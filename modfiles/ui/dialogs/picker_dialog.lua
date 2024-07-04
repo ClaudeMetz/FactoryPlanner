@@ -61,7 +61,7 @@ local function add_item_picker(parent_flow, player)
 
     -- Item picker (optimized for performance, so not everything is done in the obvious way)
     local groups_per_row = MAGIC_NUMBERS.groups_per_row
-    local table_item_groups = parent_flow.add{type="table", style="filter_group_table", column_count=groups_per_row}
+    local table_item_groups = parent_flow.add{type="table", style="fp_table_item_groups", column_count=groups_per_row}
     table_item_groups.style.width = 71 * groups_per_row
     table_item_groups.style.horizontal_spacing = 0
     table_item_groups.style.vertical_spacing = 0
@@ -307,8 +307,7 @@ local function add_item_pane(parent_flow, modal_data, item_category, item)
 
     flow_belts.add{type="label", caption="x"}
 
-    local belt_filter = {{filter="type", type="transport-belt"}, {filter="flag", flag="hidden",
-        invert=true, mode="and"}}
+    local belt_filter = {{filter="type", type="transport-belt"}, {filter="hidden", invert=true, mode="and"}}
     local choose_belt_button = flow_belts.add{type="choose-elem-button", elem_type="entity",
         tags={mod="fp", on_gui_elem_changed="picker_choose_belt"}, elem_filters=belt_filter,
         style="fp_sprite-button_inset_tiny"}

@@ -100,7 +100,7 @@ local function attempt_adding_line(player, recipe_id, modal_data)
 
         local message = nil
         if not (recipe_proto.custom or player.force.recipes[recipe_proto.name].enabled) then
-            message = {text={"fp.warning_recipe_disabled"}, category="warning"}
+            message = {text={"fp.warning_recipe_disabled", recipe_proto.localised_name}, category="warning"}
         end
         local defaults_message = line:apply_mb_defaults(player)
         if not message then message = defaults_message end  -- a bit silly

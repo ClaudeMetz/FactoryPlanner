@@ -10,7 +10,7 @@ local function add_beacon_frame(parent_flow, modal_data)
 
     flow_beacon.add{type="label", caption={"fp.pu_beacon", 1}, style="heading_3_label"}
 
-    local beacon_filter = {{filter="type", type="beacon"}, {filter="flag", flag="hidden", invert=true, mode="and"}}
+    local beacon_filter = {{filter="type", type="beacon"}, {filter="hidden", invert=true, mode="and"}}
     local button_beacon = flow_beacon.add{type="choose-elem-button", elem_type="entity", entity=beacon.proto.name,
         tags={mod="fp", on_gui_elem_changed="select_beacon"}, elem_filters=beacon_filter,
         style="fp_sprite-button_inset_tiny"}

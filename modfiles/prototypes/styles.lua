@@ -108,10 +108,26 @@ styles["fp_frame_transparent"] = {
 styles["fp_table_production"] = {
     type = "table_style",
     odd_row_graphical_set = {
-
         filename = "__core__/graphics/gui-new.png",
         position = {472, 25},
         size = 1
+    }
+}
+
+styles["fp_table_item_groups"] = {
+    type = "table_style",
+    horizontal_spacing = 0,
+    vertical_spacing = 0,
+    padding = 0,
+    background_graphical_set = {
+        position = {282, 17},
+        corner_size = 8,
+        overall_tiling_vertical_size = 48,
+        overall_tiling_vertical_spacing = 24,
+        overall_tiling_vertical_padding = 12,
+        overall_tiling_horizontal_size = 48,
+        overall_tiling_horizontal_spacing = 23,
+        overall_tiling_horizontal_padding = 12
     }
 }
 
