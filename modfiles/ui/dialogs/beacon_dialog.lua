@@ -8,7 +8,7 @@ local function add_beacon_frame(parent_flow, modal_data)
 
     local flow_beacon = parent_flow.add{type="frame", style="fp_frame_module", direction="horizontal"}
 
-    flow_beacon.add{type="label", caption={"fp.pu_beacon", 1}, style="heading_3_label"}
+    flow_beacon.add{type="label", caption={"fp.pu_beacon", 1}, style="semibold_label"}
 
     local beacon_filter = {{filter="type", type="beacon"}, {filter="hidden", invert=true, mode="and"}}
     local button_beacon = flow_beacon.add{type="choose-elem-button", elem_type="entity", entity=beacon.proto.name,
@@ -18,7 +18,7 @@ local function add_beacon_frame(parent_flow, modal_data)
     modal_elements["beacon_button"] = button_beacon
 
     flow_beacon.add{type="label", caption={"fp.info_label", {"fp.amount"}}, tooltip={"fp.beacon_amount_tt"},
-        style="heading_3_label"}
+        style="semibold_label"}
 
     local beacon_amount = (beacon.amount ~= 0) and tostring(beacon.amount) or ""
     local textfield_amount = flow_beacon.add{type="textfield", text=beacon_amount, enabled=(not BEACON_OVERLOAD_ACTIVE),
@@ -30,7 +30,7 @@ local function add_beacon_frame(parent_flow, modal_data)
     modal_elements["beacon_amount"] = textfield_amount
 
     flow_beacon.add{type="label", caption={"fp.info_label", {"fp.beacon_total"}}, tooltip={"fp.beacon_total_tt"},
-        style="heading_3_label"}
+        style="semibold_label"}
 
     local textfield_total = flow_beacon.add{type="textfield", name="fp_textfield_beacon_total_amount",
         text=tostring(beacon.total_amount or "")}

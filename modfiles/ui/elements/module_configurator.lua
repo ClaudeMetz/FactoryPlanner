@@ -16,7 +16,7 @@ local function add_module_frame(parent_flow, module, module_filters, empty_slots
 
     local frame_module = parent_flow.add{type="frame", style="fp_frame_module", direction="horizontal",
         tags={module_id=module_id}}
-    frame_module.add{type="label", caption={"fp.pu_module", 1}, style="heading_3_label"}
+    frame_module.add{type="label", caption={"fp.pu_module", 1}, style="semibold_label"}
 
     local module_name = (module) and module.proto.name or nil
     local button_module = frame_module.add{type="choose-elem-button", name="fp_chooser_module", elem_type="item",
@@ -24,7 +24,7 @@ local function add_module_frame(parent_flow, module, module_filters, empty_slots
         elem_filters=module_filters, style="fp_sprite-button_inset_tiny"}
     button_module.style.right_margin = 12
 
-    frame_module.add{type="label", caption={"fp.amount"}, style="heading_3_label"}
+    frame_module.add{type="label", caption={"fp.amount"}, style="semibold_label"}
 
     local slider_value, maximum_value, minimum_value = determine_slider_config(module, empty_slots)
     local slider_style = (maximum_value == 1) and "fp_slider_module_none" or "fp_slider_module"
@@ -49,7 +49,7 @@ local function add_effects_section(parent_flow, object, modal_elements)
 
     local class_lower = object.class:lower()
     local caption = {"", {"fp.pu_" .. class_lower, 1}, " ", {"fp.effects"}}
-    frame_effects.add{type="label", caption=caption, style="heading_3_label"}
+    frame_effects.add{type="label", caption=caption, style="semibold_label"}
 
     local label_effects = frame_effects.add{type="label", caption=object.effects_tooltip}
     label_effects.style.top_margin = -40  -- need this because extracting linebreaks from LS is hard
