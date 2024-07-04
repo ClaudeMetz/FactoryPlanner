@@ -211,6 +211,7 @@ local active_mods = script.active_mods
 
 -- Determines whether this recipe is a recycling one or not
 local recycling_recipe_mods = {
+    ["base"] = {".*%-recycling$"},
     ["IndustrialRevolution"] = {"^scrap%-.*"},
     ["space-exploration"] = {"^se%-recycle%-.*"},
     ["angelspetrochem"] = {"^converter%-.*"},
