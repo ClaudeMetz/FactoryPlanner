@@ -35,6 +35,36 @@ end
 -- ** BUILDERS **
 local builders = {}
 
+function builders.move(line, parent_flow, metadata)
+    local function create_move_button(flow, direction, first_subfloor_line)
+        local enabled = not (first_subfloor_line or metadata.archive_open)
+        if direction == "next" and line.next == nil then enabled = false
+        elseif direction == "previous" then
+            if line.previous == nil then enabled = false
+            elseif line.parent.level > 1 and line.previous == line.parent.first then enabled = false end
+        end
+
+        local endpoint = (direction == "next") and {"fp.bottom"} or {"fp.top"}
+        local up_down = (direction == "next") and "down" or "up"
+        local move_tooltip = (enabled) and {"fp.move_row_tt", {"fp.pl_recipe", 1}, {"fp." .. up_down}, endpoint} or ""
+
+        local button = flow.add{type="sprite-button", style="list_box_item", sprite="fp_arrow_" .. up_down,
+            tags={mod="fp", on_gui_click="move_line", direction=direction, line_id=line.id, on_gui_hover="set_tooltip",
+            context="production_table"}, enabled=enabled, mouse_button_filter={"left"}, raise_hover_events=true}
+        button.style.size = {18, 14}
+        button.style.padding = -1
+        metadata.tooltips[button.index] = move_tooltip
+    end
+
+    local move_flow = parent_flow.add{type="flow", direction="vertical"}
+    move_flow.style.vertical_spacing = 0
+    move_flow.style.top_padding = 2
+
+    local first_subfloor_line = (line.parent.level > 1 and line.previous == nil)
+    create_move_button(move_flow, "previous", first_subfloor_line)
+    create_move_button(move_flow, "next", first_subfloor_line)
+end
+
 function builders.done(line, parent_flow, _)
     local relevant_line = (line.class == "Floor") and line.first or line
 
@@ -50,33 +80,7 @@ function builders.recipe(line, parent_flow, metadata, indent)
     parent_flow.style.horizontal_spacing = 3
 
     if indent > 0 then parent_flow.style.left_margin = indent * 18 end
-
-    local function create_move_button(flow, direction, first_subfloor_line)
-        local enabled = not (first_subfloor_line or metadata.archive_open)
-        if direction == "next" and line.next == nil then enabled = false
-        elseif direction == "previous" then
-            if line.previous == nil then enabled = false
-            elseif line.parent.level > 1 and line.previous == line.parent.first then enabled = false end
-        end
-
-        local endpoint = (direction == "previous") and {"fp.top"} or {"fp.bottom"}
-        local up_down = (direction == "previous") and "up" or "down"
-        local sprite = "fp_arrow_" .. up_down .. "_dark"
-        local move_tooltip = (enabled) and {"fp.move_row_tt", {"fp.pl_recipe", 1}, {"fp." .. up_down}, endpoint} or ""
-
-        local button = flow.add{type="sprite-button", style="fp_button_move_row", sprite=sprite,
-            tags={mod="fp", on_gui_click="move_line", direction=direction, line_id=line.id, on_gui_hover="set_tooltip",
-            context="production_table"}, enabled=enabled, mouse_button_filter={"left"}, raise_hover_events=true}
-        metadata.tooltips[button.index] = move_tooltip
-    end
-
-    local move_flow = parent_flow.add{type="flow", direction="vertical"}
-    move_flow.style.vertical_spacing = 0
-    move_flow.style.top_padding = 2
-
     local first_subfloor_line = (line.parent.level > 1 and line.previous == nil)
-    create_move_button(move_flow, "previous", first_subfloor_line)
-    create_move_button(move_flow, "next", first_subfloor_line)
 
     local style, enabled, tutorial_tooltip = nil, true, ""
     local note = ""  ---@type LocalisedString
@@ -180,6 +184,7 @@ function builders.machine(line, parent_flow, metadata)
                 tags={mod="fp", on_gui_click="add_machine_module", machine_id=line.machine.id},
                 style="fp_sprite-button_inset_add", mouse_button_filter={"left"}, enabled=(not metadata.archive_open)}
             module_button.style.margin = 2
+            module_button.style.padding = 4
         end
     end
 end
@@ -195,6 +200,7 @@ function builders.beacon(line, parent_flow, metadata)
             tags={mod="fp", on_gui_click="add_line_beacon", line_id=line.id}, style="fp_sprite-button_inset_add",
             mouse_button_filter={"left"}, enabled=(not metadata.archive_open)}
         button.style.margin = 2
+        button.style.padding = 4
     else
         local plural_parameter = (beacon.amount == 1) and 1 or 2  -- needed because the amount can be decimal
         local number_line = {"", "\n", beacon.amount, " ", {"fp.pl_beacon", plural_parameter}}
@@ -363,6 +369,7 @@ end
 
 local all_production_columns = {
     -- name, caption, tooltip, alignment
+    {name="move", caption="", alignment="center"},
     {name="done", caption="", tooltip={"fp.column_done_tt"}, alignment="center"},
     {name="recipe", caption={"fp.pu_recipe", 1}, alignment="center"},
     {name="percentage", caption="%", tooltip={"fp.column_percentage_tt"}, alignment="center"},

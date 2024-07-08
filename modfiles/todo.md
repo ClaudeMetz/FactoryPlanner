@@ -3,17 +3,14 @@
 # Verify
 
 - Check whether pollution calculations are still correct
-- Check if beacon selector still looks and works correctly
 - Check if blueprint in hand still looks correct (when generating blueprint from machines etc)
 
 # Any time
 
 - Quality effect is multiplied by 10 in machine/beacon dialogs
-- Check why the example factory doesn't import properly
 - Use button's `auto_toggle` argument? Sounds really nice, in combination with `toggle` elsewhere maybe
 - Look into using the new sprite button definition style if that's a thing
   - Seems there might be nothing new, but disabling buttons now modifies their icon, which is undesirable in come cases
-- Make preferences dialog look less fucked up (also what does 'parameters' mean as a recipe category)
 - Figure out how to generate offshore pump prototypes again
 - Figure out how energy consumption and drain works in the new API
 - Check out how to handle emissions for different pollutant types? Do I just need to show all if applicable?
@@ -33,6 +30,13 @@
   - So theoretically every place I use such a prototype I could offer a choice of which prototype to use.
   - Which also means I'd need to keep around a value for every possible quality and account for it everywhere.
   - This is quite insane, so for the first version I'll assume everything has normal quality.
+- Kinda need the better indication of cyclic recipes for this crap, due to space platform recipes
+- Remove pasting items over products, replacing the latter. Only have it set the amount if identical
+- Remove RB support and add Factoriopedia support
+- Apparently the custom blueprint prototype is unnessecary now?
+- Adjust utility dialog handcrafting to behave like vanilla crafting does in all ways
+- The mod should create districts per planet automatically, once districts are implemented. First one should be called Nauvis too
+
 
 # Waiting on
 

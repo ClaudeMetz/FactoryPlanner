@@ -66,7 +66,7 @@ local function add_item_picker(parent_flow, player)
     table_item_groups.style.horizontal_spacing = 0
     table_item_groups.style.vertical_spacing = 0
 
-    local frame_filters = parent_flow.add{type="frame", style="fp_frame_slot_table"}
+    local frame_filters = parent_flow.add{type="frame", style="filter_frame"}
     modal_elements["filter_frame"] = frame_filters
 
     local group_id_cache, group_flow_cache, subgroup_table_cache = {}, {}, {}
@@ -138,6 +138,7 @@ local function add_item_picker(parent_flow, player)
                 table_subgroup = flow_subgroups.add{type="table", column_count=items_per_row,
                     style="filter_slot_table"}
                 table_subgroup.style.horizontally_stretchable = true
+                log(subgroup_name)
                 subgroup_table_cache[subgroup_name] = table_subgroup
 
                 subgroup_tables[subgroup_name] = {}

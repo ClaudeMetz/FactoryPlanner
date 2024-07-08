@@ -119,7 +119,7 @@ local function refresh_item_box(player, factory, show_floor_items, item_category
         table_items.add{type="sprite-button", sprite="utility/add", enabled=(not factory.archived),
             tags={mod="fp", on_gui_click="add_top_level_item", item_category=item_category},
             tooltip={"", {"fp.add"}, " ", {"fp.pl_" .. item_category, 1}, "\n", {"fp.shift_to_paste"}},
-            style="fp_sprite-button_inset_add_slot", mouse_button_filter={"left"}}
+            style="fp_sprite-button_inset_add_slot", mouse_button_filter={"left"}}.style.padding = 4
         table_item_count = table_item_count + 1
     end
 

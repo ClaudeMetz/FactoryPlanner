@@ -115,11 +115,11 @@ function preference_structures.mb_defaults(preferences, content_frame)
     table_mb_defaults.style.column_alignments[2] = "right"
     table_mb_defaults.style.column_alignments[3] = "right"
 
-    table_mb_defaults.add{type="label", caption={"", {"fp.pu_machine", 1}, ":"}}
+    table_mb_defaults.add{type="label", caption={"fp.pu_machine", 1}, style="semibold_label"}
     add_mb_default_button(table_mb_defaults, "machine")
     add_mb_default_button(table_mb_defaults, "machine_secondary")
 
-    table_mb_defaults.add{type="label", caption={"", {"fp.pu_beacon", 1}, ":"}}
+    table_mb_defaults.add{type="label", caption={"fp.pu_beacon", 1}, style="semibold_label"}
     add_mb_default_button(table_mb_defaults, "beacon")
 
     local beacon_amount_flow = table_mb_defaults.add{type="flow", direction="horizontal"}
@@ -145,7 +145,7 @@ function preference_structures.prototypes(player, content_frame, modal_elements,
 
     local function add_defaults_table(column_count, category_id)
         local frame = table_prototypes.add{type="frame", direction="horizontal", style="fp_frame_deep_slots_small"}
-        local table = frame.add{type="table", column_count=column_count, style="filter_slot_table"}
+        local table = frame.add{type="table", column_count=column_count, style="fp_table_filter_slot_small"}
 
         if category_id then
             modal_elements[type] = modal_elements[type] or {}
@@ -159,7 +159,7 @@ function preference_structures.prototypes(player, content_frame, modal_elements,
         local prototypes = global.prototypes[type]
         if #prototypes < 2 then preference_box.visible = false; goto skip end
 
-        add_defaults_table(8, nil)
+        add_defaults_table(10, nil)
         refresh_defaults_table(player, modal_elements, type, nil)
     else
         local categories = global.prototypes[type]
@@ -177,7 +177,7 @@ function preference_structures.prototypes(player, content_frame, modal_elements,
                 table_prototypes.add{type="label", caption=category_caption}
                 table_prototypes.add{type="empty-widget", style="flib_horizontal_pusher"}
 
-                add_defaults_table(8, category_id)
+                add_defaults_table(6, category_id)
                 refresh_defaults_table(player, modal_elements, type, category_id)
             end
         end
@@ -301,14 +301,11 @@ local function open_preferences_dialog(player, modal_data)
     local left_content_frame = add_content_frame()
     left_content_frame.style.width = 300
 
-    local support_frame = left_content_frame.add{type="frame", direction="vertical", style="fp_frame_bordered_stretch"}
-    support_frame.add{type="label", caption={"fp.preferences_support"}}
-
     local general_preference_names = {"show_gui_button", "attach_factory_products", "skip_factory_naming",
-        "prefer_matrix_solver", "show_floor_items", "fold_out_subfloors", "ingredient_satisfaction",
-        "round_button_numbers", "ignore_barreling_recipes", "ignore_recycling_recipes"}
+    "prefer_matrix_solver", "show_floor_items", "fold_out_subfloors", "ingredient_satisfaction",
+    "round_button_numbers", "ignore_barreling_recipes", "ignore_recycling_recipes"}
     local general_box = preference_structures.checkboxes(preferences, left_content_frame, "general",
-        general_preference_names)
+    general_preference_names)
 
     general_box.add{type="line", direction="horizontal"}.style.margin = {4, 0, 2, 0}
 
@@ -316,6 +313,11 @@ local function open_preferences_dialog(player, modal_data)
 
     local production_preference_names = {"done_column", "percentage_column", "pollution_column", "line_comment_column"}
     preference_structures.checkboxes(preferences, left_content_frame, "production", production_preference_names)
+
+    left_content_frame.add{type="empty-widget", style="flib_vertical_pusher"}
+    local support_frame = left_content_frame.add{type="frame", direction="vertical", style="fp_frame_bordered_stretch"}
+    support_frame.style.bottom_margin = -12
+    support_frame.add{type="label", caption={"fp.preferences_support"}}
 
     local right_content_frame = add_content_frame()
 

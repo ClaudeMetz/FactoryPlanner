@@ -238,8 +238,10 @@ function utility_structures.blueprints(player, modal_data)
     end
 
     if #blueprints < blueprint_limit then
-        table_blueprints.add{type="sprite-button", tags={mod="fp", on_gui_click="utility_store_blueprint"},
-            sprite="utility/add", style="fp_sprite-button_inset_add_slot", mouse_button_filter={"left"}}
+        local button_add = table_blueprints.add{type="sprite-button", sprite="utility/add",
+            tags={mod="fp", on_gui_click="utility_store_blueprint"}, style="fp_sprite-button_inset_add_slot",
+            mouse_button_filter={"left"}}
+        button_add.style.padding = 3
     end
 end
 

@@ -366,7 +366,7 @@ function generator.recipes.generate()
     for recipe_name, proto in pairs(game.get_filtered_recipe_prototypes(recipe_filter)) do
         local machine_category = global.prototypes.machines[proto.category]  ---@type { [string]: FPMachinePrototype }
         -- Avoid any recipes that have no machine to produce them, or are irrelevant
-        if machine_category ~= nil and not generator_util.is_irrelevant_recipe(proto) then
+        if machine_category ~= nil and not generator_util.is_irrelevant_recipe(proto) and not proto.is_parameter then
             local recipe = {
                 name = proto.name,
                 localised_name = proto.localised_name,

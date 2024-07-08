@@ -8,7 +8,7 @@ local function create_base_modal_dialog(player, dialog_settings, modal_data)
 
     local frame_modal_dialog = player.gui.screen.add{type="frame", direction="vertical",
         tags={mod="fp", on_gui_closed="close_modal_dialog"}}
-    frame_modal_dialog.style.minimal_width = 240
+    frame_modal_dialog.style.minimal_width = 220
     modal_elements.modal_frame = frame_modal_dialog
 
     -- Title bar
