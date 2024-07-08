@@ -21,15 +21,6 @@ styles["fp_flow_horizontal_centered"] = {
     horizontal_spacing = 16
 }
 
-styles["fp_frame_slot_table"] = {
-    type = "frame_style",
-    parent = "filter_frame",
-    top_padding = 4,
-    bottom_padding = 12,
-    graphical_set = util.table.deepcopy(styles.filter_frame.graphical_set)
-}
-styles["fp_frame_slot_table"].graphical_set.base.bottom = nil
-
 -- Intended for buttons of size 36
 styles["fp_frame_deep_slots_small"] = {
     type = "frame_style",
@@ -43,6 +34,14 @@ styles["fp_frame_deep_slots_small"] = {
         overall_tiling_horizontal_size = 28,
         overall_tiling_horizontal_spacing = 8,
         overall_tiling_horizontal_padding = 4
+    }
+}
+
+styles["fp_table_filter_slot_small"] = {
+    type = "table_style",
+    parent = "filter_slot_table",
+    column_widths = {
+        width = 36
     }
 }
 
@@ -177,14 +176,8 @@ styles["fp_sprite-button_group_tab"] = {
     horizontally_stretchable = "on",
     width = 0,  -- allows stretching
     height = 71,
+    padding = 1,
     disabled_graphical_set = styles.button.selected_graphical_set
-}
-
-styles["fp_button_move_row"] = {
-    type = "button_style",
-    parent = "button",
-    size = 14,
-    padding = -1
 }
 
 -- frame_action_button but correct

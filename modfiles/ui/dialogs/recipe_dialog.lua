@@ -148,7 +148,7 @@ local function create_recipe_group_box(modal_data, relevant_group, translations)
 
     local frame_recipes = flow_group.add{type="frame", direction="horizontal", style="fp_frame_deep_slots_small"}
     local table_recipes = frame_recipes.add{type="table", column_count=MAGIC_NUMBERS.recipes_per_row,
-        style="filter_slot_table"}
+        style="fp_table_filter_slot_small"}
 
     for _, recipe in pairs(relevant_group.recipes) do
         local recipe_proto = recipe.proto

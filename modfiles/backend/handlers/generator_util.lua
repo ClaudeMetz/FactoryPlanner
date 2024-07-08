@@ -212,11 +212,11 @@ local active_mods = script.active_mods
 -- Determines whether this recipe is a recycling one or not
 local recycling_recipe_mods = {
     ["base"] = {".*%-recycling$"},
-    ["IndustrialRevolution"] = {"^scrap%-.*"},
+    --[[ ["IndustrialRevolution"] = {"^scrap%-.*"},
     ["space-exploration"] = {"^se%-recycle%-.*"},
     ["angelspetrochem"] = {"^converter%-.*"},
     ["reverse-factory"] = {"^rf%-.*"},
-    ["ZRecycling"] = {"^dry411srev%-.*"}
+    ["ZRecycling"] = {"^dry411srev%-.*"} ]]
 }
 
 local active_recycling_recipe_mods = {}  ---@type string[]
@@ -241,12 +241,12 @@ end
 -- Determines whether the given recipe is a barreling or stacking one
 local compacting_recipe_mods = {
     ["base"] = {"^fill%-.*", "^empty%-.*"},
-    ["deadlock-beltboxes-loaders"] = {"^deadlock%-stacks%-.*", "^deadlock%-packrecipe%-.*",
+    --[[ ["deadlock-beltboxes-loaders"] = {"^deadlock%-stacks%-.*", "^deadlock%-packrecipe%-.*",
                                       "^deadlock%-unpackrecipe%-.*"},
     ["DeadlockCrating"] = {"^deadlock%-packrecipe%-.*", "^deadlock%-unpackrecipe%-.*"},
     ["IntermodalContainers"] = {"^ic%-load%-.*", "^ic%-unload%-.*"},
     ["space-exploration"] = {"^se%-delivery%-cannon%-pack%-.*"},
-    ["Satisfactorio"] = {"^packaged%-.*", "^unpack%-.*"}
+    ["Satisfactorio"] = {"^packaged%-.*", "^unpack%-.*"} ]]
 }
 
 local active_compacting_recipe_mods = {}  ---@type string[]
@@ -270,14 +270,14 @@ end
 
 -- Determines whether this recipe is irrelevant or not and should thus be excluded
 local irrelevant_recipe_categories = {
-    ["Transport_Drones"] = {"transport-drone-request", "transport-fluid-request"},
+    --[[ ["Transport_Drones"] = {"transport-drone-request", "transport-fluid-request"},
     ["Mining_Drones"] = {"mining-depot"},
     ["Deep_Storage_Unit"] = {"deep-storage-item", "deep-storage-fluid",
                              "deep-storage-item-big", "deep-storage-fluid-big",
                              "deep-storage-item-mk2/3", "deep-storage-fluid-mk2/3"},
     ["Satisfactorio"] = {"craft-bench", "equipment", "awesome-shop",
                              "resource-scanner", "object-scanner", "building",
-                             "hub-progressing", "space-elevator", "mam"}
+                             "hub-progressing", "space-elevator", "mam"} ]]
 }
 
 local irrelevant_recipe_categories_lookup = {}  ---@type { [string] : true }
