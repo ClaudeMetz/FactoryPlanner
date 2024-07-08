@@ -404,10 +404,10 @@ function generator.recipes.generate()
         if next(item.rocket_launch_products) then
             table.insert(rocket_silo_inputs, item)
         end
-    end ]]
+    end
 
     -- Localize them here so they don't have to be recreated over and over
-    local item_prototypes, recipe_prototypes = game.item_prototypes, game.recipe_prototypes
+    local item_prototypes, recipe_prototypes = game.item_prototypes, game.recipe_prototypes ]]
 
     -- Add mining recipes
     for _, proto in pairs(game.entity_prototypes) do

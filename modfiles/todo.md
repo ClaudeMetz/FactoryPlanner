@@ -1,10 +1,5 @@
 # TODO
 
-# Verify
-
-- Check whether pollution calculations are still correct
-- Check if blueprint in hand still looks correct (when generating blueprint from machines etc)
-
 # Any time
 
 - Quality effect is multiplied by 10 in machine/beacon dialogs
@@ -16,7 +11,6 @@
 - Check out how to handle emissions for different pollutant types? Do I just need to show all if applicable?
   - Only implemented `"pollution"` for now
 - Redo rocket handling now that they can't take specific items anymore, which hopefully is a simplification
-- Check which prototype attributes to use for sorting them in preferences
 - Combinators are completely changed due to logistic groups, so all that logic needs redoing
   - Logistic groups might impact other stuff as well, or could be useful for the mod (utility item requests anyone?)
 - Is `base_productivity` not a thing on Entities anymore? If not, remove from code, otherwise migrate
@@ -34,15 +28,20 @@
 - Remove pasting items over products, replacing the latter. Only have it set the amount if identical
 - Remove RB support and add Factoriopedia support
 - Apparently the custom blueprint prototype is unnessecary now?
-- Adjust utility dialog handcrafting to behave like vanilla crafting does in all ways
-- The mod should create districts per planet automatically, once districts are implemented. First one should be called Nauvis too
-
+- Deal with new beacon effect logic
 
 # Waiting on
 
-- Run Factorio with `--check-unused-prototype-data` to clean up the definitions and make sure no functionality was lost
 - Uncomment all the `.hidden` uses that were missing from the API
+- Wait on item group order getting fixed
+- Find out what's wrong with `wide_as_column_count` on tables
 
 # Release
 
 - Update other language docs for the new `plural_for_parameter` format
+- Verify custom arcosphere logic
+
+# Nice-to-have
+
+- Adjust utility dialog handcrafting to behave like vanilla crafting does in all ways
+- The mod should create districts per planet automatically, once districts are implemented. First one should be called Nauvis too
