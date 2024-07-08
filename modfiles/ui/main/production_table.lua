@@ -372,7 +372,7 @@ local all_production_columns = {
     {name="move", caption="", alignment="center"},
     {name="done", caption="", tooltip={"fp.column_done_tt"}, alignment="center"},
     {name="recipe", caption={"fp.pu_recipe", 1}, alignment="center"},
-    {name="percentage", caption="%", tooltip={"fp.column_percentage_tt"}, alignment="center"},
+    {name="percentage", caption="% ", tooltip={"fp.column_percentage_tt"}, alignment="center"},
     {name="machine", caption={"fp.pu_machine", 1}, alignment="left"},
     {name="beacon", caption={"fp.pu_beacon", 1}, alignment="left"},
     {name="power", caption={"fp.u_power"}, alignment="center"},
@@ -417,7 +417,7 @@ local function refresh_production_table(player)
 
     -- Column headers
     for index, column_data in ipairs(production_columns) do
-        local caption = (column_data.tooltip) and {"fp.info_label", column_data.caption} or column_data.caption
+        local caption = (column_data.tooltip) and {"", column_data.caption, "[img=info]"} or column_data.caption
         local label_column = table_production.add{type="label", caption=caption, tooltip=column_data.tooltip,
             style="bold_label"}
         label_column.style.bottom_margin = 6
