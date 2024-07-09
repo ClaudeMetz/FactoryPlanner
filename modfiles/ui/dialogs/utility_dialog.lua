@@ -199,7 +199,8 @@ function utility_structures.blueprints(player, modal_data)
         and util.actions.tutorial_tooltip("act_on_blueprint", nil, player) or nil
 
     local function format_signal(signal)
-        local type = (signal.type == "virtual") and "virtual-signal" or signal.type
+        -- This is screwed up, it never returns signal.type for some reason
+        local type = (signal.type == "virtual") and "virtual-signal" or "item"
         return (type .. "/" .. signal.name)
     end
 
@@ -213,8 +214,8 @@ function utility_structures.blueprints(player, modal_data)
         local button = table_blueprints.add{type="sprite-button", sprite=sprite, tooltip=tooltip,
             tags={mod="fp", on_gui_click="act_on_blueprint", index=index}, mouse_button_filter={"left-and-right"}}
 
-        local icons = (not blueprint_book) and blueprint.blueprint_icons
-            or blueprint.get_inventory(defines.inventory.item_main)[1].blueprint_icons
+        local icons = (not blueprint_book) and blueprint.preview_icons
+            or blueprint.get_inventory(defines.inventory.item_main)[1].preview_icons
         if icons then  -- this is jank-hell
             local icon_count = #icons
             local flow = button.add{type="flow", direction="horizontal", ignored_by_interaction=true}
@@ -226,7 +227,7 @@ function utility_structures.blueprints(player, modal_data)
             else
                 flow.style.padding = {4, 0, 0, 3}
                 local table = flow.add{type="table", column_count=2}
-                table.style.cell_padding = -4
+                table.style.cell_padding = -3
                 if icon_count == 2 then table.style.top_margin = top_margin end
                 for _, icon in pairs(icons) do
                     table.add{type="sprite", sprite=format_signal(icon.signal)}

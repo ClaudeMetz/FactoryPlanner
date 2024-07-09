@@ -13,7 +13,6 @@
 - Redo rocket handling now that they can't take specific items anymore, which hopefully is a simplification
 - Combinators are completely changed due to logistic groups, so all that logic needs redoing
   - Logistic groups might impact other stuff as well, or could be useful for the mod (utility item requests anyone?)
-- Is `base_productivity` not a thing on Entities anymore? If not, remove from code, otherwise migrate
 - Are `limitations` on module items not a thing anymore? What replaces that system?
   - `allowed_effects` now a thing on recipes apparently
   - also effect_receiver :: EffectReceiverPrototype ?
@@ -26,15 +25,22 @@
   - This is quite insane, so for the first version I'll assume everything has normal quality.
 - Kinda need the better indication of cyclic recipes for this crap, due to space platform recipes
 - Remove pasting items over products, replacing the latter. Only have it set the amount if identical
-- Remove RB support and add Factoriopedia support
+- Remove RB support and add Factoriopedia support (alt-left actions become alt-right and factoriopedia gets alt-left)
 - Apparently the custom blueprint prototype is unnessecary now?
 - Deal with new beacon effect logic
+- Mining productivity is now by far not the only productivity modification, so yeah, deal with that
+  - Probably just drop the option? (for now?)
+- Check on built-in productivity, like for the foundry, doesn't seem like it's applied properly
+  - Used to be `base_producvitity` but seemingly changed?
+- floor up / to the top button sprites are not lined up vertically
 
 # Waiting on
 
 - Uncomment all the `.hidden` uses that were missing from the API
 - Wait on item group order getting fixed
-- Find out what's wrong with `wide_as_column_count` on tables
+- Find out what's wrong with `wide_as_column_count` on tables, need it almost everywhere
+  - Check out the new subtler version of the table containing slots style, could be useful (used in Factoriopedia)
+- Using `blueprint.preview_icons` seems broken, returned format does not correspond with docs
 
 # Release
 
