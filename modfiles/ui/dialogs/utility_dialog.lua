@@ -199,7 +199,7 @@ function utility_structures.blueprints(player, modal_data)
         and util.actions.tutorial_tooltip("act_on_blueprint", nil, player) or nil
 
     local function format_signal(signal)
-        -- This is screwed up, it never returns signal.type for some reason
+        -- TODO This is screwed up, it never returns signal.type for some reason
         local type = (signal.type == "virtual") and "virtual-signal" or "item"
         return (type .. "/" .. signal.name)
     end
@@ -398,8 +398,9 @@ listeners.gui = {
             timeout = 20,
             handler = (function(player, _, _)
                 local missing_items = util.globals.modal_data(player).missing_items
-                local success = util.cursor.set_item_combinator(player, missing_items)
-                if success then util.raise.close_dialog(player, "cancel"); main_dialog.toggle(player) end
+                util.cursor.set_item_combinator(player, missing_items)
+                util.raise.close_dialog(player, "cancel")
+                main_dialog.toggle(player)
             end)
         },
         {
