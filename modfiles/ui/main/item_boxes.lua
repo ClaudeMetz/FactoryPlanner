@@ -220,8 +220,8 @@ local function put_ingredients_into_cursor(player, _, _)
         end
     end
 
-    local success = util.cursor.set_item_combinator(player, ingredients)
-    if success then main_dialog.toggle(player) end
+    util.cursor.set_item_combinator(player, ingredients)
+    main_dialog.toggle(player)
 end
 
 

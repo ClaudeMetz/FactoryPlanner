@@ -1,5 +1,8 @@
 # TODO
 
+# Active
+
+
 # Any time
 
 - Quality effect is multiplied by 10 in machine/beacon dialogs
@@ -26,12 +29,11 @@
 - Kinda need the better indication of cyclic recipes for this crap, due to space platform recipes
 - Remove pasting items over products, replacing the latter. Only have it set the amount if identical
 - Remove RB support and add Factoriopedia support (alt-left actions become alt-right and factoriopedia gets alt-left)
-- Apparently the custom blueprint prototype is unnessecary now?
 - Deal with new beacon effect logic
 - Mining productivity is now by far not the only productivity modification, so yeah, deal with that
-  - Probably just drop the option? (for now?)
+  - Probably just drop the option? (for now?) Also consider locking in the bonus when archiving a factory
 - Check on built-in productivity, like for the foundry, doesn't seem like it's applied properly
-  - Used to be `base_producvitity` but seemingly changed?
+  - Used to be `base_productivity` but seemingly changed?
 - floor up / to the top button sprites are not lined up vertically
 
 # Waiting on
@@ -41,6 +43,9 @@
 - Find out what's wrong with `wide_as_column_count` on tables, need it almost everywhere
   - Check out the new subtler version of the table containing slots style, could be useful (used in Factoriopedia)
 - Using `blueprint.preview_icons` seems broken, returned format does not correspond with docs
+- Using `blueprint.set_blueprint_entities` doesn't work when using modules for items apparently.
+  - Also make sure when it works that the blueprint doesn't return to inventory and is thus cursor-only
+  - Also doesn't set recipe anymore on machines, which it did in 1.1
 
 # Release
 

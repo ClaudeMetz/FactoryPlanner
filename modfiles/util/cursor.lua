@@ -6,7 +6,8 @@ local function set_cursor_blueprint(player, blueprint_entities)
     local script_inventory = game.create_inventory(1)
     local blank_slot = script_inventory[1]
 
-    blank_slot.set_stack{name="fp_cursor_blueprint"}
+    blank_slot.set_stack{name="blueprint"}
+    -- TODO This is somehow broken, probably an API bug
     blank_slot.set_blueprint_entities(blueprint_entities)
     player.add_to_clipboard(blank_slot)
     player.activate_paste()
@@ -42,6 +43,7 @@ function _cursor.set_entity(player, line, object)
         name = object.proto.name,
         position = {0, 0},
         items = module_list,
+        -- TODO This is not set anymore, not sure why, probably API change
         recipe = (object.class == "Machine") and line.recipe_proto.name or nil
     }
 
@@ -51,13 +53,8 @@ end
 
 ---@param player LuaPlayer
 ---@param item_signals { [SignalID]: number }
----@return boolean success
 function _cursor.set_item_combinator(player, item_signals)
     local combinator_proto = game.entity_prototypes["constant-combinator"]
-    if combinator_proto == nil then
-        _cursor.create_flying_text(player, {"fp.blueprint_no_combinator_prototype"})
-        return false
-    end
     local filter_limit = combinator_proto.item_slot_count
 
     local blueprint_entities = {}  ---@type BlueprintEntity[]
@@ -104,7 +101,6 @@ function _cursor.set_item_combinator(player, item_signals)
     end
 
     set_cursor_blueprint(player, blueprint_entities)
-    return true
 end
 
 ---@param player LuaPlayer
@@ -126,7 +122,7 @@ function _cursor.add_to_item_combinator(player, proto, amount)
 
     local signal = {type=proto.type, name=proto.name}
     item_signals[signal] = (item_signals[signal] or 0) + amount  -- add to existing if applicable
-    _cursor.set_item_combinator(player, item_signals)  -- don't care about success here
+    _cursor.set_item_combinator(player, item_signals)
 end
 
 return _cursor
