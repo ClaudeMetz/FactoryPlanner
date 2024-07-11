@@ -199,7 +199,7 @@ function utility_structures.blueprints(player, modal_data)
         and util.actions.tutorial_tooltip("act_on_blueprint", nil, player) or nil
 
     local function format_signal(signal)
-        -- TODO This is screwed up, it never returns signal.type for some reason
+        -- signal.type is nil if it's really "item", plus we need to translate the virtual type
         local type = (signal.type == "virtual") and "virtual-signal" or "item"
         return (type .. "/" .. signal.name)
     end

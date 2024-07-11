@@ -42,7 +42,6 @@
 - Wait on item group order getting fixed
 - Find out what's wrong with `wide_as_column_count` on tables, need it almost everywhere
   - Check out the new subtler version of the table containing slots style, could be useful (used in Factoriopedia)
-- Using `blueprint.preview_icons` seems broken, returned format does not correspond with docs
 
 # Release
 
