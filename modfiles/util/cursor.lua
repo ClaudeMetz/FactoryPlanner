@@ -33,17 +33,33 @@ function _cursor.set_entity(player, line, object)
         return false
     end
 
-    local module_list = {}
+    local items_list, slot_index = {}, 0
     for module in object.module_set:iterator() do
-        module_list[module.proto.name] = module.amount
+        local inventory_list = {}
+        for i = 1, module.amount do
+            table.insert(inventory_list, {
+                inventory = 4,  -- this should be from defines.inventory depending on the entity,
+                                -- but it seemingly works this way. Not sure.
+                stack = slot_index
+            })
+            slot_index = slot_index + 1
+        end
+
+        table.insert(items_list, {
+            id = {
+                name = module.proto.name
+            },
+            items = {
+                in_inventory = inventory_list
+            }
+        })
     end
 
     local blueprint_entity = {
         entity_number = 1,
         name = object.proto.name,
         position = {0, 0},
-        items = module_list,
-        -- TODO This is not set anymore, not sure why, probably API change
+        items = items_list,
         recipe = (object.class == "Machine") and line.recipe_proto.name or nil
     }
 

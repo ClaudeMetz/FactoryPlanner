@@ -43,9 +43,6 @@
 - Find out what's wrong with `wide_as_column_count` on tables, need it almost everywhere
   - Check out the new subtler version of the table containing slots style, could be useful (used in Factoriopedia)
 - Using `blueprint.preview_icons` seems broken, returned format does not correspond with docs
-- Using `blueprint.set_blueprint_entities` doesn't work when using modules for items apparently.
-  - Also make sure when it works that the blueprint doesn't return to inventory and is thus cursor-only
-  - Also doesn't set recipe anymore on machines, which it did in 1.1
 
 # Release
 
