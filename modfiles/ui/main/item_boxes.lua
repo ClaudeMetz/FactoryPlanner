@@ -212,15 +212,20 @@ local function put_ingredients_into_cursor(player, _, _)
     local relevant_floor = (show_floor_items) and util.context.get(player, "Floor")
         or util.context.get(player, "Factory").top_floor  --[[@as Floor]]
 
-    local ingredients = {}
+    local ingredient_signals = {}
     for _, ingredient in relevant_floor["ingredients"]:iterator() do
         if ingredient.proto.type ~= "entity" then
-            local signal = {type=ingredient.proto.type, name=ingredient.proto.name}
-            ingredients[signal] = ingredient.amount
+            table.insert(ingredient_signals, {
+                signal = {
+                    type = ingredient.proto.type,
+                    name = ingredient.proto.name,
+                },
+                count = ingredient.amount
+            })
         end
     end
 
-    util.cursor.set_item_combinator(player, ingredients)
+    util.cursor.set_item_combinator(player, ingredient_signals)
     main_dialog.toggle(player)
 end
 

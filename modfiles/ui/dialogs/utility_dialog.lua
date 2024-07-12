@@ -131,8 +131,13 @@ function utility_structures.components(player, modal_data)
                 local missing_amount = required_amount - amount_in_inventory
 
                 if missing_amount > 0 then
-                    local signal = {type=proto.type or "item", name=proto.name}
-                    modal_data.missing_items[signal] = missing_amount
+                    table.insert(modal_data.missing_items, {
+                        signal = {
+                            type = proto.type or "item",
+                            name = proto.name,
+                        },
+                        count = missing_amount
+                    })
                 end
 
                 local button_style = nil
@@ -273,14 +278,15 @@ local function handle_item_request(player, _, _)
     if factory.item_request_proxy then  -- if an item_proxy is set, cancel it
         factory:destroy_item_request_proxy()
     else
-        local modules = {}
+        -- TODO disabled for now until replacement with logistic sections
+        --[[ local modules = {}
         for signal, amount in pairs(modal_data.missing_items) do modules[signal.name] = amount end
 
         -- This crazy way to request items actually works, and is way easier than setting logistic requests
         -- The advantage that is has is that the delivery is one-time, not a constant request
         -- The disadvantage is that it's weird to have construction bots bring you stuff
         factory.item_request_proxy = player.surface.create_entity{name="item-request-proxy",
-            position=player.position, force=player.force, target=player.character, modules=modules}
+            position=player.position, force=player.force, target=player.character, modules=modules} ]]
     end
 
     update_request_button(player, modal_data, factory)
