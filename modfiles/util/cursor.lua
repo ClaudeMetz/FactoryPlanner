@@ -68,16 +68,12 @@ function _cursor.set_entity(player, line, object)
 end
 
 ---@param player LuaPlayer
----@param item_signals Signal[]
-function _cursor.set_item_combinator(player, item_signals)
-    local filters, slot_index = {}, 1
-    for _, signal in pairs(item_signals) do
-        table.insert(filters, {
-            index = slot_index,
-            type = signal.signal.type,
-            name = signal.signal.name,
-            count = math.max(signal.count, 1)  -- make sure amounts < 1 are not excluded
-        })
+---@param item_filters LogisticFilter[]
+function _cursor.set_item_combinator(player, item_filters)
+    local slot_index = 1
+    for _, filter in pairs(item_filters) do
+        filter.count = math.max(filter.count, 1)  -- make sure amounts < 1 are not excluded
+        filter.index = slot_index
         slot_index = slot_index + 1
     end
 
@@ -90,7 +86,7 @@ function _cursor.set_item_combinator(player, item_signals)
             sections = { sections = {
                 {
                     index = 1,
-                    filters = filters
+                    filters = item_filters
                 }
             } }
         }
@@ -105,24 +101,6 @@ end
 function _cursor.add_to_item_combinator(player, proto, amount)
     local item_signals, filter_matched = {}, false
 
-    local function parse_filters(filters)
-        for _, filter in pairs(filters) do
-            local count = filter.count
-            if proto.type == (filter.type or "item") and proto.name == filter.name then
-                filter_matched = true
-                count = count + amount
-            end
-
-            table.insert(item_signals, {
-                signal = {
-                    type = filter.type,
-                    name = filter.name,
-                },
-                count = count
-            })
-        end
-    end
-
     if not player.is_cursor_empty() then
         local cursor = player.cursor_stack  --[[@cast cursor -nil]]
         if cursor.is_blueprint and cursor.is_blueprint_setup() then
@@ -133,7 +111,13 @@ function _cursor.add_to_item_combinator(player, proto, amount)
                 if sections and sections.sections and #sections.sections == 1 then
                     local section = sections.sections[1]
                     if not section.group then
-                        parse_filters(section.filters)
+                        for _, filter in pairs(section.filters) do
+                            if proto.type == (filter.type or "item") and proto.name == filter.name then
+                                filter.count = filter.count + amount
+                                filter_matched = true
+                            end
+                            table.insert(item_signals, filter)
+                        end
                     end
                 end
             end
@@ -142,10 +126,10 @@ function _cursor.add_to_item_combinator(player, proto, amount)
 
     if not filter_matched then
         table.insert(item_signals, {
-            signal = {
-                type = proto.type,
-                name = proto.name,
-            },
+            type = proto.type,
+            name = proto.name,
+            quality = "normal",
+            comparator = "=",
             count = amount
         })
     end
