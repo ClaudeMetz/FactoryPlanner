@@ -56,7 +56,7 @@ function utility_structures.components(player, modal_data)
             return button
         end
         modal_elements.combinator_button = action_button("item/constant-combinator", "utility_item_combinator")
-        modal_elements.request_button = action_button("item/logistic-chest-requester", "utility_request_items)
+        modal_elements.request_button = action_button("item/logistic-robot", "utility_request_items")
 
         local table_components = components_box.add{type="table", column_count=2}
         table_components.style.horizontal_spacing = 24
@@ -93,11 +93,10 @@ function utility_structures.components(player, modal_data)
 
                 if missing_amount > 0 then
                     table.insert(modal_data.missing_items, {
-                        signal = {
-                            type = proto.type or "item",
-                            name = proto.name,
-                            quality = "normal"
-                        },
+                        type = "item",
+                        name = proto.name,
+                        quality = "normal",
+                        comparator = "=",
                         count = missing_amount
                     })
                 end
@@ -133,12 +132,13 @@ function utility_structures.components(player, modal_data)
 
     local any_missing_items = (next(modal_data.missing_items) ~= nil)
     local no_items_necessary = {"fp.info_label", {"fp.utility_no_items_necessary", {"fp.pl_" .. scope:lower(), 1}}}
-    modal_elements.combinator_button.enabled = any_missing_items
-    modal_elements.combinator_button.tooltip = (any_missing_items) and {"fp.utility_combinator_tt"}
-        or no_items_necessary
-    modal_elements.request_button.enabled = any_missing_items
-    modal_elements.request_button.tooltip = (any_missing_items) and {"fp.utility_request_tt"}
-        or no_items_necessary
+    local function configure_button(name)
+        local button = modal_elements[name .. "_button"]
+        button.enabled = any_missing_items
+        button.tooltip = (any_missing_items) and {"fp.utility_" .. name .. "_tt"} or no_items_necessary
+    end
+    configure_button("combinator")
+    configure_button("request")
 end
 
 function utility_structures.blueprints(player, modal_data)
@@ -243,10 +243,14 @@ local function handle_item_request(player, _, _)
         local new_section = requester_point.add_section()
 
         local missing_items = util.globals.modal_data(player).missing_items
-        for _, signal in pairs(missing_items) do
+        for _, item in pairs(missing_items) do
             new_section.set_slot(1, {
-                value = signal.signal,
-                min = signal.count
+                value = {
+                    name = item.name,
+                    quality = item.quality,
+                    comparator = item.comparator
+                },
+                min = item.count
             })
         end
 
