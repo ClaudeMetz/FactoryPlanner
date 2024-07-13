@@ -1,5 +1,4 @@
 local Object = require("backend.data.Object")
-local Line = require("backend.data.Line")
 
 ---@alias ProductDefinedBy "amount" | "belts" | "lanes"
 

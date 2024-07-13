@@ -2,9 +2,6 @@
 
 # Active
 
-- Logistic groups could be useful for the mod (utility item requests anyone?)
-- Change format that goes into cursor stuff to use normal quality as well
-
 # Any time
 
 - Quality effect is multiplied by 10 in machine/beacon dialogs
@@ -27,8 +24,6 @@
   - Which also means I'd need to keep around a value for every possible quality and account for it everywhere.
   - This is quite insane, so for the first version I'll assume everything has normal quality.
 - Kinda need the better indication of cyclic recipes for this crap, due to space platform recipes
-- Remove pasting items over products, replacing the latter. Only have it set the amount if identical
-- Remove RB support and add Factoriopedia support (alt-left actions become alt-right and factoriopedia gets alt-left)
 - Deal with new beacon effect logic -> Think about beacon overload mechanic too
 - Mining productivity is now by far not the only productivity modification, so yeah, deal with that
   - Probably just drop the option? (for now?) Also consider locking in the bonus when archiving a factory
@@ -37,11 +32,12 @@
 
 # Waiting on
 
-- Uncomment all the `.hidden` uses that were missing from the API
-- Wait on item group order getting fixed
 - Find out what's wrong with `wide_as_column_count` on tables, need it almost everywhere
   - Check out the new subtler version of the table containing slots style, could be useful (used in Factoriopedia)
+- Uncomment all the `.hidden` uses that were missing from the API
+- Item group order getting fixed so picker dialog works properly
 - Constant combinator `sections` format rename
+- API to open things in Factoriopedia
 
 # Release
 
@@ -52,3 +48,4 @@
 
 - Adjust utility dialog handcrafting to behave like vanilla crafting does in all ways
 - The mod should create districts per planet automatically, once districts are implemented. First one should be called Nauvis too
+- Have separate methods for each GUI action instead of a tree. Needs some prep methods sometimes maybe

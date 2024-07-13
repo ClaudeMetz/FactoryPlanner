@@ -201,8 +201,8 @@ local function handle_item_button_click(player, tags, action)
         local amount = (item.class == "Product") and item:get_required_amount() or item.amount
         util.cursor.add_to_item_combinator(player, item.proto, amount)
 
-    elseif action == "recipebook" then
-        util.open_in_recipebook(player, item.proto.type, item.proto.name)
+    elseif action == "factoriopedia" then
+        --util.open_in_factoriopedia(player, item.proto.type, item.proto.name)
     end
 end
 
@@ -313,8 +313,8 @@ listeners.gui = {
                 copy = {"shift-right"},
                 paste = {"shift-left", {archive_open=false}},
                 delete = {"control-right", {archive_open=false}},
-                put_into_cursor = {"alt-left"},
-                recipebook = {"alt-right", {recipebook=true}}
+                put_into_cursor = {"alt-right"},
+                factoriopedia = {"alt-left"}
             },
             handler = handle_item_button_click
         },
@@ -323,8 +323,8 @@ listeners.gui = {
             modifier_actions = {
                 add_recipe = {"left", {archive_open=false, matrix_active=true}},
                 copy = {"shift-right"},
-                put_into_cursor = {"alt-left"},
-                recipebook = {"alt-right", {recipebook=true}}
+                put_into_cursor = {"alt-right"},
+                factoriopedia = {"alt-left"}
             },
             handler = handle_item_button_click
         },
@@ -334,8 +334,8 @@ listeners.gui = {
                 add_recipe = {"left", {archive_open=false}},
                 specify_amount = {"right", {archive_open=false}},
                 copy = {"shift-right"},
-                put_into_cursor = {"alt-left"},
-                recipebook = {"alt-right", {recipebook=true}}
+                put_into_cursor = {"alt-right"},
+                factoriopedia = {"alt-left"}
             },
             handler = handle_item_button_click
         },
@@ -343,8 +343,8 @@ listeners.gui = {
             name = "act_on_floor_item",
             modifier_actions = {
                 copy = {"shift-right"},
-                put_into_cursor = {"alt-left"},
-                recipebook = {"alt-right", {recipebook=true}}
+                put_into_cursor = {"alt-right"},
+                factoriopedia = {"alt-left"}
             },
             handler = handle_item_button_click
         },

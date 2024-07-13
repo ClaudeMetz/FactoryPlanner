@@ -58,8 +58,8 @@ local function handle_recipe_click(player, tags, action)
         solver.update(player, factory)
         util.raise.refresh(player, "factory", nil)
 
-    elseif action == "recipebook" then
-        util.open_in_recipebook(player, "recipe", relevant_line.recipe_proto.name)
+    elseif action == "factoriopedia" then
+        --util.open_in_factoriopedia(player, "recipe", relevant_line.recipe_proto.name)
     end
 end
 
@@ -106,8 +106,8 @@ local function handle_machine_click(player, tags, action)
         util.raise.refresh(player, "factory", nil)
         if message ~= nil then util.messages.raise(player, message.category, message.text, 1) end
 
-    elseif action == "recipebook" then
-        util.open_in_recipebook(player, "entity", machine.proto.name)
+    elseif action == "factoriopedia" then
+        --util.open_in_factoriopedia(player, "entity", machine.proto.name)
     end
 end
 
@@ -144,8 +144,8 @@ local function handle_beacon_click(player, tags, action)
         solver.update(player)
         util.raise.refresh(player, "factory", nil)
 
-    elseif action == "recipebook" then
-        util.open_in_recipebook(player, "entity", beacon.proto.name)
+    elseif action == "factoriopedia" then
+        --util.open_in_factoriopedia(player, "entity", beacon.proto.name)
     end
 end
 
@@ -190,8 +190,8 @@ local function handle_module_click(player, tags, action)
         solver.update(player)
         util.raise.refresh(player, "factory", nil)
 
-    elseif action == "recipebook" then
-        util.open_in_recipebook(player, "item", module.proto.name)
+    elseif action == "factoriopedia" then
+        --util.open_in_factoriopedia(player, "item", module.proto.name)
     end
 end
 
@@ -281,8 +281,8 @@ local function handle_item_click(player, tags, action)
     elseif action == "put_into_cursor" then
         util.cursor.add_to_item_combinator(player, item.proto, item.amount)
 
-    elseif action == "recipebook" then
-        util.open_in_recipebook(player, item.proto.type, item.proto.name)
+    elseif action == "factoriopedia" then
+        --util.open_in_factoriopedia(player, item.proto.type, item.proto.name)
     end
 end
 
@@ -309,8 +309,8 @@ local function handle_fuel_click(player, tags, action)
     elseif action == "put_into_cursor" then
         util.cursor.add_to_item_combinator(player, fuel.proto, fuel.amount)
 
-    elseif action == "recipebook" then
-        util.open_in_recipebook(player, fuel.proto.type, fuel.proto.name)
+    elseif action == "factoriopedia" then
+        --util.open_in_factoriopedia(player, fuel.proto.type, fuel.proto.name)
     end
 end
 
@@ -332,7 +332,7 @@ listeners.gui = {
                 paste = {"shift-left", {archive_open=false}},
                 toggle = {"control-left", {archive_open=false}},
                 delete = {"control-right", {archive_open=false}},
-                recipebook = {"alt-right", {recipebook=true}}
+                factoriopedia = {"alt-left"}
             },
             handler = handle_recipe_click
         },
@@ -343,8 +343,8 @@ listeners.gui = {
                 copy = {"shift-right"},
                 paste = {"shift-left", {archive_open=false}},
                 reset_to_default = {"control-right", {archive_open=false}},
-                put_into_cursor = {"alt-left"},
-                recipebook = {"alt-right", {recipebook=true}}
+                put_into_cursor = {"alt-right"},
+                factoriopedia = {"alt-left"}
             },
             handler = handle_machine_click
         },
@@ -359,8 +359,8 @@ listeners.gui = {
                 copy = {"shift-right"},
                 paste = {"shift-left", {archive_open=false}},
                 delete = {"control-right", {archive_open=false}},
-                put_into_cursor = {"alt-left"},
-                recipebook = {"alt-right", {recipebook=true}}
+                put_into_cursor = {"alt-right"},
+                factoriopedia = {"alt-left"}
             },
             handler = handle_beacon_click
         },
@@ -375,7 +375,7 @@ listeners.gui = {
                 copy = {"shift-right"},
                 paste = {"shift-left", {archive_open=false}},
                 delete = {"control-right", {archive_open=false}},
-                recipebook = {"alt-right", {recipebook=true}}
+                factoriopedia = {"alt-left"}
             },
             handler = handle_module_click
         },
@@ -385,8 +385,8 @@ listeners.gui = {
                 prioritize = {"left", {archive_open=false, matrix_active=false}},
                 specify_amount = {"right", {archive_open=false, matrix_active=false}},
                 copy = {"shift-right"},
-                put_into_cursor = {"alt-left"},
-                recipebook = {"alt-right", {recipebook=true}}
+                put_into_cursor = {"alt-right"},
+                factoriopedia = {"alt-left"}
             },
             handler = (function(player, tags, action)
                 tags.item_category = "product"
@@ -400,8 +400,8 @@ listeners.gui = {
                 add_recipe_below = {"control-left", {archive_open=false, matrix_active=true}},
                 specify_amount = {"right", {archive_open=false, matrix_active=false}},
                 copy = {"shift-right"},
-                put_into_cursor = {"alt-left"},
-                recipebook = {"alt-right", {recipebook=true}}
+                put_into_cursor = {"alt-right"},
+                factoriopedia = {"alt-left"}
             },
             handler = (function(player, tags, action)
                 tags.item_category = "byproduct"
@@ -415,8 +415,8 @@ listeners.gui = {
                 add_recipe_below = {"control-left", {archive_open=false}},
                 specify_amount = {"right", {archive_open=false, matrix_active=false}},
                 copy = {"shift-right"},
-                put_into_cursor = {"alt-left"},
-                recipebook = {"alt-right", {recipebook=true}}
+                put_into_cursor = {"alt-right"},
+                factoriopedia = {"alt-left"}
             },
             handler = (function(player, tags, action)
                 tags.item_category = "ingredient"
@@ -431,8 +431,8 @@ listeners.gui = {
                 edit = {"right", {archive_open=false}},
                 copy = {"shift-right"},
                 paste = {"shift-left", {archive_open=false}},
-                put_into_cursor = {"alt-left"},
-                recipebook = {"alt-right", {recipebook=true}}
+                put_into_cursor = {"alt-right"},
+                factoriopedia = {"alt-left"}
             },
             handler = handle_fuel_click
         }
