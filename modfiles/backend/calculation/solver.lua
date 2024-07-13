@@ -86,9 +86,6 @@ local function generate_floor_data(player, factory, floor)
                 line_data.beacon_consumption = 0
                 line_data.priority_product_proto = line.priority_product
                 line_data.machine_proto = line.machine.proto
-
-                -- Effects - update effects first if mining prod is relevant
-                if line.machine.proto.mining then line.machine:summarize_effects(mining_productivity) end
                 line_data.total_effects = line.total_effects
 
                 -- Fuel prototype

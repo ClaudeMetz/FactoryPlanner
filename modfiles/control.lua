@@ -1,10 +1,10 @@
 local active_mods = script.active_mods
 
-BEACON_OVERLOAD_ACTIVE = (
+BEACON_OVERLOAD_ACTIVE = false --[[ (
     active_mods["space-exploration"]
     or active_mods["wret-beacon-rebalance-mod"]
     or active_mods["beacon-overhaul"]
-) and true
+) and true ]]
 
 DEBUGGER_ACTIVE = (active_mods["debugadapter"] ~= nil)
 DEV_ACTIVE = true  -- enables certain conveniences for development
@@ -81,7 +81,6 @@ DEV_EXPORT_STRING = "eNrtWV9v2jAQ/ypTngkjaZk6pL1saqVJmzStjxWKHOdCvdlxZjuoCPHdd05
 ---@alias Tick uint
 ---@alias VersionString string
 ---@alias ModToVersion { [string]: VersionString }
----@alias ModuleLimitations { [string]: true }
 ---@alias AllowedEffects { [string]: boolean }
 ---@alias ItemType string
 ---@alias ItemName string

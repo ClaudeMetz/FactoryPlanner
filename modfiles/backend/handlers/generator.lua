@@ -65,7 +65,6 @@ end
 ---@field energy_drain double
 ---@field emissions double
 ---@field built_by_item FPItemPrototype?
----@field base_productivity double
 ---@field allowed_effects AllowedEffects?
 ---@field module_limit integer
 ---@field launch_sequence_time number?
@@ -159,7 +158,6 @@ function generator.machines.generate()
             energy_drain = energy_drain,
             emissions = emissions,
             built_by_item = built_by_item,
-            base_productivity = 0,--(proto.base_productivity or 0),
             allowed_effects = generator_util.format_allowed_effects(proto.allowed_effects),
             module_limit = (proto.module_inventory_size or 0),
             launch_sequence_time = generator_util.determine_launch_sequence_time(proto),
@@ -310,7 +308,6 @@ end
 ---@field recycling boolean
 ---@field barreling boolean
 ---@field enabling_technologies string[]
----@field use_limitations boolean
 ---@field custom boolean
 ---@field enabled_from_the_start boolean
 ---@field hidden boolean
@@ -341,7 +338,6 @@ function generator.recipes.generate()
                 localised_name={"item-group-name.intermediate-products"}},
             type_counts = {},
             enabling_technologies = nil,
-            use_limitations = false,
             emissions_multiplier = 1
         }
     end
@@ -381,7 +377,6 @@ function generator.recipes.generate()
                 recycling = generator_util.is_recycling_recipe(proto),
                 barreling = generator_util.is_compacting_recipe(proto),
                 enabling_technologies = researchable_recipes[recipe_name],  -- can be nil
-                use_limitations = true,
                 custom = false,
                 enabled_from_the_start = proto.enabled,
                 hidden = proto.hidden,
@@ -577,7 +572,7 @@ function generator.recipes.generate()
     end
 
     -- Custom handling for Space Exploration Arcosphere recipes
-    local se_split_recipes = {"se-arcosphere-fracture", "se-naquium-processor", "se-naquium-tessaract",
+    --[[ local se_split_recipes = {"se-arcosphere-fracture", "se-naquium-processor", "se-naquium-tessaract",
         "se-space-dilation-data", "se-space-fold-data", "se-space-injection-data", "se-space-warp-data"}
     for _, recipe_name in pairs(se_split_recipes) do
         local recipe, alt_recipe = recipes[recipe_name], recipes[recipe_name .. "-alt"]
@@ -588,7 +583,7 @@ function generator.recipes.generate()
             generator_util.add_recipe_tooltip(recipe)
             remove_prototype(recipes, alt_recipe.name, nil)
         end
-    end
+    end ]]
 
     return recipes
 end
@@ -880,7 +875,6 @@ end
 ---@field category string
 ---@field tier uint
 ---@field effects ModuleEffects
----@field limitations { [string]: true }
 
 -- Generates a table containing all available modules
 ---@return NamedPrototypesWithCategory<FPModulePrototype>
@@ -889,9 +883,6 @@ function generator.modules.generate()
 
     local module_filter = {{filter="type", type="module"}--[[ , {filter="hidden", invert=true, mode="and"} ]]}
     for _, proto in pairs(game.get_filtered_item_prototypes(module_filter)) do
-        --[[ local limitations = {}  ---@type ModuleLimitations
-        for _, recipe_name in pairs(proto.limitations) do limitations[recipe_name] = true end ]]
-
         local sprite = "item/" .. proto.name
         if game.is_valid_sprite_path(sprite) then
             local module = {
@@ -900,8 +891,7 @@ function generator.modules.generate()
                 sprite = sprite,
                 category = proto.category,
                 tier = proto.tier,
-                effects = proto.module_effects or {},
-                limitations = {}--limitations
+                effects = proto.module_effects or {}
             }
             insert_prototype(modules, module, module.category)
         end

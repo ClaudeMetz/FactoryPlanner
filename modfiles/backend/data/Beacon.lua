@@ -55,14 +55,9 @@ end
 ---@param module_proto FPModulePrototype
 ---@return boolean compatible
 function Beacon:check_module_compatibility(module_proto)
-    local recipe_proto, machine_proto = self.parent.recipe_proto, self.parent.machine.proto
-
-    if next(module_proto.limitations) and recipe_proto.use_limitations
-            and not module_proto.limitations[recipe_proto.name] then
-        return false
-    end
-
+    local machine_proto = self.parent.machine.proto
     local machine_effects, beacon_effects = machine_proto.allowed_effects, self.proto.allowed_effects
+
     if machine_effects == nil or beacon_effects == nil then
         return false
     else
