@@ -67,15 +67,9 @@ function Machine:normalize_fuel(player)
 end
 
 
----@param mining_prod number
-function Machine:summarize_effects(mining_prod)
-    local effects = self.module_set.total_effects
-
-    effects["base_prod"] = --[[ self.proto.base_productivity or ]] nil
-    effects["mining_prod"] = mining_prod or nil
-
-    self.total_effects = effects
-    self.effects_tooltip = util.gui.format_module_effects(effects, false)
+function Machine:summarize_effects()
+    self.total_effects = self.module_set.total_effects
+    self.effects_tooltip = util.gui.format_module_effects(self.total_effects, false)
 
     self.parent:summarize_effects()
 end
@@ -83,14 +77,7 @@ end
 ---@param module_proto FPModulePrototype
 ---@return boolean compatible
 function Machine:check_module_compatibility(module_proto)
-    local recipe_proto = self.parent.recipe_proto
-
     if self.proto.module_limit == 0 then return false end
-
-    if next(module_proto.limitations) and recipe_proto.use_limitations
-            and not module_proto.limitations[recipe_proto.name] then
-        return false
-    end
 
     local allowed_effects = self.proto.allowed_effects
     if allowed_effects == nil then

@@ -180,11 +180,7 @@ function Line:summarize_effects()
     local effects = {consumption = 0, speed = 0, productivity = 0, pollution = 0, quality = 0}
     for _, effect_table in pairs({self.machine.total_effects, beacon_effects}) do
         for name, effect in pairs(effect_table) do
-            if name == "base_prod" or name == "mining_prod" then
-                effects["productivity"] = effects["productivity"] + effect
-            else
-                effects[name] = effects[name] + effect
-            end
+            effects[name] = effects[name] + effect
         end
     end
     self.total_effects = effects
