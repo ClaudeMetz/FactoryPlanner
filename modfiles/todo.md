@@ -3,6 +3,7 @@
 # Active
 
 - Logistic groups could be useful for the mod (utility item requests anyone?)
+- Change format that goes into cursor stuff to use normal quality as well
 
 # Any time
 

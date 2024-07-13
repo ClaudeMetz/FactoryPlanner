@@ -36,43 +36,6 @@ end
 
 local utility_structures = {}
 
-local function update_request_button(player, modal_data, factory)
-    local modal_elements = modal_data.modal_elements
-
-    local button_enabled, switch_enabled = true, true
-    local caption = ""  ---@type LocalisedString
-    local tooltip = ""  ---@type LocalisedString
-    local font_color = {}
-
-    if factory.item_request_proxy ~= nil then
-        caption = {"fp.cancel_request"}
-        font_color = {0.8, 0, 0}
-        switch_enabled = false
-
-    else
-        local scope = util.globals.preferences(player).utility_scopes.components
-        local scope_string = {"fp.pl_" .. scope:lower(), 1}
-        caption, tooltip = {"fp.request_items"}, {"fp.request_items_tt", scope_string}
-
-        if not player.force.character_logistic_requests then
-            tooltip = {"fp.warning_with_icon", {"fp.request_logistics_not_researched"}}
-            button_enabled = false
-        elseif not next(modal_data.missing_items) then
-            tooltip = {"fp.warning_with_icon", {"fp.utility_no_items_necessary", scope_string}}
-            button_enabled = false
-        elseif player.character == nil then  -- happens when the editor is active for example
-            tooltip = {"fp.warning_with_icon", {"fp.request_no_character"}}
-            button_enabled = false
-        end
-    end
-
-    modal_elements.request_button.caption = caption
-    modal_elements.request_button.tooltip = tooltip
-    modal_elements.request_button.style.font_color = font_color
-    modal_elements.request_button.enabled = button_enabled
-    modal_elements.scope_switch.enabled = switch_enabled
-end
-
 function utility_structures.components(player, modal_data)
     local preferences = util.globals.preferences(player)
     local scope = preferences.utility_scopes.components
@@ -85,17 +48,15 @@ function utility_structures.components(player, modal_data)
         modal_elements.components_box = components_box
         modal_elements.scope_switch = scope_switch
 
-        local button_combinator = custom_flow.add{type="sprite-button", sprite="item/constant-combinator",
-            tooltip={"fp.ingredients_to_combinator_tt"}, tags={mod="fp", on_gui_click="utility_item_combinator"},
-            style="fp_sprite-button_rounded_mini", mouse_button_filter={"left"}}
-        button_combinator.style.size = 29
-        button_combinator.style.padding = 0
-        modal_elements.combinator_button = button_combinator
-
-        local button_request = custom_flow.add{type="button", tags={mod="fp", on_gui_click="utility_request_items"},
-            style="rounded_button", mouse_button_filter={"left"}}
-        button_request.style.minimal_width = 0
-        modal_elements.request_button = button_request
+        local function action_button(sprite, action)
+            local button = custom_flow.add{type="sprite-button", sprite=sprite, tags={mod="fp", on_gui_click=action},
+                style="fp_sprite-button_rounded_mini", mouse_button_filter={"left"}}
+            button.style.size = 29
+            button.style.padding = 0
+            return button
+        end
+        modal_elements.combinator_button = action_button("item/constant-combinator", "utility_item_combinator")
+        modal_elements.request_button = action_button("item/logistic-chest-requester", "utility_request_items)
 
         local table_components = components_box.add{type="table", column_count=2}
         table_components.style.horizontal_spacing = 24
@@ -135,6 +96,7 @@ function utility_structures.components(player, modal_data)
                         signal = {
                             type = proto.type or "item",
                             name = proto.name,
+                            quality = "normal"
                         },
                         count = missing_amount
                     })
@@ -169,16 +131,14 @@ function utility_structures.components(player, modal_data)
     refresh_component_flow("machine")
     refresh_component_flow("module")
 
-
-    local factory = util.context.get(player, "Factory")  --[[@as Factory]]
-    factory:validate_item_request_proxy()
-
     local any_missing_items = (next(modal_data.missing_items) ~= nil)
+    local no_items_necessary = {"fp.info_label", {"fp.utility_no_items_necessary", {"fp.pl_" .. scope:lower(), 1}}}
     modal_elements.combinator_button.enabled = any_missing_items
     modal_elements.combinator_button.tooltip = (any_missing_items) and {"fp.utility_combinator_tt"}
-        or {"fp.warning_with_icon", {"fp.utility_no_items_necessary", {"fp.pl_" .. scope:lower(), 1}}}
-
-    update_request_button(player, modal_data, factory)
+        or no_items_necessary
+    modal_elements.request_button.enabled = any_missing_items
+    modal_elements.request_button.tooltip = (any_missing_items) and {"fp.utility_request_tt"}
+        or no_items_necessary
 end
 
 function utility_structures.blueprints(player, modal_data)
@@ -272,29 +232,31 @@ local function handle_scope_change(player, tags, event)
 end
 
 local function handle_item_request(player, _, _)
-    local modal_data = util.globals.modal_data(player)  --[[@as table]]
-    local factory = util.context.get(player, "Factory")  --[[@as Factory]]
+    local fly_text = util.cursor.create_flying_text
 
-    if factory.item_request_proxy then  -- if an item_proxy is set, cancel it
-        factory:destroy_item_request_proxy()
+    if not player.force.character_logistic_requests then
+        fly_text(player, {"fp.utility_logistics_not_researched"})
+    elseif player.character == nil then  -- happens when the editor is active for example
+        fly_text(player, {"fp.utility_logistics_no_character"})
     else
-        -- TODO disabled for now until replacement with logistic sections
-        --[[ local modules = {}
-        for signal, amount in pairs(modal_data.missing_items) do modules[signal.name] = amount end
+        local requester_point = player.character.get_requester_point()  -- will exist at this point
+        local new_section = requester_point.add_section()
 
-        -- This crazy way to request items actually works, and is way easier than setting logistic requests
-        -- The advantage that is has is that the delivery is one-time, not a constant request
-        -- The disadvantage is that it's weird to have construction bots bring you stuff
-        factory.item_request_proxy = player.surface.create_entity{name="item-request-proxy",
-            position=player.position, force=player.force, target=player.character, modules=modules} ]]
+        local missing_items = util.globals.modal_data(player).missing_items
+        for _, signal in pairs(missing_items) do
+            new_section.set_slot(1, {
+                value = signal.signal,
+                min = signal.count
+            })
+        end
+
+        fly_text(player, {"fp.utility_logistics_request_set"})
     end
-
-    update_request_button(player, modal_data, factory)
 end
 
 local function handle_item_handcraft(player, tags, event)
     local fly_text = util.cursor.create_flying_text
-    if not player.character then fly_text(player, {"fp.utility_no_character"}); return end
+    if not player.character then fly_text(player, {"fp.utility_crafting_no_character"}); return end
 
     local permissions = player.permission_group
     local forbidden = (permissions and not permissions.allows_action(defines.input_action.craft))
