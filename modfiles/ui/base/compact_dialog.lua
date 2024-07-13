@@ -364,16 +364,16 @@ local function handle_recipe_click(player, tags, action)
             util.context.set(player, line)
             refresh_compact_factory(player)
         end
-    elseif action == "recipebook" then
-        util.open_in_recipebook(player, "recipe", relevant_line.recipe_proto.name)
+    elseif action == "factoriopedia" then
+        --util.open_in_factoriopedia(player, "recipe", relevant_line.recipe_proto.name)
     end
 end
 
 local function handle_module_click(player, tags, action)
     local module = OBJECT_INDEX[tags.module_id]
 
-    if action == "recipebook" then
-        util.open_in_recipebook(player, "item", module.proto.name)
+    if action == "factoriopedia" then
+        --util.open_in_factoriopedia(player, "item", module.proto.name)
     end
 end
 
@@ -384,8 +384,8 @@ local function handle_machine_click(player, tags, action)
     if action == "put_into_cursor" then
         util.cursor.set_entity(player, line, line.machine)
 
-    elseif action == "recipebook" then
-        util.open_in_recipebook(player, "entity", line.machine.proto.name)
+    elseif action == "factoriopedia" then
+        --util.open_in_factoriopedia(player, "entity", line.machine.proto.name)
     end
 end
 
@@ -396,8 +396,8 @@ local function handle_beacon_click(player, tags, action)
     if action == "put_into_cursor" then
         util.cursor.set_entity(player, line, line.beacon)
 
-    elseif action == "recipebook" then
-        util.open_in_recipebook(player, "entity", line.beacon.proto.name)
+    elseif action == "factoriopedia" then
+        --util.open_in_factoriopedia(player, "entity", line.beacon.proto.name)
     end
 end
 
@@ -408,8 +408,8 @@ local function handle_item_click(player, tags, action)
     if action == "put_into_cursor" then
         util.cursor.add_to_item_combinator(player, item.proto, item.amount)
 
-    elseif action == "recipebook" then
-        util.open_in_recipebook(player, item.proto.type, item.proto.name)
+    elseif action == "factoriopedia" then
+        --util.open_in_factoriopedia(player, item.proto.type, item.proto.name)
     end
 end
 
@@ -442,14 +442,14 @@ factory_listeners.gui = {
             name = "act_on_compact_recipe",
             modifier_actions = {
                 open_subfloor = {"left"},
-                recipebook = {"alt-right", {recipebook=true}}
+                factoriopedia = {"alt-right"}
             },
             handler = handle_recipe_click
         },
         {
             name = "act_on_compact_module",
             modifier_actions = {
-                recipebook = {"alt-right", {recipebook=true}}
+                factoriopedia = {"alt-right"}
             },
             handler = handle_module_click
         },
@@ -457,7 +457,7 @@ factory_listeners.gui = {
             name = "act_on_compact_machine",
             modifier_actions = {
                 put_into_cursor = {"left"},
-                recipebook = {"alt-right", {recipebook=true}}
+                factoriopedia = {"alt-right"}
             },
             handler = handle_machine_click
         },
@@ -465,7 +465,7 @@ factory_listeners.gui = {
             name = "act_on_compact_beacon",
             modifier_actions = {
                 put_into_cursor = {"left"},
-                recipebook = {"alt-right", {recipebook=true}}
+                factoriopedia = {"alt-right"}
             },
             handler = handle_beacon_click
         },
@@ -473,7 +473,7 @@ factory_listeners.gui = {
             name = "act_on_compact_item",
             modifier_actions = {
                 put_into_cursor = {"left"},
-                recipebook = {"alt-right", {recipebook=true}}
+                factoriopedia = {"alt-right"}
             },
             handler = handle_item_click
         }

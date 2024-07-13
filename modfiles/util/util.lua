@@ -52,22 +52,4 @@ function _util.build_localised_string(strings_to_insert, current_table, next_ind
     return current_table, next_index
 end
 
--- This function is only called when Recipe Book is active, so no need to check for the mod
----@param player LuaPlayer
----@param type string
----@param name string
-function _util.open_in_recipebook(player, type, name)
-    local message = nil  ---@type LocalisedString
-
-    if remote.call("RecipeBook", "version") ~= RECIPEBOOK_API_VERSION then
-        message = {"fp.error_recipebook_version_incompatible"}
-    else
-        ---@type boolean
-        local was_opened = remote.call("RecipeBook", "open_page", player.index, type, name)
-        if not was_opened then message = {"fp.error_recipebook_lookup_failed", {"fp.pl_" .. type, 1}} end
-    end
-
-    if message then util.messages.raise(player, "error", message, 1) end
-end
-
 return _util
