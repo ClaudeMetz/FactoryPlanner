@@ -18,7 +18,6 @@ local Product = require("backend.data.Product")
 ---@field top_floor Floor
 ---@field linearly_dependant boolean?
 ---@field tick_of_deletion uint?
----@field item_request_proxy LuaEntity?
 ---@field last_valid_modset ModToVersion?
 local Factory = Object.methods()
 Factory.__index = Factory
@@ -44,7 +43,6 @@ local function init(name, timescale)
 
         linearly_dependant = false,
         tick_of_deletion = nil,
-        item_request_proxy = nil,
         last_valid_modset = nil
     }, "Factory", Factory)  --[[@as Factory]]
     object.top_floor.parent = object
@@ -158,19 +156,6 @@ function Factory:update_product_definitions(new_defined_by)
 end
 
 
-function Factory:validate_item_request_proxy()
-    local item_request_proxy = self.item_request_proxy
-    if item_request_proxy and (not item_request_proxy.valid or not next(item_request_proxy.item_requests)) then
-        self:destroy_item_request_proxy()
-    end
-end
-
-function Factory:destroy_item_request_proxy()
-    self.item_request_proxy.destroy{raise_destroy=false}
-    self.item_request_proxy = nil
-end
-
-
 ---@class PackedFactory: PackedObject
 ---@field class "Factory"
 ---@field name string
@@ -235,8 +220,6 @@ function Factory:validate()
     local matrix_free_items, valid = prototyper.util.validate_prototype_objects(self.matrix_free_items, "type")
     self.matrix_free_items = matrix_free_items
     self.valid = valid and self.valid
-
-    self:validate_item_request_proxy()  -- makes sure proxy is valid, or deletes it
 
     if self.valid then self.last_valid_modset = nil
     -- If this factory became invalid with the current configuration, retain the modset before the current one
