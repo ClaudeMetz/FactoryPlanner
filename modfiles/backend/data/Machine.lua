@@ -68,8 +68,11 @@ end
 
 
 function Machine:summarize_effects()
-    self.total_effects = self.module_set.total_effects
-    self.effects_tooltip = util.gui.format_module_effects(self.total_effects, false)
+    local module_effects = self.module_set.total_effects
+    local machine_effects = self.proto.effect_receiver.base_effect
+
+    self.effects_tooltip = util.gui.format_module_effects(module_effects, machine_effects, false)
+    self.total_effects = util.merge_effects({module_effects, machine_effects})
 
     self.parent:summarize_effects()
 end

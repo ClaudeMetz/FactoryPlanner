@@ -135,35 +135,55 @@ function _gui.reset_player(player)
 end
 
 -- Formats the given effects for use in a tooltip
----@param effects ModuleEffects
+---@param module_effects ModuleEffects
+---@param machine_effects ModuleEffects
 ---@param limit_effects boolean
 ---@return LocalisedString
-function _gui.format_module_effects(effects, limit_effects)
-    local tooltip_lines, effect_applies = {"", "\n"}, false
-    local lower_bound, upper_bound = MAGIC_NUMBERS.effects_lower_bound, MAGIC_NUMBERS.effects_upper_bound
+function _gui.format_module_effects(module_effects, machine_effects, limit_effects)
+    local lower_bound = MAGIC_NUMBERS.effects_lower_bound
+    local upper_bound = MAGIC_NUMBERS.effects_upper_bound
 
-    for effect_name, effect_value in pairs(effects) do
-        if effect_value ~= 0 then
-            effect_applies = true
-            local capped_indication = ""  ---@type LocalisedString
-
-            if limit_effects then
-                if effect_name == "productivity" and effect_value < 0 then
-                    effect_value, capped_indication = 0, {"fp.effect_maxed"}
-                elseif effect_value < lower_bound then
-                    effect_value, capped_indication = lower_bound, {"fp.effect_maxed"}
-                elseif effect_value > upper_bound then
-                    effect_value, capped_indication = upper_bound, {"fp.effect_maxed"}
-                end
+    local function limit_effect(value, name)
+        if limit_effects == false then
+            return value, ""
+        else
+            if name == "productivity" and value < 0 then
+                return 0, {"fp.effect_maxed"}
+            elseif value < lower_bound then
+                return lower_bound, {"fp.effect_maxed"}
+            elseif value > upper_bound then
+                return upper_bound, {"fp.effect_maxed"}
+            else
+                return value, ""
             end
-
-            -- Force display of either a '+' or '-', also round the result
-            local display_value = ("%+d"):format(math.floor((effect_value * 100) + 0.5))
-            table.insert(tooltip_lines, {"fp.effect_line", {"fp." .. effect_name}, display_value, capped_indication})
         end
     end
 
-    return (effect_applies) and tooltip_lines or ""
+    local function format_effect(value, color)
+        if value == nil or value == 0 then return "" end
+        -- Force display of either a '+' or '-', also round the result
+        local display_value = ("%+d"):format(math.floor((value * 100) + 0.5))
+        return {"fp.effect_value", color, display_value}
+    end
+
+
+    local tooltip_lines = {""}
+    for effect_name, _ in pairs(BLANK_EFFECTS) do
+        local module_effect, machine_effect = module_effects[effect_name], machine_effects[effect_name]
+        if module_effect ~= 0 or (machine_effect ~= nil and machine_effect ~= 0) then
+            -- Limiting only for module effects, which is only used without any other effect types
+            local limited_module_effect, indication = limit_effect(module_effect, effect_name)
+
+            local module_percentage = format_effect(limited_module_effect, "#FFE6C0")
+            local machine_percentage = format_effect(machine_effect, "#33CC33")
+
+            if #tooltip_lines > 1 then table.insert(tooltip_lines, "\n") end
+            table.insert(tooltip_lines, {"fp.effect_line", {"fp." .. effect_name}, module_percentage,
+                machine_percentage, indication})
+        end
+    end
+
+    return tooltip_lines
 end
 
 return _gui

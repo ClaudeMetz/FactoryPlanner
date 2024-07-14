@@ -176,7 +176,7 @@ function ModuleSet:sort()
 end
 
 function ModuleSet:summarize_effects()
-    local effects = {consumption = 0, speed = 0, productivity = 0, pollution = 0, quality = 0}
+    local effects = ftable.shallow_copy(BLANK_EFFECTS)
     for module in self:iterator() do
         for name, effect in pairs(module.total_effects) do
             effects[name] = effects[name] + effect

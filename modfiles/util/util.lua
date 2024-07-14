@@ -52,4 +52,16 @@ function _util.build_localised_string(strings_to_insert, current_table, next_ind
     return current_table, next_index
 end
 
+---@param effect_tables ModuleEffects[]
+---@return ModuleEffects
+function _util.merge_effects(effect_tables)
+    local effects = ftable.shallow_copy(BLANK_EFFECTS)
+    for _, effect_table in pairs(effect_tables) do
+        for name, effect in pairs(effect_table) do
+            effects[name] = effects[name] + effect
+        end
+    end
+    return effects
+end
+
 return _util

@@ -40,12 +40,12 @@ function Module:set_amount(new_amount)
 end
 
 function Module:summarize_effects()
-    local effects = {consumption = 0, speed = 0, productivity = 0, pollution = 0, quality = 0}
+    local effects = ftable.shallow_copy(BLANK_EFFECTS)
     for name, effect in pairs(self.proto.effects) do
         effects[name] = effect * self.amount
     end
     self.total_effects = effects
-    self.effects_tooltip = util.gui.format_module_effects(effects, false)
+    self.effects_tooltip = util.gui.format_module_effects(effects, {}, false)
 end
 
 
