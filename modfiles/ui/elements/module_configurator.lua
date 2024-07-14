@@ -48,11 +48,11 @@ local function add_effects_section(parent_flow, object, modal_elements)
     frame_effects.style.width = (460 / 2) - 14
 
     local class_lower = object.class:lower()
-    local caption = {"", {"fp.pu_" .. class_lower, 1}, " ", {"fp.effects"}}
-    frame_effects.add{type="label", caption=caption, style="semibold_label"}
+    local caption, tooltip = {"", {"fp.pu_" .. class_lower, 1}, " ", {"fp.effects"}}, {""}
+    if class_lower == "machine" then caption, tooltip = {"fp.info_label", caption}, {"fp.machine_effects_tt"} end
+    frame_effects.add{type="label", caption=caption, tooltip=tooltip, style="semibold_label"}
 
     local label_effects = frame_effects.add{type="label", caption=object.effects_tooltip}
-    label_effects.style.top_margin = -40  -- need this because extracting linebreaks from LS is hard
     label_effects.style.single_line = false
     modal_elements[class_lower .. "_effects_label"] = label_effects
 end
@@ -123,16 +123,17 @@ function module_configurator.add_modules_flow(parent, modal_data)
 end
 
 function module_configurator.refresh_effects_flow(modal_data)
-    local effects_tooltip = modal_data.object.effects_tooltip
-
     local lower_class = modal_data.object.class:lower()
     local object_label = modal_data.modal_elements[lower_class .. "_effects_label"]
     if not object_label or not object_label.valid then return end
 
-    object_label.parent.parent.visible = (effects_tooltip ~= "")
-    if effects_tooltip ~= "" then
-        object_label.caption = effects_tooltip
-        modal_data.modal_elements["line_effects_label"].caption = modal_data.line.effects_tooltip
+    local line_effects = modal_data.line.effects_tooltip
+    local any_line_effects = (#line_effects > 1)
+
+    object_label.parent.parent.visible = any_line_effects
+    if any_line_effects then
+        object_label.caption = modal_data.object.effects_tooltip
+        modal_data.modal_elements["line_effects_label"].caption = line_effects
     end
 end
 
@@ -142,8 +143,6 @@ function module_configurator.refresh_modules_flow(player, update_only)
 
     local module_filters = modal_data.module_set:compile_filter()
     local empty_slots = modal_data.module_set.empty_slots
-
-    local effects_tooltip = modal_data.object.effects_tooltip
 
     if update_only then
         module_configurator.refresh_effects_flow(modal_data)
@@ -182,7 +181,7 @@ function module_configurator.refresh_modules_flow(player, update_only)
     else
         modules_flow.clear()
 
-        if effects_tooltip ~= "" then
+        if #modal_data.line.effects_tooltip > 1 then
             local effects_flow = modules_flow.add{type="flow", direction="horizontal", name="flow_effects"}
             add_effects_section(effects_flow, modal_data.object, modal_data.modal_elements)
             add_effects_section(effects_flow, modal_data.line, modal_data.modal_elements)

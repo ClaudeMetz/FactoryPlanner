@@ -176,15 +176,8 @@ end
 
 function Line:summarize_effects()
     local beacon_effects = (self.beacon) and self.beacon.total_effects or nil
-
-    local effects = {consumption = 0, speed = 0, productivity = 0, pollution = 0, quality = 0}
-    for _, effect_table in pairs({self.machine.total_effects, beacon_effects}) do
-        for name, effect in pairs(effect_table) do
-            effects[name] = effects[name] + effect
-        end
-    end
-    self.total_effects = effects
-    self.effects_tooltip = util.gui.format_module_effects(effects, true)
+    self.total_effects = util.merge_effects({self.machine.total_effects, beacon_effects})
+    self.effects_tooltip = util.gui.format_module_effects(self.total_effects, {}, true)
 end
 
 

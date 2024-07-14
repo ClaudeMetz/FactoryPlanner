@@ -41,13 +41,13 @@ end
 
 
 function Beacon:summarize_effects()
-    local effect_multiplier = self.proto.effectivity * self.amount
     local effects = self.module_set.total_effects
+    local effect_multiplier = self.proto.effectivity * self.amount
     for name, effect in pairs(effects) do
         effects[name] = effect * effect_multiplier
     end
     self.total_effects = effects
-    self.effects_tooltip = util.gui.format_module_effects(effects, false)
+    self.effects_tooltip = util.gui.format_module_effects(effects, {}, false)
 
     self.parent:summarize_effects()
 end

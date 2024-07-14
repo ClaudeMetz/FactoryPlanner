@@ -65,6 +65,7 @@ end
 ---@field energy_drain double
 ---@field emissions double
 ---@field built_by_item FPItemPrototype?
+---@field effect_receiver EffectReceiver?
 ---@field allowed_effects AllowedEffects?
 ---@field module_limit integer
 ---@field launch_sequence_time number?
@@ -158,6 +159,7 @@ function generator.machines.generate()
             energy_drain = energy_drain,
             emissions = emissions,
             built_by_item = built_by_item,
+            effect_receiver = proto.effect_receiver,
             allowed_effects = generator_util.format_allowed_effects(proto.allowed_effects),
             module_limit = (proto.module_inventory_size or 0),
             launch_sequence_time = generator_util.determine_launch_sequence_time(proto),

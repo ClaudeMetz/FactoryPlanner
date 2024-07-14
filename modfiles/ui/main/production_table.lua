@@ -31,6 +31,11 @@ local function generate_metadata(player, factory)
     return metadata
 end
 
+local function format_effects_tooltip(tooltip)
+    if #tooltip > 1 then return {"", "\n\n", tooltip}
+    else return "" end
+end
+
 
 -- ** BUILDERS **
 local builders = {}
@@ -104,12 +109,11 @@ function builders.recipe(line, parent_flow, metadata, indent)
 
     local first_line = (note == "") and {"fp.tt_title", recipe_proto.localised_name}
         or {"fp.tt_title_with_note", recipe_proto.localised_name, note}
-    local tooltip = {"", first_line, relevant_line.effects_tooltip, tutorial_tooltip}
+    local tooltip = {"", first_line, format_effects_tooltip(relevant_line.effects_tooltip), tutorial_tooltip}
     local button = parent_flow.add{type="sprite-button", enabled=enabled, sprite=recipe_proto.sprite,style=style,
         tags={mod="fp", on_gui_click="act_on_line_recipe", line_id=line.id, on_gui_hover="set_tooltip",
         context="production_table"}, mouse_button_filter={"left-and-right"}, raise_hover_events=true}
     metadata.tooltips[button.index] = tooltip
-
 end
 
 function builders.percentage(line, parent_flow, metadata)
@@ -128,8 +132,8 @@ end
 local function add_module_flow(parent_flow, module_set, metadata)
     for module in module_set:iterator() do
         local number_line = {"", "\n", module.amount, " ", {"fp.pl_module", module.amount}}
-        local tooltip = {"", {"fp.tt_title", module.proto.localised_name}, number_line, module.effects_tooltip,
-            metadata.module_tutorial_tt}
+        local tooltip = {"", {"fp.tt_title", module.proto.localised_name}, number_line,
+            format_effects_tooltip(module.effects_tooltip), metadata.module_tutorial_tt}
 
         local button = parent_flow.add{type="sprite-button", sprite=module.proto.sprite, number=module.amount,
             tags={mod="fp", on_gui_click="act_on_line_module", module_id=module.id, on_gui_hover="set_tooltip",
@@ -169,7 +173,7 @@ function builders.machine(line, parent_flow, metadata)
 
         if note ~= nil then table.insert(tooltip_line, {"", " - ", note}) end
         local tooltip = {"", {"fp.tt_title", line.machine.proto.localised_name}, "\n", tooltip_line,
-            line.machine.effects_tooltip, metadata.machine_tutorial_tt}
+            format_effects_tooltip(line.machine.effects_tooltip), metadata.machine_tutorial_tt}
 
         local button = parent_flow.add{type="sprite-button", sprite=line.machine.proto.sprite, number=count,
             tags={mod="fp", on_gui_click="act_on_line_machine", machine_id=line.machine.id, on_gui_hover="set_tooltip",
@@ -205,8 +209,8 @@ function builders.beacon(line, parent_flow, metadata)
         local plural_parameter = (beacon.amount == 1) and 1 or 2  -- needed because the amount can be decimal
         local number_line = {"", "\n", beacon.amount, " ", {"fp.pl_beacon", plural_parameter}}
         if beacon.total_amount then table.insert(number_line, {"", " - ", {"fp.in_total", beacon.total_amount}}) end
-        local tooltip = {"", {"fp.tt_title", beacon.proto.localised_name}, number_line, beacon.effects_tooltip,
-            metadata.beacon_tutorial_tt}
+        local tooltip = {"", {"fp.tt_title", beacon.proto.localised_name}, number_line,
+            format_effects_tooltip(beacon.effects_tooltip), metadata.beacon_tutorial_tt}
 
         local button_beacon = parent_flow.add{type="sprite-button", sprite=beacon.proto.sprite, number=beacon.amount,
             tags={mod="fp", on_gui_click="act_on_line_beacon", beacon_id=beacon.id, on_gui_hover="set_tooltip",
