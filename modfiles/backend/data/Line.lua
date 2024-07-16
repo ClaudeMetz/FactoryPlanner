@@ -177,7 +177,7 @@ end
 function Line:summarize_effects()
     local beacon_effects = (self.beacon) and self.beacon.total_effects or nil
     self.total_effects = util.merge_effects({self.machine.total_effects, beacon_effects})
-    self.effects_tooltip = util.gui.format_module_effects(self.total_effects, {}, true)
+    self.effects_tooltip = util.gui.format_module_effects(self.total_effects, {limit=true})
 end
 
 
@@ -203,7 +203,6 @@ function Line:apply_mb_defaults(player)
     elseif machine_module then  -- only show an error if any module default is actually set
         message = {text={"fp.warning_module_not_compatible", {"fp.pl_module", 1}}, category="warning"}
     end
-    self.machine:summarize_effects()
 
     -- Add default beacon modules, if desired by the user
     local beacon_module_proto, beacon_count = mb_defaults.beacon, mb_defaults.beacon_count

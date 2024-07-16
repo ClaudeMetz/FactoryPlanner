@@ -83,6 +83,9 @@ local function generate_floor_data(player, factory, floor)
                 line_data.beacon_consumption = 0
                 line_data.priority_product_proto = line.priority_product
                 line_data.machine_proto = line.machine.proto
+
+                -- Effects - update line with recipe effects here if applicable
+                line.machine:update_recipe_effects(player.force)
                 line_data.total_effects = line.total_effects
 
                 -- Fuel prototype

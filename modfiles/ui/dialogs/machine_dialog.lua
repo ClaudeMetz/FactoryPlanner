@@ -70,22 +70,26 @@ end
 
 local function add_choices_frame(parent_frame, modal_elements, type)
     local frame_choices = parent_frame.add{type="frame", direction="vertical", style="fp_frame_bordered_stretch"}
-    local table_choices = frame_choices.add{type="table", column_count=3}
-    table_choices.style.horizontal_spacing = 20
-    table_choices.style.padding = {0, 0, -4, 0}
+    local flow_choices = frame_choices.add{type="flow", direction="horizontal"}
+    flow_choices.style.padding = {0, 0, -4, 0}
+    flow_choices.style.vertical_align = "center"
 
-    table_choices.add{type="label", caption={"fp.pu_" .. type, 1}, style="semibold_label"}
+    flow_choices.add{type="label", caption={"fp.pu_" .. type, 1}, style="semibold_label"}
 
-    local flow = table_choices.add{type="flow", direction="horizontal"}
+    if type == "fuel" then
+        local label_info = flow_choices.add{type="label", caption={"fp.machine_does_not_use_fuel"}}
+        label_info.style.padding = {9, 0, 9, 24}  -- make sure spacing stays the same when no fuel button is shown
+        modal_elements["fuel_info_label"] = label_info
+    end
+
+    flow_choices.add{type="empty-widget", style="flib_horizontal_pusher"}
+
+    local flow = flow_choices.add{type="flow", direction="horizontal"}
+    flow.style.left_margin = 12
     local frame = flow.add{type="frame", direction="horizontal", style="slot_button_deep_frame"}
     local table = frame.add{type="table", column_count=8, style="filter_slot_table"}
     modal_elements[type .. "_table"] = table
 
-    if type == "fuel" then
-        local label_info = flow.add{type="label", caption={"fp.machine_does_not_use_fuel"}}
-        label_info.style.padding = {10, -8}  -- make sure spacing stays the same when no fuel button is shown
-        modal_elements["fuel_info_label"] = label_info
-    end
 end
 
 local function add_limit_frame(parent_frame, modal_elements)

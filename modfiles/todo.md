@@ -2,9 +2,7 @@
 
 ## Active
 
-- deal with new productivity research (mining kinda separate) #3333FF #3333CC
-- check out new global? max productivity, seems to be per recipeProto
-- check out max speed no longer being translated to productivity?
+- check out new max productivity, seems to be per recipeProto
 
 
 - Check on built-in productivity, like for the foundry, doesn't seem like it's applied properly
@@ -69,6 +67,8 @@
 - Replace any machine/beacon/etc buttons with ones that have the standard tooltip.
   - Saves me the hassle of generating them and automatically has the information people expect
 - Need indication of cyclic recipes finally, used a lot on the space platform
+- Should have the ability to manually configure recipe productivity boni somewhere
+- Fix more than one craft per tick being possible, instead of it being translated into productivity
 
 ## Ghetto Github Issues
 

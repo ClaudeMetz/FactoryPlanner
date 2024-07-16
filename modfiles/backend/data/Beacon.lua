@@ -62,7 +62,7 @@ function Beacon:summarize_effects()
     end
 
     self.total_effects = effects
-    self.effects_tooltip = util.gui.format_module_effects(effects, {}, false)
+    self.effects_tooltip = util.gui.format_module_effects(effects)
 
     self.parent:summarize_effects()
 end

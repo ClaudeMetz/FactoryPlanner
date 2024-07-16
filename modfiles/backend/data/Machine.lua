@@ -13,6 +13,7 @@ local ModuleSet = require("backend.data.ModuleSet")
 ---@field amount number
 ---@field total_effects ModuleEffects
 ---@field effects_tooltip LocalisedString
+---@field recipe_effects ModuleEffects?
 local Machine = Object.methods()
 Machine.__index = Machine
 script.register_metatable("Machine", Machine)
@@ -31,6 +32,7 @@ local function init(proto, parent)
         amount = 0,
         total_effects = nil,
         effects_tooltip = "",
+        recipe_effects = nil,
 
         parent = parent
     }, "Machine", Machine)  --[[@as Machine]]
@@ -71,8 +73,9 @@ function Machine:summarize_effects()
     local module_effects = self.module_set:get_effects()
     local machine_effects = self.proto.effect_receiver.base_effect
 
-    self.effects_tooltip = util.gui.format_module_effects(module_effects, machine_effects, false)
-    self.total_effects = util.merge_effects({module_effects, machine_effects})
+    self.effects_tooltip = util.gui.format_module_effects(module_effects,
+        {machine_effects=machine_effects, recipe_effects=self.recipe_effects})
+    self.total_effects = util.merge_effects({module_effects, machine_effects, self.recipe_effects})
 
     self.parent:summarize_effects()
 end
@@ -80,6 +83,28 @@ end
 ---@return boolean uses_effects
 function Machine:uses_effects()
     return self.proto.effect_receiver.uses_module_effects
+end
+
+--- Called when the solver runs because it's the most convenient spot for it
+---@param force LuaForce
+function Machine:update_recipe_effects(force)
+    local recipe_effects, any_effect = ftable.shallow_copy(BLANK_EFFECTS), false
+
+    if self.proto.mining then
+        recipe_effects.productivity = force.mining_drill_productivity_bonus
+        any_effect = true
+    else
+        local productivity_bonus = force.recipes[self.parent.recipe_proto.name].productivity_bonus
+        if productivity_bonus > 0 then
+            recipe_effects.productivity = productivity_bonus
+            any_effect = true
+        end
+    end
+
+    if any_effect then
+        self.recipe_effects = recipe_effects
+        self:summarize_effects()
+    end
 end
 
 
