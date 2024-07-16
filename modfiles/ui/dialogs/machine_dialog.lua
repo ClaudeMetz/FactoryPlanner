@@ -78,7 +78,7 @@ local function add_choices_frame(parent_frame, modal_elements, type)
 
     local flow = table_choices.add{type="flow", direction="horizontal"}
     local frame = flow.add{type="frame", direction="horizontal", style="slot_button_deep_frame"}
-    local table = frame.add{type="table", column_count=7, style="filter_slot_table"}
+    local table = frame.add{type="table", column_count=8, style="filter_slot_table"}
     modal_elements[type .. "_table"] = table
 
     if type == "fuel" then
@@ -163,7 +163,6 @@ local function open_machine_dialog(player, modal_data)
 
     local modal_elements = modal_data.modal_elements
     local content_frame = modal_elements.content_frame
-    content_frame.style.minimal_width = 460
 
     modal_data.machine_backup = modal_data.object:clone()
     modal_data.beacon_backup = modal_data.line.beacon and modal_data.line.beacon:clone()

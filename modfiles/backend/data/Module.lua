@@ -44,6 +44,7 @@ function Module:summarize_effects()
     for name, effect in pairs(self.proto.effects) do
         effects[name] = effect * self.amount
     end
+
     self.total_effects = effects
     self.effects_tooltip = util.gui.format_module_effects(effects, {}, false)
 end
@@ -63,7 +64,7 @@ function Module:paste(object)
                 object:summarize_effects()
 
                 self.parent:replace(self, object)
-                self.parent:summarize_effects()
+                self.parent:normalize{effects=true}
                 return true, nil
             end
         else

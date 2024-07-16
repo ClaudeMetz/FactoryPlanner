@@ -44,7 +44,7 @@ require("backend.calculation.solver")
 ---@field machine FPModulePrototype?
 ---@field machine_secondary FPModulePrototype?
 ---@field beacon FPModulePrototype?
----@field beacon_count number?
+---@field beacon_count integer?
 
 ---@param player_table PlayerTable
 function reload_preferences(player_table)

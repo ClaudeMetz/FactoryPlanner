@@ -88,7 +88,7 @@ end
 function Line:change_machine_to_proto(player, proto)
     if not self.machine then
         self.machine = Machine.init(proto, self)
-        self.machine.module_set:summarize_effects()
+        self.machine:summarize_effects()
     else
         self.machine.proto = proto
 
@@ -182,6 +182,7 @@ end
 
 
 ---@param player LuaPlayer
+---@return LocalisedString? message
 function Line:apply_mb_defaults(player)
     self.machine.module_set.first = nil
     self:set_beacon(nil)
@@ -202,11 +203,10 @@ function Line:apply_mb_defaults(player)
     elseif machine_module then  -- only show an error if any module default is actually set
         message = {text={"fp.warning_module_not_compatible", {"fp.pl_module", 1}}, category="warning"}
     end
-    self.machine.module_set:summarize_effects()
+    self.machine:summarize_effects()
 
     -- Add default beacon modules, if desired by the user
     local beacon_module_proto, beacon_count = mb_defaults.beacon, mb_defaults.beacon_count
-    if BEACON_OVERLOAD_ACTIVE then beacon_count = 1 end
     local beacon_proto = prototyper.defaults.get(player, "beacons")  --[[@as FPBeaconPrototype]]
 
     if beacon_module_proto ~= nil and beacon_count ~= nil then
