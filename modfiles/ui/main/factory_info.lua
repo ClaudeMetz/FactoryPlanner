@@ -56,7 +56,8 @@ local function refresh_factory_info(player)
     local factory = util.context.get(player, "Factory")  --[[@as Factory?]]
 
     local invalid_factory_selected = (factory and not factory.valid) or false
-    factory_info_elements.repair_flow.visible = invalid_factory_selected
+    factory_info_elements.repair_button.visible = invalid_factory_selected
+    factory_info_elements.repair_label.visible = invalid_factory_selected
 
     local valid_factory_selected = (factory and factory.valid) or false
     factory_info_elements.power_pollution_flow.visible = valid_factory_selected
@@ -83,31 +84,11 @@ local function refresh_factory_info(player)
             button.toggled = (factory.timescale == button.tags.timescale)
         end
 
-        -- Mining Productivity
-        local archive_open = factory.archived
-        local custom_prod_set = factory.mining_productivity or false
-
-        if not custom_prod_set then  -- only do this calculation when it'll actually be shown
-            local prod_bonus = util.format.number((player.force.mining_drill_productivity_bonus * 100), 4)
-            factory_info_elements.prod_bonus_label.caption = {"fp.bold_label", prod_bonus .. "%"}
-        end
-        factory_info_elements.prod_bonus_label.visible = not custom_prod_set
-
-        factory_info_elements.override_prod_bonus_button.enabled = (not archive_open)
-        factory_info_elements.override_prod_bonus_button.visible = not custom_prod_set
-
-        if custom_prod_set then  -- only change the text when the textfield will actually be shown
-            factory_info_elements.prod_bonus_override_textfield.text = tostring(factory.mining_productivity)
-        end
-        factory_info_elements.prod_bonus_override_textfield.enabled = (not archive_open)
-        factory_info_elements.prod_bonus_override_textfield.visible = custom_prod_set
-        factory_info_elements.percentage_label.visible = custom_prod_set
-
         -- Solver Choice
         local matrix_solver_active = (factory.matrix_free_items ~= nil)
         local switch_state = (matrix_solver_active) and "right" or "left"
         factory_info_elements.solver_choice_switch.switch_state = switch_state
-        factory_info_elements.solver_choice_switch.enabled = (not archive_open)
+        factory_info_elements.solver_choice_switch.enabled = (not factory.archived)
     end
 end
 
@@ -123,9 +104,17 @@ local function build_factory_info(player)
     local flow_title = frame_vertical.add{type="flow", direction="horizontal"}
     flow_title.style.margin = {-4, 0, 8, 0}
     flow_title.add{type="label", caption={"fp.factory_info"}, style="caption_label"}
-    flow_title.add{type="empty-widget", style="flib_horizontal_pusher"}
+
+    -- Repair button
+    local button_repair = flow_title.add{type="button", tags={mod="fp", on_gui_click="repair_factory"},
+        caption={"fp.repair_factory"}, style="fp_button_rounded_mini", mouse_button_filter={"left"}}
+    button_repair.style.height = 20
+    button_repair.style.top_padding = -2
+    button_repair.style.margin = {2, 0, -2, 12}
+    main_elements.factory_info["repair_button"] = button_repair
 
     -- Power + Pollution
+    flow_title.add{type="empty-widget", style="flib_horizontal_pusher"}
     local flow_power_pollution = flow_title.add{type="flow", direction="horizontal"}
     main_elements.factory_info["power_pollution_flow"] = flow_power_pollution
     local label_power_value = flow_power_pollution.add{type="label"}
@@ -135,18 +124,11 @@ local function build_factory_info(player)
     main_elements.factory_info["pollution_label"] = label_pollution_value
 
 
-    -- Repair flow
-    local flow_repair = frame_vertical.add{type="flow", direction="vertical"}
-    flow_repair.style.top_margin = -2
-    main_elements.factory_info["repair_flow"] = flow_repair
-
-    local label_repair = flow_repair.add{type="label", caption={"fp.warning_with_icon", {"fp.factory_needs_repair"}}}
+    -- Repair label
+    local label_repair = frame_vertical.add{type="label", caption={"fp.warning_with_icon", {"fp.factory_needs_repair"}}}
     label_repair.style.single_line = false
+    label_repair.style.top_margin = -4
     main_elements.factory_info["repair_label"] = label_repair
-
-    local button_repair = flow_repair.add{type="button", tags={mod="fp", on_gui_click="repair_factory"},
-        caption={"fp.repair_factory"}, style="fp_button_rounded_mini", mouse_button_filter={"left"}}
-    button_repair.style.top_margin = 2
 
 
     -- Factory info
@@ -172,32 +154,6 @@ local function build_factory_info(player)
             style="fp_button_push", mouse_button_filter={"left"}}
         button.style.width = 42
     end
-
-    -- Mining productivity
-    local flow_mining_prod = flow_info.add{type="flow", direction="horizontal"}
-    flow_mining_prod.style.horizontal_spacing = 10
-    flow_mining_prod.style.vertical_align = "center"
-
-    flow_mining_prod.add{type="label", caption={"fp.info_label", {"fp.mining_productivity"}},
-        tooltip={"fp.mining_productivity_tt"}}
-    flow_mining_prod.add{type="empty-widget", style="flib_horizontal_pusher"}
-
-    local label_prod_bonus = flow_mining_prod.add{type="label"}
-    main_elements.factory_info["prod_bonus_label"] = label_prod_bonus
-
-    local button_override_prod_bonus = flow_mining_prod.add{type="button", caption={"fp.override"},
-        tags={mod="fp", on_gui_click="override_mining_prod"}, style="fp_button_rounded_mini",
-        mouse_button_filter={"left"}}
-    main_elements.factory_info["override_prod_bonus_button"] = button_override_prod_bonus
-
-    local textfield_prod_bonus = flow_mining_prod.add{type="textfield",
-        tags={mod="fp", on_gui_text_changed="mining_prod_override", on_gui_confirmed="mining_prod_override"}}
-    textfield_prod_bonus.style.size = {60, 26}
-    util.gui.setup_numeric_textfield(textfield_prod_bonus, true, true)
-    main_elements.factory_info["prod_bonus_override_textfield"] = textfield_prod_bonus
-
-    local label_percentage = flow_mining_prod.add{type="label", caption={"fp.bold_label", "%"}}
-    main_elements.factory_info["percentage_label"] = label_percentage
 
     -- Solver Choice
     local flow_solver_choice = flow_info.add{type="flow", direction="horizontal"}
@@ -232,41 +188,12 @@ listeners.gui = {
             handler = (function(player, tags, _)
                 change_timescale(player, tags.timescale)
             end)
-        },
-        {
-            name = "override_mining_prod",
-            handler = (function(player, _, _)
-                local factory = util.context.get(player, "Factory")
-                factory.mining_productivity = 0
-                solver.update(player, factory)
-                util.raise.refresh(player, "factory", nil)
-            end)
-        }
-    },
-    on_gui_text_changed = {
-        {
-            name = "mining_prod_override",
-            handler = (function(player, _, event)
-                util.context.get(player, "Factory").mining_productivity = tonumber(event.element.text)
-                util.globals.ui_state(player).recalculate_on_factory_change = true  -- set flag to recalculate
-            end)
         }
     },
     on_gui_switch_state_changed = {
         {
             name = "solver_choice_changed",
             handler = handle_solver_change
-        }
-    },
-    on_gui_confirmed = {
-        {
-            name = "mining_prod_override",
-            handler = (function(player, _, _)
-                -- Reset the recalculation flag as we re-solve below
-                util.globals.ui_state(player).recalculate_on_factory_change = false
-                solver.update(player)
-                util.raise.refresh(player, "factory", nil)
-            end)
         }
     }
 }
