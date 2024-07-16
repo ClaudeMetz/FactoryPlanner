@@ -1,11 +1,5 @@
 local active_mods = script.active_mods
 
-BEACON_OVERLOAD_ACTIVE = false --[[ (
-    active_mods["space-exploration"]
-    or active_mods["wret-beacon-rebalance-mod"]
-    or active_mods["beacon-overhaul"]
-) and true ]]
-
 DEBUGGER_ACTIVE = (active_mods["debugadapter"] ~= nil)
 DEV_ACTIVE = true  -- enables certain conveniences for development
 llog = require("util.llog")

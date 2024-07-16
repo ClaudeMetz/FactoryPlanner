@@ -2,7 +2,6 @@
 
 ## Active
 
-- deal with new beacon effect logic
 - deal with new productivity research (mining kinda separate) #3333FF #3333CC
 - check out new global? max productivity, seems to be per recipeProto
 - check out max speed no longer being translated to productivity?
@@ -21,15 +20,15 @@
 
 ## Any time
 
+- Look into whether slider bugs are fixed now, bother people otherwise. Same for weird custom slider style I use
 - Go over changes so far and pull out anything changelog-worthy
-- Use button's `auto_toggle` argument? Sounds really nice, in combination with `toggle` elsewhere maybe
 - Look into using the new sprite button definition style if that's a thing
   - Seems there might be nothing new, but disabling buttons now modifies their icon, which is undesirable in come cases
+  - Use button's `auto_toggle` argument? Sounds really nice, in combination with `toggle` elsewhere maybe
 - Figure out how to generate offshore pump prototypes again
 - Figure out how energy consumption and drain works in the new API
 - Check out how to handle emissions for different pollutant types? Do I just need to show all if applicable?
   - Only implemented `"pollution"` for now
-- Kinda need the better indication of cyclic recipes for this crap, due to space platform recipes
 - Redo rocket handling now that they can't take specific items anymore, which hopefully is a simplification
   - also there is rocket part productivity now
 - Rocket silo launch sequence time now works differently because you can have two rockets at a time
@@ -37,7 +36,6 @@
 - Mining drills now have a `resource_drain_rate_percent` thing
 
 
-- Deal with surface conditions for crafting?
 - Deal with item spoiling?
 - Holy shit quality fucks up a lot of stuff.
   - Every place I need a property that can be influenced by quality, I can specify that quality.
@@ -62,13 +60,17 @@
 
 - Update other language docs for the new `plural_for_parameter` format
 - Custom Arcosphere logic disabled for now
-- Beacon Overload functionality disabled for now
 
 ## Nice-to-have
 
-- Adjust utility dialog handcrafting to behave like vanilla crafting does in all ways
 - The mod should create districts per planet automatically, once districts are implemented. First one should be called Nauvis too
-  - In addition or orthogonally, you could set planets on factories, which automatically restricts available recipes? (surface conditions?)
-- Have separate methods for each GUI action instead of a tree. Needs some prep methods sometimes maybe
+  - In addition or orthogonally, you could set planets/plattform on factories, which automatically restricts available recipes? (surface conditions?)
+  - Surface conditions exist on recipes and machines seemingly. Not sure whether to just flag non-working recipes or not allow them
 - Replace any machine/beacon/etc buttons with ones that have the standard tooltip.
   - Saves me the hassle of generating them and automatically has the information people expect
+- Need indication of cyclic recipes finally, used a lot on the space platform
+
+## Ghetto Github Issues
+
+- Adjust utility dialog handcrafting to behave like vanilla crafting does in all ways
+- Have separate methods for each GUI action instead of a tree. Needs some prep methods sometimes maybe

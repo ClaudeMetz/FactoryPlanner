@@ -10,7 +10,6 @@ local Module = require("backend.data.Module")
 ---@field module_count integer
 ---@field module_limit integer
 ---@field empty_slots integer
----@field total_effects ModuleEffects
 local ModuleSet = Object.methods()
 ModuleSet.__index = ModuleSet
 script.register_metatable("ModuleSet", ModuleSet)
@@ -25,7 +24,6 @@ local function init(parent)
         -- 0 as placeholder for simplified parents
         module_limit = parent.proto.module_limit or 0,
         empty_slots = parent.proto.module_limit or 0,
-        total_effects = nil,
 
         parent = parent
     }, "ModuleSet", ModuleSet)  --[[@as ModuleSet]]
@@ -107,7 +105,7 @@ function ModuleSet:normalize(features)
     if features.compatibility then self:verify_compatibility() end
     if features.trim then self:trim() end
     if features.sort then self:sort() end
-    if features.effects then self:summarize_effects() end
+    if features.effects then self.parent:summarize_effects() end
 
     self:count_modules()
 end
@@ -175,16 +173,15 @@ function ModuleSet:sort()
     end
 end
 
-function ModuleSet:summarize_effects()
+---@return ModuleEffects
+function ModuleSet:get_effects()
     local effects = ftable.shallow_copy(BLANK_EFFECTS)
     for module in self:iterator() do
         for name, effect in pairs(module.total_effects) do
             effects[name] = effects[name] + effect
         end
     end
-    self.total_effects = effects
-
-    self.parent:summarize_effects()
+    return effects
 end
 
 

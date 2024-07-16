@@ -913,6 +913,7 @@ end
 ---@field allowed_effects AllowedEffects
 ---@field module_limit uint
 ---@field effectivity double
+---@field profile double[]
 ---@field energy_usage double
 
 -- Generates a table containing all available beacons
@@ -940,6 +941,7 @@ function generator.beacons.generate()
                 allowed_effects = proto.allowed_effects,
                 module_limit = proto.module_inventory_size,
                 effectivity = proto.distribution_effectivity,
+                profile = proto.profile,
                 energy_usage = proto.energy_usage or proto.max_energy_usage or 0
             }
             insert_prototype(beacons, beacon, nil)

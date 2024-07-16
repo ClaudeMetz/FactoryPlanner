@@ -68,7 +68,7 @@ end
 
 
 function Machine:summarize_effects()
-    local module_effects = self.module_set.total_effects
+    local module_effects = self.module_set:get_effects()
     local machine_effects = self.proto.effect_receiver.base_effect
 
     self.effects_tooltip = util.gui.format_module_effects(module_effects, machine_effects, false)
@@ -129,6 +129,7 @@ function Machine:pack()
 end
 
 ---@param packed_self PackedMachine
+---@param parent Line
 ---@return Machine machine
 local function unpack(packed_self, parent)
     local unpacked_self = init(packed_self.proto, parent)

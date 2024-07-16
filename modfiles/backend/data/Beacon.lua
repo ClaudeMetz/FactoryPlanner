@@ -5,7 +5,7 @@ local ModuleSet = require("backend.data.ModuleSet")
 ---@field class "Beacon"
 ---@field parent Line
 ---@field proto FPBeaconPrototype | FPPackedPrototype
----@field amount number
+---@field amount integer
 ---@field total_amount number?
 ---@field module_set ModuleSet
 ---@field total_effects ModuleEffects
@@ -40,12 +40,27 @@ function Beacon:index()
 end
 
 
+---@return double profile_multiplier
+function Beacon:profile_multiplier()
+    if self.amount == 0 then
+        return 0
+    else
+        local profile_count = #self.proto.profile
+        local index = (self.amount > profile_count) and profile_count or self.amount
+        return self.proto.profile[index]
+    end
+end
+
+
 function Beacon:summarize_effects()
-    local effects = self.module_set.total_effects
-    local effect_multiplier = self.proto.effectivity * self.amount
+    local effects = self.module_set:get_effects()
+    local profile_mulitplier = self:profile_multiplier()
+    local effect_multiplier = self.amount * profile_mulitplier * self.proto.effectivity
+
     for name, effect in pairs(effects) do
         effects[name] = effect * effect_multiplier
     end
+
     self.total_effects = effects
     self.effects_tooltip = util.gui.format_module_effects(effects, {}, false)
 
@@ -99,6 +114,7 @@ function Beacon:pack()
 end
 
 ---@param packed_self PackedBeacon
+---@param parent Line
 ---@return Beacon machine
 local function unpack(packed_self, parent)
     local unpacked_self = init(packed_self.proto, parent)
@@ -125,8 +141,6 @@ function Beacon:validate()
     local machine = self.parent.machine  -- make sure the machine can still be influenced by beacons
     if machine.valid then self.valid = (machine.proto.allowed_effects ~= nil) and self.valid end
 
-    if BEACON_OVERLOAD_ACTIVE then self.amount = 1 end
-
     self.valid = self.module_set:validate() and self.valid
 
     return self.valid
@@ -141,7 +155,7 @@ function Beacon:repair(player)
         -- Remove invalid modules and normalize the remaining ones
         self.valid = self.module_set:repair()
 
-        if self.module_set.module_count == 0 then return false end   -- if the beacon is empty, remove it
+        if self.module_set.module_count == 0 then return false end   -- if the beacon became empty, remove it
     end
 
     self.valid = true  -- if it gets to here, the beacon was successfully repaired
