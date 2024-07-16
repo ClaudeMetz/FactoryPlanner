@@ -151,15 +151,17 @@ function builders.machine(line, parent_flow, metadata)
         local machine_count = line.machine_count
         local tooltip = {"fp.subfloor_machine_count", machine_count, {"fp.pl_machine", machine_count}}
         parent_flow.add{type="sprite-button", sprite="fp_generic_assembler", style="flib_slot_button_default_small",
-            enabled=false, number=machine_count, tooltip=tooltip}
+        enabled=false, number=machine_count, tooltip=tooltip}
     else
+        local machine = line.machine
+        local machine_proto = machine.proto
         local active, round_number = (line.production_ratio > 0), metadata.round_button_numbers
-        local count, tooltip_line = util.format.machine_count(line.machine.amount, active, round_number)
+        local count, tooltip_line = util.format.machine_count(machine.amount, active, round_number)
 
-        local machine_limit = line.machine.limit
+        local machine_limit = machine.limit
         local style, note = "flib_slot_button_default_small", nil
         if not metadata.matrix_solver_active and machine_limit ~= nil then
-            if line.machine.force_limit then
+            if machine.force_limit then
                 style = "flib_slot_button_pink_small"
                 note = {"fp.machine_limit_force", machine_limit}
             elseif line.production_ratio < line.uncapped_production_ratio then
@@ -172,30 +174,32 @@ function builders.machine(line, parent_flow, metadata)
         end
 
         if note ~= nil then table.insert(tooltip_line, {"", " - ", note}) end
-        local tooltip = {"", {"fp.tt_title", line.machine.proto.localised_name}, "\n", tooltip_line,
-            format_effects_tooltip(line.machine.effects_tooltip), metadata.machine_tutorial_tt}
+        local tooltip = {"", {"fp.tt_title", machine_proto.localised_name}, "\n", tooltip_line,
+            format_effects_tooltip(machine.effects_tooltip), metadata.machine_tutorial_tt}
 
-        local button = parent_flow.add{type="sprite-button", sprite=line.machine.proto.sprite, number=count,
-            tags={mod="fp", on_gui_click="act_on_line_machine", machine_id=line.machine.id, on_gui_hover="set_tooltip",
+        local button = parent_flow.add{type="sprite-button", sprite=machine_proto.sprite, number=count,
+            tags={mod="fp", on_gui_click="act_on_line_machine", machine_id=machine.id, on_gui_hover="set_tooltip",
             context="production_table"}, style=style, mouse_button_filter={"left-and-right"}, raise_hover_events=true}
         metadata.tooltips[button.index] = tooltip
 
-        add_module_flow(parent_flow, line.machine.module_set, metadata)
-        local module_set = line.machine.module_set
-        if module_set.module_limit > module_set.module_count then
-            local module_tooltip = {"", {"fp.add_machine_module"}, "\n", {"fp.shift_to_paste"}}
-            local module_button = parent_flow.add{type="sprite-button", sprite="utility/add", tooltip=module_tooltip,
-                tags={mod="fp", on_gui_click="add_machine_module", machine_id=line.machine.id},
-                style="fp_sprite-button_inset_add", mouse_button_filter={"left"}, enabled=(not metadata.archive_open)}
-            module_button.style.margin = 2
-            module_button.style.padding = 4
+        if machine:uses_effects() then
+            add_module_flow(parent_flow, machine.module_set, metadata)
+            local module_set = machine.module_set
+            if module_set.module_limit > module_set.module_count then
+                local module_tooltip = {"", {"fp.add_machine_module"}, "\n", {"fp.shift_to_paste"}}
+                local module_button = parent_flow.add{type="sprite-button", sprite="utility/add",
+                    tooltip=module_tooltip, tags={mod="fp", on_gui_click="add_machine_module", machine_id=machine.id},
+                    style="fp_sprite-button_inset_add", mouse_button_filter={"left"},
+                    enabled=(not metadata.archive_open)}
+                module_button.style.margin = 2
+                module_button.style.padding = 4
+            end
         end
     end
 end
 
 function builders.beacon(line, parent_flow, metadata)
-    -- Beacons only work on machines that have some allowed_effects
-    if line.class == "Floor" or line.machine.proto.allowed_effects == nil then return end
+    if line.class == "Floor" or not line.machine:uses_effects() then return end
 
     local beacon = line.beacon
     if beacon == nil then

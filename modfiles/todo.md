@@ -2,14 +2,8 @@
 
 ## Active
 
-- remove use of format_allowed_effects
-- incorporate new uses_module_effects
-- incorporate new uses_beacon_effects
-- add allowed_effects support to recipes
-- make sure beacon module selection is still correct
 - deal with new beacon effect logic
-- deal with new productivity research (mining kinda separate)
-- check out uses_surface_effects
+- deal with new productivity research (mining kinda separate) #3333FF #3333CC
 - check out new global? max productivity, seems to be per recipeProto
 - check out max speed no longer being translated to productivity?
 
@@ -35,8 +29,6 @@
 - Figure out how energy consumption and drain works in the new API
 - Check out how to handle emissions for different pollutant types? Do I just need to show all if applicable?
   - Only implemented `"pollution"` for now
-- Fix _porter.import_factories(), probably by adjusting the factory string
-  - Example subfactory also doesn't work, needs some general migration fix it seems
 - Kinda need the better indication of cyclic recipes for this crap, due to space platform recipes
 - Redo rocket handling now that they can't take specific items anymore, which hopefully is a simplification
   - also there is rocket part productivity now
@@ -76,6 +68,7 @@
 
 - Adjust utility dialog handcrafting to behave like vanilla crafting does in all ways
 - The mod should create districts per planet automatically, once districts are implemented. First one should be called Nauvis too
+  - In addition or orthogonally, you could set planets on factories, which automatically restricts available recipes? (surface conditions?)
 - Have separate methods for each GUI action instead of a tree. Needs some prep methods sometimes maybe
 - Replace any machine/beacon/etc buttons with ones that have the standard tooltip.
   - Saves me the hassle of generating them and automatically has the information people expect

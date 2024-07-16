@@ -93,7 +93,7 @@ function Line:change_machine_to_proto(player, proto)
         self.machine.proto = proto
 
         self.machine.module_set:normalize({compatibility=true, trim=true, effects=true})
-        if self.machine.proto.allowed_effects == nil then self:set_beacon(nil) end
+        if not self.machine:uses_effects() then self:set_beacon(nil) end
     end
 
     -- Make sure the machine's fuel still applies
@@ -191,11 +191,11 @@ function Line:apply_mb_defaults(player)
     local module_set, module_limit = self.machine.module_set, self.machine.proto.module_limit
     local message = nil
 
-    if machine_module and self.machine:check_module_compatibility(machine_module) then
+    if machine_module and self.machine.module_set:check_compatibility(machine_module) then
         local module = Module.init(machine_module, module_limit)
         module_set:insert(module)
 
-    elseif secondary_module and self.machine:check_module_compatibility(secondary_module) then
+    elseif secondary_module and self.machine.module_set:check_compatibility(secondary_module) then
         local module = Module.init(secondary_module, module_limit)
         module_set:insert(module)
 
@@ -213,7 +213,7 @@ function Line:apply_mb_defaults(player)
         local blank_beacon = Beacon.init(beacon_proto, self)
         blank_beacon.amount = beacon_count
 
-        if blank_beacon:check_module_compatibility(beacon_module_proto) then
+        if blank_beacon.module_set:check_compatibility(beacon_module_proto) then
             local module = Module.init(beacon_module_proto, beacon_proto.module_limit)
             blank_beacon.module_set:insert(module)
             self:set_beacon(blank_beacon)  -- summarizes effects on its own

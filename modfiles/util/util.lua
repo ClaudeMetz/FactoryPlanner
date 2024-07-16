@@ -64,4 +64,11 @@ function _util.merge_effects(effect_tables)
     return effects
 end
 
+---@param a boolean
+---@param b boolean
+---@return boolean
+function _util.xor(a, b)
+    return not a ~= not b
+end
+
 return _util

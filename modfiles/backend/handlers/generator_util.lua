@@ -374,15 +374,19 @@ function generator_util.determine_launch_sequence_time(silo_proto)
     return (total_ticks / 60)  -- retured value is in seconds
 end
 
--- Returns nil if no effect is true, returns the effects otherwise
----@param allowed_effects AllowedEffects
----@return AllowedEffects? allowed_effects
-function generator_util.format_allowed_effects(allowed_effects)
-    if allowed_effects == nil then return nil end
-    for _, allowed in pairs(allowed_effects) do
-        if allowed == true then return allowed_effects end
+
+---@param proto FPMachinePrototype
+function generator_util.check_machine_effects(proto)
+    if proto.effect_receiver == nil then return end
+
+    local any_positives = false
+    for _, effect in pairs(proto.allowed_effects) do
+        if effect == true then any_positives = true; break end
     end
-    return nil  -- all effects are false
+
+    if proto.module_limit == 0 or not any_positives then
+        proto.effect_receiver.uses_module_effects = false
+    end
 end
 
 
