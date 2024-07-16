@@ -629,7 +629,7 @@ function matrix_engine.get_line_aggregate(line_data, player_index, floor_id, mac
     line_aggregate.production_ratio = total_crafts_per_timescale
     line_aggregate.uncapped_production_ratio = total_crafts_per_timescale
     for _, product in pairs(recipe_proto.products) do
-        local prodded_amount = solver_util.determine_prodded_amount(product, unmodified_crafts_per_second, total_effects)
+        local prodded_amount = solver_util.determine_prodded_amount(product, unmodified_crafts_per_second, --[[ total_effects, ]] recipe_proto.maximum_productivity)
         local item_key = matrix_engine.get_item_key(product.type, product.name)
         if factory_metadata~= nil and (factory_metadata.byproducts[item_key] or free_variables["item_"..item_key]) then
             structures.aggregate.add(line_aggregate, "Byproduct", product, prodded_amount * total_crafts_per_timescale)
@@ -640,7 +640,8 @@ function matrix_engine.get_line_aggregate(line_data, player_index, floor_id, mac
     for _, ingredient in pairs(recipe_proto.ingredients) do
         local amount = ingredient.amount
         if ingredient.ignore_productivity then
-            amount = solver_util.determine_prodded_amount(ingredient, unmodified_crafts_per_second, total_effects)
+            amount = solver_util.determine_prodded_amount(ingredient, unmodified_crafts_per_second,
+                --[[ total_effects, ]] recipe_proto.maximum_productivity)
         end
         structures.aggregate.add(line_aggregate, "Ingredient", ingredient, amount * total_crafts_per_timescale)
     end

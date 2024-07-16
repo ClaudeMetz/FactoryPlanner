@@ -296,7 +296,7 @@ end
 
 
 -- **** UTIL ****
--- Speed can't go lower than 20%, or higher than 32676% due to the engine limit
+-- Effects can't go lower than 20%, or higher than 32676% due to the engine limit
 local function cap_effect(value)
     return math.min(math.max(value, MAGIC_NUMBERS.effects_lower_bound), MAGIC_NUMBERS.effects_upper_bound)
 end
@@ -322,11 +322,13 @@ function solver_util.determine_production_ratio(crafts_per_tick, machine_limit, 
 end
 
 -- Calculates the product amount after applying productivity bonuses
-function solver_util.determine_prodded_amount(item, crafts_per_tick, total_effects)
-    local productivity = math.max(total_effects.productivity, 0)  -- no negative productivity
+function solver_util.determine_prodded_amount(item, --[[ crafts_per_tick,  ]]total_effects, maximum_productivity)
+    -- No negative productivity, and none above the recipe-determined cap
+    local productivity = math.min(math.max(total_effects.productivity, 0), maximum_productivity)
     if productivity == 0 then return item.amount end
 
-    if crafts_per_tick > 60 then productivity = ((1/60) * productivity) * crafts_per_tick end
+    -- This is likely unnessecary in 2.0, but we'll see
+    --if crafts_per_tick > 60 then productivity = ((1/60) * productivity) * crafts_per_tick end
 
     -- Return formula is a simplification of the following formula:
     -- item.amount - item.proddable_amount + (item.proddable_amount * (productivity + 1))
