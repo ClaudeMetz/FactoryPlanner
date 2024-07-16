@@ -2,19 +2,6 @@
 
 ## Active
 
-- check out new max productivity, seems to be per recipeProto
-
-
-- Check on built-in productivity, like for the foundry, doesn't seem like it's applied properly
-  - Used to be `base_productivity` but seemingly changed -> now on effect_reciever
-- Are `limitations` on module items not a thing anymore? What replaces that system?
-  - `allowed_effects` now a thing on recipes apparently
-  - also effect_receiver has which kinda effects it allows, which I need to use
-- Deal with new beacon effect logic -> Think about beacon overload mechanic too
-- Mining productivity is now by far not the only productivity modification, so yeah, deal with that
-  - Probably just drop the option? (for now?) Also consider locking in the bonus when archiving a factory
-- Also I think excess crafting speed is no longer translated to productivity but works as expected now?
-  - Also recipes now have a max productivity instead which I need to cap?
 
 ## Any time
 

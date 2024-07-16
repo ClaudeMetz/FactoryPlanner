@@ -309,6 +309,7 @@ end
 ---@field products Product[]
 ---@field main_product Product?
 ---@field allowed_effects AllowedEffects?
+---@field maximum_productivity double
 ---@field type_counts { ingredients: ItemTypeCounts, products: ItemTypeCounts }
 ---@field recycling boolean
 ---@field barreling boolean
@@ -341,6 +342,7 @@ function generator.recipes.generate()
             hidden = false,
             group = {name="intermediate-products", order="c", valid=true,
                 localised_name={"item-group-name.intermediate-products"}},
+            maximum_productivity = math.huge,
             type_counts = {},
             enabling_technologies = nil,
             emissions_multiplier = 1
@@ -379,6 +381,7 @@ function generator.recipes.generate()
                 products = proto.products,
                 main_product = proto.main_product,
                 allowed_effects = proto.allowed_effects or {},
+                maximum_productivity = 0.5,--proto.maximum_productivity,
                 type_counts = {},  -- filled out by format_* below
                 recycling = generator_util.is_recycling_recipe(proto),
                 barreling = generator_util.is_compacting_recipe(proto),

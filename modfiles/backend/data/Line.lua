@@ -177,7 +177,8 @@ end
 function Line:summarize_effects()
     local beacon_effects = (self.beacon) and self.beacon.total_effects or nil
     self.total_effects = util.merge_effects({self.machine.total_effects, beacon_effects})
-    self.effects_tooltip = util.gui.format_module_effects(self.total_effects, {limit=true})
+    self.effects_tooltip = util.gui.format_module_effects(self.total_effects,
+        {limit=true, max_prod=self.recipe_proto.maximum_productivity})
 end
 
 

@@ -137,6 +137,7 @@ end
 
 ---@class FormatModuleEffectsOptions
 ---@field limit boolean?
+---@field max_prod number?
 ---@field machine_effects ModuleEffects?
 ---@field recipe_effects ModuleEffects?
 
@@ -147,6 +148,7 @@ end
 function _gui.format_module_effects(module_effects, options)
     options = options or {}
     options.limit = options.limit or false
+    options.max_prod = options.max_prod or nil
     options.machine_effects = options.machine_effects or {}
     options.recipe_effects = options.recipe_effects or {}
 
@@ -154,19 +156,18 @@ function _gui.format_module_effects(module_effects, options)
     local upper_bound = MAGIC_NUMBERS.effects_upper_bound
 
     local function limit_effect(value, name)
-        if options.limit == false then
-            return value, ""
-        else
+        if options.limit == true then
             if name == "productivity" and value < 0 then
                 return 0, {"fp.effect_maxed"}
+            elseif name == "productivity" and value > options.max_prod then
+                return options.max_prod, {"fp.effect_maxed"}
             elseif value < lower_bound then
                 return lower_bound, {"fp.effect_maxed"}
             elseif value > upper_bound then
                 return upper_bound, {"fp.effect_maxed"}
-            else
-                return value, ""
             end
         end
+        return value, ""  -- return value if nothing above hits
     end
 
     local function format_effect(value, color)
