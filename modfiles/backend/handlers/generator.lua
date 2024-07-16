@@ -70,6 +70,7 @@ end
 ---@field module_limit integer
 ---@field launch_sequence_time number?
 ---@field burner MachineBurner?
+---@field mining boolean?
 
 ---@class FluidChannels
 ---@field input integer

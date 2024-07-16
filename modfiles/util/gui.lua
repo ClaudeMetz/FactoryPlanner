@@ -134,17 +134,27 @@ function _gui.reset_player(player)
     end
 end
 
+
+---@class FormatModuleEffectsOptions
+---@field limit boolean?
+---@field machine_effects ModuleEffects?
+---@field recipe_effects ModuleEffects?
+
 -- Formats the given effects for use in a tooltip
 ---@param module_effects ModuleEffects
----@param machine_effects ModuleEffects
----@param limit_effects boolean
+---@param options FormatModuleEffectsOptions?
 ---@return LocalisedString
-function _gui.format_module_effects(module_effects, machine_effects, limit_effects)
+function _gui.format_module_effects(module_effects, options)
+    options = options or {}
+    options.limit = options.limit or false
+    options.machine_effects = options.machine_effects or {}
+    options.recipe_effects = options.recipe_effects or {}
+
     local lower_bound = MAGIC_NUMBERS.effects_lower_bound
     local upper_bound = MAGIC_NUMBERS.effects_upper_bound
 
     local function limit_effect(value, name)
-        if limit_effects == false then
+        if options.limit == false then
             return value, ""
         else
             if name == "productivity" and value < 0 then
@@ -169,17 +179,22 @@ function _gui.format_module_effects(module_effects, machine_effects, limit_effec
 
     local tooltip_lines = {""}
     for effect_name, _ in pairs(BLANK_EFFECTS) do
-        local module_effect, machine_effect = module_effects[effect_name], machine_effects[effect_name]
-        if module_effect ~= 0 or (machine_effect ~= nil and machine_effect ~= 0) then
+        local module_effect = module_effects[effect_name]
+        local machine_effect = options.machine_effects[effect_name]
+        local recipe_effect = options.recipe_effects[effect_name]
+
+        if module_effect ~= 0 or (machine_effect ~= nil and machine_effect ~= 0)
+                or (recipe_effect ~= nil and recipe_effect ~= 0) then
             -- Limiting only for module effects, which is only used without any other effect types
             local limited_module_effect, indication = limit_effect(module_effect, effect_name)
 
             local module_percentage = format_effect(limited_module_effect, "#FFE6C0")
-            local machine_percentage = format_effect(machine_effect, "#33CC33")
+            local machine_percentage = format_effect(machine_effect, "#7CFF01")
+            local recipe_percentage = format_effect(recipe_effect, "#01FFF4")
 
             if #tooltip_lines > 1 then table.insert(tooltip_lines, "\n") end
             table.insert(tooltip_lines, {"fp.effect_line", {"fp." .. effect_name}, module_percentage,
-                machine_percentage, indication})
+                machine_percentage, recipe_percentage, indication})
         end
     end
 
