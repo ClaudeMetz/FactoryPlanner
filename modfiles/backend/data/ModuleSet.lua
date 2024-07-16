@@ -191,7 +191,26 @@ end
 ---@param module_proto FPModulePrototype
 ---@return boolean compatible
 function ModuleSet:check_compatibility(module_proto)
-    return self.parent:check_module_compatibility(module_proto)
+    if not self.parent:uses_effects() then
+        return false
+    else
+        local positive_effects = {speed=true, productivity=true, quality=true}
+        local all_allowed_effects = {self.parent.proto.allowed_effects}
+        local recipe_allowed_effects = self.parent.parent.recipe_proto.allowed_effects
+        -- No allowed_effects means all effects are allowed in this case
+        if recipe_allowed_effects then table.insert(all_allowed_effects, recipe_allowed_effects) end
+
+        for _, allowed_effects in pairs(all_allowed_effects) do
+            for name, value in pairs(module_proto.effects) do
+                -- Which module effects are allowed is confusing. Any effect considered 'positive' is
+                -- only disallowed if the effect value is actually positive, and vice versa.
+                if not (allowed_effects[name] or util.xor(value > 0, positive_effects[name] ~= nil)) then
+                    return false
+                end
+            end
+        end
+    end
+    return true
 end
 
 function ModuleSet:compile_filter()

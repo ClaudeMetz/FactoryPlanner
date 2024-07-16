@@ -42,9 +42,8 @@ end
 
 local function add_factory(player, _, event)
     local skip_factory_naming = util.globals.preferences(player).skip_factory_naming
-    local function xor(a, b) return not a ~= not b end  -- fancy, first time I ever needed this
 
-    if xor(event.shift, skip_factory_naming) then  -- go right to the item picker with automatic factory naming
+    if util.xor(event.shift, skip_factory_naming) then  -- go right to the item picker with automatic factory naming
         util.raise.open_dialog(player, {dialog="picker", modal_data={item_id=nil, item_category="product",
             create_factory=true}})
     else  -- otherwise, have the user pick a factory name first

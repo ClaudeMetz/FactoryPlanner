@@ -52,23 +52,10 @@ function Beacon:summarize_effects()
     self.parent:summarize_effects()
 end
 
----@param module_proto FPModulePrototype
----@return boolean compatible
-function Beacon:check_module_compatibility(module_proto)
-    local machine_proto = self.parent.machine.proto
-    local machine_effects, beacon_effects = machine_proto.allowed_effects, self.proto.allowed_effects
-
-    if machine_effects == nil or beacon_effects == nil then
-        return false
-    else
-        for effect_name, _ in pairs(module_proto.effects) do
-            if machine_effects[effect_name] == false or beacon_effects[effect_name] == false then
-                return false
-            end
-        end
-    end
-
-    return true
+---@return boolean uses_effects
+function Beacon:uses_effects()
+    local effect_receiver = self.parent.machine.proto.effect_receiver  --[[@as EffectReceiver]]
+    return effect_receiver.uses_module_effects and effect_receiver.uses_beacon_effects
 end
 
 

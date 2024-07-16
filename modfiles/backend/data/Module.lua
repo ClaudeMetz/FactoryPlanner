@@ -105,7 +105,7 @@ function Module:validate()
 
     -- Check whether the module is still compatible with its machine or beacon
     if self.valid and self.parent and self.parent.valid then
-        self.valid = self.parent.parent:check_module_compatibility(self.proto)
+        self.valid = self.parent:check_compatibility(self.proto)
     end
 
     if self.valid then self:summarize_effects() end

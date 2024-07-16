@@ -66,7 +66,7 @@ end
 ---@field emissions double
 ---@field built_by_item FPItemPrototype?
 ---@field effect_receiver EffectReceiver?
----@field allowed_effects AllowedEffects?
+---@field allowed_effects AllowedEffects
 ---@field module_limit integer
 ---@field launch_sequence_time number?
 ---@field burner MachineBurner?
@@ -160,11 +160,12 @@ function generator.machines.generate()
             emissions = emissions,
             built_by_item = built_by_item,
             effect_receiver = proto.effect_receiver,
-            allowed_effects = generator_util.format_allowed_effects(proto.allowed_effects),
+            allowed_effects = proto.allowed_effects or {},
             module_limit = (proto.module_inventory_size or 0),
             launch_sequence_time = generator_util.determine_launch_sequence_time(proto),
             burner = burner
         }
+        generator_util.check_machine_effects(machine)
 
         return machine
     end
@@ -306,6 +307,7 @@ end
 ---@field ingredients FPIngredient[]
 ---@field products Product[]
 ---@field main_product Product?
+---@field allowed_effects AllowedEffects?
 ---@field type_counts { ingredients: ItemTypeCounts, products: ItemTypeCounts }
 ---@field recycling boolean
 ---@field barreling boolean
@@ -375,6 +377,7 @@ function generator.recipes.generate()
                 ingredients = proto.ingredients,
                 products = proto.products,
                 main_product = proto.main_product,
+                allowed_effects = proto.allowed_effects or {},
                 type_counts = {},  -- filled out by format_* below
                 recycling = generator_util.is_recycling_recipe(proto),
                 barreling = generator_util.is_compacting_recipe(proto),
@@ -923,7 +926,7 @@ function generator.beacons.generate()
     local beacon_filter = {{filter="type", type="beacon"}, {filter="hidden", invert=true, mode="and"}}
     for _, proto in pairs(game.get_filtered_entity_prototypes(beacon_filter)) do
         local sprite = generator_util.determine_entity_sprite(proto)
-        if sprite ~= nil and proto.module_inventory_size and proto.distribution_effectivity > 0 then
+        if sprite ~= nil and proto.module_inventory_size > 0 and proto.distribution_effectivity > 0 then
             -- Beacons can refer to the actual item prototype right away because they are built after items are
             local items_to_place_this = proto.items_to_place_this
             local built_by_item = (items_to_place_this) and item_prototypes[items_to_place_this[1].name] or nil
@@ -934,7 +937,7 @@ function generator.beacons.generate()
                 sprite = sprite,
                 category = "fp_beacon",  -- custom category to be similar to machines
                 built_by_item = built_by_item,
-                allowed_effects = generator_util.format_allowed_effects(proto.allowed_effects),
+                allowed_effects = proto.allowed_effects,
                 module_limit = proto.module_inventory_size,
                 effectivity = proto.distribution_effectivity,
                 energy_usage = proto.energy_usage or proto.max_energy_usage or 0

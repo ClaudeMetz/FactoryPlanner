@@ -77,23 +77,9 @@ function Machine:summarize_effects()
     self.parent:summarize_effects()
 end
 
----@param module_proto FPModulePrototype
----@return boolean compatible
-function Machine:check_module_compatibility(module_proto)
-    if self.proto.module_limit == 0 then return false end
-
-    local allowed_effects = self.proto.allowed_effects
-    if allowed_effects == nil then
-        return false
-    else
-        for effect_name, _ in pairs(module_proto.effects) do
-            if allowed_effects[effect_name] == false then
-                return false
-            end
-        end
-    end
-
-    return true
+---@return boolean uses_effects
+function Machine:uses_effects()
+    return self.proto.effect_receiver.uses_module_effects
 end
 
 
