@@ -60,9 +60,6 @@ local function generate_floor_data(player, factory, floor)
         lines = {}
     }
 
-    local mining_productivity = (factory.mining_productivity ~= nil)
-        and (factory.mining_productivity / 100) or player.force.mining_drill_productivity_bonus
-
     for line in floor:iterator() do
         local line_data = { id = line.id }
 

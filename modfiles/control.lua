@@ -18,7 +18,7 @@ MAGIC_NUMBERS = {
     subheader_height = 36,  -- Height of the factory list subheader
     list_width = 300,  -- Width of the factory list
     list_element_height = 28,  -- Height of an individual factory list element
-    info_height = 134,  -- Height of the factory info frame
+    info_height = 100,  -- Height of the factory info frame
     item_button_size = 40,  -- Size of item box buttons
     item_box_max_rows = 4,  -- Maximum number of rows in an item box
 

@@ -10,7 +10,6 @@ local Product = require("backend.data.Product")
 ---@field archived boolean
 ---@field name string
 ---@field timescale Timescale
----@field mining_productivity number?
 ---@field matrix_free_items FPItemPrototype[]?
 ---@field blueprints string[]
 ---@field notes string
@@ -34,7 +33,6 @@ local function init(name, timescale)
 
         name = name,
         timescale = timescale,
-        mining_productivity = nil,
         matrix_free_items = nil,
         blueprints = {},
         notes = "",
@@ -160,7 +158,6 @@ end
 ---@field class "Factory"
 ---@field name string
 ---@field timescale Timescale
----@field mining_productivity number?
 ---@field matrix_free_items FPPackedPrototype[]?
 ---@field blueprints string[]
 ---@field notes string
@@ -173,7 +170,6 @@ function Factory:pack()
         class = self.class,
         name = self.name,
         timescale = self.timescale,
-        mining_productivity = self.mining_productivity,
         matrix_free_items = prototyper.util.simplify_prototypes(self.matrix_free_items, "type"),
         blueprints = self.blueprints,
         notes = self.notes,
@@ -187,7 +183,6 @@ end
 local function unpack(packed_self)
     local unpacked_self = init(packed_self.name, packed_self.timescale)
 
-    unpacked_self.mining_productivity = packed_self.mining_productivity
     -- Product prototypes will be automatically unpacked by the validation process
     unpacked_self.matrix_free_items = packed_self.matrix_free_items
     unpacked_self.blueprints = packed_self.blueprints

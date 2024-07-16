@@ -9,6 +9,8 @@ function migration.player_table(player_table)
         end
         factory.item_request_proxy = nil
 
+        factory.mining_productivity = nil
+
         local function iterate_floor(floor)
             for line in floor:iterator() do
                 if line.class == "Floor" then
@@ -23,6 +25,8 @@ function migration.player_table(player_table)
 end
 
 function migration.packed_factory(packed_factory)
+    packed_factory.mining_productivity = nil
+
     local function iterate_floor(packed_floor)
         for _, packed_line in pairs(packed_floor.lines) do
             if packed_line.class == "Floor" then
