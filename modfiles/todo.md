@@ -2,8 +2,6 @@
 
 ## Active
 
-- Quality effect is multiplied by 10 in machine/beacon dialogs, just fix it at the start even though it's weird
-- Cap quality bonus at 0 I guess
 
 ## Any time
 

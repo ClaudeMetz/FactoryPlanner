@@ -152,26 +152,27 @@ function _gui.format_module_effects(module_effects, options)
     options.machine_effects = options.machine_effects or {}
     options.recipe_effects = options.recipe_effects or {}
 
+    local positive_only_effects = {productivity=true, quality=true}
     local lower_bound = MAGIC_NUMBERS.effects_lower_bound
     local upper_bound = MAGIC_NUMBERS.effects_upper_bound
 
     local function limit_effect(value, name)
         if options.limit == true then
-            if name == "productivity" and value < 0 then
-                return 0, {"fp.effect_maxed"}
+            if positive_only_effects[name] and value < 0 then
+                return 0, {"fp.effect_limit"}
             elseif name == "productivity" and value > options.max_prod then
-                return options.max_prod, {"fp.effect_maxed"}
+                return options.max_prod, {"fp.effect_max"}
             elseif value < lower_bound then
-                return lower_bound, {"fp.effect_maxed"}
+                return lower_bound, {"fp.effect_limit"}
             elseif value > upper_bound then
-                return upper_bound, {"fp.effect_maxed"}
+                return upper_bound, {"fp.effect_max"}
             end
         end
         return value, ""  -- return value if nothing above hits
     end
 
     local function format_effect(value, color)
-        if value == nil or value == 0 then return "" end
+        if value == nil then return "" end
         -- Force display of either a '+' or '-', also round the result
         local display_value = ("%+d"):format(math.floor((value * 100) + 0.5))
         return {"fp.effect_value", color, display_value}
