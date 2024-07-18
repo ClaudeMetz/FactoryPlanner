@@ -296,7 +296,7 @@ end
 
 
 -- **** UTIL ****
--- Effects can't go lower than 20%, or higher than 32676% due to the engine limit
+-- Speed, consumption and pollution can't go lower than 20%, or higher than 32676% due to the engine limit
 local function cap_effect(value)
     return math.min(math.max(value, MAGIC_NUMBERS.effects_lower_bound), MAGIC_NUMBERS.effects_upper_bound)
 end
@@ -308,17 +308,16 @@ function solver_util.determine_crafts_per_tick(machine_proto, recipe_proto, tota
 end
 
 -- Determine the amount of machines needed to produce the given recipe in the given context
-function solver_util.determine_machine_count(crafts_per_tick, production_ratio, timescale, launch_sequence_time)
+function solver_util.determine_machine_count(crafts_per_tick, production_ratio, timescale)
     crafts_per_tick = math.min(crafts_per_tick, 60)  -- crafts_per_tick need to be limited for these calculations
-    return (production_ratio * (crafts_per_tick * (launch_sequence_time or 0) + 1)) / (crafts_per_tick * timescale)
+    return production_ratio / (crafts_per_tick * timescale)
 end
 
 -- Calculates the production ratio that the given amount of machines would result in
 -- Formula derived from determine_machine_count(), isolating production_ratio and using machine_limit as machine_count
-function solver_util.determine_production_ratio(crafts_per_tick, machine_limit, timescale, launch_sequence_time)
+function solver_util.determine_production_ratio(crafts_per_tick, machine_limit, timescale)
     crafts_per_tick = math.min(crafts_per_tick, 60)  -- crafts_per_tick need to be limited for these calculations
-    -- If launch_sequence_time is 0, the forumla is elegantly simplified to only the numerator
-    return (crafts_per_tick * machine_limit * timescale) / (crafts_per_tick * (launch_sequence_time or 0) + 1)
+    return crafts_per_tick * machine_limit * timescale
 end
 
 -- Calculates the product amount after applying productivity bonuses
