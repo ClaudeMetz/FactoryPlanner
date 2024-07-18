@@ -298,7 +298,7 @@ end
 
 -- Determines whether this machine is irrelevant or not and should thus be excluded
 local irrelevant_machine_mods = {
-    ["GhostOnWater"] = {"waterGhost%-.*"}
+    --[[ ["GhostOnWater"] = {"waterGhost%-.*"} ]]
 }
 
 local irrelevant_machines_lookup = {}  ---@type string[]
