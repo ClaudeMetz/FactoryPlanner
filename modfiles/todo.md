@@ -5,7 +5,6 @@
 
 ## Any time
 
-- Look into whether slider bugs are fixed now, bother people otherwise. Same for weird custom slider style I use
 - Look into using the new sprite button definition style if that's a thing
   - Seems there might be nothing new, but disabling buttons now modifies their icon, which is undesirable in come cases
   - Use button's `auto_toggle` argument? Sounds really nice, in combination with `toggle` elsewhere maybe
@@ -33,8 +32,8 @@
 
 - Find out what's wrong with `wide_as_column_count` on tables, need it almost everywhere
   - Check out the new subtler version of the table containing slots style, could be useful (used in Factoriopedia)
+- Sliders still bugged this is stupid https://forums.factorio.com/viewtopic.php?p=516440#p516440
 - Uncomment all the `.hidden` uses that were missing from the API
-- Item group order getting fixed so picker dialog works properly
 - Constant combinator `sections` format rename
 - API to open things in Factoriopedia
 
