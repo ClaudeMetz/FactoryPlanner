@@ -8,7 +8,6 @@
 - Look into using the new sprite button definition style if that's a thing
   - Seems there might be nothing new, but disabling buttons now modifies their icon, which is undesirable in come cases
   - Use button's `auto_toggle` argument? Sounds really nice, in combination with `toggle` elsewhere maybe
-- Figure out how to generate offshore pump prototypes again
 - Figure out how energy consumption and drain works in the new API
 - Check out how to handle emissions for different pollutant types? Do I just need to show all if applicable?
   - Only implemented `"pollution"` for now
@@ -51,8 +50,10 @@
 - Need indication of cyclic recipes finally, used a lot on the space platform
 - Should have the ability to manually configure recipe productivity boni somewhere
 - Fix more than one craft per tick being possible, instead of it being translated into productivity
+- Show offshore pump ingredients being the tile they need; requires larger refactoring probably
 
 ## Ghetto Github Issues
 
 - Adjust utility dialog handcrafting to behave like vanilla crafting does in all ways
 - Have separate methods for each GUI action instead of a tree. Needs some prep methods sometimes maybe
+- Use LuaEntityPrototype::type in generator when applicable instead of trying to parse properties -> could break stuff
