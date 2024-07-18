@@ -902,6 +902,9 @@ function generator.modules.generate()
                 tier = proto.tier,
                 effects = proto.module_effects or {}
             }
+            if module.effects["quality"] then  -- fix base game weirdness
+                module.effects["quality"] = module.effects["quality"] / 10
+            end
             insert_prototype(modules, module, module.category)
         end
     end
