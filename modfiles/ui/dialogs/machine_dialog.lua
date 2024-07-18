@@ -70,6 +70,8 @@ end
 
 local function add_choices_frame(parent_frame, modal_elements, type)
     local frame_choices = parent_frame.add{type="frame", direction="vertical", style="fp_frame_bordered_stretch"}
+    frame_choices.style.width = MAGIC_NUMBERS.module_dialog_element_width
+
     local flow_choices = frame_choices.add{type="flow", direction="horizontal"}
     flow_choices.style.padding = {0, 0, -4, 0}
     flow_choices.style.vertical_align = "center"
