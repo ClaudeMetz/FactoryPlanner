@@ -16,7 +16,6 @@
   - also there is rocket part productivity now
 - Rocket silo launch sequence time now works differently because you can have two rockets at a time
   - still relevant, but only when you can build rockets faster than you launch them
-- Mining drills now have a `resource_drain_rate_percent` thing
 
 
 - Quality is kind of a lot

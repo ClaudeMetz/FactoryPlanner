@@ -99,10 +99,11 @@ local function update_line(line_data, aggregate)
     -- Determine ingredients
     local Ingredient = structures.class.init()
     for _, ingredient in pairs(recipe_proto.ingredients) do
+        local mining_drain_rate = machine_proto.resource_drain_rate or 1   -- mining recipes never ignore productivity
         -- If productivity is to be ignored, un-apply it by applying the product-productivity to an ingredient,
         -- effectively reversing the effect (this is way simpler than doing it properly)
         local ingredient_amount = (ingredient.ignore_productivity) and determine_amount_with_productivity(ingredient)
-            or (ingredient.amount * production_ratio)
+            or (ingredient.amount * production_ratio * mining_drain_rate)
 
         structures.class.add(Ingredient, ingredient, ingredient_amount)
 

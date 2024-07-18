@@ -70,7 +70,7 @@ end
 ---@field module_limit integer
 ---@field launch_sequence_time number?
 ---@field burner MachineBurner?
----@field mining boolean?
+---@field resource_drain_rate number?
 
 ---@class FluidChannels
 ---@field input integer
@@ -187,7 +187,7 @@ function generator.machines.generate()
                     if enabled and category ~= "basic-fluid" then
                         local machine = generate_category_entry(category, proto)
                         if machine then
-                            machine.mining = true
+                            machine.resource_drain_rate = proto.resource_drain_rate_percent / 100
                             insert_prototype(machines, machine, machine.category)
                         end
                     end
@@ -429,15 +429,14 @@ function generator.recipes.generate()
             if produces_solid then
                 local recipe = custom_recipe()
                 recipe.name = "impostor-" .. proto.name
-                recipe.localised_name = proto.localised_name
+                recipe.localised_name = {"", proto.localised_name, " ", {"fp.mining_recipe"}}
                 recipe.sprite = products[1].type .. "/" .. products[1].name
                 recipe.order = proto.order
                 recipe.subgroup = {name="mining", order="y", valid=true}
                 recipe.category = proto.resource_category
-                recipe.mining = true
                 -- Set energy to mining time so the forumla for the machine_count works out
                 recipe.energy = proto.mineable_properties.mining_time
-                recipe.ingredients = {{type="entity", name=proto.name, amount=1}}
+                recipe.ingredients = {{type="entity", name=proto.name, amount=1, ignore_productivity=false}}
                 recipe.products = products
                 recipe.main_product = recipe.products[1]
 

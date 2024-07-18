@@ -178,7 +178,6 @@ function _gui.format_module_effects(module_effects, options)
         return {"fp.effect_value", color, display_value}
     end
 
-
     local tooltip_lines = {""}
     for effect_name, _ in pairs(BLANK_EFFECTS) do
         local module_effect = module_effects[effect_name]

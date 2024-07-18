@@ -327,7 +327,7 @@ function solver_util.determine_prodded_amount(item, --[[ crafts_per_tick,  ]]tot
     local productivity = math.min(math.max(total_effects.productivity, 0), maximum_productivity)
     if productivity == 0 then return item.amount end
 
-    -- This is likely unnessecary in 2.0, but we'll see
+    -- This conversion is likely unnessecary in 2.0, but we'll see
     --if crafts_per_tick > 60 then productivity = ((1/60) * productivity) * crafts_per_tick end
 
     -- Return formula is a simplification of the following formula:
