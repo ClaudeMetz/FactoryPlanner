@@ -147,6 +147,13 @@ function generator.machines.generate()
             end
         end
 
+        local effect_receiver = proto.effect_receiver or {
+            base_effects = {},
+            uses_module_effects = false,
+            uses_beacon_effects = false,
+            uses_surface_effects = false
+        }
+
         local machine = {
             name = proto.name,
             localised_name = proto.localised_name,
@@ -160,7 +167,7 @@ function generator.machines.generate()
             energy_drain = energy_drain,
             emissions = emissions,
             built_by_item = built_by_item,
-            effect_receiver = proto.effect_receiver,
+            effect_receiver = effect_receiver,
             allowed_effects = proto.allowed_effects or {},
             module_limit = (proto.module_inventory_size or 0),
             launch_sequence_time = generator_util.determine_launch_sequence_time(proto),
@@ -195,13 +202,13 @@ function generator.machines.generate()
             end
 
         -- Add offshore pumps
-        --[[ elseif proto.fluid then
+        elseif proto.type == "offshore-pump" then
             local machine = generate_category_entry(proto.name, proto)
             if machine then
-                machine.speed = 1  -- pumping speed included in the recipe product-amount
-                machine.category = proto.name  -- unique category for every offshore pump
+                machine.speed = proto.pumping_speed
+                machine.category = proto.type
                 insert_prototype(machines, machine, machine.category)
-            end ]]
+            end
         end
 
         -- Add machines that produce steam (ie. boilers)
@@ -413,7 +420,6 @@ function generator.recipes.generate()
     -- Localize them here so they don't have to be recreated over and over
     local item_prototypes, recipe_prototypes = game.item_prototypes, game.recipe_prototypes ]]
 
-    -- Add mining recipes
     for _, proto in pairs(game.entity_prototypes) do
         -- Add all mining recipes. Only supports solids for now.
         if proto.mineable_properties and proto.resource_category then
@@ -460,25 +466,6 @@ function generator.recipes.generate()
             end
 
             ::incompatible_proto::
-
-        -- Add offshore-pump fluid recipes
-        --[[ elseif proto.fluid then
-            local recipe = custom_recipe()
-            recipe.name = "impostor-" .. proto.fluid.name .. "-" .. proto.name
-            recipe.localised_name = proto.fluid.localised_name
-            recipe.sprite = "fluid/" .. proto.fluid.name
-            recipe.order = proto.order
-            recipe.subgroup = {name="fluids", order="z", valid=true}
-            recipe.category = proto.name  -- use proto name so every pump has it's own category
-            recipe.energy = 1
-            recipe.ingredients = {}
-            recipe.products = {{type="fluid", name=proto.fluid.name, amount=(proto.pumping_speed * 60)}}
-            recipe.main_product = recipe.products[1]
-
-            generator_util.format_recipe_products_and_ingredients(recipe)
-            ---@cast recipe FPRecipePrototype
-            generator_util.add_recipe_tooltip(recipe)
-            insert_prototype(recipes, recipe, nil) ]]
 
         -- Detect all the implicit rocket silo recipes
         --[[ elseif proto.rocket_parts_required ~= nil then
@@ -545,7 +532,7 @@ function generator.recipes.generate()
                         recipe.order = "z-" .. temperature
                         recipe.subgroup = {name="fluids", order="z", valid=true}
                         recipe.energy = 1
-                        recipe.ingredients = {{type="fluid", name="water", amount=60}}
+                        recipe.ingredients = {{type="fluid", name="water", amount=60, ignore_productivity=false}}
                         recipe.products = {{type="fluid", name="steam", amount=60, temperature=temperature}}
                         recipe.main_product = recipe.products[1]
 
@@ -559,6 +546,31 @@ function generator.recipes.generate()
         end
     end
 
+    -- Add offshore pump recipes
+    local pumped_fluids = {}
+    for _, proto in pairs(game.tile_prototypes) do
+        if proto.fluid and not pumped_fluids[proto.fluid.name] then
+            pumped_fluids[proto.fluid.name] = true
+
+            local recipe = custom_recipe()
+            recipe.name = "impostor-" .. proto.fluid.name .. "-" .. proto.name
+            recipe.localised_name = {"", proto.fluid.localised_name, " ", {"fp.pumping_recipe"}}
+            recipe.sprite = "fluid/" .. proto.fluid.name
+            recipe.order = proto.order
+            recipe.subgroup = {name="fluids", order="z", valid=true}
+            recipe.category = "offshore-pump"
+            recipe.energy = 1
+            recipe.ingredients = {}
+            recipe.products = {{type="fluid", name=proto.fluid.name, amount=60}}
+            recipe.main_product = recipe.products[1]
+
+            generator_util.format_recipe_products_and_ingredients(recipe)
+            ---@cast recipe FPRecipePrototype
+            generator_util.add_recipe_tooltip(recipe)
+            insert_prototype(recipes, recipe, nil)
+        end
+    end
+
     -- Add a general steam recipe that works with every boiler
     if game["fluid_prototypes"]["steam"] then  -- make sure the steam prototype exists
         local recipe = custom_recipe()
@@ -569,7 +581,7 @@ function generator.recipes.generate()
         recipe.order = "z-0"
         recipe.subgroup = {name="fluids", order="z", valid=true}
         recipe.energy = 1
-        recipe.ingredients = {{type="fluid", name="water", amount=60}}
+        recipe.ingredients = {{type="fluid", name="water", amount=60, ignore_productivity=false}}
         recipe.products = {{type="fluid", name="steam", amount=60}}
         recipe.main_product = recipe.products[1]
 
@@ -666,7 +678,7 @@ function generator.items.generate()
             if proto == nil then goto skip_item end
 
             local localised_name = generator_util.format_temperature_localised_name(item_details, proto)
-            if type == "entity" then localised_name = {"", localised_name, " ", {"fp.ore_deposit"}} end
+            if type == "entity" then localised_name = {"", localised_name, " ", {"fp.deposit"}} end
             local stack_size = (type == "item") and proto.stack_size or nil
             local order = (item_details.temperature) and (proto.order .. item_details.temperature) or proto.order
 
