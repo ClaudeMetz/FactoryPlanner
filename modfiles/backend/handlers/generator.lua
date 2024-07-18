@@ -68,7 +68,6 @@ end
 ---@field effect_receiver EffectReceiver?
 ---@field allowed_effects AllowedEffects
 ---@field module_limit integer
----@field launch_sequence_time number?
 ---@field burner MachineBurner?
 ---@field resource_drain_rate number?
 
@@ -170,7 +169,6 @@ function generator.machines.generate()
             effect_receiver = effect_receiver,
             allowed_effects = proto.allowed_effects or {},
             module_limit = (proto.module_inventory_size or 0),
-            launch_sequence_time = generator_util.determine_launch_sequence_time(proto),
             burner = burner
         }
         generator_util.check_machine_effects(machine)
@@ -408,18 +406,6 @@ function generator.recipes.generate()
     end
 
 
-    -- Determine all the items that can be inserted usefully into a rocket silo
-    --[[ local launch_products_filter = {{filter="has-rocket-launch-products"}}
-    local rocket_silo_inputs = {}  ---@type LuaItemPrototype[]
-    for _, item in pairs(game.get_filtered_item_prototypes(launch_products_filter)) do
-        if next(item.rocket_launch_products) then
-            table.insert(rocket_silo_inputs, item)
-        end
-    end
-
-    -- Localize them here so they don't have to be recreated over and over
-    local item_prototypes, recipe_prototypes = game.item_prototypes, game.recipe_prototypes ]]
-
     for _, proto in pairs(game.entity_prototypes) do
         -- Add all mining recipes. Only supports solids for now.
         if proto.mineable_properties and proto.resource_category then
@@ -466,47 +452,6 @@ function generator.recipes.generate()
             end
 
             ::incompatible_proto::
-
-        -- Detect all the implicit rocket silo recipes
-        --[[ elseif proto.rocket_parts_required ~= nil then
-            local fixed_recipe = recipe_prototypes[proto.fixed_recipe --[[@as string] ] ]
-            if fixed_recipe ~= nil then
-                -- Add recipe for all 'launchable' items
-                for _, silo_input in pairs(rocket_silo_inputs) do
-                    local silo_product = table_size(silo_input.rocket_launch_products) > 1
-                        and item_prototypes[silo_input.rocket_launch_products[1].name] or silo_input
-
-                    local recipe = custom_recipe()
-                    recipe.name = "impostor-silo-" .. proto.name .. "-item-" .. silo_input.name
-                    recipe.localised_name = silo_product.localised_name
-                    recipe.sprite = "item/" .. silo_product.name
-                    recipe.category = next(proto.crafting_categories, nil)  -- hopefully this stays working
-                    recipe.energy = fixed_recipe.energy * proto.rocket_parts_required --[[@as number] ]
-                    recipe.subgroup = {name="science-pack", order="g", valid=true}
-                    recipe.order = "x-silo-" .. proto.order .. "-" .. silo_input.order
-
-                    recipe.ingredients = fixed_recipe.ingredients
-                    for _, ingredient in pairs(recipe.ingredients) do
-                        ingredient.amount = ingredient.amount * proto.rocket_parts_required
-                    end
-                    table.insert(recipe.ingredients, {type="item", name=silo_input.name,
-                        amount=1, ignore_productivity=true})
-                    recipe.products = silo_input.rocket_launch_products
-                    recipe.main_product = recipe.products[1]
-
-                    generator_util.format_recipe_products_and_ingredients(recipe)
-                    ---@cast recipe FPRecipePrototype
-                    generator_util.add_recipe_tooltip(recipe)
-                    insert_prototype(recipes, recipe, nil)
-                end
-
-                -- Modify recipe for all rocket parts so they represent a full launch
-                -- This is needed so the launch sequence times can be incorporated correctly
-                local rocket_part_recipe = recipes[fixed_recipe.name]
-                if rocket_part_recipe then
-                    generator_util.multiply_recipe(rocket_part_recipe, proto.rocket_parts_required)
-                end
-            end ]]
         end
 
         -- Add a recipe for producing steam from a boiler

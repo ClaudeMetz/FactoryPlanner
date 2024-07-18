@@ -620,10 +620,6 @@ function matrix_engine.get_line_aggregate(line_data, player_index, floor_id, mac
     -- hacky workaround for recipes with zero energy - this really messes up the matrix
     if energy==0 then energy=0.000000001 end
     local time_per_craft = energy / (machine_speed * speed_multiplier)
-    local launch_sequence_time = machine_proto.launch_sequence_time
-    if launch_sequence_time then
-        time_per_craft = time_per_craft + launch_sequence_time
-    end
     local unmodified_crafts_per_second = 1 / time_per_craft
     local in_game_crafts_per_second = math.min(unmodified_crafts_per_second, 60)
     local total_crafts_per_timescale = timescale * machine_count * in_game_crafts_per_second

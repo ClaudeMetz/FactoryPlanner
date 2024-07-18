@@ -169,7 +169,7 @@ end
 
 
 -- Multiplies recipe products and ingredients by the given amount
----@param recipe_proto FPRecipePrototype
+--[[ ---@param recipe_proto FPRecipePrototype
 ---@param factor number
 function generator_util.multiply_recipe(recipe_proto, factor)
     ---@param item_list FormattedRecipeItem[]
@@ -185,9 +185,9 @@ function generator_util.multiply_recipe(recipe_proto, factor)
     multiply_items(recipe_proto.products)
     multiply_items(recipe_proto.ingredients)
     recipe_proto.energy = recipe_proto.energy * factor
-end
+end ]]
 
--- Adds the additional proto's ingredients, products and energy to the main proto
+--[[ -- Adds the additional proto's ingredients, products and energy to the main proto
 ---@param main_proto FPRecipePrototype
 ---@param additional_proto FPRecipePrototype
 function generator_util.combine_recipes(main_proto, additional_proto)
@@ -203,7 +203,7 @@ function generator_util.combine_recipes(main_proto, additional_proto)
     add_items_to_main_proto("products")
     add_items_to_main_proto("ingredients")
     main_proto.energy = main_proto.energy + additional_proto.energy
-end
+end ]]
 
 
 -- Active mods table needed for the funtions below
@@ -340,6 +340,8 @@ function generator_util.determine_entity_sprite(proto)
     return nil
 end
 
+-- NOTE this is wrong now that silos can have two rockets in progress at once
+--[[
 -- Determines how long a rocket takes to launch for the given rocket silo prototype
 -- These stages mirror the in-game progression and timing exactly. Most steps take an additional tick (+1)
 -- due to how the game code is written. If one stage is completed, you can only progress to the next one
@@ -372,7 +374,7 @@ function generator_util.determine_launch_sequence_time(silo_proto)
     end
 
     return (total_ticks / 60)  -- retured value is in seconds
-end
+end ]]
 
 
 ---@param proto FPMachinePrototype

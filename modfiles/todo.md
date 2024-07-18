@@ -11,10 +11,6 @@
 - Figure out how energy consumption and drain works in the new API
 - Check out how to handle emissions for different pollutant types? Do I just need to show all if applicable?
   - Only implemented `"pollution"` for now
-- Redo rocket handling now that they can't take specific items anymore, which hopefully is a simplification
-  - also there is rocket part productivity now
-- Rocket silo launch sequence time now works differently because you can have two rockets at a time
-  - still relevant, but only when you can build rockets faster than you launch them
 
 
 - Quality is kind of a lot
@@ -51,6 +47,9 @@
 - Should have the ability to manually configure recipe productivity boni somewhere
 - Fix more than one craft per tick being possible, instead of it being translated into productivity
 - Show offshore pump ingredients being the tile they need; requires larger refactoring probably
+- Add shorthand recipe for 1 complete rocket, instead of needing to add 50 parts. Hard part will be picking an icon for it
+- Note when rocket silo launch time becomes a problem for speed; it's not at lower speeds
+  - Is quite a complicated feature, especially when productivity is involved. Probably do need it though
 
 ## Ghetto Github Issues
 
