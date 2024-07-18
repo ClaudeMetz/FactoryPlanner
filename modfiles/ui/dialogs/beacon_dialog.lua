@@ -7,6 +7,7 @@ local function add_beacon_frame(parent_flow, modal_data)
     local beacon = modal_data.object
 
     local flow_beacon = parent_flow.add{type="frame", style="fp_frame_module", direction="horizontal"}
+    flow_beacon.style.width = MAGIC_NUMBERS.module_dialog_element_width
 
     flow_beacon.add{type="label", caption={"fp.pu_beacon", 1}, style="semibold_label"}
     local beacon_filter = {{filter="type", type="beacon"}, {filter="hidden", invert=true, mode="and"}}
@@ -27,7 +28,7 @@ local function add_beacon_frame(parent_flow, modal_data)
     modal_elements["beacon_amount"] = textfield_amount
 
     local label_profile = flow_beacon.add{type="label", tooltip={"fp.beacon_profile_tt"}}
-    label_profile.style.width = 60
+    label_profile.style.width = 64
     modal_elements["profile_label"] = label_profile
 
     flow_beacon.add{type="label", caption={"fp.info_label", {"fp.beacon_total"}}, tooltip={"fp.beacon_total_tt"},

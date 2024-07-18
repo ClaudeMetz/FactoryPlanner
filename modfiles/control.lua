@@ -26,7 +26,8 @@ MAGIC_NUMBERS = {
     recipes_per_row = 6,  -- Number of recipes per row in the recipe picker
     items_per_row = 10,  -- Number of items per row in the item picker
     groups_per_row = 6,  -- Number of groups in a row in the item picker
-    blueprint_limit = 12  -- Maxmimum number of blueprints allowed per factory
+    blueprint_limit = 12,  -- Maxmimum number of blueprints allowed per factory
+    module_dialog_element_width = 440  -- Width of machine and beacon dialog elements
 }
 
 CUSTOM_EVENTS = {

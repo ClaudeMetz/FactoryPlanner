@@ -171,8 +171,8 @@ function _gui.format_module_effects(module_effects, options)
         return value, ""  -- return value if nothing above hits
     end
 
-    local function format_effect(value, color)
-        if value == nil then return "" end
+    local function format_effect(name, value, color)
+        if value == nil or (value == 0 and not positive_only_effects[name]) then return "" end
         -- Force display of either a '+' or '-', also round the result
         local display_value = ("%+d"):format(math.floor((value * 100) + 0.5))
         return {"fp.effect_value", color, display_value}
@@ -189,9 +189,9 @@ function _gui.format_module_effects(module_effects, options)
             -- Limiting only for module effects, which is only used without any other effect types
             local limited_module_effect, indication = limit_effect(module_effect, effect_name)
 
-            local module_percentage = format_effect(limited_module_effect, "#FFE6C0")
-            local machine_percentage = format_effect(machine_effect, "#7CFF01")
-            local recipe_percentage = format_effect(recipe_effect, "#01FFF4")
+            local module_percentage = format_effect(effect_name, limited_module_effect, "#FFE6C0")
+            local machine_percentage = format_effect(effect_name, machine_effect, "#7CFF01")
+            local recipe_percentage = format_effect(effect_name, recipe_effect, "#01FFF4")
 
             if #tooltip_lines > 1 then table.insert(tooltip_lines, "\n") end
             table.insert(tooltip_lines, {"fp.effect_line", {"fp." .. effect_name}, module_percentage,
