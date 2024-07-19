@@ -8,7 +8,6 @@
 - Look into using the new sprite button definition style if that's a thing
   - Seems there might be nothing new, but disabling buttons now modifies their icon, which is undesirable in come cases
   - Use button's `auto_toggle` argument? Sounds really nice, in combination with `toggle` elsewhere maybe
-- Figure out how energy consumption and drain works in the new API
 - Check out how to handle emissions for different pollutant types? Do I just need to show all if applicable?
   - Only implemented `"pollution"` for now
 
