@@ -566,8 +566,7 @@ local function rebuild_compact_dialog(player, default_visibility)
 
     flow_title_bar.add{type="sprite-button", style="fp_button_frame", toggled=true,
         tags={mod="fp", on_gui_click="switch_to_main_view"}, tooltip={"fp.switch_to_main_view"},
-        sprite="fp_pin_dark", hovered_sprite="fp_pin_dark", clicked_sprite="fp_pin_light",
-        mouse_button_filter={"left"}}
+        sprite="fp_pin", mouse_button_filter={"left"}}
 
     flow_title_bar.add{type="label", caption={"mod-name.factoryplanner"}, style="fp_label_frame_title",
         ignored_by_interaction=true}
@@ -575,8 +574,8 @@ local function rebuild_compact_dialog(player, default_visibility)
         ignored_by_interaction=true}
 
     local button_close = flow_title_bar.add{type="sprite-button", tags={mod="fp", on_gui_click="close_compact_dialog"},
-        sprite="utility/close", hovered_sprite="utility/close_black", clicked_sprite="utility/close_black",
-        tooltip={"fp.close_interface"}, style="frame_action_button", mouse_button_filter={"left"}}
+        sprite="utility/close", tooltip={"fp.close_interface"}, style="frame_action_button",
+        mouse_button_filter={"left"}}
     button_close.style.padding = 1
 
     util.raise.build(player, "compact_factory", nil)

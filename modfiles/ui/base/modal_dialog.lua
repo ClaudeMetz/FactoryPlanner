@@ -34,7 +34,6 @@ local function create_base_modal_dialog(player, dialog_settings, modal_data)
 
             local search_button = flow_title_bar.add{type="sprite-button", tooltip={"fp.search_button_tt"},
                 tags={mod="fp", on_gui_click="focus_modal_searchfield"}, sprite="utility/search",
-                hovered_sprite="utility/search", clicked_sprite="utility/search",
                 style="frame_action_button", mouse_button_filter={"left"}}
             search_button.style.left_margin = 4
         end
@@ -52,8 +51,7 @@ local function create_base_modal_dialog(player, dialog_settings, modal_data)
         if not dialog_settings.show_submit_button then  -- add X-to-close button if this is not a submit dialog
             local close_button = flow_title_bar.add{type="sprite-button", tooltip={"fp.close_button_tt"},
                 tags={mod="fp", on_gui_click="close_modal_dialog", action="cancel"}, sprite="utility/close",
-                hovered_sprite="utility/close_black", clicked_sprite="utility/close_black", style="frame_action_button",
-                mouse_button_filter={"left"}}
+                style="frame_action_button", mouse_button_filter={"left"}}
             close_button.style.left_margin = 4
             close_button.style.padding = 1
         end

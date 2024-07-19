@@ -2,12 +2,11 @@
 
 ## Active
 
+- Check out any disabled type button styles, they go all transparent
+- Check out if using toggled in more places makes sense
 
 ## Any time
 
-- Look into using the new sprite button definition style if that's a thing
-  - Seems there might be nothing new, but disabling buttons now modifies their icon, which is undesirable in come cases
-  - Use button's `auto_toggle` argument? Sounds really nice, in combination with `toggle` elsewhere maybe
 
 - Quality is kind of a lot
   - Every place I need a property that can be influenced by quality, I can specify that quality.

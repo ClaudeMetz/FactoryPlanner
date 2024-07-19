@@ -157,7 +157,7 @@ local function refresh_production_box(player)
     if factory == nil then
         production_box_elements.instruction_label.caption = {"fp.production_instruction_factory"}
         production_box_elements.instruction_label.visible = true
-    elseif factory_valid and not any_lines_present then
+    elseif factory_valid and not factory.archived and not any_lines_present then
         if factory:count() == 0 then
             production_box_elements.instruction_label.caption = {"fp.production_instruction_product"}
             production_box_elements.instruction_label.visible = true
