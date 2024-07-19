@@ -13,7 +13,7 @@ local function set_blank_line(player, floor, line)
         line_id = line.id,
         machine_count = 0,
         energy_consumption = 0,
-        pollution = 0,
+        emissions = {},
         production_ratio = (line.class == "Line") and 0 or nil,
         uncapped_production_ratio = (line.class == "Line") and 0 or nil,
         Product = blank_class,
@@ -33,7 +33,7 @@ local function set_blank_factory(player, factory)
     solver.set_factory_result {
         player_index = player.index,
         energy_consumption = 0,
-        pollution = 0,
+        emissions = {},
         Product = product_class,
         Byproduct = blank_class,
         Ingredient = blank_class,
@@ -245,7 +245,7 @@ function solver.set_factory_result(result)
     local factory = player_table.active_factory
 
     factory.top_floor.power = result.energy_consumption
-    factory.top_floor.pollution = result.pollution
+    factory.top_floor.emissions = result.emissions
     factory.matrix_free_items = result.matrix_free_items
 
     -- If products are not present in the result, it means they have been produced
@@ -280,7 +280,7 @@ function solver.set_line_result(result)
     end
 
     line.power = result.energy_consumption
-    line.pollution = result.pollution
+    line.emissions = result.emissions
 
     if line.production_ratio == 0 and line.subfloor == nil then
         local recipe_proto = line.recipe_proto
@@ -309,14 +309,16 @@ end
 
 -- Determine the amount of machines needed to produce the given recipe in the given context
 function solver_util.determine_machine_count(crafts_per_tick, production_ratio, timescale)
-    crafts_per_tick = math.min(crafts_per_tick, 60)  -- crafts_per_tick need to be limited for these calculations
+    -- TODO this is probably unnessecary now?
+    --crafts_per_tick = math.min(crafts_per_tick, 60)  -- crafts_per_tick need to be limited for these calculations
     return production_ratio / (crafts_per_tick * timescale)
 end
 
 -- Calculates the production ratio that the given amount of machines would result in
 -- Formula derived from determine_machine_count(), isolating production_ratio and using machine_limit as machine_count
 function solver_util.determine_production_ratio(crafts_per_tick, machine_limit, timescale)
-    crafts_per_tick = math.min(crafts_per_tick, 60)  -- crafts_per_tick need to be limited for these calculations
+    -- TODO this is probably unnessecary now?
+    --crafts_per_tick = math.min(crafts_per_tick, 60)  -- crafts_per_tick need to be limited for these calculations
     return crafts_per_tick * machine_limit * timescale
 end
 
@@ -326,7 +328,7 @@ function solver_util.determine_prodded_amount(item, --[[ crafts_per_tick,  ]]tot
     local productivity = math.min(math.max(total_effects.productivity, 0), maximum_productivity)
     if productivity == 0 then return item.amount end
 
-    -- This conversion is likely unnessecary in 2.0, but we'll see
+    -- TODO This conversion is likely unnessecary in 2.0, but we'll see
     --if crafts_per_tick > 60 then productivity = ((1/60) * productivity) * crafts_per_tick end
 
     -- Return formula is a simplification of the following formula:
@@ -334,8 +336,8 @@ function solver_util.determine_prodded_amount(item, --[[ crafts_per_tick,  ]]tot
     return item.amount + (item.proddable_amount * productivity)
 end
 
--- Determines the amount of energy needed for a machine and the pollution that produces
-function solver_util.determine_energy_consumption_and_pollution(machine_proto, recipe_proto,
+-- Determines the amount of energy needed for a machine and the emissions that produces
+function solver_util.determine_energy_consumption_and_emissions(machine_proto, recipe_proto,
         fuel_proto, machine_count, total_effects)
     local consumption_multiplier = 1 + cap_effect(total_effects.consumption)
     local energy_consumption = machine_count * (machine_proto.energy_usage * 60) * consumption_multiplier
@@ -343,10 +345,17 @@ function solver_util.determine_energy_consumption_and_pollution(machine_proto, r
 
     local fuel_multiplier = (fuel_proto ~= nil) and fuel_proto.emissions_multiplier or 1
     local pollution_multiplier = 1 + cap_effect(total_effects.pollution)
-    local pollution = energy_consumption * machine_proto.emissions * pollution_multiplier
-        * fuel_multiplier * recipe_proto.emissions_multiplier
+    local total_multiplier = fuel_multiplier * pollution_multiplier * recipe_proto.emissions_multiplier
 
-    return (energy_consumption + drain), pollution
+    local emissions = {}  -- Emissions are per minute, so multiply everything by 60
+    for type, amount in pairs(machine_proto.emissions_per_joule) do
+        emissions[type] = energy_consumption * amount * total_multiplier * 60
+    end
+    for type, amount in pairs(machine_proto.emissions_per_second) do
+        emissions[type] = (emissions[type] or 0) + (machine_count * amount * total_multiplier * 60)
+    end
+
+    return (energy_consumption + drain), emissions
 end
 
 -- Determines the amount of fuel needed in the given context

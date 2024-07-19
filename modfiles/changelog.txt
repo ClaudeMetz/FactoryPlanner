@@ -5,8 +5,9 @@ Date: 00. 00. 0000
     - Updated the mod for Factorio 2.0 and the Space Age expansion. This means adoption to changes in existing systems and support for new systems, the most significant of which will be listed here.
   Changes:
     - Dropped Recipe Book support in favor of Factoriopedia, the new built-in recipe browser
-    - Changed the utility dialog function to request missing item delivery to create a new logistic section instead of having construction bots fulfill the order.
+    - Changed the utility dialog function to request missing item delivery to create a new logistic section instead of having construction bots fulfill the order
     - Added support for new module mechanics, like beacon profiles, machine base productivity, new productivity researches, maximum recipe productivity, and more
+    - Added support for the new kinds of pollution, dropping the dedicated pollution column in the production table
     - Updated to flib 2.0.0
   Bugfixes:
     - Various minor UI fixes and improvements

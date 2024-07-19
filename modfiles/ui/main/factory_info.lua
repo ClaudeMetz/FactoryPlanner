@@ -60,7 +60,7 @@ local function refresh_factory_info(player)
     factory_info_elements.repair_label.visible = invalid_factory_selected
 
     local valid_factory_selected = (factory and factory.valid) or false
-    factory_info_elements.power_pollution_flow.visible = valid_factory_selected
+    factory_info_elements.power_emissions_flow.visible = valid_factory_selected
     factory_info_elements.info_flow.visible = valid_factory_selected
 
     if factory == nil then return end
@@ -69,15 +69,14 @@ local function refresh_factory_info(player)
         factory_info_elements.repair_label.tooltip = util.porter.format_modset_diff(factory.last_valid_modset)
 
     elseif valid_factory_selected then  -- we need to refresh some stuff in this case
-        -- Power + Pollution
+        -- Power + Emissions
         local top_floor = factory.top_floor
         local label_power = factory_info_elements.power_label
         label_power.caption = {"fp.bold_label", util.format.SI_value(top_floor.power, "W", 3)}
         label_power.tooltip = util.format.SI_value(top_floor.power, "W", 5)
 
-        local label_pollution = factory_info_elements.pollution_label
-        label_pollution.caption = {"fp.bold_label", util.format.SI_value(top_floor.pollution, "P/m", 3)}
-        label_pollution.tooltip = util.format.SI_value(top_floor.pollution, "P/m", 5)
+        local label_emissions = factory_info_elements.emissions_label
+        label_emissions.tooltip = util.gui.format_emissions(top_floor.emissions)
 
         -- Timescale
         for _, button in pairs(factory_info_elements.timescales_table.children) do
@@ -113,15 +112,16 @@ local function build_factory_info(player)
     button_repair.style.margin = {2, 0, -2, 12}
     main_elements.factory_info["repair_button"] = button_repair
 
-    -- Power + Pollution
+    -- Power + Emissions
     flow_title.add{type="empty-widget", style="flib_horizontal_pusher"}
-    local flow_power_pollution = flow_title.add{type="flow", direction="horizontal"}
-    main_elements.factory_info["power_pollution_flow"] = flow_power_pollution
-    local label_power_value = flow_power_pollution.add{type="label"}
+    local flow_power_emissions = flow_title.add{type="flow", direction="horizontal"}
+    main_elements.factory_info["power_emissions_flow"] = flow_power_emissions
+    local label_power_value = flow_power_emissions.add{type="label"}
     main_elements.factory_info["power_label"] = label_power_value
-    flow_power_pollution.add{type="label", caption="|"}
-    local label_pollution_value = flow_power_pollution.add{type="label"}
-    main_elements.factory_info["pollution_label"] = label_pollution_value
+    flow_power_emissions.add{type="label", caption="|"}
+    local label_emissions_value = flow_power_emissions.add{type="label",
+        caption={"fp.info_label", {"fp.emissions_title"}}}
+    main_elements.factory_info["emissions_label"] = label_emissions_value
 
 
     -- Repair label

@@ -10,7 +10,7 @@ function structures.aggregate.init(player_index, floor_id)
         floor_id = floor_id,
         machine_count = 0,
         energy_consumption = 0,
-        pollution = 0,
+        emissions = {},
         production_ratio = nil,
         uncapped_production_ratio = nil,
         Product = structures.class.init(),
@@ -28,10 +28,16 @@ function structures.aggregate.subtract(aggregate, class_name, item, amount)
     structures.class.add(aggregate[class_name], item, -(amount or item.amount))
 end
 
+function structures.aggregate.add_emissions(aggregate, emissions)
+    for type, amount in pairs(emissions) do
+        aggregate.emissions[type] = (aggregate.emissions[type] or 0) + amount
+    end
+end
+
 -- Adds the first given aggregate to the second
 function structures.aggregate.add_aggregate(from_aggregate, to_aggregate)
     to_aggregate.energy_consumption = to_aggregate.energy_consumption + from_aggregate.energy_consumption
-    to_aggregate.pollution = to_aggregate.pollution + from_aggregate.pollution
+    structures.aggregate.add_emissions(to_aggregate, from_aggregate.emissions)
 
     for _, class in ipairs{"Product", "Byproduct", "Ingredient"} do
         for _, item in ipairs(structures.class.to_array(from_aggregate[class])) do

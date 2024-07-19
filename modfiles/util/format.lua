@@ -38,7 +38,7 @@ function _format.SI_value(value, unit, precision)
     local units = {
         ["W"] = {"fp.unit_watt"},
         ["J"] = {"fp.unit_joule"},
-        ["P/m"] = {"", {"fp.unit_pollution"}, "/", {"fp.unit_minute"}}
+        ["E/m"] = {"", {"fp.unit_emissions"}, "/", {"fp.unit_minute"}}
     }
 
     local sign = (value >= 0) and "" or "-"

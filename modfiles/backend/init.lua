@@ -28,7 +28,6 @@ require("backend.calculation.solver")
 ---@field ignore_recycling_recipes boolean
 ---@field done_column boolean
 ---@field percentage_column boolean
----@field pollution_column boolean
 ---@field line_comment_column boolean
 ---@field mb_defaults MBDefaults
 ---@field belts_or_lanes "belts" | "lanes"
@@ -83,7 +82,6 @@ function reload_preferences(player_table)
 
     reload("done_column", true)
     reload("percentage_column", false)
-    reload("pollution_column", false)
     reload("line_comment_column", false)
 
     reload("mb_defaults", {machine = nil, machine_secondary = nil, beacon = nil, beacon_count = nil})

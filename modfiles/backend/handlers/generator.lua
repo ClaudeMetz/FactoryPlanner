@@ -63,12 +63,13 @@ end
 ---@field energy_type "burner" | "electric" | "void"
 ---@field energy_usage double
 ---@field energy_drain double
----@field emissions double
+---@field emissions_per_joule EmissionsMap
+---@field emissions_per_second EmissionsMap
+---@field burner MachineBurner?
 ---@field built_by_item FPItemPrototype?
 ---@field effect_receiver EffectReceiver?
 ---@field allowed_effects AllowedEffects
 ---@field module_limit integer
----@field burner MachineBurner?
 ---@field resource_drain_rate number?
 
 ---@class FluidChannels
@@ -78,6 +79,8 @@ end
 ---@class MachineBurner
 ---@field effectivity double
 ---@field categories { [string]: boolean }
+
+---@alias EmissionsMap { [string]: double }
 
 -- Generates a table containing all machines for all categories
 ---@return NamedPrototypesWithCategory<FPMachinePrototype>
@@ -96,7 +99,7 @@ function generator.machines.generate()
         local speed = proto.crafting_categories and proto.get_crafting_speed() or proto.mining_speed
 
         -- Determine data related to the energy source
-        local energy_type, emissions = "", 0  -- emissions remain at 0 if no energy source is present
+        local energy_type, emissions_per_joule = "", {}  -- no emissions if no energy source is present
         local burner = nil  ---@type MachineBurner
         local energy_usage, energy_drain = (proto.energy_usage or proto.get_max_energy_usage() or 0), 0
 
@@ -108,13 +111,13 @@ function generator.machines.generate()
         local burner_prototype, fluid_burner_prototype = proto.burner_prototype, proto.fluid_energy_source_prototype
         if burner_prototype then
             energy_type = "burner"
-            emissions = burner_prototype.emissions_per_joule["pollution"]
+            emissions_per_joule = burner_prototype.emissions_per_joule
             burner = {effectivity = burner_prototype.effectivity, categories = burner_prototype.fuel_categories}
 
         -- Only supports fluid energy that burns_fluid for now, as it works the same way as solid burners
         -- Also doesn't respect scale_fluid_usage and fluid_usage_per_tick for now, let the reports come
         elseif fluid_burner_prototype then
-            emissions = fluid_burner_prototype.emissions_per_joule["pollution"]
+            emissions_per_joule = fluid_burner_prototype.emissions_per_joule
 
             if fluid_burner_prototype.burns_fluid and not fluid_burner_prototype.fluid_box.filter then
                 energy_type = "burner"
@@ -127,11 +130,11 @@ function generator.machines.generate()
         elseif proto.electric_energy_source_prototype then
             energy_type = "electric"
             energy_drain = proto.electric_energy_source_prototype.drain
-            emissions = proto.electric_energy_source_prototype.emissions_per_joule["pollution"]
+            emissions_per_joule = proto.electric_energy_source_prototype.emissions_per_joule
 
         elseif proto.void_energy_source_prototype then
             energy_type = "void"
-            emissions = proto.void_energy_source_prototype.emissions_per_joule["pollution"]
+            emissions_per_joule = proto.void_energy_source_prototype.emissions_per_joule
         end
 
         -- Determine fluid input/output channels
@@ -164,12 +167,13 @@ function generator.machines.generate()
             energy_type = energy_type,
             energy_usage = energy_usage,
             energy_drain = energy_drain,
-            emissions = emissions,
+            emissions_per_joule = emissions_per_joule,
+            emissions_per_second = proto.emissions_per_second or {},
+            burner = burner,
             built_by_item = built_by_item,
             effect_receiver = effect_receiver,
             allowed_effects = proto.allowed_effects or {},
             module_limit = (proto.module_inventory_size or 0),
-            burner = burner
         }
         generator_util.check_machine_effects(machine)
 
