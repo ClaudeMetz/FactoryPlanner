@@ -35,8 +35,7 @@ local function build_title_bar(player)
 
     local button_switch = flow_title_bar.add{type="sprite-button", style="frame_action_button",
         tags={mod="fp", on_gui_click="switch_to_compact_view"}, tooltip={"fp.switch_to_compact_view"},
-        sprite="fp_pin_light", hovered_sprite="fp_pin_dark", clicked_sprite="fp_pin_dark",
-        mouse_button_filter={"left"}}
+        sprite="fp_pin", mouse_button_filter={"left"}}
     main_elements.title_bar["switch_button"] = button_switch
 
     flow_title_bar.add{type="label", caption={"mod-name.factoryplanner"}, style="fp_label_frame_title",
@@ -62,8 +61,8 @@ local function build_title_bar(player)
     button_pause.toggled = (preferences.pause_on_interface)
 
     local button_close = flow_title_bar.add{type="sprite-button", tags={mod="fp", on_gui_click="close_main_dialog"},
-        sprite="utility/close", hovered_sprite="utility/close_black", clicked_sprite="utility/close_black",
-        tooltip={"fp.close_interface"}, style="frame_action_button", mouse_button_filter={"left"}}
+        sprite="utility/close", tooltip={"fp.close_interface"}, style="frame_action_button",
+        mouse_button_filter={"left"}}
     button_close.style.padding = 1
 
     refresh_title_bar(player)

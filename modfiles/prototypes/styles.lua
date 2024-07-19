@@ -248,6 +248,12 @@ styles["fp_button_fake_listbox_item"] = {
     default_vertical_offset = styles.button.selected_vertical_offset
 }
 
+styles["fp_sprite-button_move"] = {
+    type = "button_style",
+    parent = "list_box_item",
+    invert_colors_of_picture_when_hovered_or_toggled = true
+}
+
 -- Generate smaller versions of flib's slot buttons (size 36)
 for _, color in pairs{"default", "grey", "red", "orange", "yellow", "green", "cyan", "blue", "purple", "pink"} do
     styles["flib_slot_button_" .. color .. "_small"] = {
