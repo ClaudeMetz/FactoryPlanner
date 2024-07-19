@@ -9,7 +9,6 @@ local function generate_metadata(player, factory)
         matrix_solver_active = (factory.matrix_free_items ~= nil),
         fold_out_subfloors = preferences.fold_out_subfloors,
         round_button_numbers = preferences.round_button_numbers,
-        pollution_column = preferences.pollution_column,
         ingredient_satisfaction = preferences.ingredient_satisfaction,
         view_state_metadata = view_state.generate_metadata(player, factory),
         tooltips = tooltips.production_table
@@ -231,16 +230,11 @@ function builders.beacon(line, parent_flow, metadata)
     end
 end
 
-function builders.power(line, parent_flow, metadata)
-    local pollution_line = (metadata.pollution_column) and ""
-        or {"", "\n", {"fp.pollution"}, ": ", util.format.SI_value(line.pollution, "P/m", 5)}
-    parent_flow.add{type="label", caption=util.format.SI_value(line.power, "W", 3),
-        tooltip={"", util.format.SI_value(line.power, "W", 5), pollution_line}}
-end
-
-function builders.pollution(line, parent_flow, _)
-    parent_flow.add{type="label", caption=util.format.SI_value(line.pollution, "P/m", 3),
-        tooltip=util.format.SI_value(line.pollution, "P/m", 5)}
+function builders.power(line, parent_flow, _)
+    local tooltip = {"", util.format.SI_value(line.power, "W", 5)}
+    local emissions_list = util.gui.format_emissions(line.emissions)
+    if #emissions_list > 1 then table.insert(tooltip, {"", "\n\n", {"fp.emissions_title"}, "\n", emissions_list}) end
+    parent_flow.add{type="label", caption=util.format.SI_value(line.power, "W", 3), tooltip=tooltip}
 end
 
 function builders.products(line, parent_flow, metadata)
@@ -384,7 +378,6 @@ local all_production_columns = {
     {name="machine", caption={"fp.pu_machine", 1}, alignment="left"},
     {name="beacon", caption={"fp.pu_beacon", 1}, alignment="left"},
     {name="power", caption={"fp.u_power"}, alignment="center"},
-    {name="pollution", caption={"fp.pollution"}, alignment="center"},
     {name="products", caption={"fp.pu_product", 2}, alignment="left"},
     {name="byproducts", caption={"fp.pu_byproduct", 2}, alignment="left"},
     {name="ingredients", caption={"fp.pu_ingredient", 2}, alignment="left"},

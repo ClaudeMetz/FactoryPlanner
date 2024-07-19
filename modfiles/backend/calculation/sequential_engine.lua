@@ -123,9 +123,9 @@ local function update_line(line_data, aggregate)
     aggregate.machine_count = aggregate.machine_count + math.ceil(machine_count - 0.001)
 
 
-    -- Determine energy consumption (including potential fuel needs) and pollution
+    -- Determine energy consumption (including potential fuel needs) and emissions
     local fuel_proto = line_data.fuel_proto
-    local energy_consumption, pollution = solver_util.determine_energy_consumption_and_pollution(
+    local energy_consumption, emissions = solver_util.determine_energy_consumption_and_emissions(
         machine_proto, recipe_proto, fuel_proto, machine_count, total_effects)
 
     local fuel_amount = nil
@@ -150,7 +150,7 @@ local function update_line(line_data, aggregate)
     energy_consumption = energy_consumption + line_data.beacon_consumption
 
     aggregate.energy_consumption = aggregate.energy_consumption + energy_consumption
-    aggregate.pollution = aggregate.pollution + pollution
+    structures.aggregate.add_emissions(aggregate, emissions)
 
 
     -- Update the actual line with the calculated results
@@ -160,7 +160,7 @@ local function update_line(line_data, aggregate)
         line_id = line_data.id,
         machine_count = machine_count,
         energy_consumption = energy_consumption,
-        pollution = pollution,
+        emissions = emissions,
         production_ratio = production_ratio,
         uncapped_production_ratio = uncapped_production_ratio,
         Product = Product,
@@ -210,7 +210,7 @@ local function update_floor(floor_data, aggregate)
             -- Update the main aggregate with the results
             aggregate.machine_count = aggregate.machine_count + subfloor_aggregate.machine_count
             aggregate.energy_consumption = aggregate.energy_consumption + subfloor_aggregate.energy_consumption
-            aggregate.pollution = aggregate.pollution + subfloor_aggregate.pollution
+            structures.aggregate.add_emissions(aggregate, subfloor_aggregate.emissions)
 
             -- Subtract subfloor products as produced
             for _, item in ipairs(structures.class.to_array(subfloor_aggregate.Product)) do
@@ -228,7 +228,7 @@ local function update_floor(floor_data, aggregate)
                 line_id = line_data.id,
                 machine_count = subfloor_aggregate.machine_count,
                 energy_consumption = subfloor_aggregate.energy_consumption,
-                pollution = subfloor_aggregate.pollution,
+                emissions = subfloor_aggregate.emissions,
                 production_ratio = nil,
                 uncapped_production_ratio = nil,
                 Product = subfloor_aggregate.Product,
@@ -272,7 +272,7 @@ function sequential_engine.update_factory(factory_data)
     solver.set_factory_result {
         player_index = factory_data.player_index,
         energy_consumption = aggregate.energy_consumption,
-        pollution = aggregate.pollution,
+        emissions = aggregate.emissions,
         Product = aggregate.Product,
         Byproduct = aggregate.Byproduct,
         Ingredient = aggregate.Ingredient

@@ -387,7 +387,7 @@ function matrix_engine.run_matrix_solver(factory_data, check_linear_dependence)
                 line_id = line.id,
                 machine_count = line_aggregate.machine_count,
                 energy_consumption = line_aggregate.energy_consumption,
-                pollution = line_aggregate.pollution,
+                emissions = line_aggregate.emissions,
                 production_ratio = line_aggregate.production_ratio,
                 uncapped_production_ratio = line_aggregate.uncapped_production_ratio,
                 Product = line_aggregate.Product,
@@ -432,7 +432,7 @@ function matrix_engine.run_matrix_solver(factory_data, check_linear_dependence)
     solver.set_factory_result {
         player_index = factory_data.player_index,
         energy_consumption = top_floor_aggregate.energy_consumption,
-        pollution = top_floor_aggregate.pollution,
+        emissions = top_floor_aggregate.emissions,
         Product = main_aggregate.Product,
         Byproduct = main_aggregate.Byproduct,
         Ingredient = main_aggregate.Ingredient,
@@ -645,9 +645,9 @@ function matrix_engine.get_line_aggregate(line_data, player_index, floor_id, mac
             amount * total_crafts_per_timescale * mining_drain_rate)
     end
 
-    -- Determine energy consumption (including potential fuel needs) and pollution
+    -- Determine energy consumption (including potential fuel needs) and emissions
     local fuel_proto = line_data.fuel_proto
-    local energy_consumption, pollution = solver_util.determine_energy_consumption_and_pollution(
+    local energy_consumption, emissions = solver_util.determine_energy_consumption_and_emissions(
         line_data.machine_proto, line_data.recipe_proto, line_data.fuel_proto, machine_count, line_data.total_effects)
 
     local fuel_amount = nil
@@ -667,7 +667,7 @@ function matrix_engine.get_line_aggregate(line_data, player_index, floor_id, mac
     end
 
     line_aggregate.energy_consumption = energy_consumption
-    line_aggregate.pollution = pollution
+    line_aggregate.emissions = emissions
 
     matrix_engine.consolidate(line_aggregate)
 

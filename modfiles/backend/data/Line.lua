@@ -24,7 +24,7 @@ local SimpleItems = require("backend.data.SimpleItems")
 ---@field byproducts SimpleItems
 ---@field ingredients SimpleItems
 ---@field power number
----@field pollution number
+---@field emissions Emissions
 ---@field production_ratio number?
 ---@field uncapped_production_ratio number?
 local Line = Object.methods()
@@ -52,7 +52,7 @@ local function init(recipe_proto, production_type)
         total_effects = nil,
         effects_tooltip = "",
         power = 0,
-        pollution = 0,
+        emissions = {},
         production_ratio = 0,
         uncapped_production_ratio = 0
     }, "Line", Line)  --[[@as Line]]

@@ -139,10 +139,8 @@ end
 ---@param machine FPMachinePrototype
 ---@return LocalisedString
 function attribute_generators.machines(machine)
-    local pollution = machine.energy_usage * (machine.emissions * 60) * 60
     return {"", {"fp.attribute_line", {"fp.crafting_speed"}, util.format.number(machine.speed, 3)},
            {"fp.attribute_line", {"fp.u_power"}, util.format.SI_value(machine.energy_usage * 60, "W", 3)},
-           {"fp.attribute_line", {"fp.pollution"}, {"", util.format.SI_value(pollution, "P/m", 3)}},
            {"fp.attribute_line", {"fp.module_slots"}, machine.module_limit}}
 end
 

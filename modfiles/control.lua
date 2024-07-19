@@ -80,3 +80,4 @@ DEV_EXPORT_STRING = "eNrtWV9v2jAQ/ypTngkjaZk6pL1saqVJmzStjxWKHOdCvdlxZjuoCPHdd05
 ---@alias AllowedEffects { [string]: boolean }
 ---@alias ItemType string
 ---@alias ItemName string
+---@alias Emissions { [string]: double }
