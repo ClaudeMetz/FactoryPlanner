@@ -98,7 +98,7 @@ function generator.machines.generate()
         -- Determine data related to the energy source
         local energy_type, emissions = "", 0  -- emissions remain at 0 if no energy source is present
         local burner = nil  ---@type MachineBurner
-        local energy_usage, energy_drain = (proto.energy_usage or proto.active_energy_usage or 0), 0
+        local energy_usage, energy_drain = (proto.energy_usage or proto.get_max_energy_usage() or 0), 0
 
         -- Determine the name of the item that actually builds this machine for the item requester
         -- There can technically be more than one, but bots use the first one, so I do too
@@ -905,7 +905,7 @@ function generator.beacons.generate()
                 module_limit = proto.module_inventory_size,
                 effectivity = proto.distribution_effectivity,
                 profile = proto.profile,
-                energy_usage = proto.energy_usage or proto.max_energy_usage or 0
+                energy_usage = proto.energy_usage or proto.get_max_energy_usage() or 0
             }
             insert_prototype(beacons, beacon, nil)
         end
