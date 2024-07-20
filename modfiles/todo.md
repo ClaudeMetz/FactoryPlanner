@@ -8,7 +8,6 @@
 ## Any time
 
 - Use new, fainter table/frame style for preferences prototypes etc like in Factoriopedia
-- Fix more than one craft per tick being possible, instead of it being translated into productivity
 - Quality is kind of a lot
   - Every place I need a property that can be influenced by quality, I can specify that quality.
   - So theoretically every place I use such a prototype I could offer a choice of which prototype to use.
