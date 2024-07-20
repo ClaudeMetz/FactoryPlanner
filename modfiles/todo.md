@@ -7,7 +7,8 @@
 
 ## Any time
 
-
+- Use new, fainter table/frame style for preferences prototypes etc like in Factoriopedia
+- Fix more than one craft per tick being possible, instead of it being translated into productivity
 - Quality is kind of a lot
   - Every place I need a property that can be influenced by quality, I can specify that quality.
   - So theoretically every place I use such a prototype I could offer a choice of which prototype to use.
@@ -40,7 +41,6 @@
   - Saves me the hassle of generating them and automatically has the information people expect
 - Need indication of cyclic recipes finally, used a lot on the space platform
 - Should have the ability to manually configure recipe productivity boni somewhere
-- Fix more than one craft per tick being possible, instead of it being translated into productivity
 - Show offshore pump ingredients being the tile they need; requires larger refactoring probably
 - Add shorthand recipe for 1 complete rocket, instead of needing to add 50 parts. Hard part will be picking an icon for it
 - Note when rocket silo launch time becomes a problem for speed; it's not at lower speeds

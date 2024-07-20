@@ -164,6 +164,7 @@ function elements.choose_elem_button.create(table, field, modal_elements)
     local choose_elem_button = table.add{type="choose-elem-button",
         tags={mod="fp", on_gui_elem_changed="change_option", field_name=field.name},
         elem_type=field.elem_type, style="fp_sprite-button_inset"}
+    choose_elem_button.style.size = 40
     choose_elem_button.elem_value = field.elem_value
 
     modal_elements[field.name] = choose_elem_button

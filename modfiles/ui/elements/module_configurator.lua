@@ -21,16 +21,17 @@ local function add_module_frame(parent_flow, module, module_filters, empty_slots
     local module_name = (module) and module.proto.name or nil
     local button_module = frame_module.add{type="choose-elem-button", name="fp_chooser_module", elem_type="item",
         item=module_name, tags={mod="fp", on_gui_elem_changed="select_module", module_id=module_id},
-        elem_filters=module_filters, style="fp_sprite-button_inset_tiny"}
+        elem_filters=module_filters, style="fp_sprite-button_inset"}
     button_module.style.right_margin = 12
 
     frame_module.add{type="label", caption={"fp.amount"}, style="semibold_label"}
 
     local slider_value, maximum_value, minimum_value = determine_slider_config(module, empty_slots)
-    local slider_style = (maximum_value == 1) and "fp_slider_module_none" or "fp_slider_module"
-    local slider = frame_module.add{type="slider", name="fp_slider_module_amount", style=slider_style,
+    local slider = frame_module.add{type="slider", name="fp_slider_module_amount",
         tags={mod="fp", on_gui_value_changed="module_amount", module_id=module_id},
         minimum_value=minimum_value, maximum_value=maximum_value, value=slider_value, value_step=0.1}
+    slider.style.horizontally_stretchable = true
+    slider.style.margin = {0, 6}
     -- Fix for the slider value step "not bug" (see https://forums.factorio.com/viewtopic.php?p=516440#p516440)
     -- Fixed by setting step to something other than 1 first, then setting it to 1
     slider.set_slider_value_step(1)
@@ -173,7 +174,6 @@ function module_configurator.refresh_modules_flow(player, update_only)
                     slider.slider_value = slider_value
                     slider.set_slider_value_step(1)  -- bug workaround
                     slider.enabled = (maximum_value ~= 1)
-                    slider.style = (maximum_value == 1) and "fp_slider_module_none" or "fp_slider_module"
                 end
             end
             ::skip::

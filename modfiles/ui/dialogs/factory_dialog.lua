@@ -13,7 +13,8 @@ local function open_factory_dialog(player, modal_data)
     local modal_elements = modal_data.modal_elements
     local content_frame = modal_elements.content_frame
 
-    local flow_name = content_frame.add{type="flow", direction="horizontal", style="fp_flow_horizontal_centered"}
+    local flow_name = content_frame.add{type="flow", direction="horizontal"}
+    flow_name.style.vertical_align = "center"
     flow_name.add{type="label", caption={"fp.info_label", {"fp.factory_dialog_name"}},
         tooltip={"fp.factory_dialog_name_tt"}}
 
@@ -21,6 +22,7 @@ local function open_factory_dialog(player, modal_data)
     local textfield_name = flow_name.add{type="textfield", text=factory_name,
         tags={mod="fp", on_gui_text_changed="factory_name"}, icon_selector=true}
     textfield_name.style.width = 250
+    textfield_name.style.left_margin = 16
     textfield_name.focus()
     modal_elements["factory_name"] = textfield_name
 
