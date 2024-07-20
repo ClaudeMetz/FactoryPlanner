@@ -2,6 +2,16 @@
 Version: 0.00.00
 Date: 00. 00. 0000
   Features:
+    - 
+  Changes:
+    - 
+  Bugfixes:
+    - 
+
+---------------------------------------------------------------------------------------------------
+Version: 1.2.1
+Date: 20. 07. 2024
+  Features:
     - Updated the mod for Factorio 2.0 and the Space Age expansion. This means adoption to changes in existing systems and support for new systems, the most significant of which will be listed here.
   Changes:
     - Dropped Recipe Book support in favor of Factoriopedia, the new built-in recipe browser
