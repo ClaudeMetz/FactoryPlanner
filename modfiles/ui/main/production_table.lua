@@ -89,7 +89,7 @@ function builders.recipe(line, parent_flow, metadata, indent)
     local style, enabled, tutorial_tooltip = nil, true, ""
     local note = ""  ---@type LocalisedString
     if first_subfloor_line then
-        style = "flib_slot_button_grey_small"
+        style = "flib_slot_button_transparent_small"
         enabled = false  -- first subfloor line is static
     else
         style = (relevant_line.active) and "flib_slot_button_default_small" or "flib_slot_button_red_small"
@@ -188,7 +188,7 @@ function builders.machine(line, parent_flow, metadata)
                 local module_tooltip = {"", {"fp.add_machine_module"}, "\n", {"fp.shift_to_paste"}}
                 local module_button = parent_flow.add{type="sprite-button", sprite="utility/add",
                     tooltip=module_tooltip, tags={mod="fp", on_gui_click="add_machine_module", machine_id=machine.id},
-                    style="fp_sprite-button_inset_add", mouse_button_filter={"left"},
+                    style="fp_sprite-button_inset", mouse_button_filter={"left"},
                     enabled=(not metadata.archive_open)}
                 module_button.style.margin = 2
                 module_button.style.padding = 4
@@ -204,7 +204,7 @@ function builders.beacon(line, parent_flow, metadata)
     if beacon == nil then
         local tooltip = {"", {"fp.add_beacon"}, "\n", {"fp.shift_to_paste"}}
         local button = parent_flow.add{type="sprite-button", sprite="utility/add", tooltip=tooltip,
-            tags={mod="fp", on_gui_click="add_line_beacon", line_id=line.id}, style="fp_sprite-button_inset_add",
+            tags={mod="fp", on_gui_click="add_line_beacon", line_id=line.id}, style="fp_sprite-button_inset",
             mouse_button_filter={"left"}, enabled=(not metadata.archive_open)}
         button.style.margin = 2
         button.style.padding = 4

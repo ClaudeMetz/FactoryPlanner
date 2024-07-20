@@ -106,7 +106,7 @@ local function build_factory_info(player)
 
     -- Repair button
     local button_repair = flow_title.add{type="button", tags={mod="fp", on_gui_click="repair_factory"},
-        caption={"fp.repair_factory"}, style="fp_button_rounded_mini", mouse_button_filter={"left"}}
+        caption={"fp.repair_factory"}, style="rounded_button", mouse_button_filter={"left"}}
     button_repair.style.height = 20
     button_repair.style.top_padding = -2
     button_repair.style.margin = {2, 0, -2, 12}
@@ -150,9 +150,9 @@ local function build_factory_info(player)
 
     for scale, name in pairs(TIMESCALE_MAP) do
         local button = table_timescales.add{type="button", caption={"", "1", {"fp.unit_" .. name}},
-            tags={mod="fp", on_gui_click="change_timescale", timescale=scale},
-            style="fp_button_push", mouse_button_filter={"left"}}
-        button.style.width = 42
+            tags={mod="fp", on_gui_click="change_timescale", timescale=scale}, mouse_button_filter={"left"}}
+        button.style.size = {42, 26}
+        button.style.padding = 0
     end
 
     -- Solver Choice

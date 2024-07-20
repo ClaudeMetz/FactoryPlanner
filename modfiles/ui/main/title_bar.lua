@@ -33,7 +33,7 @@ local function build_title_bar(player)
         tags={mod="fp", on_gui_click="re-center_main_dialog"}}
     flow_title_bar.drag_target = main_elements.main_frame
 
-    local button_switch = flow_title_bar.add{type="sprite-button", style="frame_action_button",
+    local button_switch = flow_title_bar.add{type="sprite-button", style="fp_button_frame",
         tags={mod="fp", on_gui_click="switch_to_compact_view"}, tooltip={"fp.switch_to_compact_view"},
         sprite="fp_pin", mouse_button_filter={"left"}}
     main_elements.title_bar["switch_button"] = button_switch
@@ -61,7 +61,7 @@ local function build_title_bar(player)
     button_pause.toggled = (preferences.pause_on_interface)
 
     local button_close = flow_title_bar.add{type="sprite-button", tags={mod="fp", on_gui_click="close_main_dialog"},
-        sprite="utility/close", tooltip={"fp.close_interface"}, style="frame_action_button",
+        sprite="utility/close", tooltip={"fp.close_interface"}, style="fp_button_frame",
         mouse_button_filter={"left"}}
     button_close.style.padding = 1
 

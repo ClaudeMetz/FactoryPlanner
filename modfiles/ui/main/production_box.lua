@@ -205,7 +205,7 @@ local function build_production_box(player)
     local button_floor_top = subheader.add{type="sprite-button", sprite="fp_arrow_line_bar_up",
         tooltip={"fp.floor_top_tt"}, tags={mod="fp", on_gui_click="change_floor", destination="top"},
         style="fp_sprite-button_rounded_mini", mouse_button_filter={"left"}}
-        button_floor_top.style.padding = {3, 2, 1, 2}
+    button_floor_top.style.padding = {3, 2, 1, 2}
     main_elements.production_box["floor_top_button"] = button_floor_top
 
     local separator = subheader.add{type="line", direction="vertical"}
@@ -214,7 +214,9 @@ local function build_production_box(player)
 
     local button_utility_dialog = subheader.add{type="button", caption={"fp.utilities"},
         tooltip={"fp.utility_dialog_tt"}, tags={mod="fp", on_gui_click="open_utility_dialog"},
-        style="fp_button_rounded_mini", mouse_button_filter={"left"}}
+        style="rounded_button", mouse_button_filter={"left"}}
+    button_utility_dialog.style.minimal_width = 0
+    button_utility_dialog.style.height = 26
     main_elements.production_box["utility_dialog_button"] = button_utility_dialog
 
     subheader.add{type="empty-widget", style="flib_horizontal_pusher"}
@@ -230,8 +232,9 @@ local function build_production_box(player)
     main_elements.production_box["production_table_flow"] = flow_production_table
 
     local button_paste = frame_vertical.add{type="button", caption={"fp.paste_line"}, tooltip={"fp.paste_line_tt"},
-        style="fp_button_rounded_mini", tags={mod="fp", on_gui_click="paste_line"}, mouse_button_filter={"left"}}
+        style="rounded_button", tags={mod="fp", on_gui_click="paste_line"}, mouse_button_filter={"left"}}
     button_paste.style.margin = {6, 12}
+    button_paste.style.minimal_width = 0
     main_elements.production_box["paste_button"] = button_paste
 
     frame_vertical.add{type="empty-widget", style="flib_vertical_pusher"}

@@ -61,7 +61,7 @@ local function add_item_picker(parent_flow, player)
 
     -- Item picker (optimized for performance, so not everything is done in the obvious way)
     local groups_per_row = MAGIC_NUMBERS.groups_per_row
-    local table_item_groups = parent_flow.add{type="table", style="fp_table_item_groups", column_count=groups_per_row}
+    local table_item_groups = parent_flow.add{type="table", column_count=groups_per_row}
     table_item_groups.style.width = 71 * groups_per_row
     table_item_groups.style.horizontal_spacing = 0
     table_item_groups.style.vertical_spacing = 0
@@ -281,7 +281,7 @@ local function add_item_pane(parent_flow, modal_data, item_category, item)
     local flow_amount = create_flow()
     flow_amount.add{type="label", caption={"fp.pu_" .. item_category, 1}}
 
-    local item_choice_button = flow_amount.add{type="sprite-button", style="fp_sprite-button_inset_tiny"}
+    local item_choice_button = flow_amount.add{type="sprite-button", style="fp_sprite-button_inset"}
     item_choice_button.style.right_margin = 12
     modal_elements["item_choice_button"] = item_choice_button
 
@@ -311,7 +311,7 @@ local function add_item_pane(parent_flow, modal_data, item_category, item)
     local belt_filter = {{filter="type", type="transport-belt"}, {filter="hidden", invert=true, mode="and"}}
     local choose_belt_button = flow_belts.add{type="choose-elem-button", elem_type="entity",
         tags={mod="fp", on_gui_elem_changed="picker_choose_belt"}, elem_filters=belt_filter,
-        style="fp_sprite-button_inset_tiny"}
+        style="fp_sprite-button_inset"}
     modal_elements["belt_choice_button"] = choose_belt_button
 
 

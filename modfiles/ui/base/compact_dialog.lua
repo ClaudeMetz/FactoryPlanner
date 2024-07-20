@@ -337,6 +337,7 @@ local function build_compact_factory(player)
     local button_floor_top = flow_navigation.add{type="sprite-button", sprite="fp_arrow_line_bar_up",
         tooltip={"fp.floor_top_tt"}, tags={mod="fp", on_gui_click="change_compact_floor", destination="top"},
         style="fp_sprite-button_rounded_mini", mouse_button_filter={"left"}}
+    button_floor_top.style.padding = {3, 2, 1, 2}
     compact_elements["floor_top_button"] = button_floor_top
 
     -- Production table
@@ -574,8 +575,7 @@ local function rebuild_compact_dialog(player, default_visibility)
         ignored_by_interaction=true}
 
     local button_close = flow_title_bar.add{type="sprite-button", tags={mod="fp", on_gui_click="close_compact_dialog"},
-        sprite="utility/close", tooltip={"fp.close_interface"}, style="frame_action_button",
-        mouse_button_filter={"left"}}
+        sprite="utility/close", tooltip={"fp.close_interface"}, style="fp_button_frame", mouse_button_filter={"left"}}
     button_close.style.padding = 1
 
     util.raise.build(player, "compact_factory", nil)
