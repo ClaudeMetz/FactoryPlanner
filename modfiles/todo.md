@@ -2,12 +2,9 @@
 
 ## Active
 
-- Check out any disabled type button styles, they go all transparent
-- Check out if using toggled in more places makes sense
 
 ## Any time
 
-- Use new, fainter table/frame style for preferences prototypes etc like in Factoriopedia
 - Quality is kind of a lot
   - Every place I need a property that can be influenced by quality, I can specify that quality.
   - So theoretically every place I use such a prototype I could offer a choice of which prototype to use.
@@ -25,6 +22,7 @@
 - Uncomment all the `.hidden` uses that were missing from the API
 - Constant combinator `sections` format rename
 - API to open things in Factoriopedia
+- Disabled sprite buttons fade their icons, can't be turned off?
 
 ## Release
 

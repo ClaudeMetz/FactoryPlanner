@@ -2,15 +2,44 @@
 
 local styles = data.raw["gui-style"].default
 
-styles["fp_frame_deep_slots_small"] = {
+styles["fp_naked_frame"] = {
     type = "frame_style",
-    parent = "slot_button_deep_frame",
-    background_graphical_set = deep_slot_background_tiling(36, 36)
+    parent = "frame",
+    padding = 0,
+    graphical_set = {}
 }
 
-styles["fp_table_filter_slot_small"] = {
+local function light_slots(size)
+    return {
+        position = {256, 136},
+        corner_size = 16,
+        overall_tiling_vertical_size = size - 12,
+        overall_tiling_horizontal_size = size - 12,
+        overall_tiling_vertical_spacing = 12,
+        overall_tiling_horizontal_spacing = 12,
+        overall_tiling_vertical_padding = 6,
+        overall_tiling_horizontal_padding = 6
+    }
+end
+
+styles["fp_frame_light_slots"] = {
+    type = "frame_style",
+    parent = "fp_naked_frame",
+    background_graphical_set = light_slots(40)
+}
+
+-- normal slots table is called filter_slot_table
+
+styles["fp_frame_light_slots_small"] = {
+    type = "frame_style",
+    parent = "fp_naked_frame",
+    background_graphical_set = light_slots(36)
+}
+
+styles["fp_table_slots_small"] = {
     type = "table_style",
-    parent = "filter_slot_table",
+    parent = "slot_table",
+    wide_as_column_count = true,
     column_widths = {
         width = 36
     }
@@ -19,7 +48,6 @@ styles["fp_table_filter_slot_small"] = {
 styles["fp_frame_bordered_stretch"] = {
     type = "frame_style",
     parent = "bordered_frame",
-    right_padding = 8,
     horizontally_stretchable = "on"
 }
 
@@ -105,12 +133,17 @@ styles["fp_button_frame_tool"] = {
     left_padding = 8
 }
 
-styles["fp_sprite-button_rounded_mini"] = {
+styles["fp_sprite-button_rounded_sprite"] = {
     type = "button_style",
     parent = "rounded_button",
-    invert_colors_of_picture_when_disabled = true,
     size = 26,
     padding = 2
+}
+
+styles["fp_sprite-button_rounded_icon"] = {
+    type = "button_style",
+    parent = "fp_sprite-button_rounded_sprite",
+    invert_colors_of_picture_when_disabled = true
 }
 
 styles["fp_sprite-button_move"] = {

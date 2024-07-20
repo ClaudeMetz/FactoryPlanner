@@ -50,7 +50,7 @@ function utility_structures.components(player, modal_data)
 
         local function action_button(sprite, action)
             local button = custom_flow.add{type="sprite-button", sprite=sprite, tags={mod="fp", on_gui_click=action},
-                style="fp_sprite-button_rounded_mini", mouse_button_filter={"left"}}
+                style="fp_sprite-button_rounded_sprite", mouse_button_filter={"left"}}
             button.style.size = 29
             button.style.padding = 0
             return button
@@ -82,7 +82,7 @@ function utility_structures.components(player, modal_data)
         component_row.clear()
 
         local inventory_contents = modal_data.inventory_contents
-        local frame_components = component_row.add{type="frame", direction="horizontal", style="slot_button_deep_frame"}
+        local frame_components = component_row.add{type="frame", direction="horizontal", style="fp_frame_light_slots"}
         local table_components = frame_components.add{type="table", column_count=10, style="filter_slot_table"}
 
         for _, component in pairs(component_data[type .. "s"]) do
@@ -150,7 +150,7 @@ function utility_structures.blueprints(player, modal_data)
         local blueprints_box = add_utility_box(player, modal_data.modal_elements, "blueprints", true, false)
         modal_elements["blueprints_box"] = blueprints_box
 
-        local frame_blueprints = blueprints_box.add{type="frame", direction="horizontal", style="slot_button_deep_frame"}
+        local frame_blueprints = blueprints_box.add{type="frame", direction="horizontal", style="fp_frame_light_slots"}
         local table_blueprints = frame_blueprints.add{type="table", column_count=blueprint_limit,
             style="filter_slot_table"}
         table_blueprints.style.width = blueprint_limit * 40
