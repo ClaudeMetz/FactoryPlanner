@@ -309,27 +309,20 @@ end
 
 -- Determine the amount of machines needed to produce the given recipe in the given context
 function solver_util.determine_machine_count(crafts_per_tick, production_ratio, timescale)
-    -- TODO this is probably unnessecary now?
-    --crafts_per_tick = math.min(crafts_per_tick, 60)  -- crafts_per_tick need to be limited for these calculations
     return production_ratio / (crafts_per_tick * timescale)
 end
 
 -- Calculates the production ratio that the given amount of machines would result in
 -- Formula derived from determine_machine_count(), isolating production_ratio and using machine_limit as machine_count
 function solver_util.determine_production_ratio(crafts_per_tick, machine_limit, timescale)
-    -- TODO this is probably unnessecary now?
-    --crafts_per_tick = math.min(crafts_per_tick, 60)  -- crafts_per_tick need to be limited for these calculations
     return crafts_per_tick * machine_limit * timescale
 end
 
 -- Calculates the product amount after applying productivity bonuses
-function solver_util.determine_prodded_amount(item, --[[ crafts_per_tick,  ]]total_effects, maximum_productivity)
+function solver_util.determine_prodded_amount(item, total_effects, maximum_productivity)
     -- No negative productivity, and none above the recipe-determined cap
     local productivity = math.min(math.max(total_effects.productivity, 0), maximum_productivity)
     if productivity == 0 then return item.amount end
-
-    -- TODO This conversion is likely unnessecary in 2.0, but we'll see
-    --if crafts_per_tick > 60 then productivity = ((1/60) * productivity) * crafts_per_tick end
 
     -- Return formula is a simplification of the following formula:
     -- item.amount - item.proddable_amount + (item.proddable_amount * (productivity + 1))
