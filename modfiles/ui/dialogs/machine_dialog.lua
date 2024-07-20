@@ -88,7 +88,7 @@ local function add_choices_frame(parent_frame, modal_elements, type)
 
     local flow = flow_choices.add{type="flow", direction="horizontal"}
     flow.style.left_margin = 12
-    local frame = flow.add{type="frame", direction="horizontal", style="slot_button_deep_frame"}
+    local frame = flow.add{type="frame", direction="horizontal", style="fp_frame_light_slots"}
     local table = frame.add{type="table", column_count=8, style="filter_slot_table"}
     modal_elements[type .. "_table"] = table
 

@@ -143,8 +143,8 @@ function preference_structures.prototypes(player, content_frame, modal_elements,
     table_prototypes.style.top_margin = 4
 
     local function add_defaults_table(column_count, category_id)
-        local frame = table_prototypes.add{type="frame", direction="horizontal", style="fp_frame_deep_slots_small"}
-        local table = frame.add{type="table", column_count=column_count, style="fp_table_filter_slot_small"}
+        local frame = table_prototypes.add{type="frame", direction="horizontal", style="fp_frame_light_slots_small"}
+        local table = frame.add{type="table", column_count=column_count, style="fp_table_slots_small"}
 
         if category_id then
             modal_elements[type] = modal_elements[type] or {}
@@ -316,6 +316,7 @@ local function open_preferences_dialog(player, modal_data)
     left_content_frame.add{type="empty-widget", style="flib_vertical_pusher"}
     local support_frame = left_content_frame.add{type="frame", direction="vertical", style="fp_frame_bordered_stretch"}
     support_frame.style.bottom_margin = -12
+    support_frame.style.padding = 8
     support_frame.add{type="label", caption={"fp.preferences_support"}}
 
     local right_content_frame = add_content_frame()
