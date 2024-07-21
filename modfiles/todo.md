@@ -2,6 +2,9 @@
 
 ## Active
 
+- The mod should create districts per planet automatically, once districts are implemented. First one should be called Nauvis too
+  - In addition or orthogonally, you could set planets/plattform on factories, which automatically restricts available recipes? (surface conditions?)
+  - Surface conditions exist on recipes and machines seemingly. Not sure whether to just flag non-working recipes or not allow them
 
 ## Any time
 
@@ -16,13 +19,12 @@
 
 ## Waiting on
 
-- Find out what's wrong with `wide_as_column_count` on tables, need it almost everywhere
-  - Check out the new subtler version of the table containing slots style, could be useful (used in Factoriopedia)
-- Sliders still bugged this is stupid https://forums.factorio.com/viewtopic.php?p=516440#p516440
+- Sliders still bugged, this is stupid https://forums.factorio.com/viewtopic.php?p=516440#p516440
 - Uncomment all the `.hidden` uses that were missing from the API
 - Constant combinator `sections` format rename
 - API to open things in Factoriopedia
-- Disabled sprite buttons fade their icons, can't be turned off?
+- Disabled sprite buttons fade their icons, can't be turned off
+- Can't check feature flags yet to disable SA-specific features
 
 ## Release
 
@@ -31,9 +33,6 @@
 
 ## Nice-to-have
 
-- The mod should create districts per planet automatically, once districts are implemented. First one should be called Nauvis too
-  - In addition or orthogonally, you could set planets/plattform on factories, which automatically restricts available recipes? (surface conditions?)
-  - Surface conditions exist on recipes and machines seemingly. Not sure whether to just flag non-working recipes or not allow them
 - Replace any machine/beacon/etc buttons with ones that have the standard tooltip.
   - Saves me the hassle of generating them and automatically has the information people expect
 - Need indication of cyclic recipes finally, used a lot on the space platform

@@ -24,6 +24,24 @@ local function refresh_title_bar(player)
     title_bar_elements.pause_button.enabled = (not game.is_multiplayer())
 end
 
+
+local function determine_handle_widths(player)
+    local ui_state = util.globals.ui_state(player)
+    local half_total_width = ui_state.main_dialog_dimensions.width / 2
+    local shared_width = MAGIC_NUMBERS.titlebar_label_width / 2 + 12 + 2*8
+
+    local left_width = half_total_width - MAGIC_NUMBERS.left_titlebar_width - shared_width
+    local right_width = half_total_width - MAGIC_NUMBERS.right_titlebar_width - shared_width
+
+    return {left=left_width, right=right_width}
+end
+
+local function add_handle(flow, width)
+    local drag_handle = flow.add{type="empty-widget", style="flib_titlebar_drag_handle",
+        ignored_by_interaction=true}
+    drag_handle.style.width = width
+end
+
 local function build_title_bar(player)
     local main_elements = util.globals.main_elements(player)
     main_elements.title_bar = {}
@@ -38,13 +56,13 @@ local function build_title_bar(player)
         sprite="fp_pin", mouse_button_filter={"left"}}
     main_elements.title_bar["switch_button"] = button_switch
 
-    flow_title_bar.add{type="label", caption={"mod-name.factoryplanner"}, style="fp_label_frame_title",
+    local handle_widths = determine_handle_widths(player)
+    add_handle(flow_title_bar, handle_widths["left"])
+    flow_title_bar.add{type="label", caption="Factory Planner", style="fp_label_frame_title",
         ignored_by_interaction=true}
+    add_handle(flow_title_bar, handle_widths["right"])
 
-    local drag_handle = flow_title_bar.add{type="empty-widget", style="flib_titlebar_drag_handle",
-        ignored_by_interaction=true}
-    drag_handle.style.minimal_width = 80
-
+    flow_title_bar = flow_title_bar.add{type="flow", direction="horizontal"}
     flow_title_bar.add{type="button", caption={"fp.tutorial"}, style="fp_button_frame_tool",
         tags={mod="fp", on_gui_click="title_bar_open_dialog", type="tutorial"}, mouse_button_filter={"left"}}
     flow_title_bar.add{type="button", caption={"fp.preferences"}, style="fp_button_frame_tool",
