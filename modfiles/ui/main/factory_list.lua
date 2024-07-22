@@ -254,7 +254,6 @@ local function build_factory_list(player)
 
     -- This is not really a list-box, but it imitates one and allows additional features
     local listbox_factories = frame_vertical.add{type="scroll-pane", style="list_box_under_subheader_scroll_pane"}
-    listbox_factories.style.width = MAGIC_NUMBERS.list_width
     listbox_factories.style.vertically_stretchable = true
     local flow_factories = listbox_factories.add{type="flow", direction="vertical"}
     flow_factories.style.vertical_spacing = 0

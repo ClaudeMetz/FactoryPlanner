@@ -20,7 +20,8 @@ local function refresh_title_bar(player)
     local factory = util.context.get(player, "Factory")   --[[@as Factory?]]
     local title_bar_elements = ui_state.main_elements.title_bar
 
-    title_bar_elements.switch_button.enabled = factory ~= nil and factory.valid
+    title_bar_elements.compact_button.enabled = factory ~= nil and factory.valid
+    title_bar_elements.districts_button.toggled = ui_state.districts_view
     title_bar_elements.pause_button.enabled = (not game.is_multiplayer())
 end
 
@@ -51,10 +52,15 @@ local function build_title_bar(player)
         tags={mod="fp", on_gui_click="re-center_main_dialog"}}
     flow_title_bar.drag_target = main_elements.main_frame
 
-    local button_switch = flow_title_bar.add{type="sprite-button", style="fp_button_frame",
+    local button_compact = flow_title_bar.add{type="sprite-button", style="fp_button_frame",
         tags={mod="fp", on_gui_click="switch_to_compact_view"}, tooltip={"fp.switch_to_compact_view"},
         sprite="fp_pin", mouse_button_filter={"left"}}
-    main_elements.title_bar["switch_button"] = button_switch
+    main_elements.title_bar["compact_button"] = button_compact
+
+    local button_districts = flow_title_bar.add{type="button", caption={"fp.pu_district", 2},
+        tooltip={"fp.switch_to_districts_view"},  tags={mod="fp", on_gui_click="toggle_districts_view"},
+        auto_toggle=true, style="fp_button_frame_tool", mouse_button_filter={"left"}}
+    main_elements.title_bar["districts_button"] = button_districts
 
     local handle_widths = determine_handle_widths(player)
     add_handle(flow_title_bar, handle_widths["left"])
@@ -109,6 +115,14 @@ listeners.gui = {
                 util.globals.ui_state(player).compact_view = true
 
                 compact_dialog.toggle(player)
+            end)
+        },
+        {
+            name = "toggle_districts_view",
+            handler = (function(player, _, _)
+                local ui_state = util.globals.ui_state(player)
+                ui_state.districts_view = not ui_state.districts_view
+                util.raise.refresh(player, "production", nil)
             end)
         },
         {

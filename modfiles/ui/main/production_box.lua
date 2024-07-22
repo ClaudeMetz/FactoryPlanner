@@ -133,6 +133,10 @@ local function refresh_production_box(player)
     if ui_state.main_elements.main_frame == nil then return end
     local production_box_elements = ui_state.main_elements.production_box
 
+    local visible = not ui_state.districts_view
+    production_box_elements.vertical_frame.visible = visible
+    if not visible then return end
+
     local factory_valid = factory ~= nil and factory.valid
     local current_level = (factory_valid) and floor.level or 1
     local any_lines_present = factory_valid and not factory.archived and floor:count() > 0
@@ -181,6 +185,7 @@ local function build_production_box(player)
 
     local parent_flow = main_elements.flows.right_vertical
     local frame_vertical = parent_flow.add{type="frame", direction="vertical", style="inside_deep_frame"}
+    main_elements.production_box["vertical_frame"] = frame_vertical
 
     local subheader = frame_vertical.add{type="frame", direction="horizontal", style="subheader_frame"}
     subheader.style.maximal_height = 100  -- large value to nullify maximal_height

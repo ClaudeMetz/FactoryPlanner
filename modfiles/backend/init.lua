@@ -115,6 +115,7 @@ end
 ---@field modal_data table?
 ---@field selection_mode boolean
 ---@field compact_view boolean
+---@field districts_view boolean
 ---@field recalculate_on_factory_change boolean
 
 ---@param player_table PlayerTable
@@ -135,6 +136,7 @@ local function reset_ui_state(player_table)
 
         selection_mode = false,
         compact_view = false,
+        districts_view = false,
         recalculate_on_factory_change = false
     }
 end
