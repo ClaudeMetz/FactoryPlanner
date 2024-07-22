@@ -256,6 +256,10 @@ local function refresh_item_boxes(player)
     local main_elements = player_table.ui_state.main_elements
     if main_elements.main_frame == nil then return end
 
+    local visible = not player_table.ui_state.districts_view
+    main_elements.item_boxes.horizontal_flow.visible = visible
+    if not visible then return end
+
     local factory = util.context.get(player, "Factory")  --[[@as Factory?]]
     local show_floor_items = player_table.preferences.show_floor_items
 

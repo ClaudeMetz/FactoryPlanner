@@ -96,6 +96,7 @@ function main_dialog.rebuild(player, default_visibility)
 
     local left_vertical = main_horizontal.add{type="flow", direction="vertical"}
     left_vertical.style.vertical_spacing = frame_spacing
+    left_vertical.style.width = MAGIC_NUMBERS.list_width
     main_elements.flows["left_vertical"] = left_vertical
 
     local right_vertical = main_horizontal.add{type="flow", direction="vertical"}

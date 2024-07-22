@@ -3,8 +3,8 @@
 ## Active
 
 - The mod should create districts per planet automatically, once districts are implemented. First one should be called Nauvis too
-  - In addition or orthogonally, you could set planets/plattform on factories, which automatically restricts available recipes? (surface conditions?)
-  - Surface conditions exist on recipes and machines seemingly. Not sure whether to just flag non-working recipes or not allow them
+- In addition or orthogonally, you could set planets/plattform on factories, which automatically restricts available recipes? (surface conditions?)
+  - Surface conditions exist on recipes and machines seemingly. Maybe offer toggle on recipe picker to hide/show unbuildable ones
 
 ## Any time
 
@@ -29,6 +29,7 @@
 ## Release
 
 - Update other language docs for the new `plural_for_parameter` format
+- Update screenshots, maybe for SA even? Or some of both non-SA and SA?
 - Custom Arcosphere logic disabled for now
 
 ## Nice-to-have
