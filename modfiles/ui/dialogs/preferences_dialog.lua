@@ -197,10 +197,12 @@ local function handle_checkbox_preference_change(player, tags, event)
         util.raise.refresh(player, "production", nil)
 
     elseif preference_name == "ingredient_satisfaction" then
-        -- Only recalculate if the satisfaction data will actually be shown now
-        if event.element.state == true then
-            for factory in util.context.get(player, "District"):iterator() do
-                solver.determine_ingredient_satisfaction(factory)
+        if event.element.state == true then  -- only recalculate if enabled
+            local realm = util.globals.player_table(player).realm
+            for district in realm:iterator() do
+                for factory in district:iterator() do
+                    solver.determine_ingredient_satisfaction(factory)
+                end
             end
         end
         util.raise.refresh(player, "production", nil)
@@ -244,8 +246,10 @@ local function handle_bol_change(player, _, event)
     view_state.rebuild_state(player)
 
     -- Go through every factory's top level products and update their defined_by
-    for factory in player_table.district:iterator() do
-        factory:update_product_definitions(defined_by)
+    for district in player_table.realm:iterator() do
+        for factory in district:iterator() do
+            solver.determine_ingredient_satisfaction(factory)
+        end
     end
 
     solver.update(player, nil)

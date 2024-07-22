@@ -240,9 +240,9 @@ end
 local function generate_object_index()
     OBJECT_INDEX = {}
     for _, player_table in pairs(global.players) do
-        local district = player_table.district
-        if not player_table.district then return {} end  -- migration issue mitigation
-        district:index()  -- recursively indexes all objects
+        local realm = player_table.realm
+        if not player_table.realm then return {} end  -- migration issue mitigation
+        realm:index()  -- recursively indexes all objects
     end
 
     if global.tutorial_factory then

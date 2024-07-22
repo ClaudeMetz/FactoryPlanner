@@ -15,7 +15,7 @@ local _context = {}
 function _context.init(player)
     local player_table = util.globals.player_table(player)
     player_table.context = {
-        object_id = player_table.district.id,
+        object_id = player_table.realm.first.id,
         cache = {
             main = nil,
             archive = nil,
@@ -44,7 +44,7 @@ end
 
 ---@param player LuaPlayer
 ---@param archive boolean
---- Sets the context to any valid object, with the District as fallback
+--- Sets the context to any valid object, with the first District as fallback
 function _context.set_default(player, archive)
     local player_table = util.globals.player_table(player)
     local cache = player_table.context.cache
@@ -53,7 +53,7 @@ function _context.set_default(player, archive)
         if cache.archive then
             _context.set(player, OBJECT_INDEX[cache.archive])
         else
-            local factory = player_table.district:find({ archived = true })
+            local factory = player_table.realm.first:find({ archived = true })
             if factory then _context.set(player, factory)
             else archive = false end  -- try non-archive
         end
@@ -63,9 +63,9 @@ function _context.set_default(player, archive)
         if cache.main then
             _context.set(player, OBJECT_INDEX[cache.main])
         else
-            local factory = player_table.district:find({ archived = false })
+            local factory = player_table.realm.first:find({ archived = false })
             if factory then _context.set(player, factory)
-            else player_table.context.object_id = player_table.district.id end
+            else player_table.context.object_id = player_table.realm.first.id end
         end
     end
 end

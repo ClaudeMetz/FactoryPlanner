@@ -60,9 +60,8 @@ listeners.gui = {
             timeout = 20,
             handler = (function(player, _, _)
                 -- If this button can be pressed, the tutorial factory is valid implicitly
-                local player_table = util.globals.player_table(player)
                 local clone = global.tutorial_factory:clone()
-                player_table.district:insert(clone)
+                util.context.get(player, "District"):insert(clone)
                 solver.update(player, clone)
                 util.context.set(player, clone)
 

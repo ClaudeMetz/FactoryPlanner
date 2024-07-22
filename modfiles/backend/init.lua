@@ -1,4 +1,4 @@
-local District = require("backend.data.District")
+local Realm = require("backend.data.Realm")
 
 local loader = require("backend.handlers.loader")
 local migrator = require("backend.handlers.migrator")
@@ -145,7 +145,7 @@ end
 ---@class PlayerTable
 ---@field preferences PreferencesTable
 ---@field ui_state UIStateTable
----@field district District
+---@field realm Realm
 ---@field context ContextTable
 ---@field translation_tables { [string]: TranslatedDictionary }?
 ---@field clipboard ClipboardEntry?
@@ -155,7 +155,7 @@ local function player_init(player)
     global.players[player.index] = {}  --[[@as table]]
     local player_table = global.players[player.index]
 
-    player_table.district = District.init()
+    player_table.realm = Realm.init()
     util.context.init(player)
 
     reload_preferences(player_table)
@@ -183,7 +183,7 @@ local function refresh_player_table(player)
     prototyper.defaults.migrate(player_table)
     prototyper.util.migrate_mb_defaults(player_table)
 
-    player_table.district:validate()
+    player_table.realm:validate()
 end
 
 
@@ -259,8 +259,9 @@ local function handle_configuration_change()
         util.gui.toggle_mod_gui(player)  -- Recreates the mod-GUI if necessary
 
         -- Update calculations in case prototypes changed in a relevant way
-        local district = global.players[index].district  ---@type District
-        for factory in district:iterator() do solver.update(player, factory) end
+        for district in global.players[index].realm:iterator() do
+            for factory in district:iterator() do solver.update(player, factory) end
+        end
     end
 end
 
