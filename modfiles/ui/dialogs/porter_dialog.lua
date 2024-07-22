@@ -223,7 +223,7 @@ local function open_import_dialog(_, modal_data)
     util.gui.select_all(modal_elements.import_textfield)
 end
 
--- Imports the selected factories into the player's main district
+-- Imports the selected factories into the player's current District
 local function close_import_dialog(player, action)
     if action == "submit" then
         local modal_data = util.globals.modal_data(player)  ---@cast modal_data -nil

@@ -2,6 +2,9 @@ local Object = require("backend.data.Object")
 
 ---@class District: Object, ObjectMethods
 ---@field class "District"
+---@field parent Realm
+---@field next District?
+---@field previous District?
 ---@field first Factory?
 local District = Object.methods()
 District.__index = District
