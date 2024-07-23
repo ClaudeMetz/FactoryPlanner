@@ -156,7 +156,7 @@ local function player_init(player)
     local player_table = global.players[player.index]
 
     player_table.realm = Realm.init()
-    util.context.init(player)
+    util.context.init(player_table)
 
     reload_preferences(player_table)
     reset_ui_state(player_table)

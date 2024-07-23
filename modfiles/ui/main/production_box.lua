@@ -97,9 +97,8 @@ local function paste_line(player, _, _)
     util.clipboard.dummy_paste(player, dummy_line, floor)
 end
 
--- Changes the floor to either be the top one or the one above the current one
 local function change_floor(player, destination)
-    if util.context.descend_floors(player, destination) then
+    if util.context.ascend_floors(player, destination) then
         -- Only refresh if the floor was indeed changed
         util.raise.refresh(player, "production", nil)
     end
