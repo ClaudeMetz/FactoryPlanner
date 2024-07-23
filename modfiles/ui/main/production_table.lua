@@ -50,7 +50,8 @@ function builders.move(line, parent_flow, metadata)
 
         local endpoint = (direction == "next") and {"fp.bottom"} or {"fp.top"}
         local up_down = (direction == "next") and "down" or "up"
-        local move_tooltip = (enabled) and {"fp.move_row_tt", {"fp.pl_recipe", 1}, {"fp." .. up_down}, endpoint} or ""
+        local move_tooltip = (enabled) and {"", {"fp.move_object", {"fp.pl_recipe", 1}, {"fp." .. up_down}},
+            {"fp.move_object_instructions", endpoint}} or ""
 
         local button = flow.add{type="sprite-button", style="fp_sprite-button_move", sprite="fp_arrow_" .. up_down,
             tags={mod="fp", on_gui_click="move_line", direction=direction, line_id=line.id, on_gui_hover="set_tooltip",

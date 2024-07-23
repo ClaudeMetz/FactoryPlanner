@@ -152,6 +152,30 @@ styles["fp_sprite-button_move"] = {
     invert_colors_of_picture_when_hovered_or_toggled = true
 }
 
+-- Need to copy this style to get rid of the stupid built-in tooltip
+styles["fp_button_green"] = {
+    type = "button_style",
+    parent = "button",
+    default_graphical_set = {
+        base = {position = {68, 17}, corner_size = 8},
+        shadow = default_dirt
+    },
+    hovered_graphical_set = {
+        base = {position = {102, 17}, corner_size = 8},
+        shadow = default_dirt,
+        glow = default_glow(green_button_glow_color, 0.5)
+    },
+        clicked_graphical_set = {
+        base = {position = {119, 17}, corner_size = 8},
+        shadow = default_dirt
+    },
+        disabled_graphical_set = {
+        base = {position = {85, 17}, corner_size = 8},
+        shadow = default_dirt
+    },
+    left_click_sound = "__core__/sound/gui-green-confirm.ogg"
+}
+
 -- Generate smaller versions of flib's slot buttons (size 36)
 for _, color in pairs{"default", "grey", "red", "orange", "yellow", "green", "cyan", "blue", "purple", "pink"} do
     styles["flib_slot_button_" .. color .. "_small"] = {

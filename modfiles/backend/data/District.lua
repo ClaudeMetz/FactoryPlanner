@@ -5,14 +5,17 @@ local Object = require("backend.data.Object")
 ---@field parent Realm
 ---@field next District?
 ---@field previous District?
+---@field name string
 ---@field first Factory?
 local District = Object.methods()
 District.__index = District
 script.register_metatable("District", District)
 
+---@param name string?
 ---@return District
-local function init()
+local function init(name)
     local object = Object.init({
+        name = name or "New District",
         first = nil
     }, "District", District)  --[[@as District]]
     return object

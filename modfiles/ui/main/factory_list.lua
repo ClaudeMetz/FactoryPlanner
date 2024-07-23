@@ -125,8 +125,8 @@ local function refresh_factory_list(player)
             local enabled = (factory.parent:find(filter, factory[direction], direction) ~= nil)
             local endpoint = (direction == "next") and {"fp.bottom"} or {"fp.top"}
             local up_down = (direction == "next") and "down" or "up"
-            local move_tooltip = (enabled) and {"fp.move_row_tt", {"fp.pl_factory", 1},
-                {"fp." .. up_down}, endpoint} or ""
+            local move_tooltip = (enabled) and {"", {"fp.move_object", {"fp.pl_factory", 1}, {"fp." .. up_down}},
+                {"fp.move_object_instructions", endpoint}} or ""
 
             local move_button = flow.add{type="sprite-button", enabled=enabled, sprite="fp_arrow_" .. up_down,
                 tags={mod="fp", on_gui_click="move_factory", direction=direction, factory_id=factory.id,
@@ -155,8 +155,8 @@ local function refresh_factory_list(player)
                 tags={mod="fp", on_gui_click="act_on_factory", factory_id=factory.id, on_gui_hover="set_tooltip",
                 context="factory_list"}, style="list_box_item", mouse_button_filter={"left-and-right"},
                 raise_hover_events=true}
-            factory_button.style.horizontally_stretchable = true
-            factory_button.style.padding = {0, 8, 0, 4}
+            factory_button.style.padding = {0, 4}
+            factory_button.style.width = MAGIC_NUMBERS.list_width - 20
             tooltips.factory_list[factory_button.index] = tooltip
         end
     end

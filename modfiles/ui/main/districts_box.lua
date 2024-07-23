@@ -1,4 +1,79 @@
+local District = require("backend.data.District")
+
 -- ** LOCAL UTIL **
+local function save_district_name(player, tags, _)
+    local main_elements = util.globals.main_elements(player)
+    local district_elements = main_elements.districts_box[tags.district_id]
+
+    local district = OBJECT_INDEX[tags.district_id]  --[[@as District]]
+    district.name = district_elements.name_textfield.text
+
+    district_elements.edit_flow.visible = false
+    district_elements.name_flow.visible = true
+
+    util.raise.refresh(player, "all", nil)
+end
+
+local function build_district_frame(elements, district, selected_id)
+    elements[district.id] = {}
+
+    local window_frame = elements.vertical_flow.add{type="frame", direction="vertical", style="inside_shallow_frame"}
+    local subheader = window_frame.add{type="frame", direction="horizontal", style="subheader_frame"}
+
+    local function create_move_button(flow, direction)
+        local enabled = (direction == "next" and district.next ~= nil) or
+            (direction == "previous" and district.previous ~= nil)
+        local up_down = (direction == "next") and "down" or "up"
+        local tooltip = {"", {"fp.move_object", {"fp.pl_district", 1}, {"fp." .. up_down}}}
+        local move_button = flow.add{type="sprite-button", enabled=enabled, sprite="fp_arrow_" .. up_down,
+            tags={mod="fp", on_gui_click="move_district", direction=direction, district_id=district.id},
+            style="fp_sprite-button_move", tooltip=tooltip, mouse_button_filter={"left"}}
+        move_button.style.size = {18, 14}
+        move_button.style.padding = -1
+    end
+
+    local move_flow = subheader.add{type="flow", direction="vertical"}
+    move_flow.style.vertical_spacing = 0
+    move_flow.style.left_margin = 2
+    create_move_button(move_flow, "previous")
+    create_move_button(move_flow, "next")
+
+    local select_button = subheader.add{type="button", caption={"fp.select"}, style="list_box_item",
+        tags={mod="fp", on_gui_click="select_district", district_id=district.id},
+        enabled=(district.id ~= selected_id), mouse_button_filter={"left"}}
+    select_button.style.font = "default-bold"
+    select_button.style.padding = {0, 4}
+
+    subheader.add{type="label", caption={"", {"fp.pu_district", 1}, ": "}, style="subheader_caption_label"}
+
+    local flow_name = subheader.add{type="flow", direction="horizontal"}
+    flow_name.style.vertical_align = "center"
+    elements[district.id]["name_flow"] = flow_name
+    flow_name.add{type="label", caption=district.name, style="bold_label"}
+    flow_name.add{type="sprite-button", style="mini_button_aligned_to_text_vertically_when_centered",
+        tags={mod="fp", on_gui_click="edit_district_name", district_id=district.id}, sprite="utility/rename_icon",
+        tooltip={"fp.edit_name"}, mouse_button_filter={"left"}}
+
+    local flow_edit = subheader.add{type="flow", direction="horizontal", visible=false}
+    flow_edit.style.vertical_align = "center"
+    elements[district.id]["edit_flow"] = flow_edit
+    local textfield_name = flow_edit.add{type="textfield", text=district.name, icon_selector=true,
+        tags={mod="fp", on_gui_confirmed="confirm_district_name", district_id=district.id}}
+    elements[district.id]["name_textfield"] = textfield_name
+    flow_edit.add{type="sprite-button", style="mini_button_aligned_to_text_vertically_when_centered",
+        tags={mod="fp", on_gui_click="save_district_name", district_id=district.id}, sprite="utility/rename_icon",
+        tooltip={"fp.save_name"}, mouse_button_filter={"left"}}
+
+    subheader.add{type="empty-widget", style="flib_horizontal_pusher"}
+
+    subheader.add{type="sprite-button", tags={mod="fp", on_gui_click="delete_district", district_id=district.id},
+        sprite="utility/trash", style="tool_button_red", enabled=(district.parent:count() > 1),
+        mouse_button_filter={"left"}}
+
+    local scroll_pane = window_frame.add{type="scroll-pane", style="flib_naked_scroll_pane"}
+
+end
+
 local function refresh_districts_box(player)
     local player_table = util.globals.player_table(player)
 
@@ -6,9 +81,18 @@ local function refresh_districts_box(player)
     if main_elements.main_frame == nil then return end
 
     local visible = player_table.ui_state.districts_view
-    main_elements.districts_box.horizontal_flow.visible = visible
+    local main_flow = main_elements.districts_box.vertical_flow
+    main_flow.visible = visible
     if not visible then return end
 
+    main_flow.clear()
+    local selected_district_id = util.context.get(player, "District").id
+    for district in player_table.realm:iterator() do
+        build_district_frame(main_elements.districts_box, district, selected_district_id)
+    end
+
+    main_flow.add{type="button", caption={"fp.add_district"}, style="fp_button_green",
+        tags={mod="fp", on_gui_click="add_district"}, mouse_button_filter={"left"}}
 end
 
 local function build_districts_box(player)
@@ -16,9 +100,9 @@ local function build_districts_box(player)
     main_elements.districts_box = {}
 
     local parent_flow = main_elements.flows.right_vertical
-    local flow_horizontal = parent_flow.add{type="flow", direction="horizontal"}
-    main_elements.districts_box["horizontal_flow"] = flow_horizontal
-
+    local flow_vertical = parent_flow.add{type="flow", direction="vertical"}
+    flow_vertical.style.vertical_spacing = MAGIC_NUMBERS.frame_spacing
+    main_elements.districts_box["vertical_flow"] = flow_vertical
 
     refresh_districts_box(player)
 end
@@ -27,6 +111,67 @@ end
 local listeners = {}
 
 listeners.gui = {
+    on_gui_click = {
+        {
+            name = "move_district",
+            timeout = 10,
+            handler = (function(player, tags, event)
+                local district = OBJECT_INDEX[tags.district_id]  --[[@as District]]
+                local spots_to_shift = (event.control) and 5 or ((not event.shift) and 1 or nil)
+                district.parent:shift(district, tags.direction, spots_to_shift)
+
+                util.raise.refresh(player, "districts_box", nil)
+            end)
+        },
+        {
+            name = "select_district",
+            handler = (function(player, tags, _)
+                local selected_district = OBJECT_INDEX[tags.district_id]  --[[@as District]]
+                util.context.set(player, selected_district)
+                util.raise.refresh(player, "all", nil)
+            end)
+        },
+        {
+            name = "edit_district_name",
+            handler = (function(player, tags, _)
+                local main_elements = util.globals.main_elements(player)
+                local district_elements = main_elements.districts_box[tags.district_id]
+                district_elements.name_flow.visible = false
+                district_elements.edit_flow.visible = true
+            end)
+        },
+        {
+            name = "save_district_name",
+            handler = save_district_name
+        },
+        {
+            name = "delete_district",
+            handler = (function(player, tags, _)
+                local district = OBJECT_INDEX[tags.district_id]  --[[@as District]]
+
+                -- Removal will always find an alterantive because there always exists at least one District
+                local adjacent_district = util.context.remove(player, district)  --[[@as District]]
+                district.parent:remove(district)
+
+                util.context.set(player, adjacent_district)
+                util.raise.refresh(player, "all", nil)
+            end)
+        },
+        {
+            name = "add_district",
+            handler = (function(player, _, _)
+                local realm = util.globals.player_table(player).realm
+                realm:insert(District.init())
+                util.raise.refresh(player, "all", nil)
+            end)
+        }
+    },
+    on_gui_confirmed = {
+        {
+            name = "confirm_district_name",
+            handler = save_district_name
+        }
+    }
 }
 
 listeners.misc = {
