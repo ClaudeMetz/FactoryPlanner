@@ -435,7 +435,7 @@ factory_listeners.gui = {
         {
             name = "change_compact_floor",
             handler = (function(player, tags, _)
-                local floor_changed = util.context.descend_floors(player, tags.destination)
+                local floor_changed = util.context.ascend_floors(player, tags.destination)
                 if floor_changed then refresh_compact_factory(player) end
             end)
         },
