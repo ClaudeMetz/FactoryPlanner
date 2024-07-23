@@ -5,8 +5,21 @@
 - The mod should create districts per planet automatically, once districts are implemented. First one should be called Nauvis too
 - In addition or orthogonally, you could set planets/plattform on factories, which automatically restricts available recipes? (surface conditions?)
   - Surface conditions exist on recipes and machines seemingly. Maybe offer toggle on recipe picker to hide/show unbuildable ones
+    - Conditions for space platforms are on the Hub Entity maybe? (through EntityPrototype)
+    - Otherwise they are on the planet
 
-## Any time
+## Bugs
+
+- Scrap recycling recipe shouldn't be marked as recycling since it's kind of a core recipe
+- Recycling recipes seem to follow a different new format for what they produce?
+- Agriculture tower recipes not supported - maybe it doesn't use recipes?
+- Disable SA-specific features by checking feature flags in the right spots
+- Translation seems to not reload when loading a save
+- Deleting the non-selected district/factory still sets the context to a neighbor, which is weird
+- Cryoplant and foundry productivity capped at 50% seemingly (see Discord for examples)
+- Module defaults-set stuff doesn't refresh module_effects properly
+
+## Uncertainty Sphere
 
 - Quality is kind of a lot
   - Every place I need a property that can be influenced by quality, I can specify that quality.
@@ -16,6 +29,8 @@
   - seems like something that still needs to be worked out https://wubesoftware.slack.com/archives/C12GUBRHS/p1720862186697859
   - also quality calculations are not like other effects probably? Needs custom handling for sure
 - Item Spoiling - what should my interaction with it be?
+- Show offshore pump ingredients being the tile they need; requires larger refactoring probably. Not sure.
+- Use LuaEntityPrototype::type in generator when applicable instead of trying to parse properties -> could break stuff
 
 ## Waiting on
 
@@ -24,7 +39,7 @@
 - Constant combinator `sections` format rename
 - API to open things in Factoriopedia
 - Disabled sprite buttons fade their icons, can't be turned off
-- Can't check feature flags yet to disable SA-specific features
+- Can't remove button tooltip, do so on district add button when possible
 
 ## Release
 
@@ -38,13 +53,14 @@
   - Saves me the hassle of generating them and automatically has the information people expect
 - Need indication of cyclic recipes finally, used a lot on the space platform
 - Should have the ability to manually configure recipe productivity boni somewhere
-- Show offshore pump ingredients being the tile they need; requires larger refactoring probably
 - Add shorthand recipe for 1 complete rocket, instead of needing to add 50 parts. Hard part will be picking an icon for it
 - Note when rocket silo launch time becomes a problem for speed; it's not at lower speeds
   - Is quite a complicated feature, especially when productivity is involved. Probably do need it though
+- Fluid temperatures are still a major issue ...
+- Need an 'are you sure' dialog for deleting a District, resetting preferences, etc
+- Add a district automatically once someone lands on a new planet for the first time, plus space platform
 
-## Ghetto Github Issues
+## Low Priority
 
 - Adjust utility dialog handcrafting to behave like vanilla crafting does in all ways
 - Have separate methods for each GUI action instead of a tree. Needs some prep methods sometimes maybe
-- Use LuaEntityPrototype::type in generator when applicable instead of trying to parse properties -> could break stuff
