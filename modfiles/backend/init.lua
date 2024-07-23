@@ -157,6 +157,7 @@ local function player_init(player)
 
     player_table.realm = Realm.init()
     util.context.init(player_table)
+    util.context.set(player, player_table.realm.first)
 
     reload_preferences(player_table)
     reset_ui_state(player_table)
@@ -239,22 +240,15 @@ local function handle_configuration_change()
         return
     end
 
+    migrator.migrate_global(migrations)
+    migrator.migrate_player_tables(migrations)
+
     prototyper.build()
     loader.run(true)
 
-    migrator.migrate_global(migrations)
-    for _, player in pairs(game.players) do
-        migrator.migrate_player_table(player, migrations)
-        refresh_player_table(player)
-    end
-
-    global.installed_mods = script.active_mods
-    global.tutorial_factory = import_tutorial_factory()
-
-    translator.on_configuration_changed()
-    prototyper.util.build_translation_dictionaries()
-
     for index, player in pairs(game.players) do
+        refresh_player_table(player)  -- part of migration cleanup
+
         util.gui.reset_player(player)  -- Destroys all existing GUI's
         util.gui.toggle_mod_gui(player)  -- Recreates the mod-GUI if necessary
 
@@ -263,6 +257,12 @@ local function handle_configuration_change()
             for factory in district:iterator() do solver.update(player, factory) end
         end
     end
+
+    global.installed_mods = script.active_mods
+    global.tutorial_factory = import_tutorial_factory()
+
+    translator.on_configuration_changed()
+    prototyper.util.build_translation_dictionaries()
 end
 
 

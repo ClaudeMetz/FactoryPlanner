@@ -17,7 +17,7 @@ local _context = {}
 ---@param player_table PlayerTable
 function _context.init(player_table)
     player_table.context = {
-        object_id = player_table.realm.first.id,
+        object_id = nil,
         cache = {
             district = nil,
             factories = {}
@@ -178,8 +178,7 @@ function _context.validate(player)
         end
     end
 
-    if not context.object_id then return end
-    if not OBJECT_INDEX[context.object_id] then
+    if not (context.object_id and OBJECT_INDEX[context.object_id]) then
         _context.set(player, player_table.realm.first)
     end
 end

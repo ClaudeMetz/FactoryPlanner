@@ -90,11 +90,12 @@ function migrator.migrate_global(migrations)
     apply_migrations(migrations, "global", nil, nil)
 end
 
----@param player LuaPlayer
 ---@param migrations Migration[]
-function migrator.migrate_player_table(player, migrations)
-    local player_table = util.globals.player_table(player)
-    apply_migrations(migrations, "player_table", player_table, player)
+function migrator.migrate_player_tables(migrations)
+    for _, player in pairs(game.players) do
+        local player_table = util.globals.player_table(player)
+        apply_migrations(migrations, "player_table", player_table, player)
+    end
 end
 
 
