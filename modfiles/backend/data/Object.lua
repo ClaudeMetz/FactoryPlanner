@@ -32,7 +32,9 @@ function Object.init(data, class, metatable)
     global.next_object_ID = global.next_object_ID + 1
 
     setmetatable(object, metatable)
-    OBJECT_INDEX[object.id] = object
+
+    -- If the index doesn't exist yet, it will be filled in later
+    if OBJECT_INDEX then OBJECT_INDEX[object.id] = object end
 
     return object
 end
