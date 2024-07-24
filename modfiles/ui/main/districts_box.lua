@@ -7,11 +7,12 @@ local function save_district_name(player, tags, _)
 
     local district = OBJECT_INDEX[tags.district_id]  --[[@as District]]
     district.name = district_elements.name_textfield.text
+    district_elements.name_label.caption = district.name  -- saves the refresh
 
     district_elements.edit_flow.visible = false
     district_elements.name_flow.visible = true
 
-    util.raise.refresh(player, "all", nil)
+    util.raise.refresh(player, "district_info", nil)
 end
 
 local function build_district_frame(elements, district, selected_id, location_items)
@@ -51,7 +52,8 @@ local function build_district_frame(elements, district, selected_id, location_it
     local flow_name = subheader.add{type="flow", direction="horizontal"}
     flow_name.style.vertical_align = "center"
     elements[district.id]["name_flow"] = flow_name
-    flow_name.add{type="label", caption=district.name, style="bold_label"}
+    local label_name = flow_name.add{type="label", caption=district.name, style="bold_label"}
+    elements[district.id]["name_label"] = label_name
     flow_name.add{type="sprite-button", style="mini_button_aligned_to_text_vertically_when_centered",
         tags={mod="fp", on_gui_click="edit_district_name", district_id=district.id}, sprite="utility/rename_icon",
         tooltip={"fp.edit_name"}, mouse_button_filter={"left"}}
@@ -177,7 +179,7 @@ listeners.gui = {
             handler = (function(player, _, _)
                 local realm = util.globals.player_table(player).realm
                 realm:insert(District.init())
-                util.raise.refresh(player, "all", nil)
+                util.raise.refresh(player, "districts_box", nil)
             end)
         }
     },
@@ -195,7 +197,7 @@ listeners.gui = {
                 local location_proto_id = event.element.selected_index
                 district.location_proto = global.prototypes.locations[location_proto_id]
 
-                util.raise.refresh(player, "all", nil)
+                util.raise.refresh(player, "district_info", nil)
             end)
         }
     },
