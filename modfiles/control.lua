@@ -15,10 +15,11 @@ MAGIC_NUMBERS = {
     -- Some magic numbers to determine and calculate the dimensions of the main dialog
     frame_spacing = 12,  -- Spacing between the base frames in the main dialog
     title_bar_height = 28,  -- Height of the main dialog title bar
+    district_info_height = 36,
     subheader_height = 36,  -- Height of the factory list subheader
     list_width = 300,  -- Width of the factory list
     list_element_height = 28,  -- Height of an individual factory list element
-    info_height = 100,  -- Height of the factory info frame
+    factory_info_height = 100,  -- Height of the factory info frame
     item_button_size = 40,  -- Size of item box buttons
     item_box_max_rows = 4,  -- Maximum number of rows in an item box
 
@@ -28,7 +29,7 @@ MAGIC_NUMBERS = {
     groups_per_row = 6,  -- Number of groups in a row in the item picker
     blueprint_limit = 12,  -- Maxmimum number of blueprints allowed per factory
     module_dialog_element_width = 440,  -- Width of machine and beacon dialog elements
-    left_titlebar_width = 116,  -- Width of the left titlebar buttons
+    left_titlebar_width = 30,  -- Width of the left titlebar buttons
     right_titlebar_width = 294,  -- Width of the right titlebar buttons
     titlebar_label_width = 124  -- Width of the 'Factory Planner' titlebar label
 }
@@ -41,7 +42,7 @@ CUSTOM_EVENTS = {
 }
 
 PRODUCTS_PER_ROW_OPTIONS = {5, 6, 7, 8, 9, 10, 11, 12, 13, 14}
-FACTORY_LIST_ROWS_OPTIONS = {14, 16, 18, 20, 22, 24, 26, 28, 30, 32}
+FACTORY_LIST_ROWS_OPTIONS = {12, 14, 16, 18, 20, 22, 24, 26, 28, 30}
 
 TIMESCALE_MAP = {[1] = "second", [60] = "minute", [3600] = "hour"}
 BLANK_EFFECTS = {consumption = 0, speed = 0, productivity = 0, pollution = 0, quality = 0}

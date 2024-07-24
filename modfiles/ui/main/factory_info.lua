@@ -98,7 +98,7 @@ local function build_factory_info(player)
     local parent_flow = main_elements.flows.left_vertical
     local frame_vertical = parent_flow.add{type="frame", direction="vertical",
         style="inside_shallow_frame_with_padding"}
-    frame_vertical.style.size = {MAGIC_NUMBERS.list_width, MAGIC_NUMBERS.info_height}
+    frame_vertical.style.size = {MAGIC_NUMBERS.list_width, MAGIC_NUMBERS.factory_info_height}
 
     local flow_title = frame_vertical.add{type="flow", direction="horizontal"}
     flow_title.style.margin = {-4, 0, 8, 0}
