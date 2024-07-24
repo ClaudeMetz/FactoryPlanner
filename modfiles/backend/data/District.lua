@@ -6,16 +6,19 @@ local Object = require("backend.data.Object")
 ---@field next District?
 ---@field previous District?
 ---@field name string
+---@field location_proto FPLocationPrototype
 ---@field first Factory?
 local District = Object.methods()
 District.__index = District
 script.register_metatable("District", District)
 
 ---@param name string?
+---@param location string?
 ---@return District
-local function init(name)
+local function init(name, location)
     local object = Object.init({
         name = name or "New District",
+        location_proto = prototyper.util.find_prototype("locations", location or "nauvis"),
         first = nil
     }, "District", District)  --[[@as District]]
     return object
