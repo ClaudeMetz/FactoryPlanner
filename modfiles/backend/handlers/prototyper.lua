@@ -17,9 +17,10 @@ prototyper = {
 -- The boolean indicates whether this prototype has categories or not
 ---@type { [DataType]: boolean }
 prototyper.data_types = {machines = true, recipes = false, items = true, fuels = true,
-                         belts = false, wagons = true, modules = true, beacons = false}
+                         belts = false, wagons = true, modules = true, beacons = false,
+                         locations = false}
 
----@alias DataType "machines" | "recipes" | "items" | "fuels" | "belts" | "wagons" | "modules" | "beacons"
+---@alias DataType "machines" | "recipes" | "items" | "fuels" | "belts" | "wagons" | "modules" | "beacons" | "locations"
 
 ---@alias NamedPrototypes<T> { [string]: T }
 ---@alias NamedPrototypesWithCategory<T> { [string]: { name: string, members: { [string]: T } } } }
@@ -40,6 +41,7 @@ prototyper.data_types = {machines = true, recipes = false, items = true, fuels =
 ---@field wagons IndexedPrototypesWithCategory<FPWagonPrototype>
 ---@field modules IndexedPrototypesWithCategory<FPModulePrototype>
 ---@field beacons IndexedPrototypes<FPBeaconPrototype>
+---@field locations IndexedPrototypes<FPBeaconPrototype>
 
 ---@alias SortingFunction fun(a: table, b: table): boolean
 

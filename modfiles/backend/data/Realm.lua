@@ -14,7 +14,7 @@ local function init()
         first = nil
     }, "Realm", Realm)  --[[@as Realm]]
     object:insert(District.init("Nauvis"))  -- one always exists
-    object:insert(District.init())
+    object:insert(District.init("vulci", "vulcanus"))
     return object
 end
 

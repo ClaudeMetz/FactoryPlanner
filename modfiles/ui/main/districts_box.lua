@@ -14,12 +14,13 @@ local function save_district_name(player, tags, _)
     util.raise.refresh(player, "all", nil)
 end
 
-local function build_district_frame(elements, district, selected_id)
+local function build_district_frame(elements, district, selected_id, location_items)
     elements[district.id] = {}
 
     local window_frame = elements.vertical_flow.add{type="frame", direction="vertical", style="inside_shallow_frame"}
     local subheader = window_frame.add{type="frame", direction="horizontal", style="subheader_frame"}
 
+    -- Interaction buttons
     local function create_move_button(flow, direction)
         local enabled = (direction == "next" and district.next ~= nil) or
             (direction == "previous" and district.previous ~= nil)
@@ -44,6 +45,7 @@ local function build_district_frame(elements, district, selected_id)
     select_button.style.font = "default-bold"
     select_button.style.padding = {0, 4}
 
+    -- Name
     subheader.add{type="label", caption={"", {"fp.pu_district", 1}, ": "}, style="subheader_caption_label"}
 
     local flow_name = subheader.add{type="flow", direction="horizontal"}
@@ -64,8 +66,16 @@ local function build_district_frame(elements, district, selected_id)
         tags={mod="fp", on_gui_click="save_district_name", district_id=district.id}, sprite="utility/rename_icon",
         tooltip={"fp.save_name"}, mouse_button_filter={"left"}}
 
-    subheader.add{type="empty-widget", style="flib_horizontal_pusher"}
+    -- Location
+    local label_location = subheader.add{type="label", caption={"", {"fp.pu_location", 1}, ": "},
+        style="subheader_caption_label"}
+    label_location.style.left_margin = 8
+    -- Using the location id for the index works because the location prototypes are in id order
+    subheader.add{type="drop-down", items=location_items, selected_index=district.location_proto.id,
+        tags={mod="fp", on_gui_selection_state_changed="change_district_location", district_id=district.id}}
 
+    -- Delete button
+    subheader.add{type="empty-widget", style="flib_horizontal_pusher"}
     subheader.add{type="sprite-button", tags={mod="fp", on_gui_click="delete_district", district_id=district.id},
         sprite="utility/trash", style="tool_button_red", enabled=(district.parent:count() > 1),
         mouse_button_filter={"left"}}
@@ -87,8 +97,13 @@ local function refresh_districts_box(player)
 
     main_flow.clear()
     local selected_district_id = util.context.get(player, "District").id
+    local location_items = {}
+    for _, proto in pairs(global.prototypes.locations) do
+        table.insert(location_items, {"", --[[ "[img=" .. proto.sprite .. "] ", ]] proto.localised_name})
+    end
+
     for district in player_table.realm:iterator() do
-        build_district_frame(main_elements.districts_box, district, selected_district_id)
+        build_district_frame(main_elements.districts_box, district, selected_district_id, location_items)
     end
 
     main_flow.add{type="button", caption={"fp.add_district"}, style="fp_button_green",
@@ -171,7 +186,19 @@ listeners.gui = {
             name = "confirm_district_name",
             handler = save_district_name
         }
-    }
+    },
+    on_gui_selection_state_changed = {
+        {
+            name = "change_district_location",
+            handler = (function(player, tags, event)
+                local district = OBJECT_INDEX[tags.district_id]  --[[@as District]]
+                local location_proto_id = event.element.selected_index
+                district.location_proto = global.prototypes.locations[location_proto_id]
+
+                util.raise.refresh(player, "all", nil)
+            end)
+        }
+    },
 }
 
 listeners.misc = {

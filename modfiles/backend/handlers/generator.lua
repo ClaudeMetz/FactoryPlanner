@@ -8,7 +8,8 @@ local generator = {
     belts = {},
     wagons = {},
     modules = {},
-    beacons = {}
+    beacons = {},
+    locations = {}
 }
 
 
@@ -929,6 +930,47 @@ function generator.beacons.sorting_function(a, b)
     elseif a.energy_usage < b.energy_usage then return true
     elseif a.energy_usage > b.energy_usage then return false end
     return false
+end
+
+
+---@class FPLocationPrototype: FPPrototype
+---@field data_type "locations"
+---@field surface_properties { string: double }?
+
+-- Generates a table containing all 'places' with surface_conditions, like planets and platforms
+---@return NamedPrototypes<FPLocationPrototype>
+function generator.locations.generate()
+    local locations = {}  ---@type NamedPrototypes<FPLocationPrototype>
+
+    ---@param proto LuaSpaceLocationPrototype | LuaSurfacePrototype
+    ---@return FPLocationPrototype location_proto
+    local function build_location(proto)
+        --local sprite = "space-location/" .. proto.name
+        --if not proto.hidden and game.is_valid_sprite_path(sprite) then
+        --    return nil
+        --else
+            return {
+                name = proto.name,
+                localised_name = proto.localised_name,
+                sprite = "",--sprite,
+                surface_properties = proto.surface_properties
+            }
+        --end
+        end
+
+    for _, proto in pairs(game.space_location_prototypes) do
+        if proto.name ~= "space-location-unknown" then  -- only until hidden API is available
+            local location = build_location(proto)
+            if location then insert_prototype(locations, location, nil) end
+        end
+    end
+
+    --[[ for _, proto in pairs(game.surface_prototypes) do
+        local location = build_location(proto)
+        if location then insert_prototype(locations, location, nil) end
+    end ]]
+
+    return locations
 end
 
 

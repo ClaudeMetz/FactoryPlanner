@@ -5,8 +5,8 @@
 - The mod should create districts per planet automatically, once districts are implemented. First one should be called Nauvis too
 - In addition or orthogonally, you could set planets/plattform on factories, which automatically restricts available recipes? (surface conditions?)
   - Surface conditions exist on recipes and machines seemingly. Maybe offer toggle on recipe picker to hide/show unbuildable ones
-    - Conditions for space platforms are on the Hub Entity maybe? (through EntityPrototype)
-    - Otherwise they are on the planet
+    - Changing location of districts might need to revalidate all the recipes etc to make sure they still work
+    - Seems pollution type is tied to space-location, so it'd only need to show the one for each district
 
 ## Bugs
 
@@ -39,7 +39,8 @@
 - Constant combinator `sections` format rename
 - API to open things in Factoriopedia
 - Disabled sprite buttons fade their icons, can't be turned off
-- Can't remove button tooltip, do so on district add button when possible
+- space location and surface sprites can't be used yet, do so when it can
+- surface prototypes missing surface_properties read for generator
 
 ## Release
 
