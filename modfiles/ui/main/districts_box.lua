@@ -101,7 +101,7 @@ local function refresh_districts_box(player)
     local selected_district_id = util.context.get(player, "District").id
     local location_items = {}
     for _, proto in pairs(global.prototypes.locations) do
-        table.insert(location_items, {"", --[[ "[img=" .. proto.sprite .. "] ", ]] proto.localised_name})
+        table.insert(location_items, {"", "[img=" .. proto.sprite .. "] ", proto.localised_name})
     end
 
     for district in player_table.realm:iterator() do

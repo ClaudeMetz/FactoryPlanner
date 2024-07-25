@@ -85,4 +85,21 @@ function _format.machine_count(count, active, round_number)
     return formatted_count, tooltip_line
 end
 
+
+---@param ticks number
+---@return LocalisedString formatted_time
+function _format.format_time(ticks)
+    local seconds = ticks / 60
+
+    local minutes = math.floor(seconds / 60)
+    local minutes_string = (minutes > 0) and {"fp.time_minutes", minutes, minutes} or ""
+
+    seconds = math.floor(seconds - (60 * minutes))
+    local seconds_string = (seconds > 0) and {"fp.time_seconds", seconds, seconds} or ""
+
+    return (seconds_string ~= "" and minutes_string ~= "")
+        and {"", minutes_string, ", ", seconds_string}
+        or {"", minutes_string, seconds_string}  -- one or none will be non-""
+  end
+
 return _format

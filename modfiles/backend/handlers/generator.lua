@@ -335,6 +335,7 @@ end
 ---@field ingredients FormattedRecipeItem[]
 ---@field products FormattedRecipeItem[]
 ---@field main_product FormattedRecipeItem?
+---@field tooltip LocalisedString?
 
 ---@class FPIngredient: Ingredient
 ---@field ignore_productivity boolean
@@ -391,7 +392,7 @@ function generator.recipes.generate()
                 products = proto.products,
                 main_product = proto.main_product,
                 allowed_effects = proto.allowed_effects or {},
-                maximum_productivity = 0.5,--proto.maximum_productivity,
+                maximum_productivity = proto.maximum_productivity,
                 type_counts = {},  -- filled out by format_* below
                 recycling = generator_util.is_recycling_recipe(proto),
                 barreling = generator_util.is_compacting_recipe(proto),
@@ -933,8 +934,38 @@ function generator.beacons.sorting_function(a, b)
 end
 
 
+-- Doesn't need to be a lasting part of the generator as it's only used for LocationPrototypes generation
+---@return { name: string, order: string, localised_name: LocalisedString, localised_unit: LocalisedString, default_value: double, is_time: boolean }[]
+local function generate_surface_properties()
+    local properties = {}
+
+    ---@param a LuaSurfacePropertyPrototype
+    ---@param b LuaSurfacePropertyPrototype
+    ---@return boolean
+    local function property_sorting_function(a, b)
+        if a.order < b.order then return true
+        elseif a.order > b.order then return false end
+        return false
+    end
+
+    for _, proto in pairs(game.surface_property_prototypes) do
+        table.insert(properties, {
+            name = proto.name,
+            order = proto.order,
+            localised_name = proto.localised_name,
+            localised_unit = proto.localised_unit,
+            default_value = proto.default_value,
+            is_time = proto.is_time
+        })
+    end
+
+    table.sort(properties, property_sorting_function)
+    return properties
+end
+
 ---@class FPLocationPrototype: FPPrototype
 ---@field data_type "locations"
+---@field tooltip LocalisedString
 ---@field surface_properties { string: double }?
 
 -- Generates a table containing all 'places' with surface_conditions, like planets and platforms
@@ -942,31 +973,49 @@ end
 function generator.locations.generate()
     local locations = {}  ---@type NamedPrototypes<FPLocationPrototype>
 
+    local property_prototypes = generate_surface_properties()
+
     ---@param proto LuaSpaceLocationPrototype | LuaSurfacePrototype
-    ---@return FPLocationPrototype location_proto
-    local function build_location(proto)
-        --local sprite = "space-location/" .. proto.name
-        --if not proto.hidden and game.is_valid_sprite_path(sprite) then
-        --    return nil
-        --else
-            return {
-                name = proto.name,
-                localised_name = proto.localised_name,
-                sprite = "",--sprite,
-                surface_properties = proto.surface_properties
-            }
-        --end
+    ---@param type_ string
+    ---@return FPLocationPrototype? location_proto
+    local function build_location(proto, type_)
+        local sprite = type_ .. "/" .. proto.name
+        if --[[ not proto.hidden and ]] not game.is_valid_sprite_path(sprite) then return nil end
+
+        local surface_properties, tooltip = nil, {"", {"fp.tt_title", proto.localised_name}}
+
+        if proto.surface_properties then
+            surface_properties = {}
+            table.insert(tooltip, "\n")
+
+            for _, property_proto in pairs(property_prototypes) do
+                local value = proto.surface_properties[property_proto.name] or property_proto.default_value
+                surface_properties[property_proto.name] = value
+
+                local value_and_unit = {"", value, property_proto.localised_unit}  ---@type LocalisedString
+                if property_proto.is_time then value_and_unit = util.format.format_time(value) end
+                table.insert(tooltip, {"fp.surface_property", property_proto.localised_name, value_and_unit})
+            end
         end
+
+        return {
+            name = proto.name,
+            localised_name = proto.localised_name,
+            sprite = sprite,
+            tooltip = tooltip,
+            surface_properties = surface_properties
+        }
+    end
 
     for _, proto in pairs(game.space_location_prototypes) do
         if proto.name ~= "space-location-unknown" then  -- only until hidden API is available
-            local location = build_location(proto)
+            local location = build_location(proto, "space-location")
             if location then insert_prototype(locations, location, nil) end
         end
     end
 
     --[[ for _, proto in pairs(game.surface_prototypes) do
-        local location = build_location(proto)
+        local location = build_location(proto, "surface")
         if location then insert_prototype(locations, location, nil) end
     end ]]
 
