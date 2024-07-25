@@ -1,4 +1,5 @@
 local Object = require("backend.data.Object")
+local SimpleItems = require("backend.data.SimpleItems")
 
 ---@class District: Object, ObjectMethods
 ---@field class "District"
@@ -7,7 +8,12 @@ local Object = require("backend.data.Object")
 ---@field previous District?
 ---@field name string
 ---@field location_proto FPLocationPrototype
+---@field products SimpleItems
+---@field byproducts SimpleItems
+---@field ingredients SimpleItems
 ---@field first Factory?
+---@field power number
+---@field emissions Emissions
 local District = Object.methods()
 District.__index = District
 script.register_metatable("District", District)
@@ -19,7 +25,13 @@ local function init(name, location)
     local object = Object.init({
         name = name or "New District",
         location_proto = prototyper.util.find_prototype("locations", location or "nauvis"),
-        first = nil
+        products = SimpleItems.init(),
+        byproducts = SimpleItems.init(),
+        ingredients = SimpleItems.init(),
+        first = nil,
+
+        power = 0,
+        emissions = {},
     }, "District", District)  --[[@as District]]
     return object
 end
@@ -28,6 +40,9 @@ end
 function District:index()
     OBJECT_INDEX[self.id] = self
     for factory in self:iterator() do factory:index() end
+    self.products:index()
+    self.byproducts:index()
+    self.ingredients:index()
 end
 
 

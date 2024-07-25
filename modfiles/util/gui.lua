@@ -215,6 +215,7 @@ function _gui.format_emissions(emissions)
             table.insert(emissions_list, {"fp.emissions_line", pollutant, emission})
         end
     end
+    if #emissions_list == 1 then table.insert(emissions_list, {"fp.emissions_none"}) end
     return emissions_list
 end
 

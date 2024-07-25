@@ -9,7 +9,6 @@ local function refresh_district_info(player)
     district_info_elements.name_label.caption = district.name
     district_info_elements.location_sprite.sprite = district.location_proto.sprite
     district_info_elements.location_sprite.tooltip = district.location_proto.tooltip
-    district_info_elements.districts_button.toggled = ui_state.districts_view
 end
 
 local function build_district_info(player)
@@ -38,8 +37,7 @@ local function build_district_info(player)
     local button_districts = flow_horizontal.add{type="sprite-button", sprite="utility/dropdown",
         tooltip={"fp.view_districts"}, tags={mod="fp", on_gui_click="toggle_districts_view"},
         style="tool_button", auto_toggle=true, mouse_button_filter={"left"}}
-    button_districts.style.padding = 2
-    main_elements.district_info["districts_button"] = button_districts
+    button_districts.style.padding = 1
 
     refresh_district_info(player)
 end
@@ -56,6 +54,7 @@ listeners.gui = {
                 local ui_state = util.globals.ui_state(player)
                 ui_state.districts_view = not ui_state.districts_view
                 util.raise.refresh(player, "production", nil)
+                util.raise.refresh(player, "title_bar", nil)  -- for compact toggle
             end)
         }
     }
