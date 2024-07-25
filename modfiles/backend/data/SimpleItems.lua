@@ -13,7 +13,6 @@ local Object = require("backend.data.Object")
 ---@field class "SimpleItems"
 ---@field parent LineObject
 ---@field items SimpleItem[]
----@field amount integer
 local SimpleItems = Object.methods()
 SimpleItems.__index = SimpleItems
 script.register_metatable("SimpleItems", SimpleItems)
@@ -21,8 +20,7 @@ script.register_metatable("SimpleItems", SimpleItems)
 ---@return SimpleItems
 local function init()
     local object = Object.init({
-        items = {},
-        amount = 0
+        items = {}
     }, "SimpleItems", SimpleItems)  --[[@as SimpleItems]]
     return object
 end
@@ -36,12 +34,26 @@ end
 ---@param item SimpleItem
 function SimpleItems:insert(item)
     table.insert(self.items, item)
-    self.amount = self.amount + 1
+end
+
+---@param index integer
+function SimpleItems:remove(index)
+    table.remove(self.items, index)
 end
 
 function SimpleItems:clear()
     self.items = {}
-    self.amount = 0
+end
+
+---@param key_type "proto" | "name"
+---@return { FPItemPrototype: number }
+function SimpleItems:map(key_type)
+    local map = {}
+    for index, item in pairs(self.items) do
+        local key = (key_type == "proto") and item.proto or item.proto.name
+        map[key] = index
+    end
+    return map
 end
 
 
@@ -53,18 +65,20 @@ function SimpleItems:find(proto)
     end
 end
 
+---@param reverse boolean?
 ---@return fun(): integer?, SimpleItem?
-function SimpleItems:iterator()
-    local i = 0
+function SimpleItems:iterator(reverse)
+    local i = (reverse) and #self.items+1 or 0
+    local step = (reverse) and -1 or 1
     return function()
-        i = i + 1; local next = self.items[i]
+        i = i + step; local next = self.items[i]
         if next then return i, next end
     end
 end
 
 ---@return number count
 function SimpleItems:count()
-    return table_size(self.items)
+    return #self.items
 end
 
 

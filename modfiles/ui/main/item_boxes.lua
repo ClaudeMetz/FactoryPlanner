@@ -296,7 +296,7 @@ local function build_item_boxes(player)
     local products_per_row = util.globals.preferences(player).products_per_row
     build_item_box(player, "product", products_per_row)
     build_item_box(player, "byproduct", products_per_row)
-    build_item_box(player, "ingredient", products_per_row*2)
+    build_item_box(player, "ingredient", products_per_row * 2)
 
     refresh_item_boxes(player)
 end

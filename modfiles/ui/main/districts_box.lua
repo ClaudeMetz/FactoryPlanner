@@ -15,11 +15,52 @@ local function save_district_name(player, tags, _)
     util.raise.refresh(player, "district_info", nil)
 end
 
-local function build_district_frame(elements, district, selected_id, location_items)
+
+local function build_items_flow(player, parent, district)
+    local items_flow = parent.add{type="flow", direction="horizontal"}
+    items_flow.style.padding = {6, 12, 12, 12}
+    items_flow.style.horizontal_spacing = 34
+
+    local function build_item_flow(items, category, column_count)
+        local item_flow = items_flow.add{type="flow", direction="vertical"}
+        item_flow.add{type="label", caption={"fp.pu_" .. category, 2}, style="caption_label"}
+
+        local item_frame = item_flow.add{type="frame", style="slot_button_deep_frame"}
+        item_frame.style.width = column_count * MAGIC_NUMBERS.item_button_size
+        item_frame.style.minimal_height = MAGIC_NUMBERS.item_button_size
+        local table_items = item_frame.add{type="table", column_count=column_count, style="filter_slot_table"}
+
+        local item_count = 0
+        for _, item in items:iterator() do
+            if item.amount > MAGIC_NUMBERS.margin_of_error then
+                local style, enabled = "flib_slot_button_default", true
+                if item.proto.type == "entity" then style = "flib_slot_button_transparent"; enabled=false end
+                table_items.add{type="sprite-button", number=item.amount, style=style, sprite=item.proto.sprite,
+                    tooltip=item.proto.localised_name, enabled=enabled}
+                item_count = item_count + 1
+            end
+        end
+        return table_items, math.ceil(item_count / column_count)
+    end
+
+    local total_columns = util.globals.preferences(player).products_per_row * 4
+    local columns_per, remainder = math.floor(total_columns / 3), total_columns % 3
+
+    local prod_table, prod_rows = build_item_flow(district.products, "product", columns_per + remainder)
+    local byprod_table, byprod_rows = build_item_flow(district.byproducts, "byproduct", columns_per)
+    local ingr_table, ingr_rows = build_item_flow(district.ingredients, "ingredient", columns_per)
+
+    local height = math.max(prod_rows, byprod_rows, ingr_rows) * MAGIC_NUMBERS.item_button_size
+    prod_table.style.height = height; byprod_table.style.height = height; ingr_table.style.height = height
+end
+
+local function build_district_frame(player, district, location_items)
+    local elements = util.globals.main_elements(player).districts_box
     elements[district.id] = {}
 
-    local window_frame = elements.vertical_flow.add{type="frame", direction="vertical", style="inside_shallow_frame"}
+    local window_frame = elements.main_flow.add{type="frame", direction="vertical", style="inside_shallow_frame"}
     local subheader = window_frame.add{type="frame", direction="horizontal", style="subheader_frame"}
+    subheader.style.top_padding = 6
 
     -- Interaction buttons
     local function create_move_button(flow, direction)
@@ -40,6 +81,7 @@ local function build_district_frame(elements, district, selected_id, location_it
     create_move_button(move_flow, "previous")
     create_move_button(move_flow, "next")
 
+    local selected_id = util.context.get(player, "District").id
     local select_button = subheader.add{type="button", caption={"fp.select"}, style="list_box_item",
         tags={mod="fp", on_gui_click="select_district", district_id=district.id},
         enabled=(district.id ~= selected_id), mouse_button_filter={"left"}}
@@ -76,14 +118,21 @@ local function build_district_frame(elements, district, selected_id, location_it
     subheader.add{type="drop-down", items=location_items, selected_index=district.location_proto.id,
         tags={mod="fp", on_gui_selection_state_changed="change_district_location", district_id=district.id}}
 
+    -- Power & Pollution
+    local label_power = subheader.add{type="label", caption=util.format.SI_value(district.power, "W", 3),
+        style="bold_label"}
+    label_power.style.left_margin = 32
+    subheader.add{type="label", caption="|"}
+    subheader.add{type="label", caption={"fp.info_label", {"fp.emissions_title"}}, style="bold_label",
+        tooltip=util.gui.format_emissions(district.emissions)}
+
     -- Delete button
     subheader.add{type="empty-widget", style="flib_horizontal_pusher"}
     subheader.add{type="sprite-button", tags={mod="fp", on_gui_click="delete_district", district_id=district.id},
         sprite="utility/trash", style="tool_button_red", enabled=(district.parent:count() > 1),
         mouse_button_filter={"left"}}
 
-    local scroll_pane = window_frame.add{type="scroll-pane", style="flib_naked_scroll_pane"}
-
+    build_items_flow(player, window_frame, district)
 end
 
 local function refresh_districts_box(player)
@@ -93,23 +142,23 @@ local function refresh_districts_box(player)
     if main_elements.main_frame == nil then return end
 
     local visible = player_table.ui_state.districts_view
-    local main_flow = main_elements.districts_box.vertical_flow
-    main_flow.visible = visible
+    local main_flow = main_elements.districts_box.main_flow
+    main_flow.parent.visible = visible
     if not visible then return end
 
     main_flow.clear()
-    local selected_district_id = util.context.get(player, "District").id
     local location_items = {}
     for _, proto in pairs(global.prototypes.locations) do
         table.insert(location_items, {"", "[img=" .. proto.sprite .. "] ", proto.localised_name})
     end
 
     for district in player_table.realm:iterator() do
-        build_district_frame(main_elements.districts_box, district, selected_district_id, location_items)
+        build_district_frame(player, district, location_items)
     end
 
-    main_flow.add{type="button", caption={"fp.add_district"}, style="fp_button_green",
+    local button_add = main_flow.add{type="button", caption={"fp.add_district"}, style="fp_button_green",
         tags={mod="fp", on_gui_click="add_district"}, mouse_button_filter={"left"}}
+    button_add.style.horizontally_stretchable = true
 end
 
 local function build_districts_box(player)
@@ -117,9 +166,10 @@ local function build_districts_box(player)
     main_elements.districts_box = {}
 
     local parent_flow = main_elements.flows.right_vertical
-    local flow_vertical = parent_flow.add{type="flow", direction="vertical"}
+    local scroll_pane = parent_flow.add{type="scroll-pane", style="flib_naked_scroll_pane_no_padding"}
+    local flow_vertical = scroll_pane.add{type="flow", direction="vertical"}
     flow_vertical.style.vertical_spacing = MAGIC_NUMBERS.frame_spacing
-    main_elements.districts_box["vertical_flow"] = flow_vertical
+    main_elements.districts_box["main_flow"] = flow_vertical
 
     refresh_districts_box(player)
 end

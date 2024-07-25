@@ -1,6 +1,7 @@
 local sequential_engine = require("backend.calculation.sequential_engine")
 local matrix_engine = require("backend.calculation.matrix_engine")
 local structures = require("backend.calculation.structures")
+local SimpleItems = require("backend.data.SimpleItems")
 
 solver, solver_util = {}, {}
 
@@ -171,6 +172,74 @@ local function update_ingredient_satisfaction(floor, product_class)
 end
 
 
+local function update_items(old_items, current_items, new_result_items)
+    local old_item_map = {}
+    for _, item in old_items:iterator() do
+        old_item_map[item.proto] = item.amount
+    end
+
+    -- Reverse iterator so removing is fine
+    for index, current_item in current_items:iterator(true) do
+        local old_index = old_item_map[current_item.proto]
+        if old_index ~= nil then
+            current_item.amount = current_item.amount - old_items:find(current_item.proto).amount
+            if current_item.amount == 0 then current_items:remove(index) end
+        end
+    end
+
+    local current_item_map = {}
+    for _, item in current_items:iterator() do
+        current_item_map[item.proto.name] = item
+    end
+
+    for type, items in pairs(new_result_items) do
+        for name, amount in pairs(items) do
+            local current_item = current_item_map[name]
+            if current_item == nil then
+                local proto = prototyper.util.find_prototype("items", name, type)
+                current_items:insert({class="SimpleItem", proto=proto, amount=amount})
+            else
+                current_item.amount = current_item.amount + amount
+            end
+        end
+    end
+end
+
+-- Updates the district by removing and re-adding, which is faster
+--   than recalculating the whole item set from all factories
+local function update_district(factory, new_result)
+    local district = factory.parent
+
+    -- Power
+    district.power = district.power - factory.top_floor.power + new_result.energy_consumption
+
+    -- Pollution - new_result includes zeroed emissions
+    local emissions = district.emissions
+    for type, new_emissions in pairs(new_result.emissions) do
+        if emissions[type] == nil then  -- nothing to subtract if it wasn't there
+            emissions[type] = new_emissions
+        else
+            local old_emissions = factory.top_floor.emissions[type] or 0
+            emissions[type] = emissions[type] - old_emissions + new_emissions
+        end
+    end
+
+    -- Byproducts & Ingredients
+    update_items(factory.top_floor.byproducts, district.byproducts, new_result.Byproduct)
+    update_items(factory.top_floor.ingredients, district.ingredients, new_result.Ingredient)
+
+    -- Products - need to contort the data to be able to reuse the same logic
+    local old_products, product_results = SimpleItems.init(), structures.class.init()
+    for product in factory:iterator() do
+        old_products:insert({class="SimpleItem", proto=product.proto, amount=product.amount})
+
+        local product_result_amount = new_result.Product[product.proto.type][product.proto.name] or 0
+        structures.class.add(product_results, product, product:get_required_amount() - product_result_amount)
+    end
+    update_items(old_products, district.products, product_results)
+end
+
+
 -- ** TOP LEVEL **
 -- Updates the whole factory calculations from top to bottom
 function solver.update(player, factory)
@@ -243,6 +312,8 @@ end
 function solver.set_factory_result(result)
     local player_table = global.players[result.player_index]
     local factory = player_table.active_factory
+
+    update_district(factory, result)
 
     factory.top_floor.power = result.energy_consumption
     factory.top_floor.emissions = result.emissions

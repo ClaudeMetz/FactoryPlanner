@@ -37,7 +37,7 @@ local function determine_table_height(floor, column_counts)
     for line in floor:iterator() do
         local items_height = 0
         for column, count in pairs(column_counts) do
-            local column_height = math.ceil(line[column .. "s"].amount / count)
+            local column_height = math.ceil(line[column .. "s"]:count() / count)
             items_height = math.max(items_height, column_height)
         end
 

@@ -234,6 +234,7 @@ listeners.misc = {
 
         local main_focus = main_dialog.is_in_focus(player)
         local compact_focus = compact_dialog.is_in_focus(player)
+        local valid_factory = factory ~= nil and factory.valid
 
         -- Open the compact view if this toggle is pressed when neither dialog
         -- is open as that makes the most sense from a user perspective
@@ -247,7 +248,7 @@ listeners.misc = {
             util.raise.refresh(player, "production", nil)
             ui_state.compact_view = false
 
-        elseif main_focus and factory ~= nil and factory.valid then
+        elseif main_focus and valid_factory and not ui_state.districts_view then
             main_dialog.toggle(player)
             compact_dialog.toggle(player)  -- toggle also refreshes
             ui_state.compact_view = true
