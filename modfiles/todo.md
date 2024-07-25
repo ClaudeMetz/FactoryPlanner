@@ -2,7 +2,6 @@
 
 ## Active
 
-- The mod should create districts per planet automatically, once districts are implemented. First one should be called Nauvis too
 - In addition or orthogonally, you could set planets/plattform on factories, which automatically restricts available recipes? (surface conditions?)
   - Surface conditions exist on recipes and machines seemingly. Maybe offer toggle on recipe picker to hide/show unbuildable ones
     - Changing location of districts might need to revalidate all the recipes etc to make sure they still work
@@ -13,11 +12,9 @@
 - Scrap recycling recipe shouldn't be marked as recycling since it's kind of a core recipe
 - Recycling recipes seem to follow a different new format for what they produce?
 - Agriculture tower recipes not supported - maybe it doesn't use recipes?
-- Disable SA-specific features by checking feature flags in the right spots
-- Translation seems to not reload when loading a save
-- Deleting the non-selected district/factory still sets the context to a neighbor, which is weird
-- Cryoplant and foundry productivity capped at 50% seemingly (see Discord for examples)
 - Module defaults-set stuff doesn't refresh module_effects properly
+- Translation seems to not reload when loading a save
+- Disable SA-specific features by checking feature flags in the right spots
 
 ## Uncertainty Sphere
 
@@ -39,8 +36,7 @@
 - Constant combinator `sections` format rename
 - API to open things in Factoriopedia
 - Disabled sprite buttons fade their icons, can't be turned off
-- space location and surface sprites can't be used yet, do so when it can
-- surface prototypes missing surface_properties read for generator
+- Surface prototypes missing surface_properties read for generator, add surfaces to locations properly
 
 ## Release
 
@@ -60,6 +56,8 @@
 - Fluid temperatures are still a major issue ...
 - Need an 'are you sure' dialog for deleting a District, resetting preferences, etc
 - Add a district automatically once someone lands on a new planet for the first time, plus space platform
+- Look into new display_density_scale thing ideally
+- Deleting the non-selected district/factory still sets the context to a neighbor, which is weird
 
 ## Low Priority
 
