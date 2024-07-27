@@ -8,10 +8,11 @@
     - Seems pollution type is tied to space-location, so it'd only need to show the one for each district
 - Balance District items against each other? Or show things as products and ingredients if that's the case?
 - Should close districts view if any real action is taken in the factory list (select, add, etc)
+- Deleting/archiving/etc a factory doesn't update the District. Also archived ones shouldn't contribute. Use same set_blank trick; also lots of other things like deleting main product. wtf is going on
 
 ## Bugs
 
-- Scrap recycling recipe shouldn't be marked as recycling since it's kind of a core recipe
+- Scrap recycling recipe shouldn't be marked as recycling since it's kind of a core recipe (also not hidden)
 - Recycling recipes seem to follow a different new format for what they produce?
 - Agriculture tower recipes not supported - maybe it doesn't use recipes?
 - Module defaults-set stuff doesn't refresh module_effects properly
@@ -66,3 +67,4 @@
 - Adjust utility dialog handcrafting to behave like vanilla crafting does in all ways
 - Have separate methods for each GUI action instead of a tree. Needs some prep methods sometimes maybe
 - Get rid of player_table.active_factory hack since it's very easy to avoid
+- Main interface builds 4 times when starting a save, which is weird

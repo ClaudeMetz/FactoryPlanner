@@ -62,23 +62,25 @@ local function build_title_bar(player)
         ignored_by_interaction=true}
     add_handle(flow_title_bar, handle_widths["right"])
 
-    flow_title_bar = flow_title_bar.add{type="flow", direction="horizontal"}
-    flow_title_bar.add{type="button", caption={"fp.tutorial"}, style="fp_button_frame_tool",
+    local flow_right = flow_title_bar.add{type="flow", direction="horizontal"}
+    flow_right.style.horizontal_spacing = 8
+
+    flow_right.add{type="button", caption={"fp.tutorial"}, style="fp_button_frame_tool",
         tags={mod="fp", on_gui_click="title_bar_open_dialog", type="tutorial"}, mouse_button_filter={"left"}}
-    flow_title_bar.add{type="button", caption={"fp.preferences"}, style="fp_button_frame_tool",
+    flow_right.add{type="button", caption={"fp.preferences"}, style="fp_button_frame_tool",
         tags={mod="fp", on_gui_click="title_bar_open_dialog", type="preferences"}, mouse_button_filter={"left"}}
 
-    local separation = flow_title_bar.add{type="line", direction="vertical"}
+    local separation = flow_right.add{type="line", direction="vertical"}
     separation.style.height = MAGIC_NUMBERS.title_bar_height - 4
 
-    local button_pause = flow_title_bar.add{type="button", caption={"fp.pause"}, tooltip={"fp.pause_on_interface"},
+    local button_pause = flow_right.add{type="button", caption={"fp.pause"}, tooltip={"fp.pause_on_interface"},
         tags={mod="fp", on_gui_click="toggle_pause_game"}, style="fp_button_frame_tool", mouse_button_filter={"left"}}
     main_elements.title_bar["pause_button"] = button_pause
 
     local preferences = util.globals.preferences(player)
     button_pause.toggled = (preferences.pause_on_interface)
 
-    local button_close = flow_title_bar.add{type="sprite-button", tags={mod="fp", on_gui_click="close_main_dialog"},
+    local button_close = flow_right.add{type="sprite-button", tags={mod="fp", on_gui_click="close_main_dialog"},
         sprite="utility/close", tooltip={"fp.close_interface"}, style="fp_button_frame",
         mouse_button_filter={"left"}}
     button_close.style.padding = 1

@@ -228,16 +228,18 @@ local function build_production_box(player)
     util.raise.build(player, "view_state", subheader)
     main_elements.production_box["view_state_table"] = subheader["table_view_state"]
 
-    local label_instruction = frame_vertical.add{type="label", style="bold_label"}
-    label_instruction.style.margin = 20
-    main_elements.production_box["instruction_label"] = label_instruction
 
-    local flow_production_table = frame_vertical.add{type="flow", direction="horizontal"}
-    main_elements.production_box["production_table_flow"] = flow_production_table
+    local scroll_pane_production = frame_vertical.add{type="scroll-pane", style="flib_naked_scroll_pane_no_padding"}
+    scroll_pane_production.style.extra_right_padding_when_activated = -12
+    main_elements.production_box["production_scroll_pane"] = scroll_pane_production
+
+    local label_instruction = frame_vertical.add{type="label", style="bold_label"}
+    label_instruction.style.margin = 16
+    main_elements.production_box["instruction_label"] = label_instruction
 
     local button_paste = frame_vertical.add{type="button", caption={"fp.paste_line"}, tooltip={"fp.paste_line_tt"},
         style="rounded_button", tags={mod="fp", on_gui_click="paste_line"}, mouse_button_filter={"left"}}
-    button_paste.style.margin = {6, 12}
+    button_paste.style.margin = 12
     button_paste.style.minimal_width = 0
     main_elements.production_box["paste_button"] = button_paste
 

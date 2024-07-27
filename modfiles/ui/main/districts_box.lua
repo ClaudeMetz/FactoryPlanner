@@ -19,7 +19,7 @@ end
 local function build_items_flow(player, parent, district)
     local items_flow = parent.add{type="flow", direction="horizontal"}
     items_flow.style.padding = {6, 12, 12, 12}
-    items_flow.style.horizontal_spacing = 34
+    items_flow.style.horizontal_spacing = 36
 
     local function build_item_flow(items, category, column_count)
         local item_flow = items_flow.add{type="flow", direction="vertical"}
@@ -167,6 +167,8 @@ local function build_districts_box(player)
 
     local parent_flow = main_elements.flows.right_vertical
     local scroll_pane = parent_flow.add{type="scroll-pane", style="flib_naked_scroll_pane_no_padding"}
+    scroll_pane.style.top_margin = -2
+    scroll_pane.style.extra_right_margin_when_activated = -12
     local flow_vertical = scroll_pane.add{type="flow", direction="vertical"}
     flow_vertical.style.vertical_spacing = MAGIC_NUMBERS.frame_spacing
     main_elements.districts_box["main_flow"] = flow_vertical
@@ -228,8 +230,10 @@ listeners.gui = {
             name = "add_district",
             handler = (function(player, _, _)
                 local realm = util.globals.player_table(player).realm
-                realm:insert(District.init())
-                util.raise.refresh(player, "districts_box", nil)
+                local new_district = District.init()
+                realm:insert(new_district)
+                util.context.set(player, new_district)
+                util.raise.refresh(player, "all", nil)
             end)
         }
     },
