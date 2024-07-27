@@ -1,5 +1,3 @@
-local District = require("backend.data.District")
-
 -- ** LOCAL UTIL **
 local function save_district_name(player, tags, _)
     local main_elements = util.globals.main_elements(player)
@@ -155,10 +153,6 @@ local function refresh_districts_box(player)
     for district in player_table.realm:iterator() do
         build_district_frame(player, district, location_items)
     end
-
-    local button_add = main_flow.add{type="button", caption={"fp.add_district"}, style="fp_button_green",
-        tags={mod="fp", on_gui_click="add_district"}, mouse_button_filter={"left"}}
-    button_add.style.horizontally_stretchable = true
 end
 
 local function build_districts_box(player)
@@ -223,16 +217,6 @@ listeners.gui = {
                 district.parent:remove(district)
 
                 util.context.set(player, adjacent_district)
-                util.raise.refresh(player, "all", nil)
-            end)
-        },
-        {
-            name = "add_district",
-            handler = (function(player, _, _)
-                local realm = util.globals.player_table(player).realm
-                local new_district = District.init()
-                realm:insert(new_district)
-                util.context.set(player, new_district)
                 util.raise.refresh(player, "all", nil)
             end)
         }
