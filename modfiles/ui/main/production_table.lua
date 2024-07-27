@@ -394,11 +394,10 @@ local function refresh_production_table(player)
     local factory = util.context.get(player, "Factory")  --[[@as Factory]]
     local floor = util.context.get(player, "Floor")  --[[@as Floor]]
 
-    local production_table_elements = main_elements.production_table
     local factory_valid = (factory and factory.valid)
     local any_lines_present = (factory_valid) and (floor:count() > 0) or false
 
-    local scroll_pane_production = production_table_elements.production_scroll_pane
+    local scroll_pane_production = main_elements.production_box.production_scroll_pane
     scroll_pane_production.visible = (factory_valid and any_lines_present) or false
     if not factory_valid then return end
     scroll_pane_production.clear()
@@ -426,10 +425,8 @@ local function refresh_production_table(player)
         table_production.style.column_alignments[index] = column_data.alignment
     end
 
-    -- Add pushers in both directions to make sure the table takes all available space
-    local flow_pusher = table_production.add{type="flow"}
-    flow_pusher.add{type="empty-widget", style="flib_vertical_pusher"}
-    flow_pusher.add{type="empty-widget", style="flib_horizontal_pusher"}
+    -- Add pusher to make sure the table takes all available space
+    table_production.add{type="empty-widget", style="flib_horizontal_pusher"}
 
     -- Generates some data that is relevant to several different builders
     local metadata = generate_metadata(player, factory)
@@ -451,17 +448,7 @@ local function refresh_production_table(player)
 end
 
 local function build_production_table(player)
-    local main_elements = util.globals.main_elements(player)
-    main_elements.production_table = {}
-
-    -- Can't do much here since the table needs to be destroyed on refresh anyways
-    local flow_production_table = main_elements.production_box.production_table_flow
-    local scroll_pane_production = flow_production_table.add{type="scroll-pane", direction="vertical",
-        style="flib_naked_scroll_pane_no_padding"}
-    scroll_pane_production.style.horizontally_stretchable = true
-    scroll_pane_production.style.vertically_stretchable = false
-    main_elements.production_table["production_scroll_pane"] = scroll_pane_production
-
+    -- No building necessary as production_box sets everything up
     refresh_production_table(player)
 end
 
