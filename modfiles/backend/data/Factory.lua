@@ -149,7 +149,7 @@ end
 ---@param new_defined_by ProductDefinedBy
 function Factory:update_product_definitions(new_defined_by)
     for product in self:iterator() do
-        product:update_definition(new_defined_by)
+        product:change_definition(new_defined_by)
     end
 end
 

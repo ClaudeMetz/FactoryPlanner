@@ -213,16 +213,16 @@ local function update_district(factory, new_result)
     local district, timescale = factory.parent, factory.timescale
 
     -- Power
-    district.power = district.power - factory.top_floor.power/timescale + new_result.energy_consumption/timescale
+    district.power = district.power - factory.top_floor.power + new_result.energy_consumption
 
     -- Pollution - new_result includes zeroed emissions
     local emissions = district.emissions
     for type, new_emissions in pairs(new_result.emissions) do
         if emissions[type] == nil then  -- nothing to subtract if it wasn't there
-            emissions[type] = new_emissions/timescale
+            emissions[type] = new_emissions
         else
             local old_emissions = factory.top_floor.emissions[type] or 0
-            emissions[type] = emissions[type] - old_emissions/timescale + new_emissions/timescale
+            emissions[type] = emissions[type] - old_emissions + new_emissions
         end
     end
 
@@ -244,7 +244,7 @@ end
 
 -- ** TOP LEVEL **
 -- Updates the whole factory calculations from top to bottom
-function solver.update(player, factory)
+function solver.update(player, factory, blank)
     factory = factory or util.context.get(player, "Factory")
     if factory.valid then
         local player_table = util.globals.player_table(player)
@@ -253,7 +253,9 @@ function solver.update(player, factory)
 
         local factory_data = solver.generate_factory_data(player, factory)
 
-        if factory.matrix_free_items ~= nil then  -- meaning the matrix solver is active
+        if blank then  -- sets factory to a blank state
+            set_blank_factory(player, factory)
+        elseif factory.matrix_free_items ~= nil then  -- meaning the matrix solver is active
             local matrix_metadata = matrix_engine.get_matrix_solver_metadata(factory_data)
 
             if matrix_metadata.num_cols > matrix_metadata.num_rows and #factory.matrix_free_items > 0 then

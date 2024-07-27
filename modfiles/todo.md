@@ -65,3 +65,4 @@
 
 - Adjust utility dialog handcrafting to behave like vanilla crafting does in all ways
 - Have separate methods for each GUI action instead of a tree. Needs some prep methods sometimes maybe
+- Get rid of player_table.active_factory hack since it's very easy to avoid
