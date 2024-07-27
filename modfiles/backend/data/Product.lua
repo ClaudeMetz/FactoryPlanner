@@ -20,7 +20,7 @@ local function init(proto)
     local object = Object.init({
         proto = proto,
         defined_by = "amount",
-        required_amount = 0,
+        required_amount = 0,  -- always per second
         belt_proto = nil,
 
         amount = 0  -- the amount satisfied by the solver
@@ -38,7 +38,7 @@ end
 ---@return number required_amount
 function Product:get_required_amount()
     if self.defined_by == "amount" then
-        return self.required_amount
+        return self.required_amount * self.parent.timescale
     else   -- defined_by == "belts" | "lanes"
         local multiplier = (self.defined_by == "belts") and 1 or 0.5
         return self.required_amount * (self.belt_proto.throughput * multiplier) * self.parent.timescale
@@ -48,7 +48,7 @@ end
 
 -- Only used when switching between belts and lanes
 ---@param new_defined_by ProductDefinedBy
-function Product:update_definition(new_defined_by)
+function Product:change_definition(new_defined_by)
     if self.defined_by ~= "amount" and new_defined_by ~= self.defined_by then
         self.defined_by = new_defined_by
 
@@ -72,8 +72,8 @@ function Product:paste(object)
         if object.class == "Product" then
             self.parent:replace(self, object)
         elseif object.class == "SimpleItem" or object.class == "Fuel" then
-            local product = init(object.proto)
-            product.required_amount = object.amount
+            local product = init(object.proto)  -- defined_by = "amount"
+            product.required_amount = object.amount / self.parent.timescale
             self.parent:replace(self, product)
         end
 

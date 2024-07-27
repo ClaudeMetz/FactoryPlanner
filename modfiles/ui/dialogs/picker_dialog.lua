@@ -277,7 +277,6 @@ local function add_item_pane(parent_flow, modal_data, item_category, item)
     local defined_by = (item) and item.defined_by or "amount"
     modal_data.amount_defined_by = defined_by
 
-
     local flow_amount = create_flow()
     flow_amount.add{type="label", caption={"fp.pu_" .. item_category, 1}}
 
@@ -287,7 +286,8 @@ local function add_item_pane(parent_flow, modal_data, item_category, item)
 
     flow_amount.add{type="label", caption={"fp.amount"}}
 
-    local item_amount = (item and defined_by == "amount") and tostring(item.required_amount) or ""
+    local item_amount = (item and defined_by == "amount") and
+        tostring(item.required_amount * modal_data.timescale) or ""
     local textfield_amount = flow_amount.add{type="textfield", text=item_amount,
         tags={mod="fp", on_gui_text_changed="picker_item_amount"}}
     util.gui.setup_numeric_textfield(textfield_amount, true, false)
@@ -350,12 +350,15 @@ end
 
 
 local function open_picker_dialog(player, modal_data)
-    -- Create a blank factory if requested
     local preferences = util.globals.preferences(player)
-    modal_data.timescale = preferences.default_timescale
-    modal_data.lob = preferences.belts_or_lanes
 
-    if modal_data.item_id then modal_data.item = OBJECT_INDEX[modal_data.item_id] end
+    if modal_data.item_id then
+        modal_data.item = OBJECT_INDEX[modal_data.item_id]
+        modal_data.timescale = modal_data.item.parent.timescale
+    else
+        modal_data.timescale = preferences.default_timescale
+    end
+    modal_data.lob = preferences.belts_or_lanes
 
     local dialog_flow = modal_data.modal_elements.dialog_flow
     dialog_flow.style.vertical_spacing = 12
@@ -366,7 +369,7 @@ local function open_picker_dialog(player, modal_data)
     add_item_pane(item_content_frame, modal_data, modal_data.item_category, modal_data.item)
 
     -- The item picker only needs to show when adding a new item
-    if modal_data.item == nil then
+    if modal_data.item_id == nil then
         local picker_content_frame = dialog_flow.add{type="frame", direction="vertical", style="inside_deep_frame"}
         add_item_picker(picker_content_frame, player)
     end
@@ -382,6 +385,7 @@ local function close_picker_dialog(player, action)
         local defined_by = modal_data.amount_defined_by
         local relevant_textfield_name = ((defined_by == "amount") and "item" or "belt") .. "_amount_textfield"
         local relevant_amount = tonumber(modal_data.modal_elements[relevant_textfield_name].text) or 0
+        if defined_by == "amount" then relevant_amount = relevant_amount / modal_data.timescale end
 
         local refresh_scope = "factory"
         if modal_data.item ~= nil then  -- ie. this is an edit

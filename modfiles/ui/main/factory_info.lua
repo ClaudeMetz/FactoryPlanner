@@ -11,18 +11,11 @@ end
 local function change_timescale(player, new_timescale)
     local factory = util.context.get(player, "Factory")  --[[@as Factory]]
 
-    local timescale_ratio = (new_timescale / factory.timescale)
+    -- Blank out first, then update so District items are updated correctly
+    solver.update(player, factory, true)
     factory.timescale = new_timescale
-
-    -- Adjust the required_amount according to the new timescale
-    for product in factory:iterator() do
-        -- No need to change amounts for belts/lanes, as timescale change does that implicitly
-        if product.defined_by == "amount" then
-            product.required_amount = product.required_amount * timescale_ratio
-        end
-    end
-
     solver.update(player, factory)
+
     view_state.rebuild_state(player)
     util.raise.refresh(player, "factory", nil)
 end
