@@ -6,6 +6,8 @@
   - Surface conditions exist on recipes and machines seemingly. Maybe offer toggle on recipe picker to hide/show unbuildable ones
     - Changing location of districts might need to revalidate all the recipes etc to make sure they still work
     - Seems pollution type is tied to space-location, so it'd only need to show the one for each district
+- Balance District items against each other? Or show things as products and ingredients if that's the case?
+- Should close districts view if any real action is taken in the factory list (select, add, etc)
 
 ## Bugs
 

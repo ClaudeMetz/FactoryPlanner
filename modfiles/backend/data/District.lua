@@ -95,6 +95,17 @@ function District:count(filter, pivot, direction)
 end
 
 
+---@param player LuaPlayer
+function District:reset_calculations(player)
+    self.products:clear()
+    self.byproducts:clear()
+    self.ingredients:clear()
+    self.power = 0
+    self.emissions = {}
+    for factory in self:iterator() do factory:reset_calculations(player) end
+end
+
+
 --- Districts can't be invalid, this just cleanly validates the factories
 function District:validate()
     self:_validate()

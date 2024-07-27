@@ -153,6 +153,16 @@ function Factory:update_product_definitions(new_defined_by)
     end
 end
 
+---@param player LuaPlayer
+function Factory:reset_calculations(player)
+    self.top_floor.products:clear()
+    self.top_floor.byproducts:clear()
+    self.top_floor.ingredients:clear()
+    self.top_floor.power = 0
+    self.top_floor.emissions = {}
+    solver.update(player, self)
+end
+
 
 ---@class PackedFactory: PackedObject
 ---@field class "Factory"
