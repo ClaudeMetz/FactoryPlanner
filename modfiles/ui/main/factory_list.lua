@@ -15,9 +15,9 @@ local function delete_factory_for_good(metadata)
     if not main_dialog.is_in_focus(player) then return end
     -- Refresh all if the archive is currently open
     if selected_factory and selected_factory.archived == true then
-        util.raise.refresh(player, "all", nil)
+        util.raise.refresh(player, "all")
     else  -- only need to refresh the archive button enabled state really
-        util.raise.refresh(player, "factory_list", nil)
+        util.raise.refresh(player, "factory_list")
     end
 end
 
@@ -40,7 +40,7 @@ local function change_factory_archived(player, to_archive)
         factory.tick_of_deletion = nil
     end
 
-    util.raise.refresh(player, "all", nil)
+    util.raise.refresh(player, "all")
 end
 
 local function add_factory(player, _, event)
@@ -62,7 +62,7 @@ local function duplicate_factory(player, _, _)
 
     solver.update(player, clone)
     util.context.set(player, clone)
-    util.raise.refresh(player, "all", nil)
+    util.raise.refresh(player, "all")
 end
 
 
@@ -71,7 +71,7 @@ local function handle_move_factory_click(player, tags, event)
     local spots_to_shift = (event.control) and 5 or ((not event.shift) and 1 or nil)
     factory.parent:shift(factory, tags.direction, spots_to_shift)
 
-    util.raise.refresh(player, "factory_list", nil)
+    util.raise.refresh(player, "factory_list")
 end
 
 local function handle_factory_click(player, tags, action)
@@ -86,11 +86,11 @@ local function handle_factory_click(player, tags, action)
             solver.update(player, previous_factory)
         end
         util.context.set(player, selected_factory)
-        util.raise.refresh(player, "all", nil)
+        util.raise.refresh(player, "all")
 
     elseif action == "edit" then
         util.context.set(player, selected_factory)
-        util.raise.refresh(player, "all", nil)  -- refresh to update the selected factory
+        util.raise.refresh(player, "all")  -- refresh to update the selected factory
         util.raise.open_dialog(player, {dialog="factory", modal_data={factory_id=selected_factory.id}})
 
     elseif action == "delete" then
@@ -293,7 +293,7 @@ function factory_list.delete_factory(player)
         factory.parent:remove(factory)
 
         util.context.set(player, adjacent_factory or district)
-        util.raise.refresh(player, "all", nil)
+        util.raise.refresh(player, "all")
     else
         local desired_tick_of_deletion = game.tick + MAGIC_NUMBERS.factory_deletion_delay
         local actual_tick_of_deletion = util.nth_tick.register(desired_tick_of_deletion,
@@ -318,7 +318,7 @@ listeners.gui = {
                 local new_factory = district:find({archived=not archive_open})  --[[@as Factory]]
 
                 util.context.set(player, new_factory or district, true)
-                util.raise.refresh(player, "all", nil)
+                util.raise.refresh(player, "all")
             end)
         },
         {

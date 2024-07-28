@@ -194,7 +194,7 @@ local function handle_checkbox_preference_change(player, tags, event)
 
     if tags.type == "production" or preference_name == "round_button_numbers"
             or preference_name == "show_floor_items" or preference_name == "fold_out_subfloors" then
-        util.raise.refresh(player, "production", nil)
+        util.raise.refresh(player, "production")
 
     elseif preference_name == "ingredient_satisfaction" then
         if event.element.state == true then  -- only recalculate if enabled
@@ -205,10 +205,10 @@ local function handle_checkbox_preference_change(player, tags, event)
                 end
             end
         end
-        util.raise.refresh(player, "production", nil)
+        util.raise.refresh(player, "production")
 
     elseif preference_name == "attach_factory_products" or preference_name == "skip_factory_naming" then
-        util.raise.refresh(player, "factory_list", nil)
+        util.raise.refresh(player, "factory_list")
 
     elseif preference_name == "show_gui_button" then
         util.gui.toggle_mod_gui(player)
@@ -253,7 +253,7 @@ local function handle_bol_change(player, _, event)
     end
 
     solver.update(player, nil)
-    util.raise.refresh(player, "all", nil)
+    util.raise.refresh(player, "all")
 end
 
 local function handle_default_prototype_change(player, tags, event)
@@ -282,7 +282,7 @@ local function handle_default_prototype_change(player, tags, event)
 
     if type == "belts" or type == "wagons" then
         view_state.rebuild_state(player)
-        util.raise.refresh(player, "all", nil)
+        util.raise.refresh(player, "all")
     end
 end
 

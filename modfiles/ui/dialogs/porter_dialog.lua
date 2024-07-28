@@ -242,7 +242,7 @@ local function close_import_dialog(player, action)
         end
 
         util.context.set(player, first_factory)
-        util.raise.refresh(player, "all", nil)
+        util.raise.refresh(player, "all")
     end
 end
 

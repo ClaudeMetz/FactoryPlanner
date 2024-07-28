@@ -357,7 +357,7 @@ end
 
 local function close_utility_dialog(player, _)
     util.globals.modal_data(player).utility_inventory.destroy()
-    util.raise.refresh(player, "factory_info", nil)
+    util.raise.refresh(player, "factory_info")
 end
 
 

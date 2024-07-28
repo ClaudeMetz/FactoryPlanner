@@ -30,7 +30,7 @@ function _clipboard.copy(player, object)
     }
 
     util.cursor.create_flying_text(player, {"fp.copied_into_clipboard", {"fp.pu_" .. object.class:lower(), 1}})
-    util.raise.refresh(player, "paste_button", nil)
+    util.raise.refresh(player, "paste_button")
 end
 
 -- Tries pasting the player's clipboard content onto the given target
@@ -55,7 +55,7 @@ function _clipboard.paste(player, target)
             util.cursor.create_flying_text(player, {"fp.pasted_from_clipboard", {"fp.pu_" .. clip.class:lower(), 1}})
 
             solver.update(player)
-            util.raise.refresh(player, "factory", nil)
+            util.raise.refresh(player, "factory")
         else
             local object_lower, target_lower = {"fp.pl_" .. clip.class:lower(), 1}, {"fp.pl_" .. target.class:lower(), 1}
             if error == "incompatible_class" then

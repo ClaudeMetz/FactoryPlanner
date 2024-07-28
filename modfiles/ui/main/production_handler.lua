@@ -8,7 +8,7 @@ local function handle_line_move_click(player, tags, event)
     line.parent:shift(line, tags.direction, spots_to_shift)
 
     solver.update(player)
-    util.raise.refresh(player, "factory", nil)
+    util.raise.refresh(player, "factory")
 end
 
 local function handle_recipe_click(player, tags, action)
@@ -39,7 +39,7 @@ local function handle_recipe_click(player, tags, action)
         end
 
         util.context.set(player, new_context)
-        util.raise.refresh(player, "production", nil)
+        util.raise.refresh(player, "production")
 
     elseif action == "copy" then
         util.clipboard.copy(player, line)  -- use actual line
@@ -50,13 +50,13 @@ local function handle_recipe_click(player, tags, action)
     elseif action == "toggle" then
         relevant_line.active = not relevant_line.active
         solver.update(player, factory)
-        util.raise.refresh(player, "factory", nil)
+        util.raise.refresh(player, "factory")
 
     elseif action == "delete" then
         line.parent:remove(line, true)
 
         solver.update(player, factory)
-        util.raise.refresh(player, "factory", nil)
+        util.raise.refresh(player, "factory")
 
     elseif action == "factoriopedia" then
         --util.open_in_factoriopedia(player, "recipe", relevant_line.recipe_proto.name)
@@ -75,7 +75,7 @@ end
 local function handle_percentage_confirmation(player, _, _)
     util.globals.ui_state(player).recalculate_on_factory_change = false  -- reset this flag as we refresh below
     solver.update(player)
-    util.raise.refresh(player, "factory", nil)
+    util.raise.refresh(player, "factory")
 end
 
 
@@ -103,7 +103,7 @@ local function handle_machine_click(player, tags, action)
         local message = line:apply_mb_defaults(player)
 
         solver.update(player)
-        util.raise.refresh(player, "factory", nil)
+        util.raise.refresh(player, "factory")
         if message ~= nil then util.messages.raise(player, message.category, message.text, 1) end
 
     elseif action == "factoriopedia" then
@@ -142,7 +142,7 @@ local function handle_beacon_click(player, tags, action)
     elseif action == "delete" then
         line:set_beacon(nil)
         solver.update(player)
-        util.raise.refresh(player, "factory", nil)
+        util.raise.refresh(player, "factory")
 
     elseif action == "factoriopedia" then
         --util.open_in_factoriopedia(player, "entity", beacon.proto.name)
@@ -188,7 +188,7 @@ local function handle_module_click(player, tags, action)
 
         module_set:normalize({effects=true})
         solver.update(player)
-        util.raise.refresh(player, "factory", nil)
+        util.raise.refresh(player, "factory")
 
     elseif action == "factoriopedia" then
         --util.open_in_factoriopedia(player, "item", module.proto.name)
@@ -220,7 +220,7 @@ local function apply_item_options(player, options, action)
         line.percentage = (current_amount == 0) and 100 or (line.percentage * target_amount) / current_amount
 
         solver.update(player)
-        util.raise.refresh(player, "factory", nil)
+        util.raise.refresh(player, "factory")
     end
 end
 
@@ -236,7 +236,7 @@ local function handle_item_click(player, tags, action)
             line.priority_product = (line.priority_product ~= item.proto) and item.proto or nil
 
             solver.update(player)
-            util.raise.refresh(player, "factory", nil)
+            util.raise.refresh(player, "factory")
         end
 
     elseif action == "add_recipe_to_end" or action == "add_recipe_below" then
@@ -248,7 +248,7 @@ local function handle_item_click(player, tags, action)
     elseif action == "specify_amount" then
         -- Set the view state so that the amount shown in the dialog makes sense
         view_state.select(player, "items_per_timescale")
-        util.raise.refresh(player, "factory", nil)
+        util.raise.refresh(player, "factory")
 
         local type_localised_string = {"fp.pl_" .. tags.item_category, 1}
         local produce_consume = (tags.item_category == "ingredient") and {"fp.consume"} or {"fp.produce"}

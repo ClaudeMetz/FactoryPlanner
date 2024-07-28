@@ -59,7 +59,7 @@ local actions = {
         trash.archived = true
         util.context.set(player, hotness)
         solver.update(player, hotness)
-        util.raise.refresh(player, "all", nil)
+        util.raise.refresh(player, "all")
 
         -- Preferences
         player_table.preferences.display_gui_button = false

@@ -222,7 +222,7 @@ local function refresh_compact_factory(player)
     local factory = util.context.get(player, "Factory")  --[[@as Factory?]]
     if not factory or not factory.valid then return end
 
-    util.raise.refresh(player, "view_state", compact_elements.view_state_table)
+    util.raise.refresh(player, "view_state")
 
     local attach_factory_products = player_table.preferences.attach_factory_products
     compact_elements.name_label.caption = factory:tostring(attach_factory_products, true)
@@ -619,7 +619,7 @@ dialog_listeners.gui = {
                 compact_dialog.toggle(player)
 
                 main_dialog.toggle(player)
-                util.raise.refresh(player, "production", nil)
+                util.raise.refresh(player, "production")
             end)
         },
         {

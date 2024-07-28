@@ -245,7 +245,7 @@ listeners.misc = {
         elseif ui_state.compact_view and compact_focus then
             compact_dialog.toggle(player)
             main_dialog.toggle(player)
-            util.raise.refresh(player, "production", nil)
+            util.raise.refresh(player, "production")
             ui_state.compact_view = false
 
         elseif main_focus and valid_factory and not ui_state.districts_view then
