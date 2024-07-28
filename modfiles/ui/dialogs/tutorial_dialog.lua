@@ -63,7 +63,9 @@ listeners.gui = {
                 local clone = global.tutorial_factory:clone()
                 util.context.get(player, "District"):insert(clone)
                 solver.update(player, clone)
+
                 util.context.set(player, clone)
+                view_state.rebuild_state(player)
 
                 util.raise.refresh(player, "all")
                 util.raise.close_dialog(player, "cancel")
