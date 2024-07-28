@@ -92,12 +92,15 @@ local function build_district_frame(player, district, location_items)
     create_move_button(move_flow, "previous")
     create_move_button(move_flow, "next")
 
-    local selected_id = util.context.get(player, "District").id
-    local select_button = subheader.add{type="button", caption={"fp.select"}, style="list_box_item",
+    local selected = util.context.get(player, "District").id == district.id
+    local caption = (selected) and {"fp.u_selected"} or {"fp.u_select"}
+    local select_button = subheader.add{type="button", caption=caption, style="list_box_item",
         tags={mod="fp", on_gui_click="select_district", district_id=district.id},
-        enabled=(district.id ~= selected_id), mouse_button_filter={"left"}}
+        enabled=(not selected), mouse_button_filter={"left"}}
     select_button.style.font = "default-bold"
+    select_button.style.width = 72
     select_button.style.padding = {0, 4}
+    select_button.style.horizontal_align = "center"
 
     -- Name
     subheader.add{type="label", caption={"", {"fp.pu_district", 1}, ": "}, style="subheader_caption_label"}
@@ -132,7 +135,7 @@ local function build_district_frame(player, district, location_items)
     -- Power & Pollution
     local label_power = subheader.add{type="label", caption=util.format.SI_value(district.power, "W", 3),
         style="bold_label"}
-    label_power.style.left_margin = 32
+    label_power.style.left_margin = 24
     subheader.add{type="label", caption="|"}
     subheader.add{type="label", caption={"fp.info_label", {"fp.emissions_title"}}, style="bold_label",
         tooltip=util.gui.format_emissions(district.emissions)}
