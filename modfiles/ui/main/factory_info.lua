@@ -5,7 +5,7 @@ local function repair_factory(player, _, _)
     factory:repair(player)
 
     solver.update(player, factory)
-    util.raise.refresh(player, "all", nil)  -- needs the full refresh to reset factory list buttons
+    util.raise.refresh(player, "all")  -- needs the full refresh to reset factory list buttons
 end
 
 local function change_timescale(player, new_timescale)
@@ -17,7 +17,7 @@ local function change_timescale(player, new_timescale)
     solver.update(player, factory)
 
     view_state.rebuild_state(player)
-    util.raise.refresh(player, "factory", nil)
+    util.raise.refresh(player, "factory")
 end
 
 local function handle_solver_change(player, _, event)
@@ -37,7 +37,7 @@ local function handle_solver_change(player, _, event)
     end
 
     solver.update(player, factory)
-    util.raise.refresh(player, "factory", nil)
+    util.raise.refresh(player, "factory")
 end
 
 

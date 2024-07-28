@@ -5,14 +5,14 @@ local function refresh_production(player, _, _)
     local factory = util.context.get(player, "Factory")
     if factory and factory.valid then
         solver.update(player, factory)
-        util.raise.refresh(player, "factory", nil)
+        util.raise.refresh(player, "factory")
     end
 end
 
 local function change_floor(player, destination)
     if util.context.ascend_floors(player, destination) then
         -- Only refresh if the floor was indeed changed
-        util.raise.refresh(player, "production", nil)
+        util.raise.refresh(player, "production")
     end
 end
 
@@ -46,8 +46,8 @@ local function refresh_production_bar(player)
         production_bar_elements.utility_dialog_button.enabled = factory_valid
     end
 
-    util.raise.refresh(player, "view_state", production_bar_elements.view_state_table)
-    production_bar_elements.view_state_table.visible = factory_valid
+    util.raise.refresh(player, "view_state")
+    ui_state.main_elements.view_state_table.visible = factory_valid
 end
 
 
@@ -111,7 +111,7 @@ local function build_production_bar(player)
 
     subheader.add{type="empty-widget", style="flib_horizontal_pusher"}
     util.raise.build(player, "view_state", subheader)
-    main_elements.production_bar["view_state_table"] = subheader["table_view_state"]
+    main_elements["view_state_table"] = subheader["table_view_state"]
 
     refresh_production_bar(player)
 end
@@ -156,7 +156,7 @@ listeners.gui = {
                 local new_district = District.init()
                 realm:insert(new_district)
                 util.context.set(player, new_district)
-                util.raise.refresh(player, "all", nil)
+                util.raise.refresh(player, "all")
             end)
         }
     }

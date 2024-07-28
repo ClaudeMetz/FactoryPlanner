@@ -173,12 +173,12 @@ local function handle_item_button_click(player, tags, action)
         local factory = util.context.get(player, "Factory")  --[[@as Factory]]
         factory:remove(item)
         solver.update(player, factory)
-        util.raise.refresh(player, "all", nil)  -- make sure product icons are updated
+        util.raise.refresh(player, "all")  -- make sure product icons are updated
 
     elseif action == "specify_amount" then
         -- Set the view state so that the amount shown in the dialog makes sense
         view_state.select(player, "items_per_timescale")
-        util.raise.refresh(player, "factory", nil)
+        util.raise.refresh(player, "factory")
 
         local modal_data = {
             title = {"fp.options_item_title", {"fp.pl_ingredient", 1}},
@@ -245,7 +245,7 @@ local function scale_factory_by_ingredient_amount(player, options, action)
         end
 
         solver.update(player, factory)
-        util.raise.refresh(player, "factory", nil)
+        util.raise.refresh(player, "factory")
     end
 end
 

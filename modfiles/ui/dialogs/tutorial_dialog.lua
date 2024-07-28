@@ -65,7 +65,7 @@ listeners.gui = {
                 solver.update(player, clone)
                 util.context.set(player, clone)
 
-                util.raise.refresh(player, "all", nil)
+                util.raise.refresh(player, "all")
                 util.raise.close_dialog(player, "cancel")
             end)
         }
@@ -76,7 +76,7 @@ listeners.gui = {
             handler = (function(player, _, event)
                 local preferences = util.globals.preferences(player)
                 preferences.tutorial_mode = util.gui.switch.convert_to_boolean(event.element.switch_state)
-                util.raise.refresh(player, "all", nil)
+                util.raise.refresh(player, "all")
             end)
         }
     }

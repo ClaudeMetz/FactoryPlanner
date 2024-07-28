@@ -412,12 +412,12 @@ local function close_picker_dialog(player, action)
         end
 
         solver.update(player, factory)
-        util.raise.refresh(player, refresh_scope, nil)
+        util.raise.refresh(player, refresh_scope)
 
     elseif action == "delete" then
         factory:remove(modal_data.item)
         solver.update(player, factory)
-        util.raise.refresh(player, "factory", nil)
+        util.raise.refresh(player, "factory")
     end
 
     -- Remember selected group so it can be re-applied when the dialog is re-opened

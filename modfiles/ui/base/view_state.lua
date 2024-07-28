@@ -17,7 +17,7 @@ local function cycle_views(player, direction)
         view_state.select(player, new_view_id)
 
         local refresh = (ui_state.compact_view) and "compact_factory" or "production"
-        util.raise.refresh(player, refresh, nil)
+        util.raise.refresh(player, refresh)
 
         -- This avoids the game focusing a random textfield when pressing Tab to change states
         local main_frame = ui_state.main_elements.main_frame
@@ -82,12 +82,15 @@ function processors.items_per_second_per_machine(metadata, raw_amount, item_prot
 end
 
 
-local function refresh_view_state(player, table_view_state)
+local function refresh_view_state(player)
     local ui_state = util.globals.ui_state(player)
 
     -- Automatically detects a timescale change and refreshes the state if necessary
     local factory = util.context.get(player, "Factory")  --[[@as Factory?]]
     if factory == nil then return end
+
+    local relevant_elements = (ui_state.compact_view) and "compact_elements" or "main_elements"
+    local table_view_state = ui_state[relevant_elements].view_state_table
 
     for _, view_button in ipairs(table_view_state.children) do
         local view_state = ui_state.view_states[view_button.tags.view_id]
@@ -242,7 +245,7 @@ listeners.gui = {
 
                 local compact_view = util.globals.ui_state(player).compact_view
                 local refresh = (compact_view) and "compact_factory" or "production"
-                util.raise.refresh(player, refresh, nil)
+                util.raise.refresh(player, refresh)
             end)
         }
     }
@@ -263,7 +266,7 @@ listeners.misc = {
     end),
     refresh_gui_element = (function(player, event)
         if event.trigger == "view_state" then
-            refresh_view_state(player, event.element)
+            refresh_view_state(player)
         end
     end)
 }

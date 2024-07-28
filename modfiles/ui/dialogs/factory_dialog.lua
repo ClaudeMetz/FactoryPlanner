@@ -39,7 +39,7 @@ local function close_factory_dialog(player, action)
         if modal_data.factory ~= nil then modal_data.factory.name = factory_name
         else factory_list.add_factory(player, factory_name) end
 
-        util.raise.refresh(player, "all", nil)
+        util.raise.refresh(player, "all")
 
     elseif action == "delete" then
         factory_list.delete_factory(player)  -- handles archiving if necessary

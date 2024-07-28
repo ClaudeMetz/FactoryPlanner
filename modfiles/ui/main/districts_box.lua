@@ -10,7 +10,7 @@ local function save_district_name(player, tags, _)
     district_elements.edit_flow.visible = false
     district_elements.name_flow.visible = true
 
-    util.raise.refresh(player, "district_info", nil)
+    util.raise.refresh(player, "district_info")
 end
 
 
@@ -183,7 +183,7 @@ listeners.gui = {
                 local spots_to_shift = (event.control) and 5 or ((not event.shift) and 1 or nil)
                 district.parent:shift(district, tags.direction, spots_to_shift)
 
-                util.raise.refresh(player, "districts_box", nil)
+                util.raise.refresh(player, "districts_box")
             end)
         },
         {
@@ -191,7 +191,7 @@ listeners.gui = {
             handler = (function(player, tags, _)
                 local selected_district = OBJECT_INDEX[tags.district_id]  --[[@as District]]
                 util.context.set(player, selected_district)
-                util.raise.refresh(player, "all", nil)
+                util.raise.refresh(player, "all")
             end)
         },
         {
@@ -217,7 +217,7 @@ listeners.gui = {
                 district.parent:remove(district)
 
                 util.context.set(player, adjacent_district)
-                util.raise.refresh(player, "all", nil)
+                util.raise.refresh(player, "all")
             end)
         }
     },
@@ -235,7 +235,7 @@ listeners.gui = {
                 local location_proto_id = event.element.selected_index
                 district.location_proto = global.prototypes.locations[location_proto_id]
 
-                util.raise.refresh(player, "district_info", nil)
+                util.raise.refresh(player, "district_info")
             end)
         }
     },

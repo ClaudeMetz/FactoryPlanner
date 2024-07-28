@@ -105,7 +105,7 @@ local function switch_matrix_item(player, tags, event)
     end
 
     solver.update(player, factory)
-    util.raise.refresh(player, "factory", nil)
+    util.raise.refresh(player, "factory")
 end
 
 
