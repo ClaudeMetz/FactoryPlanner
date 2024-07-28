@@ -249,7 +249,7 @@ local function refresh_compact_factory(player)
     local metadata = {
         parent = production_table,
         column_counts = column_counts,
-        view_state_metadata = view_state.generate_metadata(player, factory),
+        view_state_metadata = view_state.generate_metadata(player),
         tooltips = tooltips.compact_dialog
     }
 

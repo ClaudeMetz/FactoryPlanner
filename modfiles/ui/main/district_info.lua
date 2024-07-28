@@ -55,8 +55,9 @@ listeners.gui = {
             handler = (function(player, _, _)
                 local ui_state = util.globals.ui_state(player)
                 ui_state.districts_view = not ui_state.districts_view
+
+                view_state.rebuild_state(player)
                 util.raise.refresh(player, "production")
-                util.raise.refresh(player, "title_bar")  -- for compact toggle
             end)
         }
     }

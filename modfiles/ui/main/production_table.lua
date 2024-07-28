@@ -10,7 +10,7 @@ local function generate_metadata(player, factory)
         fold_out_subfloors = preferences.fold_out_subfloors,
         round_button_numbers = preferences.round_button_numbers,
         ingredient_satisfaction = preferences.ingredient_satisfaction,
-        view_state_metadata = view_state.generate_metadata(player, factory),
+        view_state_metadata = view_state.generate_metadata(player),
         tooltips = tooltips.production_table
     }
 
