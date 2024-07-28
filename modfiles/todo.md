@@ -11,6 +11,7 @@
 - Recycling recipes seem to follow a different new format for what they produce?
 - Agriculture tower recipes not supported - maybe it doesn't use recipes?
 - Module defaults-set stuff doesn't refresh module_effects properly
+- Putting beacon into cursor doesn't seem to fill in modules
 - Translation seems to not reload when loading a save
 - Disable SA-specific features by checking feature flags in the right spots
 
@@ -62,7 +63,6 @@
 - Fluid temperatures are still a major issue ... (fluoroketone)
 - Need an 'are you sure' dialog for deleting a District, resetting preferences, etc
 - Add a district automatically once someone lands on a new planet for the first time, plus space platform
-- Look into new display_density_scale thing ideally
 - Deleting the non-selected district/factory still sets the context to a neighbor, which is weird
 
 ## Low Priority
@@ -73,3 +73,4 @@
 - Main interface toggles/builds? 4 times when starting a save, which is weird
   - Check refreshes in general, maybe write a tool that flags when multiple refreshes happen in sequence
 - Change SimpleItems to be a dict instead of an array so there needs to be no fuss finding stuff
+- Look into new display_density_scale thing ideally

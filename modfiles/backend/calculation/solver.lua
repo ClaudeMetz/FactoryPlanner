@@ -247,7 +247,7 @@ function solver.set_factory_result(result)
     local player_table = global.players[result.player_index]
     local factory = player_table.active_factory
 
-    factory.parent.needs_refresh = true
+    if factory.parent then factory.parent.needs_refresh = true end
 
     factory.top_floor.power = result.energy_consumption
     factory.top_floor.emissions = result.emissions
