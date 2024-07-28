@@ -14,6 +14,7 @@ local SimpleItems = require("backend.data.SimpleItems")
 ---@field first Factory?
 ---@field power number
 ---@field emissions Emissions
+---@field needs_refresh boolean
 local District = Object.methods()
 District.__index = District
 script.register_metatable("District", District)
@@ -32,6 +33,7 @@ local function init(name, location)
 
         power = 0,
         emissions = {},
+        needs_refresh = false
     }, "District", District)  --[[@as District]]
     return object
 end
@@ -95,14 +97,36 @@ function District:count(filter, pivot, direction)
 end
 
 
----@param player LuaPlayer
-function District:reset_calculations(player)
+-- Updates the power, emissions and items of this District if requested
+function District:refresh()
+    if not self.needs_refresh then return end
+    self.needs_refresh = false
+
+    self.power = 0
+    self.emissions = {}
     self.products:clear()
     self.byproducts:clear()
     self.ingredients:clear()
-    self.power = 0
-    self.emissions = {}
-    for factory in self:iterator() do factory:reset_calculations(player) end
+
+    for factory in self:iterator() do
+        if factory.archived then goto continue end
+
+        self.power = self.power + factory.top_floor.power
+        for name, amount in pairs(factory.top_floor.emissions) do
+            self.emissions[name] = (self.emissions[name] or 0) + amount
+        end
+
+        local product_items = SimpleItems.init()
+        for product in factory:iterator() do
+            product_items:insert({class="SimpleItem", proto=product.proto, amount=product.amount})
+        end
+        self.products:add_multiple(product_items, factory.timescale)
+
+        self.byproducts:add_multiple(factory.top_floor.byproducts, factory.timescale)
+        self.ingredients:add_multiple(factory.top_floor.ingredients, factory.timescale)
+
+        :: continue ::
+    end
 end
 
 

@@ -64,6 +64,8 @@ local function build_items_flow(player, parent, district)
 end
 
 local function build_district_frame(player, district, location_items)
+    district:refresh()  -- refreshes its data if necessary
+
     local elements = util.globals.main_elements(player).districts_box
     elements[district.id] = {}
 

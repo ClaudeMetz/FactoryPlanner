@@ -32,9 +32,10 @@ local function change_factory_archived(player, to_archive)
         util.context.set(player, adjacent_factory or factory.parent)
         view_state.rebuild_state(player)
     end
-    factory.archived = to_archive
 
+    factory.archived = to_archive
     factory.parent:shift(factory, "next", nil)  -- shift to end
+    factory.parent.needs_refresh = true
 
     -- Reset deletion if a deleted factory is un-archived
     if to_archive == false and factory.tick_of_deletion then

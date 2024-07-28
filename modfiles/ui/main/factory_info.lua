@@ -13,8 +13,6 @@ end
 local function change_timescale(player, new_timescale)
     local factory = util.context.get(player, "Factory")  --[[@as Factory]]
 
-    -- Blank out first, then update so District items are updated correctly
-    solver.update(player, factory, true)
     factory.timescale = new_timescale
     solver.update(player, factory)
 

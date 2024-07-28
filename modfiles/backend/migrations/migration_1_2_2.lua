@@ -14,6 +14,8 @@ function migration.player_table(player_table)
 
     player_table.district.name = "Nauvis"
     player_table.district.location_proto = prototyper.util.find_prototype("locations", "nauvis")
+    player_table.district.power = 0
+    player_table.district.emissions = {}
     player_table.district.products = SimpleItems.init()
     player_table.district.byproducts = SimpleItems.init()
     player_table.district.ingredients = SimpleItems.init()
