@@ -2,12 +2,7 @@
 
 ## Active
 
-- In addition or orthogonally, you could set planets/plattform on factories, which automatically restricts available recipes? (surface conditions?)
-  - Surface conditions exist on recipes and machines seemingly. Maybe offer toggle on recipe picker to hide/show unbuildable ones
-    - Changing location of districts might need to revalidate all the recipes etc to make sure they still work
-    - Seems pollution type is tied to space-location, so it'd only need to show the one for each district
-- Balance District items against each other? Or show things as products and ingredients if that's the case?
-- Deleting/archiving/etc a factory doesn't update the District. Also archived ones shouldn't contribute. Use same set_blank trick; also lots of other things like deleting main product. wtf is going on
+- Add functionality to base factory product amounts on district items
 - Write changelog entry
 
 ## Bugs
@@ -29,8 +24,15 @@
   - seems like something that still needs to be worked out https://wubesoftware.slack.com/archives/C12GUBRHS/p1720862186697859
   - also quality calculations are not like other effects probably? Needs custom handling for sure
 - Item Spoiling - what should my interaction with it be?
+- Surface conditions
+  - Districts support planets, how should the surface conditions tie into the factories?
+  - Could disallow/hide irrelevant recipes/machines or just warn about them.
+  - If I disallow, changing planets needs to remove everything invalid
+  - If I warn, I need to permanently mark invalid stuff ideally
+  - Every surface seems to have only one pollution type? (`location::pollutant_type`) If true adjust to that
 - Show offshore pump ingredients being the tile they need; requires larger refactoring probably. Not sure.
 - Use LuaEntityPrototype::type in generator when applicable instead of trying to parse properties -> could break stuff
+- Balance District items against each other? Or show things as products and ingredients if that's the case?
 
 ## Waiting on
 
@@ -57,7 +59,7 @@
 - Add shorthand recipe for 1 complete rocket, instead of needing to add 50 parts. Hard part will be picking an icon for it
 - Note when rocket silo launch time becomes a problem for speed; it's not at lower speeds
   - Is quite a complicated feature, especially when productivity is involved. Probably do need it though
-- Fluid temperatures are still a major issue ...
+- Fluid temperatures are still a major issue ... (fluoroketone)
 - Need an 'are you sure' dialog for deleting a District, resetting preferences, etc
 - Add a district automatically once someone lands on a new planet for the first time, plus space platform
 - Look into new display_density_scale thing ideally
@@ -70,3 +72,4 @@
 - Get rid of player_table.active_factory hack since it's very easy to avoid
 - Main interface toggles/builds? 4 times when starting a save, which is weird
   - Check refreshes in general, maybe write a tool that flags when multiple refreshes happen in sequence
+- Change SimpleItems to be a dict instead of an array so there needs to be no fuss finding stuff
