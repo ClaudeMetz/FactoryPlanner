@@ -7,7 +7,6 @@
     - Changing location of districts might need to revalidate all the recipes etc to make sure they still work
     - Seems pollution type is tied to space-location, so it'd only need to show the one for each district
 - Balance District items against each other? Or show things as products and ingredients if that's the case?
-- Should close districts view if any real action is taken in the factory list (select, add, etc)
 - Deleting/archiving/etc a factory doesn't update the District. Also archived ones shouldn't contribute. Use same set_blank trick; also lots of other things like deleting main product. wtf is going on
 - Write changelog entry
 
@@ -41,6 +40,7 @@
 - API to open things in Factoriopedia
 - Disabled sprite buttons fade their icons, can't be turned off
 - Surface prototypes missing surface_properties read for generator, add surfaces to locations properly
+- Ingredient/Product/etc? definitions might have changed and I use them in my type system
 
 ## Release
 
@@ -69,3 +69,4 @@
 - Have separate methods for each GUI action instead of a tree. Needs some prep methods sometimes maybe
 - Get rid of player_table.active_factory hack since it's very easy to avoid
 - Main interface toggles/builds? 4 times when starting a save, which is weird
+  - Check refreshes in general, maybe write a tool that flags when multiple refreshes happen in sequence

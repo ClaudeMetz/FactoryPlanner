@@ -1,4 +1,4 @@
--- ** LOCAL UTIL**
+-- ** LOCAL UTIL **
 local function refresh_district_info(player)
     local ui_state = util.globals.ui_state(player)
     if ui_state.main_elements.main_frame == nil then return end
@@ -53,10 +53,7 @@ listeners.gui = {
         {
             name = "toggle_districts_view",
             handler = (function(player, _, _)
-                local ui_state = util.globals.ui_state(player)
-                ui_state.districts_view = not ui_state.districts_view
-
-                view_state.rebuild_state(player)
+                main_dialog.toggle_districts_view(player)
                 util.raise.refresh(player, "production")
             end)
         }

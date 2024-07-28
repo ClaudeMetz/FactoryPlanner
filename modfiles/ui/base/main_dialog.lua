@@ -158,6 +158,15 @@ function main_dialog.set_tooltip(player, element)
     end
 end
 
+-- Centralized here to avoid another global variable
+function main_dialog.toggle_districts_view(player)
+    local ui_state = util.globals.ui_state(player)
+    ui_state.districts_view = not ui_state.districts_view
+
+    view_state.rebuild_state(player)
+    util.raise.refresh(player, "district_info")
+end
+
 
 -- ** EVENTS **
 local listeners = {}
