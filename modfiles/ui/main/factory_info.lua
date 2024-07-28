@@ -4,6 +4,8 @@ local function repair_factory(player, _, _)
     local factory = util.context.get(player, "Factory")  --[[@as Factory]]
     factory:repair(player)
 
+    local ui_state = util.globals.ui_state(player)
+    if ui_state.districts_view then main_dialog.toggle_districts_view(player) end
     solver.update(player, factory)
     util.raise.refresh(player, "all")  -- needs the full refresh to reset factory list buttons
 end
@@ -15,6 +17,9 @@ local function change_timescale(player, new_timescale)
     solver.update(player, factory, true)
     factory.timescale = new_timescale
     solver.update(player, factory)
+
+    local ui_state = util.globals.ui_state(player)
+    if ui_state.districts_view then main_dialog.toggle_districts_view(player) end
 
     view_state.rebuild_state(player)
     util.raise.refresh(player, "factory")
@@ -36,6 +41,8 @@ local function handle_solver_change(player, _, event)
         end
     end
 
+    local ui_state = util.globals.ui_state(player)
+    if ui_state.districts_view then main_dialog.toggle_districts_view(player) end
     solver.update(player, factory)
     util.raise.refresh(player, "factory")
 end
