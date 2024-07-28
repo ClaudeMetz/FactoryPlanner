@@ -60,7 +60,7 @@ local function refresh_item_box(player, factory, show_floor_items, item_category
     local floor = (show_floor_items) and util.context.get(player, "Floor") or factory.top_floor
 
     local table_item_count = 0
-    local metadata = view_state.generate_metadata(player, factory)
+    local metadata = view_state.generate_metadata(player)
     local default_style = (item_category == "byproduct") and "flib_slot_button_red" or "flib_slot_button_default"
 
     local shows_floor_items = (floor.parent.class ~= "Factory")

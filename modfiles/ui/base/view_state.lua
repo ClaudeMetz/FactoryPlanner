@@ -120,7 +120,7 @@ end
 view_state = {}
 
 -- Creates metadata relevant for a whole batch of items
-function view_state.generate_metadata(player, factory)
+function view_state.generate_metadata(player)
     local player_table = util.globals.player_table(player)
 
     local view_states = player_table.ui_state.view_states
@@ -134,9 +134,9 @@ function view_state.generate_metadata(player, factory)
 
     return {
         processor = processors[current_view_name],
-        timescale_inverse = 1 / factory.timescale,
-        timescale_string = {"fp." .. TIMESCALE_MAP[factory.timescale]},
-        adjusted_margin_of_error = MAGIC_NUMBERS.margin_of_error * factory.timescale,
+        timescale_inverse = 1 / view_states.timescale,
+        timescale_string = {"fp." .. TIMESCALE_MAP[view_states.timescale]},
+        adjusted_margin_of_error = MAGIC_NUMBERS.margin_of_error * view_states.timescale,
         belt_or_lane = belts_or_lanes:sub(1, -2),
         round_button_numbers = round_button_numbers,
         throughput_multiplier = 1 / throughput_divisor,
@@ -157,11 +157,13 @@ end
 
 
 function view_state.rebuild_state(player)
-    local ui_state = util.globals.ui_state(player)
-    local factory = util.context.get(player, "Factory")
+    local player_table = util.globals.player_table(player)
+    local default_timescale = player_table.preferences.default_timescale
 
-    -- If no factory exists yet, choose a default timescale so the UI can build properly
-    local timescale = (factory) and TIMESCALE_MAP[factory.timescale] or "second"
+    local relevant_object_type = (player_table.ui_state.districts_view) and "District" or "Factory"
+    local relevant_object = util.context.get(player, relevant_object_type)
+
+    local timescale_string = (relevant_object) and TIMESCALE_MAP[relevant_object.timescale or default_timescale]
     local singular_bol = util.globals.preferences(player).belts_or_lanes:sub(1, -2)
     local belt_proto = prototyper.defaults.get(player, "belts")
     local default_cargo_wagon = prototyper.defaults.get(player, "wagons", PROTOTYPE_MAPS.wagons["cargo-wagon"].id)
@@ -170,8 +172,8 @@ function view_state.rebuild_state(player)
     local new_view_states = {
         [1] = {
             name = "items_per_timescale",
-            caption = {"", {"fp.pu_item", 2}, "/", {"fp.unit_" .. timescale}},
-            tooltip = {"fp.view_state_tt", {"fp.items_per_timescale", {"fp." .. timescale}}}
+            caption = {"", {"fp.pu_item", 2}, "/", {"fp.unit_" .. timescale_string}},
+            tooltip = {"fp.view_state_tt", {"fp.items_per_timescale", {"fp." .. timescale_string}}}
         },
         [2] = {
             name = "belts_or_lanes",
@@ -181,8 +183,8 @@ function view_state.rebuild_state(player)
         },
         [3] = {
             name = "wagons_per_timescale",
-            caption = {"", {"fp.pu_wagon", 2}, "/", {"fp.unit_" .. timescale}},
-            tooltip = {"fp.view_state_tt", {"fp.wagons_per_timescale", {"fp." .. timescale},
+            caption = {"", {"fp.pu_wagon", 2}, "/", {"fp.unit_" .. timescale_string}},
+            tooltip = {"fp.view_state_tt", {"fp.wagons_per_timescale", {"fp." .. timescale_string},
                 default_cargo_wagon.rich_text, default_cargo_wagon.localised_name,
                 default_fluid_wagon.rich_text, default_fluid_wagon.localised_name}}
         },
@@ -191,15 +193,16 @@ function view_state.rebuild_state(player)
             caption = {"", {"fp.pu_item", 2}, "/", {"fp.unit_second"}, "/[img=fp_generic_assembler]"},
             tooltip = {"fp.view_state_tt", {"fp.items_per_second_per_machine"}}
         },
-        selected_view_id = nil,  -- set below
-        timescale = timescale  -- conserve the timescale to rebuild the state
+        -- Retain for use in metadata generation
+        timescale = (relevant_object) and relevant_object.timescale or default_timescale,
+        selected_view_id = nil  -- set below
     }
 
     -- Conserve the previous view selection if possible
-    local old_view_states = ui_state.view_states
+    local old_view_states = player_table.ui_state.view_states
     local selected_view_id = (old_view_states) and old_view_states.selected_view_id or "items_per_timescale"
 
-    ui_state.view_states = new_view_states
+    player_table.ui_state.view_states = new_view_states
     view_state.select(player, selected_view_id)
 end
 

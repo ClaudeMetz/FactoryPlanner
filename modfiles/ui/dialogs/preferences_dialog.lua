@@ -228,6 +228,8 @@ local function handle_dropdown_preference_change(player, tags, event)
     elseif tags.name == "default_timescale" then
         local index_map = {[1] = 1, [2] = 60, [3] = 3600}
         preferences.default_timescale = index_map[selected_index]
+        view_state.rebuild_state(player)  -- relevant for districts view
+        util.raise.refresh(player, "production")
     end
 end
 

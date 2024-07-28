@@ -19,6 +19,12 @@ local function build_items_flow(player, parent, district)
     items_flow.style.padding = {6, 12, 12, 12}
     items_flow.style.horizontal_spacing = 36
 
+    local preferences = util.globals.preferences(player)
+    local total_columns = preferences.products_per_row * 4
+    local columns_per, remainder = math.floor(total_columns / 3), total_columns % 3
+    local metadata = view_state.generate_metadata(player)
+    local timescale = preferences.default_timescale
+
     local function build_item_flow(items, category, column_count)
         local item_flow = items_flow.add{type="flow", direction="vertical"}
         item_flow.add{type="label", caption={"fp.pu_" .. category, 2}, style="caption_label"}
@@ -30,19 +36,24 @@ local function build_items_flow(player, parent, district)
 
         local item_count = 0
         for _, item in items:iterator() do
-            if item.amount > MAGIC_NUMBERS.margin_of_error then
-                local style, enabled = "flib_slot_button_default", true
-                if item.proto.type == "entity" then style = "flib_slot_button_transparent"; enabled=false end
-                table_items.add{type="sprite-button", number=item.amount, style=style, sprite=item.proto.sprite,
-                    tooltip=item.proto.localised_name, enabled=enabled}
-                item_count = item_count + 1
+            -- Adjust the item amounts since they are stored as per second
+            local adjusted_amount = item.amount * timescale
+            local amount, number_tooltip = view_state.process_item(metadata, item, adjusted_amount, nil)
+            if amount ~= -1 then  -- an amount of -1 means it was below the margin of error
+                if item.amount > MAGIC_NUMBERS.margin_of_error then
+                    local style, enabled = "flib_slot_button_default", true
+                    if item.proto.type == "entity" then style = "flib_slot_button_transparent"; enabled=false end
+                    local number_line = (number_tooltip) and {"", "\n", number_tooltip} or ""
+                    local tooltip = {"", {"fp.tt_title", item.proto.localised_name}, number_line}
+
+                    table_items.add{type="sprite-button", number=amount, style=style, sprite=item.proto.sprite,
+                        tooltip=tooltip, enabled=enabled}
+                    item_count = item_count + 1
+                end
             end
         end
         return table_items, math.ceil(item_count / column_count)
     end
-
-    local total_columns = util.globals.preferences(player).products_per_row * 4
-    local columns_per, remainder = math.floor(total_columns / 3), total_columns % 3
 
     local prod_table, prod_rows = build_item_flow(district.products, "product", columns_per + remainder)
     local byprod_table, byprod_rows = build_item_flow(district.byproducts, "byproduct", columns_per)

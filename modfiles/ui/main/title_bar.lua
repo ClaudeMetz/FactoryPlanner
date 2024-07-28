@@ -20,7 +20,7 @@ local function refresh_title_bar(player)
     local factory = util.context.get(player, "Factory")   --[[@as Factory?]]
     local title_bar_elements = ui_state.main_elements.title_bar
 
-    title_bar_elements.compact_button.enabled = factory ~= nil and factory.valid and not ui_state.districts_view
+    title_bar_elements.compact_button.enabled = factory ~= nil and factory.valid
     title_bar_elements.pause_button.enabled = (not game.is_multiplayer())
 end
 

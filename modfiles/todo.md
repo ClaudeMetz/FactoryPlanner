@@ -9,6 +9,7 @@
 - Balance District items against each other? Or show things as products and ingredients if that's the case?
 - Should close districts view if any real action is taken in the factory list (select, add, etc)
 - Deleting/archiving/etc a factory doesn't update the District. Also archived ones shouldn't contribute. Use same set_blank trick; also lots of other things like deleting main product. wtf is going on
+- Write changelog entry
 
 ## Bugs
 
