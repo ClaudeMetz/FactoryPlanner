@@ -67,4 +67,4 @@
 - Adjust utility dialog handcrafting to behave like vanilla crafting does in all ways
 - Have separate methods for each GUI action instead of a tree. Needs some prep methods sometimes maybe
 - Get rid of player_table.active_factory hack since it's very easy to avoid
-- Main interface builds 4 times when starting a save, which is weird
+- Main interface toggles/builds? 4 times when starting a save, which is weird

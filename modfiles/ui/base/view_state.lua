@@ -1,7 +1,5 @@
 -- This contains both the UI handling for view states, as well as the amount conversions
 
----@class ViewStates: table
-
 -- ** LOCAL UTIL **
 local function cycle_views(player, direction)
     local ui_state = util.globals.ui_state(player)
@@ -266,6 +264,8 @@ listeners.misc = {
     end),
     refresh_gui_element = (function(player, event)
         if event.trigger == "view_state" then
+            -- Only react to exact trigger as the elements containing
+            --   the view state will refresh it otherwise
             refresh_view_state(player)
         end
     end)

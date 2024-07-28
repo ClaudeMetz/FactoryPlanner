@@ -145,6 +145,7 @@ function _porter.add_factories(player, export_string)
     end
 
     util.context.set(player, first_factory)
+    view_state.rebuild_state(player)
 end
 
 return _porter
