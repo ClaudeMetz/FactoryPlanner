@@ -109,7 +109,7 @@ function District:refresh()
     self.ingredients:clear()
 
     for factory in self:iterator() do
-        if factory.archived then goto continue end
+        if not factory.valid or factory.archived then goto continue end
 
         self.power = self.power + factory.top_floor.power
         for name, amount in pairs(factory.top_floor.emissions) do
@@ -130,9 +130,15 @@ function District:refresh()
 end
 
 
---- Districts can't be invalid, this just cleanly validates the factories
+---@return boolean valid
 function District:validate()
-    self:_validate()
+    self:_validate()  -- invalid factories don't make the district invalid
+
+    -- Invalid locations are just replaced with valid ones to make the district valid
+    self.location_proto = prototyper.util.validate_prototype_object(self.location_proto, nil)
+    if self.location_proto.simplified then self.location_proto = prototyper.defaults.get_fallback("locations") end
+
+    return true  -- always makes itself valid
 end
 
 return {init = init}
