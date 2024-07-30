@@ -3,8 +3,6 @@ local mod_gui = require("mod-gui")
 local _gui = { switch = {}, mod = {} }
 
 
----@alias SwitchState "left" | "right"
-
 -- Adds an on/off-switch including a label with tooltip to the given flow
 -- Automatically converts boolean state to the appropriate switch_state
 ---@param parent_flow LuaGuiElement
@@ -31,7 +29,6 @@ function _gui.switch.add_on_off(parent_flow, action, additional_tags, state, cap
     local function add_label()
         caption = (tooltip ~= nil) and {"", caption, " [img=info]"} or caption
         label = flow.add{type="label", caption=caption, tooltip=tooltip}
-        label.style.font = "default-semibold"
     end
 
     if label_first then add_label(); add_switch(); label.style.right_margin = 8
