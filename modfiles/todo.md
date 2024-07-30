@@ -5,7 +5,6 @@
 
 ## Bugs
 
-- Scrap recycling recipe shouldn't be marked as recycling since it's kind of a core recipe (also not hidden)
 - Recycling recipes seem to follow a different new format for what they produce?
 - Agriculture tower recipes not supported - maybe it doesn't use recipes?
 - Module defaults-set stuff doesn't refresh module_effects properly
