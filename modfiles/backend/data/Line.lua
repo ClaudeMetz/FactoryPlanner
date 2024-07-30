@@ -196,10 +196,12 @@ function Line:apply_mb_defaults(player)
     if machine_module and self.machine.module_set:check_compatibility(machine_module) then
         local module = Module.init(machine_module, module_limit)
         module_set:insert(module)
+        module_set:normalize{effects=true}
 
     elseif secondary_module and self.machine.module_set:check_compatibility(secondary_module) then
         local module = Module.init(secondary_module, module_limit)
         module_set:insert(module)
+        module_set:normalize{effects=true}
 
     elseif machine_module then  -- only show an error if any module default is actually set
         message = {text={"fp.warning_module_not_compatible", {"fp.pl_module", 1}}, category="warning"}

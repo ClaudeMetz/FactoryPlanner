@@ -6,7 +6,6 @@
 ## Bugs
 
 - Recycling recipes seem to follow a different new format for what they produce?
-- Module defaults-set stuff doesn't refresh module_effects properly
 - Translation seems to not reload when loading a save
 
 ## Uncertainty Sphere
