@@ -8,13 +8,13 @@ local Realm = Object.methods()
 Realm.__index = Realm
 script.register_metatable("Realm", Realm)
 
+---@param district District?
 ---@return Realm
-local function init()
+local function init(district)
     local object = Object.init({
         first = nil
     }, "Realm", Realm)  --[[@as Realm]]
-    object:insert(District.init("Nauvis"))  -- one always exists
-    object:insert(District.init("vulci", "vulcanus"))
+    object:insert(district or District.init("Nauvis"))  -- one always exists
     return object
 end
 
@@ -73,8 +73,9 @@ function Realm:count(filter, pivot, direction)
 end
 
 
---- The realm can't be invalid, this just cleanly validates the factories
+--- The realm can't be invalid, this just cleanly validates districts
 function Realm:validate()
+    -- Districts won't be invalid either, as they put themselves in a valid state
     self:_validate()
 end
 

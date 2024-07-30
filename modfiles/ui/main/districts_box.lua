@@ -55,9 +55,9 @@ local function build_items_flow(player, parent, district)
         return table_items, math.ceil(item_count / column_count)
     end
 
-    local prod_table, prod_rows = build_item_flow(district.products, "product", columns_per + remainder)
+    local prod_table, prod_rows = build_item_flow(district.products, "product", columns_per)
     local byprod_table, byprod_rows = build_item_flow(district.byproducts, "byproduct", columns_per)
-    local ingr_table, ingr_rows = build_item_flow(district.ingredients, "ingredient", columns_per)
+    local ingr_table, ingr_rows = build_item_flow(district.ingredients, "ingredient", columns_per + remainder)
 
     local height = math.max(prod_rows, byprod_rows, ingr_rows) * MAGIC_NUMBERS.item_button_size
     prod_table.style.height = height; byprod_table.style.height = height; ingr_table.style.height = height
