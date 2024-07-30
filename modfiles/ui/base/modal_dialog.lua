@@ -35,7 +35,6 @@ local function create_base_modal_dialog(player, dialog_settings, modal_data)
             local search_button = flow_title_bar.add{type="sprite-button", tooltip={"fp.search_button_tt"},
                 tags={mod="fp", on_gui_click="focus_modal_searchfield"}, sprite="utility/search",
                 style="fp_button_frame", mouse_button_filter={"left"}}
-            search_button.style.left_margin = 4
         end
 
         if dialog_settings.reset_handler_name then  -- add a reset button if requested
