@@ -2,9 +2,15 @@
 
 ## Active
 
+- Fluid temperatures
+  - Ripped everything out for now, to have a clean slate to go off of
+  - Also disabled boiler machines&recipes, so those will need to be redone at some point
+    - They are kinda half-complete anyways
 
 ## Bugs
 
+- Right top side of main frame is fucked up
+- Add a bit of blank space to bottom of production table
 - Translation seems to not reload when loading a save
 
 ## Uncertainty Sphere
@@ -37,12 +43,12 @@
 - Add feature to transfer items from district to district, mimmicing space platform transfers
 - Replace any machine/beacon/etc buttons with ones that have the standard tooltip.
   - Saves me the hassle of generating them and automatically has the information people expect
+  - Can be done on normal buttons now I think so no need for choose-elem-buttons
 - Need indication of cyclic recipes finally, used a lot on the space platform
 - Should have the ability to manually configure recipe productivity boni somewhere
 - Add shorthand recipe for 1 complete rocket, instead of needing to add 50 parts. Hard part will be picking an icon for it
 - Note when rocket silo launch time becomes a problem for speed; it's not at lower speeds
   - Is quite a complicated feature, especially when productivity is involved. Probably do need it though
-- Fluid temperatures are still a major issue ... (fluoroketone)
 - Need an 'are you sure' dialog for deleting a District, resetting preferences, etc
 - Add a district automatically once someone lands on a new planet for the first time, plus space platform
 - Deleting the non-selected district/factory still sets the context to a neighbor, which is weird

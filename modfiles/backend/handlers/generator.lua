@@ -215,7 +215,7 @@ function generator.machines.generate()
         end
 
         -- Add machines that produce steam (ie. boilers)
-        for _, fluidbox in ipairs(proto.fluidbox_prototypes) do
+        --[[ for _, fluidbox in ipairs(proto.fluidbox_prototypes) do
             if fluidbox.production_type == "output" and fluidbox.filter
                     and fluidbox.filter.name == "steam" and proto.target_temperature ~= nil then
                 -- Exclude any boilers that use heat as their energy source
@@ -248,7 +248,7 @@ function generator.machines.generate()
                     end
                 end
             end
-        end
+        end ]]
     end
 
     return machines
@@ -461,7 +461,7 @@ function generator.recipes.generate()
         end
 
         -- Add a recipe for producing steam from a boiler
-        local existing_recipe_names = {}  ---@type { [string]: boolean }
+        --[[ local existing_recipe_names = {}  ---@type { [string]: boolean }
         for _, fluidbox in ipairs(proto.fluidbox_prototypes) do
             if fluidbox.production_type == "output" and fluidbox.filter
                 and fluidbox.filter.name == "steam" and proto.target_temperature ~= nil then
@@ -494,7 +494,7 @@ function generator.recipes.generate()
                     end
                 end
             end
-        end
+        end ]]
     end
 
     -- Add offshore pump recipes
@@ -523,7 +523,7 @@ function generator.recipes.generate()
     end
 
     -- Add a general steam recipe that works with every boiler
-    if game["fluid_prototypes"]["steam"] then  -- make sure the steam prototype exists
+    --[[ if game["fluid_prototypes"]["steam"] then  -- make sure the steam prototype exists
         local recipe = custom_recipe()
         recipe.name = "fp-general-steam"
         recipe.localised_name = {"fluid-name.steam"}
@@ -540,7 +540,7 @@ function generator.recipes.generate()
         ---@cast recipe FPRecipePrototype
         generator_util.add_recipe_tooltip(recipe)
         insert_prototype(recipes, recipe, nil)
-    end
+    end ]]
 
     -- Custom handling for Space Exploration Arcosphere recipes
     --[[ local se_split_recipes = {"se-arcosphere-fracture", "se-naquium-processor", "se-naquium-tessaract",
@@ -577,7 +577,6 @@ end
 ---@field hidden boolean
 ---@field stack_size uint?
 ---@field ingredient_only boolean
----@field temperature number
 ---@field order string
 ---@field group ItemGroup
 ---@field subgroup ItemGroup
@@ -586,7 +585,6 @@ end
 ---@field proto FormattedRecipeItem
 ---@field is_product boolean
 ---@field is_rocket_part boolean
----@field temperature number?
 
 ---@alias RelevantItems { [ItemType]: { [ItemName]: RelevantItem } }
 
@@ -606,7 +604,6 @@ function generator.items.generate()
         -- Determine whether this item is used as a product at least once
         item_details.is_product = item_details.is_product or item.is_product
         item_details.is_rocket_part = item_details.is_rocket_part or item.is_rocket_part
-        item_details.temperature = item.proto.temperature
     end
 
     -- Create a table containing every item that is either a product or an ingredient to at least one recipe
@@ -624,14 +621,13 @@ function generator.items.generate()
     -- Add all standard items
     for type, item_table in pairs(relevant_items) do
         for item_name, item_details in pairs(item_table) do
-            local proto_name = generator_util.format_temperature_name(item_details, item_name)
-            local proto = game[type .. "_prototypes"][proto_name]  ---@type LuaItemPrototype | LuaFluidPrototype
+            local proto = game[type .. "_prototypes"][item_name]  ---@type LuaItemPrototype | LuaFluidPrototype
             if proto == nil then goto skip_item end
 
-            local localised_name = generator_util.format_temperature_localised_name(item_details, proto)
+            local localised_name = proto.localised_name
             if type == "entity" then localised_name = {"", localised_name, " ", {"fp.deposit"}} end
             local stack_size = (type == "item") and proto.stack_size or nil
-            local order = (item_details.temperature) and (proto.order .. item_details.temperature) or proto.order
+            local order = proto.order
 
             local hidden = false  -- "entity" types are never hidden
             if type == "item" or type == "fluid" then hidden = proto.hidden end
@@ -645,7 +641,6 @@ function generator.items.generate()
                 hidden = hidden,
                 stack_size = stack_size,
                 ingredient_only = not item_details.is_product,
-                temperature = item_details.temperature,
                 order = order,
                 group = generator_util.generate_group_table(proto.group),
                 subgroup = generator_util.generate_group_table(proto.subgroup)

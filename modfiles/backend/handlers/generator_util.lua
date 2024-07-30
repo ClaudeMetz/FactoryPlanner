@@ -6,7 +6,6 @@ local generator_util = {}
 ---@field type string
 ---@field amount number
 ---@field proddable_amount number?
----@field temperature number?
 ---@field ignore_productivity boolean?
 
 ---@alias IndexedItemList { [ItemType]: { [ItemName]: { index: number, item: FormattedRecipeItem } } }
@@ -33,17 +32,11 @@ local function generate_formatted_item(base_item, type)
     local proddable_amount = (type == "product")
         and (base_amount - (base_item.catalyst_amount or 0)) * probability or nil
 
-    -- This will probably screw up the main_product detection down the line
-    if base_item.temperature ~= nil then
-        base_item.name = base_item.name .. "-" .. base_item.temperature
-    end
-
     return {
         name = base_item.name,
         type = base_item.type,
         amount = (base_amount * probability),
-        proddable_amount = proddable_amount,
-        temperature = base_item.temperature
+        proddable_amount = proddable_amount
     }
 end
 
@@ -54,19 +47,17 @@ local function combine_identical_products(item_list)
 
     for index=#item_list, 1, -1 do
         local item = item_list[index]
-        if item.temperature == nil then  -- don't care to deal with temperature crap
-            local touched_item = touched_items[item.type][item.name]
-            if touched_item ~= nil then
-                touched_item.amount = touched_item.amount + item.amount
-                if touched_item.proddable_amount then
-                    touched_item.proddable_amount = touched_item.proddable_amount + item.proddable_amount
-                end
-
-                -- Using the table.remove function to preserve array-format
-                table.remove(item_list, index)
-            else
-                touched_items[item.type][item.name] = item
+        local touched_item = touched_items[item.type][item.name]
+        if touched_item ~= nil then
+            touched_item.amount = touched_item.amount + item.amount
+            if touched_item.proddable_amount then
+                touched_item.proddable_amount = touched_item.proddable_amount + item.proddable_amount
             end
+
+            -- Using the table.remove function to preserve array-format
+            table.remove(item_list, index)
+        else
+            touched_items[item.type][item.name] = item
         end
     end
 end
@@ -396,28 +387,6 @@ function generator_util.check_machine_effects(proto)
 end
 
 
--- Returns the appropriate prototype name for the given item, incorporating temperature
----@param item FormattedRecipeItem | RelevantItem
----@param name string
----@return string
-function generator_util.format_temperature_name(item, name)
-    -- Optionally two dashes to account for negative temperatures
-    return (item.temperature) and string.gsub(name, "%-+[0-9]+$", "") or name
-end
-
--- Returns the appropriate localised string for the given item, incorporating temperature
----@param item FormattedRecipeItem | RelevantItem
----@param proto LuaItemPrototype | LuaFluidPrototype
----@return LocalisedString
-function generator_util.format_temperature_localised_name(item, proto)
-    if item.temperature then
-        return {"", proto.localised_name, " (", item.temperature, " ", {"fp.unit_celsius"}, ")"}
-    else
-        return proto.localised_name
-    end
-end
-
-
 -- Adds the tooltip for the given recipe
 ---@param recipe FPRecipePrototype
 function generator_util.add_recipe_tooltip(recipe)
@@ -439,11 +408,9 @@ function generator_util.add_recipe_tooltip(recipe)
         else
             local items = recipe[item_type]  ---@type FormattedRecipeItem[]
             for _, item in ipairs(items) do
-                local name = generator_util.format_temperature_name(item, item.name)
-                local proto = game[item.type .. "_prototypes"][name]  ---@type LuaItemPrototype | LuaFluidPrototype
-                local localised_name = generator_util.format_temperature_localised_name(item, proto)
+                local proto = game[item.type .. "_prototypes"][item.name]  ---@type LuaItemPrototype | LuaFluidPrototype
                 current_table, next_index = util.build_localised_string({("\n    " .. "[" .. item.type .. "="
-                    .. name .. "] " .. item.amount .. "x "), localised_name}, current_table, next_index)
+                    .. item.name .. "] " .. item.amount .. "x "), proto.localised_name}, current_table, next_index)
             end
         end
     end
