@@ -163,7 +163,8 @@ function view_state.rebuild_state(player)
     local relevant_object_type = (player_table.ui_state.districts_view) and "District" or "Factory"
     local relevant_object = util.context.get(player, relevant_object_type)
 
-    local timescale_string = (relevant_object) and TIMESCALE_MAP[relevant_object.timescale or default_timescale]
+    local timescale = (relevant_object) and relevant_object.timescale or default_timescale
+    local timescale_string = TIMESCALE_MAP[timescale]
     local singular_bol = util.globals.preferences(player).belts_or_lanes:sub(1, -2)
     local belt_proto = prototyper.defaults.get(player, "belts")
     local default_cargo_wagon = prototyper.defaults.get(player, "wagons", PROTOTYPE_MAPS.wagons["cargo-wagon"].id)
@@ -194,7 +195,7 @@ function view_state.rebuild_state(player)
             tooltip = {"fp.view_state_tt", {"fp.items_per_second_per_machine"}}
         },
         -- Retain for use in metadata generation
-        timescale = (relevant_object) and relevant_object.timescale or default_timescale,
+        timescale = timescale,
         selected_view_id = nil  -- set below
     }
 
