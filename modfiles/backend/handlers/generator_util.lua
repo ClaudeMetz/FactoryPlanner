@@ -25,6 +25,10 @@ local function generate_formatted_item(base_item, type)
         base_amount = base_item.amount
     end
 
+    if base_item.extra_count_fraction then
+        base_amount = base_amount + base_item.extra_count_fraction
+    end
+
     local probability = (base_item.probability or 1)
     local proddable_amount = (type == "product")
         and (base_amount - (base_item.catalyst_amount or 0)) * probability or nil
