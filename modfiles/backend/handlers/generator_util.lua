@@ -232,7 +232,7 @@ end
 ---@return boolean
 function generator_util.is_recycling_recipe(proto)
     for _, pattern in pairs(active_recycling_recipe_mods) do
-        if string.match(proto.name, pattern) then return true end
+        if string.match(proto.name, pattern) and proto.hidden then return true end
     end
     return false
 end
