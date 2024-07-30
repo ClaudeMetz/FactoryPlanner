@@ -5,7 +5,6 @@
 
 ## Bugs
 
-- Recycling recipes seem to follow a different new format for what they produce?
 - Translation seems to not reload when loading a save
 
 ## Uncertainty Sphere
@@ -60,6 +59,7 @@
 - Change SimpleItems to be a dict instead of an array so there needs to be no fuss finding stuff
 - Look into new display_density_scale thing ideally
 - Picker seemingly doesn't care about the item/fluid dichotomy
+- Recipe product formatting seems iffy, with new extra_count_fraction and probability/porddable stuff
 
 ## Waiting on
 
