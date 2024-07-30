@@ -6,9 +6,7 @@
 ## Bugs
 
 - Recycling recipes seem to follow a different new format for what they produce?
-- Agriculture tower recipes not supported - maybe it doesn't use recipes?
 - Module defaults-set stuff doesn't refresh module_effects properly
-- Putting beacon into cursor doesn't seem to fill in modules
 - Translation seems to not reload when loading a save
 
 ## Uncertainty Sphere
@@ -28,6 +26,7 @@
 
 ## Features
 
+- Agriculture tower recipes not supported - doesn't use recipes I don't think
 - Surface conditions
   - Districts support planets, how should the surface conditions tie into the factories?
   - Could disallow/hide irrelevant recipes/machines or just warn about them.
