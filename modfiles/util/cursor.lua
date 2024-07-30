@@ -39,7 +39,7 @@ function _cursor.set_entity(player, line, object)
         for i = 1, module.amount do
             table.insert(inventory_list, {
                 -- This should be from defines.inventory depending on the entity, but this somehow works
-                inventory = 4,
+                inventory = (object.class == "Machine") and 4 or 1,
                 stack = slot_index
             })
             slot_index = slot_index + 1
