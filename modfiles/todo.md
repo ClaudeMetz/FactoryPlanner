@@ -2,19 +2,24 @@
 
 ## Active
 
+
+## Bugs
+
+- Fix width when districts view is up by adding pushers between item boxes
+- Archiving last factory opens archive when it shouldn't
+- Right top side of main frame is fucked up - also horizontal spacing too much?
+- repair factory button too wide
+- Add a bit of blank space to bottom of production table
+- Translation seems to not reload when loading a save, maybe other times too
+- Warning about serializing lua function, maybe when dialog is open? (recipe?)
+- Allow empty factory names
+
+## Uncertainty Sphere
+
 - Fluid temperatures
   - Ripped everything out for now, to have a clean slate to go off of
   - Also disabled boiler machines&recipes, so those will need to be redone at some point
     - They are kinda half-complete anyways
-
-## Bugs
-
-- Right top side of main frame is fucked up
-- Add a bit of blank space to bottom of production table
-- Translation seems to not reload when loading a save
-
-## Uncertainty Sphere
-
 - Quality is kind of a lot
   - Every place I need a property that can be influenced by quality, I can specify that quality.
   - So theoretically every place I use such a prototype I could offer a choice of which prototype to use.
@@ -23,13 +28,13 @@
   - seems like something that still needs to be worked out https://wubesoftware.slack.com/archives/C12GUBRHS/p1720862186697859
   - also quality calculations are not like other effects probably? Needs custom handling for sure
 - Item Spoiling - what should my interaction with it be?
-- Show offshore pump ingredients being the tile they need; requires larger refactoring probably. Not sure.
-- Use LuaEntityPrototype::type in generator when applicable instead of trying to parse properties -> could break stuff
-- Balance District items against each other? Or show things as products and ingredients if that's the case?
 - Disable SA-specific features by checking feature flags in the right spots
 
 ## Features
 
+- Balance District items against each other
+- Move utilities button to factory info, alongside new 'options'/'configuration' dialog, for recipe prod settings
+-   Should have the ability to manually configure recipe productivity boni somewhere
 - Agriculture tower recipes not supported - doesn't use recipes I don't think
 - Surface conditions
   - Districts support planets, how should the surface conditions tie into the factories?
@@ -45,13 +50,13 @@
   - Saves me the hassle of generating them and automatically has the information people expect
   - Can be done on normal buttons now I think so no need for choose-elem-buttons
 - Need indication of cyclic recipes finally, used a lot on the space platform
-- Should have the ability to manually configure recipe productivity boni somewhere
 - Add shorthand recipe for 1 complete rocket, instead of needing to add 50 parts. Hard part will be picking an icon for it
 - Note when rocket silo launch time becomes a problem for speed; it's not at lower speeds
   - Is quite a complicated feature, especially when productivity is involved. Probably do need it though
 - Need an 'are you sure' dialog for deleting a District, resetting preferences, etc
 - Add a district automatically once someone lands on a new planet for the first time, plus space platform
 - Deleting the non-selected district/factory still sets the context to a neighbor, which is weird
+- Change SimpleItems to be a dict instead of an array so there needs to be no fuss finding stuff
 
 ## Low Priority
 
@@ -62,10 +67,9 @@
 - Get rid of player_table.active_factory hack since it's very easy to avoid
 - Main interface toggles/builds? 4 times when starting a save, which is weird
   - Check refreshes in general, maybe write a tool that flags when multiple refreshes happen in sequence
-- Change SimpleItems to be a dict instead of an array so there needs to be no fuss finding stuff
 - Look into new display_density_scale thing ideally
 - Picker seemingly doesn't care about the item/fluid dichotomy
-- Recipe product formatting seems iffy, with new extra_count_fraction and probability/porddable stuff
+- Use LuaEntityPrototype::type in generator when applicable instead of trying to parse properties -> could break stuff
 
 ## Waiting on
 

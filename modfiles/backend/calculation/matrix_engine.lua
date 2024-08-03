@@ -636,14 +636,9 @@ function matrix_engine.get_line_aggregate(line_data, player_index, floor_id, mac
         end
     end
     for _, ingredient in pairs(recipe_proto.ingredients) do
-        local amount = ingredient.amount
-        if ingredient.ignore_productivity then
-            amount = solver_util.determine_prodded_amount(ingredient, total_effects,
-                recipe_proto.maximum_productivity)
-        end
         local mining_drain_rate = machine_proto.resource_drain_rate or 1   -- mining recipes never ignore productivity
         structures.aggregate.add(line_aggregate, "Ingredient", ingredient,
-            amount * total_crafts_per_timescale * mining_drain_rate)
+            ingredient.amount * total_crafts_per_timescale * mining_drain_rate)
     end
 
     -- Determine energy consumption (including potential fuel needs) and emissions
