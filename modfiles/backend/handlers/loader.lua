@@ -239,7 +239,7 @@ end
 
 
 local function generate_object_index()
-    OBJECT_INDEX = {}
+    OBJECT_INDEX = {}  ---@type { [integer]: Object}
     for _, player_table in pairs(global.players) do
         if not player_table.realm then return end  -- migration issue mitigation
         player_table.realm:index()  -- recursively indexes all objects

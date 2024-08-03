@@ -51,7 +51,7 @@ BLANK_EFFECTS = {consumption = 0, speed = 0, productivity = 0, pollution = 0, qu
 ftable = require("__flib__.table")  -- has more functionality than built-in table
 translator = require("__flib__.dictionary-lite")  -- translation module for localised search
 
-util = require("util.util")  -- LuaLS doesn't like this being called 'util'
+util = require("util.util")
 
 require("ui.base.main_dialog")
 require("ui.base.compact_dialog")
