@@ -1,11 +1,4 @@
 -- ** LOCAL UTIL **
-local function update_submit_button(player, _, _)
-    local modal_elements = util.globals.modal_elements(player)
-    local name_length = string.len(modal_elements["factory_name"].text:gsub("^%s*(.-)%s*$", "%1"))
-    local issue_message = {"fp.factory_dialog_name_empty"}
-    modal_dialog.set_submit_button_state(modal_elements, (name_length > 0), issue_message)
-end
-
 local function open_factory_dialog(player, modal_data)
     local id = modal_data.factory_id
     modal_data.factory = (id ~= nil) and OBJECT_INDEX[id] or nil
@@ -19,14 +12,11 @@ local function open_factory_dialog(player, modal_data)
         tooltip={"fp.factory_dialog_name_tt"}}
 
     local factory_name = (modal_data.factory ~= nil) and modal_data.factory.name or ""
-    local textfield_name = flow_name.add{type="textfield", text=factory_name,
-        tags={mod="fp", on_gui_text_changed="factory_name"}, icon_selector=true}
+    local textfield_name = flow_name.add{type="textfield", text=factory_name, icon_selector=true}
     textfield_name.style.width = 250
     textfield_name.style.left_margin = 16
     textfield_name.focus()
     modal_elements["factory_name"] = textfield_name
-
-    update_submit_button(player)
 end
 
 local function close_factory_dialog(player, action)
@@ -49,15 +39,6 @@ end
 
 -- ** EVENTS **
 local listeners = {}
-
-listeners.gui = {
-    on_gui_text_changed = {
-        {
-            name = "factory_name",
-            handler = update_submit_button
-        }
-    }
-}
 
 listeners.dialog = {
     dialog = "factory",
