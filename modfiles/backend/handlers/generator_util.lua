@@ -83,20 +83,20 @@ end
 -- ** TOP LEVEL **
 -- Formats the products/ingredients of a recipe for more convenient use
 ---@param recipe_proto FPRecipePrototype
----@param pproducts Product[]
+---@param products Product[]
 ---@param main_product Product?
 ---@param ingredients Ingredient[]
-function generator_util.format_recipe(recipe_proto, pproducts, main_product, ingredients)
+function generator_util.format_recipe(recipe_proto, products, main_product, ingredients)
     local indexed_ingredients = create_type_indexed_list(ingredients)
     recipe_proto.type_counts.ingredients = determine_item_type_counts(indexed_ingredients)
 
 
-    local products = {}  ---@type FormattedProduct[]
-    for _, base_product in pairs(pproducts) do
+    local formatted_products = {}  ---@type FormattedProduct[]
+    for _, base_product in pairs(products) do
         local formatted_product = generate_formatted_product(base_product)
 
         if formatted_product.amount > 0 then
-            table.insert(products, formatted_product)
+            table.insert(formatted_products, formatted_product)
 
             -- Update the main product as well, if present
             if main_product ~= nil
@@ -107,8 +107,8 @@ function generator_util.format_recipe(recipe_proto, pproducts, main_product, ing
         end
     end
 
-    combine_identical_products(products)  -- only needed products, ingredients can't have duplicates
-    local indexed_products = create_type_indexed_list(products)
+    combine_identical_products(formatted_products)
+    local indexed_products = create_type_indexed_list(formatted_products)
     recipe_proto.type_counts.products = determine_item_type_counts(indexed_products)
 
 
@@ -122,27 +122,27 @@ function generator_util.format_recipe(recipe_proto, pproducts, main_product, ing
 
                 if difference < 0 then
                     ingredients[ingredient.index].amount = nil
-                    products[peer_product.index].amount = -difference
+                    formatted_products[peer_product.index].amount = -difference
                 elseif difference > 0 then
                     ingredients[ingredient.index].amount = difference
-                    products[peer_product.index].amount = nil
+                    formatted_products[peer_product.index].amount = nil
                 else
                     ingredients[ingredient.index].amount = nil
-                    products[peer_product.index].amount = nil
+                    formatted_products[peer_product.index].amount = nil
                 end
             end
         end
     end
 
     -- Remove items after the fact so the iteration above doesn't break
-    for _, item_table in pairs{ingredients, products} do
+    for _, item_table in pairs{ingredients, formatted_products} do
         for i = #item_table, 1, -1 do
             if item_table[i].amount == nil then table.remove(item_table, i) end
         end
     end
 
     recipe_proto.ingredients = ingredients
-    recipe_proto.products = products
+    recipe_proto.products = formatted_products
 end
 
 

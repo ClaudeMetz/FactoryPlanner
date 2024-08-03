@@ -51,6 +51,7 @@
 - Add a district automatically once someone lands on a new planet for the first time, plus space platform
 - Deleting the non-selected district/factory still sets the context to a neighbor, which is weird
 - Change SimpleItems to be a dict instead of an array so there needs to be no fuss finding stuff
+- Make recipe picker icons normal sized (40x40 instead of 36x36)
 
 ## Low Priority
 
