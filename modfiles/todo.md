@@ -8,7 +8,6 @@
 - Archiving last factory opens archive when it shouldn't
 - Translation seems to not reload when loading a save, maybe other times too
 - Warning about serializing lua function, maybe when dialog is open? not sure how this happend
-- Allow empty factory names
 
 ## Uncertainty Sphere
 
