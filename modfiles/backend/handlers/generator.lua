@@ -310,14 +310,14 @@ function generator.machines.sorting_function(a, b)
 end
 
 
----@class FPUnformattedRecipePrototype: FPPrototype
+---@class FPRecipePrototype: FPPrototype
 ---@field data_type "recipes"
 ---@field category string
 ---@field energy double
 ---@field emissions_multiplier double
----@field ingredients FPIngredient[]
----@field products Product[]
----@field main_product Product?
+---@field ingredients Ingredient[]
+---@field products FormattedProduct[]
+---@field main_product FormattedProduct?
 ---@field allowed_effects AllowedEffects?
 ---@field maximum_productivity double
 ---@field type_counts { ingredients: ItemTypeCounts, products: ItemTypeCounts }
@@ -330,22 +330,14 @@ end
 ---@field order string
 ---@field group ItemGroup
 ---@field subgroup ItemGroup
-
----@class FPRecipePrototype: FPUnformattedRecipePrototype
----@field ingredients FormattedRecipeItem[]
----@field products FormattedRecipeItem[]
----@field main_product FormattedRecipeItem?
 ---@field tooltip LocalisedString?
-
----@class FPIngredient: Ingredient
----@field ignore_productivity boolean
 
 -- Returns all standard recipes + custom mining, steam and rocket recipes
 ---@return NamedPrototypes<FPRecipePrototype>
 function generator.recipes.generate()
     local recipes = {}   ---@type NamedPrototypes<FPRecipePrototype>
 
-    ---@return FPUnformattedRecipePrototype
+    ---@return FPRecipePrototype
     local function custom_recipe()
         return {
             custom = true,
@@ -388,9 +380,6 @@ function generator.recipes.generate()
                 category = proto.category,
                 energy = proto.energy,
                 emissions_multiplier = proto.emissions_multiplier,
-                ingredients = proto.ingredients,
-                products = proto.products,
-                main_product = proto.main_product,
                 allowed_effects = proto.allowed_effects or {},
                 maximum_productivity = proto.maximum_productivity,
                 type_counts = {},  -- filled out by format_* below
@@ -405,8 +394,7 @@ function generator.recipes.generate()
                 subgroup = generator_util.generate_group_table(proto.subgroup)
             }
 
-            generator_util.format_recipe_products_and_ingredients(recipe)
-            ---@cast recipe FPRecipePrototype
+            generator_util.format_recipe(recipe, proto.products, proto.main_product, proto.ingredients)
             insert_prototype(recipes, recipe, nil)
         end
     end
@@ -419,8 +407,9 @@ function generator.recipes.generate()
             if not products then goto incompatible_proto end
 
             local produces_solid = false
-            for _, product in pairs(products) do  -- detects all solid mining recipes
+            for _, product in pairs(products) do
                 if product.type == "item" then produces_solid = true; break end
+                product.ignored_by_productivity = product.amount
             end
             if not produces_solid then goto incompatible_proto end
 
@@ -434,13 +423,12 @@ function generator.recipes.generate()
                 recipe.category = proto.resource_category
                 -- Set energy to mining time so the forumla for the machine_count works out
                 recipe.energy = proto.mineable_properties.mining_time
-                recipe.ingredients = {{type="entity", name=proto.name, amount=1, ignore_productivity=false}}
-                recipe.products = products
-                recipe.main_product = recipe.products[1]
+
+                local ingredients = {{type="entity", name=proto.name, amount=1}}
 
                 -- Add mining fluid, if required
                 if proto.mineable_properties.required_fluid then
-                    table.insert(recipe.ingredients, {
+                    table.insert(ingredients, {
                         type = "fluid",
                         name = proto.mineable_properties.required_fluid,
                         -- fluid_amount is given for a 'set' of mining ops, with a set being 10 ore
@@ -448,8 +436,8 @@ function generator.recipes.generate()
                     })
                 end
 
-                generator_util.format_recipe_products_and_ingredients(recipe)
-                ---@cast recipe FPRecipePrototype
+                generator_util.format_recipe(recipe, products, products[1], ingredients)
+
                 generator_util.add_recipe_tooltip(recipe)
                 insert_prototype(recipes, recipe, nil)
 
@@ -483,12 +471,11 @@ function generator.recipes.generate()
                         recipe.order = "z-" .. temperature
                         recipe.subgroup = {name="fluids", order="z", valid=true}
                         recipe.energy = 1
-                        recipe.ingredients = {{type="fluid", name="water", amount=60, ignore_productivity=false}}
-                        recipe.products = {{type="fluid", name="steam", amount=60, temperature=temperature}}
-                        recipe.main_product = recipe.products[1]
 
-                        generator_util.format_recipe_products_and_ingredients(recipe)
-                        ---@cast recipe FPRecipePrototype
+                        local ingredients = {{type="fluid", name="water", amount=60}}
+                        local products = {{type="fluid", name="steam", amount=60, temperature=temperature, ignored_by_productivity=60}}
+                        generator_util.format_recipe(recipe, products, products[1], ingredients)
+
                         generator_util.add_recipe_tooltip(recipe)
                         insert_prototype(recipes, recipe, nil)
                     end
@@ -511,12 +498,10 @@ function generator.recipes.generate()
             recipe.subgroup = {name="fluids", order="z", valid=true}
             recipe.category = "offshore-pump"
             recipe.energy = 1
-            recipe.ingredients = {}
-            recipe.products = {{type="fluid", name=proto.fluid.name, amount=60}}
-            recipe.main_product = recipe.products[1]
 
-            generator_util.format_recipe_products_and_ingredients(recipe)
-            ---@cast recipe FPRecipePrototype
+            local products = {{type="fluid", name=proto.fluid.name, amount=60}}
+            generator_util.format_recipe(recipe, products, products[1], {})
+
             generator_util.add_recipe_tooltip(recipe)
             insert_prototype(recipes, recipe, nil)
         end
@@ -532,12 +517,11 @@ function generator.recipes.generate()
         recipe.order = "z-0"
         recipe.subgroup = {name="fluids", order="z", valid=true}
         recipe.energy = 1
-        recipe.ingredients = {{type="fluid", name="water", amount=60, ignore_productivity=false}}
-        recipe.products = {{type="fluid", name="steam", amount=60}}
-        recipe.main_product = recipe.products[1]
 
-        generator_util.format_recipe_products_and_ingredients(recipe)
-        ---@cast recipe FPRecipePrototype
+        local ingredients = {{type="fluid", name="water", amount=60}}
+        local products = {{type="fluid", name="steam", amount=60, ignored_by_productivity=60}}
+        generator_util.format_recipe(recipe, products, products[1], ingredients)
+
         generator_util.add_recipe_tooltip(recipe)
         insert_prototype(recipes, recipe, nil)
     end ]]
@@ -582,7 +566,7 @@ end
 ---@field subgroup ItemGroup
 
 ---@class RelevantItem
----@field proto FormattedRecipeItem
+---@field proto RecipeItem
 ---@field is_product boolean
 ---@field is_rocket_part boolean
 

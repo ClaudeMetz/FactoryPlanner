@@ -47,7 +47,7 @@ local function recipe_map_from(item_type)
     local map = {}  ---@type RecipeMap
 
     for _, recipe in pairs(global.prototypes.recipes) do
-        for _, item in ipairs(recipe[item_type] --[[@as FormattedRecipeItem[] ]]) do
+        for _, item in ipairs(recipe[item_type]) do
             local item_proto = prototyper.util.find_prototype("items", item.name, item.type)  ---@cast item_proto -nil
             map[item_proto.category_id] = map[item_proto.category_id] or {}
             map[item_proto.category_id][item_proto.id] = map[item_proto.category_id][item_proto.id] or {}

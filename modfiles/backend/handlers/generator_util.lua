@@ -1,47 +1,43 @@
 local generator_util = {}
 
 -- ** LOCAL UTIL **
----@class FormattedRecipeItem
+---@alias RecipeItem FormattedProduct | Ingredient
+---@alias IndexedItemList { [ItemType]: { [ItemName]: { index: number, item: RecipeItem } } }
+---@alias ItemList { [ItemType]: { [ItemName]: RecipeItem } }
+---@alias ItemTypeCounts { items: number, fluids: number }
+
+---@class FormattedProduct
 ---@field name string
 ---@field type string
 ---@field amount number
 ---@field proddable_amount number?
----@field ignore_productivity boolean?
 
----@alias IndexedItemList { [ItemType]: { [ItemName]: { index: number, item: FormattedRecipeItem } } }
----@alias ItemList { [ItemType]: { [ItemName]: FormattedRecipeItem } }
----@alias ItemTypeCounts { items: number, fluids: number }
-
--- Determines the actual amount of items that a recipe product or ingredient equates to
----@param base_item Ingredient | Product
----@param type "ingredient" | "product"
----@return FormattedRecipeItem
-local function generate_formatted_item(base_item, type)
+---@param product Product
+---@return FormattedProduct
+local function generate_formatted_product(product)
     local base_amount = 0
-    if base_item.amount_max ~= nil and base_item.amount_min ~= nil then
-        base_amount = (base_item.amount_max + base_item.amount_min) / 2
+    if product.amount_max ~= nil and product.amount_min ~= nil then
+        base_amount = (product.amount_max + product.amount_min) / 2
     else
-        base_amount = base_item.amount
+        base_amount = product.amount
     end
 
-    if base_item.extra_count_fraction then
-        base_amount = base_amount + base_item.extra_count_fraction
-    end
+    base_amount = base_amount + (product.extra_count_fraction or 0)
 
-    local probability = (base_item.probability or 1)
-    local proddable_amount = (type == "product")
-        and (base_amount - (base_item.catalyst_amount or 0)) * probability or nil
+    local probability = (product.probability or 1)
+    local proddable_amount = base_amount - (product.ignored_by_productivity or 0)
 
     return {
-        name = base_item.name,
-        type = base_item.type,
-        amount = (base_amount * probability),
-        proddable_amount = proddable_amount
+        name = product.name,
+        type = product.type,
+        amount = base_amount * probability,
+        proddable_amount = proddable_amount * probability
     }
 end
 
+
 -- Combines items that occur more than once into one entry
----@param item_list FormattedRecipeItem[]
+---@param item_list RecipeItem[]
 local function combine_identical_products(item_list)
     local touched_items = {item = {}, fluid = {}, entity = {}}  ---@type ItemList
 
@@ -62,7 +58,7 @@ local function combine_identical_products(item_list)
     end
 end
 
----@param item_list FormattedRecipeItem[]
+---@param item_list RecipeItem[]
 ---@return IndexedItemList
 local function create_type_indexed_list(item_list)
     local indexed_list = {item = {}, fluid = {}, entity = {}}  ---@type IndexedItemList
@@ -86,40 +82,27 @@ end
 
 -- ** TOP LEVEL **
 -- Formats the products/ingredients of a recipe for more convenient use
----@param recipe_proto FPUnformattedRecipePrototype
-function generator_util.format_recipe_products_and_ingredients(recipe_proto)
-    local ingredients = {}  ---@type FormattedRecipeItem[]
-    for _, base_ingredient in pairs(recipe_proto.ingredients) do
-        local formatted_ingredient = generate_formatted_item(base_ingredient, "ingredient")
-
-        if formatted_ingredient.amount > 0 then
-            -- Productivity applies to all ingredients by default, some exceptions apply (ex. satellite)
-            -- Also add proddable_amount so productivity bonus can be un-applied later in the model
-            if base_ingredient.ignore_productivity then
-                formatted_ingredient.ignore_productivity = true
-                formatted_ingredient.proddable_amount = formatted_ingredient.amount
-            end
-
-            table.insert(ingredients, formatted_ingredient)
-        end
-    end
-
+---@param recipe_proto FPRecipePrototype
+---@param pproducts Product[]
+---@param main_product Product?
+---@param ingredients Ingredient[]
+function generator_util.format_recipe(recipe_proto, pproducts, main_product, ingredients)
     local indexed_ingredients = create_type_indexed_list(ingredients)
     recipe_proto.type_counts.ingredients = determine_item_type_counts(indexed_ingredients)
 
 
-    local products = {}  ---@type FormattedRecipeItem[]
-    for _, base_product in pairs(recipe_proto.products) do
-        local formatted_product = generate_formatted_item(base_product, "product")
+    local products = {}  ---@type FormattedProduct[]
+    for _, base_product in pairs(pproducts) do
+        local formatted_product = generate_formatted_product(base_product)
 
         if formatted_product.amount > 0 then
             table.insert(products, formatted_product)
 
             -- Update the main product as well, if present
-            if recipe_proto.main_product ~= nil
-                    and formatted_product.type == recipe_proto.main_product.type
-                    and formatted_product.name == recipe_proto.main_product.name then
-                recipe_proto.main_product = formatted_product  --[[@as Product]]
+            if main_product ~= nil
+                    and formatted_product.type == main_product.type
+                    and formatted_product.name == main_product.name then
+                recipe_proto.main_product = formatted_product
             end
         end
     end
@@ -167,7 +150,7 @@ end
 --[[ ---@param recipe_proto FPRecipePrototype
 ---@param factor number
 function generator_util.multiply_recipe(recipe_proto, factor)
-    ---@param item_list FormattedRecipeItem[]
+    ---@param item_list RecipeItem[]
     local function multiply_items(item_list)
         for _, item in pairs(item_list) do
             item.amount = item.amount * factor
@@ -188,7 +171,7 @@ end ]]
 function generator_util.combine_recipes(main_proto, additional_proto)
     ---@param item_category "products" | "ingredients"
     local function add_items_to_main_proto(item_category)
-        local additional_items = additional_proto[item_category]  ---@type FormattedRecipeItem[]
+        local additional_items = additional_proto[item_category]  ---@type RecipeItem[]
         for _, item in pairs(additional_items) do
             table.insert(main_proto[item_category], item)
         end
