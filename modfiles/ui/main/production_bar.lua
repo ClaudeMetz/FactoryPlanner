@@ -52,13 +52,17 @@ end
 
 
 local function build_production_bar(player)
-    local main_elements = util.globals.main_elements(player)
+    local ui_state = util.globals.ui_state(player)
+    local main_elements = ui_state.main_elements
     main_elements.production_bar = {}
 
     local parent_flow = main_elements.flows.right_vertical
     local subheader = parent_flow.add{type="frame", direction="horizontal", style="inside_deep_frame"}
     subheader.style.padding = {6, 4}
     subheader.style.height = MAGIC_NUMBERS.subheader_height
+    -- Not really sure why setting the width here is necessary, but it is
+    subheader.style.width = ui_state.main_dialog_dimensions.width - MAGIC_NUMBERS.list_width
+        - (3 * MAGIC_NUMBERS.frame_spacing)
 
     local button_refresh = subheader.add{type="sprite-button", tags={mod="fp", on_gui_click="refresh_production"},
         sprite="utility/refresh", style="tool_button", tooltip={"fp.refresh_production"}, mouse_button_filter={"left"}}

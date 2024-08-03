@@ -5,13 +5,9 @@
 
 ## Bugs
 
-- Fix width when districts view is up by adding pushers between item boxes
 - Archiving last factory opens archive when it shouldn't
-- Right top side of main frame is fucked up - also horizontal spacing too much?
-- repair factory button too wide
-- Add a bit of blank space to bottom of production table
 - Translation seems to not reload when loading a save, maybe other times too
-- Warning about serializing lua function, maybe when dialog is open? (recipe?)
+- Warning about serializing lua function, maybe when dialog is open? not sure how this happend
 - Allow empty factory names
 
 ## Uncertainty Sphere

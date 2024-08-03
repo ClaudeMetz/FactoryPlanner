@@ -108,6 +108,7 @@ local function build_factory_info(player)
     button_repair.style.height = 20
     button_repair.style.top_padding = -2
     button_repair.style.margin = {2, 0, -2, 12}
+    button_repair.style.minimal_width = 0
     main_elements.factory_info["repair_button"] = button_repair
 
     -- Power + Emissions

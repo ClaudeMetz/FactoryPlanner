@@ -17,7 +17,6 @@ end
 local function build_items_flow(player, parent, district)
     local items_flow = parent.add{type="flow", direction="horizontal"}
     items_flow.style.padding = {6, 12, 12, 12}
-    items_flow.style.horizontal_spacing = 36
 
     local preferences = util.globals.preferences(player)
     local total_columns = preferences.products_per_row * 4
@@ -56,7 +55,9 @@ local function build_items_flow(player, parent, district)
     end
 
     local prod_table, prod_rows = build_item_flow(district.products, "product", columns_per)
+    items_flow.add{type="empty-widget", style="flib_horizontal_pusher"}
     local byprod_table, byprod_rows = build_item_flow(district.byproducts, "byproduct", columns_per)
+    items_flow.add{type="empty-widget", style="flib_horizontal_pusher"}
     local ingr_table, ingr_rows = build_item_flow(district.ingredients, "ingredient", columns_per + remainder)
 
     local height = math.max(prod_rows, byprod_rows, ingr_rows) * MAGIC_NUMBERS.item_button_size
