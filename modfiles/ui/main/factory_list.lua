@@ -26,12 +26,11 @@ end
 local function change_factory_archived(player, to_archive)
     local factory = util.context.get(player, "Factory")  --[[@as Factory]]
 
-    -- If it's pulling the last factory from the archive, keep the context on it
     if to_archive or factory.parent:count({archived=true}) > 1 then
         local adjacent_factory = util.context.remove(player, factory)
-        util.context.set(player, adjacent_factory or factory.parent)
+        util.context.set(player, adjacent_factory or factory.parent, true)
         view_state.rebuild_state(player)
-    end
+    end  -- if it's pulling the last factory from the archive, keep the context on it
 
     factory.archived = to_archive
     factory.parent:shift(factory, "next", nil)  -- shift to end
