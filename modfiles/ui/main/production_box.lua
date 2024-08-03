@@ -156,6 +156,7 @@ local function build_production_box(player)
 
     local scroll_pane_production = frame_vertical.add{type="scroll-pane", style="flib_naked_scroll_pane_no_padding"}
     scroll_pane_production.style.extra_right_padding_when_activated = -12
+    scroll_pane_production.style.bottom_padding = 60  -- add a bit of 'overscroll' to the bottom
     main_elements.production_box["production_scroll_pane"] = scroll_pane_production
 
     local label_instruction = frame_vertical.add{type="label", style="bold_label"}
