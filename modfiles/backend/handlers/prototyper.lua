@@ -18,9 +18,9 @@ prototyper = {
 ---@type { [DataType]: boolean }
 prototyper.data_types = {machines = true, recipes = false, items = true, fuels = true,
                          belts = false, wagons = true, modules = true, beacons = false,
-                         locations = false}
+                         locations = false, qualities = false}
 
----@alias DataType "machines" | "recipes" | "items" | "fuels" | "belts" | "wagons" | "modules" | "beacons" | "locations"
+---@alias DataType "machines" | "recipes" | "items" | "fuels" | "belts" | "wagons" | "modules" | "beacons" | "locations" | "qualities"
 
 ---@alias NamedPrototypes<T> { [string]: T }
 ---@alias NamedPrototypesWithCategory<T> { [string]: { name: string, members: { [string]: T } } } }
@@ -41,7 +41,8 @@ prototyper.data_types = {machines = true, recipes = false, items = true, fuels =
 ---@field wagons IndexedPrototypesWithCategory<FPWagonPrototype>
 ---@field modules IndexedPrototypesWithCategory<FPModulePrototype>
 ---@field beacons IndexedPrototypes<FPBeaconPrototype>
----@field locations IndexedPrototypes<FPBeaconPrototype>
+---@field locations IndexedPrototypes<FPLocationPrototype>
+---@field qualities IndexedPrototypes<FPQualityPrototype>
 
 ---@alias SortingFunction fun(a: table, b: table): boolean
 

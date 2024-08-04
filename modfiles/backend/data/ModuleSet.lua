@@ -191,7 +191,6 @@ function ModuleSet:check_compatibility(module_proto)
     if not self.parent:uses_effects() then
         return false
     else
-        local positive_effects = {speed=true, productivity=true, quality=true}
         local all_allowed_effects = {self.parent.proto.allowed_effects}
         local recipe_allowed_effects = self.parent.parent.recipe_proto.allowed_effects
         -- No allowed_effects means all effects are allowed in this case
@@ -199,9 +198,8 @@ function ModuleSet:check_compatibility(module_proto)
 
         for _, allowed_effects in pairs(all_allowed_effects) do
             for name, value in pairs(module_proto.effects) do
-                -- Which module effects are allowed is confusing. Any effect considered 'positive' is
-                -- only disallowed if the effect value is actually positive, and vice versa.
-                if not (allowed_effects[name] or util.xor(value > 0, positive_effects[name] ~= nil)) then
+                -- Effects only need to be in the allowed list if they are considered positive
+                if not allowed_effects[name] and util.is_positive_effect(name, value) then
                     return false
                 end
             end
@@ -218,13 +216,7 @@ function ModuleSet:compile_filter()
         end
     end
 
-    local existing_modules = {}
-    for module in self:iterator() do
-        table.insert(existing_modules, module.proto.name)
-    end
-
-    return {{filter="name", name=compatible_modules},
-        {filter="name", mode="and", invert=true, name=existing_modules}}
+    return {{filter="name", name=compatible_modules}}
 end
 
 

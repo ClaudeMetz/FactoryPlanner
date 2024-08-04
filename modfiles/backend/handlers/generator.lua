@@ -9,7 +9,8 @@ local generator = {
     wagons = {},
     modules = {},
     beacons = {},
-    locations = {}
+    locations = {},
+    qualities = {}
 }
 
 
@@ -999,6 +1000,45 @@ function generator.locations.generate()
     end ]]
 
     return locations
+end
+
+---@class FPQualityPrototype: FPPrototype
+---@field data_type "qualities"
+---@field multiplier double
+
+---@return NamedPrototypes<FPQualityPrototype>
+function generator.qualities.generate()
+    local qualities = {}  ---@type NamedPrototypes<FPQualityPrototype>
+
+    for _, proto in pairs(game.quality_prototypes) do
+        if proto.name ~= "quality-unknown" then  -- only until hidden API is available, maybe
+            local sprite = "quality/" .. proto.name
+            if game.is_valid_sprite_path(sprite) then
+                local quality = {
+                    name = proto.name,
+                    localised_name = proto.localised_name,
+                    sprite = sprite,
+                    --color = proto.color, -- useful for tooltips, probably formatted into rich text
+                    multiplier = 1 + (proto.level * 0.3)
+                    -- Also has these two, we'll see how they work
+                    --beacon_power_usage_multiplier
+                    --mining_drill_resource_drain_multiplier
+                }
+                insert_prototype(qualities, quality, nil)
+            end
+        end
+    end
+
+    return qualities
+end
+
+---@param a FPQualityPrototype
+---@param b FPQualityPrototype
+---@return boolean
+function generator.qualities.sorting_function(a, b)
+    if a.multiplier < b.multiplier then return true
+    elseif a.multiplier > b.multiplier then return false end
+    return false
 end
 
 

@@ -198,7 +198,8 @@ end
 ---@field wagons MappedPrototypesWithCategory<FPWagonPrototype>
 ---@field modules MappedPrototypesWithCategory<FPModulePrototype>
 ---@field beacons MappedPrototypes<FPBeaconPrototype>
----@field locations MappedPrototypes<FPBeaconPrototype>
+---@field locations MappedPrototypes<FPLocationPrototype>
+---@field qualities MappedPrototypes<FPQualityPrototype>
 
 ---@param data_types { [DataType]: boolean }
 ---@return PrototypeMaps

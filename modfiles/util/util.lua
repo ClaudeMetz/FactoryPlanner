@@ -52,6 +52,7 @@ function _util.build_localised_string(strings_to_insert, current_table, next_ind
     return current_table, next_index
 end
 
+
 ---@param effect_tables ModuleEffects[]
 ---@return ModuleEffects
 function _util.merge_effects(effect_tables)
@@ -63,6 +64,18 @@ function _util.merge_effects(effect_tables)
     end
     return effects
 end
+
+local positive_effects = {speed=true, productivity=true, quality=true}
+
+---@param name string
+---@param value ModuleEffectValue
+---@return boolean is_positive_effect
+function _util.is_positive_effect(name, value)
+    -- Effects are considered positive if their effect is actually in the 'desirable'
+    -- direction, ie. positive speed, or negative pollution
+    return (value > 0) == positive_effects[name]
+end
+
 
 ---@param a boolean
 ---@param b boolean
