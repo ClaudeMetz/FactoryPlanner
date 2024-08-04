@@ -93,7 +93,7 @@ local function handle_amount_change(player, _, _)
     modal_data.module_set:normalize({effects=true})
 
     update_profile_label(modal_data)
-    module_configurator.refresh_effects_flow(modal_data)
+    module_configurator.refresh_modules_flow(player, false)
     update_dialog_submit_button(modal_data)
 end
 

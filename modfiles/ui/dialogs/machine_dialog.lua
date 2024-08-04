@@ -31,8 +31,7 @@ local function refresh_fuel_frame(player)
     modal_elements.fuel_table.clear()
 
     local machine_burner = machine.proto.burner
-    modal_elements.fuel_table.visible = (machine_burner ~= nil)
-    modal_elements.fuel_info_label.visible = (machine_burner == nil)
+    modal_elements.fuel_frame.visible = (machine_burner ~= nil)
 
     if machine_burner == nil then return end
     local current_proto = machine.fuel.proto
@@ -71,19 +70,13 @@ end
 local function add_choices_frame(parent_frame, modal_elements, type)
     local frame_choices = parent_frame.add{type="frame", direction="vertical", style="fp_frame_bordered_stretch"}
     frame_choices.style.width = MAGIC_NUMBERS.module_dialog_element_width
+    modal_elements[type .. "_frame"] = frame_choices
 
     local flow_choices = frame_choices.add{type="flow", direction="horizontal"}
     flow_choices.style.padding = {0, 0, -4, 0}
     flow_choices.style.vertical_align = "center"
 
     flow_choices.add{type="label", caption={"fp.pu_" .. type, 1}, style="semibold_label"}
-
-    if type == "fuel" then
-        local label_info = flow_choices.add{type="label", caption={"fp.machine_does_not_use_fuel"}}
-        label_info.style.padding = {9, 0, 9, 24}  -- make sure spacing stays the same when no fuel button is shown
-        modal_elements["fuel_info_label"] = label_info
-    end
-
     flow_choices.add{type="empty-widget", style="flib_horizontal_pusher"}
 
     local flow = flow_choices.add{type="flow", direction="horizontal"}
@@ -91,7 +84,6 @@ local function add_choices_frame(parent_frame, modal_elements, type)
     local frame = flow.add{type="frame", direction="horizontal", style="fp_frame_light_slots"}
     local table = frame.add{type="table", column_count=8, style="filter_slot_table"}
     modal_elements[type .. "_table"] = table
-
 end
 
 local function add_limit_frame(parent_frame, modal_elements)

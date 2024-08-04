@@ -164,6 +164,11 @@ end
 ---@return Machine clone
 function Machine:clone()
     local clone = unpack(self:pack(), self.parent)
+
+    -- Copy these over so we don't need to run the solver
+    clone.amount = self.amount
+    clone.recipe_effects = self.recipe_effects
+
     clone:validate()
     return clone
 end
