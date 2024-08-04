@@ -12,7 +12,7 @@ function migration.player_table(player_table)
         end
     end
 
-    player_table.district.name = "Nauvis"
+    player_table.district.name = "New District"
     player_table.district.location_proto = {name = "nauvis", data_type = "locations", simplified = true}
     player_table.district.power = 0
     player_table.district.emissions = {}

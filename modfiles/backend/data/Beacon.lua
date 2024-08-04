@@ -153,7 +153,7 @@ function Beacon:repair(player)
         return false
     else  -- otherwise, the modules need to be checked and removed if necessary
         -- Remove invalid modules and normalize the remaining ones
-        self.valid = self.module_set:repair()
+        self.valid = self.module_set:repair(player)
 
         if self.module_set.module_count == 0 then return false end   -- if the beacon became empty, remove it
     end

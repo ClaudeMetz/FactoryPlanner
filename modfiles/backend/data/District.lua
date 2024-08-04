@@ -20,12 +20,11 @@ District.__index = District
 script.register_metatable("District", District)
 
 ---@param name string?
----@param location string?
 ---@return District
-local function init(name, location)
+local function init(name)
     local object = Object.init({
         name = name or "New District",
-        location_proto = prototyper.util.find_prototype("locations", location or "nauvis"),
+        location_proto = prototyper.defaults.get_fallback("locations"),
         products = SimpleItems.init(),
         byproducts = SimpleItems.init(),
         ingredients = SimpleItems.init(),
