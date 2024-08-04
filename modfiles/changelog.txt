@@ -22,6 +22,7 @@ Date: 20. 07. 2024
   Features:
     - Updated the mod for Factorio 2.0 and the Space Age expansion. This means adoption to changes in existing systems and support for new systems, the most significant of which will be listed here.
     - TODO districts, surface conditions?
+    - TODO quality (modules)
   Changes:
     - Dropped Recipe Book support in favor of Factoriopedia, the new built-in recipe browser
     - Changed the utility dialog function to request missing item delivery to create a new logistic section instead of having construction bots fulfill the order

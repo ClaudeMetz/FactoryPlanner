@@ -162,10 +162,7 @@ local function refresh_districts_box(player)
     if not visible then return end
 
     main_flow.clear()
-    local location_items = {}
-    for _, proto in pairs(global.prototypes.locations) do
-        table.insert(location_items, {"", "[img=" .. proto.sprite .. "] ", proto.localised_name})
-    end
+    local location_items = util.gui.generate_dropdown_items("locations")
 
     for district in player_table.realm:iterator() do
         build_district_frame(player, district, location_items)

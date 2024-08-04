@@ -21,6 +21,8 @@
 - Disable SA-specific features by checking feature flags in the right spots
 - Add a district automatically once someone lands on a new planet for the first time, plus space platform
   - Not sure if I want this, might be overbearing
+- Default modules/beacons is awkward with quality since you can't specify it (atm)
+  - Feature is still neat, but maybe time to axe it? Or make it work better somehow
 
 ## Features
 
@@ -74,6 +76,10 @@
 - Surface prototypes missing surface_properties read for generator, add surfaces to locations properly
 - Ingredient/Product/etc? definitions might have changed and I use them in my type system
 - Base game steals tons of normal key combos which is annoying (ctrl+f among others)
+- No way to show quality on sprite buttons, which is essential in tons of places
+  - Same thing for quality color, which should be used in relevant tooltips
+- Also no way to have quality-affected items in choose-elem-buttons, neither the version with built-in selector
+  - Would use this instead of the additional dropdown in all likelyhood
 
 ## Release
 
