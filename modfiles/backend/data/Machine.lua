@@ -204,7 +204,7 @@ function Machine:repair(player)
         self:normalize_fuel(player)
     end
 
-    self.module_set:repair()
+    self.module_set:repair(player)
 
     return self.valid
 end
