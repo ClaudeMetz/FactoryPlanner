@@ -131,9 +131,11 @@ end
 
 local function add_module_flow(parent_flow, module_set, metadata)
     for module in module_set:iterator() do
+        local title_line = (module.quality_proto.level == 0) and {"fp.tt_title", module.proto.localised_name}
+            or {"fp.tt_title_with_note", module.proto.localised_name, module.quality_proto.localised_name}
         local number_line = {"", "\n", module.amount, " ", {"fp.pl_module", module.amount}}
-        local tooltip = {"", {"fp.tt_title", module.proto.localised_name}, number_line,
-            format_effects_tooltip(module.effects_tooltip), metadata.module_tutorial_tt}
+        local tooltip = {"", title_line, number_line, format_effects_tooltip(module.effects_tooltip),
+            metadata.module_tutorial_tt}
 
         local button = parent_flow.add{type="sprite-button", sprite=module.proto.sprite, number=module.amount,
             tags={mod="fp", on_gui_click="act_on_line_module", module_id=module.id, on_gui_hover="set_tooltip",
@@ -210,11 +212,13 @@ function builders.beacon(line, parent_flow, metadata)
         button.style.margin = 2
         button.style.padding = 4
     else
+        local title_line = (beacon.quality_proto.level == 0) and {"fp.tt_title", beacon.proto.localised_name}
+            or {"fp.tt_title_with_note", beacon.proto.localised_name, beacon.quality_proto.localised_name}
         local plural_parameter = (beacon.amount == 1) and 1 or 2  -- needed because the amount can be decimal
         local number_line = {"", "\n", beacon.amount, " ", {"fp.pl_beacon", plural_parameter}}
         if beacon.total_amount then table.insert(number_line, {"", " - ", {"fp.in_total", beacon.total_amount}}) end
-        local tooltip = {"", {"fp.tt_title", beacon.proto.localised_name}, number_line,
-            format_effects_tooltip(beacon.effects_tooltip), metadata.beacon_tutorial_tt}
+        local tooltip = {"", title_line, number_line, format_effects_tooltip(beacon.effects_tooltip),
+            metadata.beacon_tutorial_tt}
 
         local button_beacon = parent_flow.add{type="sprite-button", sprite=beacon.proto.sprite, number=beacon.amount,
             tags={mod="fp", on_gui_click="act_on_line_beacon", beacon_id=beacon.id, on_gui_hover="set_tooltip",

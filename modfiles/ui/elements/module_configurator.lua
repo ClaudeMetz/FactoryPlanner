@@ -26,7 +26,7 @@ local function add_module_frame(parent_flow, module, module_filters, empty_slots
     -- No quality choose elem button, so using dropdown for now, which are ugly
     local selected_index = (module) and module.quality_proto.id or nil
     frame_module.add{type="drop-down", name="fp_chooser_quality", items=quality_items,
-        tags={mod="fp", on_gui_selection_state_changed="select_quality", module_id=module_id},
+        tags={mod="fp", on_gui_selection_state_changed="select_module_quality", module_id=module_id},
         selected_index=selected_index, enabled=(module ~= nil)}
 
     --local label_amount = frame_module.add{type="label", caption={"fp.amount"}, style="semibold_label"}
@@ -55,7 +55,7 @@ end
 local function add_effects_section(parent_flow, object, modal_elements)
     local frame_effects = parent_flow.add{type="frame", direction="vertical", style="fp_frame_bordered_stretch"}
     frame_effects.style.vertically_stretchable = true
-    frame_effects.style.width = (MAGIC_NUMBERS.module_dialog_element_width / 2) - 2
+    --frame_effects.style.width = (MAGIC_NUMBERS.module_dialog_element_width / 2) - 2  -- TODO undo
 
     local class_lower = object.class:lower()
     local caption, tooltip = {"", {"fp.pu_" .. class_lower, 1}, " ", {"fp.effects"}}, {""}
@@ -234,7 +234,7 @@ listeners.gui = {
     },
     on_gui_selection_state_changed = {
         {
-            name = "select_quality",
+            name = "select_module_quality",
             handler = handle_quality_selection
         }
     }

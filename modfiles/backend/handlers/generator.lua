@@ -862,6 +862,7 @@ end
 ---@field allowed_effects AllowedEffects
 ---@field module_limit uint
 ---@field effectivity double
+---@field quality_bonus double
 ---@field profile double[]
 ---@field energy_usage double
 
@@ -890,6 +891,7 @@ function generator.beacons.generate()
                 allowed_effects = proto.allowed_effects,
                 module_limit = proto.module_inventory_size,
                 effectivity = proto.distribution_effectivity,
+                quality_bonus = proto.distribution_effectivity_bonus_per_quality_level,
                 profile = proto.profile,
                 energy_usage = proto.energy_usage or proto.get_max_energy_usage() or 0
             }
@@ -1004,6 +1006,7 @@ end
 
 ---@class FPQualityPrototype: FPPrototype
 ---@field data_type "qualities"
+---@field level uint
 ---@field multiplier double
 
 ---@return NamedPrototypes<FPQualityPrototype>
@@ -1019,6 +1022,7 @@ function generator.qualities.generate()
                     localised_name = proto.localised_name,
                     sprite = sprite,
                     --color = proto.color, -- useful for tooltips, probably formatted into rich text
+                    level = proto.level,
                     multiplier = 1 + (proto.level * 0.3)
                     -- Also has these two, we'll see how they work
                     --beacon_power_usage_multiplier
@@ -1036,8 +1040,8 @@ end
 ---@param b FPQualityPrototype
 ---@return boolean
 function generator.qualities.sorting_function(a, b)
-    if a.multiplier < b.multiplier then return true
-    elseif a.multiplier > b.multiplier then return false end
+    if a.level < b.level then return true
+    elseif a.level > b.level then return false end
     return false
 end
 

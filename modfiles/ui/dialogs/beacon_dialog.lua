@@ -7,15 +7,21 @@ local function add_beacon_frame(parent_flow, modal_data)
     local beacon = modal_data.object
 
     local flow_beacon = parent_flow.add{type="frame", style="fp_frame_module", direction="horizontal"}
-    flow_beacon.style.width = MAGIC_NUMBERS.module_dialog_element_width
+    --flow_beacon.style.width = MAGIC_NUMBERS.module_dialog_element_width
 
     flow_beacon.add{type="label", caption={"fp.pu_beacon", 1}, style="semibold_label"}
     local beacon_filter = {{filter="type", type="beacon"}, {filter="hidden", invert=true, mode="and"}}
     local button_beacon = flow_beacon.add{type="choose-elem-button", elem_type="entity", entity=beacon.proto.name,
         tags={mod="fp", on_gui_elem_changed="select_beacon"}, elem_filters=beacon_filter,
         style="fp_sprite-button_inset"}
-    button_beacon.style.right_margin = 12
+    --button_beacon.style.right_margin = 12
     modal_elements["beacon_button"] = button_beacon
+
+    -- No quality choose elem button, so using dropdown for now, which are ugly
+    local quality_items = util.gui.generate_dropdown_items("qualities")
+    local selected_index = (beacon) and beacon.quality_proto.id or nil
+    flow_beacon.add{type="drop-down", items=quality_items, selected_index=selected_index,
+        tags={mod="fp", on_gui_selection_state_changed="select_beacon_quality"}}.style.right_margin = 8
 
     flow_beacon.add{type="label", caption={"fp.info_label", {"fp.amount"}}, tooltip={"fp.beacon_amount_tt"},
         style="semibold_label"}
@@ -105,6 +111,16 @@ local function handle_beacon_selection(player, entities)
     modal_dialog.leave_selection_mode(player)
 end
 
+local function handle_quality_selection(player, tags, event)
+    local modal_data = util.globals.modal_data(player)  --[[@as table]]
+    local quality_proto_id = event.element.selected_index
+    local new_proto = global.prototypes.qualities[quality_proto_id]
+    modal_data.object.quality_proto = new_proto
+
+    modal_data.module_set:normalize({effects=true})
+    module_configurator.refresh_modules_flow(player, false)
+end
+
 
 local function open_beacon_dialog(player, modal_data)
     local line = OBJECT_INDEX[modal_data.line_id]
@@ -180,6 +196,12 @@ listeners.gui = {
             handler = (function(player, _, _)
                 modal_dialog.enter_selection_mode(player, "fp_beacon_selector")
             end)
+        }
+    },
+    on_gui_selection_state_changed = {
+        {
+            name = "select_beacon_quality",
+            handler = handle_quality_selection
         }
     }
 }
