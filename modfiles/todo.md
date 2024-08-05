@@ -2,6 +2,13 @@
 
 ## Active
 
+- Quality is kind of a lot
+  - Every place I need a property that can be influenced by quality, I can specify that quality.
+  - So theoretically every place I use such a prototype I could offer a choice of which prototype to use.
+  - Which also means I'd need to keep around a value for every possible quality and account for it everywhere.
+  - Also not sure how the calculations work, or how I should integrate them, with them being probabilities and all.
+  - seems like something that still needs to be worked out https://wubesoftware.slack.com/archives/C12GUBRHS/p1720862186697859
+  - also quality calculations are not like other effects probably? Needs custom handling for sure
 
 ## Bugs
 
@@ -10,13 +17,6 @@
 
 ## Uncertainty Sphere
 
-- Quality is kind of a lot
-  - Every place I need a property that can be influenced by quality, I can specify that quality.
-  - So theoretically every place I use such a prototype I could offer a choice of which prototype to use.
-  - Which also means I'd need to keep around a value for every possible quality and account for it everywhere.
-  - Also not sure how the calculations work, or how I should integrate them, with them being probabilities and all.
-  - seems like something that still needs to be worked out https://wubesoftware.slack.com/archives/C12GUBRHS/p1720862186697859
-  - also quality calculations are not like other effects probably? Needs custom handling for sure
 - Item Spoiling - what should my interaction with it be?
 - Disable SA-specific features by checking feature flags in the right spots
 - Add a district automatically once someone lands on a new planet for the first time, plus space platform
@@ -74,12 +74,13 @@
 - API to open things in Factoriopedia
 - Disabled sprite buttons fade their icons, can't be turned off
 - Surface prototypes missing surface_properties read for generator, add surfaces to locations properly
-- Ingredient/Product/etc? definitions might have changed and I use them in my type system
 - Base game steals tons of normal key combos which is annoying (ctrl+f among others)
 - No way to show quality on sprite buttons, which is essential in tons of places
   - Same thing for quality color, which should be used in relevant tooltips
 - Also no way to have quality-affected items in choose-elem-buttons, neither the version with built-in selector
   - Would use this instead of the additional dropdown in all likelyhood
+  - If dropdowns are removed, set fixed width to effects section in module_configurator again
+- Special quality attributes for beacons and miners not available on LuaQualityPrototype yet
 
 ## Release
 

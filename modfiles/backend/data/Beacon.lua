@@ -5,6 +5,7 @@ local ModuleSet = require("backend.data.ModuleSet")
 ---@field class "Beacon"
 ---@field parent Line
 ---@field proto FPBeaconPrototype | FPPackedPrototype
+---@field quality_proto FPQualityPrototype
 ---@field amount integer
 ---@field total_amount number?
 ---@field module_set ModuleSet
@@ -20,6 +21,7 @@ script.register_metatable("Beacon", Beacon)
 local function init(proto, parent)
     local object = Object.init({
         proto = proto,
+        quality_proto = prototyper.defaults.get_fallback("qualities"),
         amount = 0,
         total_amount = nil,
         module_set = nil,
@@ -53,10 +55,11 @@ end
 
 
 function Beacon:summarize_effects()
-    local effects = self.module_set:get_effects()
     local profile_mulitplier = self:profile_multiplier()
-    local effect_multiplier = self.amount * profile_mulitplier * self.proto.effectivity
+    local effectivity = self.proto.effectivity + (self.quality_proto.level * self.proto.quality_bonus)
+    local effect_multiplier = self.amount * profile_mulitplier * effectivity
 
+    local effects = self.module_set:get_effects()
     for name, effect in pairs(effects) do
         effects[name] = effect * effect_multiplier
     end
@@ -98,6 +101,7 @@ end
 ---@class PackedBeacon: PackedObject
 ---@field class "Beacon"
 ---@field proto FPBeaconPrototype
+---@field quality_proto FPQualityPrototype
 ---@field amount number
 ---@field total_amount number?
 ---@field module_set PackedModuleSet
@@ -107,6 +111,7 @@ function Beacon:pack()
     return {
         class = self.class,
         proto = prototyper.util.simplify_prototype(self.proto, nil),
+        quality_proto = prototyper.util.simplify_prototype(self.quality_proto, nil),
         amount = self.amount,
         total_amount = self.total_amount,
         module_set = self.module_set:pack()
@@ -118,6 +123,7 @@ end
 ---@return Beacon machine
 local function unpack(packed_self, parent)
     local unpacked_self = init(packed_self.proto, parent)
+    unpacked_self.quality_proto = packed_self.quality_proto
     unpacked_self.amount = packed_self.amount
     unpacked_self.total_amount = packed_self.total_amount
     unpacked_self.module_set = ModuleSet.unpack(packed_self.module_set, unpacked_self)
@@ -138,6 +144,9 @@ function Beacon:validate()
     self.proto = prototyper.util.validate_prototype_object(self.proto, nil)
     self.valid = (not self.proto.simplified)
 
+    self.quality_proto = prototyper.util.validate_prototype_object(self.quality_proto, nil)
+    self.valid = (not self.quality_proto.simplified) and self.valid
+
     local machine = self.parent.machine  -- make sure the machine can still be influenced by beacons
     if machine.valid then self.valid = (machine.proto.allowed_effects ~= nil) and self.valid end
 
@@ -151,11 +160,12 @@ end
 function Beacon:repair(player)
     if self.proto.simplified then -- if still simplified, the beacon can't be repaired and needs to be removed
         return false
-    else  -- otherwise, the modules need to be checked and removed if necessary
+    else  -- otherwise, the quality and modules need to be checked and corrected if necessary
+        if self.quality_proto.simplified then self.quality_proto = prototyper.defaults.get_fallback("qualities") end
+
         -- Remove invalid modules and normalize the remaining ones
         self.valid = self.module_set:repair(player)
-
-        if self.module_set.module_count == 0 then return false end   -- if the beacon became empty, remove it
+        if self.module_set.module_count == 0 then return false end  -- if the beacon became empty, remove it
     end
 
     self.valid = true  -- if it gets to here, the beacon was successfully repaired

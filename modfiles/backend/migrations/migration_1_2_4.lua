@@ -2,10 +2,14 @@
 
 local migration = {}
 
+local function normal_quality_proto()
+    return {name = "normal", data_type = "qualities", simplified = true}
+end
+
 function migration.player_table(player_table)
     local function update_modules(module_set)
         for module in module_set:iterator() do
-            module.quality_proto = {name = "normal", data_type = "qualities", simplified = true}
+            module.quality_proto = normal_quality_proto()
         end
     end
 
@@ -17,7 +21,10 @@ function migration.player_table(player_table)
                         iterate_floor(line)
                     else
                         update_modules(line.machine.module_set)
-                        if line.beacon then update_modules(line.beacon.module_set) end
+                        if line.beacon then
+                            line.beacon.quality_proto = normal_quality_proto()
+                            update_modules(line.beacon.module_set)
+                        end
                     end
                 end
             end
@@ -29,7 +36,7 @@ end
 function migration.packed_factory(packed_factory)
     local function update_modules(module_set)
         for _, module in pairs(module_set.modules) do
-            module.quality_proto = {name = "normal", data_type = "qualities", simplified = true}
+            module.quality_proto = normal_quality_proto()
         end
     end
 
@@ -39,7 +46,10 @@ function migration.packed_factory(packed_factory)
                 iterate_floor(packed_line)
             else
                 update_modules(packed_line.machine.module_set)
-                if packed_line.beacon then update_modules(packed_line.beacon.module_set) end
+                if packed_line.beacon then
+                    packed_line.beacon.quality_proto = normal_quality_proto()
+                    update_modules(packed_line.beacon.module_set)
+                end
             end
         end
     end
