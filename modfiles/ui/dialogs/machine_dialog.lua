@@ -84,6 +84,8 @@ local function add_choices_frame(parent_frame, modal_elements, type)
     local frame = flow.add{type="frame", direction="horizontal", style="fp_frame_light_slots"}
     local table = frame.add{type="table", column_count=8, style="filter_slot_table"}
     modal_elements[type .. "_table"] = table
+
+    return frame_choices
 end
 
 local function add_limit_frame(parent_frame, modal_elements)
@@ -121,6 +123,12 @@ local function handle_machine_choice(player, tags, _)
     refresh_machine_frame(player)
     refresh_fuel_frame(player)
     module_configurator.refresh_modules_flow(player, false)
+end
+
+local function handle_quality_selection(player, _, event)
+    local machine = util.globals.modal_data(player).object
+    local quality_proto_id = event.element.selected_index
+    machine.quality_proto = global.prototypes.qualities[quality_proto_id]
 end
 
 local function handle_fuel_choice(player, tags, _)
@@ -162,9 +170,19 @@ local function open_machine_dialog(player, modal_data)
     modal_data.beacon_backup = modal_data.line.beacon and modal_data.line.beacon:clone()
     modal_data.module_set = modal_data.object.module_set
 
-    -- Choices
-    add_choices_frame(content_frame, modal_elements, "machine")
+    -- Machine
+    local frame_choices = add_choices_frame(content_frame, modal_elements, "machine")
     refresh_machine_frame(player)
+
+    -- No quality choose elem button, so using dropdown for now, which are ugly
+    local quality_items = util.gui.generate_dropdown_items("qualities")
+    local flow_quality = frame_choices.add{type="flow", direction="horizontal"}
+    flow_quality.style.top_margin = 8
+    --flow_quality.add{type="empty-widget", style="flib_horizontal_pusher"}
+    flow_quality.add{type="drop-down", items=quality_items, selected_index=modal_data.object.quality_proto.id,
+        tags={mod="fp", on_gui_selection_state_changed="select_machine_quality"}}
+
+    -- Fuel
     add_choices_frame(content_frame, modal_elements, "fuel")
     refresh_fuel_frame(player)
 
@@ -221,6 +239,12 @@ listeners.gui = {
         {
             name = "machine_force_limit",
             handler = change_machine_force_limit
+        }
+    },
+    on_gui_selection_state_changed = {
+        {
+            name = "select_machine_quality",
+            handler = handle_quality_selection
         }
     }
 }

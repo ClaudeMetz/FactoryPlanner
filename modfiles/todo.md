@@ -2,13 +2,6 @@
 
 ## Active
 
-- Quality is kind of a lot
-  - Every place I need a property that can be influenced by quality, I can specify that quality.
-  - So theoretically every place I use such a prototype I could offer a choice of which prototype to use.
-  - Which also means I'd need to keep around a value for every possible quality and account for it everywhere.
-  - Also not sure how the calculations work, or how I should integrate them, with them being probabilities and all.
-  - seems like something that still needs to be worked out https://wubesoftware.slack.com/archives/C12GUBRHS/p1720862186697859
-  - also quality calculations are not like other effects probably? Needs custom handling for sure
 
 ## Bugs
 
@@ -17,12 +10,19 @@
 
 ## Uncertainty Sphere
 
+- Quality calculations: not sure how far I want to go with these
+  - Could at least give the probabilities maybe? It's a lot of tooltip clutter, and potentially solver clutter
+  - There's bigger ideas where you could enter X quality Y items per timescale and it would backsolve it
+  - Plus more such ideas, but they seem kinda out there currently, need to play with quality myself first
 - Item Spoiling - what should my interaction with it be?
 - Disable SA-specific features by checking feature flags in the right spots
 - Add a district automatically once someone lands on a new planet for the first time, plus space platform
   - Not sure if I want this, might be overbearing
 - Default modules/beacons is awkward with quality since you can't specify it (atm)
   - Feature is still neat, but maybe time to axe it? Or make it work better somehow
+- Default machines is awkward with quality as you can't specify it
+  - Would be better solved with the in-dialog 'save as default' instead of it being a preference idea
+- Not sure what to do with assembling machines fixed_quality and fixed_recipe
 
 ## Features
 

@@ -176,8 +176,10 @@ function builders.machine(line, parent_flow, metadata)
         end
 
         if note ~= nil then table.insert(tooltip_line, {"", " - ", note}) end
-        local tooltip = {"", {"fp.tt_title", machine_proto.localised_name}, "\n", tooltip_line,
-            format_effects_tooltip(machine.effects_tooltip), metadata.machine_tutorial_tt}
+        local title_line = (machine.quality_proto.level == 0) and {"fp.tt_title", machine_proto.localised_name}
+        or {"fp.tt_title_with_note", machine_proto.localised_name, machine.quality_proto.localised_name}
+        local tooltip = {"", title_line, "\n", tooltip_line, format_effects_tooltip(machine.effects_tooltip),
+            metadata.machine_tutorial_tt}
 
         local button = parent_flow.add{type="sprite-button", sprite=machine_proto.sprite, number=count,
             tags={mod="fp", on_gui_click="act_on_line_machine", machine_id=machine.id, on_gui_hover="set_tooltip",

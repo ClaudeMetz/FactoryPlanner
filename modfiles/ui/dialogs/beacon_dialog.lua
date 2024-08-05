@@ -19,8 +19,7 @@ local function add_beacon_frame(parent_flow, modal_data)
 
     -- No quality choose elem button, so using dropdown for now, which are ugly
     local quality_items = util.gui.generate_dropdown_items("qualities")
-    local selected_index = (beacon) and beacon.quality_proto.id or nil
-    flow_beacon.add{type="drop-down", items=quality_items, selected_index=selected_index,
+    flow_beacon.add{type="drop-down", items=quality_items, selected_index=beacon.quality_proto.id,
         tags={mod="fp", on_gui_selection_state_changed="select_beacon_quality"}}.style.right_margin = 8
 
     flow_beacon.add{type="label", caption={"fp.info_label", {"fp.amount"}}, tooltip={"fp.beacon_amount_tt"},
@@ -111,7 +110,7 @@ local function handle_beacon_selection(player, entities)
     modal_dialog.leave_selection_mode(player)
 end
 
-local function handle_quality_selection(player, tags, event)
+local function handle_quality_selection(player, _, event)
     local modal_data = util.globals.modal_data(player)  --[[@as table]]
     local quality_proto_id = event.element.selected_index
     local new_proto = global.prototypes.qualities[quality_proto_id]
