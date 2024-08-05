@@ -91,8 +91,9 @@ function generator.machines.generate()
 
     ---@param category string
     ---@param proto LuaEntityPrototype
+    ---@param quality_category ("assembling-machine" | "mining-drill")?
     ---@return FPMachinePrototype?
-    local function generate_category_entry(category, proto)
+    local function generate_category_entry(category, proto, quality_category)
         -- First, determine if there is a valid sprite for this machine
         local sprite = generator_util.determine_entity_sprite(proto)
         if sprite == nil then return end
@@ -163,6 +164,7 @@ function generator.machines.generate()
             localised_name = proto.localised_name,
             sprite = sprite,
             category = category,
+            quality_category = quality_category,
             ingredient_limit = (proto.ingredient_count or 255),
             fluid_channels = fluid_channels,
             speed = speed,
@@ -186,7 +188,7 @@ function generator.machines.generate()
         if --[[ not proto.hidden and ]] proto.crafting_categories and proto.energy_usage ~= nil
                 and not generator_util.is_irrelevant_machine(proto) then
             for category, _ in pairs(proto.crafting_categories) do
-                local machine = generate_category_entry(category, proto)
+                local machine = generate_category_entry(category, proto, "assembling-machine")
                 if machine then insert_prototype(machines, machine, machine.category) end
             end
 
@@ -196,7 +198,7 @@ function generator.machines.generate()
                 for category, enabled in pairs(proto.resource_categories) do
                     -- Only supports solid mining recipes for now (no oil, etc.)
                     if enabled and category ~= "basic-fluid" then
-                        local machine = generate_category_entry(category, proto)
+                        local machine = generate_category_entry(category, proto, "mining-drill")
                         if machine then
                             machine.resource_drain_rate = proto.resource_drain_rate_percent / 100
                             insert_prototype(machines, machine, machine.category)
@@ -207,7 +209,7 @@ function generator.machines.generate()
 
         -- Add offshore pumps
         elseif proto.type == "offshore-pump" then
-            local machine = generate_category_entry(proto.name, proto)
+            local machine = generate_category_entry(proto.name, proto, nil)
             if machine then
                 machine.speed = proto.pumping_speed
                 machine.category = proto.type

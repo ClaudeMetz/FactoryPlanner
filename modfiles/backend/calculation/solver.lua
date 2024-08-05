@@ -76,21 +76,29 @@ local function generate_floor_data(player, factory, floor)
                     or line.percentage == 0 or not line.active then
                 set_blank_line(player, floor, line)  -- useless lines don't need to run through the solver
             else
+                local machine = line.machine
                 line_data.recipe_proto = line.recipe_proto
                 line_data.timescale = factory.timescale
                 line_data.percentage = line.percentage  -- non-zero
                 line_data.production_type = line.production_type
-                line_data.machine_limit = {limit=line.machine.limit, force_limit=line.machine.force_limit}
-                line_data.beacon_consumption = 0
                 line_data.priority_product_proto = line.priority_product
-                line_data.machine_proto = line.machine.proto
+                line_data.machine_proto = machine.proto
+                line_data.machine_limit = {limit=machine.limit, force_limit=machine.force_limit}
+                line_data.fuel_proto = machine.fuel and machine.fuel.proto or nil
+
+                -- Quality effects
+                local machine_speed = machine.proto.speed
+                local quality_category = machine.proto.quality_category
+                if quality_category == "assembling-machine" then
+                    machine_speed = machine_speed * machine.quality_proto.multiplier
+                elseif quality_category == "mining-drill" then
+                    -- TBI
+                end
+                line_data.machine_speed = machine_speed
 
                 -- Effects - update line with recipe effects here if applicable
-                line.machine:update_recipe_effects(player.force)
+                machine:update_recipe_effects(player.force)
                 line_data.total_effects = line.total_effects
-
-                -- Fuel prototype
-                if line.machine.fuel ~= nil then line_data.fuel_proto = line.machine.fuel.proto end
 
                 -- Beacon total - can be calculated here, which is faster and simpler
                 if line.beacon ~= nil and line.beacon.total_amount ~= nil then
@@ -307,9 +315,8 @@ local function cap_effect(value)
 end
 
 -- Determines the number of crafts per tick for the given data
-function solver_util.determine_crafts_per_tick(machine_proto, recipe_proto, total_effects)
-    local machine_speed = machine_proto.speed * (1 + cap_effect(total_effects.speed))
-    return machine_speed / recipe_proto.energy
+function solver_util.determine_crafts_per_tick(machine_speed, recipe_proto, total_effects)
+    return (machine_speed * (1 + cap_effect(total_effects.speed))) / recipe_proto.energy
 end
 
 -- Determine the amount of machines needed to produce the given recipe in the given context

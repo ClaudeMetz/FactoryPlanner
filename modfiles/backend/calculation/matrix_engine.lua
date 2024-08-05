@@ -614,7 +614,7 @@ function matrix_engine.get_line_aggregate(line_data, player_index, floor_id, mac
     local machine_proto = line_data.machine_proto
     local timescale = line_data.timescale
     local total_effects = line_data.total_effects
-    local machine_speed = machine_proto.speed
+    local machine_speed = line_data.machine_speed
     local speed_multiplier = (1 + math.max(total_effects.speed, -0.8))
     local energy = recipe_proto.energy
     -- hacky workaround for recipes with zero energy - this really messes up the matrix
@@ -661,6 +661,9 @@ function matrix_engine.get_line_aggregate(line_data, player_index, floor_id, mac
     elseif line_data.machine_proto.energy_type == "void" then
         energy_consumption = 0  -- set electrical consumption to 0 while still polluting
     end
+
+    -- Include beacon energy consumption
+    energy_consumption = energy_consumption + (line_data.beacon_consumption or 0)
 
     line_aggregate.energy_consumption = energy_consumption
     line_aggregate.emissions = emissions

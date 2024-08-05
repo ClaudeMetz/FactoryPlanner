@@ -20,7 +20,7 @@ local function update_line(line_data, aggregate)
 
     -- Determine production ratio
     local production_ratio, uncapped_production_ratio = 0, 0
-    local crafts_per_tick = solver_util.determine_crafts_per_tick(machine_proto, recipe_proto, total_effects)
+    local crafts_per_tick = solver_util.determine_crafts_per_tick(line_data.machine_speed, recipe_proto, total_effects)
 
     -- Determines the production ratio that would be needed to fully satisfy the given product
     local function determine_production_ratio(relevant_product)
@@ -145,7 +145,7 @@ local function update_line(line_data, aggregate)
     end
 
     -- Include beacon energy consumption
-    energy_consumption = energy_consumption + line_data.beacon_consumption
+    energy_consumption = energy_consumption + (line_data.beacon_consumption or 0)
 
     aggregate.energy_consumption = aggregate.energy_consumption + energy_consumption
     structures.aggregate.add_emissions(aggregate, emissions)

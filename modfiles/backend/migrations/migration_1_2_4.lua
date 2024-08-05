@@ -20,6 +20,7 @@ function migration.player_table(player_table)
                     if line.class == "Floor" then
                         iterate_floor(line)
                     else
+                        line.machine.quality_proto = normal_quality_proto()
                         update_modules(line.machine.module_set)
                         if line.beacon then
                             line.beacon.quality_proto = normal_quality_proto()
@@ -45,6 +46,7 @@ function migration.packed_factory(packed_factory)
             if packed_line.class == "Floor" then
                 iterate_floor(packed_line)
             else
+                packed_line.machine.quality_proto = normal_quality_proto()
                 update_modules(packed_line.machine.module_set)
                 if packed_line.beacon then
                     packed_line.beacon.quality_proto = normal_quality_proto()

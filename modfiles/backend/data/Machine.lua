@@ -6,6 +6,7 @@ local ModuleSet = require("backend.data.ModuleSet")
 ---@field class "Machine"
 ---@field parent Line
 ---@field proto FPMachinePrototype | FPPackedPrototype
+---@field quality_proto FPQualityPrototype
 ---@field limit number?
 ---@field force_limit boolean
 ---@field fuel Fuel?
@@ -24,6 +25,7 @@ script.register_metatable("Machine", Machine)
 local function init(proto, parent)
     local object = Object.init({
         proto = proto,
+        quality_proto = prototyper.defaults.get_fallback("qualities"),
         limit = nil,
         force_limit = true,  -- ignored if limit is not set
         fuel = nil,  -- needs to be set by calling Machine.find_fuel afterwards
@@ -131,6 +133,7 @@ end
 ---@class PackedMachine: PackedObject
 ---@field class "Machine"
 ---@field proto FPMachinePrototype
+---@field quality_proto FPQualityPrototype
 ---@field limit number?
 ---@field force_limit boolean
 ---@field fuel PackedFuel?
@@ -141,6 +144,7 @@ function Machine:pack()
     return {
         class = self.class,
         proto = prototyper.util.simplify_prototype(self.proto, "category"),
+        quality_proto = prototyper.util.simplify_prototype(self.quality_proto, nil),
         limit = self.limit,
         force_limit = self.force_limit,
         fuel = self.fuel and self.fuel:pack(),
@@ -153,6 +157,7 @@ end
 ---@return Machine machine
 local function unpack(packed_self, parent)
     local unpacked_self = init(packed_self.proto, parent)
+    unpacked_self.quality_proto = packed_self.quality_proto
     unpacked_self.limit = packed_self.limit
     unpacked_self.force_limit = packed_self.force_limit
     unpacked_self.fuel = packed_self.fuel and Fuel.unpack(packed_self.fuel, unpacked_self)
@@ -179,6 +184,9 @@ function Machine:validate()
     self.proto = prototyper.util.validate_prototype_object(self.proto, "category")
     self.valid = (not self.proto.simplified)
 
+    self.quality_proto = prototyper.util.validate_prototype_object(self.quality_proto, nil)
+    self.valid = (not self.quality_proto.simplified) and self.valid
+
     if self.valid and self.parent.valid then
         self.valid = self.parent:is_machine_applicable(self.proto)
     end
@@ -201,7 +209,9 @@ function Machine:repair(player)
         return false  -- if this happens, the whole line can not be salvaged
     end
     self.valid = true  -- if it gets to this, change_machine was successful and the machine is valid
-    -- It just might need to cleanup some fuel and/or modules
+    -- It just might need to cleanup some fuel, modules and/or quality
+
+    if self.quality_proto.simplified then self.quality_proto = prototyper.defaults.get_fallback("qualities") end
 
     if self.fuel and not self.fuel.valid and not self.fuel:repair(player) then
         -- If fuel is unrepairable, replace it with a default value
