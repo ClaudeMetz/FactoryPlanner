@@ -37,7 +37,10 @@
 ## Features
 
 - Move utilities button to factory info, alongside new 'options'/'configuration' dialog, for recipe prod settings
--   Should have the ability to manually configure recipe productivity boni somewhere
+  - Should have the ability to manually configure recipe productivity boni somewhere
+  - Or, getting crazy, re-add the production bar above the table and have factory info stuff there
+  - Could shuffle more things around, like move buttons back down, other stuff up top, if I have another bar
+  - Another advantage is that the factory list on the left can more space for when multiplayer stuff hits
 - Agriculture tower recipes not supported - doesn't use recipes I don't think
 - Surface conditions, based on Districts
   - It's too messy to not allow condition-incompatible stuff, since it'll need to be addressed on any planet change

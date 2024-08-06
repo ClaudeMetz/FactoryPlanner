@@ -73,7 +73,7 @@ local function build_production_bar(player)
     local flow_production = subheader.add{type="flow", direction="horizontal"}
     main_elements.production_bar["production_flow"] = flow_production
 
-    local label_production = flow_production.add{type="label", caption={"fp.production"}, style="frame_title"}
+    local label_production = flow_production.add{type="label", caption={"fp.pu_factory", 1}, style="frame_title"}
     label_production.style.padding = {-1, 8}
 
     local label_level = flow_production.add{type="label"}

@@ -69,7 +69,7 @@ function reload_preferences(player_table)
     reload("factory_list_rows", 24)
     reload("default_timescale", 60)
 
-    reload("show_gui_button", true)
+    reload("show_gui_button", false)
     reload("attach_factory_products", false)
     reload("skip_factory_naming", false)
     reload("prefer_matrix_solver", false)
