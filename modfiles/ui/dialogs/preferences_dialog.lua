@@ -257,30 +257,30 @@ local function handle_bol_change(player, _, event)
 end
 
 local function handle_default_prototype_change(player, tags, event)
-    local type = tags.type
+    local data_type = tags.type
     local category_id = tags.category_id
 
     local modal_elements = util.globals.modal_elements(player)
-    prototyper.defaults.set(player, type, tags.prototype_id, category_id)
-    refresh_defaults_table(player, modal_elements, type, category_id)
+    prototyper.defaults.set(player, data_type, tags.prototype_id, category_id)
+    refresh_defaults_table(player, modal_elements, data_type, category_id)
 
     -- If this was an shift-click, set this prototype on every category that also has it
-    if event.shift and type == "machines" then
-        local new_default_prototype = prototyper.defaults.get(player, type, category_id)
+    if event.shift and data_type == "machines" then
+        local new_default = prototyper.defaults.get(player, data_type, category_id)
 
-        for _, secondary_category in pairs(PROTOTYPE_MAPS[type]) do
+        for _, secondary_category in pairs(global.prototypes.machines) do
             if table_size(secondary_category.members) > 1 then  -- don't attempt to change categories with only one machine
-                local secondary_prototype = secondary_category.members[new_default_prototype.name]
+                local secondary_prototype = prototyper.util.find(data_type, new_default.name, secondary_category.name)
 
                 if secondary_prototype ~= nil then
-                    prototyper.defaults.set(player, type, secondary_prototype.id, secondary_category.id)
-                    refresh_defaults_table(player, modal_elements, type, secondary_category.id)
+                    prototyper.defaults.set(player, data_type, secondary_prototype.id, secondary_category.id)
+                    refresh_defaults_table(player, modal_elements, data_type, secondary_category.id)
                 end
             end
         end
     end
 
-    if type == "belts" or type == "wagons" then
+    if data_type == "belts" or data_type == "wagons" then
         view_state.rebuild_state(player)
         util.raise.refresh(player, "all")
     end

@@ -141,9 +141,8 @@ end
 ---@param player LuaPlayer
 ---@return boolean success
 function Line:change_machine_to_default(player)
-    local machine_category_id = PROTOTYPE_MAPS.machines[self.recipe_proto.category].id
     -- All categories are guaranteed to have at least one machine, so this is never nil
-    local default_machine_proto = prototyper.defaults.get(player, "machines", machine_category_id)
+    local default_machine_proto = prototyper.defaults.get(player, "machines", self.recipe_proto.category)
     ---@cast default_machine_proto FPMachinePrototype
 
     -- If the default is applicable, just set it straight away

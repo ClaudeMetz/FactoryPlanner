@@ -69,9 +69,8 @@ function Machine:normalize_fuel(player)
     if self.fuel == nil then
         -- Use the first category of this machine's burner as the default one
         local fuel_category_name, _ = next(burner.categories, nil)
-        local fuel_category_id = PROTOTYPE_MAPS.fuels[fuel_category_name].id
 
-        local default_fuel_proto = prototyper.defaults.get(player, "fuels", fuel_category_id)
+        local default_fuel_proto = prototyper.defaults.get(player, "fuels", fuel_category_name)
         self.fuel = Fuel.init(default_fuel_proto, self)
     end
 end

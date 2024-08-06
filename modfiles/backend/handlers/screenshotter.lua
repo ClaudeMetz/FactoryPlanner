@@ -75,7 +75,7 @@ local actions = {
             beacon_count = 8
         }
 
-        prototyper.defaults.set(player, "belts", PROTOTYPE_MAPS.belts["fast-transport-belt"].id)
+        prototyper.defaults.set(player, "belts", "fast-transport-belt")
         set_machine_default(player, "electric-mining-drill", "basic-solid")
         set_machine_default(player, "steel-furnace", "smelting")
         set_machine_default(player, "assembling-machine-2", "crafting")
