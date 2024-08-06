@@ -228,6 +228,20 @@ function Line:apply_mb_defaults(player)
     return message
 end
 
+---@return PrototypeFilter filter
+function Line:compile_machine_filter()
+    local compatible_machines = {}
+
+    local machines = PROTOTYPE_MAPS.machines[self.machine.proto.category].members
+    for _, machine_proto in pairs(machines) do
+        if self:is_machine_applicable(machine_proto) then
+            table.insert(compatible_machines, machine_proto.name)
+        end
+    end
+
+    return {{filter="name", name=compatible_machines}}
+end
+
 
 ---@param object CopyableObject
 ---@return boolean success

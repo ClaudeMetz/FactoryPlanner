@@ -28,7 +28,7 @@ local function init(proto, parent)
         quality_proto = prototyper.defaults.get_fallback("qualities"),
         limit = nil,
         force_limit = true,  -- ignored if limit is not set
-        fuel = nil,  -- needs to be set by calling Machine.find_fuel afterwards
+        fuel = nil,  -- needs to be set by calling Machine.normalize_fuel afterwards
         module_set = nil,
 
         amount = 0,
@@ -47,6 +47,12 @@ function Machine:index()
     OBJECT_INDEX[self.id] = self
     if self.fuel then self.fuel:index() end
     self.module_set:index()
+end
+
+
+---@return {name: string, quality: string}
+function Machine:elem_value()
+    return {name=self.proto.name, quality=self.quality_proto.name}
 end
 
 
@@ -102,6 +108,22 @@ function Machine:update_recipe_effects(force)
         self.recipe_effects = {productivity=recipe_bonus}
         self:summarize_effects()
     end
+end
+
+
+function Machine:compile_fuel_filter()
+    local compatible_fuels = {}
+
+    for category_name, _ in pairs(self.proto.burner.categories) do
+        local category = PROTOTYPE_MAPS.fuels[category_name]
+        if category ~= nil then
+            for _, fuel_proto in pairs(category.members) do
+                table.insert(compatible_fuels, fuel_proto.name)
+            end
+        end
+    end
+
+    return {{filter="name", name=compatible_fuels}}
 end
 
 

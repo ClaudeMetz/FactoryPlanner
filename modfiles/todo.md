@@ -2,6 +2,9 @@
 
 ## Active
 
+- Get rid of whole PROTOTYPE_ATTRIBUTES thing in favor of game's tooltips
+  - See if I use choose-elem buttons somewhere else just for the tooltip even if buttons can now have it
+
 - Change prototyper.find_prototype to have option to find category only
 - Consider a similar method that uses id's to avoid global.prototypes.X
   - Maybe even a combination of both, should you have a category name and proto id etc
@@ -9,6 +12,9 @@
 
 ## Bugs
 
+- You can select two of the same module if you want, due to the new quality stuff
+  - Can't prohibit two of the same module because they could have different qualities
+  - Probably need to remove it again after the fact with a warning message
 - Translation seems to not reload when loading a save, maybe other times too
 - Warning about serializing lua function, maybe when dialog is open? not sure how this happend
 
@@ -47,9 +53,6 @@
     themselves with manual refreshes if they want to, thus also no loop detection for now
   - Not exactly sure on the details of the refresh logic, will find it while implementing
 - Add feature to transfer items from district to district, mimmicing space platform transfers
-- Replace any machine/beacon/etc buttons with ones that have the standard tooltip.
-  - Saves me the hassle of generating them and automatically has the information people expect
-  - Can be done on normal buttons now I think so no need for choose-elem-buttons
 - Need indication of cyclic recipes finally, used a lot on the space platform
 - Add shorthand recipe for 1 complete rocket, instead of needing to add 50 parts. Hard part will be picking an icon for it
 - Need an 'are you sure' dialog for deleting a District, resetting preferences, etc
@@ -78,7 +81,7 @@
 - API to open things in Factoriopedia
 - Disabled sprite buttons fade their icons, can't be turned off
 - Surface prototypes missing surface_properties read for generator, add surfaces to locations properly
-- Base game steals tons of normal key combos which is annoying (ctrl+f among others)
+- Base game steals normal key combos which is annoying (ctrl+f among others)
 - No way to show quality on sprite buttons, which is essential in tons of places
   - Same thing for quality color, which should be used in relevant tooltips
 - Special quality attributes for beacons and miners not available on LuaQualityPrototype yet
