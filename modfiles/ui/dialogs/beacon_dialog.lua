@@ -7,20 +7,16 @@ local function add_beacon_frame(parent_flow, modal_data)
     local beacon = modal_data.object
 
     local flow_beacon = parent_flow.add{type="frame", style="fp_frame_module", direction="horizontal"}
-    --flow_beacon.style.width = MAGIC_NUMBERS.module_dialog_element_width
+    flow_beacon.style.width = MAGIC_NUMBERS.module_dialog_element_width
 
     flow_beacon.add{type="label", caption={"fp.pu_beacon", 1}, style="semibold_label"}
     local beacon_filter = {{filter="type", type="beacon"}, {filter="hidden", invert=true, mode="and"}}
-    local button_beacon = flow_beacon.add{type="choose-elem-button", elem_type="entity", entity=beacon.proto.name,
+    local button_beacon = flow_beacon.add{type="choose-elem-button", elem_type="entity-with-quality",
         tags={mod="fp", on_gui_elem_changed="select_beacon"}, elem_filters=beacon_filter,
         style="fp_sprite-button_inset"}
-    --button_beacon.style.right_margin = 12
+    button_beacon.elem_value = beacon:elem_value()
+    button_beacon.style.right_margin = 12
     modal_elements["beacon_button"] = button_beacon
-
-    -- No quality choose elem button, so using dropdown for now, which are ugly
-    local quality_items = util.gui.generate_dropdown_items("qualities")
-    flow_beacon.add{type="drop-down", items=quality_items, selected_index=beacon.quality_proto.id,
-        tags={mod="fp", on_gui_selection_state_changed="select_beacon_quality"}}.style.right_margin = 8
 
     flow_beacon.add{type="label", caption={"fp.info_label", {"fp.amount"}}, tooltip={"fp.beacon_amount_tt"},
         style="semibold_label"}
@@ -73,19 +69,18 @@ end
 
 local function handle_beacon_change(player, _, _)
     local modal_data = util.globals.modal_data(player)  --[[@as table]]
-    local beacon_button = modal_data.modal_elements.beacon_button
     local beacon = modal_data.object
+    local beacon_button = modal_data.modal_elements.beacon_button
+    local elem_value = beacon_button.elem_value
 
-    local previous_beacon_name = beacon.proto.name
-    if not beacon_button.elem_value then
-        beacon_button.elem_value = previous_beacon_name  -- reset the beacon so it can't be nil
-        return  -- nothing changed
-    elseif beacon_button.elem_value == previous_beacon_name then
+    if not elem_value then
+        beacon_button.elem_value = beacon:elem_value()  -- reset the beacon so it can't be nil
         return  -- nothing changed
     end
 
     -- Change the beacon to the new type
-    beacon.proto = prototyper.util.find_prototype("beacons", beacon_button.elem_value, nil)
+    beacon.proto = prototyper.util.find_prototype("beacons", elem_value.name, nil)
+    beacon.quality_proto = prototyper.util.find_prototype("qualities", elem_value.quality, nil)
     beacon.module_set:normalize({compatibility=true, trim=true, effects=true})
 
     update_profile_label(modal_data)
@@ -108,16 +103,6 @@ local function handle_beacon_selection(player, entities)
     modal_elements.beacon_total.focus()
 
     modal_dialog.leave_selection_mode(player)
-end
-
-local function handle_quality_selection(player, _, event)
-    local modal_data = util.globals.modal_data(player)  --[[@as table]]
-    local quality_proto_id = event.element.selected_index
-    local new_proto = global.prototypes.qualities[quality_proto_id]
-    modal_data.object.quality_proto = new_proto
-
-    modal_data.module_set:normalize({effects=true})
-    module_configurator.refresh_modules_flow(player, false)
 end
 
 
@@ -195,12 +180,6 @@ listeners.gui = {
             handler = (function(player, _, _)
                 modal_dialog.enter_selection_mode(player, "fp_beacon_selector")
             end)
-        }
-    },
-    on_gui_selection_state_changed = {
-        {
-            name = "select_beacon_quality",
-            handler = handle_quality_selection
         }
     }
 }

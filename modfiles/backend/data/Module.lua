@@ -34,6 +34,12 @@ function Module:index()
 end
 
 
+---@return {name: string, quality: string}
+function Module:elem_value()
+    return {name=self.proto.name, quality=self.quality_proto.name}
+end
+
+
 ---@param new_amount integer
 function Module:set_amount(new_amount)
     self.amount = new_amount

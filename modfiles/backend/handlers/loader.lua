@@ -263,6 +263,8 @@ function loader.run(skip_check)
     generate_object_index()
 
     PROTOTYPE_MAPS = prototype_maps(prototyper.data_types)
+    MODULE_NAME_MAP = module_name_map()
+
     PROTOTYPE_ATTRIBUTES = prototype_attributes()
 
     ORDERED_RECIPE_GROUPS = ordered_recipe_groups()
@@ -272,7 +274,6 @@ function loader.run(skip_check)
     }
 
     SORTED_ITEMS = sorted_items()
-    MODULE_NAME_MAP = module_name_map()
 end
 
 return loader

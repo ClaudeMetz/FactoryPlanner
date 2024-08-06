@@ -2,6 +2,10 @@
 
 ## Active
 
+- Change prototyper.find_prototype to have option to find category only
+- Consider a similar method that uses id's to avoid global.prototypes.X
+  - Maybe even a combination of both, should you have a category name and proto id etc
+  - Make sure to find all the places that could use this
 
 ## Bugs
 
@@ -77,9 +81,6 @@
 - Base game steals tons of normal key combos which is annoying (ctrl+f among others)
 - No way to show quality on sprite buttons, which is essential in tons of places
   - Same thing for quality color, which should be used in relevant tooltips
-- Also no way to have quality-affected items in choose-elem-buttons, neither the version with built-in selector
-  - Would use this instead of the additional dropdown in all likelyhood
-  - If dropdowns are removed, set fixed width to effects section in module_configurator again
 - Special quality attributes for beacons and miners not available on LuaQualityPrototype yet
 
 ## Release

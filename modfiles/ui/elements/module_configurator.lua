@@ -11,26 +11,20 @@ local function determine_slider_config(module, empty_slots)
     return slider_value, maximum_value, minimum_value
 end
 
-local function add_module_frame(parent_flow, module, module_filters, empty_slots, quality_items)
+local function add_module_frame(parent_flow, module, module_filters, empty_slots)
     local module_id = module and module.id or nil
 
     local frame_module = parent_flow.add{type="frame", style="fp_frame_module", direction="horizontal",
         tags={module_id=module_id}}
     frame_module.add{type="label", caption={"fp.pu_module", 1}, style="semibold_label"}
 
-    local module_name = (module) and module.proto.name or nil
-    frame_module.add{type="choose-elem-button", name="fp_chooser_module", elem_type="item", item=module_name,
+    local button_module = frame_module.add{type="choose-elem-button", name="fp_chooser_module",
         tags={mod="fp", on_gui_elem_changed="select_module", module_id=module_id},
-        elem_filters=module_filters, style="fp_sprite-button_inset"}
+        elem_type="item-with-quality", elem_filters=module_filters, style="fp_sprite-button_inset"}
+    button_module.elem_value = (module) and module:elem_value() or nil
 
-    -- No quality choose elem button, so using dropdown for now, which are ugly
-    local selected_index = (module) and module.quality_proto.id or nil
-    frame_module.add{type="drop-down", name="fp_chooser_quality", items=quality_items,
-        tags={mod="fp", on_gui_selection_state_changed="select_module_quality", module_id=module_id},
-        selected_index=selected_index, enabled=(module ~= nil)}
-
-    --local label_amount = frame_module.add{type="label", caption={"fp.amount"}, style="semibold_label"}
-    --label_amount.style.left_margin = 8
+    local label_amount = frame_module.add{type="label", caption={"fp.amount"}, style="semibold_label"}
+    label_amount.style.left_margin = 8
 
     local slider_value, maximum_value, minimum_value = determine_slider_config(module, empty_slots)
     local numeric_enabled = (maximum_value ~= 1 and module ~= nil)
@@ -55,7 +49,7 @@ end
 local function add_effects_section(parent_flow, object, modal_elements)
     local frame_effects = parent_flow.add{type="frame", direction="vertical", style="fp_frame_bordered_stretch"}
     frame_effects.style.vertically_stretchable = true
-    --frame_effects.style.width = (MAGIC_NUMBERS.module_dialog_element_width / 2) - 2  -- TODO undo
+    frame_effects.style.width = (MAGIC_NUMBERS.module_dialog_element_width / 2) - 2
 
     local class_lower = object.class:lower()
     local caption, tooltip = {"", {"fp.pu_" .. class_lower, 1}, " ", {"fp.effects"}}, {""}
@@ -70,19 +64,22 @@ end
 
 local function handle_module_selection(player, tags, event)
     local module_set = util.globals.modal_data(player).module_set
-    local new_name = event.element.elem_value
+    local new_module = event.element.elem_value
 
     if tags.module_id then  -- editing an existing module
         local module = OBJECT_INDEX[tags.module_id]  --[[@as Module]]
-        if new_name then  -- changed to another module
-            module.proto = MODULE_NAME_MAP[new_name]
+        if new_module then  -- changed to another module
+            module.proto = MODULE_NAME_MAP[new_module.name]
+            module.quality_proto = prototyper.util.find_prototype("qualities", new_module.quality)
             module:summarize_effects()
         else  -- removed module
             module_set:remove(module)
         end
-    elseif new_name then -- choosing a new module on an empty line
+    elseif new_module then -- choosing a new module on an empty line
         local slider = event.element.parent["fp_slider_module_amount"]
-        local module = Module.init(MODULE_NAME_MAP[new_name], slider.slider_value)
+        local module_proto = MODULE_NAME_MAP[new_module.name]
+        local module = Module.init(module_proto, slider.slider_value)
+        module.quality_proto = prototyper.util.find_prototype("qualities", new_module.quality)
         module_set:insert(module)
     end
 
@@ -90,22 +87,9 @@ local function handle_module_selection(player, tags, event)
     module_configurator.refresh_modules_flow(player, false)
 end
 
-local function handle_quality_selection(player, tags, event)
-    local modal_data = util.globals.modal_data(player)  --[[@as table]]
-    local quality_proto_id = event.element.selected_index
-    local new_proto = global.prototypes.qualities[quality_proto_id]
-
-    local module = OBJECT_INDEX[tags.module_id]  --[[@as Module]]
-    module.quality_proto = new_proto
-    module:summarize_effects()
-    modal_data.module_set:normalize({effects=true})
-    module_configurator.refresh_effects_flow(modal_data)
-end
-
 local function handle_module_slider_change(player, tags, event)
     local module_set = util.globals.modal_data(player).module_set
     local new_slider_value = event.element.slider_value
-    local module_textfield = event.element.parent["fp_textfield_module_amount"]
 
     local module = OBJECT_INDEX[tags.module_id]  --[[@as Module]]
     module:set_amount(new_slider_value)
@@ -156,7 +140,6 @@ function module_configurator.refresh_modules_flow(player, update_only)
 
     local module_filters = modal_data.module_set:compile_filter()
     local empty_slots = modal_data.module_set.empty_slots
-    local quality_items = util.gui.generate_dropdown_items("qualities")
 
     if update_only then
         module_configurator.refresh_effects_flow(modal_data)
@@ -175,7 +158,7 @@ function module_configurator.refresh_modules_flow(player, update_only)
                 else
                     local slider_value, maximum_value, minimum_value = determine_slider_config(module, empty_slots)
 
-                    frame["fp_chooser_module"].elem_value = module.proto.name
+                    frame["fp_chooser_module"].elem_value = module:elem_value()
 
                     local textfield = frame["fp_textfield_module_amount"]
                     textfield.text = tostring(module.amount)
@@ -201,11 +184,11 @@ function module_configurator.refresh_modules_flow(player, update_only)
         end
 
         for module in modal_data.module_set:iterator() do
-            add_module_frame(modules_flow, module, module_filters, empty_slots, quality_items)
+            add_module_frame(modules_flow, module, module_filters, empty_slots)
         end
     end
 
-    if empty_slots > 0 then add_module_frame(modules_flow, nil, module_filters, empty_slots, quality_items) end
+    if empty_slots > 0 then add_module_frame(modules_flow, nil, module_filters, empty_slots) end
     if modal_data.submit_checker then modal_data.submit_checker(modal_data) end
 end
 
@@ -230,12 +213,6 @@ listeners.gui = {
         {
             name = "module_amount",
             handler = handle_module_textfield_change
-        }
-    },
-    on_gui_selection_state_changed = {
-        {
-            name = "select_module_quality",
-            handler = handle_quality_selection
         }
     }
 }
