@@ -159,7 +159,7 @@ local function add_item_picker(parent_flow, player)
             local button_item = table_subgroup.add{type="sprite-button", sprite=item_proto.sprite, style=button_style,
                 tags={mod="fp", on_gui_click="select_picker_item", item_id=item_proto.id,
                 category_id=item_proto.category_id}, enabled=(existing_product == nil),
-                tooltip=item_proto.localised_name, mouse_button_filter={"left"}}
+                elem_tooltip={type=item_proto.type, name=item_proto.name}, mouse_button_filter={"left"}}
 
             -- Figure out the translated name here so search doesn't have to repeat the work for every character
             local translated_name = (translations) and translations[item_proto.type][item_name] or nil
@@ -238,7 +238,7 @@ local function set_item_proto(modal_data, item_proto)
 
     local item_choice_button = modal_elements.item_choice_button
     item_choice_button.sprite = (item_proto) and item_proto.sprite or nil
-    item_choice_button.tooltip = (item_proto) and item_proto.tooltip or ""
+    item_choice_button.elem_tooltip = (item_proto) and {type=item_proto.type, name=item_proto.name} or nil
 
     -- Disable definition by belt for fluids
     local is_fluid = item_proto and item_proto.type == "fluid"

@@ -2,9 +2,6 @@
 
 ## Active
 
-- Get rid of whole PROTOTYPE_ATTRIBUTES thing in favor of game's tooltips
-  - See if I use choose-elem buttons somewhere else just for the tooltip even if buttons can now have it
-
 - Change prototyper.find_prototype to have option to find category only
 - Consider a similar method that uses id's to avoid global.prototypes.X
   - Maybe even a combination of both, should you have a category name and proto id etc
@@ -78,6 +75,7 @@
   - Is quite a complicated feature, especially when productivity is involved. Probably do need it though
 - Look into new display_density_scale thing ideally
 - Picker seemingly doesn't care about the item/fluid dichotomy
+- Finally get rid of generic dialogs, even without the extended features
 
 ## Waiting on
 
