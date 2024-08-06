@@ -161,14 +161,10 @@ local function create_recipe_group_box(modal_data, relevant_group, translations)
         local button_tags = {mod="fp", on_gui_click="pick_recipe", recipe_proto_id=recipe_proto.id}
         local button_recipe = nil
 
-        if recipe_proto.custom then  -- can't use choose-elem-buttons for custom recipes
-            button_recipe = table_recipes.add{type="sprite-button", tags=button_tags, style=style,
-                sprite=recipe_proto.sprite, tooltip=recipe_proto.tooltip, mouse_button_filter={"left"}}
-        else
-            button_recipe = table_recipes.add{type="choose-elem-button", elem_type="recipe", tags=button_tags,
-                style=style, recipe=recipe_name, mouse_button_filter={"left"}}
-            button_recipe.locked = true
-        end
+        button_recipe = table_recipes.add{type="sprite-button", tags=button_tags, style=style,
+            sprite=recipe_proto.sprite, mouse_button_filter={"left"}}
+        if recipe_proto.custom then button_recipe.tooltip = recipe_proto.tooltip
+        else button_recipe.elem_tooltip = {type="recipe", name=recipe_name} end
 
         -- Figure out the translated name here so search doesn't have to repeat the work for every character
         local translated_name = (translations) and translations["recipe"][recipe_name] or nil

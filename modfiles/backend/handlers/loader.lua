@@ -90,101 +90,6 @@ local function sorted_items()
 end
 
 
--- Generates a table mapping modules to their prototype by name
----@return ModuleMap
-local function module_name_map()
-    local map = {}  ---@type ModuleMap
-
-    for _, category in pairs(global.prototypes.modules) do
-        for _, module in pairs(category.members) do
-            map[module.name] = module
-        end
-    end
-
-    return map
-end
-
-
-local attribute_generators = {}  ---@type { [string]: fun(proto: AnyFPPrototype): LocalisedString }
-
----@param belt FPBeltPrototype
----@return LocalisedString
-function attribute_generators.belts(belt)
-    local throughput_string = {"", belt.throughput .. " ", {"fp.pl_item", 2}, "/", {"fp.unit_second"}}
-    return {"fp.attribute_line", {"fp.throughput"}, throughput_string}
-end
-
----@param beacon FPBeaconPrototype
----@return LocalisedString
-function attribute_generators.beacons(beacon)
-    return {"", {"fp.attribute_line", {"fp.module_slots"}, beacon.module_limit},
-           {"fp.attribute_line", {"fp.effectivity"}, (beacon.effectivity * 100) .. "%"},
-           {"fp.attribute_line", {"fp.u_power"}, util.format.SI_value(beacon.energy_usage * 60, "W", 3)}}
-end
-
----@param wagon FPWagonPrototype
----@return LocalisedString
-function attribute_generators.wagons(wagon)
-    local storage_unit = (wagon.category == "cargo-wagon") and {"fp.pl_stack", wagon.storage} or {"fp.l_fluid"}
-    return {"fp.attribute_line", {"fp.storage"}, {"", util.format.number(wagon.storage, 3) .. " ", storage_unit}}
-end
-
----@param fuel FPFuelPrototype
----@return LocalisedString
-function attribute_generators.fuels(fuel)
-    return {"", {"fp.attribute_line", {"fp.fuel_value"}, util.format.SI_value(fuel.fuel_value, "J", 3)},
-           {"fp.attribute_line", {"fp.emissions_multiplier"}, fuel.emissions_multiplier}}
-end
-
----@param machine FPMachinePrototype
----@return LocalisedString
-function attribute_generators.machines(machine)
-    return {"", {"fp.attribute_line", {"fp.crafting_speed"}, util.format.number(machine.speed, 3)},
-           {"fp.attribute_line", {"fp.u_power"}, util.format.SI_value(machine.energy_usage * 60, "W", 3)},
-           {"fp.attribute_line", {"fp.module_slots"}, machine.module_limit}}
-end
-
-
----@alias PrototypeAttributes { [DataType]: { [integer]: LocalisedString } }
----@alias PrototypeAttributesWithCategory { [DataType]: { [integer]: { [integer]: LocalisedString } } }
-
--- Generates the attribute strings for some types of prototypes
----@return PrototypeAttributes | PrototypeAttributesWithCategory
-local function prototype_attributes()
-    local relevant_prototypes = {"belts", "beacons", "wagons", "fuels", "machines"}
-    local attributes = {}  ---@type PrototypeAttributes | PrototypeAttributesWithCategory
-
-    for _, data_type in pairs(relevant_prototypes) do
-        local prototypes = global.prototypes[data_type]  ---@type AnyIndexedPrototypes
-        local generator_function = attribute_generators[data_type]
-
-        attributes[data_type] = {}
-        if prototyper.data_types[data_type] == false then
-            ---@cast prototypes IndexedPrototypes<FPPrototype>
-            ---@cast attributes PrototypeAttributes
-
-            for proto_id, prototype in pairs(prototypes) do
-                attributes[data_type][proto_id] = generator_function(prototype)
-            end
-        else
-            ---@cast prototypes IndexedPrototypesWithCategory<FPPrototypeWithCategory>
-            ---@cast attributes PrototypeAttributesWithCategory
-
-            for category_id, category in pairs(prototypes) do
-                attributes[data_type][category_id] = {}
-                local attribute_category = attributes[data_type][category_id]
-
-                for proto_id, prototype in pairs(category.members) do
-                    attribute_category[proto_id] = generator_function(prototype)
-                end
-            end
-        end
-    end
-
-    return attributes
-end
-
-
 ---@alias MappedPrototypes<T> { [string]: T }
 ---@alias MappedPrototypesWithCategory<T> { [string]: { id: integer, name: string, members: { [string]: T } } }
 ---@alias MappedCategory { id: integer, name: string, members: { [string]: table } }
@@ -239,6 +144,22 @@ local function prototype_maps(data_types)
 end
 
 
+-- Generates a table mapping modules to their prototype by name
+---@return ModuleMap
+local function module_name_map()
+    local map = {}  ---@type ModuleMap
+
+    for _, category in pairs(global.prototypes.modules) do
+        for _, module in pairs(category.members) do
+            map[module.name] = module
+        end
+    end
+
+    return map
+end
+
+
+
 local function generate_object_index()
     OBJECT_INDEX = {}  ---@type { [integer]: Object}
     for _, player_table in pairs(global.players) do
@@ -264,8 +185,6 @@ function loader.run(skip_check)
 
     PROTOTYPE_MAPS = prototype_maps(prototyper.data_types)
     MODULE_NAME_MAP = module_name_map()
-
-    PROTOTYPE_ATTRIBUTES = prototype_attributes()
 
     ORDERED_RECIPE_GROUPS = ordered_recipe_groups()
     RECIPE_MAPS = {

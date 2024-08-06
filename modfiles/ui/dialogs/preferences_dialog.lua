@@ -28,11 +28,9 @@ local function refresh_defaults_table(player, modal_elements, type, category_id)
     for prototype_id, prototype in ipairs(prototypes) do
         local selected = (default_proto.id == prototype_id)
         local style = (selected) and "flib_slot_button_green_small" or "flib_slot_button_default_small"
-        local first_line = (selected) and {"fp.tt_title_with_note", prototype.localised_name, {"fp.selected"}}
-            or {"fp.tt_title", prototype.localised_name}
-        local tooltip = {"", first_line, "\n", prototyper.util.get_attributes(prototype)}
+        local tooltip = {type=prototype.elem_type, name=prototype.name}
 
-        table_prototypes.add{type="sprite-button", sprite=prototype.sprite, tooltip=tooltip, style=style,
+        table_prototypes.add{type="sprite-button", sprite=prototype.sprite, style=style, elem_tooltip=tooltip,
             tags={mod="fp", on_gui_click="select_preference_default", type=type, prototype_id=prototype_id,
             category_id=category_id}, mouse_button_filter={"left"}}
     end

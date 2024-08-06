@@ -121,19 +121,6 @@ end
 
 
 -- ** UTIL **
--- Returns the attribute string for the given prototype
----@param prototype AnyFPPrototype
----@return LocalisedString
-function prototyper.util.get_attributes(prototype)
-    if prototype.category_id == nil then
-        ---@cast prototype FPPrototype
-        return PROTOTYPE_ATTRIBUTES[prototype.data_type][prototype.id]
-    else
-        ---@cast prototype FPPrototypeWithCategory
-        return PROTOTYPE_ATTRIBUTES[prototype.data_type][prototype.category_id][prototype.id]
-    end
-end
-
 -- Finds the given prototype by name. Can use the loader cache since it'll exist at this point.
 ---@param data_type DataType
 ---@param prototype_name string

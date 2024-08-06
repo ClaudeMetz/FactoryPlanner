@@ -59,6 +59,7 @@ end
 ---@class FPMachinePrototype: FPPrototypeWithCategory
 ---@field data_type "machines"
 ---@field category string
+---@field elem_type ElemType
 ---@field ingredient_limit integer
 ---@field fluid_channels FluidChannels
 ---@field speed double
@@ -164,6 +165,7 @@ function generator.machines.generate()
             localised_name = proto.localised_name,
             sprite = sprite,
             category = category,
+            elem_type = "entity",
             quality_category = quality_category,
             ingredient_limit = (proto.ingredient_count or 255),
             fluid_channels = fluid_channels,
@@ -647,6 +649,7 @@ end
 ---@field data_type "fuels"
 ---@field type "item" | "fluid"
 ---@field category string | "fluid-fuel"
+---@field elem_type ElemType
 ---@field fuel_value float
 ---@field stack_size uint?
 ---@field emissions_multiplier double
@@ -682,6 +685,7 @@ function generator.fuels.generate()
                 localised_name = proto.localised_name,
                 sprite = "item/" .. proto.name,
                 type = "item",
+                elem_type = "item",
                 category = proto.fuel_category,
                 fuel_value = proto.fuel_value,
                 stack_size = proto.stack_size,
@@ -701,6 +705,7 @@ function generator.fuels.generate()
                 localised_name = proto.localised_name,
                 sprite = "fluid/" .. proto.name,
                 type = "fluid",
+                elem_type = "fluid",
                 category = "fluid-fuel",
                 fuel_value = proto.fuel_value,
                 stack_size = nil,
@@ -727,6 +732,7 @@ end
 
 ---@class FPBeltPrototype: FPPrototype
 ---@field data_type "belts"
+---@field elem_type ElemType
 ---@field rich_text string
 ---@field throughput double
 
@@ -744,6 +750,7 @@ function generator.belts.generate()
                 name = proto.name,
                 localised_name = proto.localised_name,
                 sprite = sprite,
+                elem_type = "entity",
                 rich_text = "[entity=" .. proto.name .. "]",
                 throughput = proto.belt_speed * 480
             }
@@ -766,8 +773,9 @@ end
 
 ---@class FPWagonPrototype: FPPrototypeWithCategory
 ---@field data_type "wagons"
----@field rich_text string
 ---@field category "cargo-wagon" | "fluid-wagon"
+---@field elem_type ElemType
+---@field rich_text string
 ---@field storage number
 
 -- Generates a table containing all available cargo and fluid wagons
@@ -785,8 +793,9 @@ function generator.wagons.generate()
                 name = proto.name,
                 localised_name = proto.localised_name,
                 sprite = generator_util.determine_entity_sprite(proto),
-                rich_text = "[entity=" .. proto.name .. "]",
                 category = "cargo-wagon",
+                elem_type = "entity",
+                rich_text = "[entity=" .. proto.name .. "]",
                 storage = inventory_size
             }
             insert_prototype(wagons, wagon, wagon.category)
@@ -802,8 +811,9 @@ function generator.wagons.generate()
                 name = proto.name,
                 localised_name = proto.localised_name,
                 sprite = generator_util.determine_entity_sprite(proto),
-                rich_text = "[entity=" .. proto.name .. "]",
                 category = "fluid-wagon",
+                elem_type = "entity",
+                rich_text = "[entity=" .. proto.name .. "]",
                 storage = proto.fluid_capacity
             }
             insert_prototype(wagons, wagon, wagon.category)
@@ -860,6 +870,7 @@ end
 ---@class FPBeaconPrototype: FPPrototype
 ---@field data_type "beacons"
 ---@field category "fp_beacon"
+---@field elem_type ElemType
 ---@field built_by_item FPItemPrototype
 ---@field allowed_effects AllowedEffects
 ---@field module_limit uint
@@ -889,6 +900,7 @@ function generator.beacons.generate()
                 localised_name = proto.localised_name,
                 sprite = sprite,
                 category = "fp_beacon",  -- custom category to be similar to machines
+                elem_type = "entity",
                 built_by_item = built_by_item,
                 allowed_effects = proto.allowed_effects,
                 module_limit = proto.module_inventory_size,
