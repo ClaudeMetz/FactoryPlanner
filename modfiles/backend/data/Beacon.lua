@@ -42,6 +42,12 @@ function Beacon:index()
 end
 
 
+---@return {name: string, quality: string}
+function Beacon:elem_value()
+    return {name=self.proto.name, quality=self.quality_proto.name}
+end
+
+
 ---@return double profile_multiplier
 function Beacon:profile_multiplier()
     if self.amount == 0 then
