@@ -257,11 +257,12 @@ end
 -- Returns the default prototype for the given type, incorporating the category, if given
 ---@param player LuaPlayer
 ---@param data_type DataType
----@param category_id integer?
+---@param category (integer | string)?
 ---@return AnyPrototypeDefault
-function prototyper.defaults.get(player, data_type, category_id)
+function prototyper.defaults.get(player, data_type, category)
     ---@type AnyPrototypeDefault
     local default = util.globals.preferences(player)["default_" .. data_type]
+    local category_id = (type(category) == "string") and prototyper.util.find(data_type, nil, category).id or category
     return (category_id == nil) and default or default[category_id]
 end
 
@@ -269,15 +270,17 @@ end
 ---@param player LuaPlayer
 ---@param data_type DataType
 ---@param prototype_id integer
----@param category_id integer?
-function prototyper.defaults.set(player, data_type, prototype_id, category_id)
+---@param category (integer | string)?
+function prototyper.defaults.set(player, data_type, prototype_id, category)
     local preferences = util.globals.preferences(player)
     local prototypes = global.prototypes[data_type]  ---@type AnyIndexedPrototypes
 
-    if category_id == nil then
+    if category == nil then
         ---@type PrototypeDefault
         preferences["default_" .. data_type] = prototypes[prototype_id]
     else
+        local category_id = (type(category) == "string") and prototyper.util.find(data_type, nil, category).id
+            or category
         ---@type PrototypeWithCategoryDefault
         preferences["default_" .. data_type][category_id] = prototypes[category_id].members[prototype_id]
     end
