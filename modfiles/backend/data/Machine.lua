@@ -115,7 +115,7 @@ function Machine:compile_fuel_filter()
     local compatible_fuels = {}
 
     for category_name, _ in pairs(self.proto.burner.categories) do
-        local category = PROTOTYPE_MAPS.fuels[category_name]
+        local category = prototyper.util.find("fuels", nil, category_name)
         if category ~= nil then
             for _, fuel_proto in pairs(category.members) do
                 table.insert(compatible_fuels, fuel_proto.name)
@@ -132,7 +132,7 @@ end
 ---@return string? error
 function Machine:paste(object)
     if object.class == "Machine" then
-        local found_machine = prototyper.util.find_prototype("machines", object.proto.name, self.proto.category)
+        local found_machine = prototyper.util.find("machines", object.proto.name, self.proto.category)
 
         if found_machine and self.parent:is_machine_applicable(object.proto) then
             object.parent = self.parent

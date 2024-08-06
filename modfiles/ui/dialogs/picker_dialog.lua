@@ -339,7 +339,7 @@ end
 
 local function handle_belt_pick(player, _, event)
     local belt_name = event.element.elem_value
-    local belt_proto = prototyper.util.find_prototype("belts", belt_name, nil)
+    local belt_proto = prototyper.util.find("belts", belt_name, nil)
 
     local modal_data = util.globals.modal_data(player)
     set_belt_proto(modal_data, belt_proto)  -- syncs amounts itself

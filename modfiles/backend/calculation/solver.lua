@@ -119,7 +119,7 @@ local function update_object_items(object, item_category, item_results)
     simple_items:clear()
 
     for _, item_result in pairs(structures.class.to_array(item_results)) do
-        local item_proto = prototyper.util.find_prototype("items", item_result.name, item_result.type)
+        local item_proto = prototyper.util.find("items", item_result.name, item_result.type)
         simple_items:insert({class="SimpleItem", proto=item_proto, amount=item_result.amount})
     end
 end
@@ -129,7 +129,7 @@ local function set_zeroed_items(line, item_category, items)
     simple_items:clear()
 
     for _, item in pairs(items) do
-        local item_proto = prototyper.util.find_prototype("items", item.name, item.type)
+        local item_proto = prototyper.util.find("items", item.name, item.type)
         simple_items:insert({class="SimpleItem", proto=item_proto, amount=0})
     end
 end

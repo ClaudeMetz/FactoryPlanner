@@ -100,7 +100,7 @@ local function switch_matrix_item(player, tags, event)
             end
         end
     else -- "constrained"
-        local item_proto = PROTOTYPE_MAPS.items[tags.type].members[tags.name]
+        local item_proto = prototyper.util.find("items", tags.name, tags.type)
         table.insert(factory.matrix_free_items, item_proto)
     end
 

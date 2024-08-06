@@ -123,15 +123,15 @@ end
 -- ** UTIL **
 -- Finds the given prototype by name. Can use the loader cache since it'll exist at this point.
 ---@param data_type DataType
----@param prototype_name string
+---@param prototype_name string?
 ---@param category_name string?
----@return AnyFPPrototype?
-function prototyper.util.find_prototype(data_type, prototype_name, category_name)
+---@return (AnyFPPrototype | NamedCategory)?
+function prototyper.util.find(data_type, prototype_name, category_name)
     local prototype_map = PROTOTYPE_MAPS[data_type]
 
-    if category_name == nil then
-        return prototype_map[prototype_name]  -- can be nil
-    else
+    if util.xor((category_name ~= nil), (prototype_name ~= nil)) then
+        return prototype_map[category_name or prototype_name]  -- can be nil
+    else  -- category and prototype provided
         local category = prototype_map[category_name]  ---@type MappedCategory
         if category == nil then return nil end
         return category.members[prototype_name]  -- can be nil
@@ -183,12 +183,12 @@ function prototyper.util.validate_prototype_object(prototype, category_designati
 
     if prototype.simplified then  -- try to unsimplify, otherwise it stays that way
         ---@cast prototype FPPackedPrototype
-        local new_proto = prototyper.util.find_prototype(prototype.data_type, prototype.name, prototype.category)
+        local new_proto = prototyper.util.find(prototype.data_type, prototype.name, prototype.category)
         if new_proto then updated_proto = new_proto end
     else
         ---@cast prototype AnyFPPrototype
         local category = prototype[category_designation]  ---@type string
-        local new_proto = prototyper.util.find_prototype(prototype.data_type, prototype.name, category)
+        local new_proto = prototyper.util.find(prototype.data_type, prototype.name, category)
         updated_proto = new_proto or prototyper.util.simplify_prototype(prototype, category)
     end
 
@@ -230,7 +230,7 @@ end
 ---@param player_table PlayerTable
 function prototyper.util.migrate_mb_defaults(player_table)
     local mb_defaults = player_table.preferences.mb_defaults
-    local find = prototyper.util.find_prototype
+    local find = prototyper.util.find
 
     local machine = mb_defaults.machine
     if machine then
@@ -320,7 +320,7 @@ function prototyper.defaults.migrate(player_table)
 
         if not has_categories then
             -- Use the same prototype if an equivalent can be found, use fallback otherwise
-            local equivalent_proto = prototyper.util.find_prototype(data_type, default.name, nil)
+            local equivalent_proto = prototyper.util.find(data_type, default.name, nil)
             ---@cast equivalent_proto PrototypeDefault
             preferences["default_" .. data_type] = equivalent_proto  ---@type PrototypeDefault
                 or prototyper.defaults.get_fallback(data_type)
@@ -342,7 +342,7 @@ function prototyper.defaults.migrate(player_table)
                 if previous_category then  -- category existed previously
                     local proto_name = previous_category.name
                     ---@type PrototypeWithCategoryDefault
-                    new_defaults[category.id] = prototyper.util.find_prototype(data_type, proto_name, category.name)
+                    new_defaults[category.id] = prototyper.util.find(data_type, proto_name, category.name)
                 end
                 new_defaults[category.id] = new_defaults[category.id] or fallback[category.id]
             end

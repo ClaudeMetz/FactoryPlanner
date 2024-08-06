@@ -50,7 +50,7 @@ end
 
 -- for our purposes the string "(item type id)_(item id)" is what we're calling the "item_key"
 function matrix_engine.get_item_key(item_type_name, item_name)
-    local item = prototyper.util.find_prototype("items", item_name, item_type_name)
+    local item = prototyper.util.find("items", item_name, item_type_name)
     return tostring(item.category_id) .. '_' .. tostring(item.id)
 end
 

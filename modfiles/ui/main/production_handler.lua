@@ -292,10 +292,9 @@ local function handle_fuel_click(player, tags, action)
 
     if action == "add_recipe_to_end" or action == "add_recipe_below" then
         local add_after_line_id = (action == "add_recipe_below") and line.id or nil
-        local category = PROTOTYPE_MAPS.items[fuel.proto.type]
-        local proto_id = category.members[fuel.proto.name].id
+        local proto = prototyper.util.find("items", fuel.proto.name, fuel.proto.type)
         util.raise.open_dialog(player, {dialog="recipe", modal_data={add_after_line_id=add_after_line_id,
-            production_type="produce", category_id=category.id, product_id=proto_id}})
+            production_type="produce", category_id=proto.category_id, product_id=proto.id}})
 
     elseif action == "edit" then  -- fuel is changed through the machine dialog
         util.raise.open_dialog(player, {dialog="machine", modal_data={machine_id=fuel.parent.id}})
