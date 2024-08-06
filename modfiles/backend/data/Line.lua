@@ -108,7 +108,7 @@ end
 ---@return boolean success
 function Line:change_machine_by_action(player, action, current_proto)
     local current_machine_proto = current_proto or self.machine.proto
-    local machines_category = PROTOTYPE_MAPS.machines[current_machine_proto.category]
+    local machines_category = prototyper.util.find("machines", nil, current_machine_proto.category)
     local category_machines = global.prototypes.machines[machines_category.id].members
 
     if action == "upgrade" then
@@ -232,8 +232,8 @@ end
 function Line:compile_machine_filter()
     local compatible_machines = {}
 
-    local machines = PROTOTYPE_MAPS.machines[self.machine.proto.category].members
-    for _, machine_proto in pairs(machines) do
+    local machine_category = prototyper.util.find("machines", nil, self.machine.proto.category)
+    for _, machine_proto in pairs(machine_category.members) do
         if self:is_machine_applicable(machine_proto) then
             table.insert(compatible_machines, machine_proto.name)
         end

@@ -48,7 +48,7 @@ local function recipe_map_from(item_type)
 
     for _, recipe in pairs(global.prototypes.recipes) do
         for _, item in ipairs(recipe[item_type]) do
-            local item_proto = prototyper.util.find_prototype("items", item.name, item.type)  ---@cast item_proto -nil
+            local item_proto = prototyper.util.find("items", item.name, item.type)  ---@cast item_proto -nil
             map[item_proto.category_id] = map[item_proto.category_id] or {}
             map[item_proto.category_id][item_proto.id] = map[item_proto.category_id][item_proto.id] or {}
             map[item_proto.category_id][item_proto.id][recipe.id] = true
@@ -65,9 +65,8 @@ local function sorted_items()
     local items = {}
 
     for _, type in pairs{"item", "fluid"} do
-        for _, item in pairs(PROTOTYPE_MAPS.items[type].members) do
-            -- Silly checks needed here for migration purposes
-            if item.group.valid and item.subgroup.valid then table.insert(items, item) end
+        for _, item in pairs(prototyper.util.find("items", nil, type).members) do
+            table.insert(items, item)
         end
     end
 

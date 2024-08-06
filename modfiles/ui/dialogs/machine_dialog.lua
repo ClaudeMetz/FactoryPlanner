@@ -96,8 +96,8 @@ local function handle_machine_choice(player, _, event)
     local machine = util.globals.modal_data(player).object  --[[@as Machine]]
     local elem_value = event.element.elem_value
 
-    local new_machine_proto = prototyper.util.find_prototype("machines", elem_value.name, machine.proto.category)
-    local new_quality_proto = prototyper.util.find_prototype("qualities", elem_value.quality, nil)
+    local new_machine_proto = prototyper.util.find("machines", elem_value.name, machine.proto.category)
+    local new_quality_proto = prototyper.util.find("qualities", elem_value.quality, nil)
 
     -- Can't use Line:change_machine_to_proto() as that modifies the line, which we can't do
     machine.proto = new_machine_proto
@@ -117,7 +117,7 @@ local function handle_fuel_choice(player, _, event)
     local elem_value = event.element.elem_value
 
     for category_name, _ in pairs(machine.proto.burner.categories) do
-        local new_proto = prototyper.util.find_prototype("fuels", elem_value, category_name)
+        local new_proto = prototyper.util.find("fuels", elem_value, category_name)
         if new_proto then machine.fuel.proto = new_proto; break end
     end
 end

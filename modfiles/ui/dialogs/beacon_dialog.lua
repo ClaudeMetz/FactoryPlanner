@@ -79,8 +79,8 @@ local function handle_beacon_change(player, _, _)
     end
 
     -- Change the beacon to the new type
-    beacon.proto = prototyper.util.find_prototype("beacons", elem_value.name, nil)
-    beacon.quality_proto = prototyper.util.find_prototype("qualities", elem_value.quality, nil)
+    beacon.proto = prototyper.util.find("beacons", elem_value.name, nil)
+    beacon.quality_proto = prototyper.util.find("qualities", elem_value.quality, nil)
     beacon.module_set:normalize({compatibility=true, trim=true, effects=true})
 
     update_profile_label(modal_data)

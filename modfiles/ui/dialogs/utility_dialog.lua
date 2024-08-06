@@ -110,7 +110,7 @@ function utility_structures.components(player, modal_data)
                     amount_in_inventory, required_amount}
 
                 local category_id = (proto.data_type == "items") and proto.category_id
-                    or PROTOTYPE_MAPS.items["item"].id  -- modules/beacons are always an 'item'
+                    or prototyper.util.find("items", nil, "item").id
                 local proto_id = (proto.data_Type == "items") and proto.id
                     or PROTOTYPE_MAPS.items["item"].members[proto.name].id
                 table_components.add{type="sprite-button", sprite=proto.sprite, number=required_amount, tooltip=tooltip,

@@ -70,7 +70,7 @@ local function handle_module_selection(player, tags, event)
         local module = OBJECT_INDEX[tags.module_id]  --[[@as Module]]
         if new_module then  -- changed to another module
             module.proto = MODULE_NAME_MAP[new_module.name]
-            module.quality_proto = prototyper.util.find_prototype("qualities", new_module.quality)
+            module.quality_proto = prototyper.util.find("qualities", new_module.quality, nil)
             module:summarize_effects()
         else  -- removed module
             module_set:remove(module)
@@ -79,7 +79,7 @@ local function handle_module_selection(player, tags, event)
         local slider = event.element.parent["fp_slider_module_amount"]
         local module_proto = MODULE_NAME_MAP[new_module.name]
         local module = Module.init(module_proto, slider.slider_value)
-        module.quality_proto = prototyper.util.find_prototype("qualities", new_module.quality)
+        module.quality_proto = prototyper.util.find("qualities", new_module.quality, nil)
         module_set:insert(module)
     end
 
