@@ -55,11 +55,14 @@
   - Just need the simplest version that works for now, so users will have to trigger the infinite loops
     themselves with manual refreshes if they want to, thus also no loop detection for now
   - Not exactly sure on the details of the refresh logic, will find it while implementing
+  - Should have a 'multiply District amount by X' variable too so you can overproduce on purpose
+  - Alternatively could have a district amount + the normal amount instead, a bit messy but could work well
 - Add feature to transfer items from district to district, mimmicing space platform transfers
 - Need indication of cyclic recipes finally, used a lot on the space platform
 - Add shorthand recipe for 1 complete rocket, instead of needing to add 50 parts. Hard part will be picking an icon for it
 - Need an 'are you sure' dialog for deleting a District, resetting preferences, etc
 - Make recipe picker icons normal sized (40x40 instead of 36x36)
+- Check out if there is any way to use key combos like Q to pick items/entities
 
 ## Low Priority
 
