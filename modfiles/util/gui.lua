@@ -217,14 +217,4 @@ function _gui.format_emissions(emissions)
 end
 
 
----@param data_type DataType
----@return LocalisedString[] items
-function _gui.generate_dropdown_items(data_type)
-    local items = {}
-    for _, proto in pairs(global.prototypes[data_type]) do
-        table.insert(items, {"", "[img=" .. proto.sprite .. "] ", proto.localised_name})
-    end
-    return items
-end
-
 return _gui
