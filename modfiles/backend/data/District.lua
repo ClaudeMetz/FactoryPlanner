@@ -107,9 +107,7 @@ function District:refresh()
     self.byproducts:clear()
     self.ingredients:clear()
 
-    for factory in self:iterator() do
-        if not factory.valid or factory.archived then goto continue end
-
+    for factory in self:iterator({archived=false, valid=true}) do
         self.power = self.power + factory.top_floor.power
         for name, amount in pairs(factory.top_floor.emissions) do
             self.emissions[name] = (self.emissions[name] or 0) + amount
@@ -123,8 +121,6 @@ function District:refresh()
 
         self.byproducts:add_multiple(factory.top_floor.byproducts, factory.timescale)
         self.ingredients:add_multiple(factory.top_floor.ingredients, factory.timescale)
-
-        :: continue ::
     end
 end
 
