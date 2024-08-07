@@ -99,9 +99,6 @@ function generator.machines.generate()
         local sprite = generator_util.determine_entity_sprite(proto)
         if sprite == nil then return end
 
-        -- If it is a miner, set speed to mining_speed so the machine_count-formula works out
-        local speed = proto.crafting_categories and proto.get_crafting_speed() or proto.mining_speed
-
         -- Determine data related to the energy source
         local energy_type, emissions_per_joule = "", {}  -- no emissions if no energy source is present
         local burner = nil  ---@type MachineBurner
@@ -169,7 +166,7 @@ function generator.machines.generate()
             quality_category = quality_category,
             ingredient_limit = (proto.ingredient_count or 255),
             fluid_channels = fluid_channels,
-            speed = speed,
+            speed = proto.get_crafting_speed(),
             energy_type = energy_type,
             energy_usage = energy_usage,
             energy_drain = energy_drain,
@@ -202,20 +199,30 @@ function generator.machines.generate()
                     if enabled and category ~= "basic-fluid" then
                         local machine = generate_category_entry(category, proto, "mining-drill")
                         if machine then
+                            machine.speed = proto.mining_speed
                             machine.resource_drain_rate = proto.resource_drain_rate_percent / 100
-                            insert_prototype(machines, machine, machine.category)
+                            insert_prototype(machines, machine, category)
                         end
                     end
                 end
             end
 
-        -- Add offshore pumps
         elseif proto.type == "offshore-pump" then
-            local machine = generate_category_entry(proto.name, proto, nil)
+            local machine = generate_category_entry(proto.type, proto, nil)
             if machine then
                 machine.speed = proto.pumping_speed
-                machine.category = proto.type
-                insert_prototype(machines, machine, machine.category)
+                insert_prototype(machines, machine, proto.type)
+            end
+
+        elseif proto.type == "agricultural-tower" then
+            local machine = generate_category_entry(proto.type, proto, nil)
+            if machine then
+                --[[ local growth_area_width = (proto.growth_grid_tile_size * 2) + 1
+                local available_tiles = growth_area_width * growth_area_width - 1 ]]
+                -- deal with energy_usage, crane_energy_usage
+                machine.speed = 48--available_tiles
+                machine.energy_usage = 0  -- implemented later
+                insert_prototype(machines, machine, proto.type)
             end
         end
 
@@ -371,6 +378,14 @@ function generator.recipes.generate()
         end
     end
 
+    -- Determine which plant is created by which seed
+    local plant_seed_map = {}
+    for _, item_proto in pairs(game.item_prototypes) do
+        if item_proto.plant_result then
+            plant_seed_map[item_proto.plant_result.name] = item_proto.name
+        end
+    end
+
     -- Add all standard recipes
     local recipe_filter = {{filter="energy", comparison=">", value=0},
         {filter="energy", comparison="<", value=1e+21, mode="and"}}
@@ -447,8 +462,33 @@ function generator.recipes.generate()
                 insert_prototype(recipes, recipe, nil)
 
             --else
-                -- crude-oil and angels-natural-gas go here (not interested atm)
+                -- crude-oil etc goes here
             end
+
+            ::incompatible_proto::
+
+        elseif proto.type == "plant" then
+            local products = proto.mineable_properties.products
+            if not products then goto incompatible_proto end
+            local seed_name = plant_seed_map[proto.name]
+            if not seed_name then goto incompatible_proto end
+
+            local recipe = custom_recipe()
+            recipe.name = "impostor-" .. proto.name
+            recipe.localised_name = {"", proto.localised_name, " ", {"fp.planting_recipe"}}
+            recipe.sprite = products[1].type .. "/" .. products[1].name
+            recipe.order = proto.order
+            recipe.subgroup = {name="planting", order="z", valid=true}
+            recipe.category = "agricultural-tower"
+            recipe.energy = proto.growth_ticks / 60
+
+            -- Deal with proto.harvest_emissions + proto.emissions_per_second somehow, probably on machine?
+
+            local ingredients = {{type="item", name=seed_name, amount=1}}
+            generator_util.format_recipe(recipe, products, products[1], ingredients)
+
+            generator_util.add_recipe_tooltip(recipe)
+            insert_prototype(recipes, recipe, nil)
 
             ::incompatible_proto::
         end
