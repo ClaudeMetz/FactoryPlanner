@@ -34,7 +34,6 @@
   - Or, getting crazy, re-add the production bar above the table and have factory info stuff there
   - Could shuffle more things around, like move buttons back down, other stuff up top, if I have another bar
   - Another advantage is that the factory list on the left can more space for when multiplayer stuff hits
-- Agriculture tower recipes not supported - doesn't use recipes I don't think
 - Surface conditions, based on Districts
   - It's too messy to not allow condition-incompatible stuff, since it'll need to be addressed on any planet change
   - Instead, mark incompatible recipes/machines red in their dialogs and in the prod table, and disable their line
@@ -56,6 +55,11 @@
 - Need an 'are you sure' dialog for deleting a District, resetting preferences, etc
 - Make recipe picker icons normal sized (40x40 instead of 36x36)
 - Check out if there is any way to use key combos like Q to pick items/entities
+- Agriculture tower improvements
+  - Needs implementation of power usage and pollution, which is kinda messy
+  - Should really output the tower tiles needed, and not assume full agri tower usage
+  - Would require a proper system for 'entity' ingredients ideally, finally
+  - Could then also use that for oil yields, maybe infinite mining yields
 
 ## Low Priority
 
@@ -85,6 +89,7 @@
 - No way to show quality on sprite buttons, which is essential in tons of places
   - Same thing for quality color, which should be used in relevant tooltips
 - Special quality attributes for beacons and miners not available on LuaQualityPrototype yet
+- Plant harvest_emissions and AgriTower growth_grid_tile_size are missing
 
 ## Release
 

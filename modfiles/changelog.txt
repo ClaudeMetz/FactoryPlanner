@@ -2,11 +2,11 @@
 Version: 0.00.00
 Date: 00. 00. 0000
   Features:
-    - 
+    -
   Changes:
-    - 
+    -
   Bugfixes:
-    - 
+    -
 
 ---------------------------------------------------------------------------------------------------
 Version: 1.2.4
@@ -31,6 +31,7 @@ Date: 20. 07. 2024
     - Dropped Recipe Book support in favor of Factoriopedia, the new built-in recipe browser
     - Changed the utility dialog function to request missing item delivery to create a new logistic section instead of having construction bots fulfill the order
     - Added support for new module mechanics, like beacon profiles, machine base productivity, new productivity researches, maximum recipe productivity, and more
+    - Added support for the new agriculture tower and its recipes
     - Added support for the new kinds of pollution, dropping the dedicated pollution column in the production table
     - Improved and fixed various parts of the interface
     - Dropped support for boiler recipes, for now
