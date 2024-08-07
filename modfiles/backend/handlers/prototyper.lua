@@ -121,20 +121,32 @@ end
 
 
 -- ** UTIL **
--- Finds the given prototype by name. Can use the loader cache since it'll exist at this point.
 ---@param data_type DataType
----@param prototype_name string?
----@param category_name string?
+---@param prototype (integer | string)?
+---@param category (integer | string)?
 ---@return (AnyFPPrototype | NamedCategory)?
-function prototyper.util.find(data_type, prototype_name, category_name)
-    local prototype_map = PROTOTYPE_MAPS[data_type]
+function prototyper.util.find(data_type, prototype, category)
+    local prototypes, prototype_map = global.prototypes[data_type], PROTOTYPE_MAPS[data_type]
 
-    if util.xor((category_name ~= nil), (prototype_name ~= nil)) then
-        return prototype_map[category_name or prototype_name]  -- can be nil
+    if util.xor((category ~= nil), (prototype ~= nil)) then  -- either category or prototype provided
+        local identifier = category or prototype
+        local relevant_map = (type(identifier) == "string") and prototype_map or prototypes
+        return relevant_map[identifier]  -- can be nil
+
     else  -- category and prototype provided
-        local category = prototype_map[category_name]  ---@type MappedCategory
-        if category == nil then return nil end
-        return category.members[prototype_name]  -- can be nil
+        local category_map = (type(category) == "string") and prototype_map or prototypes
+        local category_table = category_map[category]  ---@type MappedCategory
+        if category_table == nil then return nil end
+
+        if type(prototype) == type(category) then
+            return category_table.members[prototype]  -- can be nil
+        else  -- If types don't match, we need to use the opposite map for the category
+            if type(prototype) == "string" then
+                return prototype_map[category_table.name].members[prototype]  -- can be nil
+            else
+                return prototypes[category_table.id].members[prototype]  -- can be nil
+            end
+        end
     end
 end
 
@@ -262,8 +274,8 @@ end
 function prototyper.defaults.get(player, data_type, category)
     ---@type AnyPrototypeDefault
     local default = util.globals.preferences(player)["default_" .. data_type]
-    local category_id = (type(category) == "string") and prototyper.util.find(data_type, nil, category).id or category
-    return (category_id == nil) and default or default[category_id]
+    local category_table = prototyper.util.find(data_type, nil, category)
+    return (category_table == nil) and default or default[category_table.id]
 end
 
 -- Sets the default prototype for the given type, incorporating the category, if given
@@ -279,8 +291,7 @@ function prototyper.defaults.set(player, data_type, prototype_id, category)
         ---@type PrototypeDefault
         preferences["default_" .. data_type] = prototypes[prototype_id]
     else
-        local category_id = (type(category) == "string") and prototyper.util.find(data_type, nil, category).id
-            or category
+        local category_id = prototyper.util.find(data_type, nil, category).id  --[[@as integer]]
         ---@type PrototypeWithCategoryDefault
         preferences["default_" .. data_type][category_id] = prototypes[category_id].members[prototype_id]
     end

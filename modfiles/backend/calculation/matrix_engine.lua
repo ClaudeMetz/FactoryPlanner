@@ -33,7 +33,7 @@ local matrix_engine = {}
 function matrix_engine.get_recipe_protos(recipe_ids)
     local recipe_protos = {}
     for i, recipe_id in ipairs(recipe_ids) do
-        local recipe_proto = global.prototypes.recipes[recipe_id]
+        local recipe_proto = prototyper.util.find("recipes", recipe_id, nil)
         recipe_protos[i] = recipe_proto
     end
     return recipe_protos
@@ -57,15 +57,15 @@ end
 function matrix_engine.get_item(item_key)
     local split_str = util.split_string(item_key, "_")
     local item_type_id, item_id = split_str[1], split_str[2]
-    return global.prototypes.items[item_type_id].members[item_id]
+    return prototyper.util.find("items", item_id, item_type_id)
 end
 
 -- this is really only used for debugging
 function matrix_engine.get_item_name(item_key)
     local split_str = util.split_string(item_key, "_")
     local item_type_id, item_id = split_str[1], split_str[2]
-    local item_info = global.prototypes.items[item_type_id].members[item_id]
-    return item_info.type.."_"..item_info.name
+    local item_info = prototyper.util.find("items", item_id, item_type_id)
+    return item_info.type .. "_" .. item_info.name
 end
 
 function matrix_engine.print_rows(rows)

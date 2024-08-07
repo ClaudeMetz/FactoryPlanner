@@ -14,7 +14,7 @@ local function run_preliminary_checks(player, modal_data)
     local map = RECIPE_MAPS[modal_data.production_type][modal_data.category_id][modal_data.product_id]
     if map ~= nil then  -- this being nil means that the item has no recipes
         for recipe_id, _ in pairs(map) do
-            local recipe = global.prototypes.recipes[recipe_id]
+            local recipe = prototyper.util.find("recipes", recipe_id, nil)
             local force_recipe = force_recipes[recipe.name]
 
             if recipe.custom then  -- Add custom recipes by default
@@ -87,7 +87,7 @@ end
 
 -- Tries to add the given recipe to the current floor, then exiting the modal dialog
 local function attempt_adding_line(player, recipe_id, modal_data)
-    local recipe_proto = global.prototypes.recipes[recipe_id]
+    local recipe_proto = prototyper.util.find("recipes", recipe_id, nil)
     local line = Line.init(recipe_proto, modal_data.production_type)
 
     -- If finding a machine fails, this line is invalid
@@ -306,7 +306,7 @@ listeners.gui = {
 listeners.dialog = {
     dialog = "recipe",
     metadata = (function(modal_data)
-        local product_proto = global.prototypes.items[modal_data.category_id].members[modal_data.product_id]
+        local product_proto = prototyper.util.find("items", modal_data.product_id, modal_data.category_id)
         return {
             caption = {"", {"fp.add"}, " ", {"fp.pl_recipe", 1}},
             subheader_text = {"fp.recipe_instruction", {"fp." .. modal_data.production_type},
