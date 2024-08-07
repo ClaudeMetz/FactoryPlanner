@@ -108,28 +108,26 @@ end
 ---@return boolean success
 function Line:change_machine_by_action(player, action, current_proto)
     local current_machine_proto = current_proto or self.machine.proto
-    local machines_category = prototyper.util.find("machines", nil, current_machine_proto.category)
-    local category_machines = global.prototypes.machines[machines_category.id].members
+    local category_id = current_machine_proto.category_id
+
+    local function try_machine(new_machine_id)
+        current_machine_proto = prototyper.util.find("machines", new_machine_id, category_id) --[[@as FPMachinePrototype]]
+
+        if self:is_machine_applicable(current_machine_proto) then
+            self:change_machine_to_proto(player, current_machine_proto)
+            return true
+        end
+        return false
+    end
 
     if action == "upgrade" then
-        local max_machine_id = #category_machines
-
+        local max_machine_id = #prototyper.util.find("machines", nil, category_id).members
         while current_machine_proto.id < max_machine_id do
-            current_machine_proto = category_machines[current_machine_proto.id + 1]
-
-            if self:is_machine_applicable(current_machine_proto) then
-                self:change_machine_to_proto(player, current_machine_proto)
-                return true
-            end
+            if try_machine(current_machine_proto.id + 1) then return true end
         end
     else  -- action == "downgrade"
         while current_machine_proto.id > 1 do
-            current_machine_proto = category_machines[current_machine_proto.id - 1]
-
-            if self:is_machine_applicable(current_machine_proto) then
-                self:change_machine_to_proto(player, current_machine_proto)
-                return true
-            end
+            if try_machine(current_machine_proto.id - 1) then return true end
         end
     end
 

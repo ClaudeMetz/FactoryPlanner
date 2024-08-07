@@ -277,7 +277,7 @@ local function handle_item_handcraft(player, tags, event)
 
     local success = false
     for recipe_id, _ in pairs(recipes) do
-        local recipe_name = global.prototypes.recipes[recipe_id].name
+        local recipe_name = prototyper.util.get("recipes", recipe_id, nil).name
         local craftable_amount = player.get_craftable_count(recipe_name)
 
         if craftable_amount > 0 then

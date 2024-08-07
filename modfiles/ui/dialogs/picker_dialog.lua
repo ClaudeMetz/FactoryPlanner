@@ -330,7 +330,7 @@ end
 local function handle_item_pick(player, tags, _)
     local modal_data = util.globals.modal_data(player)
 
-    local item_proto = global.prototypes.items[tags.category_id].members[tags.item_id]
+    local item_proto = prototyper.util.find("items", tags.item_id, tags.category_id)
     set_item_proto(modal_data, item_proto)  -- no need for sync in this case
 
     set_appropriate_focus(modal_data)

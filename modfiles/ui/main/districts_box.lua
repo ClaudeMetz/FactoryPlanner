@@ -250,7 +250,7 @@ listeners.gui = {
             handler = (function(player, tags, event)
                 local district = OBJECT_INDEX[tags.district_id]  --[[@as District]]
                 local location_proto_id = event.element.selected_index
-                district.location_proto = global.prototypes.locations[location_proto_id]
+                district.location_proto = prototyper.util.find("locations", location_proto_id, nil)
 
                 util.raise.refresh(player, "district_info")
             end)
