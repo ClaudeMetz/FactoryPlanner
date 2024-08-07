@@ -5,7 +5,6 @@
 - Consider a similar method that uses id's to avoid global.prototypes.X
   - Maybe even a combination of both, should you have a category name and proto id etc
   - Make sure to find all the places that could use this
-- Production scrollpane is fucked up again ... go back through commits
 
 ## Bugs
 
