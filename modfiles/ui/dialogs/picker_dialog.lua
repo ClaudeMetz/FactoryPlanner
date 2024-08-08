@@ -138,7 +138,6 @@ local function add_item_picker(parent_flow, player)
                 table_subgroup = flow_subgroups.add{type="table", column_count=items_per_row,
                     style="filter_slot_table"}
                 table_subgroup.style.horizontally_stretchable = true
-                log(subgroup_name)
                 subgroup_table_cache[subgroup_name] = table_subgroup
 
                 subgroup_tables[subgroup_name] = {}
@@ -155,11 +154,14 @@ local function add_item_picker(parent_flow, player)
             local item_name = item_proto.name
             local existing_product = existing_products[item_name]
             local button_style = (existing_product) and "flib_slot_button_red" or "flib_slot_button_default"
+            local tooltip, elem_tooltip = nil, nil
+            if item_proto.type == "entity" then tooltip = item_proto.tooltip
+            else elem_tooltip = {type=item_proto.type, name=item_proto.name} end
 
             local button_item = table_subgroup.add{type="sprite-button", sprite=item_proto.sprite, style=button_style,
                 tags={mod="fp", on_gui_click="select_picker_item", item_id=item_proto.id,
                 category_id=item_proto.category_id}, enabled=(existing_product == nil),
-                elem_tooltip={type=item_proto.type, name=item_proto.name}, mouse_button_filter={"left"}}
+                tooltip=tooltip, elem_tooltip=elem_tooltip, mouse_button_filter={"left"}}
 
             -- Figure out the translated name here so search doesn't have to repeat the work for every character
             local translated_name = (translations) and translations[item_proto.type][item_name] or nil
@@ -238,7 +240,11 @@ local function set_item_proto(modal_data, item_proto)
 
     local item_choice_button = modal_elements.item_choice_button
     item_choice_button.sprite = (item_proto) and item_proto.sprite or nil
-    item_choice_button.elem_tooltip = (item_proto) and {type=item_proto.type, name=item_proto.name} or nil
+    if item_proto then
+        item_choice_button.tooltip = (item_proto.type == "entity") and item_proto.tooltip or nil
+        item_choice_button.elem_tooltip = (item_proto.type ~= "entity") and
+            {type=item_proto.type, name=item_proto.name} or nil
+    end
 
     -- Disable definition by belt for fluids
     local is_fluid = item_proto and item_proto.type == "fluid"

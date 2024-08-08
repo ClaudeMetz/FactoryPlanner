@@ -240,6 +240,7 @@ local function handle_item_click(player, tags, action)
         end
 
     elseif action == "add_recipe_to_end" or action == "add_recipe_below" then
+        if item.proto.type == "entity" then return end
         local production_type = (tags.item_category == "byproduct") and "consume" or "produce"
         local add_after_line_id = (action == "add_recipe_below") and line.id or nil
         util.raise.open_dialog(player, {dialog="recipe", modal_data={add_after_line_id=add_after_line_id,
@@ -276,12 +277,15 @@ local function handle_item_click(player, tags, action)
         util.raise.open_dialog(player, {dialog="options", modal_data=modal_data})
 
     elseif action == "copy" then
+        if item.proto.type == "entity" then return end
         util.clipboard.copy(player, item)
 
     elseif action == "put_into_cursor" then
+        if item.proto.type == "entity" then return end
         util.cursor.add_to_item_combinator(player, item.proto, item.amount)
 
     elseif action == "factoriopedia" then
+        if item.proto.type == "entity" then return end
         --util.open_in_factoriopedia(player, item.proto.type, item.proto.name)
     end
 end

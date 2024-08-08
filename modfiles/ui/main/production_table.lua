@@ -305,12 +305,11 @@ function builders.ingredients(line, parent_flow, metadata)
             ingredient, nil, machine_count)
         if amount == -1 then goto skip_ingredient end  -- an amount of -1 means it was below the margin of error
 
-        local style, enabled = "flib_slot_button_green_small", true
+        local style = "flib_slot_button_green_small"
         local satisfaction_line = ""  ---@type LocalisedString
 
         if ingredient.proto.type == "entity" then
             style = "flib_slot_button_transparent_small"
-            enabled = false
         elseif metadata.ingredient_satisfaction and ingredient.amount > 0 then
             local satisfaction_percentage = (ingredient.satisfied_amount / ingredient.amount) * 100
             local formatted_percentage = util.format.number(satisfaction_percentage, 3)
@@ -328,12 +327,12 @@ function builders.ingredients(line, parent_flow, metadata)
 
         local name_line = {"fp.tt_title", ingredient.proto.localised_name}
         local number_line = (number_tooltip) and {"", "\n", number_tooltip} or ""
-        local tutorial_tt = (enabled) and metadata.ingredient_tutorial_tt or ""
+        local tutorial_tt = (ingredient.proto.type == "entity") and metadata.ingredient_tutorial_tt or ""
         local tooltip = {"", name_line, number_line, satisfaction_line, tutorial_tt}
 
         local button = parent_flow.add{type="sprite-button", sprite=ingredient.proto.sprite, style=style,
             tags={mod="fp", on_gui_click="act_on_line_ingredient", line_id=line.id, item_index=index,
-            on_gui_hover="set_tooltip", context="production_table"}, number=amount, enabled=enabled,
+            on_gui_hover="set_tooltip", context="production_table"}, number=amount,
             mouse_button_filter={"left-and-right"}, raise_hover_events=true}
         metadata.tooltips[button.index] = tooltip
 
@@ -357,7 +356,7 @@ function builders.fuel(line, parent_flow, metadata)
         satisfaction_line = {"", "\n", (formatted_percentage .. "%"), " ", {"fp.satisfied"}}
     end
 
-    local name_line = {"fp.tt_title_with_note", fuel.proto.localised_name, {"fp.pl_fuel", 1}}
+    local name_line = {"fp.tt_title_with_note", fuel.proto.localised_name, {"fp.pu_fuel", 1}}
     local number_line = (number_tooltip) and {"", "\n", number_tooltip} or ""
     local tooltip = {"", name_line, number_line, satisfaction_line, metadata.fuel_tutorial_tt}
 
