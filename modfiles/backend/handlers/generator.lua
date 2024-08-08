@@ -419,21 +419,6 @@ function generator.recipes.generate()
         end
     end
 
-
-    -- Add convenience recipe to build whole rockets instead of parts
-    local rocket_recipe = ftable.deep_copy(recipes["rocket-part"])
-    rocket_recipe.name = "impostor-silo-rocket"
-    rocket_recipe.localised_name = {"", {"entity-name.rocket"}, " ", {"fp.launch"}}
-    rocket_recipe.sprite = "fp_silo_rocket"
-    rocket_recipe.order = rocket_recipe.order .. "-b"
-    rocket_recipe.custom = true
-
-    generator_util.multiply_recipe(rocket_recipe, 50)
-    rocket_recipe.products = {{type="entity", name="custom-silo-rocket", amount=1}}
-
-    insert_prototype(recipes, rocket_recipe, nil)
-
-
     for _, proto in pairs(game.entity_prototypes) do
         -- Add all mining recipes. Only supports solids for now.
         if proto.mineable_properties and proto.resource_category then
@@ -480,6 +465,7 @@ function generator.recipes.generate()
 
             ::incompatible_proto::
 
+        -- Add agricultural tower recipes
         elseif proto.type == "plant" then
             local products = proto.mineable_properties.products
             if not products then goto incompatible_proto end
@@ -503,6 +489,22 @@ function generator.recipes.generate()
             insert_prototype(recipes, recipe, nil)
 
             ::incompatible_proto::
+
+        -- Add convenience recipes to build whole rockets instead of parts
+        elseif proto.type == "rocket-silo" then
+            local parts_recipe = recipes[proto.fixed_recipe]
+
+            local rocket_recipe = ftable.deep_copy(parts_recipe)
+            rocket_recipe.name = "impostor-" .. proto.name .. "-rocket"
+            rocket_recipe.localised_name = {"", proto.localised_name, " ", {"fp.launch"}}
+            rocket_recipe.sprite = "fp_silo_rocket"
+            rocket_recipe.order = rocket_recipe.order .. "-" .. proto.order
+            rocket_recipe.custom = true
+
+            generator_util.multiply_recipe(rocket_recipe, proto.rocket_parts_required)
+            rocket_recipe.products = {{type="entity", name="custom-silo-rocket", amount=1}}
+
+            insert_prototype(recipes, rocket_recipe, nil)
         end
 
         -- Add a recipe for producing steam from a boiler
@@ -655,7 +657,9 @@ function generator.items.generate()
         end
     end
 
-    local custom_items = {}  -- a list of custom items, representing in-world entities mostly
+
+    local custom_items, rocket_parts = {}, {}
+    -- Build custom items, representing in-world entities mostly
     for _, proto in pairs(game.entity_prototypes) do
         -- Add all mining deposits. Only supports solids for now.
         if proto.mineable_properties and proto.resource_category then
@@ -669,22 +673,28 @@ function generator.items.generate()
                 group = proto.group,
                 subgroup = proto.subgroup
             }
+
+        -- Mark rocket silo part items here so they can be marked as non-hidden
+        elseif proto.type == "rocket-silo" then
+            local parts_recipe = game.recipe_prototypes[proto.fixed_recipe]
+            rocket_parts[parts_recipe.main_product.name] = true
         end
     end
 
-    local rocket_part = game.item_prototypes["rocket-part"]
+    -- Only need one rocket item for all silos/recipes
     custom_items["custom-silo-rocket"] = {
         name = "custom-silo-rocket",
         localised_name = {"", {"entity-name.rocket"}, " ", {"fp.launch"}},
         sprite = "fp_silo_rocket",
         hidden = false,
-        order = rocket_part.order .. "-z",
-        group = rocket_part.group,
-        subgroup = rocket_part.subgroup
+        order = "z",
+        group = {name="intermediate-products", order="c", valid=true,
+            localised_name={"item-group-name.intermediate-products"}},
+        subgroup = {name="intermediate-product", order="g", valid=true,
+            localised_name={"item-subgroup-name.intermediate-product"}},
     }
 
 
-    -- Add all standard items
     for type, item_table in pairs(relevant_items) do
         for item_name, item_details in pairs(item_table) do
             local proto = (type == "entity") and custom_items[item_name] or
@@ -697,7 +707,7 @@ function generator.items.generate()
                 localised_name = proto.localised_name,
                 sprite = sprite,
                 type = type,
-                hidden = proto.hidden,
+                hidden = (not rocket_parts[item_name]) and proto.hidden,
                 stack_size = (type == "item") and proto.stack_size or nil,
                 ingredient_only = not item_details.is_product,
                 order = proto.order,
@@ -708,13 +718,6 @@ function generator.items.generate()
 
             insert_prototype(items, item, item.type)
         end
-    end
-
-    -- Not sure why this one is hidden by default
-    local item_members = items["item"].members
-    if item_members["rocket-part"] then
-        item_members["rocket-part"].hidden = false
-        item_members["rocket-part"].order = item_members["rocket-part"].order .. "-a"
     end
 
     return items

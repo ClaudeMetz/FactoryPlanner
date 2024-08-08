@@ -2,7 +2,7 @@
 
 ## Active
 
-- Generalize custom rocket recipe to use fixed_recipe? (also check out fixed_quality)
+- Add custom recipe for research rocket -> RocketSiloRocket::research_products?
 
 - Agriculture tower improvements
   - Needs implementation of power usage and pollution, which is kinda messy
