@@ -490,20 +490,36 @@ function generator.recipes.generate()
 
             ::incompatible_proto::
 
-        -- Add convenience recipes to build whole rockets instead of parts
         elseif proto.type == "rocket-silo" then
             local parts_recipe = recipes[proto.fixed_recipe]
 
+            -- Add special research rocket recipe
+            local research_recipe = ftable.deep_copy(parts_recipe)
+            --local research_products = proto.rocket_entity_prototype.research_products
+            local research_products = {{type = "item", name = "space-science-pack", amount = 10}}
+            local main_proto = game.item_prototypes[research_products[1].name]
+            research_recipe.name = "impostor-" .. main_proto.name .. "-rocket"
+            research_recipe.localised_name = {"", main_proto.localised_name, " ", {"fp.research_rocket"}}
+            research_recipe.sprite = "item/" .. main_proto.name
+            research_recipe.order = parts_recipe.order .. "-" .. proto.order .. "-a"
+            research_recipe.hidden = false
+            research_recipe.custom = true
+
+            generator_util.multiply_recipe(research_recipe, proto.rocket_parts_required)
+            research_recipe.products = research_products  -- set after multiplication
+            insert_prototype(recipes, research_recipe, nil)
+
+            -- Add convenience recipe to build whole rocket instead of parts
             local rocket_recipe = ftable.deep_copy(parts_recipe)
             rocket_recipe.name = "impostor-" .. proto.name .. "-rocket"
             rocket_recipe.localised_name = {"", proto.localised_name, " ", {"fp.launch"}}
             rocket_recipe.sprite = "fp_silo_rocket"
-            rocket_recipe.order = rocket_recipe.order .. "-" .. proto.order
+            rocket_recipe.order = parts_recipe.order .. "-" .. proto.order .. "-b"
+            rocket_recipe.hidden = false
             rocket_recipe.custom = true
 
             generator_util.multiply_recipe(rocket_recipe, proto.rocket_parts_required)
             rocket_recipe.products = {{type="entity", name="custom-silo-rocket", amount=1}}
-
             insert_prototype(recipes, rocket_recipe, nil)
         end
 
