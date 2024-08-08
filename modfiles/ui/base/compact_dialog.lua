@@ -178,7 +178,6 @@ local function add_item_flow(line, relevant_line, item_category, button_color, m
         if type == "entity" then
             style = (relevant_line.done) and "flib_slot_button_transparent_grayscale_small"
                 or "flib_slot_button_transparent_small"
-            enabled = false
             tooltip = {"", {"fp.tt_title", proto.localised_name}, number_line}
         end
 
@@ -405,6 +404,7 @@ end
 local function handle_item_click(player, tags, action)
     local item = (tags.fuel_id) and OBJECT_INDEX[tags.fuel_id]
         or OBJECT_INDEX[tags.simple_items_id].items[tags.item_index]
+    if item.proto.type == "entity" then return end
 
     if action == "put_into_cursor" then
         util.cursor.add_to_item_combinator(player, item.proto, item.amount)

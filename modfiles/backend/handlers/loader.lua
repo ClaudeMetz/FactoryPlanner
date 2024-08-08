@@ -64,7 +64,7 @@ end
 local function sorted_items()
     local items = {}
 
-    for _, type in pairs{"item", "fluid"} do
+    for _, type in pairs{"item", "fluid", "entity"} do
         for _, item in pairs(prototyper.util.find("items", nil, type).members) do
             table.insert(items, item)
         end

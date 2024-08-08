@@ -147,7 +147,7 @@ end
 
 
 -- Multiplies recipe products and ingredients by the given amount
---[[ ---@param recipe_proto FPRecipePrototype
+---@param recipe_proto FPRecipePrototype
 ---@param factor number
 function generator_util.multiply_recipe(recipe_proto, factor)
     ---@param item_list RecipeItem[]
@@ -163,7 +163,7 @@ function generator_util.multiply_recipe(recipe_proto, factor)
     multiply_items(recipe_proto.products)
     multiply_items(recipe_proto.ingredients)
     recipe_proto.energy = recipe_proto.energy * factor
-end ]]
+end
 
 --[[ -- Adds the additional proto's ingredients, products and energy to the main proto
 ---@param main_proto FPRecipePrototype
@@ -372,33 +372,34 @@ end
 
 -- Adds the tooltip for the given recipe
 ---@param recipe FPRecipePrototype
-function generator_util.add_recipe_tooltip(recipe)
+---@return LocalisedString
+function generator_util.recipe_tooltip(recipe)
     local tooltip = {"", {"fp.tt_title", recipe.localised_name}}  ---@type LocalisedString
     local current_table, next_index = tooltip, 3
 
     if recipe.energy ~= nil then
-        current_table, next_index = util.build_localised_string(
-            {"", "\n  ", {"fp.crafting_time"}, ": ", recipe.energy}, current_table, next_index)
+        local energy_line = {"fp.recipe_crafting_time", recipe.energy}
+        current_table, next_index = util.build_localised_string(energy_line, current_table, next_index)
     end
 
+    local item_protos = global.prototypes.items
     for _, item_type in ipairs{"ingredients", "products"} do
         local locale_key = (item_type == "ingredients") and "fp.pu_ingredient" or "fp.pu_product"
-        current_table, next_index = util.build_localised_string(
-            {"", "\n  ", {locale_key, 2}, ":"}, current_table, next_index)
+        local header_line = {"fp.recipe_header", {locale_key, 2}}
+        current_table, next_index = util.build_localised_string(header_line, current_table, next_index)
         if not next(recipe[item_type]) then
-            current_table, next_index = util.build_localised_string({
-                "\n    ", {"fp.none"}}, current_table, next_index)
+            current_table, next_index = util.build_localised_string({"fp.recipe_none"}, current_table, next_index)
         else
-            local items = recipe[item_type]  ---@type FormattedRecipeItem[]
+            local items = recipe[item_type]
             for _, item in ipairs(items) do
-                local proto = game[item.type .. "_prototypes"][item.name]  ---@type LuaItemPrototype | LuaFluidPrototype
-                current_table, next_index = util.build_localised_string({("\n    " .. "[" .. item.type .. "="
-                    .. item.name .. "] " .. item.amount .. "x "), proto.localised_name}, current_table, next_index)
+                local proto = item_protos[item.type].members[item.name]
+                local item_line = {"fp.recipe_item", proto.sprite, item.amount, proto.localised_name}
+                current_table, next_index = util.build_localised_string(item_line, current_table, next_index)
             end
         end
     end
 
-    recipe.tooltip = tooltip
+    return tooltip
 end
 
 ---@class ItemGroup

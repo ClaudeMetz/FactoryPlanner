@@ -88,18 +88,14 @@ local function refresh_item_box(player, factory, show_floor_items, item_category
 
         local name_line = {"fp.tt_title", item.proto.localised_name}
         local number_line = (number_tooltip) and {"", "\n", number_tooltip} or ""
-        local tooltip, enabled = nil, true
-        if item.proto.type == "entity" then  -- only relevant to ingredients
-            tooltip = {"", name_line, number_line, satisfaction_line}
+        local tooltip = {"", name_line, number_line, satisfaction_line, tutorial_tt}
+        if item.class ~= "Product" and item.proto.type == "entity" then
             style = "flib_slot_button_transparent"
-            enabled = false
-        else
-            tooltip = {"", name_line, number_line, satisfaction_line, tutorial_tt}
         end
 
         local button = table_items.add{type="sprite-button", number=amount, style=style, sprite=item.proto.sprite,
             tags={mod="fp", on_gui_click=action, item_category=item_category, item_id=item.id, item_index=index,
-            on_gui_hover="set_tooltip", context="item_boxes"}, enabled=enabled, mouse_button_filter={"left-and-right"},
+            on_gui_hover="set_tooltip", context="item_boxes"}, mouse_button_filter={"left-and-right"},
             raise_hover_events=true}
         tooltips.item_boxes[button.index] = tooltip
         table_item_count = table_item_count + 1
@@ -164,9 +160,11 @@ local function handle_item_button_click(player, tags, action)
             modal_data={item_id=item.id, item_category=tags.item_category}})
 
     elseif action == "copy" then
+        if item.proto.type == "entity" then return end
         util.clipboard.copy(player, item)
 
     elseif action == "paste" then
+        if item.proto.type == "entity" then return end
         util.clipboard.paste(player, item)
 
     elseif action == "delete" then
@@ -200,10 +198,12 @@ local function handle_item_button_click(player, tags, action)
         util.raise.open_dialog(player, {dialog="options", modal_data=modal_data})
 
     elseif action == "put_into_cursor" then
+        if item.proto.type == "entity" then return end
         local amount = (item.class == "Product") and item:get_required_amount() or item.amount
         util.cursor.add_to_item_combinator(player, item.proto, amount)
 
     elseif action == "factoriopedia" then
+        if item.proto.type == "entity" then return end
         --util.open_in_factoriopedia(player, item.proto.type, item.proto.name)
     end
 end

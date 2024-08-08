@@ -420,6 +420,20 @@ function generator.recipes.generate()
     end
 
 
+    -- Add convenience recipe to build whole rockets instead of parts
+    local rocket_recipe = ftable.deep_copy(recipes["rocket-part"])
+    rocket_recipe.name = "impostor-silo-rocket"
+    rocket_recipe.localised_name = {"", {"entity-name.rocket"}, " ", {"fp.launch"}}
+    rocket_recipe.sprite = "fp_silo_rocket"
+    rocket_recipe.order = rocket_recipe.order .. "-b"
+    rocket_recipe.custom = true
+
+    generator_util.multiply_recipe(rocket_recipe, 50)
+    rocket_recipe.products = {{type="entity", name="custom-silo-rocket", amount=1}}
+
+    insert_prototype(recipes, rocket_recipe, nil)
+
+
     for _, proto in pairs(game.entity_prototypes) do
         -- Add all mining recipes. Only supports solids for now.
         if proto.mineable_properties and proto.resource_category then
@@ -444,7 +458,7 @@ function generator.recipes.generate()
                 -- Set energy to mining time so the forumla for the machine_count works out
                 recipe.energy = proto.mineable_properties.mining_time
 
-                local ingredients = {{type="entity", name=proto.name, amount=1}}
+                local ingredients = {{type="entity", name="custom-" .. proto.name, amount=1}}
 
                 -- Add mining fluid, if required
                 if proto.mineable_properties.required_fluid then
@@ -458,7 +472,6 @@ function generator.recipes.generate()
 
                 generator_util.format_recipe(recipe, products, products[1], ingredients)
 
-                generator_util.add_recipe_tooltip(recipe)
                 insert_prototype(recipes, recipe, nil)
 
             --else
@@ -487,7 +500,6 @@ function generator.recipes.generate()
             local ingredients = {{type="item", name=seed_name, amount=1}}
             generator_util.format_recipe(recipe, products, products[1], ingredients)
 
-            generator_util.add_recipe_tooltip(recipe)
             insert_prototype(recipes, recipe, nil)
 
             ::incompatible_proto::
@@ -521,7 +533,6 @@ function generator.recipes.generate()
                         local products = {{type="fluid", name="steam", amount=60, temperature=temperature, ignored_by_productivity=60}}
                         generator_util.format_recipe(recipe, products, products[1], ingredients)
 
-                        generator_util.add_recipe_tooltip(recipe)
                         insert_prototype(recipes, recipe, nil)
                     end
                 end
@@ -547,7 +558,6 @@ function generator.recipes.generate()
             local products = {{type="fluid", name=proto.fluid.name, amount=60}}
             generator_util.format_recipe(recipe, products, products[1], {})
 
-            generator_util.add_recipe_tooltip(recipe)
             insert_prototype(recipes, recipe, nil)
         end
     end
@@ -567,7 +577,6 @@ function generator.recipes.generate()
         local products = {{type="fluid", name="steam", amount=60, ignored_by_productivity=60}}
         generator_util.format_recipe(recipe, products, products[1], ingredients)
 
-        generator_util.add_recipe_tooltip(recipe)
         insert_prototype(recipes, recipe, nil)
     end ]]
 
@@ -580,7 +589,6 @@ function generator.recipes.generate()
             recipe.custom = true
             generator_util.combine_recipes(recipe, alt_recipe)
             generator_util.multiply_recipe(recipe, 0.5)
-            generator_util.add_recipe_tooltip(recipe)
             remove_prototype(recipes, alt_recipe.name, nil)
         end
     end ]]
@@ -591,10 +599,12 @@ end
 ---@param recipes NamedPrototypes<FPRecipePrototype>
 function generator.recipes.second_pass(recipes)
     local machines = global.prototypes.machines
-    -- Check again if all recipes still have a machine to produce them after machine second pass
     for _, recipe in pairs(recipes) do
+        -- Check again if all recipes still have a machine to produce them after machine second pass
         if not machines[recipe.category] then
             remove_prototype(recipes, recipe.name, nil)
+        elseif recipe.custom then
+            recipe.tooltip = generator_util.recipe_tooltip(recipe)
         end
     end
 end
@@ -609,11 +619,11 @@ end
 ---@field order string
 ---@field group ItemGroup
 ---@field subgroup ItemGroup
+---@field tooltip LocalisedString?
 
 ---@class RelevantItem
 ---@field proto RecipeItem
 ---@field is_product boolean
----@field is_rocket_part boolean
 
 ---@alias RelevantItems { [ItemType]: { [ItemName]: RelevantItem } }
 
@@ -632,53 +642,79 @@ function generator.items.generate()
         local item_details = table[type][name]
         -- Determine whether this item is used as a product at least once
         item_details.is_product = item_details.is_product or item.is_product
-        item_details.is_rocket_part = item_details.is_rocket_part or item.is_rocket_part
     end
 
     -- Create a table containing every item that is either a product or an ingredient to at least one recipe
     local relevant_items = {}  ---@type RelevantItems
     for _, recipe_proto in pairs(global.prototypes.recipes) do
         for _, product in pairs(recipe_proto.products) do
-            local is_rocket_part = (recipe_proto.category == "rocket-building")
-            add_item(relevant_items, {proto=product, is_product=true, is_rocket_part=is_rocket_part})
+            add_item(relevant_items, {proto=product, is_product=true})
         end
         for _, ingredient in pairs(recipe_proto.ingredients) do
-            add_item(relevant_items, {proto=ingredient, is_product=false, is_rocket_part=false})
+            add_item(relevant_items, {proto=ingredient, is_product=false})
         end
     end
+
+    local custom_items = {}  -- a list of custom items, representing in-world entities mostly
+    for _, proto in pairs(game.entity_prototypes) do
+        -- Add all mining deposits. Only supports solids for now.
+        if proto.mineable_properties and proto.resource_category then
+            local name = "custom-" .. proto.name
+            custom_items[name] = {
+                name = name,
+                localised_name = {"", proto.localised_name, " ", {"fp.deposit"}},
+                sprite = "entity/" .. proto.name,
+                hidden = true,
+                order = proto.order,
+                group = proto.group,
+                subgroup = proto.subgroup
+            }
+        end
+    end
+
+    local rocket_part = game.item_prototypes["rocket-part"]
+    custom_items["custom-silo-rocket"] = {
+        name = "custom-silo-rocket",
+        localised_name = {"", {"entity-name.rocket"}, " ", {"fp.launch"}},
+        sprite = "fp_silo_rocket",
+        hidden = false,
+        order = rocket_part.order .. "-z",
+        group = rocket_part.group,
+        subgroup = rocket_part.subgroup
+    }
+
 
     -- Add all standard items
     for type, item_table in pairs(relevant_items) do
         for item_name, item_details in pairs(item_table) do
-            local proto = game[type .. "_prototypes"][item_name]  ---@type LuaItemPrototype | LuaFluidPrototype
-            if proto == nil then goto skip_item end
-
-            local localised_name = proto.localised_name
-            if type == "entity" then localised_name = {"", localised_name, " ", {"fp.deposit"}} end
-            local stack_size = (type == "item") and proto.stack_size or nil
-            local order = proto.order
-
-            local hidden = false  -- "entity" types are never hidden
-            if type == "item" or type == "fluid" then hidden = proto.hidden end
-            if item_details.is_rocket_part then hidden = false end
+            local proto = (type == "entity") and custom_items[item_name] or
+                game[type .. "_prototypes"][item_name]  ---@type LuaItemPrototype | LuaFluidPrototype
+            local sprite = (type == "entity") and proto.sprite or (type .. "/" .. proto.name)
+            local tooltip = (type == "entity") and proto.localised_name or nil
 
             local item = {
                 name = item_name,
-                localised_name = localised_name,
-                sprite = type .. "/" .. proto.name,
+                localised_name = proto.localised_name,
+                sprite = sprite,
                 type = type,
-                hidden = hidden,
-                stack_size = stack_size,
+                hidden = proto.hidden,
+                stack_size = (type == "item") and proto.stack_size or nil,
                 ingredient_only = not item_details.is_product,
-                order = order,
+                order = proto.order,
                 group = generator_util.generate_group_table(proto.group),
-                subgroup = generator_util.generate_group_table(proto.subgroup)
+                subgroup = generator_util.generate_group_table(proto.subgroup),
+                tooltip = tooltip
             }
 
             insert_prototype(items, item, item.type)
-
-            ::skip_item::
         end
+    end
+
+    -- Not sure why this one is hidden by default
+    local item_members = items["item"].members
+    if item_members["rocket-part"] then
+        item_members["rocket-part"].hidden = false
+        item_members["rocket-part"].order = item_members["rocket-part"].order .. "-a"
     end
 
     return items
@@ -909,7 +945,7 @@ end
 
 ---@class FPBeaconPrototype: FPPrototype
 ---@field data_type "beacons"
----@field category "fp_beacon"
+---@field category "beacon"
 ---@field elem_type ElemType
 ---@field built_by_item FPItemPrototype
 ---@field allowed_effects AllowedEffects
@@ -939,7 +975,7 @@ function generator.beacons.generate()
                 name = proto.name,
                 localised_name = proto.localised_name,
                 sprite = sprite,
-                category = "fp_beacon",  -- custom category to be similar to machines
+                category = "beacon",  -- custom category to be similar to machines
                 elem_type = "entity",
                 built_by_item = built_by_item,
                 allowed_effects = proto.allowed_effects,

@@ -2,6 +2,13 @@
 
 ## Active
 
+- Generalize custom rocket recipe to use fixed_recipe? (also check out fixed_quality)
+
+- Agriculture tower improvements
+  - Needs implementation of power usage and pollution, which is kinda messy
+  - Should really output the tower tiles needed, and not assume full agri tower usage
+  - Would require a proper system for 'entity' ingredients ideally, finally
+  - Could then also use that for oil yields, maybe infinite mining yields
 
 ## Bugs
 
@@ -10,6 +17,7 @@
   - Probably need to remove it again after the fact with a warning message
 - Translation seems to not reload when loading a save, maybe other times too
 - Warning about serializing lua function, maybe when dialog is open? not sure how this happend
+- Rocket silo power usage seems very low, likely doesn't consider launch usage
 
 ## Uncertainty Sphere
 
@@ -25,7 +33,6 @@
   - Feature is still neat, but maybe time to axe it? Or make it work better somehow
 - Default machines is awkward with quality as you can't specify it
   - Would be better solved with the in-dialog 'save as default' instead of it being a preference idea
-- Not sure what to do with assembling machines fixed_quality and fixed_recipe
 
 ## Features
 
@@ -51,19 +58,13 @@
   - Alternatively could have a district amount + the normal amount instead, a bit messy but could work well
 - Add feature to transfer items from district to district, mimmicing space platform transfers
 - Need indication of cyclic recipes finally, used a lot on the space platform
-- Add shorthand recipe for 1 complete rocket, instead of needing to add 50 parts. Hard part will be picking an icon for it
 - Need an 'are you sure' dialog for deleting a District, resetting preferences, etc
 - Make recipe picker icons normal sized (40x40 instead of 36x36)
 - Check out if there is any way to use key combos like Q to pick items/entities
-- Agriculture tower improvements
-  - Needs implementation of power usage and pollution, which is kinda messy
-  - Should really output the tower tiles needed, and not assume full agri tower usage
-  - Would require a proper system for 'entity' ingredients ideally, finally
-  - Could then also use that for oil yields, maybe infinite mining yields
 
 ## Low Priority
 
-- Make custom tooltips look a bit nicer, maybe look at RB for inspiration or something
+- Make custom recipe tooltips look a bit nicer, maybe look at RB for inspiration or something
 - Add new view of rockets/timescale, useful for items you need to transfer across planets
   - Needs new view state preferences idea. Could also be timescale/rocket instead
 - Adjust utility dialog handcrafting to behave like vanilla crafting does in all ways
@@ -73,9 +74,11 @@
   - Check refreshes in general, maybe write a tool that flags when multiple refreshes happen in sequence
 - Note when rocket silo launch time becomes a problem for speed; it's not at lower speeds
   - Is quite a complicated feature, especially when productivity is involved. Probably do need it though
-- Look into new display_density_scale thing ideally
 - Picker seemingly doesn't care about the item/fluid dichotomy
 - Finally get rid of generic dialogs, even without the extended features
+- Mark entity-type item buttons better visually, somehow
+- When context menus come in, make sure to filter actions properly for all item buttons
+  - This is a bit messy with entity-type items currently and can't easily be fixed atm
 
 ## Waiting on
 
