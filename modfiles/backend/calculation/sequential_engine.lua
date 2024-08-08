@@ -97,11 +97,9 @@ local function update_line(line_data, aggregate)
     end
 
     -- Determine ingredients
-    local mining_drain_rate = machine_proto.resource_drain_rate or 1
-
     local Ingredient = structures.class.init()
     for _, ingredient in pairs(recipe_proto.ingredients) do
-        local ingredient_amount = (ingredient.amount * production_ratio * mining_drain_rate)
+        local ingredient_amount = (ingredient.amount * production_ratio * line_data.resource_drain_rate)
 
         structures.class.add(Ingredient, ingredient, ingredient_amount)
 

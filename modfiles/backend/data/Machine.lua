@@ -96,7 +96,7 @@ end
 ---@param force LuaForce
 function Machine:update_recipe_effects(force)
     local mining_bonus = force.mining_drill_productivity_bonus
-    if mining_bonus > 0 and self.proto.resource_drain_rate then
+    if mining_bonus > 0 and self.proto.quality_category == "mining-drill" then
         self.recipe_effects = {productivity=mining_bonus}
         self:summarize_effects()
     end

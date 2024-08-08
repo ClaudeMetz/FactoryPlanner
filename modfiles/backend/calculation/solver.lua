@@ -88,21 +88,27 @@ local function generate_floor_data(player, factory, floor)
 
                 -- Quality effects
                 local machine_speed = machine.proto.speed
+                local resource_drain_rate = machine.proto.resource_drain_rate or 1
+
                 local quality_category = machine.proto.quality_category
                 if quality_category == "assembling-machine" then
                     machine_speed = machine_speed * machine.quality_proto.multiplier
                 elseif quality_category == "mining-drill" then
-                    -- TBI
+                    resource_drain_rate = resource_drain_rate
+                        * machine.quality_proto.mining_drill_resource_drain_multiplier
                 end
                 line_data.machine_speed = machine_speed
+                line_data.resource_drain_rate = resource_drain_rate
 
                 -- Effects - update line with recipe effects here if applicable
                 machine:update_recipe_effects(player.force)
                 line_data.total_effects = line.total_effects
 
                 -- Beacon total - can be calculated here, which is faster and simpler
-                if line.beacon ~= nil and line.beacon.total_amount ~= nil then
-                    line_data.beacon_consumption = line.beacon.proto.energy_usage * line.beacon.total_amount * 60
+                local beacon = line.beacon
+                if beacon ~= nil and beacon.total_amount ~= nil then
+                    line_data.beacon_consumption = beacon.proto.energy_usage * beacon.total_amount * 60
+                        * beacon.quality_proto.beacon_power_usage_multiplier
                 end
 
                 table.insert(floor_data.lines, line_data)
