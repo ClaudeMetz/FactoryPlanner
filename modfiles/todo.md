@@ -2,7 +2,7 @@
 
 ## Active
 
-- Add custom recipe for research rocket -> RocketSiloRocket::research_products?
+- Special quality attributes for beacons and miners not available on LuaQualityPrototype yet
 
 - Agriculture tower improvements
   - Needs implementation of power usage and pollution, which is kinda messy
@@ -79,20 +79,21 @@
 - Mark entity-type item buttons better visually, somehow
 - When context menus come in, make sure to filter actions properly for all item buttons
   - This is a bit messy with entity-type items currently and can't easily be fixed atm
+- In generator use proto.type instead of trying to detect based on properties
 
 ## Waiting on
 
 - Sliders still bugged, this is stupid https://forums.factorio.com/viewtopic.php?p=516440#p516440
+- Base game steals normal key combos which is annoying (ctrl+f among others)
 - Uncomment all the `.hidden` uses that were missing from the API
 - Constant combinator `sections` format rename
 - API to open things in Factoriopedia
 - Disabled sprite buttons fade their icons, can't be turned off
 - Surface prototypes missing surface_properties read for generator, add surfaces to locations properly
-- Base game steals normal key combos which is annoying (ctrl+f among others)
 - No way to show quality on sprite buttons, which is essential in tons of places
   - Same thing for quality color, which should be used in relevant tooltips
-- Special quality attributes for beacons and miners not available on LuaQualityPrototype yet
 - Plant harvest_emissions and AgriTower growth_grid_tile_size are missing
+- RocketSiloRocket::research_products missing from API
 
 ## Release
 
