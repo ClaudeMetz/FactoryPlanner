@@ -131,7 +131,7 @@ end
 
 local function add_module_flow(parent_flow, module_set, metadata)
     for module in module_set:iterator() do
-        local title_line = (module.quality_proto.level == 0) and {"fp.tt_title", module.proto.localised_name}
+        local title_line = (not module.quality_proto.always_show) and {"fp.tt_title", module.proto.localised_name}
             or {"fp.tt_title_with_note", module.proto.localised_name, module.quality_proto.localised_name}
         local number_line = {"", "\n", module.amount, " ", {"fp.pl_module", module.amount}}
         local tooltip = {"", title_line, number_line, format_effects_tooltip(module.effects_tooltip),
@@ -176,7 +176,7 @@ function builders.machine(line, parent_flow, metadata)
         end
 
         if note ~= nil then table.insert(tooltip_line, {"", " - ", note}) end
-        local title_line = (machine.quality_proto.level == 0) and {"fp.tt_title", machine_proto.localised_name}
+        local title_line = (not machine.quality_proto.always_show) and {"fp.tt_title", machine_proto.localised_name}
         or {"fp.tt_title_with_note", machine_proto.localised_name, machine.quality_proto.localised_name}
         local tooltip = {"", title_line, "\n", tooltip_line, format_effects_tooltip(machine.effects_tooltip),
             metadata.machine_tutorial_tt}
@@ -214,7 +214,7 @@ function builders.beacon(line, parent_flow, metadata)
         button.style.margin = 2
         button.style.padding = 4
     else
-        local title_line = (beacon.quality_proto.level == 0) and {"fp.tt_title", beacon.proto.localised_name}
+        local title_line = (not beacon.quality_proto.always_show) and {"fp.tt_title", beacon.proto.localised_name}
             or {"fp.tt_title_with_note", beacon.proto.localised_name, beacon.quality_proto.localised_name}
         local plural_parameter = (beacon.amount == 1) and 1 or 2  -- needed because the amount can be decimal
         local number_line = {"", "\n", beacon.amount, " ", {"fp.pl_beacon", plural_parameter}}

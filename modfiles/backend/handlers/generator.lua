@@ -1131,11 +1131,11 @@ function generator.qualities.generate()
                     localised_name = proto.localised_name,
                     sprite = sprite,
                     --color = proto.color, -- useful for tooltips, probably formatted into rich text
+                    always_show = proto.draw_sprite_by_default,
                     level = proto.level,
-                    multiplier = 1 + (proto.level * 0.3)
-                    -- Also has these two, we'll see how they work
-                    --beacon_power_usage_multiplier
-                    --mining_drill_resource_drain_multiplier
+                    multiplier = 1 + (proto.level * 0.3),
+                    beacon_power_usage_multiplier = proto.beacon_power_usage_multiplier,
+                    mining_drill_resource_drain_multiplier = proto.mining_drill_resource_drain_multiplier
                 }
                 insert_prototype(qualities, quality, nil)
             end

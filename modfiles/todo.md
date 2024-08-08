@@ -2,8 +2,6 @@
 
 ## Active
 
-- Special quality attributes for beacons and miners not available on LuaQualityPrototype yet
-
 - Agriculture tower improvements
   - Needs implementation of power usage and pollution, which is kinda messy
   - Should really output the tower tiles needed, and not assume full agri tower usage
@@ -94,6 +92,7 @@
   - Same thing for quality color, which should be used in relevant tooltips
 - Plant harvest_emissions and AgriTower growth_grid_tile_size are missing
 - RocketSiloRocket::research_products missing from API
+- No way to read quality color for use in tooltips
 
 ## Release
 

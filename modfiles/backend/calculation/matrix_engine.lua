@@ -611,7 +611,6 @@ function matrix_engine.get_line_aggregate(line_data, player_index, floor_id, mac
     line_aggregate.machine_count = machine_count
     -- the index in the factory_data.top_floor.lines table can be different from the line_id!
     local recipe_proto = line_data.recipe_proto
-    local machine_proto = line_data.machine_proto
     local timescale = line_data.timescale
     local total_effects = line_data.total_effects
     local machine_speed = line_data.machine_speed
@@ -636,9 +635,8 @@ function matrix_engine.get_line_aggregate(line_data, player_index, floor_id, mac
         end
     end
     for _, ingredient in pairs(recipe_proto.ingredients) do
-        local mining_drain_rate = machine_proto.resource_drain_rate or 1   -- mining recipes never ignore productivity
         structures.aggregate.add(line_aggregate, "Ingredient", ingredient,
-            ingredient.amount * total_crafts_per_timescale * mining_drain_rate)
+            ingredient.amount * total_crafts_per_timescale * line_data.resource_drain_rate)
     end
 
     -- Determine energy consumption (including potential fuel needs) and emissions
