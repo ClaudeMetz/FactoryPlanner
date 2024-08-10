@@ -75,6 +75,7 @@ local function handle_beacon_change(player, _, _)
 
     if not elem_value then
         beacon_button.elem_value = beacon:elem_value()  -- reset the beacon so it can't be nil
+        util.cursor.create_flying_text(player, {"fp.no_removal", {"fp.pu_beacon", 1}})
         return  -- nothing changed
     end
 

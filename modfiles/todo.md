@@ -78,6 +78,7 @@
 - When context menus come in, make sure to filter actions properly for all item buttons
   - This is a bit messy with entity-type items currently and can't easily be fixed atm
 - In generator use proto.type instead of trying to detect based on properties
+- Come up with an icon for effects that are limited up or down, instead of saying '(limited)'
 
 ## Waiting on
 
