@@ -24,59 +24,79 @@ local function cycle_views(player, direction)
 end
 
 
+local function format_entity_item(metadata, raw_amount, item_proto)
+    local amount = (item_proto.fixed_unit) and raw_amount * metadata.timescale_inverse or raw_amount
+    local number = util.format.number(amount, metadata.formatting_precision)
+    local unit = item_proto.fixed_unit or {"fp.per_timescale", metadata.timescale_string}
+    return number, {"", number, " ", unit}
+end
+
 local processors = {}  -- individual functions for each kind of view state
 function processors.items_per_timescale(metadata, raw_amount, item_proto, _)
-    local number = util.format.number(raw_amount, metadata.formatting_precision)
-
-    local plural_parameter = (number == "1") and 1 or 2
-    local type_string = (item_proto.type == "fluid") and {"fp.l_fluid"} or {"fp.pl_item", plural_parameter}
-    local tooltip = {"", number, " ", type_string, "/", metadata.timescale_string}
-
-    return number, tooltip
+    if item_proto.type == "entity" then
+        local number, tooltip = format_entity_item(metadata, raw_amount, item_proto)
+        return number, tooltip
+    else
+        local number = util.format.number(raw_amount, metadata.formatting_precision)
+        local plural_parameter = (number == "1") and 1 or 2
+        local type_string = (item_proto.type == "fluid") and {"fp.l_fluid"} or {"fp.pl_item", plural_parameter}
+        return number, {"", number, " ", type_string, "/", metadata.timescale_string}
+    end
 end
 
 function processors.belts_or_lanes(metadata, raw_amount, item_proto, _)
-    if item_proto.type == "entity" then return nil, nil end  -- entity items don't make sense here
+    if item_proto.type == "fluid" then return nil, nil end  -- fluids don't make sense here
 
-    local divisor = (item_proto.type == "fluid") and 50 or 1
-    local raw_number = raw_amount * metadata.throughput_multiplier * metadata.timescale_inverse / divisor
-    local number = util.format.number(raw_number, metadata.formatting_precision)
+    if item_proto.type == "entity" then
+        local number, tooltip = format_entity_item(metadata, raw_amount, item_proto)
+        return number, tooltip
+    else
+        local raw_number = raw_amount * metadata.throughput_multiplier * metadata.timescale_inverse
+        local number = util.format.number(raw_number, metadata.formatting_precision)
 
-    local plural_parameter = (number == "1") and 1 or 2
-    local tooltip = {"", number, " ", {"fp.pl_" .. metadata.belt_or_lane, plural_parameter}}
+        local plural_parameter = (number == "1") and 1 or 2
+        local tooltip = {"", number, " ", {"fp.pl_" .. metadata.belt_or_lane, plural_parameter}}
 
-    local return_number = (metadata.round_button_numbers) and math.ceil(raw_number - 0.001) or number
-    return return_number, tooltip
+        local return_number = (metadata.round_button_numbers) and math.ceil(raw_number - 0.001) or number
+        return return_number, tooltip
+    end
 end
 
 function processors.wagons_per_timescale(metadata, raw_amount, item_proto, _)
-    if item_proto.type == "entity" then return nil, nil end  -- entity items don't make sense here
+    if item_proto.type == "entity" then
+        local number, tooltip = format_entity_item(metadata, raw_amount, item_proto)
+        return number, tooltip
+    else
+        local wagon_capacity = (item_proto.type == "fluid") and metadata.fluid_wagon_capacity
+            or metadata.cargo_wagon_capactiy * item_proto.stack_size
+        local wagon_count = raw_amount / wagon_capacity
+        local number = util.format.number(wagon_count, metadata.formatting_precision)
 
-    local wagon_capacity = (item_proto.type == "fluid") and metadata.fluid_wagon_capacity
-        or metadata.cargo_wagon_capactiy * item_proto.stack_size
-    local wagon_count = raw_amount / wagon_capacity
-    local number = util.format.number(wagon_count, metadata.formatting_precision)
+        local plural_parameter = (number == "1") and 1 or 2
+        local tooltip = {"", number, " ", {"fp.pl_wagon", plural_parameter}, "/", metadata.timescale_string}
 
-    local plural_parameter = (number == "1") and 1 or 2
-    local tooltip = {"", number, " ", {"fp.pl_wagon", plural_parameter}, "/", metadata.timescale_string}
-
-    return number, tooltip
+        return number, tooltip
+    end
 end
 
 function processors.items_per_second_per_machine(metadata, raw_amount, item_proto, machine_count)
     if machine_count == 0 then return 0, "" end  -- avoid division by zero
-    if item_proto.type == "entity" then return nil, nil end  -- entity items don't make sense here
 
-    local raw_number = raw_amount * metadata.timescale_inverse / (math.ceil((machine_count or 1) - 0.001))
-    local number = util.format.number(raw_number, metadata.formatting_precision)
+    if item_proto.type == "entity" then
+        local number, tooltip = format_entity_item(metadata, raw_amount, item_proto)
+        return number, tooltip
+    else
+        local raw_number = raw_amount * metadata.timescale_inverse / (math.ceil((machine_count or 1) - 0.001))
+        local number = util.format.number(raw_number, metadata.formatting_precision)
 
-    local plural_parameter = (number == "1") and 1 or 2
-    local type_string = (item_proto.type == "fluid") and {"fp.l_fluid"} or {"fp.pl_item", plural_parameter}
-    -- If machine_count is nil, this shouldn't show /machine
-    local per_machine = (machine_count ~= nil) and {"", "/", {"fp.pl_machine", 1}} or ""
-    local tooltip = {"", number, " ", type_string, "/", {"fp.second"}, per_machine}
+        local plural_parameter = (number == "1") and 1 or 2
+        local type_string = (item_proto.type == "fluid") and {"fp.l_fluid"} or {"fp.pl_item", plural_parameter}
+        -- If machine_count is nil, this shouldn't show /machine
+        local per_machine = (machine_count ~= nil) and {"", "/", {"fp.pl_machine", 1}} or ""
+        local tooltip = {"", number, " ", type_string, "/", {"fp.second"}, per_machine}
 
-    return number, tooltip
+        return number, tooltip
+    end
 end
 
 

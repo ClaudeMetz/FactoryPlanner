@@ -327,8 +327,7 @@ function builders.ingredients(line, parent_flow, metadata)
 
         local name_line = {"fp.tt_title", ingredient.proto.localised_name}
         local number_line = (number_tooltip) and {"", "\n", number_tooltip} or ""
-        local tutorial_tt = (ingredient.proto.type == "entity") and metadata.ingredient_tutorial_tt or ""
-        local tooltip = {"", name_line, number_line, satisfaction_line, tutorial_tt}
+        local tooltip = {"", name_line, number_line, satisfaction_line, metadata.ingredient_tutorial_tt}
 
         local button = parent_flow.add{type="sprite-button", sprite=ingredient.proto.sprite, style=style,
             tags={mod="fp", on_gui_click="act_on_line_ingredient", line_id=line.id, item_index=index,
