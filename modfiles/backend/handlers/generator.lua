@@ -481,7 +481,10 @@ function generator.recipes.generate()
 
             -- Deal with proto.harvest_emissions + proto.emissions_per_second somehow, probably on machine?
 
-            local ingredients = {{type="item", name=seed_name, amount=1}}
+            local ingredients = {
+                {type="item", name=seed_name, amount=1},
+                {type="entity", name="custom-agriculture-square", amount=(proto.growth_ticks / 60)}
+            }
             generator_util.format_recipe(recipe, products, products[1], ingredients)
 
             insert_prototype(recipes, recipe, nil)
@@ -633,6 +636,7 @@ end
 ---@field group ItemGroup
 ---@field subgroup ItemGroup
 ---@field tooltip LocalisedString?
+---@field fixed_unit LocalisedString?
 
 ---@class RelevantItem
 ---@field proto RecipeItem
@@ -691,6 +695,17 @@ function generator.items.generate()
         end
     end
 
+    -- Only need one square item for all agricultural towers
+    custom_items["custom-agriculture-square"] = {
+        name = "custom-agriculture-square",
+        localised_name = {"fp.agriculture_square"},
+        sprite = "fp_agriculture_square",
+        hidden = true,
+        order = "z",
+        fixed_unit = {"fp.agriculture_unit"}
+    }
+    generator_util.add_default_groups(custom_items["custom-agriculture-square"])
+
     -- Only need one rocket item for all silos/recipes
     custom_items["custom-silo-rocket"] = {
         name = "custom-silo-rocket",
@@ -714,7 +729,7 @@ function generator.items.generate()
                 hidden = (not rocket_parts[item_name]) and proto.hidden,
                 stack_size = (type == "item") and proto.stack_size or nil,
                 ingredient_only = not item_details.is_product,
-                order = proto.order,
+                order = proto.order
             }
 
             if type == "entity" then
@@ -722,6 +737,7 @@ function generator.items.generate()
                 item.group = proto.group
                 item.subgroup = proto.subgroup
                 item.tooltip = proto.localised_name
+                item.fixed_unit = proto.fixed_unit or nil
             else
                 item.sprite = (type .. "/" .. proto.name)
                 item.group = generator_util.generate_group_table(proto.group)

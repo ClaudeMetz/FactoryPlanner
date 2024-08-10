@@ -24,12 +24,12 @@ Date: 30. 07. 2024
 Version: 1.2.1
 Date: 20. 07. 2024
   Features:
-    - Updated the mod for Factorio 2.0 and the Space Age expansion. This means adoption to changes in existing systems and support for new systems, the most significant of which will be listed here.
+    - Updated the mod for Factorio 2.0 and the Space Age expansion. This means adoption to changes in existing systems and support for new systems, the most significant of which will be listed here. The mod will still work just fine without Space Age, with appropriate adjustements to the interface.
     - TODO districts -> surface conditions, pollution?
     - Added support for using machines, beacons, and modules of different quality levels
-  Changes:
-    - Added support for new module mechanics, like beacon profiles, machine base productivity, new productivity researches, maximum recipe productivity, and more
     - Added support for the new agriculture tower and its recipes
+  Changes:
+    - Adjusted mod for new module mechanics such as beacon profiles, machine base productivity, new productivity researches, maximum recipe productivity, and more
     - Changed the utility dialog function to request missing item delivery to create a new logistic section instead of having construction bots fulfill the order
     - Dropped Recipe Book support in favor of Factoriopedia, the new built-in recipe browser
     - Dropped support for boiler recipes, for now

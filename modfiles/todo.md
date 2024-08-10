@@ -2,11 +2,6 @@
 
 ## Active
 
-- Agriculture tower improvements
-  - Needs implementation of power usage and pollution, which is kinda messy
-  - Should really output the tower tiles needed, and not assume full agri tower usage
-  - Would require a proper system for 'entity' ingredients ideally, finally
-  - Could then also use that for oil yields, maybe infinite mining yields
 
 ## Bugs
 
@@ -14,7 +9,8 @@
   - Can't prohibit two of the same module because they could have different qualities
   - Probably need to remove it again after the fact with a warning message
 - Translation seems to not reload when loading a save, maybe other times too
-- Warning about serializing lua function, maybe when dialog is open? not sure how this happend
+- Warning about serializing lua function, maybe when dialog is open?
+  - Steve ran into with beacon dialog open, plus a module chooseElem open
 - Rocket silo power usage seems very low, likely doesn't consider launch usage
 
 ## Uncertainty Sphere
@@ -24,9 +20,6 @@
   - There's bigger ideas where you could enter X quality Y items per timescale and it would backsolve it
   - Plus more such ideas, but they seem kinda out there currently, need to play with quality myself first
 - Item Spoiling - what should my interaction with it be?
-- Disable SA-specific features by checking feature flags in the right spots
-- Add a district automatically once someone lands on a new planet for the first time, plus space platform
-  - Not sure if I want this, might be overbearing
 - Default modules/beacons is awkward with quality since you can't specify it (atm)
   - Feature is still neat, but maybe time to axe it? Or make it work better somehow
 - Default machines is awkward with quality as you can't specify it
@@ -34,11 +27,16 @@
 
 ## Features
 
+- Agriculture tower implementation
+  - Having a machine number just doesn't make sense for it, so need to adjust solver and UI
+    to allow for machines that just don't have a machine amount. Useful for oil mining too.
+  - Missing energy and pollution production, is different to normal entities
 - Move utilities button to factory info, alongside new 'options'/'configuration' dialog, for recipe prod settings
   - Should have the ability to manually configure recipe productivity boni somewhere
   - Or, getting crazy, re-add the production bar above the table and have factory info stuff there
   - Could shuffle more things around, like move buttons back down, other stuff up top, if I have another bar
   - Another advantage is that the factory list on the left can more space for when multiplayer stuff hits
+  - Could drop the per-factory timescale setting and just have it be global. Makes layout easier too
 - Surface conditions, based on Districts
   - It's too messy to not allow condition-incompatible stuff, since it'll need to be addressed on any planet change
   - Instead, mark incompatible recipes/machines red in their dialogs and in the prod table, and disable their line
@@ -59,6 +57,10 @@
 - Need an 'are you sure' dialog for deleting a District, resetting preferences, etc
 - Make recipe picker icons normal sized (40x40 instead of 36x36)
 - Check out if there is any way to use key combos like Q to pick items/entities
+- Implement support for fluid mining (oil etc) with the new item entity system
+- Disable SA-specific features by checking feature flags in the right spots
+- Convert solver to be timescale-independent, and only apply timescale when displaying results
+  - Basically means calculate everything as /s, like I do for Districts already
 
 ## Low Priority
 
