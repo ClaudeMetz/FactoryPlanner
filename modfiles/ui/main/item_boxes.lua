@@ -216,7 +216,7 @@ local function put_ingredients_into_cursor(player, _, _)
 
     local ingredient_filters = {}
     for _, ingredient in relevant_floor["ingredients"]:iterator() do
-        if ingredient.proto.type ~= "entity" then
+        if ingredient.proto.type ~= "entity" and ingredient.amount > MAGIC_NUMBERS.margin_of_error then
             table.insert(ingredient_filters, {
                 type = ingredient.proto.type,
                 name = ingredient.proto.name,

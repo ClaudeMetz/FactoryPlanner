@@ -96,6 +96,12 @@ local function handle_machine_choice(player, _, event)
     local machine = util.globals.modal_data(player).object  --[[@as Machine]]
     local elem_value = event.element.elem_value
 
+    if not elem_value then
+        event.element.elem_value = machine:elem_value()  -- reset the machine so it can't be nil
+        util.cursor.create_flying_text(player, {"fp.no_removal", {"fp.pu_machine", 1}})
+        return  -- nothing changed
+    end
+
     local new_machine_proto = prototyper.util.find("machines", elem_value.name, machine.proto.category)
     local new_quality_proto = prototyper.util.find("qualities", elem_value.quality, nil)
 
@@ -115,6 +121,12 @@ end
 local function handle_fuel_choice(player, _, event)
     local machine = util.globals.modal_data(player).object
     local elem_value = event.element.elem_value
+
+    if not elem_value then
+        event.element.elem_value = machine.fuel.proto.name  -- reset the fuel so it can't be nil
+        util.cursor.create_flying_text(player, {"fp.no_removal", {"fp.pu_fuel", 1}})
+        return  -- nothing changed
+    end
 
     for category_name, _ in pairs(machine.proto.burner.categories) do
         local new_proto = prototyper.util.find("fuels", elem_value, category_name)
