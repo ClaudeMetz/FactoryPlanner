@@ -415,4 +415,21 @@ function generator_util.generate_group_table(group)
     return {name=group.name, localised_name=group.localised_name, order=group.order, valid=true}
 end
 
+---@param proto FPItemPrototype | FPRecipePrototype
+function generator_util.add_default_groups(proto)
+    proto.group = generator_util.generate_group_table(game.item_group_prototypes["other"])
+    proto.subgroup = {name="custom_subgroup", localised_name="", order="a", valid=true}
+end
+
+---@param proto FPItemPrototype | FPRecipePrototype
+---@param group_name string
+---@param subgroup_name string
+function generator_util.add_groups(proto, group_name, subgroup_name)
+    generator_util.add_default_groups(proto)
+    local group = game.item_group_prototypes[group_name]
+    if group then proto.group = generator_util.generate_group_table(group) end
+    local subgroup = game.item_subgroup_prototypes[subgroup_name]
+    if subgroup then proto.subgroup = generator_util.generate_group_table(subgroup) end
+end
+
 return generator_util
