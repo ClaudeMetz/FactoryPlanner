@@ -351,17 +351,17 @@ function generator.recipes.generate()
 
     ---@return FPRecipePrototype
     local function custom_recipe()
-        return {
+        local recipe = {
             custom = true,
             enabled_from_the_start = true,
             hidden = false,
-            group = {name="intermediate-products", order="c", valid=true,
-                localised_name={"item-group-name.intermediate-products"}},
             maximum_productivity = math.huge,
             type_counts = {},
             enabling_technologies = nil,
             emissions_multiplier = 1
         }
+        generator_util.add_default_groups(recipe)
+        return recipe
     end
 
 
@@ -438,7 +438,6 @@ function generator.recipes.generate()
                 recipe.localised_name = {"", proto.localised_name, " ", {"fp.mining_recipe"}}
                 recipe.sprite = products[1].type .. "/" .. products[1].name
                 recipe.order = proto.order
-                recipe.subgroup = {name="mining", order="y", valid=true}
                 recipe.category = proto.resource_category
                 -- Set energy to mining time so the forumla for the machine_count works out
                 recipe.energy = proto.mineable_properties.mining_time
@@ -477,7 +476,6 @@ function generator.recipes.generate()
             recipe.localised_name = {"", proto.localised_name, " ", {"fp.planting_recipe"}}
             recipe.sprite = products[1].type .. "/" .. products[1].name
             recipe.order = proto.order
-            recipe.subgroup = {name="planting", order="z", valid=true}
             recipe.category = "agricultural-tower"
             recipe.energy = proto.growth_ticks / 60
 
@@ -544,7 +542,6 @@ function generator.recipes.generate()
                         recipe.sprite = "fluid/steam"
                         recipe.category = "steam-" .. temperature
                         recipe.order = "z-" .. temperature
-                        recipe.subgroup = {name="fluids", order="z", valid=true}
                         recipe.energy = 1
 
                         local ingredients = {{type="fluid", name="water", amount=60}}
@@ -569,7 +566,6 @@ function generator.recipes.generate()
             recipe.localised_name = {"", proto.fluid.localised_name, " ", {"fp.pumping_recipe"}}
             recipe.sprite = "fluid/" .. proto.fluid.name
             recipe.order = proto.order
-            recipe.subgroup = {name="fluids", order="z", valid=true}
             recipe.category = "offshore-pump"
             recipe.energy = 1
 
@@ -588,7 +584,6 @@ function generator.recipes.generate()
         recipe.sprite = "fluid/steam"
         recipe.category = "general-steam"
         recipe.order = "z-0"
-        recipe.subgroup = {name="fluids", order="z", valid=true}
         recipe.energy = 1
 
         local ingredients = {{type="fluid", name="water", amount=60}}
@@ -685,10 +680,9 @@ function generator.items.generate()
                 localised_name = {"", proto.localised_name, " ", {"fp.deposit"}},
                 sprite = "entity/" .. proto.name,
                 hidden = true,
-                order = proto.order,
-                group = proto.group,
-                subgroup = proto.subgroup
+                order = proto.order
             }
+            generator_util.add_default_groups(custom_items[name])
 
         -- Mark rocket silo part items here so they can be marked as non-hidden
         elseif proto.type == "rocket-silo" then
@@ -703,34 +697,36 @@ function generator.items.generate()
         localised_name = {"", {"entity-name.rocket"}, " ", {"fp.launch"}},
         sprite = "fp_silo_rocket",
         hidden = false,
-        order = "z",
-        group = {name="intermediate-products", order="c", valid=true,
-            localised_name={"item-group-name.intermediate-products"}},
-        subgroup = {name="intermediate-product", order="g", valid=true,
-            localised_name={"item-subgroup-name.intermediate-product"}},
+        order = "z"
     }
+    generator_util.add_groups(custom_items["custom-silo-rocket"], "intermediate-products", "intermediate-product")
 
 
     for type, item_table in pairs(relevant_items) do
         for item_name, item_details in pairs(item_table) do
             local proto = (type == "entity") and custom_items[item_name] or
                 game[type .. "_prototypes"][item_name]  ---@type LuaItemPrototype | LuaFluidPrototype
-            local sprite = (type == "entity") and proto.sprite or (type .. "/" .. proto.name)
-            local tooltip = (type == "entity") and proto.localised_name or nil
 
             local item = {
                 name = item_name,
                 localised_name = proto.localised_name,
-                sprite = sprite,
                 type = type,
                 hidden = (not rocket_parts[item_name]) and proto.hidden,
                 stack_size = (type == "item") and proto.stack_size or nil,
                 ingredient_only = not item_details.is_product,
                 order = proto.order,
-                group = generator_util.generate_group_table(proto.group),
-                subgroup = generator_util.generate_group_table(proto.subgroup),
-                tooltip = tooltip
             }
+
+            if type == "entity" then
+                item.sprite = proto.sprite
+                item.group = proto.group
+                item.subgroup = proto.subgroup
+                item.tooltip = proto.localised_name
+            else
+                item.sprite = (type .. "/" .. proto.name)
+                item.group = generator_util.generate_group_table(proto.group)
+                item.subgroup = generator_util.generate_group_table(proto.subgroup)
+            end
 
             insert_prototype(items, item, item.type)
         end
