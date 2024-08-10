@@ -190,6 +190,8 @@ function module_configurator.refresh_modules_flow(player, update_only)
 
     if empty_slots > 0 then add_module_frame(modules_flow, nil, module_filters, empty_slots) end
     if modal_data.submit_checker then modal_data.submit_checker(modal_data) end
+
+    modules_flow.visible = (#modules_flow.children > 0)
 end
 
 

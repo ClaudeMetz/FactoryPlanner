@@ -165,7 +165,13 @@ local function player_init(player)
     util.gui.toggle_mod_gui(player)
     util.messages.raise(player, "hint", {"fp.hint_tutorial"}, 6)
 
-    if DEV_ACTIVE then util.porter.add_factories(player, DEV_EXPORT_STRING) end
+    if DEV_ACTIVE then
+        util.porter.add_factories(player, DEV_EXPORT_STRING)
+
+        player.force.research_all_technologies()
+        player.clear_recipe_notifications()
+        player.cheat_mode = true
+    end
 end
 
 ---@param player LuaPlayer

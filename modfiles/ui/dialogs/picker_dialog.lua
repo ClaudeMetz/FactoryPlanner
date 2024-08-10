@@ -308,8 +308,8 @@ local function add_item_pane(parent_flow, modal_data, item_category, item)
     local textfield_belts = flow_belts.add{type="textfield", text=belt_amount,
         tags={mod="fp", on_gui_text_changed="picker_belt_amount"}}
     util.gui.setup_numeric_textfield(textfield_belts, true, false)
-    textfield_belts.style.width = 85
-    textfield_belts.style.left_margin = 4
+    textfield_belts.style.width = 86
+    textfield_belts.style.left_margin = 6
     modal_elements["belt_amount_textfield"] = textfield_belts
 
     flow_belts.add{type="label", caption="x"}

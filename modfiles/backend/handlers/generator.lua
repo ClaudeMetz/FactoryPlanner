@@ -1026,7 +1026,7 @@ end
 
 
 -- Doesn't need to be a lasting part of the generator as it's only used for LocationPrototypes generation
----@return { name: string, order: string, localised_name: LocalisedString, localised_unit: LocalisedString, default_value: double, is_time: boolean }[]
+---@return LuaSurfacePropertyPrototype[]
 local function generate_surface_properties()
     local properties = {}
 
