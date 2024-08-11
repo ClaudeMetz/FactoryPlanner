@@ -559,7 +559,8 @@ function generator.recipes.generate()
             recipe.energy = 1
 
             local products = {{type="fluid", name=proto.fluid.name, amount=60}}
-            generator_util.format_recipe(recipe, products, products[1], {})
+            local ingredients = {{type="entity", name="custom-" .. proto.name, amount=0}}
+            generator_util.format_recipe(recipe, products, products[1], ingredients)
 
             insert_prototype(recipes, recipe, nil)
         end
@@ -659,24 +660,42 @@ function generator.items.generate()
     end
 
 
-    local custom_items, rocket_parts = {}, {}
     -- Build custom items, representing in-world entities mostly
+    local custom_items, rocket_parts = {}, {}
+
     for _, proto in pairs(game.entity_prototypes) do
         if proto.type == "resource" --[[ and not proto.hidden ]] then
-            local item = {
-                name = "custom-" .. proto.name,
+            local item_name = "custom-" .. proto.name
+            custom_items[item_name] = {
+                name = item_name,
                 localised_name = {"", proto.localised_name, " ", {"fp.deposit"}},
                 sprite = "entity/" .. proto.name,
                 hidden = true,
                 order = proto.order
             }
-            generator_util.add_default_groups(item)
-            custom_items[item.name] = item
+            generator_util.add_default_groups(custom_items[item_name])
 
         -- Mark rocket silo part items here so they can be marked as non-hidden
         elseif proto.type == "rocket-silo" --[[ and not proto.hidden ]] then
             local parts_recipe = game.recipe_prototypes[proto.fixed_recipe]
             rocket_parts[parts_recipe.main_product.name] = true
+        end
+    end
+
+    local pumped_fluids = {}
+    for _, proto in pairs(game.tile_prototypes) do
+        if proto.fluid and not pumped_fluids[proto.fluid.name] --[[ and not proto.hidden ]] then
+            pumped_fluids[proto.fluid.name] = true
+
+            local item_name = "custom-" .. proto.name
+            custom_items[item_name] = {
+                name = item_name,
+                localised_name = {"", proto.localised_name, " ", {"fp.lake"}},
+                sprite = "tile/" .. proto.name,
+                hidden = true,
+                order = proto.order
+            }
+            generator_util.add_default_groups(custom_items[item_name])
         end
     end
 
