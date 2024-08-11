@@ -62,17 +62,18 @@ end
 
 
 ---@param count number
----@param active boolean
 ---@param round_number boolean
----@return string formatted_count
+---@return string? formatted_count
 ---@return LocalisedString tooltip_line
-function _format.machine_count(count, active, round_number)
+function _format.machine_count(count, round_number)
+    if count == 0 then return nil, "" end
+
     -- The formatting is used to 'round down' when the decimal is very small
     local formatted_count = util.format.number(count, 3)
     local tooltip_count = formatted_count
 
     -- If the formatting returns 0, it is a very small number, so show it as 0.001
-    if formatted_count == "0" and active then
+    if formatted_count == "0" then
         tooltip_count = "≤0.001"
         formatted_count = "0.01"  -- shows up as 0.0 on the button
     end
@@ -80,7 +81,7 @@ function _format.machine_count(count, active, round_number)
     if round_number then formatted_count = tostring(math.ceil(formatted_count --[[@as number]])) end
 
     local plural_parameter = (tooltip_count == "1") and 1 or 2
-    local tooltip_line = {"", tooltip_count, " ", {"fp.pl_machine", plural_parameter}}
+    local tooltip_line = {"", "\n", tooltip_count, " ", {"fp.pl_machine", plural_parameter}}
 
     return formatted_count, tooltip_line
 end
