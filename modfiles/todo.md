@@ -12,6 +12,8 @@
 - Warning about serializing lua function, maybe when dialog is open?
   - Steve ran into with beacon dialog open, plus a module chooseElem open
 - Rocket silo power usage seems very low, likely doesn't consider launch usage
+- Differences between trad and matrix solver related to quality
+  - String: eNrtV01rGzEQ/S86e42dOIUs9NJDTy0Uegxm0UqzzoA+NpLWrTH+7x2tZHdtJ6QtJrjtgg/Wm+830sPeMvjeWhcqbaWHwMotq7kHVrL59GY6n7MJAwVrHkAWjqPyQ0ujsKbz/f2UPjMCnjquMGyOfLgI1m1axY0Bly0LMviWCyj4alBrt3dHoDoPWyYU97Hix5SEogzXMeABA+j3rbMCvEezKjqDYUn2gBq84Iqc3s0mrFYdtA5NoCxbSm9siKkZeVKw7EQ4LvQlgckcbKQjVzypRR6CSFnFrkoWuyFE8sCrsGkhQz6OibpV2CBIVgbXATUhoUEDsqpjKNe2MzGdg6cOHcEZKe9muyUNZNuqUda62MuBjx6YMNoMKFbO6RtlPB7lEyF9WoEtVK+PM2w+Bb3QfiYOrdm7JyRWk5aKlg1XHiaMloZrSHEUBk6ACf3C5zPajebiMfY4mOtzhs7pp0sogrOarwwEFEW8TydLyC4GhS++YXgsGtWhPJksF31htHx/z9hSsAIjeX8Dh9mSP76UrrE0cqVQE8GZBXpmnYIqP7XD3D36FeJEyeN4l8n+/K3sd7GmrosUWdwe0zJ0OSUjl3oLLg63erfc0bEGLqwZcvAhIecz1nvDsFoC37b1xcXX51sgXX1+b73tChZ2kxYmrNYQz4xk+ldVhss1N4JGFOhE98/JzKgto7ZcqPXbUVt+U1t+vsNRXUZ1GdVl/OVySXUR3If450jYlt58IXjd03Dd+tLQ3LJna7ANDYEr1bnVZhSU6xKUxd8rKHejoPyhoKA7W+AoJKOQjELynwsJAcvdD1NMMyY=
 
 ## Uncertainty Sphere
 
@@ -31,6 +33,9 @@
   - Having a machine number just doesn't make sense for it, so need to adjust solver and UI
     to allow for machines that just don't have a machine amount. Useful for oil mining too.
   - Missing energy and pollution production, is different to normal entities
+- Better infinite mining drill support
+  - Kind of incredibly annoying, since there is nothing I can really calculate about it
+  - Could still make it so it shows the oil patch as an ingredient without amount (same for offshore pumps)
 - Move utilities button to factory info, alongside new 'options'/'configuration' dialog, for recipe prod settings
   - Should have the ability to manually configure recipe productivity boni somewhere
   - Or, getting crazy, re-add the production bar above the table and have factory info stuff there
@@ -57,7 +62,6 @@
 - Need an 'are you sure' dialog for deleting a District, resetting preferences, etc
 - Make recipe picker icons normal sized (40x40 instead of 36x36)
 - Check out if there is any way to use key combos like Q to pick items/entities
-- Implement support for fluid mining (oil etc) with the new item entity system
 - Disable SA-specific features by checking feature flags in the right spots
 - Convert solver to be timescale-independent, and only apply timescale when displaying results
   - Basically means calculate everything as /s, like I do for Districts already
@@ -79,7 +83,6 @@
 - Mark entity-type item buttons better visually, somehow
 - When context menus come in, make sure to filter actions properly for all item buttons
   - This is a bit messy with entity-type items currently and can't easily be fixed atm
-- In generator use proto.type instead of trying to detect based on properties
 - Come up with an icon for effects that are limited up or down, instead of saying '(limited)'
 
 ## Waiting on

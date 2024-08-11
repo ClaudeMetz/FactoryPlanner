@@ -184,37 +184,31 @@ function generator.machines.generate()
     end
 
     for _, proto in pairs(game.entity_prototypes) do
-        if --[[ not proto.hidden and ]] proto.crafting_categories and proto.energy_usage ~= nil
+        if proto.crafting_categories --[[ and not proto.hidden ]] and proto.energy_usage ~= nil
                 and not generator_util.is_irrelevant_machine(proto) then
             for category, _ in pairs(proto.crafting_categories) do
                 local machine = generate_category_entry(category, proto, "assembling-machine")
                 if machine then insert_prototype(machines, machine, machine.category) end
             end
 
-        -- Add mining machines
-        elseif proto.resource_categories then
-            if --[[ not proto.hidden and ]] proto.type ~= "character" then
-                for category, enabled in pairs(proto.resource_categories) do
-                    -- Only supports solid mining recipes for now (no oil, etc.)
-                    if enabled and category ~= "basic-fluid" then
-                        local machine = generate_category_entry(category, proto, "mining-drill")
-                        if machine then
-                            machine.speed = proto.mining_speed
-                            machine.resource_drain_rate = proto.resource_drain_rate_percent / 100
-                            insert_prototype(machines, machine, category)
-                        end
-                    end
+        elseif proto.type == "mining-drill" --[[ and not proto.hidden ]] then
+            for category, _ in pairs(proto.resource_categories) do
+                local machine = generate_category_entry(category, proto, "mining-drill")
+                if machine then
+                    machine.speed = proto.mining_speed
+                    machine.resource_drain_rate = proto.resource_drain_rate_percent / 100
+                    insert_prototype(machines, machine, category)
                 end
             end
 
-        elseif proto.type == "offshore-pump" then
+        elseif proto.type == "offshore-pump" --[[ and not proto.hidden ]] then
             local machine = generate_category_entry(proto.type, proto, nil)
             if machine then
                 machine.speed = proto.pumping_speed
                 insert_prototype(machines, machine, proto.type)
             end
 
-        elseif proto.type == "agricultural-tower" then
+        elseif proto.type == "agricultural-tower" --[[ and not proto.hidden ]] then
             local machine = generate_category_entry(proto.type, proto, nil)
             if machine then
                 --[[ local growth_area_width = (proto.growth_grid_tile_size * 2) + 1
@@ -420,29 +414,22 @@ function generator.recipes.generate()
     end
 
     for _, proto in pairs(game.entity_prototypes) do
-        -- Add all mining recipes. Only supports solids for now.
-        if proto.mineable_properties and proto.resource_category then
+        if proto.type == "resource" --[[ and not proto.hidden ]] then
             local products = proto.mineable_properties.products
             if not products then goto incompatible_proto end
 
-            local produces_solid = false
-            for _, product in pairs(products) do
-                if product.type == "item" then produces_solid = true; break end
-                product.ignored_by_productivity = product.amount
-            end
-            if not produces_solid then goto incompatible_proto end
+            local recipe = custom_recipe()
+            recipe.name = "impostor-" .. proto.name
+            recipe.localised_name = {"", proto.localised_name, " ", {"fp.mining_recipe"}}
+            recipe.sprite = products[1].type .. "/" .. products[1].name
+            recipe.order = proto.order
+            recipe.category = proto.resource_category
 
-            if produces_solid then
-                local recipe = custom_recipe()
-                recipe.name = "impostor-" .. proto.name
-                recipe.localised_name = {"", proto.localised_name, " ", {"fp.mining_recipe"}}
-                recipe.sprite = products[1].type .. "/" .. products[1].name
-                recipe.order = proto.order
-                recipe.category = proto.resource_category
+            local ingredients = {{type="entity", name="custom-" .. proto.name, amount=1}}
+
+            if not proto.infinite_resource then
                 -- Set energy to mining time so the forumla for the machine_count works out
                 recipe.energy = proto.mineable_properties.mining_time
-
-                local ingredients = {{type="entity", name="custom-" .. proto.name, amount=1}}
 
                 -- Add mining fluid, if required
                 if proto.mineable_properties.required_fluid then
@@ -453,19 +440,18 @@ function generator.recipes.generate()
                         amount = proto.mineable_properties.fluid_amount / 10
                     })
                 end
-
-                generator_util.format_recipe(recipe, products, products[1], ingredients)
-
-                insert_prototype(recipes, recipe, nil)
-
-            --else
-                -- crude-oil etc goes here
+            else
+                recipe.energy = 0
+                ingredients[1].amount = 0
             end
+
+            generator_util.format_recipe(recipe, products, products[1], ingredients)
+            insert_prototype(recipes, recipe, nil)
 
             ::incompatible_proto::
 
         -- Add agricultural tower recipes
-        elseif proto.type == "plant" then
+        elseif proto.type == "plant" --[[ and not proto.hidden ]] then
             local products = proto.mineable_properties.products
             if not products then goto incompatible_proto end
             local seed_name = plant_seed_map[proto.name]
@@ -477,7 +463,7 @@ function generator.recipes.generate()
             recipe.sprite = products[1].type .. "/" .. products[1].name
             recipe.order = proto.order
             recipe.category = "agricultural-tower"
-            recipe.energy = proto.growth_ticks / 60
+            recipe.energy = 0
 
             -- Deal with proto.harvest_emissions + proto.emissions_per_second somehow, probably on machine?
 
@@ -491,7 +477,7 @@ function generator.recipes.generate()
 
             ::incompatible_proto::
 
-        elseif proto.type == "rocket-silo" then
+        elseif proto.type == "rocket-silo" --[[ and not proto.hidden ]] then
             local parts_recipe = recipes[proto.fixed_recipe]
 
             -- Add special research rocket recipe
@@ -561,7 +547,7 @@ function generator.recipes.generate()
     -- Add offshore pump recipes
     local pumped_fluids = {}
     for _, proto in pairs(game.tile_prototypes) do
-        if proto.fluid and not pumped_fluids[proto.fluid.name] then
+        if proto.fluid and not pumped_fluids[proto.fluid.name] --[[ and not proto.hidden ]] then
             pumped_fluids[proto.fluid.name] = true
 
             local recipe = custom_recipe()
@@ -676,20 +662,19 @@ function generator.items.generate()
     local custom_items, rocket_parts = {}, {}
     -- Build custom items, representing in-world entities mostly
     for _, proto in pairs(game.entity_prototypes) do
-        -- Add all mining deposits. Only supports solids for now.
-        if proto.mineable_properties and proto.resource_category then
-            local name = "custom-" .. proto.name
-            custom_items[name] = {
-                name = name,
+        if proto.type == "resource" --[[ and not proto.hidden ]] then
+            local item = {
+                name = "custom-" .. proto.name,
                 localised_name = {"", proto.localised_name, " ", {"fp.deposit"}},
                 sprite = "entity/" .. proto.name,
                 hidden = true,
                 order = proto.order
             }
-            generator_util.add_default_groups(custom_items[name])
+            generator_util.add_default_groups(item)
+            custom_items[item.name] = item
 
         -- Mark rocket silo part items here so they can be marked as non-hidden
-        elseif proto.type == "rocket-silo" then
+        elseif proto.type == "rocket-silo" --[[ and not proto.hidden ]] then
             local parts_recipe = game.recipe_prototypes[proto.fixed_recipe]
             rocket_parts[parts_recipe.main_product.name] = true
         end

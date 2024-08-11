@@ -157,8 +157,7 @@ function builders.machine(line, parent_flow, metadata)
     else
         local machine = line.machine
         local machine_proto = machine.proto
-        local active, round_number = (line.production_ratio > 0), metadata.round_button_numbers
-        local count, tooltip_line = util.format.machine_count(machine.amount, active, round_number)
+        local count, tooltip_line = util.format.machine_count(machine.amount, metadata.round_button_numbers)
 
         local machine_limit = machine.limit
         local style, note = "flib_slot_button_default_small", nil
@@ -178,7 +177,7 @@ function builders.machine(line, parent_flow, metadata)
         if note ~= nil then table.insert(tooltip_line, {"", " - ", note}) end
         local title_line = (not machine.quality_proto.always_show) and {"fp.tt_title", machine_proto.localised_name}
         or {"fp.tt_title_with_note", machine_proto.localised_name, machine.quality_proto.localised_name}
-        local tooltip = {"", title_line, "\n", tooltip_line, format_effects_tooltip(machine.effects_tooltip),
+        local tooltip = {"", title_line, tooltip_line, format_effects_tooltip(machine.effects_tooltip),
             metadata.machine_tutorial_tt}
 
         local button = parent_flow.add{type="sprite-button", sprite=machine_proto.sprite, number=count,
