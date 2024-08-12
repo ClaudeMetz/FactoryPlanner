@@ -243,6 +243,22 @@ function builders.power(line, parent_flow, _)
     parent_flow.add{type="label", caption=util.format.SI_value(line.power, "W", 3), tooltip=tooltip}
 end
 
+
+local function add_catalysts(flow, line, category, metadata)
+    if line.class == "Floor" then return end
+    for _, item in pairs(line.recipe_proto.catalysts[category]) do
+        local item_proto = prototyper.util.find("items", item.name, item.type)  --[[@as FPItemPrototype]]
+
+        local amount, number_tooltip = view_state.process_item(metadata.view_state_metadata,
+            {proto=item_proto}, (item.amount * line.production_ratio), line.machine.amount)
+        local title_line = {"fp.tt_title_with_note", item_proto.localised_name, {"fp.catalyst"}}
+        local number_line = (number_tooltip) and {"", "\n", number_tooltip} or ""
+
+        flow.add{type="sprite-button", sprite=item_proto.sprite, number=amount,
+            tooltip={"", title_line, number_line}, style="flib_slot_button_blue_small"}
+    end
+end
+
 function builders.products(line, parent_flow, metadata)
     for index, product in line["products"]:iterator() do
         -- items/s/machine does not make sense for lines with subfloors, show items/s instead
@@ -272,6 +288,8 @@ function builders.products(line, parent_flow, metadata)
 
         ::skip_product::
     end
+
+    add_catalysts(parent_flow, line, "products", metadata)
 end
 
 function builders.byproducts(line, parent_flow, metadata)
@@ -336,6 +354,8 @@ function builders.ingredients(line, parent_flow, metadata)
 
         ::skip_ingredient::
     end
+
+    add_catalysts(parent_flow, line, "ingredients", metadata)
 
     if line.class ~= "Floor" and line.machine.fuel then builders.fuel(line, parent_flow, metadata) end
 end

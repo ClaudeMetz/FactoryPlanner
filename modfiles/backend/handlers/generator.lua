@@ -327,6 +327,7 @@ end
 ---@field allowed_effects AllowedEffects?
 ---@field maximum_productivity double
 ---@field type_counts { ingredients: ItemTypeCounts, products: ItemTypeCounts }
+---@field catalysts { ingredients: Ingredient[], products: FormattedProduct[] }
 ---@field recycling boolean
 ---@field barreling boolean
 ---@field enabling_technologies string[]
@@ -351,6 +352,7 @@ function generator.recipes.generate()
             hidden = false,
             maximum_productivity = math.huge,
             type_counts = {},
+            catalysts = {products={}, ingredients={}},
             enabling_technologies = nil,
             emissions_multiplier = 1
         }
@@ -397,6 +399,7 @@ function generator.recipes.generate()
                 allowed_effects = proto.allowed_effects or {},
                 maximum_productivity = proto.maximum_productivity,
                 type_counts = {},  -- filled out by format_* below
+                catalysts = {products={}, ingredients={}},  -- filled out by format_* below
                 recycling = generator_util.is_recycling_recipe(proto),
                 barreling = generator_util.is_compacting_recipe(proto),
                 enabling_technologies = researchable_recipes[recipe_name],  -- can be nil
