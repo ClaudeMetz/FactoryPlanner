@@ -121,12 +121,24 @@ function generator_util.format_recipe(recipe_proto, products, main_product, ingr
                 local difference = ingredient.item.amount - peer_product.item.amount
 
                 if difference < 0 then
+                    local item = ftable.shallow_copy(ingredient.item)
+                    item.amount = peer_product.item.amount + difference
+                    recipe_proto.catalysts.ingredients[item.name] = item
+
                     ingredients[ingredient.index].amount = nil
                     formatted_products[peer_product.index].amount = -difference
                 elseif difference > 0 then
+                    local item = ftable.shallow_copy(peer_product.item)
+                    item.amount = ingredient.item.amount - difference
+                    recipe_proto.catalysts.products[item.name] = item
+
                     ingredients[ingredient.index].amount = difference
                     formatted_products[peer_product.index].amount = nil
                 else
+                    -- Nilled-out items are just shown as ingredient catalysts
+                    local item = ftable.shallow_copy(ingredient.item)
+                    recipe_proto.catalysts.ingredients[item.name] = item
+
                     ingredients[ingredient.index].amount = nil
                     formatted_products[peer_product.index].amount = nil
                 end

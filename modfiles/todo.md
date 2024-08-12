@@ -12,6 +12,7 @@
 - Warning about serializing lua function, maybe when dialog is open?
   - Steve ran into with beacon dialog open, plus a module chooseElem open
 - Rocket silo power usage seems very low, likely doesn't consider launch usage
+- Rocket silo recipes don't re-run recipe formatting because they are deepcopies, but they should do so probably
 - Differences between trad and matrix solver related to quality
   - String: eNrtV01rGzEQ/S86e42dOIUs9NJDTy0Uegxm0UqzzoA+NpLWrTH+7x2tZHdtJ6QtJrjtgg/Wm+830sPeMvjeWhcqbaWHwMotq7kHVrL59GY6n7MJAwVrHkAWjqPyQ0ujsKbz/f2UPjMCnjquMGyOfLgI1m1axY0Bly0LMviWCyj4alBrt3dHoDoPWyYU97Hix5SEogzXMeABA+j3rbMCvEezKjqDYUn2gBq84Iqc3s0mrFYdtA5NoCxbSm9siKkZeVKw7EQ4LvQlgckcbKQjVzypRR6CSFnFrkoWuyFE8sCrsGkhQz6OibpV2CBIVgbXATUhoUEDsqpjKNe2MzGdg6cOHcEZKe9muyUNZNuqUda62MuBjx6YMNoMKFbO6RtlPB7lEyF9WoEtVK+PM2w+Bb3QfiYOrdm7JyRWk5aKlg1XHiaMloZrSHEUBk6ACf3C5zPajebiMfY4mOtzhs7pp0sogrOarwwEFEW8TydLyC4GhS++YXgsGtWhPJksF31htHx/z9hSsAIjeX8Dh9mSP76UrrE0cqVQE8GZBXpmnYIqP7XD3D36FeJEyeN4l8n+/K3sd7GmrosUWdwe0zJ0OSUjl3oLLg63erfc0bEGLqwZcvAhIecz1nvDsFoC37b1xcXX51sgXX1+b73tChZ2kxYmrNYQz4xk+ldVhss1N4JGFOhE98/JzKgto7ZcqPXbUVt+U1t+vsNRXUZ1GdVl/OVySXUR3If450jYlt58IXjd03Dd+tLQ3LJna7ANDYEr1bnVZhSU6xKUxd8rKHejoPyhoKA7W+AoJKOQjELynwsJAcvdD1NMMyY=
 
@@ -58,7 +59,6 @@
   - Should have a 'multiply District amount by X' variable too so you can overproduce on purpose
   - Alternatively could have a district amount + the normal amount instead, a bit messy but could work well
 - Add feature to transfer items from district to district, mimmicing space platform transfers
-- Need indication of cyclic recipes finally, used a lot on the space platform
 - Need an 'are you sure' dialog for deleting a District, resetting preferences, etc
 - Check out if there is any way to use key combos like Q to pick items/entities
 - Disable SA-specific features by checking feature flags in the right spots
@@ -98,6 +98,7 @@
 - Plant harvest_emissions and AgriTower growth_grid_tile_size are missing
 - RocketSiloRocket::research_products missing from API
 - No way to read quality color for use in tooltips
+- global_effects on planets, yet another effect that needs to be considered
 
 ## Release
 

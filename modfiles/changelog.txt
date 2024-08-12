@@ -28,6 +28,7 @@ Date: 20. 07. 2024
     - TODO districts -> surface conditions, pollution?
     - Added support for using machines, beacons, and modules of different quality levels
     - Added support for the new agriculture tower and its recipes
+    - Added indication of cyclic/catalyst ingredients in recipes, making it easier to plan their logistics
   Changes:
     - Adjusted mod for new module mechanics such as beacon profiles, machine base productivity, new productivity researches, maximum recipe productivity, and more
     - Changed the utility dialog function to request missing item delivery to create a new logistic section instead of having construction bots fulfill the order
