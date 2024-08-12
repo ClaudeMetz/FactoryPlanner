@@ -60,7 +60,6 @@
 - Add feature to transfer items from district to district, mimmicing space platform transfers
 - Need indication of cyclic recipes finally, used a lot on the space platform
 - Need an 'are you sure' dialog for deleting a District, resetting preferences, etc
-- Make recipe picker icons normal sized (40x40 instead of 36x36)
 - Check out if there is any way to use key combos like Q to pick items/entities
 - Disable SA-specific features by checking feature flags in the right spots
 - Convert solver to be timescale-independent, and only apply timescale when displaying results
