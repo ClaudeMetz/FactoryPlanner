@@ -144,19 +144,20 @@ local function create_recipe_group_box(modal_data, relevant_group, translations)
     local group_sprite = flow_group.add{type="sprite-button", sprite=("item-group/" .. relevant_group.proto.name),
         tooltip=relevant_group.proto.localised_name, style="transparent_slot"}
     group_sprite.style.size = 64
-    group_sprite.style.right_margin = 12
 
-    local frame_recipes = flow_group.add{type="frame", direction="horizontal", style="fp_frame_light_slots_small"}
+    flow_group.add{type="empty-widget", style="flib_horizontal_pusher"}
+    local frame_recipes = flow_group.add{type="frame", direction="horizontal", style="fp_frame_light_slots"}
+    frame_recipes.style.width = MAGIC_NUMBERS.recipes_per_row * 40
     local table_recipes = frame_recipes.add{type="table", column_count=MAGIC_NUMBERS.recipes_per_row,
-        style="fp_table_slots_small"}
+        style="slot_table"}
 
     for _, recipe in pairs(relevant_group.recipes) do
         local recipe_proto = recipe.proto
         local recipe_name = recipe_proto.name
 
-        local style = "flib_slot_button_green_small"
-        if not recipe.enabled then style = "flib_slot_button_yellow_small"
-        elseif recipe_proto.hidden then style = "flib_slot_button_default_small" end
+        local style = "flib_slot_button_green"
+        if not recipe.enabled then style = "flib_slot_button_yellow"
+        elseif recipe_proto.hidden then style = "flib_slot_button_default" end
 
         local button_tags = {mod="fp", on_gui_click="pick_recipe", recipe_proto_id=recipe_proto.id}
         local button_recipe = nil
@@ -218,7 +219,7 @@ local function apply_recipe_filter(player, search_term)
         group.frame.visible = any_group_recipe_visible
         any_recipe_visible = any_recipe_visible or any_group_recipe_visible
 
-        local button_table_height = math.ceil(table_size(group.recipe_buttons) / MAGIC_NUMBERS.recipes_per_row) * 36
+        local button_table_height = math.ceil(table_size(group.recipe_buttons) / MAGIC_NUMBERS.recipes_per_row) * 40
         local additional_height = math.max(88, button_table_height + 24) + 4
         desired_scroll_pane_height = desired_scroll_pane_height + additional_height
     end

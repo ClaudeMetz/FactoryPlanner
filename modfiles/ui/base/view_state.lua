@@ -155,7 +155,7 @@ function view_state.generate_metadata(player)
     return {
         processor = processors[current_view_name],
         timescale_inverse = 1 / view_states.timescale,
-        timescale_string = {"fp." .. TIMESCALE_MAP[view_states.timescale]},
+        timescale_string = {"fp.unit_" .. TIMESCALE_MAP[view_states.timescale]},
         adjusted_margin_of_error = MAGIC_NUMBERS.margin_of_error * view_states.timescale,
         belt_or_lane = belts_or_lanes:sub(1, -2),
         round_button_numbers = round_button_numbers,

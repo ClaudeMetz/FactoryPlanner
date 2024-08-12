@@ -220,7 +220,7 @@ Version: 1.1.62
 Date: 27. 04. 2023
   Bugfixes:
     - Fixed that specifying amounts on top level ingredients was disabled when the matrix solver was enabled
-    - Fixed a crash when selecting a specific nexelit recipe from PyMods
+    - Fixed a crash when selecting a specific Nexelit recipe from PyMods
     - Fixed that the tutorial mode toggle was always re-activated during migration
     - Fixed that repairing a machine with invalid fuel would not work properly
     - Fixed that a couple of strings could not be localised
