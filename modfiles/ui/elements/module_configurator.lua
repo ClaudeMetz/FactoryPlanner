@@ -78,8 +78,8 @@ local function handle_module_selection(player, tags, event)
     elseif new_module then -- choosing a new module on an empty line
         local slider = event.element.parent["fp_slider_module_amount"]
         local module_proto = MODULE_NAME_MAP[new_module.name]
-        local module = Module.init(module_proto, slider.slider_value)
-        module.quality_proto = prototyper.util.find("qualities", new_module.quality, nil)
+        local quality_proto = prototyper.util.find("qualities", new_module.quality, nil)
+        local module = Module.init(module_proto, slider.slider_value, quality_proto)
         module_set:insert(module)
     end
 

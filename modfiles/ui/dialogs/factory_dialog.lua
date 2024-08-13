@@ -12,8 +12,8 @@ local function open_factory_dialog(player, modal_data)
         tooltip={"fp.factory_dialog_name_tt"}}
 
     local factory_name = (modal_data.factory ~= nil) and modal_data.factory.name or ""
-    local textfield_name = flow_name.add{type="textfield", text=factory_name, icon_selector=true}
-    textfield_name.style.width = 250
+    local textfield_name = flow_name.add{type="textfield", text=factory_name, icon_selector=true,
+        tags={mod="fp", on_gui_confirmed="factory_name"}}
     textfield_name.style.left_margin = 16
     textfield_name.focus()
     modal_elements["factory_name"] = textfield_name
@@ -39,6 +39,17 @@ end
 
 -- ** EVENTS **
 local listeners = {}
+
+listeners.gui = {
+    on_gui_confirmed = {
+        {
+            name = "factory_name",
+            handler = (function(player, _, event)
+                util.raise.close_dialog(player, "submit")
+            end)
+        }
+    }
+}
 
 listeners.dialog = {
     dialog = "factory",

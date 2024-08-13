@@ -14,11 +14,12 @@ script.register_metatable("Module", Module)
 
 ---@param proto FPModulePrototype | FPPackedPrototype
 ---@param amount integer
+---@param quality_proto FPQualityPrototype
 ---@return Module
-local function init(proto, amount)
+local function init(proto, amount, quality_proto)
     local object = Object.init({
         proto = proto,
-        quality_proto = prototyper.defaults.get_fallback("qualities"),
+        quality_proto = quality_proto,
         amount = amount,
 
         total_effects = nil,

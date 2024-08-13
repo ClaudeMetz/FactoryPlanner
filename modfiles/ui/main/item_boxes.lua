@@ -81,9 +81,9 @@ local function refresh_item_box(player, factory, show_floor_items, item_category
             local percentage_string = util.format.number(satisfied_percentage, 3)
             satisfaction_line = {"", "\n", {"fp.bold_label", (percentage_string .. "%")}, " ", {"fp.satisfied"}}
 
-            if satisfied_percentage <= 0 then style = "flib_slot_button_red"
-            elseif satisfied_percentage < 100 then style = "flib_slot_button_yellow"
-            else style = "flib_slot_button_green" end
+            if percentage_string == "0" then style = "flib_slot_button_red"
+            elseif percentage_string == "100" then style = "flib_slot_button_green"
+            else style = "flib_slot_button_yellow" end
         end
 
         local name_line = {"fp.tt_title", item.proto.localised_name}

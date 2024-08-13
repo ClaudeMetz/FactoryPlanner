@@ -619,9 +619,7 @@ function matrix_engine.get_line_aggregate(line_data, player_index, floor_id, mac
     -- hacky workaround for recipes with zero energy - this really messes up the matrix
     if energy==0 then energy=0.000000001 end
     local time_per_craft = energy / (machine_speed * speed_multiplier)
-    local unmodified_crafts_per_second = 1 / time_per_craft
-    local in_game_crafts_per_second = math.min(unmodified_crafts_per_second, 60)
-    local total_crafts_per_timescale = timescale * machine_count * in_game_crafts_per_second
+    local total_crafts_per_timescale = timescale * machine_count * (1 / time_per_craft)
     line_aggregate.production_ratio = total_crafts_per_timescale
     line_aggregate.uncapped_production_ratio = total_crafts_per_timescale
     for _, product in pairs(recipe_proto.products) do
@@ -767,9 +765,9 @@ function matrix_engine.to_reduced_row_echelon_form(m)
             end
 
             -- find nonzero cols in this row for the elimination step
-            nonzero_pivot_cols = {}
+            local nonzero_pivot_cols = {}
             for update_col = curr_col+1, num_cols do
-                curr_pivot_col_value = m[pivot_row][update_col]
+                local curr_pivot_col_value = m[pivot_row][update_col]
                 if curr_pivot_col_value ~= 0 then
                     nonzero_pivot_cols[update_col] = curr_pivot_col_value
                 end
