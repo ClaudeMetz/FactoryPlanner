@@ -130,7 +130,7 @@ local function open_beacon_dialog(player, modal_data)
     update_dialog_submit_button(modal_data)
 
     -- Modules
-    modal_data.submit_checker = update_dialog_submit_button
+    modal_data.submit_checker = "beacon_submit_checker"
     module_configurator.add_modules_flow(content_frame, modal_data)
     module_configurator.refresh_modules_flow(player, false)
 end
@@ -202,6 +202,10 @@ listeners.dialog = {
     end),
     open = open_beacon_dialog,
     close = close_beacon_dialog
+}
+
+listeners.global = {
+    beacon_submit_checker = update_dialog_submit_button
 }
 
 listeners.misc = {

@@ -9,8 +9,6 @@
   - Can't prohibit two of the same module because they could have different qualities
   - Probably need to remove it again after the fact with a warning message
 - Translation seems to not reload when loading a save, maybe other times too
-- Warning about serializing lua function, maybe when dialog is open?
-  - Steve ran into with beacon dialog open, plus a module chooseElem open
 - Rocket silo power usage seems very low, likely doesn't consider launch usage
 - Rocket silo recipes don't re-run recipe formatting because they are deepcopies, but they should do so probably
 - Differences between trad and matrix solver related to quality
