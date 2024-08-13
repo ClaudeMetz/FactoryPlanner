@@ -188,15 +188,16 @@ function Line:apply_mb_defaults(player)
     local mb_defaults = util.globals.preferences(player).mb_defaults
     local machine_module, secondary_module = mb_defaults.machine, mb_defaults.machine_secondary
     local module_set, module_limit = self.machine.module_set, self.machine.proto.module_limit
+    local default_quality = prototyper.defaults.get_fallback("qualities")  --[[@as FPQualityPrototype]]
     local message = nil
 
     if machine_module and self.machine.module_set:check_compatibility(machine_module) then
-        local module = Module.init(machine_module, module_limit)
+        local module = Module.init(machine_module, module_limit, default_quality)
         module_set:insert(module)
         module_set:normalize{effects=true}
 
     elseif secondary_module and self.machine.module_set:check_compatibility(secondary_module) then
-        local module = Module.init(secondary_module, module_limit)
+        local module = Module.init(secondary_module, module_limit, default_quality)
         module_set:insert(module)
         module_set:normalize{effects=true}
 
@@ -213,7 +214,7 @@ function Line:apply_mb_defaults(player)
         blank_beacon.amount = beacon_count
 
         if blank_beacon.module_set:check_compatibility(beacon_module_proto) then
-            local module = Module.init(beacon_module_proto, beacon_proto.module_limit)
+            local module = Module.init(beacon_module_proto, beacon_proto.module_limit, default_quality)
             blank_beacon.module_set:insert(module)
             self:set_beacon(blank_beacon)  -- summarizes effects on its own
 

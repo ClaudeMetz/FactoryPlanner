@@ -32,7 +32,7 @@ local function create_base_modal_dialog(player, dialog_settings, modal_data)
             modal_elements.search_textfield = searchfield
             modal_dialog.set_searchfield_state(player)
 
-            local search_button = flow_title_bar.add{type="sprite-button", tooltip={"fp.search_button_tt"},
+            flow_title_bar.add{type="sprite-button", tooltip={"fp.search_button_tt"},
                 tags={mod="fp", on_gui_click="focus_modal_searchfield"}, sprite="utility/search",
                 style="fp_button_frame", mouse_button_filter={"left"}}
         end
