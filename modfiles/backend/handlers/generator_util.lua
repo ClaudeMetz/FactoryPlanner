@@ -158,23 +158,15 @@ function generator_util.format_recipe(recipe_proto, products, main_product, ingr
 end
 
 
--- Multiplies recipe products and ingredients by the given amount
----@param recipe_proto FPRecipePrototype
+---@param item_list RecipeItem[]
 ---@param factor number
-function generator_util.multiply_recipe(recipe_proto, factor)
-    ---@param item_list RecipeItem[]
-    local function multiply_items(item_list)
-        for _, item in pairs(item_list) do
-            item.amount = item.amount * factor
-            if item.proddable_amount ~= nil then
-                item.proddable_amount = item.proddable_amount * factor
-            end
+function generator_util.multiply_recipe_items(item_list, factor)
+    for _, item in pairs(item_list) do
+        item.amount = item.amount * factor
+        if item.proddable_amount ~= nil then
+            item.proddable_amount = item.proddable_amount * factor
         end
     end
-
-    multiply_items(recipe_proto.products)
-    multiply_items(recipe_proto.ingredients)
-    recipe_proto.energy = recipe_proto.energy * factor
 end
 
 --[[ -- Adds the additional proto's ingredients, products and energy to the main proto
