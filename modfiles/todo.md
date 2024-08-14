@@ -8,7 +8,6 @@
 - You can select two of the same module if you want, due to the new quality stuff
   - Can't prohibit two of the same module because they could have different qualities
   - Probably need to remove it again after the fact with a warning message
-- Translation seems to not reload when loading a save, maybe other times too
 - Rocket silo power usage seems very low, likely doesn't consider launch usage
 - Rocket silo recipes don't re-run recipe formatting because they are deepcopies, but they should do so probably
 
@@ -18,7 +17,6 @@
   - Could at least give the probabilities maybe? It's a lot of tooltip clutter, and potentially solver clutter
   - There's bigger ideas where you could enter X quality Y items per timescale and it would backsolve it
   - Plus more such ideas, but they seem kinda out there currently, need to play with quality myself first
-- Item Spoiling - what should my interaction with it be?
 - Default modules/beacons is awkward with quality since you can't specify it (atm)
   - Feature is still neat, but maybe time to axe it? Or make it work better somehow
 - Default machines is awkward with quality as you can't specify it
@@ -55,11 +53,18 @@
   - Should have a 'multiply District amount by X' variable too so you can overproduce on purpose
   - Alternatively could have a district amount + the normal amount instead, a bit messy but could work well
 - Add feature to transfer items from district to district, mimmicing space platform transfers
+  - In addition, it would be good if the mod could calculate your rocket and platform needs for the given items
+  - Not super simple, needs constraints given by the user, like platform specs, and maybe others
+  - Otherwise there won't be a unique solution. Kinda orthogonal in general, but would be helpful to have
 - Need an 'are you sure' dialog for deleting a District, resetting preferences, etc
 - Check out if there is any way to use key combos like Q to pick items/entities
 - Disable SA-specific features by checking feature flags in the right spots
 - Convert solver to be timescale-independent, and only apply timescale when displaying results
   - Basically means calculate everything as /s, like I do for Districts already
+- Have arithmetic in textfields using game.evaluate_expression
+  - Kinda annoying since I need to do a lot of handling myself, but at least the most annoying part is done for me
+- Turn item spoilage results into recipes since mods will use that as a critical path for sure
+- Add support for burnt_result items
 
 ## Low Priority
 
@@ -79,6 +84,9 @@
 - When context menus come in, make sure to filter actions properly for all item buttons
   - This is a bit messy with entity-type items currently and can't easily be fixed atm
 - Come up with an icon for effects that are limited up or down, instead of saying '(limited)'
+- Item Spoiling - Not super much to do without a lot of effort.
+  - Could do a thing where the user enters the time between steps and it takes the spoilage that incurrs into account
+  - Maybe some other stuff too, but I'll have to play with it to figure this out. Low priority anyways
 
 ## Waiting on
 
@@ -88,11 +96,8 @@
 - Constant combinator `sections` format rename
 - API to open things in Factoriopedia
 - Disabled sprite buttons fade their icons, can't be turned off
-- Surface prototypes missing surface_properties read for generator, add surfaces to locations properly
 - No way to show quality on sprite buttons, which is essential in tons of places
   - Same thing for quality color, which should be used in relevant tooltips
-- Plant harvest_emissions and AgriTower growth_grid_tile_size are missing
-- RocketSiloRocket::research_products missing from API
 - No way to read quality color for use in tooltips
 - global_effects on planets, yet another effect that needs to be considered
 

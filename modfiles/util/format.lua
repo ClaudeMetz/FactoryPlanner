@@ -90,6 +90,7 @@ end
 ---@param ticks number
 ---@return LocalisedString formatted_time
 function _format.format_time(ticks)
+    if ticks == 0 then return {"fp.none"} end
     local seconds = ticks / 60
 
     local minutes = math.floor(seconds / 60)

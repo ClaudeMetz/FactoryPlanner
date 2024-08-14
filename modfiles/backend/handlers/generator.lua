@@ -211,11 +211,10 @@ function generator.machines.generate()
         elseif proto.type == "agricultural-tower" --[[ and not proto.hidden ]] then
             local machine = generate_category_entry(proto.type, proto, nil)
             if machine then
-                --[[ local growth_area_width = (proto.growth_grid_tile_size * 2) + 1
-                local available_tiles = growth_area_width * growth_area_width - 1 ]]
-                -- deal with energy_usage, crane_energy_usage
-                machine.speed = 48--available_tiles
-                machine.energy_usage = 0  -- implemented later
+                local growth_area_width = (proto.growth_grid_tile_size * 2) + 1
+                local available_tiles = growth_area_width * growth_area_width - 1
+                machine.speed = available_tiles
+                machine.energy_usage = 0  -- implemented later: energy_usage, crane_energy_usage
                 insert_prototype(machines, machine, proto.type)
             end
         end
@@ -485,8 +484,7 @@ function generator.recipes.generate()
 
             -- Add special research rocket recipe
             local research_recipe = ftable.deep_copy(parts_recipe)
-            --local research_products = proto.rocket_entity_prototype.research_products
-            local research_products = {{type = "item", name = "space-science-pack", amount = 10}}
+            local research_products = proto.rocket_entity_prototype.research_products
             local main_proto = game.item_prototypes[research_products[1].name]
             research_recipe.name = "impostor-" .. main_proto.name .. "-rocket"
             research_recipe.localised_name = {"", main_proto.localised_name, " ", {"fp.research_rocket"}}
@@ -1124,10 +1122,10 @@ function generator.locations.generate()
         end
     end
 
-    --[[ for _, proto in pairs(game.surface_prototypes) do
+    for _, proto in pairs(game.surface_prototypes) do
         local location = build_location(proto, "surface")
         if location then insert_prototype(locations, location, nil) end
-    end ]]
+    end
 
     return locations
 end
