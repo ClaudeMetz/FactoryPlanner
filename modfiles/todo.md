@@ -9,7 +9,6 @@
   - Can't prohibit two of the same module because they could have different qualities
   - Probably need to remove it again after the fact with a warning message
 - Rocket silo power usage seems very low, likely doesn't consider launch usage
-- Rocket silo recipes don't re-run recipe formatting because they are deepcopies, but they should do so probably
 
 ## Uncertainty Sphere
 
@@ -28,9 +27,6 @@
   - Having a machine number just doesn't make sense for it, so need to adjust solver and UI
     to allow for machines that just don't have a machine amount. Useful for oil mining too.
   - Missing energy and pollution production, is different to normal entities
-- Better infinite mining drill support
-  - Kind of incredibly annoying, since there is nothing I can really calculate about it
-  - Could still make it so it shows the oil patch as an ingredient without amount (same for offshore pumps)
 - Move utilities button to factory info, alongside new 'options'/'configuration' dialog, for recipe prod settings
   - Should have the ability to manually configure recipe productivity boni somewhere
   - Or, getting crazy, re-add the production bar above the table and have factory info stuff there
@@ -87,11 +83,13 @@
 - Item Spoiling - Not super much to do without a lot of effort.
   - Could do a thing where the user enters the time between steps and it takes the spoilage that incurrs into account
   - Maybe some other stuff too, but I'll have to play with it to figure this out. Low priority anyways
+- Better infinite mining drill support
+  - Kind of incredibly annoying, since there is nothing I can really calculate about it
+  - Could still make it so it shows the oil patch as an ingredient without amount (same for offshore pumps)
 
 ## Waiting on
 
 - Sliders still bugged, this is stupid https://forums.factorio.com/viewtopic.php?p=516440#p516440
-- Base game steals normal key combos which is annoying (ctrl+f among others)
 - Uncomment all the `.hidden` uses that were missing from the API
 - Constant combinator `sections` format rename
 - API to open things in Factoriopedia
