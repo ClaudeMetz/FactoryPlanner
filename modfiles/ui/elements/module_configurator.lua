@@ -66,11 +66,19 @@ local function handle_module_selection(player, tags, event)
     local module_set = util.globals.modal_data(player).module_set
     local new_module = event.element.elem_value
 
+    local function check_existing(module)
+        if module_set:find({proto=module.proto, quality_proto=module.quality_proto}) then
+            util.cursor.create_flying_text(player, {"fp.configurator_duplicate_module"})
+            return true
+        end
+    end
+
     if tags.module_id then  -- editing an existing module
         local module = OBJECT_INDEX[tags.module_id]  --[[@as Module]]
         if new_module then  -- changed to another module
             module.proto = MODULE_NAME_MAP[new_module.name]
             module.quality_proto = prototyper.util.find("qualities", new_module.quality, nil)
+            if check_existing(module) then module_set:remove(module) end
             module:summarize_effects()
         else  -- removed module
             module_set:remove(module)
@@ -80,7 +88,7 @@ local function handle_module_selection(player, tags, event)
         local module_proto = MODULE_NAME_MAP[new_module.name]
         local quality_proto = prototyper.util.find("qualities", new_module.quality, nil)
         local module = Module.init(module_proto, slider.slider_value, quality_proto)
-        module_set:insert(module)
+        if not check_existing(module) then module_set:insert(module) end
     end
 
     module_set:normalize({effects=true})

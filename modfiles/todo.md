@@ -5,9 +5,6 @@
 
 ## Bugs
 
-- You can select two of the same module if you want, due to the new quality stuff
-  - Can't prohibit two of the same module because they could have different qualities
-  - Probably need to remove it again after the fact with a warning message
 - Rocket silo power usage seems very low, likely doesn't consider launch usage
 
 ## Uncertainty Sphere
@@ -33,6 +30,8 @@
   - Could shuffle more things around, like move buttons back down, other stuff up top, if I have another bar
   - Another advantage is that the factory list on the left can more space for when multiplayer stuff hits
   - Could drop the per-factory timescale setting and just have it be global. Makes layout easier too
+    - For that, convert solver to be timescale-independent, and only apply timescale when displaying results
+    - Basically means calculate everything as /s, like I do for Districts already
 - Surface conditions, based on Districts
   - It's too messy to not allow condition-incompatible stuff, since it'll need to be addressed on any planet change
   - Instead, mark incompatible recipes/machines red in their dialogs and in the prod table, and disable their line
@@ -55,8 +54,6 @@
 - Need an 'are you sure' dialog for deleting a District, resetting preferences, etc
 - Check out if there is any way to use key combos like Q to pick items/entities
 - Disable SA-specific features by checking feature flags in the right spots
-- Convert solver to be timescale-independent, and only apply timescale when displaying results
-  - Basically means calculate everything as /s, like I do for Districts already
 - Have arithmetic in textfields using game.evaluate_expression
   - Kinda annoying since I need to do a lot of handling myself, but at least the most annoying part is done for me
 - Turn item spoilage results into recipes since mods will use that as a critical path for sure
