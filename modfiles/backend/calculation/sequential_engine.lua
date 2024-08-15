@@ -129,7 +129,7 @@ local function update_line(line_data, aggregate)
         machine_proto, recipe_proto, fuel_proto, machine_count, total_effects)
 
     local fuel_amount = nil
-    if fuel_proto ~= nil then  -- Seeing a fuel_proto here means it needs to be re-calculated
+    if fuel_proto ~= nil then
         fuel_amount = solver_util.determine_fuel_amount(energy_consumption, machine_proto.burner,
             fuel_proto.fuel_value, timescale)
 
@@ -139,6 +139,12 @@ local function update_line(line_data, aggregate)
 
         -- Add fuel to the aggregate, consuming this line's byproducts first, if possible
         structures.class.balance_items(fuel_class, aggregate, "Byproduct", "Product")
+
+        if fuel_proto.burnt_result then
+            local burnt = {type="item", name=fuel_proto.burnt_result, amount=fuel_amount}
+            structures.class.add(Byproduct, burnt)  -- add to line
+            structures.aggregate.add(aggregate, "Byproduct", burnt)  -- add to floor
+        end
 
         energy_consumption = 0  -- set electrical consumption to 0 when fuel is used
 
