@@ -6,7 +6,7 @@ local _gui = { switch = {}, mod = {} }
 -- Adds an on/off-switch including a label with tooltip to the given flow
 -- Automatically converts boolean state to the appropriate switch_state
 ---@param parent_flow LuaGuiElement
----@param action string
+---@param action string?
 ---@param additional_tags Tags
 ---@param state SwitchState | boolean
 ---@param caption LocalisedString?
@@ -214,6 +214,31 @@ function _gui.format_emissions(emissions)
     end
     if #emissions_list == 1 then table.insert(emissions_list, {"fp.emissions_none"}) end
     return emissions_list
+end
+
+
+local expression_variables = {k=1000, K=1000, m=1000000, M=1000000, g=1000000000, G=1000000000}
+
+---@param textfield LuaGuiElement
+---@return number? expression
+function _gui.parse_expression_field(textfield)
+    local expression = nil
+    pcall(function() expression = game.evaluate_expression(textfield.text, expression_variables) end)
+    return expression
+end
+
+---@param textfield LuaGuiElement
+function _gui.update_expression_field(textfield)
+    local expression = _gui.parse_expression_field(textfield)
+
+    textfield.style = (textfield.text ~= "" and expression == nil) and "invalid_value_textfield" or "textbox"
+    textfield.style.width = textfield.tags.width  --[[@as number]]  -- this is stupid but styles work out that way
+end
+
+---@param textfield LuaGuiElement
+function _gui.confirm_expression_field(textfield)
+    local expression = _gui.parse_expression_field(textfield)
+    if expression then textfield.text = tostring(expression) end
 end
 
 

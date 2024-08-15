@@ -17,17 +17,6 @@ local function refresh_fuel_frame(player)
     modal_elements.fuel_button.elem_filters = machine:compile_fuel_filter()
 end
 
-local function refresh_limit_frame(player)
-    local modal_data = util.globals.modal_data(player)  --[[@as table]]
-    local textfield = modal_data.modal_elements.limit_textfield
-    local switch = modal_data.modal_elements.force_limit_switch
-
-    local machine = modal_data.object
-    textfield.text = tostring(machine.limit or "")
-    switch.switch_state = util.gui.switch.convert_to_state(machine.force_limit)
-    switch.enabled = (machine.limit ~= nil)
-end
-
 
 local function create_choice_frame(parent_frame, label_caption)
     local frame_choices = parent_frame.add{type="frame", direction="horizontal", style="fp_frame_bordered_stretch"}
@@ -71,24 +60,28 @@ end
 
 
 local function add_limit_frame(parent_frame, player)
-    local modal_elements = util.globals.modal_data(player).modal_elements
+    local modal_data = util.globals.modal_data(player)  --[[@as table]]
+    local machine = modal_data.object
 
     local frame_limit = parent_frame.add{type="frame", direction="horizontal", style="fp_frame_module"}
     frame_limit.add{type="label", caption={"fp.info_label", {"fp.machine_limit"}},
         tooltip={"fp.machine_limit_tt"}, style="semibold_label"}
 
-    local textfield_limit = frame_limit.add{type="textfield", tags={mod="fp", on_gui_text_changed="machine_limit"}}
-    textfield_limit.style.width = 45
-    textfield_limit.style.right_margin = 12
-    util.gui.setup_numeric_textfield(textfield_limit, true, false)
-    modal_elements["limit_textfield"] = textfield_limit
+    local textfield_width = 45
+    local textfield_limit = frame_limit.add{type="textfield", tags={mod="fp", on_gui_text_changed="machine_limit",
+        on_gui_confirmed="machine_limit", width=textfield_width}, tooltip={"fp.expression_textfield"},
+        text=machine.limit}
+    textfield_limit.lose_focus_on_confirm = true
+    textfield_limit.style.width = textfield_width
+    modal_data.modal_elements["limit_textfield"] = textfield_limit
 
-    frame_limit.add{type="label", caption={"fp.info_label", {"fp.machine_force_limit"}},
+    local label_force = frame_limit.add{type="label", caption={"fp.info_label", {"fp.machine_force_limit"}},
         tooltip={"fp.machine_force_limit_tt"}, style="semibold_label"}
-    local switch_force_limit = util.gui.switch.add_on_off(frame_limit, "machine_force_limit", {}, "left")
-    modal_elements["force_limit_switch"] = switch_force_limit
+    label_force.style.left_margin = 12
 
-    refresh_limit_frame(player)
+    local state =  util.gui.switch.convert_to_state(machine.force_limit)
+    local switch_force_limit = util.gui.switch.add_on_off(frame_limit, nil, {}, state)
+    modal_data.modal_elements["force_limit_switch"] = switch_force_limit
 end
 
 
@@ -134,24 +127,6 @@ local function handle_fuel_choice(player, _, event)
     end
 end
 
-local function change_machine_limit(player, _, event)
-    local machine = util.globals.modal_data(player).object
-
-    machine.limit = tonumber(event.element.text)
-    if machine.limit == nil then machine.force_limit = true end
-
-    refresh_limit_frame(player)
-end
-
-local function change_machine_force_limit(player, _, event)
-    local machine = util.globals.modal_data(player).object
-
-    local switch_state = util.gui.switch.convert_to_boolean(event.element.switch_state)
-    machine.force_limit = switch_state
-
-    refresh_limit_frame(player)
-end
-
 
 local function open_machine_dialog(player, modal_data)
     modal_data.object = OBJECT_INDEX[modal_data.machine_id]  --[[@as Machine]]
@@ -184,6 +159,8 @@ local function close_machine_dialog(player, action)
 
     if action == "submit" then
         machine.module_set:normalize({sort=true})
+        machine.limit = util.gui.parse_expression_field(modal_data.modal_elements.limit_textfield)
+        machine.force_limit = util.gui.switch.convert_to_state(modal_data.modal_elements.force_limit_switch)
 
         solver.update(player)
         util.raise.refresh(player, "factory")
@@ -213,13 +190,17 @@ listeners.gui = {
     on_gui_text_changed = {
         {
             name = "machine_limit",
-            handler = change_machine_limit
+            handler = (function(_, _, event)
+                util.gui.update_expression_field(event.element)
+            end)
         }
     },
-    on_gui_switch_state_changed = {
+    on_gui_confirmed = {
         {
-            name = "machine_force_limit",
-            handler = change_machine_force_limit
+            name = "machine_limit",
+            handler = (function(_, _, event)
+                util.gui.confirm_expression_field(event.element)
+            end)
         }
     }
 }

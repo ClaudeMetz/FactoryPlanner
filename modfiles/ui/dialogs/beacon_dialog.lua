@@ -21,11 +21,13 @@ local function add_beacon_frame(parent_flow, modal_data)
     flow_beacon.add{type="label", caption={"fp.info_label", {"fp.amount"}}, tooltip={"fp.beacon_amount_tt"},
         style="semibold_label"}
     local beacon_amount = (beacon.amount ~= 0) and tostring(beacon.amount) or ""
+    local amount_width = 40
     local textfield_amount = flow_beacon.add{type="textfield", text=beacon_amount,
-        tags={mod="fp", on_gui_text_changed="beacon_amount"}}
-    util.gui.setup_numeric_textfield(textfield_amount, false, false)
+        tags={mod="fp", on_gui_text_changed="beacon_amount", on_gui_confirmed="beacon_amount",
+        width=amount_width}, tooltip={"fp.expression_textfield"}}
+    textfield_amount.lose_focus_on_confirm = true
+    textfield_amount.style.width = amount_width
     util.gui.select_all(textfield_amount)
-    textfield_amount.style.width = 40
     modal_elements["beacon_amount"] = textfield_amount
 
     local label_profile = flow_beacon.add{type="label", tooltip={"fp.beacon_profile_tt"}}
@@ -34,10 +36,12 @@ local function add_beacon_frame(parent_flow, modal_data)
 
     flow_beacon.add{type="label", caption={"fp.info_label", {"fp.beacon_total"}}, tooltip={"fp.beacon_total_tt"},
         style="semibold_label"}
-    local textfield_total = flow_beacon.add{type="textfield", name="fp_textfield_beacon_total_amount",
-        text=tostring(beacon.total_amount or "")}
-    util.gui.setup_numeric_textfield(textfield_total, true, false)
-    textfield_total.style.width = 40
+    local total_width = 40
+    local textfield_total = flow_beacon.add{type="textfield", text=tostring(beacon.total_amount or ""),
+        tags={mod="fp", on_gui_text_changed="beacon_total_amount", on_gui_confirmed="beacon_total_amount",
+        width=total_width}, tooltip={"fp.expression_textfield"}}
+    textfield_total.lose_focus_on_confirm = true
+    textfield_total.style.width = total_width
     modal_elements["beacon_total"] = textfield_total
 
     local button_total = flow_beacon.add{type="sprite-button", tags={mod="fp", on_gui_click="use_beacon_selector"},
@@ -55,7 +59,7 @@ local function update_profile_label(modal_data)
 end
 
 local function update_dialog_submit_button(modal_data)
-    local beacon_amount = tonumber(modal_data.modal_elements.beacon_amount.text)
+    local beacon_amount = util.gui.parse_expression_field(modal_data.modal_elements.beacon_amount)
 
     local message = nil
     if not beacon_amount or beacon_amount == 0 then
@@ -88,11 +92,12 @@ local function handle_beacon_change(player, _, _)
     module_configurator.refresh_modules_flow(player, false)
 end
 
-local function handle_amount_change(player, _, _)
+local function handle_amount_change(player, _, event)
     local modal_data = util.globals.modal_data(player)  --[[@as table]]
-    modal_data.object.amount = tonumber(modal_data.modal_elements.beacon_amount.text) or 0
+    modal_data.object.amount = util.gui.parse_expression_field(modal_data.modal_elements.beacon_amount) or 0
     modal_data.module_set:normalize({effects=true})
 
+    util.gui.update_expression_field(event.element)
     update_profile_label(modal_data)
     module_configurator.refresh_modules_flow(player, false)
     update_dialog_submit_button(modal_data)
@@ -141,7 +146,7 @@ local function close_beacon_dialog(player, action)
 
     if action == "submit" then
         local beacon = modal_data.object
-        local total_amount = tonumber(modal_data.modal_elements.beacon_total.text) or 0
+        local total_amount = util.gui.parse_expression_field(modal_data.modal_elements.beacon_total) or 0
         beacon.total_amount = (total_amount > 0) and total_amount or nil
 
         solver.update(player, factory)
@@ -172,6 +177,26 @@ listeners.gui = {
         {
             name = "beacon_amount",
             handler = handle_amount_change
+        },
+        {
+            name = "beacon_total_amount",
+            handler = (function(_, _, event)
+                util.gui.update_expression_field(event.element)
+            end)
+        }
+    },
+    on_gui_confirmed = {
+        {
+            name = "beacon_amount",
+            handler = (function(_, _, event)
+                util.gui.confirm_expression_field(event.element)
+            end)
+        },
+        {
+            name = "beacon_total_amount",
+            handler = (function(_, _, event)
+                util.gui.confirm_expression_field(event.element)
+            end)
         }
     },
     on_gui_click = {

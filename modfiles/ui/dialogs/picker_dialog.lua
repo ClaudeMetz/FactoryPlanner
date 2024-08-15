@@ -197,7 +197,7 @@ end
 local function sync_amounts(modal_data)
     local modal_elements = modal_data.modal_elements
 
-    local belt_amount = tonumber(modal_elements.belt_amount_textfield.text)
+    local belt_amount = util.gui.parse_expression_field(modal_elements.belt_amount_textfield)
     if belt_amount == nil then
         modal_elements.item_amount_textfield.text = ""
     else
@@ -224,7 +224,7 @@ local function set_belt_proto(modal_data, belt_proto)
         modal_elements.belt_choice_button.elem_value = belt_proto.name
         modal_data.amount_defined_by = modal_data.lob
 
-        local item_amount = tonumber(modal_elements.item_amount_textfield.text)
+        local item_amount = util.gui.parse_expression_field(modal_elements.item_amount_textfield)
         if item_amount ~= nil then
             local throughput = belt_proto.throughput * ((modal_data.lob == "belts") and 1 or 0.5)
             local belt_amount = item_amount / throughput / modal_data.timescale
@@ -256,13 +256,13 @@ end
 
 local function update_dialog_submit_button(modal_elements)
     local item_choice_button = modal_elements.item_choice_button
-    local item_amount_textfield = modal_elements.item_amount_textfield
+    local item_amount = util.gui.parse_expression_field(modal_elements.item_amount_textfield)
 
     local message = nil
     if item_choice_button.sprite == "" then
         message = {"fp.picker_issue_select_item"}
-    -- The item amount will be filled even if the item is defined_by ~= "amount"
-    elseif tonumber(item_amount_textfield.text) == nil then
+    elseif item_amount == nil then
+        -- The item amount will be filled even if the item is defined_by ~= "amount"
         message = {"fp.picker_issue_enter_amount"}
     end
 
@@ -294,22 +294,26 @@ local function add_item_pane(parent_flow, modal_data, item_category, item)
 
     local item_amount = (item and defined_by == "amount") and
         tostring(item.required_amount * modal_data.timescale) or ""
+    local amount_width = 90
     local textfield_amount = flow_amount.add{type="textfield", text=item_amount,
-        tags={mod="fp", on_gui_text_changed="picker_item_amount"}}
-    util.gui.setup_numeric_textfield(textfield_amount, true, false)
-    textfield_amount.style.width = 90
+        tags={mod="fp", on_gui_text_changed="picker_item_amount", on_gui_confirmed="picker_item_amount",
+        width=amount_width}, tooltip={"fp.expression_textfield"}}
+    textfield_amount.lose_focus_on_confirm = true
+    textfield_amount.style.width = amount_width
     modal_elements["item_amount_textfield"] = textfield_amount
 
 
     local flow_belts = create_flow()
-    flow_belts.add{type="label", caption={"fp.amount_by", {"fp.pl_" .. modal_data.lob:sub(1, -2), 2}}}
+    local label = flow_belts.add{type="label", caption={"fp.amount_by", {"fp.pl_" .. modal_data.lob:sub(1, -2), 2}}}
+    label.style.right_margin = 6
 
     local belt_amount = (item and defined_by ~= "amount") and tostring(item.required_amount) or ""
+    local belt_width = 86
     local textfield_belts = flow_belts.add{type="textfield", text=belt_amount,
-        tags={mod="fp", on_gui_text_changed="picker_belt_amount"}}
-    util.gui.setup_numeric_textfield(textfield_belts, true, false)
-    textfield_belts.style.width = 86
-    textfield_belts.style.left_margin = 6
+        tags={mod="fp", on_gui_text_changed="picker_belt_amount", on_gui_confirmed="picker_belt_amount",
+        width=belt_width}, tooltip={"fp.expression_textfield"}}
+    textfield_belts.lose_focus_on_confirm = true
+    textfield_belts.style.width = belt_width
     modal_elements["belt_amount_textfield"] = textfield_belts
 
     flow_belts.add{type="label", caption="x"}
@@ -390,7 +394,7 @@ local function close_picker_dialog(player, action)
     if action == "submit" then
         local defined_by = modal_data.amount_defined_by
         local relevant_textfield_name = ((defined_by == "amount") and "item" or "belt") .. "_amount_textfield"
-        local relevant_amount = tonumber(modal_data.modal_elements[relevant_textfield_name].text) or 0
+        local relevant_amount = util.gui.parse_expression_field(modal_data.modal_elements[relevant_textfield_name]) or 0
         if defined_by == "amount" then relevant_amount = relevant_amount / modal_data.timescale end
 
         local refresh_scope = "factory"
@@ -458,17 +462,32 @@ listeners.gui = {
     on_gui_text_changed = {
         {
             name = "picker_item_amount",
-            handler = (function(player, _, _)
-                local modal_data = util.globals.modal_data(player)
-                update_dialog_submit_button(modal_data.modal_elements)
+            handler = (function(player, _, event)
+                util.gui.update_expression_field(event.element)
+                update_dialog_submit_button(util.globals.modal_elements(player))
             end)
         },
         {
             name = "picker_belt_amount",
-            handler = (function(player, _, _)
+            handler = (function(player, _, event)
                 local modal_data = util.globals.modal_data(player)
+                util.gui.update_expression_field(event.element)
                 sync_amounts(modal_data)  -- defined_by ~= "amount"
                 update_dialog_submit_button(modal_data.modal_elements)
+            end)
+        }
+    },
+    on_gui_confirmed = {
+        {
+            name = "picker_item_amount",
+            handler = (function(_, _, event)
+                util.gui.confirm_expression_field(event.element)
+            end)
+        },
+        {
+            name = "picker_belt_amount",
+            handler = (function(_, _, event)
+                util.gui.confirm_expression_field(event.element)
             end)
         }
     }

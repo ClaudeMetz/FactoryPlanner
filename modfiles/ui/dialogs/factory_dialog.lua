@@ -44,7 +44,7 @@ listeners.gui = {
     on_gui_confirmed = {
         {
             name = "factory_name",
-            handler = (function(player, _, event)
+            handler = (function(player, _, _)
                 util.raise.close_dialog(player, "submit")
             end)
         }
