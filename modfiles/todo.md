@@ -53,8 +53,6 @@
 - Need an 'are you sure' dialog for deleting a District, resetting preferences, etc
 - Check out if there is any way to use key combos like Q to pick items/entities
 - Disable SA-specific features by checking feature flags in the right spots
-- Have arithmetic in textfields using game.evaluate_expression
-  - Kinda annoying since I need to do a lot of handling myself, but at least the most annoying part is done for me
 
 ## Low Priority
 
@@ -94,6 +92,7 @@
   - Same thing for quality color, which should be used in relevant tooltips
 - No way to read quality color for use in tooltips
 - global_effects on planets, yet another effect that needs to be considered
+- game.evaluate_expression should not error but return something else if expression is invalid
 
 ## Release
 
