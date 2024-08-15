@@ -5,7 +5,6 @@
 
 ## Bugs
 
-- Rocket silo power usage seems very low, likely doesn't consider launch usage
 
 ## Uncertainty Sphere
 
@@ -56,8 +55,6 @@
 - Disable SA-specific features by checking feature flags in the right spots
 - Have arithmetic in textfields using game.evaluate_expression
   - Kinda annoying since I need to do a lot of handling myself, but at least the most annoying part is done for me
-- Turn item spoilage results into recipes since mods will use that as a critical path for sure
-- Add support for burnt_result items
 
 ## Low Priority
 
@@ -71,7 +68,7 @@
   - Check refreshes in general, maybe write a tool that flags when multiple refreshes happen in sequence
 - Note when rocket silo launch time becomes a problem for speed; it's not at lower speeds
   - Is quite a complicated feature, especially when productivity is involved. Probably do need it though
-- Picker seemingly doesn't care about the item/fluid dichotomy
+- Rocket silo power usage seems very low, likely doesn't consider launch usage
 - Finally get rid of generic dialogs, even without the extended features
 - Mark entity-type item buttons better visually, somehow
 - When context menus come in, make sure to filter actions properly for all item buttons
@@ -83,6 +80,8 @@
 - Better infinite mining drill support
   - Kind of incredibly annoying, since there is nothing I can really calculate about it
   - Could still make it so it shows the oil patch as an ingredient without amount (same for offshore pumps)
+- Turn item spoilage results into recipes since mods will use that as a critical path for sure
+  - Kinda annoying since it doesn't use machines, just times, so the recipes would be very near useless
 
 ## Waiting on
 
@@ -100,4 +99,5 @@
 
 - Update other language docs for the new `plural_for_parameter` format
 - Update screenshots, maybe for SA even? Or some of both non-SA and SA?
+- Update mod descriptions to mention SA/2.0 general compatibility
 - Custom Arcosphere logic disabled for now
