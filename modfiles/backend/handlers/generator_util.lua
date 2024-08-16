@@ -361,8 +361,6 @@ end ]]
 
 ---@param proto FPMachinePrototype
 function generator_util.check_machine_effects(proto)
-    if proto.effect_receiver == nil then return end
-
     local any_positives = false
     for _, effect in pairs(proto.allowed_effects) do
         if effect == true then any_positives = true; break end

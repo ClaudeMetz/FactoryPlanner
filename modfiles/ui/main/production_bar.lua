@@ -23,7 +23,33 @@ local function refresh_production_bar(player)
     production_bar_elements.factory_flow.visible = (not districts_view)
     production_bar_elements.district_flow.visible = districts_view
 
-    production_bar_elements.refresh_button.enabled = factory_valid
+    local valid_factory_selected = (factory and factory.valid) or false
+
+    if not districts_view then
+        -- Power + Emissions
+        production_bar_elements.power_emissions_flow.visible = valid_factory_selected
+        if valid_factory_selected then
+            local top_floor = factory.top_floor
+            local label_power = production_bar_elements.power_label
+            label_power.caption = {"fp.bold_label", util.format.SI_value(top_floor.power, "W", 3)}
+            label_power.tooltip = {"", {"fp.u_power"}, ": ", util.format.SI_value(top_floor.power, "W", 5)}
+
+            local label_emissions = production_bar_elements.emissions_label
+            label_emissions.caption = {"fp.bold_label", util.format.SI_value(top_floor.emissions, "E/m", 3)}
+            label_emissions.tooltip = util.gui.format_emissions(top_floor.emissions, factory.parent)
+        end
+
+        -- Validity label
+        local invalid_factory_selected = (factory and not factory.valid) or false
+        production_bar_elements.validity_label.visible = invalid_factory_selected
+    end
+
+    production_bar_elements.timescales_table.visible = valid_factory_selected and not districts_view
+    if valid_factory_selected then
+        for _, button in pairs(production_bar_elements.timescales_table.children) do
+            button.toggled = (factory.timescale == button.tags.timescale)
+        end
+    end
 
     util.raise.refresh(player, "view_state")
     ui_state.main_elements.view_state_table.visible = factory_valid
@@ -56,6 +82,19 @@ local function build_production_bar(player)
     local label_factory = flow_factory.add{type="label", caption={"fp.pu_factory", 1}, style="frame_title"}
     label_factory.style.padding = {-1, 8}
 
+    local flow_power_emissions = flow_factory.add{type="flow", direction="horizontal"}
+    flow_power_emissions.style.margin = {3, 0, 0, 12}
+    main_elements.production_bar["power_emissions_flow"] = flow_power_emissions
+    local label_power_value = flow_power_emissions.add{type="label"}
+    main_elements.production_bar["power_label"] = label_power_value
+    flow_power_emissions.add{type="label", caption="|"}
+    local label_emissions_value = flow_power_emissions.add{type="label"}
+    main_elements.production_bar["emissions_label"] = label_emissions_value
+
+    local label_invalid = flow_factory.add{type="label", caption={"fp.invalid"}, style="bold_red_label"}
+    label_invalid.style.top_margin = 4
+    main_elements.production_bar["validity_label"] = label_invalid
+
     -- District bar
     local flow_districts = subheader.add{type="flow", direction="horizontal"}
     main_elements.production_bar["district_flow"] = flow_districts
@@ -69,8 +108,22 @@ local function build_production_bar(player)
     button_add.style.left_margin = 12
     button_add.style.minimal_width = 0
 
-
+    -- Shared bar
     subheader.add{type="empty-widget", style="flib_horizontal_pusher"}
+
+    local table_timescales = subheader.add{type="table", column_count=table_size(TIMESCALE_MAP)}
+    table_timescales.style.horizontal_spacing = 0
+    table_timescales.style.right_margin = 8
+    main_elements.production_bar["timescales_table"] = table_timescales
+
+    for scale, name in pairs(TIMESCALE_MAP) do
+        local button = table_timescales.add{type="button", caption={"", "/", {"fp.unit_" .. name}},
+            tags={mod="fp", on_gui_click="change_timescale", timescale=scale},
+            tooltip={"fp.timescale_tt", {"fp." .. name}}, mouse_button_filter={"left"}}
+        button.style.size = {42, 26}
+        button.style.padding = 0
+    end
+
     util.raise.build(player, "view_state", subheader)
     main_elements["view_state_table"] = subheader["table_view_state"]
 
@@ -106,6 +159,18 @@ listeners.gui = {
                 realm:insert(new_district)
                 util.context.set(player, new_district)
                 util.raise.refresh(player, "all")
+            end)
+        },
+        {
+            name = "change_timescale",
+            handler = (function(player, tags, _)
+                local factory = util.context.get(player, "Factory")  --[[@as Factory]]
+
+                factory.timescale = tags.timescale
+                solver.update(player, factory)
+
+                view_state.rebuild_state(player)
+                util.raise.refresh(player, "factory")
             end)
         }
     }

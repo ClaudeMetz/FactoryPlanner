@@ -66,7 +66,7 @@ function reload_preferences(player_table)
     reload("recipe_filters", {disabled = false, hidden = false})
 
     reload("products_per_row", 7)
-    reload("factory_list_rows", 24)
+    reload("factory_list_rows", 28)
     reload("default_timescale", 60)
 
     reload("show_gui_button", false)
