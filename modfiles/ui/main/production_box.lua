@@ -82,6 +82,13 @@ local function refresh_solver_frame(player)
 end
 
 
+local function change_floor(player, destination)
+    if util.context.ascend_floors(player, destination) then
+        -- Only refresh if the floor was indeed changed
+        util.raise.refresh(player, "production")
+    end
+end
+
 local function paste_line(player, _, _)
     local floor = util.context.get(player, "Floor")  --[[@as Floor]]
 
@@ -123,6 +130,19 @@ local function refresh_production_box(player)
 
     local factory_valid = factory ~= nil and factory.valid
     local any_lines_present = factory_valid and not factory.archived and floor:count() > 0
+    local current_level = (factory_valid) and floor.level or 1
+
+    production_box_elements.level_label.caption = (not factory_valid) and ""
+        or {"fp.bold_label", {"", {"fp.level"}, " ", current_level}}
+
+    production_box_elements.floor_up_button.visible = factory_valid
+    production_box_elements.floor_up_button.enabled = (current_level > 1)
+
+    production_box_elements.floor_top_button.visible = factory_valid
+    production_box_elements.floor_top_button.enabled = (current_level > 1)
+
+    production_box_elements.utility_dialog_button.enabled = factory_valid
+
 
     production_box_elements.instruction_label.visible = false
     if factory == nil then
@@ -154,14 +174,50 @@ local function build_production_box(player)
     local frame_vertical = parent_flow.add{type="frame", direction="vertical", style="inside_deep_frame"}
     main_elements.production_box["vertical_frame"] = frame_vertical
 
+    -- Subheader
+    local subheader = frame_vertical.add{type="frame", direction="horizontal", style="subheader_frame"}
+    local flow_production = subheader.add{type="flow", direction="horizontal"}
+
+    local label_production = flow_production.add{type="label", caption={"fp.u_production"}, style="frame_title"}
+    label_production.style.padding = {-1, 8}
+
+    local label_level = flow_production.add{type="label"}
+    label_level.style.margin = {4, 6, 0, 4}
+    main_elements.production_box["level_label"] = label_level
+
+    local button_floor_up = flow_production.add{type="sprite-button", sprite="fp_arrow_line_up",
+        tooltip={"fp.floor_up_tt"}, tags={mod="fp", on_gui_click="change_floor", destination="up"},
+        style="fp_sprite-button_rounded_icon", mouse_button_filter={"left"}}
+    main_elements.production_box["floor_up_button"] = button_floor_up
+
+    local button_floor_top = flow_production.add{type="sprite-button", sprite="fp_arrow_line_bar_up",
+        tooltip={"fp.floor_top_tt"}, tags={mod="fp", on_gui_click="change_floor", destination="top"},
+        style="fp_sprite-button_rounded_icon", mouse_button_filter={"left"}}
+    button_floor_top.style.padding = {3, 2, 1, 2}
+    main_elements.production_box["floor_top_button"] = button_floor_top
+
+    flow_production.add{type="empty-widget", style="flib_horizontal_pusher"}
+
+    local button_utility_dialog = flow_production.add{type="button", caption={"fp.utilities"},
+        tooltip={"fp.utility_dialog_tt"}, tags={mod="fp", on_gui_click="open_utility_dialog"},
+        style="rounded_button", mouse_button_filter={"left"}}
+    button_utility_dialog.style.minimal_width = 0
+    button_utility_dialog.style.height = 26
+    button_utility_dialog.style.margin = {0, 8}
+    main_elements.production_box["utility_dialog_button"] = button_utility_dialog
+
+
+    -- Main scrollpane
     local scroll_pane_production = frame_vertical.add{type="scroll-pane", style="flib_naked_scroll_pane_no_padding"}
     scroll_pane_production.style.extra_right_padding_when_activated = -12
     main_elements.production_box["production_scroll_pane"] = scroll_pane_production
 
+    -- Instruction label
     local label_instruction = frame_vertical.add{type="label", style="bold_label"}
     label_instruction.style.margin = 16
     main_elements.production_box["instruction_label"] = label_instruction
 
+    -- Paste button
     local button_paste = frame_vertical.add{type="button", caption={"fp.paste_line"}, tooltip={"fp.paste_line_tt"},
         style="rounded_button", tags={mod="fp", on_gui_click="paste_line"}, mouse_button_filter={"left"}}
     button_paste.style.margin = 12
@@ -171,6 +227,7 @@ local function build_production_box(player)
     frame_vertical.add{type="empty-widget", style="flib_vertical_pusher"}
     frame_vertical.add{type="empty-widget", style="flib_horizontal_pusher"}
 
+    -- Bottom UI for messages & solver
     local scroll_pane_messages = frame_vertical.add{type="scroll-pane", vertical_scroll_policy="never",
         visible=false, style="flib_naked_scroll_pane_no_padding"}
     main_elements["messages_frame"] = scroll_pane_messages
@@ -205,6 +262,18 @@ local listeners = {}
 listeners.gui = {
     on_gui_click = {
         {
+            name = "change_floor",
+            handler = (function(player, tags, _)
+                change_floor(player, tags.destination)
+            end)
+        },
+        {
+            name = "open_utility_dialog",
+            handler = (function(player, _, _)
+                util.raise.open_dialog(player, {dialog="utility"})
+            end)
+        },
+        {
             name = "paste_line",
             handler = paste_line
         },
@@ -216,6 +285,13 @@ listeners.gui = {
 }
 
 listeners.misc = {
+    fp_up_floor = (function(player, _, _)
+        if main_dialog.is_in_focus(player) then change_floor(player, "up") end
+    end),
+    fp_top_floor = (function(player, _, _)
+        if main_dialog.is_in_focus(player) then change_floor(player, "top") end
+    end),
+
     build_gui_element = (function(player, event)
         if event.trigger == "main_dialog" then
             build_production_box(player)
