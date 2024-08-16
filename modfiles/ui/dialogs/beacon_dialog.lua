@@ -25,7 +25,6 @@ local function add_beacon_frame(parent_flow, modal_data)
     local textfield_amount = flow_beacon.add{type="textfield", text=beacon_amount,
         tags={mod="fp", on_gui_text_changed="beacon_amount", on_gui_confirmed="beacon_amount",
         width=amount_width}, tooltip={"fp.expression_textfield"}}
-    textfield_amount.lose_focus_on_confirm = true
     textfield_amount.style.width = amount_width
     util.gui.select_all(textfield_amount)
     modal_elements["beacon_amount"] = textfield_amount
@@ -40,7 +39,6 @@ local function add_beacon_frame(parent_flow, modal_data)
     local textfield_total = flow_beacon.add{type="textfield", text=tostring(beacon.total_amount or ""),
         tags={mod="fp", on_gui_text_changed="beacon_total_amount", on_gui_confirmed="beacon_total_amount",
         width=total_width}, tooltip={"fp.expression_textfield"}}
-    textfield_total.lose_focus_on_confirm = true
     textfield_total.style.width = total_width
     modal_elements["beacon_total"] = textfield_total
 
@@ -188,14 +186,16 @@ listeners.gui = {
     on_gui_confirmed = {
         {
             name = "beacon_amount",
-            handler = (function(_, _, event)
-                util.gui.confirm_expression_field(event.element)
+            handler = (function(player, _, event)
+                local confirmed = util.gui.confirm_expression_field(event.element)
+                if confirmed then util.raise.close_dialog(player, "submit") end
             end)
         },
         {
             name = "beacon_total_amount",
-            handler = (function(_, _, event)
-                util.gui.confirm_expression_field(event.element)
+            handler = (function(player, _, event)
+                local confirmed = util.gui.confirm_expression_field(event.element)
+                if confirmed then util.raise.close_dialog(player, "submit") end
             end)
         }
     },

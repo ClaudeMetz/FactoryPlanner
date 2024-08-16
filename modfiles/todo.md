@@ -2,8 +2,6 @@
 
 ## Active
 
-- Make textfields with expressions confirm dialog if expression is already reduced
-  - also drop the focus loss on confirm I think
 
 ## Bugs
 
