@@ -11,7 +11,8 @@ local function generate_metadata(player, factory)
         round_button_numbers = preferences.round_button_numbers,
         ingredient_satisfaction = preferences.ingredient_satisfaction,
         view_state_metadata = view_state.generate_metadata(player),
-        tooltips = tooltips.production_table
+        tooltips = tooltips.production_table,
+        district = factory.parent
     }
 
     if preferences.tutorial_mode then
@@ -236,10 +237,9 @@ function builders.beacon(line, parent_flow, metadata)
     end
 end
 
-function builders.power(line, parent_flow, _)
-    local tooltip = {"", util.format.SI_value(line.power, "W", 5)}
-    local emissions_list = util.gui.format_emissions(line.emissions)
-    if #emissions_list > 1 then table.insert(tooltip, {"", "\n\n", {"fp.emissions_title"}, "\n", emissions_list}) end
+function builders.power(line, parent_flow, metadata)
+    local tooltip = {"", util.format.SI_value(line.power, "W", 5), "\n",
+        util.gui.format_emissions(line.emissions, metadata.district)}
     parent_flow.add{type="label", caption=util.format.SI_value(line.power, "W", 3), tooltip=tooltip}
 end
 

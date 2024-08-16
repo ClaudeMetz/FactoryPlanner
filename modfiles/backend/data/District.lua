@@ -13,7 +13,7 @@ local SimpleItems = require("backend.data.SimpleItems")
 ---@field ingredients SimpleItems
 ---@field first Factory?
 ---@field power number
----@field emissions Emissions
+---@field emissions number
 ---@field needs_refresh boolean
 local District = Object.methods()
 District.__index = District
@@ -31,7 +31,7 @@ local function init(name)
         first = nil,
 
         power = 0,
-        emissions = {},
+        emissions = 0,
         needs_refresh = false
     }, "District", District)  --[[@as District]]
     return object
@@ -102,16 +102,14 @@ function District:refresh()
     self.needs_refresh = false
 
     self.power = 0
-    self.emissions = {}
+    self.emissions = 0
     self.products:clear()
     self.byproducts:clear()
     self.ingredients:clear()
 
     for factory in self:iterator({archived=false, valid=true}) do
         self.power = self.power + factory.top_floor.power
-        for name, amount in pairs(factory.top_floor.emissions) do
-            self.emissions[name] = (self.emissions[name] or 0) + amount
-        end
+        self.emissions = self.emissions + factory.top_floor.emissions
 
         local product_items = SimpleItems.init()
         for product in factory:iterator() do

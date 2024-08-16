@@ -74,7 +74,8 @@ local function refresh_factory_info(player)
         label_power.tooltip = util.format.SI_value(top_floor.power, "W", 5)
 
         local label_emissions = factory_info_elements.emissions_label
-        label_emissions.tooltip = util.gui.format_emissions(top_floor.emissions)
+        label_emissions.caption = {"fp.bold_label", util.format.SI_value(top_floor.emissions, "E/m", 3)}
+        label_emissions.tooltip = util.gui.format_emissions(top_floor.emissions, factory.parent)
 
         -- Timescale
         for _, button in pairs(factory_info_elements.timescales_table.children) do
@@ -118,8 +119,7 @@ local function build_factory_info(player)
     local label_power_value = flow_power_emissions.add{type="label"}
     main_elements.factory_info["power_label"] = label_power_value
     flow_power_emissions.add{type="label", caption="|"}
-    local label_emissions_value = flow_power_emissions.add{type="label",
-        caption={"fp.info_label", {"fp.emissions_title"}}}
+    local label_emissions_value = flow_power_emissions.add{type="label"}
     main_elements.factory_info["emissions_label"] = label_emissions_value
 
 

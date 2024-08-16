@@ -122,7 +122,7 @@ local function update_line(line_data, aggregate)
     -- Determine energy consumption (including potential fuel needs) and emissions
     local fuel_proto = line_data.fuel_proto
     local energy_consumption, emissions = solver_util.determine_energy_consumption_and_emissions(
-        machine_proto, recipe_proto, fuel_proto, machine_count, total_effects)
+        machine_proto, recipe_proto, fuel_proto, machine_count, total_effects, line_data.pollutant_type)
 
     local fuel_amount = nil
     if fuel_proto ~= nil then  -- Seeing a fuel_proto here means it needs to be re-calculated
@@ -146,7 +146,7 @@ local function update_line(line_data, aggregate)
     energy_consumption = energy_consumption + (line_data.beacon_consumption or 0)
 
     aggregate.energy_consumption = aggregate.energy_consumption + energy_consumption
-    structures.aggregate.add_emissions(aggregate, emissions)
+    aggregate.emissions = aggregate.emissions + emissions
 
 
     -- Update the actual line with the calculated results
@@ -206,7 +206,7 @@ local function update_floor(floor_data, aggregate)
             -- Update the main aggregate with the results
             aggregate.machine_count = aggregate.machine_count + subfloor_aggregate.machine_count
             aggregate.energy_consumption = aggregate.energy_consumption + subfloor_aggregate.energy_consumption
-            structures.aggregate.add_emissions(aggregate, subfloor_aggregate.emissions)
+            aggregate.emissions = aggregate.emissions + subfloor_aggregate.emissions
 
             -- Subtract subfloor products as produced
             for _, item in ipairs(structures.class.to_array(subfloor_aggregate.Product)) do

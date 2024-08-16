@@ -138,8 +138,8 @@ local function build_district_frame(player, district, location_items)
         style="bold_label"}
     label_power.style.left_margin = 24
     subheader.add{type="label", caption="|"}
-    subheader.add{type="label", caption={"fp.info_label", {"fp.emissions_title"}}, style="bold_label",
-        tooltip=util.gui.format_emissions(district.emissions)}
+    subheader.add{type="label", caption=util.format.SI_value(district.emissions, "E/m", 3), style="bold_label",
+        tooltip=util.gui.format_emissions(district.emissions, district)}
 
     -- Delete button
     subheader.add{type="empty-widget", style="flib_horizontal_pusher"}
@@ -250,9 +250,10 @@ listeners.gui = {
             handler = (function(player, tags, event)
                 local district = OBJECT_INDEX[tags.district_id]  --[[@as District]]
                 local location_proto_id = event.element.selected_index
-                district.location_proto = prototyper.util.find("locations", location_proto_id, nil)
+                district.location_proto = prototyper.util.find("locations", location_proto_id, nil)  --[[@as FPLocationPrototype]]
 
-                util.raise.refresh(player, "district_info")
+                for factory in district:iterator() do solver.update(player, factory) end
+                util.raise.refresh(player, "all")
             end)
         }
     },

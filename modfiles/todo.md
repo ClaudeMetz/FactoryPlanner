@@ -2,6 +2,11 @@
 
 ## Active
 
+- Surface conditions, based on Districts
+  - It's too messy to not allow condition-incompatible stuff, since it'll need to be addressed on any planet change
+  - Instead, mark incompatible recipes/machines red in their dialogs and in the prod table, and disable their line
+  - On location change/migration, go over everything and check things, disable if incompatible
+  - Maybe have a second flag à la `valid` for this that gets verified in some way.
 
 ## Bugs
 
@@ -31,12 +36,6 @@
   - Could drop the per-factory timescale setting and just have it be global. Makes layout easier too
     - For that, convert solver to be timescale-independent, and only apply timescale when displaying results
     - Basically means calculate everything as /s, like I do for Districts already
-- Surface conditions, based on Districts
-  - It's too messy to not allow condition-incompatible stuff, since it'll need to be addressed on any planet change
-  - Instead, mark incompatible recipes/machines red in their dialogs and in the prod table, and disable their line
-  - On location change/migration, go over everything and check things, disable if incompatible
-  - Maybe have a second flag à la `valid` for this that gets verified in some way.
-  - Every surface seems to have only one pollution type? (`location::pollutant_type`) If true adjust to that
 - Change SimpleItems to be a dict instead of an array so there needs to be no fuss finding stuff
 - Balance District items against each other
 - Allow Factory products to take their amounts from the District's ingredients
@@ -71,7 +70,10 @@
 - Mark entity-type item buttons better visually, somehow
 - When context menus come in, make sure to filter actions properly for all item buttons
   - This is a bit messy with entity-type items currently and can't easily be fixed atm
+  - Also drop the tutorial dialog entirely, along with the example factory and everything
 - Come up with an icon for effects that are limited up or down, instead of saying '(limited)'
+  - Could use the arrows that have a floor above/below them to indicate this
+  - Also move the other effect capping from solver stuff over to the part the user sees
 - Item Spoiling - Not super much to do without a lot of effort.
   - Could do a thing where the user enters the time between steps and it takes the spoilage that incurrs into account
   - Maybe some other stuff too, but I'll have to play with it to figure this out. Low priority anyways

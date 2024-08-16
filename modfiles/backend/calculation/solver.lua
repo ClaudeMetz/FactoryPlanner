@@ -14,7 +14,7 @@ local function set_blank_line(player, floor, line)
         line_id = line.id,
         machine_count = 0,
         energy_consumption = 0,
-        emissions = {},
+        emissions = 0,
         production_ratio = (line.class == "Line") and 0 or nil,
         uncapped_production_ratio = (line.class == "Line") and 0 or nil,
         Product = blank_class,
@@ -34,7 +34,7 @@ local function set_blank_factory(player, factory)
     solver.set_factory_result {
         player_index = player.index,
         energy_consumption = 0,
-        emissions = {},
+        emissions = 0,
         Product = product_class,
         Byproduct = blank_class,
         Ingredient = blank_class,
@@ -85,6 +85,7 @@ local function generate_floor_data(player, factory, floor)
                 line_data.machine_proto = machine.proto
                 line_data.machine_limit = {limit=machine.limit, force_limit=machine.force_limit}
                 line_data.fuel_proto = machine.fuel and machine.fuel.proto or nil
+                line_data.pollutant_type = factory.parent.location_proto.pollutant_type
 
                 -- Quality effects
                 local machine_speed = machine.proto.speed
@@ -349,24 +350,23 @@ end
 
 -- Determines the amount of energy needed for a machine and the emissions that produces
 function solver_util.determine_energy_consumption_and_emissions(machine_proto, recipe_proto,
-        fuel_proto, machine_count, total_effects)
+        fuel_proto, machine_count, total_effects, pollutant_type)
     local consumption_multiplier = 1 + cap_effect(total_effects.consumption)
     local energy_consumption = machine_count * (machine_proto.energy_usage * 60) * consumption_multiplier
     local drain = math.ceil(machine_count - 0.001) * (machine_proto.energy_drain * 60)
+    local total_consumption = energy_consumption + drain
+
+    if pollutant_type == nil then return total_consumption, 0 end
 
     local fuel_multiplier = (fuel_proto ~= nil) and fuel_proto.emissions_multiplier or 1
     local pollution_multiplier = 1 + cap_effect(total_effects.pollution)
     local total_multiplier = fuel_multiplier * pollution_multiplier * recipe_proto.emissions_multiplier
 
-    local emissions = {}  -- Emissions are per minute, so multiply everything by 60
-    for type, amount in pairs(machine_proto.emissions_per_joule) do
-        emissions[type] = energy_consumption * amount * total_multiplier * 60
-    end
-    for type, amount in pairs(machine_proto.emissions_per_second) do
-        emissions[type] = (emissions[type] or 0) + (machine_count * amount * total_multiplier * 60)
-    end
+    local emissions_per_joule = energy_consumption * (machine_proto.emissions_per_joule[pollutant_type] or 0)
+    local emissions_per_second = machine_count * (machine_proto.emissions_per_second[pollutant_type] or 0)
+    local total_emissions = (emissions_per_joule + emissions_per_second) * total_multiplier * 60
 
-    return (energy_consumption + drain), emissions
+    return total_consumption, total_emissions
 end
 
 -- Determines the amount of fuel needed in the given context
