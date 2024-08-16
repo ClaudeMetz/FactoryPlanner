@@ -233,9 +233,18 @@ function _gui.update_expression_field(textfield)
 end
 
 ---@param textfield LuaGuiElement
+---@return boolean confirmed
 function _gui.confirm_expression_field(textfield)
     local expression = _gui.parse_expression_field(textfield)
-    if expression then textfield.text = tostring(expression) end
+    if expression then
+        local exp = tostring(expression)
+        if exp == textfield.text then
+            return true
+        else
+            textfield.text = exp
+        end
+    end
+    return false
 end
 
 
