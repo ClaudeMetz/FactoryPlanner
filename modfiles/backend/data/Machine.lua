@@ -137,6 +137,7 @@ function Machine:paste(object)
             object.parent = self.parent
             self.parent.machine = object
 
+            self.parent.surface_compatibility = nil  -- reset since the machine changed
             object.module_set:normalize({compatibility=true, effects=true})
             object.parent:summarize_effects()
             return true, nil

@@ -88,29 +88,38 @@ function builders.recipe(line, parent_flow, metadata, indent)
     if indent > 0 then parent_flow.style.left_margin = indent * 18 end
     local first_subfloor_line = (line.parent.level > 1 and line.previous == nil)
 
-    local style, enabled, tutorial_tooltip = nil, true, ""
+    local style, enabled, surface_info = nil, true, {""}
     local note = ""  ---@type LocalisedString
     if first_subfloor_line then
         style = "flib_slot_button_transparent_small"
         enabled = false  -- first subfloor line is static
     else
-        style = (relevant_line.active) and "flib_slot_button_default_small" or "flib_slot_button_red_small"
+        local surface_compatibility = relevant_line:get_surface_compatibility()
+        local line_active = (relevant_line.active and surface_compatibility.overall)
+        style = (line_active) and "flib_slot_button_default_small" or "flib_slot_button_red_small"
         note = (relevant_line.active) and "" or {"fp.recipe_inactive"}
-        tutorial_tooltip = metadata.recipe_tutorial_tt
+
+        if not surface_compatibility.recipe then
+            table.insert(surface_info, {"fp.blocking_condition", {"fp.pl_recipe", 1}})
+        end
+        if not surface_compatibility.machine then
+            table.insert(surface_info, {"fp.blocking_condition", {"fp.pl_machine", 1}})
+        end
 
         if line.class == "Floor" then
-            style = (relevant_line.active) and "flib_slot_button_blue_small" or "flib_slot_button_purple_small"
+            style = (line_active) and "flib_slot_button_blue_small" or "flib_slot_button_purple_small"
             note = {"fp.recipe_subfloor_attached"}
 
         elseif line.production_type == "consume" then
-            style = (relevant_line.active) and "flib_slot_button_yellow_small" or "flib_slot_button_orange_small"
+            style = (line_active) and "flib_slot_button_yellow_small" or "flib_slot_button_orange_small"
             note = {"fp.recipe_consumes_byproduct"}
         end
     end
 
     local first_line = (note == "") and {"fp.tt_title", recipe_proto.localised_name}
         or {"fp.tt_title_with_note", recipe_proto.localised_name, note}
-    local tooltip = {"", first_line, format_effects_tooltip(relevant_line.effects_tooltip), tutorial_tooltip}
+    local tooltip = {"", first_line, surface_info, format_effects_tooltip(relevant_line.effects_tooltip),
+        metadata.recipe_tutorial_tt}
     local button = parent_flow.add{type="sprite-button", enabled=enabled, sprite=recipe_proto.sprite,style=style,
         tags={mod="fp", on_gui_click="act_on_line_recipe", line_id=line.id, on_gui_hover="set_tooltip",
         context="production_table"}, mouse_button_filter={"left-and-right"}, raise_hover_events=true}

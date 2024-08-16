@@ -197,6 +197,16 @@ function Floor:check_product_compatibility(object)
     return false
 end
 
+function Floor:reset_surface_compatibility()
+    for line in self:iterator() do
+        if line.class == "Floor" then  ---@cast line Floor
+            line:reset_surface_compatibility()
+        else
+            line.surface_compatibility = nil
+        end
+    end
+end
+
 ---@param object CopyableObject
 ---@return boolean success
 ---@return string? error

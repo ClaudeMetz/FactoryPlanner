@@ -101,6 +101,7 @@ local function handle_machine_choice(player, _, event)
     -- Can't use Line:change_machine_to_proto() as that modifies the line, which we can't do
     machine.proto = new_machine_proto
     machine.quality_proto = new_quality_proto
+    machine.parent.surface_compatibility = nil  -- reset since the machine changed
     machine:normalize_fuel(player)
     machine.module_set:normalize({compatibility=true, trim=true, effects=true})
 
