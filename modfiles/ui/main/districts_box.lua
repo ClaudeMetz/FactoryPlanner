@@ -147,7 +147,7 @@ local function build_district_frame(player, district, location_items)
 
     -- Power & Pollution
     local label_power = subheader.add{type="label", caption=util.format.SI_value(district.power, "W", 3),
-        style="bold_label"}
+        style="bold_label", tooltip={"", {"fp.u_power"}, ": ", util.format.SI_value(district.power, "W", 5)}}
     label_power.style.left_margin = 24
     subheader.add{type="label", caption="|"}
     subheader.add{type="label", caption=util.format.SI_value(district.emissions, "E/m", 3), style="bold_label",

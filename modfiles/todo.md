@@ -2,15 +2,13 @@
 
 ## Active
 
-- Move utilities button to factory info, alongside new 'options'/'configuration' dialog, for recipe prod settings
-  - Should have the ability to manually configure recipe productivity boni somewhere
-  - Or, getting crazy, re-add the production bar above the table and have factory info stuff there
-  - Could shuffle more things around, like move buttons back down, other stuff up top, if I have another bar
-  - Another advantage is that the factory list on the left can more space for when multiplayer stuff hits
-  - Could drop the per-factory timescale setting and just have it be global. Makes layout easier too
-    - For that, convert solver to be timescale-independent, and only apply timescale when displaying results
-    - Basically means calculate everything as /s, like I do for Districts already
-  - Have production bar refresh districts if they are on screen
+- Should have the ability to manually configure recipe productivity boni somewhere, probs in utility dialog
+- Could drop the per-factory timescale setting and just have it be global. Makes layout easier too
+- For that, convert solver to be timescale-independent, and only apply timescale when displaying results
+- Basically means calculate everything as /s, like I do for Districts already
+- Change timescales to only per second or per minute with a toggle switch because prettier
+- Have production bar refresh districts if they are on screen
+- Write migration for emissions table change for some reason
 
 ## Bugs
 
@@ -79,6 +77,7 @@
   - Could still make it so it shows the oil patch as an ingredient without amount (same for offshore pumps)
 - Turn item spoilage results into recipes since mods will use that as a critical path for sure
   - Kinda annoying since it doesn't use machines, just times, so the recipes would be very near useless
+- Maybe a built-in calculator would be very nice to have, actually
 
 ## Waiting on
 

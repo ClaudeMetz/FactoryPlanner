@@ -89,6 +89,39 @@ local function change_floor(player, destination)
     end
 end
 
+local function handle_solver_change(player, _, event)
+    local factory = util.context.get(player, "Factory")  --[[@as Factory]]
+    local new_solver = (event.element.switch_state == "left") and "traditional" or "matrix"
+
+    if new_solver == "matrix" then
+        factory.matrix_free_items = {}  -- activate the matrix solver
+    else
+        factory.matrix_free_items = nil  -- disable the matrix solver
+        factory.linearly_dependant = false
+
+        local any_lines_removed = factory.top_floor:remove_consuming_lines()
+        if any_lines_removed then  -- inform the user if any byproduct recipes are being removed
+            util.messages.raise(player, "hint", {"fp.hint_byproducts_removed"}, 1)
+        end
+    end
+
+    local ui_state = util.globals.ui_state(player)
+    if ui_state.districts_view then main_dialog.toggle_districts_view(player) end
+    solver.update(player, factory)
+    util.raise.refresh(player, "factory")
+end
+
+local function repair_factory(player, _, _)
+    -- This function can only run is a factory is selected and invalid
+    local factory = util.context.get(player, "Factory")  --[[@as Factory]]
+    factory:repair(player)
+
+    local ui_state = util.globals.ui_state(player)
+    if ui_state.districts_view then main_dialog.toggle_districts_view(player) end
+    solver.update(player, factory)
+    util.raise.refresh(player, "all")  -- needs the full refresh to reset factory list buttons
+end
+
 local function paste_line(player, _, _)
     local floor = util.context.get(player, "Floor")  --[[@as Floor]]
 
@@ -96,7 +129,7 @@ local function paste_line(player, _, _)
     util.clipboard.dummy_paste(player, dummy_line, floor)
 end
 
-local function switch_matrix_item(player, tags, event)
+local function switch_matrix_item(player, tags, _)
     local factory = util.context.get(player, "Factory")  --[[@as Factory]]
 
     if tags.status == "unrestricted" then
@@ -141,8 +174,15 @@ local function refresh_production_box(player)
     production_box_elements.floor_top_button.visible = factory_valid
     production_box_elements.floor_top_button.enabled = (current_level > 1)
 
-    production_box_elements.utility_dialog_button.enabled = factory_valid
+    production_box_elements.solver_flow.visible = factory_valid
+    if factory_valid then
+        local matrix_solver_active = (factory.matrix_free_items ~= nil)
+        local switch_state = (matrix_solver_active) and "right" or "left"
+        production_box_elements.solver_choice_switch.switch_state = switch_state
+        production_box_elements.solver_choice_switch.enabled = (not factory.archived)
+    end
 
+    production_box_elements.utility_dialog_button.enabled = factory_valid
 
     production_box_elements.instruction_label.visible = false
     if factory == nil then
@@ -156,6 +196,14 @@ local function refresh_production_box(player)
             production_box_elements.instruction_label.caption = {"fp.production_instruction_recipe"}
             production_box_elements.instruction_label.visible = true
         end
+    end
+
+    local invalid_factory_selected = (factory and not factory.valid) or false
+    production_box_elements.repair_flow.visible = invalid_factory_selected
+
+    if invalid_factory_selected then
+        local last_modset = util.porter.format_modset_diff(factory.last_valid_modset)
+        production_box_elements.diff_label.tooltip = last_modset
     end
 
     refresh_paste_button(player)
@@ -176,35 +224,47 @@ local function build_production_box(player)
 
     -- Subheader
     local subheader = frame_vertical.add{type="frame", direction="horizontal", style="subheader_frame"}
+    subheader.style.top_padding = 4
     local flow_production = subheader.add{type="flow", direction="horizontal"}
 
+    local button_utility_dialog = flow_production.add{type="sprite-button", tooltip={"fp.utility_dialog_tt"},
+        tags={mod="fp", on_gui_click="open_utility_dialog"}, sprite="flib_settings_black", style="tool_button",
+        mouse_button_filter={"left"}}
+    button_utility_dialog.style.padding = 1
+    main_elements.production_box["utility_dialog_button"] = button_utility_dialog
+
     local label_production = flow_production.add{type="label", caption={"fp.u_production"}, style="frame_title"}
-    label_production.style.padding = {-1, 8}
+    label_production.style.padding = {0, 8}
 
     local label_level = flow_production.add{type="label"}
-    label_level.style.margin = {4, 6, 0, 4}
+    label_level.style.margin = {5, 6, 0, 4}
     main_elements.production_box["level_label"] = label_level
 
     local button_floor_up = flow_production.add{type="sprite-button", sprite="fp_arrow_line_up",
         tooltip={"fp.floor_up_tt"}, tags={mod="fp", on_gui_click="change_floor", destination="up"},
         style="fp_sprite-button_rounded_icon", mouse_button_filter={"left"}}
+    button_floor_up.style.top_margin = 2
     main_elements.production_box["floor_up_button"] = button_floor_up
 
     local button_floor_top = flow_production.add{type="sprite-button", sprite="fp_arrow_line_bar_up",
         tooltip={"fp.floor_top_tt"}, tags={mod="fp", on_gui_click="change_floor", destination="top"},
         style="fp_sprite-button_rounded_icon", mouse_button_filter={"left"}}
     button_floor_top.style.padding = {3, 2, 1, 2}
+    button_floor_top.style.top_margin = 2
     main_elements.production_box["floor_top_button"] = button_floor_top
 
     flow_production.add{type="empty-widget", style="flib_horizontal_pusher"}
 
-    local button_utility_dialog = flow_production.add{type="button", caption={"fp.utilities"},
-        tooltip={"fp.utility_dialog_tt"}, tags={mod="fp", on_gui_click="open_utility_dialog"},
-        style="rounded_button", mouse_button_filter={"left"}}
-    button_utility_dialog.style.minimal_width = 0
-    button_utility_dialog.style.height = 26
-    button_utility_dialog.style.margin = {0, 8}
-    main_elements.production_box["utility_dialog_button"] = button_utility_dialog
+    local flow_solver = flow_production.add{type="flow", direction="horizontal"}
+    flow_solver.style.horizontal_spacing = 12
+    flow_solver.style.margin = {4, 8, 0, 0}
+    main_elements.production_box["solver_flow"] = flow_solver
+    flow_solver.add{type="label", caption={"fp.info_label", {"fp.solver_choice"}}, style="bold_label",
+        tooltip={"fp.solver_choice_tt"}}
+    local switch_solver_choice = flow_solver.add{type="switch",
+        right_label_caption={"fp.solver_choice_matrix"}, left_label_caption={"fp.solver_choice_traditional"},
+        tags={mod="fp", on_gui_switch_state_changed="solver_choice_changed"}}
+    main_elements.production_box["solver_choice_switch"] = switch_solver_choice
 
 
     -- Main scrollpane
@@ -216,6 +276,27 @@ local function build_production_box(player)
     local label_instruction = frame_vertical.add{type="label", style="bold_label"}
     label_instruction.style.margin = 16
     main_elements.production_box["instruction_label"] = label_instruction
+
+    -- Repair panel
+    local flow_repair = frame_vertical.add{type="flow", direction="vertical"}
+    flow_repair.style.margin = 12
+    flow_repair.style.width = 380
+    main_elements.production_box["repair_flow"] = flow_repair
+
+    local label_repair = flow_repair.add{type="label", caption={"fp.warning_with_icon", {"fp.factory_needs_repair"}}}
+    label_repair.style.single_line = false
+
+    local flow_actions = flow_repair.add{type="flow", direction="horizontal"}
+    flow_actions.style.top_margin = 8
+    local label_diff = flow_actions.add{type="label", caption={"fp.modset_differences"}, style="bold_label"}
+    main_elements.production_box["diff_label"] = label_diff
+    flow_actions.add{type="empty-widget", style="flib_horizontal_pusher"}
+    local button_repair = flow_actions.add{type="button", tags={mod="fp", on_gui_click="repair_factory"},
+        caption={"fp.repair_factory"}, mouse_button_filter={"left"}}
+    button_repair.style.minimal_width = 0
+    button_repair.style.right_margin = 16
+    button_repair.style.height = 22
+    button_repair.style.padding = {0, 4}
 
     -- Paste button
     local button_paste = frame_vertical.add{type="button", caption={"fp.paste_line"}, tooltip={"fp.paste_line_tt"},
@@ -274,12 +355,23 @@ listeners.gui = {
             end)
         },
         {
+            name = "repair_factory",
+            timeout = 20,
+            handler = repair_factory
+        },
+        {
             name = "paste_line",
             handler = paste_line
         },
         {
             name = "switch_matrix_item",
             handler = switch_matrix_item
+        }
+    },
+    on_gui_switch_state_changed = {
+        {
+            name = "solver_choice_changed",
+            handler = handle_solver_change
         }
     }
 }

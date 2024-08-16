@@ -19,7 +19,6 @@ MAGIC_NUMBERS = {
     subheader_height = 36,  -- Height of the factory list subheader
     list_width = 300,  -- Width of the factory list
     list_element_height = 28,  -- Height of an individual factory list element
-    factory_info_height = 100,  -- Height of the factory info frame
     item_button_size = 40,  -- Size of item box buttons
     item_box_max_rows = 4,  -- Maximum number of rows in an item box
 
@@ -41,8 +40,8 @@ CUSTOM_EVENTS = {
     refresh_gui_element = script.generate_event_name()
 }
 
-PRODUCTS_PER_ROW_OPTIONS = {5, 6, 7, 8, 9, 10, 11, 12, 13, 14}
-FACTORY_LIST_ROWS_OPTIONS = {12, 14, 16, 18, 20, 22, 24, 26, 28, 30}
+PRODUCTS_PER_ROW_OPTIONS = {5, 6, 7, 8, 9, 10, 11, 12}
+FACTORY_LIST_ROWS_OPTIONS = {18, 20, 22, 24, 26, 28, 30, 32}
 
 TIMESCALE_MAP = {[1] = "second", [60] = "minute", [3600] = "hour"}
 BLANK_EFFECTS = {consumption = 0, speed = 0, productivity = 0, pollution = 0, quality = 0}

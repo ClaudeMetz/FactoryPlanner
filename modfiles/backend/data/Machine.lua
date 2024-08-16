@@ -89,6 +89,7 @@ end
 
 ---@return boolean uses_effects
 function Machine:uses_effects()
+    if self.proto.effect_receiver == nil then return false end
     return self.proto.effect_receiver.uses_module_effects
 end
 
