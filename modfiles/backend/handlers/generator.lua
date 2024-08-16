@@ -485,6 +485,7 @@ function generator.recipes.generate()
             -- Add special research rocket recipe
             local research_recipe = custom_recipe()
             local research_products = proto.rocket_entity_prototype.research_products
+            if research_products == nil then goto incompatible_proto end
             local main_proto = game.item_prototypes[research_products[1].name]
 
             research_recipe.name = "impostor-" .. main_proto.name .. "-rocket"
@@ -514,6 +515,8 @@ function generator.recipes.generate()
                 rocket_products[1], parts_recipe.ingredients)
             generator_util.multiply_recipe_items(rocket_recipe.ingredients, proto.rocket_parts_required)
             insert_prototype(recipes, rocket_recipe, nil)
+
+            ::incompatible_proto::
         end
 
         -- Add a recipe for producing steam from a boiler
@@ -1080,6 +1083,7 @@ end
 ---@field data_type "locations"
 ---@field tooltip LocalisedString
 ---@field surface_properties { string: double }?
+---@field pollutant_type string?
 
 -- Generates a table containing all 'places' with surface_conditions, like planets and platforms
 ---@return NamedPrototypes<FPLocationPrototype>
@@ -1116,7 +1120,8 @@ function generator.locations.generate()
             localised_name = proto.localised_name,
             sprite = sprite,
             tooltip = tooltip,
-            surface_properties = surface_properties
+            surface_properties = surface_properties,
+            pollutant_type = (type_ == "space-location" and proto.pollutant_type) and proto.pollutant_type.name or nil
         }
     end
 

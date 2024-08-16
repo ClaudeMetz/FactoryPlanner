@@ -21,6 +21,7 @@ local function open_tutorial_dialog(player, modal_data)
     -- Run solver to see if any lines don't do anything, indicating an unuseful example
     local tutorial_factory = global.tutorial_factory
     if tutorial_factory then
+        tutorial_factory.parent = {location_proto={pollutant_type=nil}}  -- hack to get it working temporarily
         solver.update(player, tutorial_factory)
         for line in tutorial_factory.top_floor:iterator() do
             if line.production_ratio == 0 then

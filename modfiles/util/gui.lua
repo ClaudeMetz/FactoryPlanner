@@ -200,20 +200,17 @@ function _gui.format_module_effects(module_effects, options)
 end
 
 
----@param emissions Emissions
----@return LocalisedString emissions_list
-function _gui.format_emissions(emissions)
-    local emissions_list = {""}
-    for type, value in pairs(emissions) do
-        if value > 0 then
-            if #emissions_list > 1 then table.insert(emissions_list, "\n") end
-            local pollutant = {"airborne-pollutant-name." .. type}
-            local emission = util.format.SI_value(value, "E/m", 3)
-            table.insert(emissions_list, {"fp.emissions_line", pollutant, emission})
-        end
+---@param emissions number
+---@param district District
+---@return LocalisedString tooltip
+function _gui.format_emissions(emissions, district)
+    if emissions == 0 then
+        return {"fp.emissions_none"}
+    else
+        local pollutant = {"airborne-pollutant-name." .. district.location_proto.pollutant_type}
+        local emission = util.format.SI_value(emissions, "E/m", 3)
+        return {"fp.emissions_line", pollutant, emission}
     end
-    if #emissions_list == 1 then table.insert(emissions_list, {"fp.emissions_none"}) end
-    return emissions_list
 end
 
 
