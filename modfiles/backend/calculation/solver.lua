@@ -322,19 +322,19 @@ local function cap_effect(value)
 end
 
 -- Determines the number of crafts per tick for the given data
-function solver_util.determine_crafts_per_tick(machine_speed, recipe_proto, total_effects)
+function solver_util.determine_crafts_per_second(machine_speed, recipe_proto, total_effects)
     return (machine_speed * (1 + cap_effect(total_effects.speed))) / recipe_proto.energy
 end
 
 -- Determine the amount of machines needed to produce the given recipe in the given context
-function solver_util.determine_machine_count(crafts_per_tick, production_ratio, timescale)
-    return production_ratio / (crafts_per_tick * timescale)
+function solver_util.determine_machine_count(crafts_per_second, production_ratio, timescale)
+    return production_ratio / (crafts_per_second * timescale)
 end
 
 -- Calculates the production ratio that the given amount of machines would result in
 -- Formula derived from determine_machine_count(), isolating production_ratio and using machine_limit as machine_count
-function solver_util.determine_production_ratio(crafts_per_tick, machine_limit, timescale)
-    return crafts_per_tick * machine_limit * timescale
+function solver_util.determine_production_ratio(crafts_per_second, machine_limit, timescale)
+    return crafts_per_second * machine_limit * timescale
 end
 
 -- Calculates the product amount after applying productivity bonuses
