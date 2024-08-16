@@ -9,42 +9,21 @@ local function refresh_production(player, _, _)
     end
 end
 
-local function change_floor(player, destination)
-    if util.context.ascend_floors(player, destination) then
-        -- Only refresh if the floor was indeed changed
-        util.raise.refresh(player, "production")
-    end
-end
-
 
 local function refresh_production_bar(player)
     local ui_state = util.globals.ui_state(player)
     local factory = util.context.get(player, "Factory")  --[[@as Factory?]]
-    local floor = util.context.get(player, "Floor")  --[[@as Floor?]]
 
     if ui_state.main_elements.main_frame == nil then return end
     local production_bar_elements = ui_state.main_elements.production_bar
 
     local districts_view = ui_state.districts_view
     local factory_valid = factory ~= nil and factory.valid
-    local current_level = (factory_valid) and floor.level or 1
 
-    production_bar_elements.production_flow.visible = (not districts_view)
+    production_bar_elements.factory_flow.visible = (not districts_view)
     production_bar_elements.district_flow.visible = districts_view
 
     production_bar_elements.refresh_button.enabled = factory_valid
-    production_bar_elements.level_label.caption = (not factory_valid) and ""
-        or {"fp.bold_label", {"", {"fp.level"}, " ", current_level}}
-
-    if not districts_view then
-        production_bar_elements.floor_up_button.visible = factory_valid
-        production_bar_elements.floor_up_button.enabled = (current_level > 1)
-
-        production_bar_elements.floor_top_button.visible = factory_valid
-        production_bar_elements.floor_top_button.enabled = (current_level > 1)
-
-        production_bar_elements.utility_dialog_button.enabled = factory_valid
-    end
 
     util.raise.refresh(player, "view_state")
     ui_state.main_elements.view_state_table.visible = factory_valid
@@ -70,36 +49,14 @@ local function build_production_bar(player)
     main_elements.production_bar["refresh_button"] = button_refresh
 
 
-    local flow_production = subheader.add{type="flow", direction="horizontal"}
-    main_elements.production_bar["production_flow"] = flow_production
+    -- Factory bar
+    local flow_factory = subheader.add{type="flow", direction="horizontal"}
+    main_elements.production_bar["factory_flow"] = flow_factory
 
-    local label_production = flow_production.add{type="label", caption={"fp.pu_factory", 1}, style="frame_title"}
-    label_production.style.padding = {-1, 8}
+    local label_factory = flow_factory.add{type="label", caption={"fp.pu_factory", 1}, style="frame_title"}
+    label_factory.style.padding = {-1, 8}
 
-    local label_level = flow_production.add{type="label"}
-    label_level.style.margin = {4, 6, 0, 0}
-    main_elements.production_bar["level_label"] = label_level
-
-    local button_floor_up = flow_production.add{type="sprite-button", sprite="fp_arrow_line_up",
-        tooltip={"fp.floor_up_tt"}, tags={mod="fp", on_gui_click="change_floor", destination="up"},
-        style="fp_sprite-button_rounded_icon", mouse_button_filter={"left"}}
-    main_elements.production_bar["floor_up_button"] = button_floor_up
-
-    local button_floor_top = flow_production.add{type="sprite-button", sprite="fp_arrow_line_bar_up",
-        tooltip={"fp.floor_top_tt"}, tags={mod="fp", on_gui_click="change_floor", destination="top"},
-        style="fp_sprite-button_rounded_icon", mouse_button_filter={"left"}}
-    button_floor_top.style.padding = {3, 2, 1, 2}
-    main_elements.production_bar["floor_top_button"] = button_floor_top
-
-    local button_utility_dialog = flow_production.add{type="button", caption={"fp.utilities"},
-        tooltip={"fp.utility_dialog_tt"}, tags={mod="fp", on_gui_click="open_utility_dialog"},
-        style="rounded_button", mouse_button_filter={"left"}}
-    button_utility_dialog.style.minimal_width = 0
-    button_utility_dialog.style.height = 26
-    button_utility_dialog.style.left_margin = 12
-    main_elements.production_bar["utility_dialog_button"] = button_utility_dialog
-
-
+    -- District bar
     local flow_districts = subheader.add{type="flow", direction="horizontal"}
     main_elements.production_bar["district_flow"] = flow_districts
 
@@ -142,18 +99,6 @@ listeners.gui = {
             end)
         },
         {
-            name = "change_floor",
-            handler = (function(player, tags, _)
-                change_floor(player, tags.destination)
-            end)
-        },
-        {
-            name = "open_utility_dialog",
-            handler = (function(player, _, _)
-                util.raise.open_dialog(player, {dialog="utility"})
-            end)
-        },
-        {
             name = "add_district",
             handler = (function(player, _, _)
                 local realm = util.globals.player_table(player).realm
@@ -169,12 +114,6 @@ listeners.gui = {
 listeners.misc = {
     fp_refresh_production = (function(player, _, _)
         if main_dialog.is_in_focus(player) then refresh_production(player, nil, nil) end
-    end),
-    fp_up_floor = (function(player, _, _)
-        if main_dialog.is_in_focus(player) then change_floor(player, "up") end
-    end),
-    fp_top_floor = (function(player, _, _)
-        if main_dialog.is_in_focus(player) then change_floor(player, "top") end
     end),
 
     build_gui_element = (function(player, event)

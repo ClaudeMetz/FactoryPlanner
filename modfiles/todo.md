@@ -2,6 +2,15 @@
 
 ## Active
 
+- Move utilities button to factory info, alongside new 'options'/'configuration' dialog, for recipe prod settings
+  - Should have the ability to manually configure recipe productivity boni somewhere
+  - Or, getting crazy, re-add the production bar above the table and have factory info stuff there
+  - Could shuffle more things around, like move buttons back down, other stuff up top, if I have another bar
+  - Another advantage is that the factory list on the left can more space for when multiplayer stuff hits
+  - Could drop the per-factory timescale setting and just have it be global. Makes layout easier too
+    - For that, convert solver to be timescale-independent, and only apply timescale when displaying results
+    - Basically means calculate everything as /s, like I do for Districts already
+  - Have production bar refresh districts if they are on screen
 
 ## Bugs
 
@@ -23,14 +32,6 @@
   - Having a machine number just doesn't make sense for it, so need to adjust solver and UI
     to allow for machines that just don't have a machine amount. Useful for oil mining too.
   - Missing energy and pollution production, is different to normal entities
-- Move utilities button to factory info, alongside new 'options'/'configuration' dialog, for recipe prod settings
-  - Should have the ability to manually configure recipe productivity boni somewhere
-  - Or, getting crazy, re-add the production bar above the table and have factory info stuff there
-  - Could shuffle more things around, like move buttons back down, other stuff up top, if I have another bar
-  - Another advantage is that the factory list on the left can more space for when multiplayer stuff hits
-  - Could drop the per-factory timescale setting and just have it be global. Makes layout easier too
-    - For that, convert solver to be timescale-independent, and only apply timescale when displaying results
-    - Basically means calculate everything as /s, like I do for Districts already
 - Change SimpleItems to be a dict instead of an array so there needs to be no fuss finding stuff
 - Balance District items against each other
 - Allow Factory products to take their amounts from the District's ingredients
@@ -66,6 +67,7 @@
 - When context menus come in, make sure to filter actions properly for all item buttons
   - This is a bit messy with entity-type items currently and can't easily be fixed atm
   - Also drop the tutorial dialog entirely, along with the example factory and everything
+  - Also use them to quick-change default belts on the view, for example
 - Come up with an icon for effects that are limited up or down, instead of saying '(limited)'
   - Could use the arrows that have a floor above/below them to indicate this
   - Also move the other effect capping from solver stuff over to the part the user sees
