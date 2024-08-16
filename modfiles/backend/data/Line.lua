@@ -6,6 +6,11 @@ local SimpleItems = require("backend.data.SimpleItems")
 
 ---@alias ProductionType "produce" | "consume"
 
+---@class SurfaceCompatibility
+---@field recipe boolean
+---@field machine boolean
+---@field overall boolean
+
 ---@class Line: Object, ObjectMethods
 ---@field class "Line"
 ---@field parent Floor
@@ -18,6 +23,7 @@ local SimpleItems = require("backend.data.SimpleItems")
 ---@field beacon Beacon?
 ---@field priority_product (FPItemPrototype | FPPackedPrototype)?
 ---@field comment string
+---@field surface_compatibility SurfaceCompatibility?
 ---@field total_effects ModuleEffects
 ---@field effects_tooltip LocalisedString
 ---@field products SimpleItems
@@ -49,6 +55,7 @@ local function init(recipe_proto, production_type)
         priority_product = nil,
         comment = "",
 
+        surface_compatibility = nil,  -- determined on demand
         total_effects = nil,
         effects_tooltip = "",
         power = 0,
@@ -94,6 +101,7 @@ function Line:change_machine_to_proto(player, proto)
 
         self.machine.module_set:normalize({compatibility=true, trim=true, effects=true})
         if not self.machine:uses_effects() then self:set_beacon(nil) end
+        self.surface_compatibility = nil  -- reset it since the machine changed
     end
 
     -- Make sure the machine's fuel still applies
@@ -238,6 +246,36 @@ function Line:compile_machine_filter()
     end
 
     return {{filter="name", name=compatible_machines}}
+end
+
+
+---@param properties SurfaceProperties?
+---@param conditions SurfaceCondition[]
+---@return boolean compatible
+local function check_compatibility(properties, conditions)
+    if not properties or not conditions then return true end
+    for _, condition in pairs(conditions) do
+        local property = properties[condition.property]
+        if property and (property < condition.min or property > condition.max) then
+            return false
+        end
+    end
+    return true
+end
+
+---@return SurfaceCompatibility compatibility
+function Line:get_surface_compatibility()
+    -- Determine and save compatibility on the fly when requested
+    if self.surface_compatibility == nil then
+        local object = self.parent  --[[@as Object]]  -- find the District this is in
+        while object.class ~= "District" do object = object.parent  --[[@as District]] end
+        local properties = object.location_proto.surface_properties
+
+        local recipe = check_compatibility(properties, self.recipe_proto.surface_conditions)
+        local machine = check_compatibility(properties, self.machine.proto.surface_conditions)
+        self.surface_compatibility = {recipe=recipe, machine=machine, overall=(recipe and machine)}
+    end
+    return self.surface_compatibility
 end
 
 

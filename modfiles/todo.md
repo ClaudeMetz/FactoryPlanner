@@ -2,11 +2,8 @@
 
 ## Active
 
-- Surface conditions, based on Districts
-  - It's too messy to not allow condition-incompatible stuff, since it'll need to be addressed on any planet change
-  - Instead, mark incompatible recipes/machines red in their dialogs and in the prod table, and disable their line
-  - On location change/migration, go over everything and check things, disable if incompatible
-  - Maybe have a second flag à la `valid` for this that gets verified in some way.
+- Make textfields with expressions confirm dialog if expression is already reduced
+  - also drop the focus loss on confirm I think
 
 ## Bugs
 

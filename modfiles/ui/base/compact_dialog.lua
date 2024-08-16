@@ -265,8 +265,8 @@ local function refresh_compact_factory(player)
     end
 
     for line in floor:iterator() do -- build the individual lines
-        local relevant_line = (line.class == "Floor") and line.first or line
-        if not relevant_line.active then goto skip_line end
+        local relevant_line = (line.class == "Floor") and line.first or line  --[[@as Line]]
+        if not relevant_line.active or relevant_line:get_surface_compatibility().overall then goto skip_line end
 
         -- Recipe and Checkmark
         local recipe_flow = production_table.add{type="flow", direction="horizontal"}

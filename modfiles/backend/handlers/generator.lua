@@ -73,6 +73,7 @@ end
 ---@field effect_receiver EffectReceiver?
 ---@field allowed_effects AllowedEffects
 ---@field module_limit integer
+---@field surface_conditions SurfaceCondition[]
 ---@field resource_drain_rate number?
 
 ---@class FluidChannels
@@ -177,6 +178,7 @@ function generator.machines.generate()
             effect_receiver = effect_receiver,
             allowed_effects = proto.allowed_effects or {},
             module_limit = (proto.module_inventory_size or 0),
+            surface_conditions = proto.surface_conditions
         }
         generator_util.check_machine_effects(machine)
 
@@ -327,6 +329,7 @@ end
 ---@field maximum_productivity double
 ---@field type_counts { ingredients: ItemTypeCounts, products: ItemTypeCounts }
 ---@field catalysts { ingredients: Ingredient[], products: FormattedProduct[] }
+---@field surface_conditions SurfaceCondition[]?
 ---@field recycling boolean
 ---@field barreling boolean
 ---@field enabling_technologies string[]
@@ -352,7 +355,6 @@ function generator.recipes.generate()
             maximum_productivity = math.huge,
             type_counts = {},
             catalysts = {products={}, ingredients={}},
-            enabling_technologies = nil,
             emissions_multiplier = 1
         }
         generator_util.add_default_groups(recipe)
@@ -399,6 +401,7 @@ function generator.recipes.generate()
                 maximum_productivity = proto.maximum_productivity,
                 type_counts = {},  -- filled out by format_* below
                 catalysts = {products={}, ingredients={}},  -- filled out by format_* below
+                surface_conditions = proto.surface_conditions,
                 recycling = generator_util.is_recycling_recipe(proto),
                 barreling = generator_util.is_compacting_recipe(proto),
                 enabling_technologies = researchable_recipes[recipe_name],  -- can be nil
@@ -1082,8 +1085,10 @@ end
 ---@class FPLocationPrototype: FPPrototype
 ---@field data_type "locations"
 ---@field tooltip LocalisedString
----@field surface_properties { string: double }?
+---@field surface_properties SurfaceProperties?
 ---@field pollutant_type string?
+
+---@alias SurfaceProperties { string: double }
 
 -- Generates a table containing all 'places' with surface_conditions, like planets and platforms
 ---@return NamedPrototypes<FPLocationPrototype>
