@@ -57,8 +57,7 @@ local function update_line(line_data, aggregate)
     -- Limit the machine_count by reducing the production_ratio, if necessary
     local machine_limit = line_data.machine_limit
     if machine_limit.limit ~= nil then
-        local capped_production_ratio = solver_util.determine_production_ratio(crafts_per_second,
-            machine_limit.limit)
+        local capped_production_ratio = crafts_per_second * machine_limit.limit
         production_ratio = machine_limit.force_limit and capped_production_ratio
             or math.min(production_ratio, capped_production_ratio)
     end
@@ -115,7 +114,7 @@ local function update_line(line_data, aggregate)
 
 
     -- Determine machine count
-    local machine_count = solver_util.determine_machine_count(crafts_per_second, production_ratio)
+    local machine_count = production_ratio / crafts_per_second
     -- Add the integer machine count to the aggregate so it can be displayed on the origin_line
     aggregate.machine_count = aggregate.machine_count + math.ceil(machine_count - 0.001)
 

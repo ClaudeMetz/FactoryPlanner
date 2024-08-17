@@ -296,7 +296,7 @@ local function add_item_pane(parent_flow, modal_data, item_category, item)
         tostring(item.required_amount * modal_data.timescale) or ""
     local amount_width = 90
     local textfield_amount = flow_amount.add{type="textfield", text=item_amount,
-        tags={mod="fp", on_gui_text_changed="picker_item_amount", on_gui_confirmed="picker_item_amount",
+        tags={mod="fp", on_gui_text_changed="picker_item_amount", on_gui_confirmed="picker_amount",
         width=amount_width}, tooltip={"fp.expression_textfield"}}
     textfield_amount.style.width = amount_width
     modal_elements["item_amount_textfield"] = textfield_amount
@@ -309,7 +309,7 @@ local function add_item_pane(parent_flow, modal_data, item_category, item)
     local belt_amount = (item and defined_by ~= "amount") and tostring(item.required_amount) or ""
     local belt_width = 86
     local textfield_belts = flow_belts.add{type="textfield", text=belt_amount,
-        tags={mod="fp", on_gui_text_changed="picker_belt_amount", on_gui_confirmed="picker_belt_amount",
+        tags={mod="fp", on_gui_text_changed="picker_belt_amount", on_gui_confirmed="picker_amount",
         width=belt_width}, tooltip={"fp.expression_textfield"}}
     textfield_belts.style.width = belt_width
     modal_elements["belt_amount_textfield"] = textfield_belts
@@ -473,14 +473,7 @@ listeners.gui = {
     },
     on_gui_confirmed = {
         {
-            name = "picker_item_amount",
-            handler = (function(player, _, event)
-                local confirmed = util.gui.confirm_expression_field(event.element)
-                if confirmed then util.raise.close_dialog(player, "submit") end
-            end)
-        },
-        {
-            name = "picker_belt_amount",
+            name = "picker_amount",
             handler = (function(player, _, event)
                 local confirmed = util.gui.confirm_expression_field(event.element)
                 if confirmed then util.raise.close_dialog(player, "submit") end

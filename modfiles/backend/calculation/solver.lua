@@ -325,21 +325,10 @@ function solver_util.determine_crafts_per_second(machine_speed, recipe_proto, to
     return (machine_speed * (1 + cap_effect(total_effects.speed))) / recipe_proto.energy
 end
 
--- Determine the amount of machines needed to produce the given recipe in the given context
-function solver_util.determine_machine_count(crafts_per_second, production_ratio)
-    return production_ratio / crafts_per_second
-end
-
--- Calculates the production ratio that the given amount of machines would result in
--- Formula derived from determine_machine_count(), isolating production_ratio and using machine_limit as machine_count
-function solver_util.determine_production_ratio(crafts_per_second, machine_limit)
-    return crafts_per_second * machine_limit
-end
-
 -- Calculates the product amount after applying productivity bonuses
 function solver_util.determine_prodded_amount(item, total_effects, maximum_productivity)
     -- No negative productivity, and none above the recipe-determined cap
-    local productivity = math.min(math.max(total_effects.productivity, 0), maximum_productivity)
+    local productivity = math.min(math.max(cap_effect(total_effects.productivity), 0), maximum_productivity)
     if productivity == 0 then return item.amount end
 
     -- Return formula is a simplification of the following formula:
