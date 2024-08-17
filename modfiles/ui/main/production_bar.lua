@@ -2,10 +2,17 @@ local District = require("backend.data.District")
 
 -- ** LOCAL UTIL **
 local function refresh_production(player, _, _)
-    local factory = util.context.get(player, "Factory")
-    if factory and factory.valid then
-        solver.update(player, factory)
-        util.raise.refresh(player, "factory")
+    local ui_state = util.globals.ui_state(player)
+    if ui_state.districts_view then
+        local realm = util.globals.player_table(player).realm
+        for district in realm:iterator() do district:refresh() end
+        util.raise.refresh(player, "districts_box")
+    else
+        local factory = util.context.get(player, "Factory")
+        if factory and factory.valid then
+            solver.update(player, factory)
+            util.raise.refresh(player, "factory")
+        end
     end
 end
 

@@ -3,9 +3,7 @@
 ## Active
 
 - Should have the ability to manually configure recipe productivity boni somewhere, probs in utility dialog
-- Have production bar refresh districts if they are on screen
-- Write migration for emissions table change for some reason
-- Change matrix engine to user solver.util where possible
+- Change pause button to play icon, with it default-toggled
 
 ## Bugs
 
@@ -46,6 +44,9 @@
 
 ## Low Priority
 
+- Add calculator window - button in main and compact windows, with keyboard shortcut
+  - Shortcut should work from anywhere. Calculator needs to be independent window pretty much, kinda tricky
+  - UI just simple but nice, with history. Use evaluate_expression for calculation, making things easy
 - Make custom recipe tooltips look a bit nicer, maybe look at RB for inspiration or something
 - Add new view of rockets/timescale, useful for items you need to transfer across planets
   - Needs new view state preferences idea. Could also be timescale/rocket instead
@@ -74,7 +75,7 @@
   - Could still make it so it shows the oil patch as an ingredient without amount (same for offshore pumps)
 - Turn item spoilage results into recipes since mods will use that as a critical path for sure
   - Kinda annoying since it doesn't use machines, just times, so the recipes would be very near useless
-- Maybe a built-in calculator would be very nice to have, actually
+- Preferences export would be great. Maybe without migration if that makes it much easier
 
 ## Waiting on
 

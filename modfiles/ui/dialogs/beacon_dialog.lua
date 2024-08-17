@@ -37,7 +37,7 @@ local function add_beacon_frame(parent_flow, modal_data)
         style="semibold_label"}
     local total_width = 40
     local textfield_total = flow_beacon.add{type="textfield", text=tostring(beacon.total_amount or ""),
-        tags={mod="fp", on_gui_text_changed="beacon_total_amount", on_gui_confirmed="beacon_total_amount",
+        tags={mod="fp", on_gui_text_changed="beacon_total_amount", on_gui_confirmed="beacon_amount",
         width=total_width}, tooltip={"fp.expression_textfield"}}
     textfield_total.style.width = total_width
     modal_elements["beacon_total"] = textfield_total
@@ -186,13 +186,6 @@ listeners.gui = {
     on_gui_confirmed = {
         {
             name = "beacon_amount",
-            handler = (function(player, _, event)
-                local confirmed = util.gui.confirm_expression_field(event.element)
-                if confirmed then util.raise.close_dialog(player, "submit") end
-            end)
-        },
-        {
-            name = "beacon_total_amount",
             handler = (function(player, _, event)
                 local confirmed = util.gui.confirm_expression_field(event.element)
                 if confirmed then util.raise.close_dialog(player, "submit") end
