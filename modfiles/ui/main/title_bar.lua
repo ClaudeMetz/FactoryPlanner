@@ -5,9 +5,6 @@ local function toggle_paused_state(player, _, _)
         preferences.pause_on_interface = not preferences.pause_on_interface
 
         local main_elements = util.globals.main_elements(player)
-        local button_pause = main_elements.title_bar.pause_button
-        button_pause.toggled = (preferences.pause_on_interface)
-
         main_dialog.set_pause_state(player, main_elements.main_frame)
     end
 end
@@ -73,12 +70,12 @@ local function build_title_bar(player)
     local separation = flow_right.add{type="line", direction="vertical"}
     separation.style.height = MAGIC_NUMBERS.title_bar_height - 4
 
-    local button_pause = flow_right.add{type="button", caption={"fp.pause"}, tooltip={"fp.pause_on_interface"},
-        tags={mod="fp", on_gui_click="toggle_pause_game"}, style="fp_button_frame_tool", mouse_button_filter={"left"}}
-    main_elements.title_bar["pause_button"] = button_pause
-
     local preferences = util.globals.preferences(player)
-    button_pause.toggled = (preferences.pause_on_interface)
+    local button_pause = flow_right.add{type="sprite-button", sprite="fp_play", tooltip={"fp.pause_on_interface"},
+        tags={mod="fp", on_gui_click="toggle_pause_game"}, auto_toggle=true, style="fp_button_frame",
+        toggled=(not preferences.pause_on_interface), mouse_button_filter={"left"}}
+    button_pause.style.padding = -1
+    main_elements.title_bar["pause_button"] = button_pause
 
     local button_close = flow_right.add{type="sprite-button", tags={mod="fp", on_gui_click="close_main_dialog"},
         sprite="utility/close", tooltip={"fp.close_interface"}, style="fp_button_frame",
