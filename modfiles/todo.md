@@ -3,7 +3,6 @@
 ## Active
 
 - Should have the ability to manually configure recipe productivity boni somewhere, probs in utility dialog
-- Change pause button to play icon, with it default-toggled
 
 ## Bugs
 
