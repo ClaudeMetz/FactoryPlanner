@@ -44,12 +44,7 @@ local function refresh_production_bar(player)
         production_bar_elements.validity_label.visible = invalid_factory_selected
     end
 
-    production_bar_elements.timescales_table.visible = valid_factory_selected and not districts_view
-    if valid_factory_selected then
-        for _, button in pairs(production_bar_elements.timescales_table.children) do
-            button.toggled = (factory.timescale == button.tags.timescale)
-        end
-    end
+    production_bar_elements.timescale_switch.visible = valid_factory_selected
 
     util.raise.refresh(player, "view_state")
     ui_state.main_elements.view_state_table.visible = factory_valid
@@ -111,18 +106,15 @@ local function build_production_bar(player)
     -- Shared bar
     subheader.add{type="empty-widget", style="flib_horizontal_pusher"}
 
-    local table_timescales = subheader.add{type="table", column_count=table_size(TIMESCALE_MAP)}
-    table_timescales.style.horizontal_spacing = 0
-    table_timescales.style.right_margin = 8
-    main_elements.production_bar["timescales_table"] = table_timescales
+    local flow_timescale = subheader.add{type="flow", direction="horizontal"}
+    flow_timescale.style.margin = {4, 16, 0, 0}
 
-    for scale, name in pairs(TIMESCALE_MAP) do
-        local button = table_timescales.add{type="button", caption={"", "/", {"fp.unit_" .. name}},
-            tags={mod="fp", on_gui_click="change_timescale", timescale=scale},
-            tooltip={"fp.timescale_tt", {"fp." .. name}}, mouse_button_filter={"left"}}
-        button.style.size = {42, 26}
-        button.style.padding = 0
-    end
+    local switch_state = (util.globals.preferences(player).timescale == 1) and "left" or "right"
+    local switch_timescale = flow_timescale.add{type="switch", tooltip={"fp.timescale_tt"}, switch_state=switch_state,
+        left_label_caption={"", "/", {"fp.second"}}, right_label_caption={"", "/", {"fp.minute"}},
+        tags={mod="fp", on_gui_switch_state_changed="toggle_timescale"}}
+    switch_timescale.style.margin = {0, 4}
+    main_elements.production_bar["timescale_switch"] = switch_timescale
 
     util.raise.build(player, "view_state", subheader)
     main_elements["view_state_table"] = subheader["table_view_state"]
@@ -160,14 +152,14 @@ listeners.gui = {
                 util.context.set(player, new_district)
                 util.raise.refresh(player, "all")
             end)
-        },
+        }
+    },
+    on_gui_switch_state_changed = {
         {
-            name = "change_timescale",
-            handler = (function(player, tags, _)
-                local factory = util.context.get(player, "Factory")  --[[@as Factory]]
-
-                factory.timescale = tags.timescale
-                solver.update(player, factory)
+            name = "toggle_timescale",
+            handler = (function(player, _, event)
+                local new_timescale = (event.element.switch_state == "left") and 1 or 60
+                util.globals.preferences(player).timescale = new_timescale
 
                 view_state.rebuild_state(player)
                 util.raise.refresh(player, "factory")

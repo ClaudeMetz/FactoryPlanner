@@ -131,7 +131,7 @@ function utility_structures.components(player, modal_data)
     refresh_component_flow("module")
 
     local any_missing_items = (next(modal_data.missing_items) ~= nil)
-    local no_items_necessary = {"fp.info_label", {"fp.utility_no_items_necessary", {"fp.pl_" .. scope:lower(), 1}}}
+    local no_items_necessary = {"fp.utility_no_items_necessary", {"fp.pl_" .. scope:lower(), 1}}
     local function configure_button(name)
         local button = modal_elements[name .. "_button"]
         button.enabled = any_missing_items

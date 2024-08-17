@@ -38,19 +38,18 @@ end
 
 ---@param simple_items SimpleItems
 ---@param divisor number
-function SimpleItems:add_multiple(simple_items, divisor)
+function SimpleItems:add_multiple(simple_items)
     local dict = {}
     for _, item in pairs(self.items) do
         dict[item.proto] = item
     end
 
     for _, item in pairs(simple_items.items) do
-        local new_amount = item.amount / divisor
         local existing = dict[item.proto]
         if existing then
-            existing.amount = existing.amount + new_amount
+            existing.amount = existing.amount + item.amount
         else
-            table.insert(self.items, {class="SimpleItem", proto=item.proto, amount=new_amount})
+            table.insert(self.items, {class="SimpleItem", proto=item.proto, amount=item.amount})
         end
     end
 end

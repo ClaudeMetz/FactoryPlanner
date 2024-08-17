@@ -115,10 +115,10 @@ function District:refresh()
         for product in factory:iterator() do
             product_items:insert({class="SimpleItem", proto=product.proto, amount=product.amount})
         end
-        self.products:add_multiple(product_items, factory.timescale)
+        self.products:add_multiple(product_items)
 
-        self.byproducts:add_multiple(factory.top_floor.byproducts, factory.timescale)
-        self.ingredients:add_multiple(factory.top_floor.ingredients, factory.timescale)
+        self.byproducts:add_multiple(factory.top_floor.byproducts)
+        self.ingredients:add_multiple(factory.top_floor.ingredients)
     end
 end
 

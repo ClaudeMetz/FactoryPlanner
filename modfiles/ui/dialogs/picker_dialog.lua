@@ -360,12 +360,8 @@ end
 local function open_picker_dialog(player, modal_data)
     local preferences = util.globals.preferences(player)
 
-    if modal_data.item_id then
-        modal_data.item = OBJECT_INDEX[modal_data.item_id]
-        modal_data.timescale = modal_data.item.parent.timescale
-    else
-        modal_data.timescale = preferences.default_timescale
-    end
+    if modal_data.item_id then modal_data.item = OBJECT_INDEX[modal_data.item_id] end
+    modal_data.timescale = preferences.timescale
     modal_data.lob = preferences.belts_or_lanes
 
     local dialog_flow = modal_data.modal_elements.dialog_flow
