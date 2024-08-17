@@ -5,8 +5,9 @@ local sequential_engine = {}
 
 -- ** LOCAL UTIL **
 local function update_line(line_data, aggregate)
-    local recipe_proto, machine_proto = line_data.recipe_proto, line_data.machine_proto
-    local total_effects, timescale = line_data.total_effects, line_data.timescale
+    local recipe_proto = line_data.recipe_proto
+    local machine_proto = line_data.machine_proto
+    local total_effects = line_data.total_effects
 
     -- Determine relevant products
     local relevant_products, byproducts = {}, {}
@@ -57,7 +58,7 @@ local function update_line(line_data, aggregate)
     local machine_limit = line_data.machine_limit
     if machine_limit.limit ~= nil then
         local capped_production_ratio = solver_util.determine_production_ratio(crafts_per_second,
-            machine_limit.limit, timescale)
+            machine_limit.limit)
         production_ratio = machine_limit.force_limit and capped_production_ratio
             or math.min(production_ratio, capped_production_ratio)
     end
@@ -114,7 +115,7 @@ local function update_line(line_data, aggregate)
 
 
     -- Determine machine count
-    local machine_count = solver_util.determine_machine_count(crafts_per_second, production_ratio, timescale)
+    local machine_count = solver_util.determine_machine_count(crafts_per_second, production_ratio)
     -- Add the integer machine count to the aggregate so it can be displayed on the origin_line
     aggregate.machine_count = aggregate.machine_count + math.ceil(machine_count - 0.001)
 
@@ -127,7 +128,7 @@ local function update_line(line_data, aggregate)
     local fuel_amount = nil
     if fuel_proto ~= nil then  -- Seeing a fuel_proto here means it needs to be re-calculated
         fuel_amount = solver_util.determine_fuel_amount(energy_consumption, machine_proto.burner,
-            fuel_proto.fuel_value, timescale)
+            fuel_proto.fuel_value)
 
         local fuel_class = structures.class.init()
         local fuel = {type=fuel_proto.type, name=fuel_proto.name, amount=fuel_amount}

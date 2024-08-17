@@ -3,12 +3,9 @@
 ## Active
 
 - Should have the ability to manually configure recipe productivity boni somewhere, probs in utility dialog
-- Could drop the per-factory timescale setting and just have it be global. Makes layout easier too
-- For that, convert solver to be timescale-independent, and only apply timescale when displaying results
-- Basically means calculate everything as /s, like I do for Districts already
-- Change timescales to only per second or per minute with a toggle switch because prettier
 - Have production bar refresh districts if they are on screen
 - Write migration for emissions table change for some reason
+- Change matrix engine to user solver.util where possible
 
 ## Bugs
 

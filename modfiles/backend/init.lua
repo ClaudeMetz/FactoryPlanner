@@ -9,13 +9,13 @@ require("backend.calculation.solver")
 
 
 ---@class PreferencesTable
+---@field timescale Timescale
 ---@field pause_on_interface boolean
 ---@field tutorial_mode boolean
 ---@field utility_scopes { components: "Factory" | "Floor" }
 ---@field recipe_filters { disabled: boolean, hidden: boolean }
 ---@field products_per_row integer
 ---@field factory_list_rows integer
----@field default_timescale Timescale
 ---@field show_gui_button boolean
 ---@field attach_factory_products boolean
 ---@field skip_factory_naming boolean
@@ -37,7 +37,7 @@ require("backend.calculation.solver")
 ---@field default_wagons PrototypeWithCategoryDefault
 ---@field default_beacons PrototypeDefault
 
----@alias Timescale 1 | 60 | 3600
+---@alias Timescale 1 | 60
 
 ---@class MBDefaults
 ---@field machine FPModulePrototype?
@@ -60,14 +60,14 @@ function reload_preferences(player_table)
         end
     end
 
+    reload("timescale", 60)
     reload("pause_on_interface", false)
     reload("tutorial_mode", true)
     reload("utility_scopes", {components = "Factory"})
     reload("recipe_filters", {disabled = false, hidden = false})
 
     reload("products_per_row", 7)
-    reload("factory_list_rows", 28)
-    reload("default_timescale", 60)
+    reload("factory_list_rows", 26)
 
     reload("show_gui_button", false)
     reload("attach_factory_products", false)

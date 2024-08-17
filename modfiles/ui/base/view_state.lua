@@ -25,9 +25,9 @@ end
 
 
 local function format_entity_item(metadata, raw_amount, item_proto)
-    local amount = (item_proto.fixed_unit) and raw_amount * metadata.timescale_inverse or raw_amount
+    local amount = (item_proto.fixed_unit) and raw_amount or raw_amount * metadata.timescale
     local number = util.format.number(amount, metadata.formatting_precision)
-    local unit = item_proto.fixed_unit or {"fp.per_timescale", metadata.timescale_string}
+    local unit = item_proto.fixed_unit or {"fp.per_timescale", {"fp." .. TIMESCALE_MAP[metadata.timescale]}}
     return number, {"", number, " ", unit}
 end
 
@@ -37,7 +37,7 @@ function processors.items_per_timescale(metadata, raw_amount, item_proto, _)
         local number, tooltip = format_entity_item(metadata, raw_amount, item_proto)
         return number, tooltip
     else
-        local number = util.format.number(raw_amount, metadata.formatting_precision)
+        local number = util.format.number(raw_amount * metadata.timescale, metadata.formatting_precision)
         local plural_parameter = (number == "1") and 1 or 2
         local type_string = (item_proto.type == "fluid") and {"fp.l_fluid"} or {"fp.pl_item", plural_parameter}
         return number, {"", number, " ", type_string, "/", metadata.timescale_string}
@@ -51,7 +51,7 @@ function processors.belts_or_lanes(metadata, raw_amount, item_proto, _)
         local number, tooltip = format_entity_item(metadata, raw_amount, item_proto)
         return number, tooltip
     else
-        local raw_number = raw_amount * metadata.throughput_multiplier * metadata.timescale_inverse
+        local raw_number = raw_amount * metadata.throughput_multiplier
         local number = util.format.number(raw_number, metadata.formatting_precision)
 
         local plural_parameter = (number == "1") and 1 or 2
@@ -69,7 +69,7 @@ function processors.wagons_per_timescale(metadata, raw_amount, item_proto, _)
     else
         local wagon_capacity = (item_proto.type == "fluid") and metadata.fluid_wagon_capacity
             or metadata.cargo_wagon_capactiy * item_proto.stack_size
-        local wagon_count = raw_amount / wagon_capacity
+        local wagon_count = (raw_amount * metadata.timescale) / wagon_capacity
         local number = util.format.number(wagon_count, metadata.formatting_precision)
 
         local plural_parameter = (number == "1") and 1 or 2
@@ -86,7 +86,7 @@ function processors.items_per_second_per_machine(metadata, raw_amount, item_prot
         local number, tooltip = format_entity_item(metadata, raw_amount, item_proto)
         return number, tooltip
     else
-        local raw_number = raw_amount * metadata.timescale_inverse / (math.ceil((machine_count or 1) - 0.001))
+        local raw_number = raw_amount / (math.ceil((machine_count or 1) - 0.001))
         local number = util.format.number(raw_number, metadata.formatting_precision)
 
         local plural_parameter = (number == "1") and 1 or 2
@@ -154,7 +154,7 @@ function view_state.generate_metadata(player)
 
     return {
         processor = processors[current_view_name],
-        timescale_inverse = 1 / view_states.timescale,
+        timescale = view_states.timescale,
         timescale_string = {"fp.unit_" .. TIMESCALE_MAP[view_states.timescale]},
         adjusted_margin_of_error = MAGIC_NUMBERS.margin_of_error * view_states.timescale,
         belt_or_lane = belts_or_lanes:sub(1, -2),
@@ -178,12 +178,8 @@ end
 
 function view_state.rebuild_state(player)
     local player_table = util.globals.player_table(player)
-    local default_timescale = player_table.preferences.default_timescale
 
-    local relevant_object_type = (player_table.ui_state.districts_view) and "District" or "Factory"
-    local relevant_object = util.context.get(player, relevant_object_type)
-
-    local timescale = (relevant_object) and relevant_object.timescale or default_timescale
+    local timescale = player_table.preferences.timescale
     local timescale_string = TIMESCALE_MAP[timescale]
     local singular_bol = util.globals.preferences(player).belts_or_lanes:sub(1, -2)
     local belt_proto = prototyper.defaults.get(player, "belts")

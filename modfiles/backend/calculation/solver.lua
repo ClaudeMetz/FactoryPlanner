@@ -78,7 +78,6 @@ local function generate_floor_data(player, factory, floor)
             else
                 local machine = line.machine
                 line_data.recipe_proto = line.recipe_proto
-                line_data.timescale = factory.timescale
                 line_data.percentage = line.percentage  -- non-zero
                 line_data.production_type = line.production_type
                 line_data.priority_product_proto = line.priority_product
@@ -327,14 +326,14 @@ function solver_util.determine_crafts_per_second(machine_speed, recipe_proto, to
 end
 
 -- Determine the amount of machines needed to produce the given recipe in the given context
-function solver_util.determine_machine_count(crafts_per_second, production_ratio, timescale)
-    return production_ratio / (crafts_per_second * timescale)
+function solver_util.determine_machine_count(crafts_per_second, production_ratio)
+    return production_ratio / crafts_per_second
 end
 
 -- Calculates the production ratio that the given amount of machines would result in
 -- Formula derived from determine_machine_count(), isolating production_ratio and using machine_limit as machine_count
-function solver_util.determine_production_ratio(crafts_per_second, machine_limit, timescale)
-    return crafts_per_second * machine_limit * timescale
+function solver_util.determine_production_ratio(crafts_per_second, machine_limit)
+    return crafts_per_second * machine_limit
 end
 
 -- Calculates the product amount after applying productivity bonuses
@@ -370,6 +369,6 @@ function solver_util.determine_energy_consumption_and_emissions(machine_proto, r
 end
 
 -- Determines the amount of fuel needed in the given context
-function solver_util.determine_fuel_amount(energy_consumption, burner, fuel_value, timescale)
-    return ((energy_consumption / burner.effectivity) / fuel_value) * timescale
+function solver_util.determine_fuel_amount(energy_consumption, burner, fuel_value)
+    return (energy_consumption / burner.effectivity) / fuel_value
 end

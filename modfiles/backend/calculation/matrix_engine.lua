@@ -6,14 +6,14 @@ Algorithm Overview
 ------------------
 The algorithm is based on the post here: https://kirkmcdonald.github.io/posts/calculation.html
 We solve the matrix equation Ax = b, where:
-    - A is a matrix whose entry in row i and col j is the output/timescale/building for item i and recipe j
+    - A is a matrix whose entry in row i and col j is the output/building for item i and recipe j
       (negative is input, positive is output)
     - x is the vector of unknowns that we're solving for, and whose jth entry will be the # buildings needed for recipe j
-    - b is the vector whose ith entry is the desired output/timescale for item i
+    - b is the vector whose ith entry is the desired output for item i
 Note the current implementation requires a square matrix_engine.
 If there are more recipes than items, the problem is under-constrained and some recipes must be deleted.
 If there are more items than recipes, the problem is over-constrained (this is more common).
-    In this case we can construct "pseudo-recipes" for certrain items that produce 1/timescale/"building".
+    In this case we can construct "pseudo-recipes" for certrain items that produce 1/"building".
     Items with pseudo-recipes will be "free" variables that will have some constrained non-zero input or
     output after solving.
     The solved "number of buildings" will be equal to the extra input or output needed for that item.
@@ -539,7 +539,7 @@ function matrix_engine.get_matrix(factory_data, rows, columns)
     -- Returns the matrix to be solved.
     -- Format is a list of lists, where outer lists are rows and inner lists are columns.
     -- Rows are items and columns are recipes (or pseudo-recipes in the case of free items).
-    -- Elements have units of items/timescale/building, and are positive for outputs and negative for inputs.
+    -- Elements have units of items/building, and are positive for outputs and negative for inputs.
 
     -- initialize matrix to all zeros
     local matrix = {}
@@ -611,7 +611,6 @@ function matrix_engine.get_line_aggregate(line_data, player_index, floor_id, mac
     line_aggregate.machine_count = machine_count
     -- the index in the factory_data.top_floor.lines table can be different from the line_id!
     local recipe_proto = line_data.recipe_proto
-    local timescale = line_data.timescale
     local total_effects = line_data.total_effects
     local machine_speed = line_data.machine_speed
     local speed_multiplier = (1 + math.max(total_effects.speed, -0.8))
@@ -619,22 +618,22 @@ function matrix_engine.get_line_aggregate(line_data, player_index, floor_id, mac
     -- hacky workaround for recipes with zero energy - this really messes up the matrix
     if energy==0 then energy=0.000000001 end
     local time_per_craft = energy / (machine_speed * speed_multiplier)
-    local total_crafts_per_timescale = timescale * machine_count * (1 / time_per_craft)
-    line_aggregate.production_ratio = total_crafts_per_timescale
-    line_aggregate.uncapped_production_ratio = total_crafts_per_timescale
+    local total_crafts = machine_count * (1 / time_per_craft)
+    line_aggregate.production_ratio = total_crafts
+    line_aggregate.uncapped_production_ratio = total_crafts
     for _, product in pairs(recipe_proto.products) do
         local prodded_amount = solver_util.determine_prodded_amount(product, total_effects,
             recipe_proto.maximum_productivity)
         local item_key = matrix_engine.get_item_key(product.type, product.name)
         if factory_metadata~= nil and (factory_metadata.byproducts[item_key] or free_variables["item_"..item_key]) then
-            structures.aggregate.add(line_aggregate, "Byproduct", product, prodded_amount * total_crafts_per_timescale)
+            structures.aggregate.add(line_aggregate, "Byproduct", product, prodded_amount * total_crafts)
         else
-            structures.aggregate.add(line_aggregate, "Product", product, prodded_amount * total_crafts_per_timescale)
+            structures.aggregate.add(line_aggregate, "Product", product, prodded_amount * total_crafts)
         end
     end
     for _, ingredient in pairs(recipe_proto.ingredients) do
         structures.aggregate.add(line_aggregate, "Ingredient", ingredient,
-            ingredient.amount * total_crafts_per_timescale * line_data.resource_drain_rate)
+            ingredient.amount * total_crafts * line_data.resource_drain_rate)
     end
 
     -- Determine energy consumption (including potential fuel needs) and emissions
@@ -646,7 +645,7 @@ function matrix_engine.get_line_aggregate(line_data, player_index, floor_id, mac
     local fuel_amount = nil
     if fuel_proto ~= nil then  -- Seeing a fuel_proto here means it needs to be re-calculated
         fuel_amount = solver_util.determine_fuel_amount(energy_consumption, line_data.machine_proto.burner,
-            line_data.fuel_proto.fuel_value, timescale)
+            line_data.fuel_proto.fuel_value)
 
         if include_fuel_ingredient then
             local fuel = {type=fuel_proto.type, name=fuel_proto.name, amount=fuel_amount}

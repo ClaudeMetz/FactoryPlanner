@@ -9,7 +9,6 @@ local Product = require("backend.data.Product")
 ---@field previous Factory?
 ---@field archived boolean
 ---@field name string
----@field timescale Timescale
 ---@field matrix_free_items FPItemPrototype[]?
 ---@field blueprints string[]
 ---@field notes string
@@ -23,16 +22,14 @@ Factory.__index = Factory
 script.register_metatable("Factory", Factory)
 
 ---@param name string
----@param timescale Timescale
 ---@return Factory
-local function init(name, timescale)
+local function init(name)
     local object = Object.init({
         archived = false,
         --owner = nil,
         --shared = false,
 
         name = name,
-        timescale = timescale,
         matrix_free_items = nil,
         blueprints = {},
         notes = "",
@@ -157,7 +154,6 @@ end
 ---@class PackedFactory: PackedObject
 ---@field class "Factory"
 ---@field name string
----@field timescale Timescale
 ---@field matrix_free_items FPPackedPrototype[]?
 ---@field blueprints string[]
 ---@field notes string
@@ -169,7 +165,6 @@ function Factory:pack()
     return {
         class = self.class,
         name = self.name,
-        timescale = self.timescale,
         matrix_free_items = prototyper.util.simplify_prototypes(self.matrix_free_items, "type"),
         blueprints = self.blueprints,
         notes = self.notes,
@@ -181,7 +176,7 @@ end
 ---@param packed_self PackedFactory
 ---@return Factory factory
 local function unpack(packed_self)
-    local unpacked_self = init(packed_self.name, packed_self.timescale)
+    local unpacked_self = init(packed_self.name)
 
     -- Product prototypes will be automatically unpacked by the validation process
     unpacked_self.matrix_free_items = packed_self.matrix_free_items

@@ -80,13 +80,6 @@ function preference_structures.dropdowns(preferences, parent_flow)
         if value == preferences.factory_list_rows then height_index = index end
     end
     add_dropdown("factory_list_rows", height_items, height_index)
-
-    local timescale_items, timescale_index = {}, nil
-    for value, name in pairs(TIMESCALE_MAP) do
-        table.insert(timescale_items, {"fp.per_timescale", {"fp." .. name}})
-        if value == preferences.default_timescale then timescale_index = table_size(timescale_items) end
-    end
-    add_dropdown("default_timescale", timescale_items, timescale_index)
 end
 
 function preference_structures.mb_defaults(preferences, content_frame)
@@ -223,11 +216,6 @@ local function handle_dropdown_preference_change(player, tags, event)
     elseif tags.name == "factory_list_rows" then
         preferences.factory_list_rows = FACTORY_LIST_ROWS_OPTIONS[selected_index]
         util.globals.modal_data(player).rebuild = true
-    elseif tags.name == "default_timescale" then
-        local index_map = {[1] = 1, [2] = 60, [3] = 3600}
-        preferences.default_timescale = index_map[selected_index]
-        view_state.rebuild_state(player)  -- relevant for districts view
-        util.raise.refresh(player, "production")
     end
 end
 
@@ -308,7 +296,7 @@ local function open_preferences_dialog(player, modal_data)
     "prefer_matrix_solver", "show_floor_items", "fold_out_subfloors", "ingredient_satisfaction",
     "round_button_numbers", "ignore_barreling_recipes", "ignore_recycling_recipes"}
     local general_box = preference_structures.checkboxes(preferences, left_content_frame, "general",
-    general_preference_names)
+        general_preference_names)
 
     general_box.add{type="line", direction="horizontal"}.style.margin = {4, 0, 2, 0}
 

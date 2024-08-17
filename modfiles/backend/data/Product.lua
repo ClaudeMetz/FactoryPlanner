@@ -38,10 +38,10 @@ end
 ---@return number required_amount
 function Product:get_required_amount()
     if self.defined_by == "amount" then
-        return self.required_amount * self.parent.timescale
+        return self.required_amount
     else   -- defined_by == "belts" | "lanes"
         local multiplier = (self.defined_by == "belts") and 1 or 0.5
-        return self.required_amount * (self.belt_proto.throughput * multiplier) * self.parent.timescale
+        return self.required_amount * (self.belt_proto.throughput * multiplier)
     end
 end
 
@@ -73,7 +73,7 @@ function Product:paste(object)
             self.parent:replace(self, object)
         elseif object.class == "SimpleItem" or object.class == "Fuel" then
             local product = init(object.proto)  -- defined_by = "amount"
-            product.required_amount = object.amount / self.parent.timescale
+            product.required_amount = object.amount
             self.parent:replace(self, product)
         end
 
