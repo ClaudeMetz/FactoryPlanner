@@ -3,6 +3,11 @@
 ## Active
 
 - Should have the ability to manually configure recipe productivity boni somewhere, probs in utility dialog
+  - Have ability to copy from other factory otherwise it's tedious
+
+- Come up with an icon for effects that are limited up or down, instead of saying '(limited)'
+  - Could use the arrows that have a floor above/below them to indicate this
+  - Also move the other effect capping from solver stuff over to the part the user sees
 
 ## Bugs
 
@@ -13,17 +18,14 @@
   - Could at least give the probabilities maybe? It's a lot of tooltip clutter, and potentially solver clutter
   - There's bigger ideas where you could enter X quality Y items per timescale and it would backsolve it
   - Plus more such ideas, but they seem kinda out there currently, need to play with quality myself first
-- Default modules/beacons is awkward with quality since you can't specify it (atm)
-  - Feature is still neat, but maybe time to axe it? Or make it work better somehow
-- Default machines is awkward with quality as you can't specify it
-  - Would be better solved with the in-dialog 'save as default' instead of it being a preference idea
+- Better infinite mining drill support
+  - Kind of incredibly annoying, since there is nothing I can really calculate about it
+  - Could still make it so it shows the oil patch as an ingredient without amount (same for offshore pumps)
+- Turn item spoilage results into recipes since mods will use that as a critical path for sure
+  - Kinda annoying since it doesn't use machines, just times, so the recipes would be very near useless
 
 ## Features
 
-- Agriculture tower implementation
-  - Having a machine number just doesn't make sense for it, so need to adjust solver and UI
-    to allow for machines that just don't have a machine amount. Useful for oil mining too.
-  - Missing energy and pollution production, is different to normal entities
 - Change SimpleItems to be a dict instead of an array so there needs to be no fuss finding stuff
 - Balance District items against each other
 - Allow Factory products to take their amounts from the District's ingredients
@@ -50,7 +52,6 @@
 - Add new view of rockets/timescale, useful for items you need to transfer across planets
   - Needs new view state preferences idea. Could also be timescale/rocket instead
 - Adjust utility dialog handcrafting to behave like vanilla crafting does in all ways
-- Have separate methods for each GUI action instead of a tree. Needs some prep methods sometimes maybe
 - Get rid of player_table.active_factory hack since it's very easy to avoid
 - Main interface toggles/builds? 4 times when starting a save, which is weird
   - Check refreshes in general, maybe write a tool that flags when multiple refreshes happen in sequence
@@ -58,23 +59,21 @@
   - Is quite a complicated feature, especially when productivity is involved. Probably do need it though
 - Rocket silo power usage seems very low, likely doesn't consider launch usage
 - Finally get rid of generic dialogs, even without the extended features
-- Mark entity-type item buttons better visually, somehow
 - When context menus come in, make sure to filter actions properly for all item buttons
   - This is a bit messy with entity-type items currently and can't easily be fixed atm
   - Also drop the tutorial dialog entirely, along with the example factory and everything
   - Also use them to quick-change default belts on the view, for example
-- Come up with an icon for effects that are limited up or down, instead of saying '(limited)'
-  - Could use the arrows that have a floor above/below them to indicate this
-  - Also move the other effect capping from solver stuff over to the part the user sees
 - Item Spoiling - Not super much to do without a lot of effort.
   - Could do a thing where the user enters the time between steps and it takes the spoilage that incurrs into account
   - Maybe some other stuff too, but I'll have to play with it to figure this out. Low priority anyways
-- Better infinite mining drill support
-  - Kind of incredibly annoying, since there is nothing I can really calculate about it
-  - Could still make it so it shows the oil patch as an ingredient without amount (same for offshore pumps)
-- Turn item spoilage results into recipes since mods will use that as a critical path for sure
-  - Kinda annoying since it doesn't use machines, just times, so the recipes would be very near useless
 - Preferences export would be great. Maybe without migration if that makes it much easier
+- Default modules/beacons is awkward with quality since you can't specify it (atm)
+  - Feature is still neat, but maybe time to axe it? Or make it work better somehow
+- Default machines is awkward with quality as you can't specify it
+  - Would be better solved with the in-dialog 'save as default' instead of it being a preference idea
+- Agriculture tower implementation
+  - Missing energy and pollution production, is different to normal entities
+- Make recalculate_on_factory_change a factory property, not a UI one
 
 ## Waiting on
 

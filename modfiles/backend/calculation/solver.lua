@@ -101,7 +101,7 @@ local function generate_floor_data(player, factory, floor)
                 line_data.resource_drain_rate = resource_drain_rate
 
                 -- Effects - update line with recipe effects here if applicable
-                machine:update_recipe_effects(player.force)
+                machine:update_recipe_effects(player.force, factory)
                 line_data.total_effects = line.total_effects
 
                 -- Beacon total - can be calculated here, which is faster and simpler

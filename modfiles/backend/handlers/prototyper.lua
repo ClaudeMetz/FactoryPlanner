@@ -98,24 +98,21 @@ end
 
 
 function prototyper.build()
-    global.prototypes = {}  ---@type PrototypeLists
-    local prototypes = global.prototypes
-
     for data_type, _ in pairs(prototyper.data_types) do
         ---@type AnyNamedPrototypes
-        prototypes[data_type] = generator[data_type].generate()
+        global.prototypes[data_type] = generator[data_type].generate()
     end
 
     -- Second pass to do some things that can't be done in the first pass due to the strict sequencing
     for data_type, _ in pairs(prototyper.data_types) do
         local second_pass = generator[data_type].second_pass  ---@type fun(prototypes: NamedPrototypes)
-        if second_pass ~= nil then second_pass(prototypes[data_type]) end
+        if second_pass ~= nil then second_pass(global.prototypes[data_type]) end
     end
 
     -- Finish up generation by converting lists to use ids as keys, and sort if desired
     for data_type, _ in pairs(prototyper.data_types) do
         local sorting_function = generator[data_type].sorting_function  ---@type SortingFunction
-        prototypes[data_type] = convert_and_sort(data_type, sorting_function)  ---@type AnyIndexedPrototypes
+        global.prototypes[data_type] = convert_and_sort(data_type, sorting_function)  ---@type AnyIndexedPrototypes
     end
 end
 
@@ -258,6 +255,25 @@ function prototyper.util.migrate_mb_defaults(player_table)
     if beacon then
         mb_defaults.beacon = find("modules", beacon.name, nil)  --[[@as FPModulePrototype ]]
     end
+end
+
+
+-- Generates a list of all recipes whose productivity can be changed via research
+---@return { [string]: true }
+function prototyper.util.productivity_recipes()
+    local productivity_recipes = {}
+
+    for _, technology in pairs(game.technology_prototypes) do
+        for _, effect in pairs(technology.effects or {}) do
+            if effect.type == "mining-drill-productivity-bonus" then
+                productivity_recipes["custom-mining"] = true
+            elseif effect.type == "change-recipe-productivity" then
+                productivity_recipes[effect.recipe] = true
+            end
+        end
+    end
+
+    return productivity_recipes
 end
 
 
