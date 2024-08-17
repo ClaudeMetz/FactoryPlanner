@@ -60,6 +60,7 @@ end
 ---@field data_type "machines"
 ---@field category string
 ---@field elem_type ElemType
+---@field quality_category QualityCategory
 ---@field ingredient_limit integer
 ---@field fluid_channels FluidChannels
 ---@field speed double
@@ -85,6 +86,7 @@ end
 ---@field categories { [string]: boolean }
 
 ---@alias EmissionsMap { [string]: double }
+---@alias QualityCategory ("assembling-machine" | "mining-drill")?
 
 -- Generates a table containing all machines for all categories
 ---@return NamedPrototypesWithCategory<FPMachinePrototype>
@@ -93,7 +95,7 @@ function generator.machines.generate()
 
     ---@param category string
     ---@param proto LuaEntityPrototype
-    ---@param quality_category ("assembling-machine" | "mining-drill")?
+    ---@param quality_category QualityCategory
     ---@return FPMachinePrototype?
     local function generate_category_entry(category, proto, quality_category)
         -- First, determine if there is a valid sprite for this machine

@@ -142,6 +142,18 @@ function Factory:tostring(attach_products, export_format)
 end
 
 
+---@param force LuaForce
+---@param recipe_name string
+---@return ModuleEffectValue productivity_bonus
+function Factory:get_productivity_bonus(force, recipe_name)
+    if recipe_name == "custom-mining" then
+        return force.mining_drill_productivity_bonus
+    else
+        return force.recipes[recipe_name].productivity_bonus
+    end
+end
+
+
 -- Only used when switching between belts and lanes
 ---@param new_defined_by ProductDefinedBy
 function Factory:update_product_definitions(new_defined_by)

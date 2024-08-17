@@ -206,6 +206,16 @@ local function import_tutorial_factory()
     return factory  -- can still not be admissible if any lines don't produce anything
 end
 
+---@class GlobalTable
+---@field players { [PlayerIndex]: PlayerTable }
+---@field prototypes PrototypeLists
+---@field next_object_ID integer
+---@field nth_tick_events { [Tick]: NthTickEvent }
+---@field productivity_recipes { [string] : true }
+---@field installed_mods ModToVersion
+---@field tutorial_factory Factory?
+global = {}  -- just for the type checker, doesn't do anything
+
 local function global_init()
     -- Set up a new save for development if necessary
     local freeplay = remote.interfaces["freeplay"]
@@ -214,22 +224,19 @@ local function global_init()
         if freeplay["set_disable_crashsite"] then remote.call("freeplay", "set_disable_crashsite", true) end
     end
 
-    global.players = {}  ---@type { [PlayerIndex]: PlayerTable }
+    global.players = {}  -- Table containing all player-specific data
     global.next_object_ID = 1  -- Counter used for assigning incrementing IDs to all objects
+    global.nth_tick_events = {}  -- Save metadata about currently registered on_nth_tick events
 
-    -- Save metadata about currently registered on_nth_tick events
-    global.nth_tick_events = {}  ---@type { [Tick]: NthTickEvent }
-
+    global.prototypes = {}  -- Table containing all relevant prototypes indexed by ID
     prototyper.build()  -- Generate all relevant prototypes and save them in global
     loader.run(true)  -- Run loader which creates useful indexes of prototype data
 
-    -- Retain current modset to detect mod changes for factories that became invalid
-    global.installed_mods = script.active_mods  ---@type ModToVersion
-    -- Import the tutorial factory to validate and cache it
-    global.tutorial_factory = import_tutorial_factory()
+    global.productivity_recipes = prototyper.util.productivity_recipes()  -- Recipes with possible productivity boni
+    global.installed_mods = script.active_mods  -- Retain current modset to detect mod changes for invalid factories
+    global.tutorial_factory = import_tutorial_factory()  -- Import the tutorial factory to validate and cache it
 
-    -- Initialize flib's translation module
-    translator.on_init()
+    translator.on_init()  -- Initialize flib's translation module
     prototyper.util.build_translation_dictionaries()
 
     for _, player in pairs(game.players) do player_init(player) end
@@ -249,6 +256,8 @@ local function handle_configuration_change()
     migrator.migrate_global(migrations)
     migrator.migrate_player_tables(migrations)
 
+    -- Re-build prototypes
+    global.prototypes = {}
     prototyper.build()
     loader.run(true)
 
@@ -264,6 +273,8 @@ local function handle_configuration_change()
         end
     end
 
+
+    global.productivity_recipes = prototyper.util.productivity_recipes()
     global.installed_mods = script.active_mods
     global.tutorial_factory = import_tutorial_factory()
 

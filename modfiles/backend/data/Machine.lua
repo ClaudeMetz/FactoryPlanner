@@ -95,18 +95,24 @@ end
 
 --- Called when the solver runs because it's the most convenient spot for it
 ---@param force LuaForce
-function Machine:update_recipe_effects(force)
-    local mining_bonus = force.mining_drill_productivity_bonus
-    if mining_bonus > 0 and self.proto.quality_category == "mining-drill" then
-        self.recipe_effects = {productivity=mining_bonus}
-        self:summarize_effects()
+---@param factory Factory
+function Machine:update_recipe_effects(force, factory)
+    local recipe_proto = self.parent.recipe_proto
+
+    if self.proto.quality_category == "mining-drill" then
+        local mining_bonus = factory:get_productivity_bonus(force, "custom-mining")
+        if mining_bonus > 0 then
+            self.recipe_effects = {productivity=mining_bonus}
+            self:summarize_effects()
+        end
     end
 
-    if self.parent.recipe_proto.custom then return end
-    local recipe_bonus = force.recipes[self.parent.recipe_proto.name].productivity_bonus
-    if recipe_bonus > 0 then
-        self.recipe_effects = {productivity=recipe_bonus}
-        self:summarize_effects()
+    if not recipe_proto.custom then
+        local recipe_bonus = factory:get_productivity_bonus(force, recipe_proto.name)
+        if recipe_bonus > 0 then
+            self.recipe_effects = {productivity=recipe_bonus}
+            self:summarize_effects()
+        end
     end
 end
 
