@@ -99,20 +99,15 @@ end
 function Machine:update_recipe_effects(force, factory)
     local recipe_proto = self.parent.recipe_proto
 
-    if self.proto.quality_category == "mining-drill" then
-        local mining_bonus = factory:get_productivity_bonus(force, "custom-mining")
-        if mining_bonus > 0 then
-            self.recipe_effects = {productivity=mining_bonus}
-            self:summarize_effects()
-        end
-    end
+    local recipe_name = nil
+    if self.proto.quality_category == "mining-drill" then recipe_name = "custom-mining"
+    elseif not recipe_proto.custom then recipe_name = recipe_proto.name
+    else return end  -- no recipe effects for custom recipes
 
-    if not recipe_proto.custom then
-        local recipe_bonus = factory:get_productivity_bonus(force, recipe_proto.name)
-        if recipe_bonus > 0 then
-            self.recipe_effects = {productivity=recipe_bonus}
-            self:summarize_effects()
-        end
+    local recipe_bonus = factory:get_productivity_bonus(force, recipe_name)
+    if recipe_bonus > 0 then
+        self.recipe_effects = {productivity=recipe_bonus}
+        self:summarize_effects()
     end
 end
 

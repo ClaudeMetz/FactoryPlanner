@@ -97,6 +97,24 @@ local function convert_and_sort(data_type, prototype_sorting_function)
 end
 
 
+---@alias ProductivityRecipes { [string]: boolean }
+
+---@return ProductivityRecipes
+local function generate_productivity_recipes()
+    local productivity_recipes = {}
+    for _, technology in pairs(game.technology_prototypes) do
+        for _, effect in pairs(technology.effects or {}) do
+            if effect.type == "mining-drill-productivity-bonus" then
+                productivity_recipes["custom-mining"] = true
+            elseif effect.type == "change-recipe-productivity" then
+                productivity_recipes[effect.recipe] = true
+            end
+        end
+    end
+    return productivity_recipes
+end
+
+
 function prototyper.build()
     for data_type, _ in pairs(prototyper.data_types) do
         ---@type AnyNamedPrototypes
@@ -114,6 +132,8 @@ function prototyper.build()
         local sorting_function = generator[data_type].sorting_function  ---@type SortingFunction
         global.prototypes[data_type] = convert_and_sort(data_type, sorting_function)  ---@type AnyIndexedPrototypes
     end
+
+    global.productivity_recipes = generate_productivity_recipes()
 end
 
 
@@ -255,25 +275,6 @@ function prototyper.util.migrate_mb_defaults(player_table)
     if beacon then
         mb_defaults.beacon = find("modules", beacon.name, nil)  --[[@as FPModulePrototype ]]
     end
-end
-
-
--- Generates a list of all recipes whose productivity can be changed via research
----@return { [string]: true }
-function prototyper.util.productivity_recipes()
-    local productivity_recipes = {}
-
-    for _, technology in pairs(game.technology_prototypes) do
-        for _, effect in pairs(technology.effects or {}) do
-            if effect.type == "mining-drill-productivity-bonus" then
-                productivity_recipes["custom-mining"] = true
-            elseif effect.type == "change-recipe-productivity" then
-                productivity_recipes[effect.recipe] = true
-            end
-        end
-    end
-
-    return productivity_recipes
 end
 
 

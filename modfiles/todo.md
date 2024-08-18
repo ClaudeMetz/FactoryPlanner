@@ -2,9 +2,6 @@
 
 ## Active
 
-- Should have the ability to manually configure recipe productivity boni somewhere, probs in utility dialog
-  - Have ability to copy from other factory otherwise it's tedious
-
 - Come up with an icon for effects that are limited up or down, instead of saying '(limited)'
   - Could use the arrows that have a floor above/below them to indicate this
   - Also move the other effect capping from solver stuff over to the part the user sees

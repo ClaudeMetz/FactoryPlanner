@@ -1,7 +1,7 @@
 -- ** LOCAL UTIL **
 -- Adds a box with title and optional scope switch for the given type of utility
-local function add_utility_box(player, modal_elements, type, show_tooltip, show_switch)
-    local bordered_frame = modal_elements.content_frame.add{type="frame", direction="vertical",
+local function add_utility_box(player, modal_elements, side, type, show_tooltip, show_switch)
+    local bordered_frame = modal_elements[side .. "_side"].add{type="frame", direction="vertical",
         style="fp_frame_bordered_stretch"}
     modal_elements[type .. "_box"] = bordered_frame
 
@@ -44,7 +44,7 @@ function utility_structures.components(player, modal_data)
 
     if modal_elements.components_box == nil then
         local components_box, custom_flow, scope_switch = add_utility_box(player, modal_data.modal_elements,
-            "components", true, true)
+            "left", "components", true, true)
         modal_elements.components_box = components_box
         modal_elements.scope_switch = scope_switch
 
@@ -147,7 +147,8 @@ function utility_structures.blueprints(player, modal_data)
     local blueprint_limit = MAGIC_NUMBERS.blueprint_limit
 
     if modal_elements.blueprints_box == nil then
-        local blueprints_box = add_utility_box(player, modal_data.modal_elements, "blueprints", true, false)
+        local blueprints_box = add_utility_box(player, modal_data.modal_elements, "left", "blueprints", true, false)
+        blueprints_box.style.margin = {4, 0}
         modal_elements["blueprints_box"] = blueprints_box
 
         local frame_blueprints = blueprints_box.add{type="frame", direction="horizontal", style="fp_frame_light_slots"}
@@ -213,14 +214,78 @@ function utility_structures.blueprints(player, modal_data)
 end
 
 function utility_structures.notes(player, modal_data)
-    local utility_box = add_utility_box(player, modal_data.modal_elements, "notes", false, false)
+    local utility_box = add_utility_box(player, modal_data.modal_elements, "left", "notes", false, false)
 
     local notes = util.context.get(player, "Factory").notes
     local text_box = utility_box.add{type="text-box", text=notes,
         tags={mod="fp", on_gui_text_changed="factory_notes"}}
-    text_box.style.size = {480, 250}
+    text_box.style.vertically_stretchable = true
+    text_box.style.minimal_height = 320
+    text_box.style.width = 480
     text_box.word_wrap = true
-    text_box.style.top_margin = -2
+end
+
+function utility_structures.productivity_boni(player, modal_data)
+    local current_factory = util.context.get(player, "Factory")  --[[@as Factory]]
+    local attach_factory_products = util.globals.preferences(player).attach_factory_products
+
+    if not modal_data.modal_elements["productivity_boni_table"] then
+        local boni_box = add_utility_box(player, modal_data.modal_elements, "right", "productivity_boni", true, false)
+
+        local flow_import = boni_box.add{type="flow", direction="horizontal"}
+        flow_import.style.vertical_align = "center"
+        flow_import.style.bottom_margin = 8
+        flow_import.add{type="label", caption={"fp.import_from"}, style="bold_label"}
+        flow_import.add{type="empty-widget", style="flib_horizontal_pusher"}
+
+        local factory_names = {}
+        modal_data.factory_index = {}  -- used to find the factory later
+        for factory in current_factory.parent:iterator() do
+            if factory.id ~= current_factory.id then
+                local factory_name = factory:tostring(attach_factory_products, true)
+                table.insert(factory_names, factory_name)
+                table.insert(modal_data.factory_index, factory.id)  -- will match dropdown index
+            end
+        end
+        local enabled = (#factory_names > 0)
+        local dropdown_factory = flow_import.add{type="drop-down", items=factory_names, enabled=enabled}
+        modal_data.modal_elements["factory_dropdown"] = dropdown_factory
+        flow_import.add{type="sprite-button", tags={mod="fp", on_gui_click="import_productivity_boni"},
+            style="flib_tool_button_light_green", tooltip={"fp.import_from_tt"}, enabled=enabled,
+            sprite="utility/check_mark", mouse_button_filter={"left"}}
+
+
+        local table = boni_box.add{type="table", column_count=3}
+        table.style.column_alignments[2] = "center"
+        table.style.column_alignments[3] = "center"
+        table.style.horizontal_spacing = 16
+        modal_data.modal_elements["productivity_boni_table"] = table
+    end
+    local table = modal_data.modal_elements["productivity_boni_table"]
+    table.clear()
+
+    table.add{type="label", caption={"fp.pu_recipe", 1}, style="bold_label"}
+    table.add{type="label", caption={"fp.current"}, style="bold_label"}
+    table.add{type="label", caption={"fp.custom"}, style="bold_label"}
+
+    for recipe_name in pairs(global.productivity_recipes) do
+        local recipe_proto = prototyper.util.find("recipes", recipe_name, nil)  --[[@as FPRecipePrototype]]
+        local caption = (recipe_name == "custom-mining")
+            and {"", "[img=utility/mining_drill_productivity_bonus_modifier_icon]  ", {"fp.mining_recipes"}}
+            or {"", "[recipe=" .. recipe_name .. "]  ", recipe_proto.localised_name}
+        table.add{type="label", caption=caption}
+
+        local productivity = util.get_recipe_productivity(player.force, recipe_name)
+        local percentage = ("%+d"):format(math.floor((productivity * 100) + 0.5)) .. "%"
+        table.add{type="label", caption=percentage}
+
+        local current_bonus = current_factory.productivity_boni[recipe_name]
+        local current_percentage = (current_bonus) and current_bonus * 100 or nil
+        local textfield_bonus = table.add{type="textfield", text=current_percentage,
+            tags={mod="fp", on_gui_text_changed="productivity_bonus", recipe_name=recipe_name}}
+        util.gui.setup_numeric_textfield(textfield_bonus, false, false)
+        textfield_bonus.style.width = 52
+    end
 end
 
 
@@ -345,18 +410,56 @@ local function handle_blueprint_click(player, tags, action)
 end
 
 
+local function import_productivity_boni(player, _, event)
+    local modal_data = util.globals.modal_data(player)  --[[@as table]]
+    local selected_index = modal_data.modal_elements.factory_dropdown.selected_index
+    local export_factory = OBJECT_INDEX[modal_data.factory_index[selected_index]]  --[[@as Factory]]
+    local import_factory = util.context.get(player, "Factory")  --[[@as Factory]]
+    import_factory.productivity_boni = ftable.deep_copy(export_factory.productivity_boni)
+
+    utility_structures.productivity_boni(player, modal_data)
+    modal_data.recalculate = true
+end
+
+
 local function open_utility_dialog(player, modal_data)
     -- Add the players' relevant inventory components to modal_data
     modal_data.inventory_contents = player.get_main_inventory().get_contents()
     modal_data.utility_inventory = game.create_inventory(1)  -- used for blueprint decoding
 
+    local modal_elements = modal_data.modal_elements
+
+    local flow_content = modal_elements.dialog_flow.add{type="flow", direction="horizontal"}
+    flow_content.style.horizontal_spacing = 12
+
+    local left_frame = flow_content.add{type="frame", direction="vertical", style="inside_shallow_frame"}
+    local left_scrollpane = left_frame.add{type="scroll-pane", style="flib_naked_scroll_pane"}
+    left_scrollpane.style.padding = 12
+    modal_data.modal_elements.left_side = left_scrollpane
+
+    local right_frame = flow_content.add{type="frame", direction="vertical", style="inside_shallow_frame"}
+    local right_scrollpane = right_frame.add{type="scroll-pane", style="flib_naked_scroll_pane"}
+    right_scrollpane.style.vertically_stretchable = true
+    right_scrollpane.style.padding = 12
+    modal_data.modal_elements.right_side = right_scrollpane
+
+    -- Left side
     utility_structures.components(player, modal_data)
     utility_structures.blueprints(player, modal_data)
     utility_structures.notes(player, modal_data)
+
+    -- Right side
+    utility_structures.productivity_boni(player, modal_data)
 end
 
 local function close_utility_dialog(player, _)
-    util.globals.modal_data(player).utility_inventory.destroy()
+    local modal_data = util.globals.modal_data(player)  --[[@as table]]
+    if modal_data.recalculate then
+        local factory = util.context.get(player, "Factory")  --[[@as Factory]]
+        solver.update(player, factory)
+        util.raise.refresh(player, "factory")
+    end
+    modal_data.utility_inventory.destroy()
 end
 
 
@@ -396,6 +499,10 @@ listeners.gui = {
             },
             handler = handle_blueprint_click
         },
+        {
+            name = "import_productivity_boni",
+            handler = import_productivity_boni
+        }
     },
     on_gui_switch_state_changed = {
         {
@@ -409,6 +516,15 @@ listeners.gui = {
             handler = (function(player, _, event)
                 util.context.get(player, "Factory").notes = event.element.text
             end)
+        },
+        {
+            name = "productivity_bonus",
+            handler = (function(player, tags, event)
+                local factory = util.context.get(player, "Factory")  --[[@as Factory]]
+                local bonus = tonumber(event.element.text)  -- nil if invalid or empty
+                if bonus then factory.productivity_boni[tags.recipe_name] = bonus / 100 end
+                util.globals.modal_data(player).recalculate = true
+            end)
         }
     }
 }
@@ -417,7 +533,7 @@ listeners.dialog = {
     dialog = "utility",
     metadata = (function(_) return {
         caption = {"fp.utilities"},
-        create_content_frame = true
+        create_content_frame = false
     } end),
     open = open_utility_dialog,
     close = close_utility_dialog
