@@ -210,14 +210,12 @@ listeners.dialog = {
     metadata = (function(modal_data)
         local line = OBJECT_INDEX[modal_data.line_id]
         local machine_name = line.machine.proto.localised_name
-        local edit = (line.beacon ~= nil)
-        local action = (edit) and "edit" or "add"
         return {
-            caption = {"", {"fp." .. action}, " ", {"fp.pl_beacon", 1}},
-            subheader_text = {("fp.beacon_dialog_description_" .. action), machine_name},
+            caption = {"", {"fp." .. "edit"}, " ", {"fp.pl_beacon", 1}},
+            subheader_text = {("fp.beacon_dialog_description"), machine_name},
             create_content_frame = true,
             show_submit_button = true,
-            show_delete_button = (edit == true)
+            show_delete_button = (line.beacon ~= nil)
         }
     end),
     open = open_beacon_dialog,
