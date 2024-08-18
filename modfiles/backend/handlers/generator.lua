@@ -1117,7 +1117,7 @@ function generator.locations.generate()
                 surface_properties[property_proto.name] = value
 
                 local value_and_unit = {"", value, property_proto.localised_unit}  ---@type LocalisedString
-                if property_proto.is_time then value_and_unit = util.format.format_time(value) end
+                if property_proto.is_time then value_and_unit = util.format.time(value) end
                 table.insert(tooltip, {"fp.surface_property", property_proto.localised_name, value_and_unit})
             end
         end

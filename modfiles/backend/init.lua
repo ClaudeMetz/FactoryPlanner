@@ -211,7 +211,7 @@ end
 ---@field prototypes PrototypeLists
 ---@field next_object_ID integer
 ---@field nth_tick_events { [Tick]: NthTickEvent }
----@field productivity_recipes { [string] : true }
+---@field productivity_recipes ProductivityRecipes
 ---@field installed_mods ModToVersion
 ---@field tutorial_factory Factory?
 global = {}  -- just for the type checker, doesn't do anything
@@ -232,7 +232,6 @@ local function global_init()
     prototyper.build()  -- Generate all relevant prototypes and save them in global
     loader.run(true)  -- Run loader which creates useful indexes of prototype data
 
-    global.productivity_recipes = prototyper.util.productivity_recipes()  -- Recipes with possible productivity boni
     global.installed_mods = script.active_mods  -- Retain current modset to detect mod changes for invalid factories
     global.tutorial_factory = import_tutorial_factory()  -- Import the tutorial factory to validate and cache it
 
@@ -273,8 +272,6 @@ local function handle_configuration_change()
         end
     end
 
-
-    global.productivity_recipes = prototyper.util.productivity_recipes()
     global.installed_mods = script.active_mods
     global.tutorial_factory = import_tutorial_factory()
 

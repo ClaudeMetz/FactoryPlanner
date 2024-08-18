@@ -12,6 +12,7 @@ local Product = require("backend.data.Product")
 ---@field matrix_free_items FPItemPrototype[]?
 ---@field blueprints string[]
 ---@field notes string
+---@field productivity_boni { string: ModuleEffectValue }
 ---@field first Product?
 ---@field top_floor Floor
 ---@field linearly_dependant boolean?
@@ -33,6 +34,7 @@ local function init(name)
         matrix_free_items = nil,
         blueprints = {},
         notes = "",
+        productivity_boni = {},
         first = nil,
         top_floor = Floor.init(1),
 
@@ -146,11 +148,9 @@ end
 ---@param recipe_name string
 ---@return ModuleEffectValue productivity_bonus
 function Factory:get_productivity_bonus(force, recipe_name)
-    if recipe_name == "custom-mining" then
-        return force.mining_drill_productivity_bonus
-    else
-        return force.recipes[recipe_name].productivity_bonus
-    end
+    local custom_bonus = self.productivity_boni[recipe_name]
+    if custom_bonus then return custom_bonus
+    else return util.get_recipe_productivity(force, recipe_name) end
 end
 
 
@@ -169,6 +169,7 @@ end
 ---@field matrix_free_items FPPackedPrototype[]?
 ---@field blueprints string[]
 ---@field notes string
+---@field productivity_boni { string: ModuleEffectValue }
 ---@field products PackedProduct[]?
 ---@field top_floor PackedFloor
 
@@ -180,6 +181,7 @@ function Factory:pack()
         matrix_free_items = prototyper.util.simplify_prototypes(self.matrix_free_items, "type"),
         blueprints = self.blueprints,
         notes = self.notes,
+        productivitiy_boni = self.productivity_boni,
         products = self:_pack(),
         top_floor = self.top_floor:pack()
     }
@@ -194,6 +196,7 @@ local function unpack(packed_self)
     unpacked_self.matrix_free_items = packed_self.matrix_free_items
     unpacked_self.blueprints = packed_self.blueprints
     unpacked_self.notes = packed_self.notes
+    unpacked_self.productivity_boni = packed_self.productivity_boni
 
     unpacked_self.first = Object.unpack(packed_self.products, Product.unpack, unpacked_self)  --[[@as Product]]
 
@@ -222,6 +225,13 @@ function Factory:validate()
     local matrix_free_items, valid = prototyper.util.validate_prototype_objects(self.matrix_free_items, "type")
     self.matrix_free_items = matrix_free_items
     self.valid = valid and self.valid
+
+    -- Remove any invalid boni, no need to mark the factory as invalid
+    for recipe_name, _ in pairs(self.productivity_boni) do
+        if not global.productivity_recipes[recipe_name] then
+            self.productivity_boni[recipe_name] = nil
+        end
+    end
 
     if self.valid then self.last_valid_modset = nil
     -- If this factory became invalid with the current configuration, retain the modset before the current one
