@@ -2,8 +2,6 @@
 
 ## Active
 
-- Also move the other effect capping from solver stuff over to the part the user sees
-
 ## Bugs
 
 - Setting a module in machine dialog and backing out still sets the module
