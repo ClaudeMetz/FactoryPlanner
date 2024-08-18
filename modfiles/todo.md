@@ -4,9 +4,6 @@
 
 ## Bugs
 
-- Setting a module in machine dialog and backing out still sets the module
-  - Somehow opening it a second time sets it for real
-
 ## Uncertainty Sphere
 
 - Quality calculations: not sure how far I want to go with these

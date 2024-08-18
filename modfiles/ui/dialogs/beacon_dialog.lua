@@ -157,6 +157,8 @@ local function close_beacon_dialog(player, action)
 
     else -- action == "cancel"
         modal_data.line:set_beacon(modal_data.backup_beacon)  -- could be nil
+        -- Need to refresh so the buttons have the 'new' backup beacon for further actions
+        util.raise.refresh(player, "production_detail")
     end
 end
 
