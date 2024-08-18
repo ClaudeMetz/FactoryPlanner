@@ -2,12 +2,12 @@
 
 ## Active
 
-- Come up with an icon for effects that are limited up or down, instead of saying '(limited)'
-  - Could use the arrows that have a floor above/below them to indicate this
-  - Also move the other effect capping from solver stuff over to the part the user sees
+- Also move the other effect capping from solver stuff over to the part the user sees
 
 ## Bugs
 
+- Setting a module in machine dialog and backing out still sets the module
+  - Somehow opening it a second time sets it for real
 
 ## Uncertainty Sphere
 

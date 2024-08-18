@@ -156,13 +156,13 @@ function _gui.format_module_effects(module_effects, options)
     local function limit_effect(value, name)
         if options.limit == true then
             if positive_only_effects[name] and value < 0 then
-                return 0, {"fp.effect_limit"}
+                return 0, "[img=fp_limited_down]"
             elseif name == "productivity" and value > options.max_prod then
-                return options.max_prod, {"fp.effect_max"}
+                return options.max_prod, "[img=fp_limited_up]"
             elseif value < lower_bound then
-                return lower_bound, {"fp.effect_limit"}
+                return lower_bound, "[img=fp_limited_down]"
             elseif value > upper_bound then
-                return upper_bound, {"fp.effect_max"}
+                return upper_bound, "[img=fp_limited_up]"
             end
         end
         return value, ""  -- return value if nothing above hits
