@@ -188,14 +188,14 @@ function generator.machines.generate()
     end
 
     for _, proto in pairs(game.entity_prototypes) do
-        if proto.crafting_categories --[[ and not proto.hidden ]] and proto.energy_usage ~= nil
+        if proto.crafting_categories and not proto.hidden and proto.energy_usage ~= nil
                 and not generator_util.is_irrelevant_machine(proto) then
             for category, _ in pairs(proto.crafting_categories) do
                 local machine = generate_category_entry(category, proto, "assembling-machine")
                 if machine then insert_prototype(machines, machine, machine.category) end
             end
 
-        elseif proto.type == "mining-drill" --[[ and not proto.hidden ]] then
+        elseif proto.type == "mining-drill" and not proto.hidden then
             for category, _ in pairs(proto.resource_categories) do
                 local machine = generate_category_entry(category, proto, "mining-drill")
                 if machine then
@@ -205,14 +205,14 @@ function generator.machines.generate()
                 end
             end
 
-        elseif proto.type == "offshore-pump" --[[ and not proto.hidden ]] then
+        elseif proto.type == "offshore-pump" and not proto.hidden then
             local machine = generate_category_entry(proto.type, proto, nil)
             if machine then
                 machine.speed = proto.pumping_speed
                 insert_prototype(machines, machine, proto.type)
             end
 
-        elseif proto.type == "agricultural-tower" --[[ and not proto.hidden ]] then
+        elseif proto.type == "agricultural-tower" and not proto.hidden then
             local machine = generate_category_entry(proto.type, proto, nil)
             if machine then
                 local growth_area_width = (proto.growth_grid_tile_size * 2) + 1
@@ -421,7 +421,7 @@ function generator.recipes.generate()
     end
 
     for _, proto in pairs(game.entity_prototypes) do
-        if proto.type == "resource" --[[ and not proto.hidden ]] then
+        if proto.type == "resource" and not proto.hidden then
             local products = proto.mineable_properties.products
             if not products then goto incompatible_proto end
 
@@ -458,7 +458,7 @@ function generator.recipes.generate()
             ::incompatible_proto::
 
         -- Add agricultural tower recipes
-        elseif proto.type == "plant" --[[ and not proto.hidden ]] then
+        elseif proto.type == "plant" and not proto.hidden then
             local products = proto.mineable_properties.products
             if not products then goto incompatible_proto end
             local seed_name = plant_seed_map[proto.name]
@@ -484,7 +484,7 @@ function generator.recipes.generate()
 
             ::incompatible_proto::
 
-        elseif proto.type == "rocket-silo" --[[ and not proto.hidden ]] then
+        elseif proto.type == "rocket-silo" and not proto.hidden then
             local parts_recipe = game.recipe_prototypes[proto.fixed_recipe]
 
             -- Add special research rocket recipe
@@ -561,7 +561,7 @@ function generator.recipes.generate()
     -- Add offshore pump recipes
     local pumped_fluids = {}
     for _, proto in pairs(game.tile_prototypes) do
-        if proto.fluid and not pumped_fluids[proto.fluid.name] --[[ and not proto.hidden ]] then
+        if proto.fluid and not pumped_fluids[proto.fluid.name] and not proto.hidden then
             pumped_fluids[proto.fluid.name] = true
 
             local recipe = custom_recipe()
@@ -678,7 +678,7 @@ function generator.items.generate()
     local custom_items, rocket_parts = {}, {}
 
     for _, proto in pairs(game.entity_prototypes) do
-        if proto.type == "resource" --[[ and not proto.hidden ]] then
+        if proto.type == "resource" and not proto.hidden then
             local item_name = "custom-" .. proto.name
             custom_items[item_name] = {
                 name = item_name,
@@ -690,7 +690,7 @@ function generator.items.generate()
             generator_util.add_default_groups(custom_items[item_name])
 
         -- Mark rocket silo part items here so they can be marked as non-hidden
-        elseif proto.type == "rocket-silo" --[[ and not proto.hidden ]] then
+        elseif proto.type == "rocket-silo" and not proto.hidden then
             local parts_recipe = game.recipe_prototypes[proto.fixed_recipe]
             rocket_parts[parts_recipe.main_product.name] = true
         end
@@ -698,7 +698,7 @@ function generator.items.generate()
 
     local pumped_fluids = {}
     for _, proto in pairs(game.tile_prototypes) do
-        if proto.fluid and not pumped_fluids[proto.fluid.name] --[[ and not proto.hidden ]] then
+        if proto.fluid and not pumped_fluids[proto.fluid.name] and not proto.hidden then
             pumped_fluids[proto.fluid.name] = true
 
             local item_name = "custom-" .. proto.name
@@ -1104,7 +1104,7 @@ function generator.locations.generate()
     ---@return FPLocationPrototype? location_proto
     local function build_location(proto, type_)
         local sprite = type_ .. "/" .. proto.name
-        if --[[ not proto.hidden and ]] not game.is_valid_sprite_path(sprite) then return nil end
+        if not proto.hidden and not game.is_valid_sprite_path(sprite) then return nil end
 
         local surface_properties, tooltip = nil, {"", {"fp.tt_title", proto.localised_name}}
 
@@ -1133,7 +1133,7 @@ function generator.locations.generate()
     end
 
     for _, proto in pairs(game.space_location_prototypes) do
-        if proto.name ~= "space-location-unknown" then  -- only until hidden API is available
+        if proto.name ~= "space-location-unknown" then  -- Shouldn't this be hidden by the game?
             local location = build_location(proto, "space-location")
             if location then insert_prototype(locations, location, nil) end
         end
@@ -1157,7 +1157,7 @@ function generator.qualities.generate()
     local qualities = {}  ---@type NamedPrototypes<FPQualityPrototype>
 
     for _, proto in pairs(game.quality_prototypes) do
-        if proto.name ~= "quality-unknown" then  -- only until hidden API is available, maybe
+        if proto.name ~= "quality-unknown" then  -- Shouldn't this be hidden by the game?
             local sprite = "quality/" .. proto.name
             if game.is_valid_sprite_path(sprite) then
                 local quality = {
