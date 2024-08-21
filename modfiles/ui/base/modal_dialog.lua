@@ -63,12 +63,8 @@ local function create_base_modal_dialog(player, dialog_settings, modal_data)
         content_frame.style.vertically_stretchable = true
 
         if dialog_settings.subheader_text then
-            local subheader = content_frame.add{type="frame", direction="horizontal", style="subheader_frame"}
-            subheader.style.horizontally_stretchable = true
-            subheader.style.padding = {12, 24, 12, 12}
-            local label = subheader.add{type="label", caption=dialog_settings.subheader_text,
-                tooltip=dialog_settings.subheader_tooltip}
-            label.style.font = "default-semibold"
+            util.gui.add_modal_subheader(content_frame, dialog_settings.subheader_text,
+                dialog_settings.subheader_tooltip)
         end
 
         local scroll_pane = content_frame.add{type="scroll-pane", direction="vertical", style="flib_naked_scroll_pane"}

@@ -2,6 +2,12 @@
 
 ## Active
 
+- Default modules/beacons is awkward with quality since you can't specify it (atm)
+  - Feature is still neat, but maybe time to axe it? Or make it work better somehow
+
+- Save fuel default for combined categories instead of separate ones
+- Save quality alongside default machine instead of just the machine
+
 ## Bugs
 
 ## Uncertainty Sphere
@@ -59,13 +65,11 @@
   - Could do a thing where the user enters the time between steps and it takes the spoilage that incurrs into account
   - Maybe some other stuff too, but I'll have to play with it to figure this out. Low priority anyways
 - Preferences export would be great. Maybe without migration if that makes it much easier
-- Default modules/beacons is awkward with quality since you can't specify it (atm)
-  - Feature is still neat, but maybe time to axe it? Or make it work better somehow
-- Default machines is awkward with quality as you can't specify it
-  - Would be better solved with the in-dialog 'save as default' instead of it being a preference idea
 - Agriculture tower implementation
   - Missing energy and pollution production, is different to normal entities
 - Make recalculate_on_factory_change a factory property, not a UI one
+- Make modal dialog create left and right content frames, since it's used quite a lot now
+- Use modal dialog reset button functionality on machine and beacon dialogs
 
 ## Waiting on
 

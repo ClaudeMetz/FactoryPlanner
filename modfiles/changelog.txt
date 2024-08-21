@@ -28,21 +28,23 @@ Date: 30. 07. 2024
 Version: 1.2.1
 Date: 20. 07. 2024
   Features:
+    - This version was a huge amount of effort over many months, and puts the mod in a much better place for the future. It's a big step forward, I hope you enjoy it, and thanks for the support so far!
     - Updated the mod for Factorio 2.0 and the Space Age expansion. This means adoption to changes in existing systems and support for new systems, the most significant of which will be listed here. The mod will still work just fine without Space Age, with appropriate adjustements to the interface.
     - TODO districts -> surface conditions, pollution?
     - Added the ability to set a quality level on machines, beacons, and modules
-    - Added support for all the new machines and recipes, like the agriculture tower
+    - Added support for the new machines and recipes, like the agriculture tower
     - Added indication of cyclic/catalyst ingredients in recipes, making it easier to plan their logistics
     - Added support for arithmetic operations in relevant textfields
     - Added the ability to set custom productivity boni for relevant recipes
   Changes:
     - Updated the layout of the main interface to better accommodate new functionality and improve its semantics
+    - Moved the global machine, fuel and beacon defaults from the preferences dialog into the machine/beacon dialog
     - Changed the timescale setting to be global instead of per factory, while dropping the per hour option
     - Adjusted mod for new module mechanics such as beacon profiles, machine base productivity, new productivity researches, maximum recipe productivity, and more
     - Changed the utility dialog function to request missing item delivery to create a new logistic section instead of having construction bots fulfill the order
     - Dropped Recipe Book support in favor of Factoriopedia, the new built-in recipe browser
     - Dropped support for boiler recipes, for now
-    - Improved and fixed various parts of the interface
+    - Fixed and improved various parts of the interface
     - Updated the Factorio Library mod to 2.0.0
   Bugfixes:
     -

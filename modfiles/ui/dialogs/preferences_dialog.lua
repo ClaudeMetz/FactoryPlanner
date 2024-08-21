@@ -252,7 +252,7 @@ local function handle_default_prototype_change(player, tags, event)
     prototyper.defaults.set(player, data_type, tags.prototype_id, category_id)
     refresh_defaults_table(player, modal_elements, data_type, category_id)
 
-    -- If this was an shift-click, set this prototype on every category that also has it
+   --[[  -- If this was an shift-click, set this prototype on every category that also has it
     if event.shift and data_type == "machines" then
         local new_default = prototyper.defaults.get(player, data_type, category_id)
 
@@ -266,7 +266,7 @@ local function handle_default_prototype_change(player, tags, event)
                 end
             end
         end
-    end
+    end ]]
 
     if data_type == "belts" or data_type == "wagons" then
         view_state.rebuild_state(player)
@@ -307,7 +307,6 @@ local function open_preferences_dialog(player, modal_data)
 
     left_content_frame.add{type="empty-widget", style="flib_vertical_pusher"}
     local support_frame = left_content_frame.add{type="frame", direction="vertical", style="fp_frame_bordered_stretch"}
-    support_frame.style.bottom_margin = -12
     support_frame.style.padding = 8
     support_frame.add{type="label", caption={"fp.preferences_support"}}
 
@@ -318,8 +317,8 @@ local function open_preferences_dialog(player, modal_data)
     local belts_box = preference_structures.prototypes(player, right_content_frame, modal_elements, "belts")
     preference_structures.prototypes(player, right_content_frame, modal_elements, "beacons")
     preference_structures.prototypes(player, right_content_frame, modal_elements, "wagons")
-    preference_structures.prototypes(player, right_content_frame, modal_elements, "fuels")
-    preference_structures.prototypes(player, right_content_frame, modal_elements, "machines")
+    --preference_structures.prototypes(player, right_content_frame, modal_elements, "fuels")
+    --preference_structures.prototypes(player, right_content_frame, modal_elements, "machines")
 
     belts_box.visible = true  -- force visible so additional preference is accessible
     belts_box.title_flow.add{type="empty-widget", style="flib_horizontal_pusher"}
