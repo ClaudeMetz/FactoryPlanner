@@ -5,7 +5,6 @@
 - Default modules/beacons is awkward with quality since you can't specify it (atm)
   - Feature is still neat, but maybe time to axe it? Or make it work better somehow
 
-- Save fuel default for combined categories instead of separate ones
 - Save quality alongside default machine instead of just the machine
 
 ## Bugs
