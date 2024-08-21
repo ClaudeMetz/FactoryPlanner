@@ -1,6 +1,73 @@
 require("ui.elements.module_configurator")
 
 -- ** LOCAL UTIL **
+local function add_checkbox(modal_elements, checkbox_type, localised_name, identifier, event_name)
+    local caption, tooltip = {"fp." .. checkbox_type}, {"fp." .. checkbox_type .. "_tt", localised_name}
+    local tags = (event_name) and {mod="fp", on_gui_checked_state_changed=event_name} or nil
+    local checkbox = modal_elements.defaults_panel.add{type="checkbox", state=false,
+        caption=caption, tooltip=tooltip, tags=tags}
+    modal_elements[identifier] = checkbox
+end
+
+local function refresh_defaults_frame(player)
+    local modal_data = util.globals.modal_data(player)  --[[@as table]]
+    local modal_elements = modal_data.modal_elements
+    local machine = modal_data.object  --[[@as Machine]]
+
+    -- Machine
+    local default_machine = prototyper.defaults.get(player, "machines", machine.proto.category)
+    local all_machines = modal_elements.machine_all.state
+    modal_elements.machine.enabled = (default_machine.id ~= machine.proto.id and not all_machines)
+    modal_elements.machine.state = (default_machine.id == machine.proto.id or all_machines)
+
+    -- Fuel
+    local fuel_required, default_fuel = (machine.proto.burner ~= nil), nil
+    if fuel_required then
+        local machine_category = next(machine.proto.burner.categories, nil)
+        default_fuel = prototyper.defaults.get(player, "fuels", machine_category)
+    end  ---@cast default_fuel FPFuelPrototype
+    local all_fuels = modal_elements.fuel_all.state
+    modal_elements.fuel.enabled = fuel_required and (default_fuel.id ~= machine.fuel.proto.id and not all_fuels)
+    modal_elements.fuel.state = fuel_required and (default_fuel.id == machine.fuel.proto.id or all_fuels)
+    modal_elements.fuel_all.enabled = fuel_required
+end
+
+local function add_defaults_panel(parent_frame, player)
+    local modal_elements = util.globals.modal_elements(player)
+
+    local bordered_frame = parent_frame.add{type="frame", direction="vertical", style="fp_frame_bordered_stretch"}
+    bordered_frame.style.vertically_stretchable = true
+    bordered_frame.style.right_padding = 24
+    modal_elements.defaults_panel = bordered_frame
+
+    bordered_frame.add{type="label", caption={"fp.pu_machine", 1}, style="caption_label"}
+    add_checkbox(modal_elements, "save_as_default", {"fp.pl_machine", 1}, "machine")
+    add_checkbox(modal_elements, "save_for_all", {"fp.pl_machine", 1}, "machine_all", "toggle_checkbox_all")
+
+    local fuel_label = bordered_frame.add{type="label", caption={"fp.pu_fuel", 1}, style="caption_label"}
+    fuel_label.style.top_margin = 8
+    add_checkbox(modal_elements, "save_as_default", {"fp.pl_fuel", 1}, "fuel")
+    add_checkbox(modal_elements, "save_for_all", {"fp.pl_fuel", 1}, "fuel_all", "toggle_checkbox_all")
+
+    refresh_defaults_frame(player)
+end
+
+local function set_defaults(player, machine)
+    local modal_elements = util.globals.modal_elements(player)
+    if modal_elements.machine_all.state then
+        prototyper.defaults.set_all(player, "machines", machine.proto.name)
+    elseif modal_elements.machine.state then
+        prototyper.defaults.set(player, "machines", machine.proto.id, machine.proto.category)
+    end
+
+    if modal_elements.fuel_all.state then
+        prototyper.defaults.set_all(player, "fuels", machine.fuel.proto.name)
+    elseif modal_elements.fuel.state then
+        prototyper.defaults.set(player, "fuels", machine.fuel.proto.id, next(machine.proto.burner.categories, nil))
+    end
+end
+
+
 local function refresh_fuel_frame(player)
     local modal_data = util.globals.modal_data(player)  --[[@as table]]
     local modal_elements = modal_data.modal_elements
@@ -109,6 +176,7 @@ local function handle_machine_choice(player, _, event)
 
     refresh_fuel_frame(player)
     module_configurator.refresh_modules_flow(player, false)
+    refresh_defaults_frame(player)
 end
 
 local function handle_fuel_choice(player, _, event)
@@ -125,6 +193,8 @@ local function handle_fuel_choice(player, _, event)
         local new_proto = prototyper.util.find("fuels", elem_value, category_name)
         if new_proto then machine.fuel.proto = new_proto; break end
     end
+
+    refresh_defaults_frame(player)
 end
 
 
@@ -136,21 +206,44 @@ local function open_machine_dialog(player, modal_data)
     modal_data.beacon_backup = modal_data.line.beacon and modal_data.line.beacon:clone()
     modal_data.module_set = modal_data.object.module_set
 
-    local content_frame = modal_data.modal_elements.content_frame
+    local flow_content = modal_data.modal_elements.dialog_flow.add{type="flow", direction="horizontal"}
+    flow_content.style.horizontal_spacing = 12
+
+    local left_frame = flow_content.add{type="frame", direction="vertical", style="inside_shallow_frame"}
+    left_frame.style.vertically_stretchable = true
+
+    local subheader_caption = {"fp.machine_dialog_description", modal_data.line.recipe_proto.localised_name}
+    local subheader = util.gui.add_modal_subheader(left_frame, subheader_caption, nil)
+
+    subheader.add{type="empty-widget", style="flib_horizontal_pusher"}
+    local button_defaults = subheader.add{type="button", caption={"fp.defaults_open"}, style="fp_button_transparent",
+        tags={mod="fp", on_gui_click="toggle_defaults_panel"}}
+    modal_data.modal_elements["defaults_button"] = button_defaults
+
+    local left_flow = left_frame.add{type="flow", direction="vertical"}
+    left_flow.style.padding = 12
 
     -- Machine & Fuel
-    local flow_machine = content_frame.add{type="flow", direction="horizontal"}
+    local flow_machine = left_flow.add{type="flow", direction="horizontal"}
     add_machine_frame(flow_machine, player, modal_data.line)
     add_fuel_frame(flow_machine, player)
 
     -- Limit
     if modal_data.line.parent.parent.matrix_free_items == nil then
-        add_limit_frame(content_frame, player)
+        add_limit_frame(left_flow, player)
     end
 
     -- Modules
-    module_configurator.add_modules_flow(content_frame, modal_data)
+    module_configurator.add_modules_flow(left_flow, modal_data)
     module_configurator.refresh_modules_flow(player, false)
+
+    local right_frame = flow_content.add{type="frame", direction="vertical", visible=false, style="inside_shallow_frame"}
+    right_frame.style.padding = 12
+    right_frame.style.vertically_stretchable = true
+    modal_data.modal_elements["defaults_box"] = right_frame
+
+    -- Defaults
+    add_defaults_panel(right_frame, player)
 end
 
 local function close_machine_dialog(player, action)
@@ -161,6 +254,8 @@ local function close_machine_dialog(player, action)
         machine.module_set:normalize({sort=true})
         machine.limit = util.gui.parse_expression_field(modal_data.modal_elements.limit_textfield)
         machine.force_limit = util.gui.switch.convert_to_state(modal_data.modal_elements.force_limit_switch)
+
+        set_defaults(player, machine)  -- set defaults according to the checkboxes
 
         solver.update(player)
         util.raise.refresh(player, "factory")
@@ -205,18 +300,33 @@ listeners.gui = {
                 if confirmed then util.raise.close_dialog(player, "submit") end
             end)
         }
+    },
+    on_gui_click = {
+        {
+            name = "toggle_defaults_panel",
+            handler = (function(player, _, _)
+                local modal_elements = util.globals.modal_elements(player)  --[[@as table]]
+                local defaults_frame = modal_elements.defaults_box
+                defaults_frame.visible = not defaults_frame.visible
+                modal_elements.defaults_button.caption = (defaults_frame.visible)
+                    and {"fp.defaults_close"} or {"fp.defaults_open"}
+            end)
+        }
+    },
+    on_gui_checked_state_changed = {
+        {
+            name = "toggle_checkbox_all",
+            handler = refresh_defaults_frame
+        }
     }
 }
 
 listeners.dialog = {
     dialog = "machine",
     metadata = (function(modal_data)
-        local machine = OBJECT_INDEX[modal_data.machine_id]
-        local recipe_name = machine.parent.recipe_proto.localised_name
         return {
             caption = {"", {"fp.edit"}, " ", {"fp.pl_machine", 1}},
-            subheader_text = {"fp.machine_dialog_description", recipe_name},
-            create_content_frame = true,
+            create_content_frame = false,
             show_submit_button = true
         }
     end),

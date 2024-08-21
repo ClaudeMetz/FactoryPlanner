@@ -289,7 +289,6 @@ end
 ---@param category (integer | string)?
 ---@return AnyPrototypeDefault
 function prototyper.defaults.get(player, data_type, category)
-    ---@type AnyPrototypeDefault
     local default = util.globals.preferences(player)["default_" .. data_type]
     local category_table = prototyper.util.find(data_type, nil, category)
     return (category_table == nil) and default or default[category_table.id]
@@ -305,12 +304,27 @@ function prototyper.defaults.set(player, data_type, prototype_id, category)
     local prototypes = global.prototypes[data_type]  ---@type AnyIndexedPrototypes
 
     if category == nil then
-        ---@type PrototypeDefault
         preferences["default_" .. data_type] = prototypes[prototype_id]
     else
         local category_id = prototyper.util.find(data_type, nil, category).id  --[[@as integer]]
-        ---@type PrototypeWithCategoryDefault
         preferences["default_" .. data_type][category_id] = prototypes[category_id].members[prototype_id]
+    end
+end
+
+-- Sets the default prototypem for all categories of the given type
+---@param player LuaPlayer
+---@param data_type DataType
+---@param prototype_name string
+function prototyper.defaults.set_all(player, data_type, prototype_name)
+    -- Doesn't make sense for prototypes without categories, just use .set() instead
+    if prototyper.data_types[data_type] == false then return end
+
+    local defaults = util.globals.preferences(player)["default_" .. data_type]
+    for _, category in pairs(global.prototypes[data_type]) do
+        if table_size(category.members) > 1 then  -- don't change single-member categories
+            local matched_prototype = prototyper.util.find(data_type, prototype_name, category.id)
+            if matched_prototype then defaults[category.id] = matched_prototype end
+        end
     end
 end
 
