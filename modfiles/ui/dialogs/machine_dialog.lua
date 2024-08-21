@@ -217,7 +217,7 @@ local function open_machine_dialog(player, modal_data)
 
     subheader.add{type="empty-widget", style="flib_horizontal_pusher"}
     local button_defaults = subheader.add{type="button", caption={"fp.defaults_open"}, style="fp_button_transparent",
-        tags={mod="fp", on_gui_click="toggle_defaults_panel"}}
+        tags={mod="fp", on_gui_click="toggle_machine_defaults_panel"}}
     modal_data.modal_elements["defaults_button"] = button_defaults
 
     local left_flow = left_frame.add{type="flow", direction="vertical"}
@@ -237,6 +237,7 @@ local function open_machine_dialog(player, modal_data)
     module_configurator.add_modules_flow(left_flow, modal_data)
     module_configurator.refresh_modules_flow(player, false)
 
+
     local right_frame = flow_content.add{type="frame", direction="vertical", visible=false, style="inside_shallow_frame"}
     right_frame.style.padding = 12
     right_frame.style.vertically_stretchable = true
@@ -255,7 +256,7 @@ local function close_machine_dialog(player, action)
         machine.limit = util.gui.parse_expression_field(modal_data.modal_elements.limit_textfield)
         machine.force_limit = util.gui.switch.convert_to_state(modal_data.modal_elements.force_limit_switch)
 
-        set_defaults(player, machine)  -- set defaults according to the checkboxes
+        set_defaults(player, machine)
 
         solver.update(player)
         util.raise.refresh(player, "factory")
@@ -303,7 +304,7 @@ listeners.gui = {
     },
     on_gui_click = {
         {
-            name = "toggle_defaults_panel",
+            name = "toggle_machine_defaults_panel",
             handler = (function(player, _, _)
                 local modal_elements = util.globals.modal_elements(player)  --[[@as table]]
                 local defaults_frame = modal_elements.defaults_box
@@ -323,7 +324,7 @@ listeners.gui = {
 
 listeners.dialog = {
     dialog = "machine",
-    metadata = (function(modal_data)
+    metadata = (function(_)
         return {
             caption = {"", {"fp.edit"}, " ", {"fp.pl_machine", 1}},
             create_content_frame = false,

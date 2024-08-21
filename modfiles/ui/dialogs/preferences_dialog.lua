@@ -315,7 +315,7 @@ local function open_preferences_dialog(player, modal_data)
     preference_structures.mb_defaults(preferences, right_content_frame)
 
     local belts_box = preference_structures.prototypes(player, right_content_frame, modal_elements, "belts")
-    preference_structures.prototypes(player, right_content_frame, modal_elements, "beacons")
+    --preference_structures.prototypes(player, right_content_frame, modal_elements, "beacons")
     preference_structures.prototypes(player, right_content_frame, modal_elements, "wagons")
     --preference_structures.prototypes(player, right_content_frame, modal_elements, "fuels")
     --preference_structures.prototypes(player, right_content_frame, modal_elements, "machines")
