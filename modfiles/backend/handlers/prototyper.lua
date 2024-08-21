@@ -351,7 +351,7 @@ end
 
 -- Kinda unclean that I have to do this, but it's better than storing it elsewhere
 local category_designations = {machines="category", items="type",
-    fuels="category", wagons="category", modules="category"}
+    fuels="combined_category", wagons="category", modules="category"}
 
 -- Migrates the default prototypes preferences, trying to preserve the users choices
 -- When this is called, the loader cache will already exist

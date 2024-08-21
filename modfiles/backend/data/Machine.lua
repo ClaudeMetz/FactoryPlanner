@@ -67,10 +67,7 @@ function Machine:normalize_fuel(player)
 
     -- If this machine has fuel already, don't replace it
     if self.fuel == nil then
-        -- Use the first category of this machine's burner as the default one
-        local fuel_category_name, _ = next(burner.categories, nil)
-
-        local default_fuel_proto = prototyper.defaults.get(player, "fuels", fuel_category_name)
+        local default_fuel_proto = prototyper.defaults.get(player, "fuels", burner.combined_category)
         self.fuel = Fuel.init(default_fuel_proto, self)
     end
 end
@@ -115,13 +112,9 @@ end
 function Machine:compile_fuel_filter()
     local compatible_fuels = {}
 
-    for category_name, _ in pairs(self.proto.burner.categories) do
-        local category = prototyper.util.find("fuels", nil, category_name)
-        if category ~= nil then
-            for _, fuel_proto in pairs(category.members) do
-                table.insert(compatible_fuels, fuel_proto.name)
-            end
-        end
+    local fuel_category = prototyper.util.find("fuels", nil, self.proto.burner.combined_category)
+    for _, fuel_proto in pairs(fuel_category.members) do
+        table.insert(compatible_fuels, fuel_proto.name)
     end
 
     return {{filter="name", name=compatible_fuels}}

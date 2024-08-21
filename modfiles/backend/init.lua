@@ -94,10 +94,6 @@ function reload_preferences(player_table)
     reload("default_wagons", prototyper.defaults.get_fallback("wagons"))
     reload("default_beacons", prototyper.defaults.get_fallback("beacons"))
 
-    -- Default to coal if it exists, since any other default is silly
-    local coal_fuel = prototyper.util.find("fuels", "coal", "chemical")
-    if coal_fuel then updated_prefs.default_fuels[coal_fuel.category_id] = coal_fuel end
-
     player_table.preferences = updated_prefs
 end
 
@@ -161,6 +157,9 @@ local function player_init(player)
 
     reload_preferences(player_table)
     reset_ui_state(player_table)
+
+    -- Set default fuel to coal because anything else is awkward
+    prototyper.defaults.set_all(player, "fuels", "coal")
 
     util.gui.toggle_mod_gui(player)
     util.messages.raise(player, "hint", {"fp.hint_tutorial"}, 6)

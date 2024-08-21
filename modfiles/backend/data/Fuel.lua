@@ -35,6 +35,7 @@ end
 function Fuel:paste(object)
     if object.class == "Fuel" then
         local burner = self.parent.proto.burner  -- will exist if there is fuel to paste on
+        -- Check invididual categories so you can paste between combined_categories
         for category_name, _ in pairs(burner.categories) do
             if self.proto.category == category_name then
                 self.proto = object.proto
@@ -75,7 +76,6 @@ function Fuel:validate()
     self.proto = prototyper.util.validate_prototype_object(self.proto, "category")
     self.valid = (not self.proto.simplified)
 
-    -- Make sure the fuel categories are still compatible
     if self.valid and self.parent.valid then
         local burner = self.parent.proto.burner
         self.valid = burner and burner.categories[self.proto.category] ~= nil

@@ -84,6 +84,7 @@ end
 ---@class MachineBurner
 ---@field effectivity double
 ---@field categories { [string]: boolean }
+---@field combined_category string
 
 ---@alias EmissionsMap { [string]: double }
 ---@alias QualityCategory ("assembling-machine" | "mining-drill")?
@@ -116,7 +117,11 @@ function generator.machines.generate()
         if burner_prototype then
             energy_type = "burner"
             emissions_per_joule = burner_prototype.emissions_per_joule
-            burner = {effectivity = burner_prototype.effectivity, categories = burner_prototype.fuel_categories}
+            burner = {effectivity = burner_prototype.effectivity, categories = burner_prototype.fuel_categories,
+                combined_category = ""}
+            for fuel_category, _ in pairs(burner_prototype.fuel_categories) do
+                burner.combined_category = burner.combined_category .. fuel_category
+            end
 
         -- Only supports fluid energy that burns_fluid for now, as it works the same way as solid burners
         -- Also doesn't respect scale_fluid_usage and fluid_usage_per_tick for now, let the reports come
@@ -125,7 +130,8 @@ function generator.machines.generate()
 
             if fluid_burner_prototype.burns_fluid and not fluid_burner_prototype.fluid_box.filter then
                 energy_type = "burner"
-                burner = {effectivity = fluid_burner_prototype.effectivity, categories = {["fluid-fuel"] = true}}
+                burner = {effectivity = fluid_burner_prototype.effectivity, categories = {["fluid-fuel"] = true},
+                    combined_category = "fluid-fuel"}
 
             else  -- Avoid adding this type of complex fluid energy as electrical energy
                 energy_type = "void"
@@ -303,19 +309,6 @@ function generator.machines.second_pass(machines)
             end
         end
     end
-end
-
----@param a FPMachinePrototype
----@param b FPMachinePrototype
----@return boolean
-function generator.machines.sorting_function(a, b)
-    if a.speed < b.speed then return true
-    elseif a.speed > b.speed then return false
-    elseif a.module_limit < b.module_limit then return true
-    elseif a.module_limit > b.module_limit then return false
-    elseif a.energy_usage < b.energy_usage then return true
-    elseif a.energy_usage > b.energy_usage then return false end
-    return false
 end
 
 
@@ -774,6 +767,7 @@ end
 ---@field data_type "fuels"
 ---@field type "item" | "fluid"
 ---@field category string | "fluid-fuel"
+---@field combined_category string
 ---@field elem_type ElemType
 ---@field fuel_value float
 ---@field stack_size uint?
@@ -784,27 +778,16 @@ end
 function generator.fuels.generate()
     local fuels = {}  ---@type NamedPrototypesWithCategory<FPFuelPrototype>
 
-    -- Determine all the fuel categories that the machine prototypes use
-    local used_fuel_categories = {}  ---@type { [string]: boolean}
-    for _, machine_category in pairs(global.prototypes.machines) do
-        for _, machine_proto in pairs(machine_category.members) do
-            if machine_proto.burner then
-                for category_name, _ in pairs(machine_proto.burner.categories) do
-                    used_fuel_categories[category_name] = true
-                end
-            end
-        end
-    end
-
     local fuel_filter = {{filter="fuel-value", comparison=">", value=0},
         {filter="fuel-value", comparison="<", value=1e+21, mode="and"}--[[ ,
         {filter="hidden", invert=true, mode="and"} ]]}
 
-    -- Add solid fuels
+    -- Build solid fuels - to be combined into categories afterwards
     local item_list = global.prototypes.items["item"].members  ---@type NamedPrototypesWithCategory<FPItemPrototype>
+    local fuel_categories = {}  -- temporary list to be combined later
     for _, proto in pairs(game.get_filtered_item_prototypes(fuel_filter)) do
-        -- Only use fuels that were actually detected/accepted to be items and find use in at least one machine
-        if item_list[proto.name] and used_fuel_categories[proto.fuel_category] ~= nil then
+        -- Only use fuels that were actually detected/accepted to be items
+        if item_list[proto.name] then
             local fuel = {
                 name = proto.name,
                 localised_name = proto.localised_name,
@@ -816,11 +799,28 @@ function generator.fuels.generate()
                 stack_size = proto.stack_size,
                 emissions_multiplier = proto.fuel_emissions_multiplier
             }
-            insert_prototype(fuels, fuel, fuel.category)
+            fuel_categories[fuel.category] = fuel_categories[fuel.category] or {}
+            table.insert(fuel_categories[fuel.category], fuel)
         end
     end
 
-    -- Add liquid fuels
+    -- Create category for each combination of fuel used by machines
+    -- Also filters out any fuels that aren't used by any actual machine
+    for _, machine_category in pairs(global.prototypes.machines) do
+        for _, machine_proto in pairs(machine_category.members) do
+            if machine_proto.burner then
+                local combined_category = machine_proto.burner.combined_category
+                for fuel_category, _ in pairs(machine_proto.burner.categories) do
+                    for _, fuel in pairs(fuel_categories[fuel_category]) do
+                        fuel.combined_category = combined_category
+                        insert_prototype(fuels, fuel, combined_category)
+                    end
+                end
+            end
+        end
+    end
+
+    -- Add liquid fuels - they are a category of their own always
     local fluid_list = global.prototypes.items["fluid"].members  ---@type NamedPrototypesWithCategory<FPItemPrototype>
     for _, proto in pairs(game.get_filtered_fluid_prototypes(fuel_filter)) do
         -- Only use fuels that have actually been detected/accepted as fluids
@@ -832,26 +832,16 @@ function generator.fuels.generate()
                 type = "fluid",
                 elem_type = "fluid",
                 category = "fluid-fuel",
+                combined_category = "fluid-fuel",
                 fuel_value = proto.fuel_value,
                 stack_size = nil,
                 emissions_multiplier = proto.emissions_multiplier
             }
-            insert_prototype(fuels, fuel, fuel.category)
+            insert_prototype(fuels, fuel, fuel.combined_category)
         end
     end
 
     return fuels
-end
-
----@param a FPFuelPrototype
----@param b FPFuelPrototype
----@return boolean
-function generator.fuels.sorting_function(a, b)
-    if a.fuel_value < b.fuel_value then return true
-    elseif a.fuel_value > b.fuel_value then return false
-    elseif a.emissions_multiplier < b.emissions_multiplier then return true
-    elseif a.emissions_multiplier > b.emissions_multiplier then return false end
-    return false
 end
 
 
@@ -1039,19 +1029,6 @@ function generator.beacons.generate()
     end
 
     return beacons
-end
-
----@param a FPBeaconPrototype
----@param b FPBeaconPrototype
----@return boolean
-function generator.beacons.sorting_function(a, b)
-    if a.module_limit < b.module_limit then return true
-    elseif a.module_limit > b.module_limit then return false
-    elseif a.effectivity < b.effectivity then return true
-    elseif a.effectivity > b.effectivity then return false
-    elseif a.energy_usage < b.energy_usage then return true
-    elseif a.energy_usage > b.energy_usage then return false end
-    return false
 end
 
 
