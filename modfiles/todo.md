@@ -5,7 +5,6 @@
 - Default modules/beacons is awkward with quality since you can't specify it (atm)
   - Feature is still neat, but maybe time to axe it? Or make it work better somehow
 
-- Save quality alongside default machine instead of just the machine
 - Remove any code and locale related to removed prefs dialog stuff
 - Think about disabling all/module checkboxes too if appropriate - kinda lot of work to figure out
 
