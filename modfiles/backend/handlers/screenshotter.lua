@@ -42,7 +42,7 @@ end
 
 local function set_machine_default(player, proto_name, category_name)
     local proto = prototyper.util.find("machines", proto_name, category_name)
-    prototyper.defaults.set(player, "machines", {prototype=proto.id}, proto.category_id)
+    prototyper.defaults.set(player, "machines", {prototype=proto.id, quality="normal"}, proto.category_id)
 end
 
 

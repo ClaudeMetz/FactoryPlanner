@@ -15,19 +15,24 @@ local function refresh_defaults_frame(player)
     local machine = modal_data.object  --[[@as Machine]]
 
     -- Machine
-    local default_machine = prototyper.defaults.get(player, "machines", machine.proto.category).proto
+    local machine_default = prototyper.defaults.get(player, "machines", machine.proto.category)
+    local same_machine = (machine_default.proto.id == machine.proto.id)
+    local same_quality = (machine_default.quality.id == machine.quality_proto.id)
     local all_machines = modal_elements.machine_all.state
-    modal_elements.machine.enabled = (default_machine.id ~= machine.proto.id and not all_machines)
-    modal_elements.machine.state = (default_machine.id == machine.proto.id or all_machines)
+
+    modal_elements.machine.enabled = not (same_machine and same_quality) and not all_machines
+    modal_elements.machine.state = (same_machine and same_quality) or all_machines
 
     -- Fuel
     local fuel_required, default_fuel = (machine.proto.burner ~= nil), nil
     if fuel_required then
         default_fuel = prototyper.defaults.get(player, "fuels", machine.proto.burner.combined_category).proto
     end  ---@cast default_fuel FPFuelPrototype
+    local same_fuel = fuel_required and (default_fuel.id == machine.fuel.proto.id)
     local all_fuels = modal_elements.fuel_all.state
-    modal_elements.fuel.enabled = fuel_required and (default_fuel.id ~= machine.fuel.proto.id and not all_fuels)
-    modal_elements.fuel.state = fuel_required and (default_fuel.id == machine.fuel.proto.id or all_fuels)
+
+    modal_elements.fuel.enabled = fuel_required and (not same_fuel and not all_fuels)
+    modal_elements.fuel.state = fuel_required and (same_fuel or all_fuels)
     modal_elements.fuel_all.enabled = fuel_required
 end
 
@@ -53,10 +58,12 @@ end
 
 local function set_defaults(player, machine)
     local modal_elements = util.globals.modal_elements(player)
+
+    local machine_data = {prototype=machine.proto.id, quality=machine.quality_proto.id}
     if modal_elements.machine_all.state then
-        prototyper.defaults.set_all(player, "machines", {prototype=machine.proto.id})
+        prototyper.defaults.set_all(player, "machines", machine_data)
     elseif modal_elements.machine.state then
-        prototyper.defaults.set(player, "machines", {prototype=machine.proto.id}, machine.proto.category)
+        prototyper.defaults.set(player, "machines", machine_data, machine.proto.category)
     end
 
     if modal_elements.fuel_all.state then

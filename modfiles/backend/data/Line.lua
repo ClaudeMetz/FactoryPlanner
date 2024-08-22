@@ -148,21 +148,23 @@ end
 ---@return boolean success
 function Line:change_machine_to_default(player)
     -- All categories are guaranteed to have at least one machine, so this is never nil
-    local default_machine_proto = prototyper.defaults.get(player, "machines", self.recipe_proto.category).proto
-    ---@cast default_machine_proto FPMachinePrototype
+    local machine_default = prototyper.defaults.get(player, "machines", self.recipe_proto.category)
+    local default_proto = machine_default.proto  --[[@as FPMachinePrototype]]
 
+    local success = false
     -- If the default is applicable, just set it straight away
-    if self:is_machine_applicable(default_machine_proto) then
-        self:change_machine_to_proto(player, default_machine_proto)
-        return true
+    if self:is_machine_applicable(default_proto) then
+        self:change_machine_to_proto(player, default_proto)
+        success = true
     -- Otherwise, go up, then down the category to find an alternative
-    elseif self:change_machine_by_action(player, "upgrade", default_machine_proto) then
-        return true
-    elseif self:change_machine_by_action(player, "downgrade", default_machine_proto) then
-        return true
-    else  -- no machine in the whole category is applicable
-        return false
+    elseif self:change_machine_by_action(player, "upgrade", default_proto) then
+        success = true
+    elseif self:change_machine_by_action(player, "downgrade", default_proto) then
+        success = true
     end
+
+    if success then self.machine.quality_proto = machine_default.quality end
+    return success
 end
 
 

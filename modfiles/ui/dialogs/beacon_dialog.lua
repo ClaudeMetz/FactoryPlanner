@@ -8,10 +8,14 @@ local function refresh_defaults_frame(player)
     local beacon = modal_data.object  --[[@as Beacon]]
 
     local default_beacon = prototyper.defaults.get(player, "beacons")
-    modal_elements.beacon_default.enabled = (default_beacon.proto.id ~= beacon.proto.id)
-    modal_elements.beacon_default.state = (default_beacon.proto.id == beacon.proto.id)
-    modal_elements.beacon_default_amount.enabled = (default_beacon.beacon_amount ~= beacon.amount)
-    modal_elements.beacon_default_amount.state = (default_beacon.beacon_amount == beacon.amount)
+    local same_beacon = (default_beacon.proto.id == beacon.proto.id)
+    local same_quality = (default_beacon.quality.id == beacon.quality_proto.id)
+    local same_amount = (default_beacon.beacon_amount == beacon.amount)
+
+    modal_elements.beacon_default.enabled = not (same_beacon and same_quality)
+    modal_elements.beacon_default.state = same_beacon and same_quality
+    modal_elements.beacon_default_amount.enabled = not same_amount
+    modal_elements.beacon_default_amount.state = same_amount
 end
 
 local function add_defaults_panel(parent_frame, player)
@@ -38,6 +42,7 @@ local function set_defaults(player, beacon)
     local modal_elements = util.globals.modal_elements(player)
     local data = {
         prototype = modal_elements.beacon_default.state and beacon.proto.id or nil,
+        quality = modal_elements.beacon_default.state and beacon.quality_proto.id or nil,
         beacon_amount = modal_elements.beacon_default_amount.state and beacon.amount or nil
     }
     prototyper.defaults.set(player, "beacons", data, nil)
@@ -164,6 +169,7 @@ local function open_beacon_dialog(player, modal_data)
     else
         local default_beacon = prototyper.defaults.get(player, "beacons")
         modal_data.object = Beacon.init(default_beacon.proto, line)
+        modal_data.object.quality_proto = default_beacon.quality
         modal_data.object.amount = default_beacon.beacon_amount or 0
         line:set_beacon(modal_data.object)
     end
