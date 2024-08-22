@@ -21,7 +21,7 @@ script.register_metatable("Beacon", Beacon)
 local function init(proto, parent)
     local object = Object.init({
         proto = proto,
-        quality_proto = prototyper.defaults.get_fallback("qualities"),
+        quality_proto = prototyper.defaults.get_fallback("qualities").proto,
         amount = 0,
         total_amount = nil,
         module_set = nil,
@@ -168,7 +168,9 @@ function Beacon:repair(player)
     if self.proto.simplified then -- if still simplified, the beacon can't be repaired and needs to be removed
         return false
     else  -- otherwise, the quality and modules need to be checked and corrected if necessary
-        if self.quality_proto.simplified then self.quality_proto = prototyper.defaults.get_fallback("qualities") end
+        if self.quality_proto.simplified then
+            self.quality_proto = prototyper.defaults.get_fallback("qualities").proto
+        end
 
         -- Remove invalid modules and normalize the remaining ones
         self.valid = self.module_set:repair(player)

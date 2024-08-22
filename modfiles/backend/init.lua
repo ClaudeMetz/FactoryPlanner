@@ -159,7 +159,7 @@ local function player_init(player)
     reset_ui_state(player_table)
 
     -- Set default fuel to coal because anything else is awkward
-    prototyper.defaults.set_all(player, "fuels", "coal")
+    prototyper.defaults.set_all(player, "fuels", {prototype="coal"})
 
     util.gui.toggle_mod_gui(player)
     util.messages.raise(player, "hint", {"fp.hint_tutorial"}, 6)

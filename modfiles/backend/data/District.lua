@@ -24,7 +24,7 @@ script.register_metatable("District", District)
 local function init(name)
     local object = Object.init({
         name = name or "New District",
-        location_proto = prototyper.defaults.get_fallback("locations"),
+        location_proto = prototyper.defaults.get_fallback("locations").proto,
         products = SimpleItems.init(),
         byproducts = SimpleItems.init(),
         ingredients = SimpleItems.init(),
@@ -129,7 +129,9 @@ function District:validate()
 
     -- Invalid locations are just replaced with valid ones to make the district valid
     self.location_proto = prototyper.util.validate_prototype_object(self.location_proto, nil)
-    if self.location_proto.simplified then self.location_proto = prototyper.defaults.get_fallback("locations") end
+    if self.location_proto.simplified then
+        self.location_proto = prototyper.defaults.get_fallback("locations").proto
+    end
 
     return true  -- always makes itself valid
 end

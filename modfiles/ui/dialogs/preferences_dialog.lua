@@ -23,7 +23,7 @@ local function refresh_defaults_table(player, modal_elements, type, category_id)
     end
 
     table_prototypes.clear()
-    local default_proto = prototyper.defaults.get(player, type, category_id)
+    local default_proto = prototyper.defaults.get(player, type, category_id).proto
 
     for prototype_id, prototype in ipairs(prototypes) do
         local selected = (default_proto.id == prototype_id)
@@ -113,7 +113,7 @@ function preference_structures.mb_defaults(preferences, content_frame)
     table_mb_defaults.add{type="label", caption={"fp.pu_beacon", 1}, style="semibold_label"}
     add_mb_default_button(table_mb_defaults, "beacon")
 
-    local beacon_amount_flow = table_mb_defaults.add{type="flow", direction="horizontal"}
+    --[[ local beacon_amount_flow = table_mb_defaults.add{type="flow", direction="horizontal"}
     beacon_amount_flow.style.vertical_align = "center"
     beacon_amount_flow.style.horizontal_spacing = 8
 
@@ -123,7 +123,7 @@ function preference_structures.mb_defaults(preferences, content_frame)
     local textfield_amount = beacon_amount_flow.add{type="textfield", text=mb_defaults.beacon_count,
         tags={mod="fp", on_gui_text_changed="mb_default_beacon_amount"}}
     util.gui.setup_numeric_textfield(textfield_amount, false, false)
-    textfield_amount.style.width = 42
+    textfield_amount.style.width = 42 ]]
 end
 
 function preference_structures.prototypes(player, content_frame, modal_elements, type)
@@ -249,24 +249,8 @@ local function handle_default_prototype_change(player, tags, event)
     local category_id = tags.category_id
 
     local modal_elements = util.globals.modal_elements(player)
-    prototyper.defaults.set(player, data_type, tags.prototype_id, category_id)
+    prototyper.defaults.set(player, data_type, {prototype=tags.prototype_id}, category_id)
     refresh_defaults_table(player, modal_elements, data_type, category_id)
-
-   --[[  -- If this was an shift-click, set this prototype on every category that also has it
-    if event.shift and data_type == "machines" then
-        local new_default = prototyper.defaults.get(player, data_type, category_id)
-
-        for _, secondary_category in pairs(global.prototypes.machines) do
-            if table_size(secondary_category.members) > 1 then  -- don't attempt to change categories with only one machine
-                local secondary_prototype = prototyper.util.find(data_type, new_default.name, secondary_category.name)
-
-                if secondary_prototype ~= nil then
-                    prototyper.defaults.set(player, data_type, secondary_prototype.id, secondary_category.id)
-                    refresh_defaults_table(player, modal_elements, data_type, secondary_category.id)
-                end
-            end
-        end
-    end ]]
 
     if data_type == "belts" or data_type == "wagons" then
         view_state.rebuild_state(player)
@@ -347,7 +331,7 @@ listeners.gui = {
             handler = handle_default_prototype_change
         }
     },
-    on_gui_text_changed = {
+    --[[ on_gui_text_changed = {
         {
             name = "mb_default_beacon_amount",
             handler = (function(player, _, event)
@@ -355,7 +339,7 @@ listeners.gui = {
                 mb_defaults.beacon_count = tonumber(event.element.text)
             end)
         }
-    },
+    }, ]]
     on_gui_checked_state_changed = {
         {
             name = "toggle_preference",
