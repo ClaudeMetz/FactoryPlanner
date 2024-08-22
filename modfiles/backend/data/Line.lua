@@ -148,7 +148,7 @@ end
 ---@return boolean success
 function Line:change_machine_to_default(player)
     -- All categories are guaranteed to have at least one machine, so this is never nil
-    local default_machine_proto = prototyper.defaults.get(player, "machines", self.recipe_proto.category)
+    local default_machine_proto = prototyper.defaults.get(player, "machines", self.recipe_proto.category).proto
     ---@cast default_machine_proto FPMachinePrototype
 
     -- If the default is applicable, just set it straight away
@@ -196,7 +196,7 @@ function Line:apply_mb_defaults(player)
     local mb_defaults = util.globals.preferences(player).mb_defaults
     local machine_module, secondary_module = mb_defaults.machine, mb_defaults.machine_secondary
     local module_set, module_limit = self.machine.module_set, self.machine.proto.module_limit
-    local default_quality = prototyper.defaults.get_fallback("qualities")  --[[@as FPQualityPrototype]]
+    local default_quality = prototyper.defaults.get_fallback("qualities").proto  --[[@as FPQualityPrototype]]
     local message = nil
 
     if machine_module and self.machine.module_set:check_compatibility(machine_module) then
@@ -214,15 +214,15 @@ function Line:apply_mb_defaults(player)
     end
 
     -- Add default beacon modules, if desired by the user
-    local beacon_module_proto, beacon_count = mb_defaults.beacon, mb_defaults.beacon_count
-    local beacon_proto = prototyper.defaults.get(player, "beacons")  --[[@as FPBeaconPrototype]]
+    local beacon_module_proto = mb_defaults.beacon
+    local beacon_default = prototyper.defaults.get(player, "beacons", nil)
 
-    if beacon_module_proto ~= nil and beacon_count ~= nil then
-        local blank_beacon = Beacon.init(beacon_proto, self)
-        blank_beacon.amount = beacon_count
+    if beacon_module_proto ~= nil and beacon_default.beacon_amount ~= nil then
+        local blank_beacon = Beacon.init(beacon_default.proto, self)
+        blank_beacon.amount = beacon_default.beacon_amount
 
         if blank_beacon.module_set:check_compatibility(beacon_module_proto) then
-            local module = Module.init(beacon_module_proto, beacon_proto.module_limit, default_quality)
+            local module = Module.init(beacon_module_proto, beacon_default.proto.module_limit, default_quality)
             blank_beacon.module_set:insert(module)
             self:set_beacon(blank_beacon)  -- summarizes effects on its own
 

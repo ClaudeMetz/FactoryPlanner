@@ -42,7 +42,7 @@ end
 
 local function set_machine_default(player, proto_name, category_name)
     local proto = prototyper.util.find("machines", proto_name, category_name)
-    prototyper.defaults.set(player, "machines", proto.id, proto.category_id)
+    prototyper.defaults.set(player, "machines", {prototype=proto.id}, proto.category_id)
 end
 
 
@@ -75,7 +75,7 @@ local actions = {
             beacon_count = 8
         }
 
-        prototyper.defaults.set(player, "belts", "fast-transport-belt")
+        prototyper.defaults.set(player, "belts", {prototype="fast-transport-belt"}, nil)
         set_machine_default(player, "electric-mining-drill", "basic-solid")
         set_machine_default(player, "steel-furnace", "smelting")
         set_machine_default(player, "assembling-machine-2", "crafting")

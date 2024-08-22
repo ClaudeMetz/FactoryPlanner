@@ -279,51 +279,59 @@ end
 
 
 -- ** DEFAULTS **
----@alias PrototypeDefault FPPrototype
----@alias PrototypeWithCategoryDefault { [integer]: FPPrototypeWithCategory }
----@alias AnyPrototypeDefault PrototypeDefault | PrototypeWithCategoryDefault
+---@class DefaultPrototype
+---@field proto AnyFPPrototype
+---@field beacon_amount integer?
+
+---@class DefaultData
+---@field prototype (integer | string)?
+---@field beacon_amount integer?
+
+---@alias AnyPrototypeDefault DefaultPrototype | { [integer]: DefaultPrototype }
 
 -- Returns the default prototype for the given type, incorporating the category, if given
 ---@param player LuaPlayer
 ---@param data_type DataType
 ---@param category (integer | string)?
----@return AnyPrototypeDefault
+---@return DefaultPrototype
 function prototyper.defaults.get(player, data_type, category)
     local default = util.globals.preferences(player)["default_" .. data_type]
     local category_table = prototyper.util.find(data_type, nil, category)
     return (category_table == nil) and default or default[category_table.id]
 end
 
--- Sets the default prototype for the given type, incorporating the category, if given
+-- Sets the default for the given type, incorporating the category if given
 ---@param player LuaPlayer
 ---@param data_type DataType
----@param prototype_id integer
+---@param data DefaultData
 ---@param category (integer | string)?
-function prototyper.defaults.set(player, data_type, prototype_id, category)
-    local preferences = util.globals.preferences(player)
-    local prototypes = global.prototypes[data_type]  ---@type AnyIndexedPrototypes
+function prototyper.defaults.set(player, data_type, data, category)
+    local default = prototyper.defaults.get(player, data_type, category)
 
-    if category == nil then
-        preferences["default_" .. data_type] = prototypes[prototype_id]
-    else
-        local category_id = prototyper.util.find(data_type, nil, category).id  --[[@as integer]]
-        preferences["default_" .. data_type][category_id] = prototypes[category_id].members[prototype_id]
+    if data.prototype then
+        default.proto = prototyper.util.find(data_type, data.prototype, category)  --[[@as AnyFPPrototype]]
+    end
+    if data.beacon_amount then
+        default.beacon_amount = data.beacon_amount
     end
 end
 
 -- Sets the default prototypem for all categories of the given type
 ---@param player LuaPlayer
 ---@param data_type DataType
----@param prototype_name string
-function prototyper.defaults.set_all(player, data_type, prototype_name)
+---@param data DefaultData
+function prototyper.defaults.set_all(player, data_type, data)
     -- Doesn't make sense for prototypes without categories, just use .set() instead
     if prototyper.data_types[data_type] == false then return end
 
     local defaults = util.globals.preferences(player)["default_" .. data_type]
-    for _, category in pairs(global.prototypes[data_type]) do
-        if table_size(category.members) > 1 then  -- don't change single-member categories
-            local matched_prototype = prototyper.util.find(data_type, prototype_name, category.id)
-            if matched_prototype then defaults[category.id] = matched_prototype end
+    for _, category_data in pairs(global.prototypes[data_type]) do
+        if table_size(category_data.members) > 1 then  -- don't change single-member categories
+            local matched_prototype = prototyper.util.find(data_type, data.prototype, category_data.id)
+            if matched_prototype then
+                defaults[category_data.id].proto = matched_prototype
+                defaults[category_data.id].beacon_amount = data.beacon_amount
+            end
         end
     end
 end
@@ -334,15 +342,15 @@ end
 function prototyper.defaults.get_fallback(data_type)
     local prototypes = global.prototypes[data_type]  ---@type AnyIndexedPrototypes
 
-    local fallback = {}
+    local fallback = nil
     if prototyper.data_types[data_type] == false then
         ---@cast prototypes IndexedPrototypes<FPPrototype>
-        fallback = prototypes[1]
+        fallback = {proto=prototypes[1], beacon_amount=nil}
     else
         ---@cast prototypes IndexedPrototypesWithCategory<FPPrototypeWithCategory>
-        fallback = {}  ---@type PrototypeWithCategoryDefault
+        fallback = {}
         for _, category in pairs(prototypes) do
-            fallback[category.id] = category.members[1]
+            fallback[category.id] = {proto=category.members[1], beacon_amount=nil}
         end
     end
 
@@ -353,46 +361,42 @@ end
 local category_designations = {machines="category", items="type",
     fuels="combined_category", wagons="category", modules="category"}
 
--- Migrates the default prototypes preferences, trying to preserve the users choices
+-- Migrates the default prototype preferences, trying to preserve the users choices
 -- When this is called, the loader cache will already exist
 ---@param player_table PlayerTable
 function prototyper.defaults.migrate(player_table)
     local preferences = player_table.preferences
 
     for data_type, has_categories in pairs(prototyper.data_types) do
+        local fallback = prototyper.defaults.get_fallback(data_type)
         local default = preferences["default_" .. data_type]
         if default == nil then goto skip end
 
         if not has_categories then
             -- Use the same prototype if an equivalent can be found, use fallback otherwise
-            local equivalent_proto = prototyper.util.find(data_type, default.name, nil)
-            ---@cast equivalent_proto PrototypeDefault
-            preferences["default_" .. data_type] = equivalent_proto  ---@type PrototypeDefault
-                or prototyper.defaults.get_fallback(data_type)
+            local equivalent_proto = prototyper.util.find(data_type, default.proto.name, nil)
+            preferences["default_" .. data_type].proto = equivalent_proto or fallback.proto
         else
-            local new_defaults = {}  ---@type PrototypeWithCategoryDefault
-            local fallback = prototyper.defaults.get_fallback(data_type)
-
-            local default_map = {}  ---@type { [string]: FPPrototype }
-            for _, default_proto in pairs(default) do
-                local category_name = default_proto[category_designations[data_type]]  ---@type string
-                default_map[category_name] = default_proto
+            local default_map = {}
+            for _, default_data in pairs(default) do
+                local category_name = default_data.proto[category_designations[data_type]]  ---@type string
+                default_map[category_name] = default_data
             end
 
-            ---@type IndexedPrototypesWithCategory<FPPrototypeWithCategory>
-            local categories = global.prototypes[data_type]
-
-            for _, category in pairs(categories) do
+            local new_defaults = {}
+            for _, category in pairs(global.prototypes[data_type]) do
                 local previous_category = default_map[category.name]
                 if previous_category then  -- category existed previously
-                    local proto_name = previous_category.name
-                    ---@type PrototypeWithCategoryDefault
-                    new_defaults[category.id] = prototyper.util.find(data_type, proto_name, category.name)
+                    local proto_name = previous_category.proto.name
+                    new_defaults[category.id] = {
+                        proto = prototyper.util.find(data_type, proto_name, category.name),
+                        beacon_amount = previous_category.beacon_amount
+                    }
                 end
                 new_defaults[category.id] = new_defaults[category.id] or fallback[category.id]
             end
 
-            preferences["default_" .. data_type] = new_defaults  ---@type PrototypeWithCategoryDefault
+            preferences["default_" .. data_type] = new_defaults
         end
         ::skip::
     end

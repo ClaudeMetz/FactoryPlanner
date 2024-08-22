@@ -15,7 +15,7 @@ local function refresh_defaults_frame(player)
     local machine = modal_data.object  --[[@as Machine]]
 
     -- Machine
-    local default_machine = prototyper.defaults.get(player, "machines", machine.proto.category)
+    local default_machine = prototyper.defaults.get(player, "machines", machine.proto.category).proto
     local all_machines = modal_elements.machine_all.state
     modal_elements.machine.enabled = (default_machine.id ~= machine.proto.id and not all_machines)
     modal_elements.machine.state = (default_machine.id == machine.proto.id or all_machines)
@@ -23,7 +23,7 @@ local function refresh_defaults_frame(player)
     -- Fuel
     local fuel_required, default_fuel = (machine.proto.burner ~= nil), nil
     if fuel_required then
-        default_fuel = prototyper.defaults.get(player, "fuels", machine.proto.burner.combined_category)
+        default_fuel = prototyper.defaults.get(player, "fuels", machine.proto.burner.combined_category).proto
     end  ---@cast default_fuel FPFuelPrototype
     local all_fuels = modal_elements.fuel_all.state
     modal_elements.fuel.enabled = fuel_required and (default_fuel.id ~= machine.fuel.proto.id and not all_fuels)
@@ -54,15 +54,16 @@ end
 local function set_defaults(player, machine)
     local modal_elements = util.globals.modal_elements(player)
     if modal_elements.machine_all.state then
-        prototyper.defaults.set_all(player, "machines", machine.proto.name)
+        prototyper.defaults.set_all(player, "machines", {prototype=machine.proto.id})
     elseif modal_elements.machine.state then
-        prototyper.defaults.set(player, "machines", machine.proto.id, machine.proto.category)
+        prototyper.defaults.set(player, "machines", {prototype=machine.proto.id}, machine.proto.category)
     end
 
     if modal_elements.fuel_all.state then
-        prototyper.defaults.set_all(player, "fuels", machine.fuel.proto.name)
+        prototyper.defaults.set_all(player, "fuels", {prototype=machine.fuel.proto.id})
     elseif modal_elements.fuel.state then
-        prototyper.defaults.set(player, "fuels", machine.fuel.proto.id, machine.proto.burner.combined_category)
+        local category = machine.proto.burner.combined_category
+        prototyper.defaults.set(player, "fuels", {prototype=machine.fuel.proto.id}, category)
     end
 end
 

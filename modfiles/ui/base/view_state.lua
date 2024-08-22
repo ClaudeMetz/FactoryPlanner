@@ -147,10 +147,10 @@ function view_state.generate_metadata(player)
     local current_view_name = view_states[view_states.selected_view_id].name
     local belts_or_lanes = player_table.preferences.belts_or_lanes
     local round_button_numbers = player_table.preferences.round_button_numbers
-    local throughput = prototyper.defaults.get(player, "belts").throughput
+    local throughput = prototyper.defaults.get(player, "belts").proto.throughput
     local throughput_divisor = (belts_or_lanes == "belts") and throughput or (throughput / 2)
-    local default_cargo_wagon = prototyper.defaults.get(player, "wagons", "cargo-wagon")
-    local default_fluid_wagon = prototyper.defaults.get(player, "wagons", "fluid-wagon")
+    local default_cargo_wagon = prototyper.defaults.get(player, "wagons", "cargo-wagon").proto
+    local default_fluid_wagon = prototyper.defaults.get(player, "wagons", "fluid-wagon").proto
 
     return {
         processor = processors[current_view_name],
@@ -182,9 +182,9 @@ function view_state.rebuild_state(player)
     local timescale = player_table.preferences.timescale
     local timescale_string = TIMESCALE_MAP[timescale]
     local singular_bol = util.globals.preferences(player).belts_or_lanes:sub(1, -2)
-    local belt_proto = prototyper.defaults.get(player, "belts")
-    local default_cargo_wagon = prototyper.defaults.get(player, "wagons", "cargo-wagon")
-    local default_fluid_wagon = prototyper.defaults.get(player, "wagons", "fluid-wagon")
+    local belt_proto = prototyper.defaults.get(player, "belts").proto
+    local default_cargo_wagon = prototyper.defaults.get(player, "wagons", "cargo-wagon").proto
+    local default_fluid_wagon = prototyper.defaults.get(player, "wagons", "fluid-wagon").proto
 
     local new_view_states = {
         [1] = {
