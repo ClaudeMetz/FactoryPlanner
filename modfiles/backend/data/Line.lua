@@ -190,44 +190,28 @@ end
 
 
 ---@param player LuaPlayer
----@return LocalisedString? message
-function Line:apply_mb_defaults(player)
+function Line:apply_defaults(player)
+    -- Machine defaults
+    local machine_default = prototyper.defaults.get(player, "machines", self.machine.proto.category)
     self.machine.module_set.first = nil
-    self:set_beacon(nil)
 
-    local mb_defaults = util.globals.preferences(player).mb_defaults
-    local machine_module, secondary_module = mb_defaults.machine, mb_defaults.machine_secondary
-    local module_set, module_limit = self.machine.module_set, self.machine.proto.module_limit
-    local default_quality = prototyper.defaults.get_fallback("qualities").proto  --[[@as FPQualityPrototype]]
-    local message = nil
-
-    if machine_module and self.machine.module_set:check_compatibility(machine_module) then
-        local module = Module.init(machine_module, module_limit, default_quality)
-        module_set:insert(module)
-        module_set:normalize{effects=true}
-
-    elseif secondary_module and self.machine.module_set:check_compatibility(secondary_module) then
-        local module = Module.init(secondary_module, module_limit, default_quality)
-        module_set:insert(module)
-        module_set:normalize{effects=true}
-
-    elseif machine_module then  -- only show an error if any module default is actually set
-        message = {text={"fp.warning_module_not_compatible", {"fp.pl_module", 1}}, category="warning"}
+    if machine_default.modules then
+        -- Doesn't set machine and quality, that should be done beforehand
+        self.machine.module_set:ingest_default(machine_default.modules)
     end
 
     -- Beacon defaults
     local beacon_default = prototyper.defaults.get(player, "beacons", nil)
+    self:set_beacon(nil)
 
     -- The .proto checks also confirms quality and modules are set
     if beacon_default.proto and beacon_default.beacon_amount then
-        local blank_beacon = Beacon.init(beacon_default.proto, self)
+        local blank_beacon = Beacon.init(beacon_default.proto --[[@as FPBeaconPrototype]], self)
         blank_beacon.quality_proto = beacon_default.quality
         blank_beacon.amount = beacon_default.beacon_amount
         blank_beacon.module_set:ingest_default(beacon_default.modules)
         self:set_beacon(blank_beacon)  -- summarizes effects on its own
     end
-
-    return message
 end
 
 ---@return PrototypeFilter filter

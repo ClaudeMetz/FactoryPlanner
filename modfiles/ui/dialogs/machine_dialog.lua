@@ -1,10 +1,9 @@
 require("ui.elements.module_configurator")
 
 -- ** LOCAL UTIL **
-local function add_checkbox(modal_elements, checkbox_type, localised_name, identifier, event_name)
-    local caption, tooltip = {"fp." .. checkbox_type}, {"fp." .. checkbox_type .. "_tt", localised_name}
+local function add_checkbox(modal_elements, caption, tooltip, identifier, event_name)
     local tags = (event_name) and {mod="fp", on_gui_checked_state_changed=event_name} or nil
-    local checkbox = modal_elements.defaults_panel.add{type="checkbox", state=false,
+    local checkbox = modal_elements.defaults_flow.add{type="checkbox", state=false,
         caption=caption, tooltip=tooltip, tags=tags}
     modal_elements[identifier] = checkbox
 end
@@ -19,9 +18,10 @@ local function refresh_defaults_frame(player)
     local same_machine = (machine_default.proto.id == machine.proto.id)
     local same_quality = (machine_default.quality.id == machine.quality_proto.id)
     local all_machines = modal_elements.machine_all.state
+    local same_modules = machine.module_set:equals_default(machine_default.modules)
 
-    modal_elements.machine.enabled = not (same_machine and same_quality) and not all_machines
-    modal_elements.machine.state = (same_machine and same_quality) or all_machines
+    modal_elements.machine.enabled = not (same_machine and same_quality and same_modules) and not all_machines
+    modal_elements.machine.state = (same_machine and same_quality and same_modules) or all_machines
 
     -- Fuel
     local fuel_required, default_fuel = (machine.proto.burner ~= nil), nil
@@ -39,27 +39,50 @@ end
 local function add_defaults_panel(parent_frame, player)
     local modal_elements = util.globals.modal_elements(player)
 
-    local bordered_frame = parent_frame.add{type="frame", direction="vertical", style="fp_frame_bordered_stretch"}
-    bordered_frame.style.vertically_stretchable = true
-    bordered_frame.style.right_padding = 24
-    modal_elements.defaults_panel = bordered_frame
+    local flow_default = parent_frame.add{type="flow", direction="vertical"}
+    flow_default.style.vertical_spacing = 4
+    flow_default.style.right_padding = 12
+    modal_elements["defaults_flow"] = flow_default
 
-    bordered_frame.add{type="label", caption={"fp.pu_machine", 1}, style="caption_label"}
-    add_checkbox(modal_elements, "save_as_default", {"fp.pl_machine", 1}, "machine")
-    add_checkbox(modal_elements, "save_for_all", {"fp.pl_machine", 1}, "machine_all", "machine_checkbox_all")
+    flow_default.add{type="label", caption={"", {"fp.pu_machine", 1}, " & ", {"fp.pu_module", 2}},
+       style="caption_label"}
 
-    local fuel_label = bordered_frame.add{type="label", caption={"fp.pu_fuel", 1}, style="caption_label"}
+    add_checkbox(modal_elements, {"fp.save_as_default"}, {"fp.save_as_default_machine_tt"}, "machine", nil)
+    add_checkbox(modal_elements, {"fp.save_for_all"}, {"fp.save_for_all_machine_tt"}, "machine_all",
+        "machine_checkbox_all")
+
+    local fuel_label = flow_default.add{type="label", caption={"fp.pu_fuel", 1}, style="caption_label"}
     fuel_label.style.top_margin = 8
-    add_checkbox(modal_elements, "save_as_default", {"fp.pl_fuel", 1}, "fuel")
-    add_checkbox(modal_elements, "save_for_all", {"fp.pl_fuel", 1}, "fuel_all", "machine_checkbox_all")
+    add_checkbox(modal_elements, {"fp.save_as_default"}, {"fp.save_as_default_fuel_tt"}, "fuel")
+    add_checkbox(modal_elements, {"fp.save_for_all"}, {"fp.save_for_all_fuel_tt"}, "fuel_all", "machine_checkbox_all")
+
+    parent_frame.add{type="empty-widget", style="flib_vertical_pusher"}
+    local flow_submit = parent_frame.add{type="flow", direction="horizontal"}
+    flow_submit.add{type="empty-widget", style="flib_horizontal_pusher"}
+    local button_submit = flow_submit.add{type="button", caption={"fp.set_defaults"}, style="fp_button_green",
+        tags={mod="fp", on_gui_click="save_machine_defaults"}, mouse_button_filter={"left"}}
+    button_submit.style.minimal_width = 0
 
     refresh_defaults_frame(player)
 end
 
-local function set_defaults(player, machine)
-    local modal_elements = util.globals.modal_elements(player)
+local function toggle_defaults_panel(player)
+    local modal_elements = util.globals.modal_elements(player)  --[[@as table]]
+    local defaults_frame = modal_elements.defaults_box
+    defaults_frame.visible = not defaults_frame.visible
+    modal_elements.defaults_button.caption = (defaults_frame.visible)
+        and {"fp.defaults_close"} or {"fp.defaults_open"}
+end
 
-    local machine_data = {prototype=machine.proto.id, quality=machine.quality_proto.id}
+local function save_defaults(player)
+    local modal_elements = util.globals.modal_elements(player)
+    local machine = util.globals.modal_data(player).object
+
+    local machine_data = {
+        prototype = machine.proto.id,
+        quality = machine.quality_proto.id,
+        modules = machine.module_set:compile_default()
+    }
     if modal_elements.machine_all.state then
         prototyper.defaults.set_all(player, "machines", machine_data)
     elseif modal_elements.machine.state then
@@ -72,6 +95,9 @@ local function set_defaults(player, machine)
         local category = machine.proto.burner.combined_category
         prototyper.defaults.set(player, "fuels", {prototype=machine.fuel.proto.id}, category)
     end
+
+    refresh_defaults_frame(player)
+    toggle_defaults_panel(player)
 end
 
 
@@ -249,6 +275,7 @@ local function open_machine_dialog(player, modal_data)
     modal_data.modal_elements["defaults_box"] = right_frame
 
     -- Defaults
+    modal_data.defaults_refresher = "machine_defaults_refresher"
     add_defaults_panel(right_frame, player)
 end
 
@@ -260,8 +287,6 @@ local function close_machine_dialog(player, action)
         machine.module_set:normalize({sort=true})
         machine.limit = util.gui.parse_expression_field(modal_data.modal_elements.limit_textfield)
         machine.force_limit = util.gui.switch.convert_to_state(modal_data.modal_elements.force_limit_switch)
-
-        set_defaults(player, machine)
 
         solver.update(player)
         util.raise.refresh(player, "factory")
@@ -317,6 +342,14 @@ listeners.gui = {
                 modal_elements.defaults_button.caption = (defaults_frame.visible)
                     and {"fp.defaults_close"} or {"fp.defaults_open"}
             end)
+        },
+        {
+            name = "toggle_machine_defaults_panel",
+            handler = toggle_defaults_panel
+        },
+        {
+            name = "save_machine_defaults",
+            handler = save_defaults
         }
     },
     on_gui_checked_state_changed = {
@@ -338,6 +371,10 @@ listeners.dialog = {
     end),
     open = open_machine_dialog,
     close = close_machine_dialog
+}
+
+listeners.global = {
+    machine_defaults_refresher = refresh_defaults_frame
 }
 
 return { listeners }

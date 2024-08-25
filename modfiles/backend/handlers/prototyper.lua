@@ -255,28 +255,6 @@ function prototyper.util.build_translation_dictionaries()
     end
 end
 
--- Migrates the prototypes for default beacons and modules
----@param player_table PlayerTable
-function prototyper.util.migrate_mb_defaults(player_table)
-    local mb_defaults = player_table.preferences.mb_defaults
-    local find = prototyper.util.find
-
-    local machine = mb_defaults.machine
-    if machine then
-        mb_defaults.machine = find("modules", machine.name, machine.category)  --[[@as FPModulePrototype ]]
-    end
-
-    local second = mb_defaults.machine_secondary
-    if second then
-        mb_defaults.machine_secondary = find("modules", second.name, second.category)  --[[@as FPModulePrototype ]]
-    end
-
-    local beacon = mb_defaults.beacon
-    if beacon then
-        mb_defaults.beacon = find("modules", beacon.name, nil)  --[[@as FPModulePrototype ]]
-    end
-end
-
 
 -- ** DEFAULTS **
 ---@class DefaultPrototype

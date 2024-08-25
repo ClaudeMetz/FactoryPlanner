@@ -29,7 +29,6 @@ require("backend.calculation.solver")
 ---@field done_column boolean
 ---@field percentage_column boolean
 ---@field line_comment_column boolean
----@field mb_defaults MBDefaults
 ---@field belts_or_lanes "belts" | "lanes"
 ---@field default_machines PrototypeWithCategoryDefault
 ---@field default_fuels PrototypeWithCategoryDefault
@@ -83,8 +82,6 @@ function reload_preferences(player_table)
     reload("done_column", true)
     reload("percentage_column", false)
     reload("line_comment_column", false)
-
-    reload("mb_defaults", {machine = nil, machine_secondary = nil, beacon = nil, beacon_count = nil})
 
     reload("belts_or_lanes", "belts")
 
@@ -177,9 +174,7 @@ end
 local function refresh_player_table(player)
     local player_table = global.players[player.index]
 
-    -- Migrate the prototypes used in the player's preferences
     prototyper.defaults.migrate(player_table)
-    prototyper.util.migrate_mb_defaults(player_table)
 
     reload_preferences(player_table)
     reset_ui_state(player_table)
