@@ -215,22 +215,16 @@ function Line:apply_mb_defaults(player)
         message = {text={"fp.warning_module_not_compatible", {"fp.pl_module", 1}}, category="warning"}
     end
 
-    -- Add default beacon modules, if desired by the user
-    local beacon_module_proto = mb_defaults.beacon
+    -- Beacon defaults
     local beacon_default = prototyper.defaults.get(player, "beacons", nil)
 
-    if beacon_module_proto ~= nil and beacon_default.beacon_amount ~= nil then
+    -- The .proto checks also confirms quality and modules are set
+    if beacon_default.proto and beacon_default.beacon_amount then
         local blank_beacon = Beacon.init(beacon_default.proto, self)
+        blank_beacon.quality_proto = beacon_default.quality
         blank_beacon.amount = beacon_default.beacon_amount
-
-        if blank_beacon.module_set:check_compatibility(beacon_module_proto) then
-            local module = Module.init(beacon_module_proto, beacon_default.proto.module_limit, default_quality)
-            blank_beacon.module_set:insert(module)
-            self:set_beacon(blank_beacon)  -- summarizes effects on its own
-
-        elseif message == nil then  -- don't overwrite previous message, if it exists
-            message = {text={"fp.warning_module_not_compatible", {"fp.pl_beacon", 1}}, category="warning"}
-        end
+        blank_beacon.module_set:ingest_default(beacon_default.modules)
+        self:set_beacon(blank_beacon)  -- summarizes effects on its own
     end
 
     return message

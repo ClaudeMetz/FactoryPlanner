@@ -82,7 +82,7 @@ function preference_structures.dropdowns(preferences, parent_flow)
     add_dropdown("factory_list_rows", height_items, height_index)
 end
 
-function preference_structures.mb_defaults(preferences, content_frame)
+--[[ function preference_structures.mb_defaults(preferences, content_frame)
     local mb_defaults = preferences.mb_defaults
     local preference_box = add_preference_box(content_frame, "mb_defaults")
 
@@ -95,7 +95,7 @@ function preference_structures.mb_defaults(preferences, content_frame)
             tooltip={"fp.preference_mb_default_" .. type .. "_tt"}}
         local item = (mb_defaults[type] ~= nil) and mb_defaults[type].name or nil
         flow.add{type="choose-elem-button", elem_type="item", item=item, style="fp_sprite-button_inset",
-            elem_filters={{filter="type", type="module"}--[[ , {filter="hidden", mode="and", invert=true} ]]},
+            elem_filters={{filter="type", type="module"}--[[ , {filter="hidden", mode="and", invert=true} ] ]},
             tags={mod="fp", on_gui_elem_changed="change_mb_default", type=type}}
     end
 
@@ -113,7 +113,7 @@ function preference_structures.mb_defaults(preferences, content_frame)
     table_mb_defaults.add{type="label", caption={"fp.pu_beacon", 1}, style="semibold_label"}
     add_mb_default_button(table_mb_defaults, "beacon")
 
-    --[[ local beacon_amount_flow = table_mb_defaults.add{type="flow", direction="horizontal"}
+    local beacon_amount_flow = table_mb_defaults.add{type="flow", direction="horizontal"}
     beacon_amount_flow.style.vertical_align = "center"
     beacon_amount_flow.style.horizontal_spacing = 8
 
@@ -123,8 +123,8 @@ function preference_structures.mb_defaults(preferences, content_frame)
     local textfield_amount = beacon_amount_flow.add{type="textfield", text=mb_defaults.beacon_count,
         tags={mod="fp", on_gui_text_changed="mb_default_beacon_amount"}}
     util.gui.setup_numeric_textfield(textfield_amount, false, false)
-    textfield_amount.style.width = 42 ]]
-end
+    textfield_amount.style.width = 42
+end ]]
 
 function preference_structures.prototypes(player, content_frame, modal_elements, type)
     local preference_box = add_preference_box(content_frame, ("default_" .. type))
@@ -219,12 +219,12 @@ local function handle_dropdown_preference_change(player, tags, event)
     end
 end
 
-local function handle_mb_default_change(player, tags, event)
+--[[ local function handle_mb_default_change(player, tags, event)
     local mb_defaults = util.globals.preferences(player).mb_defaults
     local module_name = event.element.elem_value
 
     mb_defaults[tags.type] = (module_name ~= nil) and MODULE_NAME_MAP[module_name] or nil
-end
+end ]]
 
 local function handle_bol_change(player, _, event)
     local player_table = util.globals.player_table(player)
@@ -296,7 +296,7 @@ local function open_preferences_dialog(player, modal_data)
 
     local right_content_frame = add_content_frame()
 
-    preference_structures.mb_defaults(preferences, right_content_frame)
+    --preference_structures.mb_defaults(preferences, right_content_frame)
 
     local belts_box = preference_structures.prototypes(player, right_content_frame, modal_elements, "belts")
     --preference_structures.prototypes(player, right_content_frame, modal_elements, "beacons")
@@ -352,12 +352,12 @@ listeners.gui = {
             handler = handle_dropdown_preference_change
         }
     },
-    on_gui_elem_changed = {
+    --[[ on_gui_elem_changed = {
         {
             name = "change_mb_default",
             handler = handle_mb_default_change
         }
-    },
+    }, ]]
     on_gui_switch_state_changed = {
         {
             name = "choose_belts_or_lanes",

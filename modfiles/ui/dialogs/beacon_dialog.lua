@@ -11,9 +11,10 @@ local function refresh_defaults_frame(player)
     local same_beacon = (default_beacon.proto.id == beacon.proto.id)
     local same_quality = (default_beacon.quality.id == beacon.quality_proto.id)
     local same_amount = (default_beacon.beacon_amount == beacon.amount)
+    local same_modules = beacon.module_set:equals_default(default_beacon.modules)
 
-    modal_elements.beacon_default.enabled = not (same_beacon and same_quality)
-    modal_elements.beacon_default.state = same_beacon and same_quality
+    modal_elements.beacon_default.enabled = not (same_beacon and same_quality and same_modules)
+    modal_elements.beacon_default.state = same_beacon and same_quality and same_modules
     modal_elements.beacon_default_amount.enabled = not same_amount
     modal_elements.beacon_default_amount.state = same_amount
 end
@@ -21,31 +22,52 @@ end
 local function add_defaults_panel(parent_frame, player)
     local modal_elements = util.globals.modal_elements(player)
 
-    local bordered_frame = parent_frame.add{type="frame", direction="vertical", style="fp_frame_bordered_stretch"}
-    bordered_frame.style.vertically_stretchable = true
-    bordered_frame.style.right_padding = 24
-    modal_elements.defaults_panel = bordered_frame
+    local flow_default = parent_frame.add{type="flow", direction="vertical"}
+    flow_default.style.vertical_spacing = 4
+    flow_default.style.right_padding = 12
 
-    bordered_frame.add{type="label", caption={"fp.pu_beacon", 1}, style="caption_label"}
-    local checkbox_beacon = modal_elements.defaults_panel.add{type="checkbox", state=false,
-        caption={"fp.save_as_default"}, tooltip={"fp.save_as_default_tt", {"fp.pl_beacon", 1}}}
+    flow_default.add{type="label", caption={"", {"fp.pu_beacon", 1}, " & ", {"fp.pu_module", 2}},
+        style="caption_label"}
+    local checkbox_beacon = flow_default.add{type="checkbox", state=false,
+        caption={"fp.save_as_default"}, tooltip={"fp.save_as_default_beacon_tt"}}
     modal_elements["beacon_default"] = checkbox_beacon
 
-    local checkbox_amount = modal_elements.defaults_panel.add{type="checkbox", state=false,
+    local checkbox_amount = flow_default.add{type="checkbox", state=false,
         caption={"fp.save_beacon_amount"}, tooltip={"fp.save_beacon_amount_tt"}}
     modal_elements["beacon_default_amount"] = checkbox_amount
+
+    parent_frame.add{type="empty-widget", style="flib_vertical_pusher"}
+    local flow_submit = parent_frame.add{type="flow", direction="horizontal"}
+    flow_submit.add{type="empty-widget", style="flib_horizontal_pusher"}
+    local button_submit = flow_submit.add{type="button", caption={"fp.set_defaults"}, style="fp_button_green",
+        tags={mod="fp", on_gui_click="save_beacon_defaults"}, mouse_button_filter={"left"}}
+    button_submit.style.minimal_width = 0
 
     refresh_defaults_frame(player)
 end
 
-local function set_defaults(player, beacon)
+local function toggle_defaults_panel(player)
+    local modal_elements = util.globals.modal_elements(player)  --[[@as table]]
+    local defaults_frame = modal_elements.defaults_box
+    defaults_frame.visible = not defaults_frame.visible
+    modal_elements.defaults_button.caption = (defaults_frame.visible)
+        and {"fp.defaults_close"} or {"fp.defaults_open"}
+end
+
+local function save_defaults(player)
     local modal_elements = util.globals.modal_elements(player)
+    local beacon = util.globals.modal_data(player).object  --[[@as Beacon]]
+
     local data = {
         prototype = modal_elements.beacon_default.state and beacon.proto.id or nil,
         quality = modal_elements.beacon_default.state and beacon.quality_proto.id or nil,
+        modules = modal_elements.beacon_default.state and beacon.module_set:compile_default() or nil,
         beacon_amount = modal_elements.beacon_default_amount.state and beacon.amount or nil
     }
     prototyper.defaults.set(player, "beacons", data, nil)
+
+    refresh_defaults_frame(player)
+    toggle_defaults_panel(player)
 end
 
 
@@ -171,6 +193,7 @@ local function open_beacon_dialog(player, modal_data)
         modal_data.object = Beacon.init(default_beacon.proto, line)
         modal_data.object.quality_proto = default_beacon.quality
         modal_data.object.amount = default_beacon.beacon_amount or 0
+        modal_data.object.module_set:ingest_default(default_beacon.modules)
         line:set_beacon(modal_data.object)
     end
     modal_data.module_set = modal_data.object.module_set
@@ -210,6 +233,7 @@ local function open_beacon_dialog(player, modal_data)
     modal_data.modal_elements["defaults_box"] = right_frame
 
     -- Defaults
+    modal_data.defaults_refresher = "beacon_defaults_refresher"
     add_defaults_panel(right_frame, player)
 end
 
@@ -221,8 +245,6 @@ local function close_beacon_dialog(player, action)
         local beacon = modal_data.object
         local total_amount = util.gui.parse_expression_field(modal_data.modal_elements.beacon_total) or 0
         beacon.total_amount = (total_amount > 0) and total_amount or nil
-
-        set_defaults(player, beacon)
 
         solver.update(player, factory)
         util.raise.refresh(player, "factory")
@@ -281,13 +303,11 @@ listeners.gui = {
         },
         {
             name = "toggle_beacon_defaults_panel",
-            handler = (function(player, _, _)
-                local modal_elements = util.globals.modal_elements(player)  --[[@as table]]
-                local defaults_frame = modal_elements.defaults_box
-                defaults_frame.visible = not defaults_frame.visible
-                modal_elements.defaults_button.caption = (defaults_frame.visible)
-                    and {"fp.defaults_close"} or {"fp.defaults_open"}
-            end)
+            handler = toggle_defaults_panel
+        },
+        {
+            name = "save_beacon_defaults",
+            handler = save_defaults
         }
     }
 }
@@ -308,6 +328,7 @@ listeners.dialog = {
 }
 
 listeners.global = {
+    beacon_defaults_refresher = refresh_defaults_frame,
     beacon_submit_checker = update_dialog_submit_button
 }
 

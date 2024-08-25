@@ -198,6 +198,7 @@ function module_configurator.refresh_modules_flow(player, update_only)
     end
 
     if empty_slots > 0 then add_module_frame(modules_flow, nil, module_filters, empty_slots) end
+    if modal_data.defaults_refresher then GLOBAL_HANDLERS[modal_data.defaults_refresher](player) end
     if modal_data.submit_checker then GLOBAL_HANDLERS[modal_data.submit_checker](modal_data) end
 
     modules_flow.visible = (#modules_flow.children > 0)
