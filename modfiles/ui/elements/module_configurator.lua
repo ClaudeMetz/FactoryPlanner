@@ -74,14 +74,15 @@ local function handle_module_selection(player, tags, event)
     end
 
     if tags.module_id then  -- editing an existing module
-        local module = OBJECT_INDEX[tags.module_id]  --[[@as Module]]
+        local existing_module = OBJECT_INDEX[tags.module_id]  --[[@as Module]]
         if new_module then  -- changed to another module
-            module.proto = MODULE_NAME_MAP[new_module.name]
-            module.quality_proto = prototyper.util.find("qualities", new_module.quality, nil)
-            if check_existing(module) then module_set:remove(module) end
-            module:summarize_effects()
+            local new_proto = MODULE_NAME_MAP[new_module.name]
+            local new_quality_proto = prototyper.util.find("qualities", new_module.quality, nil)
+            local module = Module.init(new_proto, existing_module.amount, new_quality_proto)
+            module_set:remove(existing_module)
+            if not check_existing(module) then module_set:insert(module) end
         else  -- removed module
-            module_set:remove(module)
+            module_set:remove(existing_module)
         end
     elseif new_module then -- choosing a new module on an empty line
         local slider = event.element.parent["fp_slider_module_amount"]
