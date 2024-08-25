@@ -66,7 +66,6 @@ function preference_structures.dropdowns(preferences, parent_flow)
             tags={mod="fp", on_gui_selection_state_changed="choose_preference", name=name}}
     end
 
-
     local width_items, width_index = {}, nil
     for index, value in pairs(PRODUCTS_PER_ROW_OPTIONS) do
         width_items[index] = {"", value .. " ", {"fp.pl_product", 2}}
@@ -82,56 +81,54 @@ function preference_structures.dropdowns(preferences, parent_flow)
     add_dropdown("factory_list_rows", height_items, height_index)
 end
 
-function preference_structures.prototypes(player, content_frame, modal_elements, type)
-    local preference_box = add_preference_box(content_frame, ("default_" .. type))
+function preference_structures.belts(player, content_frame, modal_elements)
+    local preference_box = add_preference_box(content_frame, "default_belts")
     local table_prototypes = preference_box.add{type="table", column_count=3}
     table_prototypes.style.horizontal_spacing = 20
     table_prototypes.style.vertical_spacing = 8
     table_prototypes.style.top_margin = 4
 
-    local function add_defaults_table(column_count, category_id)
-        local frame = table_prototypes.add{type="frame", direction="horizontal", style="fp_frame_light_slots_small"}
-        local table = frame.add{type="table", column_count=column_count, style="fp_table_slots_small"}
+    local frame = table_prototypes.add{type="frame", direction="horizontal", style="fp_frame_light_slots_small"}
+    local table = frame.add{type="table", column_count=10, style="fp_table_slots_small"}
+    modal_elements["belts"] = table
+    refresh_defaults_table(player, modal_elements, "belts", nil)
 
-        if category_id then
-            modal_elements[type] = modal_elements[type] or {}
-            modal_elements[type][category_id] = table
-        else
-            modal_elements[type] = table
+    preference_box.title_flow.add{type="empty-widget", style="flib_horizontal_pusher"}
+    local belts_or_lanes = util.globals.preferences(player).belts_or_lanes
+    local switch_state = (belts_or_lanes == "belts") and "left" or "right"
+    preference_box.title_flow.add{type="switch", switch_state=switch_state, tooltip={"fp.preference_belts_or_lanes_tt"},
+        tags={mod="fp", on_gui_switch_state_changed="choose_belts_or_lanes"},
+        left_label_caption={"fp.pu_belt", 2}, right_label_caption={"fp.pu_lane", 2}}
+end
+
+function preference_structures.wagons(player, content_frame, modal_elements)
+    local preference_box = add_preference_box(content_frame, "default_wagons")
+    local table_prototypes = preference_box.add{type="table", column_count=3}
+    table_prototypes.style.horizontal_spacing = 20
+    table_prototypes.style.vertical_spacing = 8
+    table_prototypes.style.top_margin = 4
+
+    local categories = global.prototypes.wagons
+    if not next(categories) then preference_box.visible = false; return end
+
+    local any_category_visible = false
+    for category_id, category in ipairs(categories) do
+        if #category.members > 1 then
+            any_category_visible = true
+
+            local category_caption = {"?", {"wagon-category-name." .. category.name}, "'" .. category.name .. "'"}
+            table_prototypes.add{type="label", caption=category_caption}
+            table_prototypes.add{type="empty-widget", style="flib_horizontal_pusher"}
+
+            local frame = table_prototypes.add{type="frame", direction="horizontal", style="fp_frame_light_slots_small"}
+            local table = frame.add{type="table", column_count=6, style="fp_table_slots_small"}
+            modal_elements.wagons = modal_elements.wagons or {}
+            modal_elements.wagons[category_id] = table
+
+            refresh_defaults_table(player, modal_elements, "wagons", category_id)
         end
     end
-
-    if not prototyper.data_types[type] then
-        local prototypes = global.prototypes[type]
-        if #prototypes < 2 then preference_box.visible = false; goto skip end
-
-        add_defaults_table(10, nil)
-        refresh_defaults_table(player, modal_elements, type, nil)
-    else
-        local categories = global.prototypes[type]
-        if not next(categories) then preference_box.visible = false; goto skip end
-
-        local any_category_visible = false
-        for category_id, category in ipairs(categories) do
-            local prototypes = category.members
-
-            if #prototypes > 1 then
-                any_category_visible = true
-
-                local category_caption = {"?", {type:sub(1, -2) .. "-category-name." .. category.name},
-                    "'" .. category.name .. "'"}
-                table_prototypes.add{type="label", caption=category_caption}
-                table_prototypes.add{type="empty-widget", style="flib_horizontal_pusher"}
-
-                add_defaults_table(6, category_id)
-                refresh_defaults_table(player, modal_elements, type, category_id)
-            end
-        end
-        if not any_category_visible then preference_box.visible = false end
-    end
-
-    :: skip ::
-    return preference_box
+    if not any_category_visible then preference_box.visible = false end
 end
 
 
@@ -192,7 +189,7 @@ local function handle_bol_change(player, _, event)
     util.raise.refresh(player, "all")
 end
 
-local function handle_default_prototype_change(player, tags, event)
+local function handle_default_prototype_change(player, tags, _)
     local data_type = tags.type
     local category_id = tags.category_id
 
@@ -244,15 +241,8 @@ local function open_preferences_dialog(player, modal_data)
 
     local right_content_frame = add_content_frame()
 
-    local belts_box = preference_structures.prototypes(player, right_content_frame, modal_elements, "belts")
-    preference_structures.prototypes(player, right_content_frame, modal_elements, "wagons")
-
-    belts_box.visible = true  -- force visible so additional preference is accessible
-    belts_box.title_flow.add{type="empty-widget", style="flib_horizontal_pusher"}
-    local switch_state = (preferences.belts_or_lanes == "belts") and "left" or "right"
-    belts_box.title_flow.add{type="switch", switch_state=switch_state, tooltip={"fp.preference_belts_or_lanes_tt"},
-        tags={mod="fp", on_gui_switch_state_changed="choose_belts_or_lanes"},
-        left_label_caption={"fp.pu_belt", 2}, right_label_caption={"fp.pu_lane", 2}}
+    preference_structures.belts(player, right_content_frame, modal_elements)
+    preference_structures.wagons(player, right_content_frame, modal_elements)
 end
 
 local function close_preferences_dialog(player, _)
