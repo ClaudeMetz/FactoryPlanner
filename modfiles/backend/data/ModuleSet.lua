@@ -208,6 +208,7 @@ function ModuleSet:check_compatibility(module_proto)
     return true
 end
 
+---@return ItemPrototypeFilter[]
 function ModuleSet:compile_filter()
     local compatible_modules = {}
     for module_name, module_proto in pairs(MODULE_NAME_MAP) do
@@ -217,6 +218,50 @@ function ModuleSet:compile_filter()
     end
 
     return {{filter="name", name=compatible_modules}}
+end
+
+
+---@return DefaultModuleData[]
+function ModuleSet:compile_default()
+    local modules_default = {}
+    for module in self:iterator() do
+        table.insert(modules_default, {
+            prototype = module.proto.name,
+            quality = module.quality_proto.name,
+            amount = module.amount
+        })
+    end
+    return modules_default
+end
+
+---@param default_data DefaultModule[]
+---@return boolean equals
+function ModuleSet:equals_default(default_data)
+    if not default_data then return (self.module_count == 0) end
+    if #default_data ~= self:count() then return false end
+
+    local indexed_default = {}
+    for _, default in pairs(default_data) do
+        indexed_default[default.proto.name] = default
+    end
+    for module in self:iterator() do
+        local default = indexed_default[module.proto.name]
+        if not default or default.quality.name ~= module.quality_proto.name
+                or default.amount ~= module.amount then
+            return false
+        end
+    end
+    return true
+end
+
+---@param module_default DefaultModule[]
+function ModuleSet:ingest_default(module_default)
+    if not module_default then return end  -- no default to ingest
+    for _, default_module in pairs(module_default) do
+        self:insert(Module.init(default_module.proto, default_module.amount, default_module.quality))
+    end
+    -- Compatibility check necessary because the module might not be compatible with the recipe
+    self:normalize({compatibility=true, trim=true, sort=true})  -- normalize for outdated defaults
 end
 
 

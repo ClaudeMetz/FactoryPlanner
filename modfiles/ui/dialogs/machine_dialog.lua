@@ -46,12 +46,12 @@ local function add_defaults_panel(parent_frame, player)
 
     bordered_frame.add{type="label", caption={"fp.pu_machine", 1}, style="caption_label"}
     add_checkbox(modal_elements, "save_as_default", {"fp.pl_machine", 1}, "machine")
-    add_checkbox(modal_elements, "save_for_all", {"fp.pl_machine", 1}, "machine_all", "toggle_checkbox_all")
+    add_checkbox(modal_elements, "save_for_all", {"fp.pl_machine", 1}, "machine_all", "machine_checkbox_all")
 
     local fuel_label = bordered_frame.add{type="label", caption={"fp.pu_fuel", 1}, style="caption_label"}
     fuel_label.style.top_margin = 8
     add_checkbox(modal_elements, "save_as_default", {"fp.pl_fuel", 1}, "fuel")
-    add_checkbox(modal_elements, "save_for_all", {"fp.pl_fuel", 1}, "fuel_all", "toggle_checkbox_all")
+    add_checkbox(modal_elements, "save_for_all", {"fp.pl_fuel", 1}, "fuel_all", "machine_checkbox_all")
 
     refresh_defaults_frame(player)
 end
@@ -321,7 +321,7 @@ listeners.gui = {
     },
     on_gui_checked_state_changed = {
         {
-            name = "toggle_checkbox_all",
+            name = "machine_checkbox_all",
             handler = refresh_defaults_frame
         }
     }

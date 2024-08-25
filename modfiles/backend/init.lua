@@ -177,6 +177,10 @@ end
 local function refresh_player_table(player)
     local player_table = global.players[player.index]
 
+    -- Migrate the prototypes used in the player's preferences
+    prototyper.defaults.migrate(player_table)
+    prototyper.util.migrate_mb_defaults(player_table)
+
     reload_preferences(player_table)
     reset_ui_state(player_table)
 
@@ -184,10 +188,6 @@ local function refresh_player_table(player)
 
     player_table.translation_tables = nil
     player_table.clipboard = nil
-
-    -- Migrate the prototypes used in the player's preferences
-    prototyper.defaults.migrate(player_table)
-    prototyper.util.migrate_mb_defaults(player_table)
 
     player_table.realm:validate()
 end

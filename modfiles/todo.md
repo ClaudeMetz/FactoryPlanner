@@ -2,11 +2,12 @@
 
 ## Active
 
-- Default modules/beacons is awkward with quality since you can't specify it (atm)
-  - Feature is still neat, but maybe time to axe it? Or make it work better somehow
-
+- Machine module defaults
 - Remove any code and locale related to removed prefs dialog stuff
-- Think about disabling all/module checkboxes too if appropriate - kinda lot of work to figure out
+- Think about disabling _all checkboxes too if appropriate - kinda lot of work to figure out
+- Add defaults panel kinda thing to modal_dialog to reduce code duplication
+- Make modal dialog create left and right content frames, since it's used quite a lot now
+- Use modal dialog reset button functionality on machine and beacon dialogs
 
 ## Bugs
 
@@ -19,8 +20,6 @@
 - Better infinite mining drill support
   - Kind of incredibly annoying, since there is nothing I can really calculate about it
   - Could still make it so it shows the oil patch as an ingredient without amount (same for offshore pumps)
-- Turn item spoilage results into recipes since mods will use that as a critical path for sure
-  - Kinda annoying since it doesn't use machines, just times, so the recipes would be very near useless
 
 ## Features
 
@@ -33,13 +32,16 @@
   - Not exactly sure on the details of the refresh logic, will find it while implementing
   - Should have a 'multiply District amount by X' variable too so you can overproduce on purpose
   - Alternatively could have a district amount + the normal amount instead, a bit messy but could work well
+- Make recalculate_on_factory_change a factory property, not a UI one
 - Add feature to transfer items from district to district, mimmicing space platform transfers
   - In addition, it would be good if the mod could calculate your rocket and platform needs for the given items
   - Not super simple, needs constraints given by the user, like platform specs, and maybe others
   - Otherwise there won't be a unique solution. Kinda orthogonal in general, but would be helpful to have
 - Need an 'are you sure' dialog for deleting a District, resetting preferences, etc
-- Check out if there is any way to use key combos like Q to pick items/entities
 - Disable SA-specific features by checking feature flags in the right spots
+- Turn item spoilage results into recipes since mods will use that as a critical path for sure
+  - Kinda annoying since it doesn't use machines, just times, so the recipes would be very near useless
+  - Could use 'time' as a custom ingredient on an otherwise blank line
 
 ## Low Priority
 
@@ -67,9 +69,6 @@
 - Preferences export would be great. Maybe without migration if that makes it much easier
 - Agriculture tower implementation
   - Missing energy and pollution production, is different to normal entities
-- Make recalculate_on_factory_change a factory property, not a UI one
-- Make modal dialog create left and right content frames, since it's used quite a lot now
-- Use modal dialog reset button functionality on machine and beacon dialogs
 
 ## Waiting on
 
@@ -83,6 +82,8 @@
 - No way to read quality color for use in tooltips
 - global_effects on planets, yet another effect that needs to be considered
 - game.evaluate_expression should not error but return something else if expression is invalid
+- Ask about whether hover key combos would be possible
+  - Could imitate it by keeping track of hover states myself, wouldn't be too horrible
 
 ## Release
 

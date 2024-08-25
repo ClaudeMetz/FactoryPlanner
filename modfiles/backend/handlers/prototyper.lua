@@ -282,12 +282,24 @@ end
 ---@class DefaultPrototype
 ---@field proto AnyFPPrototype
 ---@field quality FPQualityPrototype?
+---@field modules DefaultModule[]?
 ---@field beacon_amount integer?
+
+---@class DefaultModule
+---@field proto FPModulePrototype
+---@field quality FPQualityPrototype
+---@field amount integer
 
 ---@class DefaultData
 ---@field prototype (integer | string)?
 ---@field quality (integer | string)?
+---@field modules DefaultModuleData[]?
 ---@field beacon_amount integer?
+
+---@class DefaultModuleData
+---@field prototype (integer | string)
+---@field quality (integer | string)
+---@field amount integer
 
 ---@alias AnyPrototypeDefault DefaultPrototype | { [integer]: DefaultPrototype }
 
@@ -316,6 +328,16 @@ function prototyper.defaults.set(player, data_type, data, category)
     if data.quality then
         default.quality = prototyper.util.find("qualities", data.quality, nil)  --[[@as FPQualityPrototype]]
     end
+    if data.modules then
+        default.modules = {}
+        for _, default_module in pairs(data.modules) do
+            table.insert(default.modules, {
+                proto = MODULE_NAME_MAP[default_module.prototype],
+                quality = prototyper.util.find("qualities", default_module.quality, nil),
+                amount = default_module.amount
+            })
+        end
+    end
     if data.beacon_amount then
         default.beacon_amount = data.beacon_amount
     end
@@ -329,26 +351,15 @@ function prototyper.defaults.set_all(player, data_type, data)
     -- Doesn't make sense for prototypes without categories, just use .set() instead
     if prototyper.data_types[data_type] == false then return end
 
-    local defaults = util.globals.preferences(player)["default_" .. data_type]
     for _, category_data in pairs(global.prototypes[data_type]) do
         if table_size(category_data.members) > 1 then  -- don't change single-member categories
             local matched_prototype = prototyper.util.find(data_type, data.prototype, category_data.id)
             if matched_prototype then
-                defaults[category_data.id].proto = matched_prototype
-                defaults[category_data.id].quality = prototyper.util.find("qualities", data.quality, nil)
-                defaults[category_data.id].beacon_amount = data.beacon_amount
+                data.prototype = matched_prototype.name
+                prototyper.defaults.set(player, data_type, data, category_data.id)
             end
         end
     end
-end
-
-
----@param quality_proto FPQualityPrototype?
----@return FPQualityPrototype?
-local function get_migrated_quality(quality_proto)
-    if not quality_proto then return nil end  -- defaults without quality should stay without
-    local equivalent_proto = prototyper.util.find("qualities", quality_proto.name, nil)  --[[@as FPQualityPrototype?]]
-    return equivalent_proto or global.prototypes.qualities[1]
 end
 
 local prototypes_with_quality = {machines=true, beacons=true, modules=true}
@@ -363,16 +374,58 @@ function prototyper.defaults.get_fallback(data_type)
     local fallback = nil
     if prototyper.data_types[data_type] == false then
         ---@cast prototypes IndexedPrototypes<FPPrototype>
-        fallback = {proto=prototypes[1], quality=default_quality, beacon_amount=nil}
+        fallback = {proto=prototypes[1], quality=default_quality, modules=nil, beacon_amount=nil}
     else
         ---@cast prototypes IndexedPrototypesWithCategory<FPPrototypeWithCategory>
         fallback = {}
         for _, category in pairs(prototypes) do
-            fallback[category.id] = {proto=category.members[1], quality=default_quality, beacon_amount=nil}
+            fallback[category.id] = {proto=category.members[1], quality=default_quality, modules=nil, beacon_amount=nil}
         end
     end
 
     return fallback
+end
+
+
+---@param data_type DataType
+---@param fallback DefaultPrototype
+---@param default DefaultPrototype
+---@param category string?
+---@return DefaultPrototype migrated_default
+local function migrate_prototype_default(data_type, fallback, default, category)
+    local equivalent_proto = prototyper.util.find(data_type, default.proto.name, category)
+    if not equivalent_proto then
+        return fallback  -- full reset if prototype went missing
+    else
+        local migrated_default = {
+            proto = equivalent_proto,
+            quality = nil,  -- only migrated if relevant for this data_type
+            modules = nil,  -- only migrated to anything if previously present
+            beacon_amount = default.beacon_amount or fallback.beacon_amount  -- could be nil
+        }
+
+        if prototypes_with_quality[data_type] then
+            local equivalent_quality = prototyper.util.find("qualities", default.quality.name, nil)
+            migrated_default.quality = equivalent_quality or fallback.quality
+        end
+
+        if default.modules then
+            migrated_default.modules = {}
+            for _, module in pairs(default.modules) do
+                local equivalent_module = prototyper.util.find("modules", module.proto.name, module.proto.category)
+                if equivalent_module then
+                    local equivalent_quality = prototyper.util.find("qualities", module.quality.name, nil)
+                    table.insert(migrated_default.modules, {
+                        proto = equivalent_module,
+                        quality = equivalent_quality or fallback.quality,  -- same quality as the base proto
+                        amount = module.amount
+                    })
+                end
+            end
+        end
+
+        return migrated_default
+    end
 end
 
 -- Kinda unclean that I have to do this, but it's better than storing it elsewhere
@@ -391,11 +444,7 @@ function prototyper.defaults.migrate(player_table)
         if default == nil then goto skip end
 
         if not has_categories then
-            -- Use the same prototype if an equivalent can be found, use fallback otherwise
-            local equivalent_proto = prototyper.util.find(data_type, default.proto.name, nil)
-            preferences["default_" .. data_type].proto = equivalent_proto or fallback.proto
-            preferences["default_" .. data_type].quality = get_migrated_quality(default.quality)
-            -- beacon_amount is just carried over as it's just a number
+            preferences["default_" .. data_type] = migrate_prototype_default(data_type, fallback, default, nil)
         else
             local default_map = {}
             for _, default_data in pairs(default) do
@@ -405,18 +454,10 @@ function prototyper.defaults.migrate(player_table)
 
             local new_defaults = {}
             for _, category in pairs(global.prototypes[data_type]) do
-                local previous_category = default_map[category.name]
-                if previous_category then  -- category existed previously
-                    local proto_name = previous_category.proto.name
-                    new_defaults[category.id] = {
-                        proto = prototyper.util.find(data_type, proto_name, category.name),
-                        quality = get_migrated_quality(previous_category.quality),
-                        beacon_amount = previous_category.beacon_amount
-                    }
-                end
-                new_defaults[category.id] = new_defaults[category.id] or fallback[category.id]
+                local previous_default = default_map[category.name]
+                new_defaults[category.id] = (not previous_default) and fallback[category.id]
+                    or migrate_prototype_default(data_type, fallback[category.id], previous_default, category.name)
             end
-
             preferences["default_" .. data_type] = new_defaults
         end
         ::skip::
