@@ -13,6 +13,8 @@ function migration.player_table(player_table)
     player_table.preferences.default_wagons = nil
     player_table.preferences.default_beacons = nil
 
+    player_table.preferences.mb_defaults = nil
+
     for district in player_table.realm:iterator() do
         for factory in district:iterator() do
             factory.productivity_boni = {}

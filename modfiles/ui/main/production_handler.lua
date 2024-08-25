@@ -100,11 +100,10 @@ local function handle_machine_click(player, tags, action)
         line:change_machine_to_default(player)  -- guaranteed to find something
         machine.limit = nil
         machine.force_limit = true
-        local message = line:apply_mb_defaults(player)
+        line:apply_defaults(player)
 
         solver.update(player)
         util.raise.refresh(player, "factory")
-        if message ~= nil then util.messages.raise(player, message.category, message.text, 1) end
 
     elseif action == "factoriopedia" then
         --util.open_in_factoriopedia(player, "entity", machine.proto.name)

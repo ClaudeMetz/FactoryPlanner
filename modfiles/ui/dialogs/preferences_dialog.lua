@@ -82,50 +82,6 @@ function preference_structures.dropdowns(preferences, parent_flow)
     add_dropdown("factory_list_rows", height_items, height_index)
 end
 
---[[ function preference_structures.mb_defaults(preferences, content_frame)
-    local mb_defaults = preferences.mb_defaults
-    local preference_box = add_preference_box(content_frame, "mb_defaults")
-
-    local function add_mb_default_button(parent_flow, type)
-        local flow = parent_flow.add{type="flow", direction="horizontal"}
-        flow.style.vertical_align = "center"
-        flow.style.horizontal_spacing = 8
-
-        flow.add{type="label", caption={"fp.info_label", {"fp.preference_mb_default_" .. type}},
-            tooltip={"fp.preference_mb_default_" .. type .. "_tt"}}
-        local item = (mb_defaults[type] ~= nil) and mb_defaults[type].name or nil
-        flow.add{type="choose-elem-button", elem_type="item", item=item, style="fp_sprite-button_inset",
-            elem_filters={{filter="type", type="module"}--[[ , {filter="hidden", mode="and", invert=true} ] ]},
-            tags={mod="fp", on_gui_elem_changed="change_mb_default", type=type}}
-    end
-
-    local table_mb_defaults = preference_box.add{type="table", column_count=3}
-    table_mb_defaults.style.horizontal_spacing = 18
-    -- Table alignment is so stupid
-    table_mb_defaults.style.column_alignments[1] = "left"
-    table_mb_defaults.style.column_alignments[2] = "right"
-    table_mb_defaults.style.column_alignments[3] = "right"
-
-    table_mb_defaults.add{type="label", caption={"fp.pu_machine", 1}, style="semibold_label"}
-    add_mb_default_button(table_mb_defaults, "machine")
-    add_mb_default_button(table_mb_defaults, "machine_secondary")
-
-    table_mb_defaults.add{type="label", caption={"fp.pu_beacon", 1}, style="semibold_label"}
-    add_mb_default_button(table_mb_defaults, "beacon")
-
-    local beacon_amount_flow = table_mb_defaults.add{type="flow", direction="horizontal"}
-    beacon_amount_flow.style.vertical_align = "center"
-    beacon_amount_flow.style.horizontal_spacing = 8
-
-    beacon_amount_flow.add{type="label", caption={"fp.info_label", {"fp.preference_mb_default_beacon_amount"}},
-        tooltip={"fp.preference_mb_default_beacon_amount_tt"}}
-
-    local textfield_amount = beacon_amount_flow.add{type="textfield", text=mb_defaults.beacon_count,
-        tags={mod="fp", on_gui_text_changed="mb_default_beacon_amount"}}
-    util.gui.setup_numeric_textfield(textfield_amount, false, false)
-    textfield_amount.style.width = 42
-end ]]
-
 function preference_structures.prototypes(player, content_frame, modal_elements, type)
     local preference_box = add_preference_box(content_frame, ("default_" .. type))
     local table_prototypes = preference_box.add{type="table", column_count=3}
@@ -219,13 +175,6 @@ local function handle_dropdown_preference_change(player, tags, event)
     end
 end
 
---[[ local function handle_mb_default_change(player, tags, event)
-    local mb_defaults = util.globals.preferences(player).mb_defaults
-    local module_name = event.element.elem_value
-
-    mb_defaults[tags.type] = (module_name ~= nil) and MODULE_NAME_MAP[module_name] or nil
-end ]]
-
 local function handle_bol_change(player, _, event)
     local player_table = util.globals.player_table(player)
     local defined_by = (event.element.switch_state == "left") and "belts" or "lanes"
@@ -233,7 +182,6 @@ local function handle_bol_change(player, _, event)
     player_table.preferences.belts_or_lanes = defined_by
     view_state.rebuild_state(player)
 
-    -- Go through every factory's top level products and update their defined_by
     for district in player_table.realm:iterator() do
         for factory in district:iterator() do
             solver.determine_ingredient_satisfaction(factory)
@@ -296,13 +244,8 @@ local function open_preferences_dialog(player, modal_data)
 
     local right_content_frame = add_content_frame()
 
-    --preference_structures.mb_defaults(preferences, right_content_frame)
-
     local belts_box = preference_structures.prototypes(player, right_content_frame, modal_elements, "belts")
-    --preference_structures.prototypes(player, right_content_frame, modal_elements, "beacons")
     preference_structures.prototypes(player, right_content_frame, modal_elements, "wagons")
-    --preference_structures.prototypes(player, right_content_frame, modal_elements, "fuels")
-    --preference_structures.prototypes(player, right_content_frame, modal_elements, "machines")
 
     belts_box.visible = true  -- force visible so additional preference is accessible
     belts_box.title_flow.add{type="empty-widget", style="flib_horizontal_pusher"}
@@ -331,15 +274,6 @@ listeners.gui = {
             handler = handle_default_prototype_change
         }
     },
-    --[[ on_gui_text_changed = {
-        {
-            name = "mb_default_beacon_amount",
-            handler = (function(player, _, event)
-                local mb_defaults = util.globals.preferences(player).mb_defaults
-                mb_defaults.beacon_count = tonumber(event.element.text)
-            end)
-        }
-    }, ]]
     on_gui_checked_state_changed = {
         {
             name = "toggle_preference",
@@ -352,12 +286,6 @@ listeners.gui = {
             handler = handle_dropdown_preference_change
         }
     },
-    --[[ on_gui_elem_changed = {
-        {
-            name = "change_mb_default",
-            handler = handle_mb_default_change
-        }
-    }, ]]
     on_gui_switch_state_changed = {
         {
             name = "choose_belts_or_lanes",

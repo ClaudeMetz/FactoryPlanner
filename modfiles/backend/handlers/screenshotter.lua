@@ -68,12 +68,6 @@ local actions = {
         player_table.preferences.recipe_filters = {disabled = true, hidden = false}
         player_table.preferences.ignore_barreling_recipes = true
         player_table.preferences.ignore_recycling_recipes = true
-        player_table.preferences.mb_defaults = {  -- naughty use of the prototyper function
-            machine = prototyper.util.find("modules", "productivity-module-3", "productivity"),
-            machine_secondary = nil,
-            beacon = prototyper.util.find("modules", "speed-module-3", "speed"),
-            beacon_count = 8
-        }
 
         prototyper.defaults.set(player, "belts", {prototype="fast-transport-belt"}, nil)
         set_machine_default(player, "electric-mining-drill", "basic-solid")

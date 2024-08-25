@@ -98,16 +98,14 @@ local function attempt_adding_line(player, recipe_id, modal_data)
         local relative_object = OBJECT_INDEX[modal_data.add_after_line_id]  --[[@as LineObject]]
         floor:insert(line, relative_object, "next")  -- if not relative, insert uses last line
 
-        local message = nil
         if not (recipe_proto.custom or player.force.recipes[recipe_proto.name].enabled) then
-            message = {text={"fp.warning_recipe_disabled", recipe_proto.localised_name}, category="warning"}
+            util.messages.raise(player, "warning", {"fp.warning_recipe_disabled", recipe_proto.localised_name}, 2)
         end
-        local defaults_message = line:apply_mb_defaults(player)
-        if not message then message = defaults_message end  -- a bit silly
+
+        line:apply_default(player)  -- apply default modules and beacon if set
 
         solver.update(player)
         util.raise.refresh(player, "factory")
-        if message ~= nil then util.messages.raise(player, message.category, message.text, 1) end
     end
 end
 
