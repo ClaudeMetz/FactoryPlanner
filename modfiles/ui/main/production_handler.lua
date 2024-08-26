@@ -3,8 +3,19 @@ local Beacon = require("backend.data.Beacon")
 
 -- ** LOCAL UTIL **
 local function handle_line_move_click(player, tags, event)
+    --- @type Line
     local line = OBJECT_INDEX[tags.line_id]
+    local floor = line.parent
+
     local spots_to_shift = (event.control) and 5 or ((not event.shift) and 1 or nil)
+    if spots_to_shift == nil and floor.level > 1 and tags.direction == "previous" then
+        spots_to_shift = 0
+        for previous_line in floor:iterator(nil, line.previous, "previous") do
+            if previous_line.id ~= floor.first.id then
+                spots_to_shift = spots_to_shift + 1
+            end
+        end
+    end
     line.parent:shift(line, tags.direction, spots_to_shift)
 
     solver.update(player)
