@@ -19,15 +19,39 @@ local generator_util = {}
 ---@return FormattedRecipeItem
 local function generate_formatted_item(base_item, type)
     local base_amount = 0
+    local catalyst_amount = base_item.catalyst_amount or 0
+    local probability = (base_item.probability or 1)
+    local prod_part = 0
+
     if base_item.amount_max ~= nil and base_item.amount_min ~= nil then
-        base_amount = (base_item.amount_max + base_item.amount_min) / 2
+        local min = base_item.amount_min
+        local max = base_item.amount_max
+        base_amount = (min + max) / 2
+
+        -- When a recipe has a random output affected by prod and with a
+        -- catalyst specified, prod only applies when the output rolls above
+        -- the catalyst amount.
+        -- For example, if the recipe outputs 0-4 with 2 catalyst, the possible
+        -- output rolls are, with equal probability for each:
+        -- 0 1 2 3 4
+        -- and when the prod bar fills, the output rolls are:
+        -- 0 0 0 1 2
+        local cat_min = math.max(min - catalyst_amount, 0)
+        local cat_max = math.max(max - catalyst_amount, 0)
+        prod_part = (cat_min + cat_max) / 2
+
+        -- If the catalyst is at least the minimum amount, the prod part
+        -- must be multiplied by the probability that it rolls at least the
+        -- catalyst amount.
+        if cat_min == 0 then
+            prod_part = prod_part * (cat_max + 1) / (max - min + 1)
+        end
     else
         base_amount = base_item.amount
+        prod_part = math.max(base_amount - catalyst_amount, 0)
     end
 
-    local probability = (base_item.probability or 1)
-    local proddable_amount = (type == "product")
-        and (base_amount - (base_item.catalyst_amount or 0)) * probability or nil
+    local proddable_amount = (type == "product") and prod_part * probability or nil
 
     -- This will probably screw up the main_product detection down the line
     if base_item.temperature ~= nil then
