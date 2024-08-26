@@ -19,10 +19,12 @@ local function refresh_defaults_frame(player, reset_all)
     end
 
     -- Machine
+    local machine_tooltip = prototyper.defaults.generate_tooltip(player, "machines", machine.proto.category)
     local equals_machine = prototyper.defaults.equals_default(player, "machines", machine, machine.proto.category)
     local equals_all_machines = prototyper.defaults.equals_all_defaults(player, "machines", machine)
     local all_machines = modal_elements.machine_all.state or equals_all_machines
 
+    modal_elements.machine_title.tooltip = machine_tooltip
     modal_elements.machine.enabled = not equals_machine and not all_machines
     modal_elements.machine.state = equals_machine or all_machines
     modal_elements.machine_all.enabled = not equals_all_machines
@@ -30,14 +32,17 @@ local function refresh_defaults_frame(player, reset_all)
 
     -- Fuel
     local fuel_required = (machine.proto.burner ~= nil)
+    local fuel_tooltip = {"fp.machine_no_fuel_required"}  ---@type LocalisedString
     local equals_fuel, equals_all_fuels = false, false
     if fuel_required then
         local category = machine.proto.burner.combined_category
+        fuel_tooltip = prototyper.defaults.generate_tooltip(player, "fuels", category)
         equals_fuel = prototyper.defaults.equals_default(player, "fuels", machine.fuel, category)
         equals_all_fuels = prototyper.defaults.equals_all_defaults(player, "fuels", machine.fuel)
     end
     local all_fuels = modal_elements.fuel_all.state or equals_all_fuels
 
+    modal_elements.fuel_title.tooltip = fuel_tooltip
     modal_elements.fuel.enabled = fuel_required and (not equals_fuel and not all_fuels)
     modal_elements.fuel.state = fuel_required and (equals_fuel or all_fuels)
     modal_elements.fuel_all.enabled = fuel_required and not equals_all_fuels
@@ -52,15 +57,19 @@ local function add_defaults_panel(parent_frame, player)
     flow_default.style.right_padding = 12
     modal_elements["defaults_flow"] = flow_default
 
-    flow_default.add{type="label", caption={"", {"fp.pu_machine", 1}, " & ", {"fp.pu_module", 2}},
-       style="caption_label"}
+    local machine_caption = {"fp.info_label", {"", {"fp.pu_machine", 1}, " & ", {"fp.pu_module", 2}}}
+    local label_machine = flow_default.add{type="label", caption=machine_caption, style="caption_label"}
+    modal_elements["machine_title"] = label_machine
 
     add_checkbox(modal_elements, {"fp.save_as_default"}, {"fp.save_as_default_machine_tt"}, "machine", nil)
     add_checkbox(modal_elements, {"fp.save_for_all"}, {"fp.save_for_all_machine_tt"}, "machine_all",
         "machine_checkbox_all")
 
-    local fuel_label = flow_default.add{type="label", caption={"fp.pu_fuel", 1}, style="caption_label"}
+    local fuel_caption = {"fp.info_label", {"fp.pu_fuel", 1}}
+    local fuel_label = flow_default.add{type="label", caption=fuel_caption, style="caption_label"}
     fuel_label.style.top_margin = 8
+    modal_elements["fuel_title"] = fuel_label
+
     add_checkbox(modal_elements, {"fp.save_as_default"}, {"fp.save_as_default_fuel_tt"}, "fuel")
     add_checkbox(modal_elements, {"fp.save_for_all"}, {"fp.save_for_all_fuel_tt"}, "fuel_all", "machine_checkbox_all")
 

@@ -7,10 +7,12 @@ local function refresh_defaults_frame(player)
     local modal_elements = modal_data.modal_elements
     local beacon = modal_data.object  --[[@as Beacon]]
 
+    local beacon_tooltip = prototyper.defaults.generate_tooltip(player, "beacons", nil)
     local beacon_default = prototyper.defaults.get(player, "beacons", nil)
     local equals_beacon = prototyper.defaults.equals_default(player, "beacons", beacon, nil)
     local equals_amount = (beacon_default.beacon_amount == beacon.amount)
 
+    modal_elements.beacon_title.tooltip = beacon_tooltip
     modal_elements.beacon_default.enabled = not equals_beacon
     modal_elements.beacon_default.state = equals_beacon
     modal_elements.beacon_default_amount.enabled = not equals_amount
@@ -24,8 +26,10 @@ local function add_defaults_panel(parent_frame, player)
     flow_default.style.vertical_spacing = 4
     flow_default.style.right_padding = 12
 
-    flow_default.add{type="label", caption={"", {"fp.pu_beacon", 1}, " & ", {"fp.pu_module", 2}},
-        style="caption_label"}
+    local caption = {"fp.info_label", {"", {"fp.pu_beacon", 1}, " & ", {"fp.pu_module", 2}}}
+    local label_beacon = flow_default.add{type="label", caption=caption, style="caption_label"}
+    modal_elements["beacon_title"] = label_beacon
+
     local checkbox_beacon = flow_default.add{type="checkbox", state=false,
         caption={"fp.save_as_default"}, tooltip={"fp.save_as_default_beacon_tt"}}
     modal_elements["beacon_default"] = checkbox_beacon
