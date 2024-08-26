@@ -181,6 +181,16 @@ function Line:set_beacon(beacon)
     end
 end
 
+---@param player LuaPlayer
+function Line:setup_beacon(player)
+    local beacon_defaults = prototyper.defaults.get(player, "beacons", nil)
+    if beacon_defaults.modules and beacon_defaults.beacon_amount ~= 0 then
+        local blank_beacon = Beacon.init(beacon_defaults.proto, self)
+        self:set_beacon(blank_beacon)
+        blank_beacon:reset(player)
+    end
+end
+
 function Line:summarize_effects()
     local beacon_effects = (self.beacon) and self.beacon.total_effects or nil
     self.total_effects = util.merge_effects({self.machine.total_effects, beacon_effects})
@@ -188,31 +198,6 @@ function Line:summarize_effects()
         {limit=true, max_prod=self.recipe_proto.maximum_productivity})
 end
 
-
----@param player LuaPlayer
-function Line:apply_defaults(player)
-    -- Machine defaults
-    local machine_default = prototyper.defaults.get(player, "machines", self.machine.proto.category)
-    self.machine.module_set.first = nil
-
-    if machine_default.modules then
-        -- Doesn't set machine and quality, that should be done beforehand
-        self.machine.module_set:ingest_default(machine_default.modules)
-    end
-
-    -- Beacon defaults
-    local beacon_default = prototyper.defaults.get(player, "beacons", nil)
-    self:set_beacon(nil)
-
-    -- The .proto checks also confirms quality and modules are set
-    if beacon_default.proto and beacon_default.beacon_amount then
-        local blank_beacon = Beacon.init(beacon_default.proto --[[@as FPBeaconPrototype]], self)
-        blank_beacon.quality_proto = beacon_default.quality
-        blank_beacon.amount = beacon_default.beacon_amount
-        blank_beacon.module_set:ingest_default(beacon_default.modules)
-        self:set_beacon(blank_beacon)  -- summarizes effects on its own
-    end
-end
 
 ---@return PrototypeFilter filter
 function Line:compile_machine_filter()

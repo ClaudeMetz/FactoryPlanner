@@ -269,14 +269,14 @@ end
 ---@field amount integer
 
 ---@class DefaultData
----@field prototype (integer | string)?
----@field quality (integer | string)?
+---@field prototype string?
+---@field quality string?
 ---@field modules DefaultModuleData[]?
 ---@field beacon_amount integer?
 
 ---@class DefaultModuleData
----@field prototype (integer | string)
----@field quality (integer | string)
+---@field prototype string
+---@field quality string
 ---@field amount integer
 
 ---@alias AnyPrototypeDefault DefaultPrototype | { [integer]: DefaultPrototype }
@@ -315,6 +315,7 @@ function prototyper.defaults.set(player, data_type, data, category)
                 amount = default_module.amount
             })
         end
+        if #default.modules == 0 then default.modules = nil end
     end
     if data.beacon_amount then
         default.beacon_amount = data.beacon_amount
@@ -400,6 +401,7 @@ local function migrate_prototype_default(data_type, fallback, default, category)
                     })
                 end
             end
+            if #migrated_default.modules == 0 then migrated_default.modules = nil end
         end
 
         return migrated_default

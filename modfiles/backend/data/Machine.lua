@@ -120,6 +120,21 @@ function Machine:compile_fuel_filter()
     return {{filter="name", name=compatible_fuels}}
 end
 
+---@param player LuaPlayer
+function Machine:reset(player)
+    self.limit = nil
+    self.force_limit = true
+
+    local machine_default = prototyper.defaults.get(player, "machines", self.proto.category)
+    self.module_set:clear()
+    if machine_default.modules then self.module_set:ingest_default(machine_default.modules) end
+
+    if self.proto.burner ~= nil then
+        local fuel_default = prototyper.defaults.get(player, "fuels", self.proto.burner.combined_category)
+        self.fuel = Fuel.init(fuel_default.proto, self)
+    end
+end
+
 
 ---@param object CopyableObject
 ---@return boolean success
@@ -134,7 +149,6 @@ function Machine:paste(object)
 
             self.parent.surface_compatibility = nil  -- reset since the machine changed
             object.module_set:normalize({compatibility=true, effects=true})
-            object.parent:summarize_effects()
             return true, nil
         else
             return false, "incompatible"

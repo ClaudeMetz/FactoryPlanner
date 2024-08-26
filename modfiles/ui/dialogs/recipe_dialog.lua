@@ -102,7 +102,9 @@ local function attempt_adding_line(player, recipe_id, modal_data)
             util.messages.raise(player, "warning", {"fp.warning_recipe_disabled", recipe_proto.localised_name}, 2)
         end
 
-        line:apply_default(player)  -- apply default modules and beacon if set
+        -- Set machine and beacon up as their default
+        line.machine:reset(player)
+        line:setup_beacon(player)
 
         solver.update(player)
         util.raise.refresh(player, "factory")

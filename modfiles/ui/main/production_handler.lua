@@ -96,15 +96,6 @@ local function handle_machine_click(player, tags, action)
     elseif action == "paste" then
         util.clipboard.paste(player, machine)
 
-    elseif action == "reset_to_default" then
-        line:change_machine_to_default(player)  -- guaranteed to find something
-        machine.limit = nil
-        machine.force_limit = true
-        line:apply_defaults(player)
-
-        solver.update(player)
-        util.raise.refresh(player, "factory")
-
     elseif action == "factoriopedia" then
         --util.open_in_factoriopedia(player, "entity", machine.proto.name)
     end
@@ -344,7 +335,6 @@ listeners.gui = {
                 edit = {"right", {archive_open=false}},
                 copy = {"shift-right"},
                 paste = {"shift-left", {archive_open=false}},
-                reset_to_default = {"control-right", {archive_open=false}},
                 put_into_cursor = {"alt-right"},
                 factoriopedia = {"alt-left"}
             },
