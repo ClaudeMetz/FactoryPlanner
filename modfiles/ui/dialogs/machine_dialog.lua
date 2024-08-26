@@ -8,32 +8,40 @@ local function add_checkbox(modal_elements, caption, tooltip, identifier, event_
     modal_elements[identifier] = checkbox
 end
 
-local function refresh_defaults_frame(player)
+local function refresh_defaults_frame(player, reset_all)
     local modal_data = util.globals.modal_data(player)  --[[@as table]]
     local modal_elements = modal_data.modal_elements
     local machine = modal_data.object  --[[@as Machine]]
 
-    -- Machine
-    local machine_default = prototyper.defaults.get(player, "machines", machine.proto.category)
-    local same_machine = (machine_default.proto.id == machine.proto.id)
-    local same_quality = (machine_default.quality.id == machine.quality_proto.id)
-    local all_machines = modal_elements.machine_all.state
-    local same_modules = machine.module_set:equals_default(machine_default.modules)
+    if reset_all == true then
+        modal_elements.machine_all.state = false
+        modal_elements.fuel_all.state = false
+    end
 
-    modal_elements.machine.enabled = not (same_machine and same_quality and same_modules) and not all_machines
-    modal_elements.machine.state = (same_machine and same_quality and same_modules) or all_machines
+    -- Machine
+    local equals_machine = prototyper.defaults.equals_default(player, "machines", machine, machine.proto.category)
+    local equals_all_machines = prototyper.defaults.equals_all_defaults(player, "machines", machine)
+    local all_machines = modal_elements.machine_all.state or equals_all_machines
+
+    modal_elements.machine.enabled = not equals_machine and not all_machines
+    modal_elements.machine.state = equals_machine or all_machines
+    modal_elements.machine_all.enabled = not equals_all_machines
+    modal_elements.machine_all.state = all_machines
 
     -- Fuel
-    local fuel_required, default_fuel = (machine.proto.burner ~= nil), nil
+    local fuel_required = (machine.proto.burner ~= nil)
+    local equals_fuel, equals_all_fuels = false, false
     if fuel_required then
-        default_fuel = prototyper.defaults.get(player, "fuels", machine.proto.burner.combined_category).proto
-    end  ---@cast default_fuel FPFuelPrototype
-    local same_fuel = fuel_required and (default_fuel.id == machine.fuel.proto.id)
-    local all_fuels = modal_elements.fuel_all.state
+        local category = machine.proto.burner.combined_category
+        equals_fuel = prototyper.defaults.equals_default(player, "fuels", machine.fuel, category)
+        equals_all_fuels = prototyper.defaults.equals_all_defaults(player, "fuels", machine.fuel)
+    end
+    local all_fuels = modal_elements.fuel_all.state or equals_all_fuels
 
-    modal_elements.fuel.enabled = fuel_required and (not same_fuel and not all_fuels)
-    modal_elements.fuel.state = fuel_required and (same_fuel or all_fuels)
-    modal_elements.fuel_all.enabled = fuel_required
+    modal_elements.fuel.enabled = fuel_required and (not equals_fuel and not all_fuels)
+    modal_elements.fuel.state = fuel_required and (equals_fuel or all_fuels)
+    modal_elements.fuel_all.enabled = fuel_required and not equals_all_fuels
+    modal_elements.fuel_all.state = fuel_required and all_fuels
 end
 
 local function add_defaults_panel(parent_frame, player)
@@ -226,7 +234,7 @@ local function handle_machine_choice(player, _, event)
 
     refresh_fuel_frame(player)
     module_configurator.refresh_modules_flow(player, false)
-    refresh_defaults_frame(player)
+    refresh_defaults_frame(player, true)
 end
 
 local function handle_fuel_choice(player, _, event)
@@ -242,7 +250,7 @@ local function handle_fuel_choice(player, _, event)
     local combined_category = machine.proto.burner.combined_category
     machine.fuel.proto = prototyper.util.find("fuels", elem_value, combined_category)
 
-    refresh_defaults_frame(player)
+    refresh_defaults_frame(player, true)
 end
 
 

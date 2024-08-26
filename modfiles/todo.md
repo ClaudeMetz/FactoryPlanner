@@ -2,7 +2,7 @@
 
 ## Active
 
-- Think about disabling _all checkboxes too if appropriate - kinda lot of work to figure out
+- Show current defaults in tooltip or something
 - Add defaults panel kinda thing to modal_dialog to reduce code duplication
 - Make modal dialog create left and right content frames, since it's used quite a lot now
 
