@@ -474,3 +474,30 @@ function prototyper.defaults.migrate(player_table)
         ::skip::
     end
 end
+
+
+---@param player LuaPlayer
+---@param data_type DataType
+---@param category (integer | string)?
+---@return LocalisedString
+function prototyper.defaults.generate_tooltip(player, data_type, category)
+    local default = prototyper.defaults.get(player, data_type, category)
+    local tooltip = {"", {"fp.current_default"}, "\n"}
+
+    local proto_line = (not default.quality) and {"fp.tt_title", default.proto.localised_name}
+        or {"fp.tt_title_with_note", default.proto.localised_name, default.quality.localised_name}
+    table.insert(tooltip, proto_line)
+    if default.beacon_amount then table.insert(tooltip, " x" .. default.beacon_amount) end
+
+    if default.modules then
+        local modules = ""
+        for _, module in pairs(default.modules) do
+            for i = 1, module.amount, 1 do
+                modules = modules .. "[img=" .. module.proto.sprite .. "]"
+            end
+        end
+        table.insert(tooltip, {"", "\n", modules})
+    end
+
+    return tooltip
+end

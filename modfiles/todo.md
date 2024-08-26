@@ -2,7 +2,6 @@
 
 ## Active
 
-- Show current defaults in tooltip or something
 - Add defaults panel kinda thing to modal_dialog to reduce code duplication
 - Make modal dialog create left and right content frames, since it's used quite a lot now
 
@@ -89,6 +88,7 @@
 ## Release
 
 - Update other language docs for the new `plural_for_parameter` format
+- Write changelog description for districts
 - Update screenshots, maybe for SA even? Or some of both non-SA and SA?
 - Update mod descriptions to mention SA/2.0 general compatibility
 - Custom Arcosphere logic disabled for now
