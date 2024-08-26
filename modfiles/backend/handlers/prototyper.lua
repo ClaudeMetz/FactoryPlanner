@@ -341,6 +341,37 @@ function prototyper.defaults.set_all(player, data_type, data)
     end
 end
 
+
+---@param player LuaPlayer
+---@param data_type DataType
+---@param object Machine | Fuel | Beacon
+---@param category (integer | string)?
+---@return boolean equals
+function prototyper.defaults.equals_default(player, data_type, object, category)
+    local default = prototyper.defaults.get(player, data_type, category)
+    local same_proto = (default.proto.name == object.proto.name)
+    local same_quality, same_modules = true, true
+    if object.quality_proto then same_quality = (default.quality.id == object.quality_proto.id) end
+    if object.module_set then same_modules = object.module_set:equals_default(default.modules) end
+    return same_proto and same_quality and same_modules
+end
+
+---@param player LuaPlayer
+---@param data_type DataType
+---@param object Machine | Fuel
+---@return boolean equals_all
+function prototyper.defaults.equals_all_defaults(player, data_type, object)
+    for _, category_data in pairs(global.prototypes[data_type]) do
+        local in_category = (prototyper.util.find(data_type, object.proto.name, category_data.id) ~= nil)
+        local equals_default = prototyper.defaults.equals_default(player, data_type, object, category_data.id)
+        if in_category and not equals_default then
+            return false
+        end
+    end
+    return true
+end
+
+
 local prototypes_with_quality = {machines=true, beacons=true, modules=true}
 
 -- Returns the fallback default for the given type of prototype
