@@ -3,13 +3,11 @@ Version: 0.00.00
 Date: 00. 00. 0000
   Features:
     - Added support for burnt items being output as burner fuel is used up (Thanks falsedrow!)
-    -
   Changes:
     -
   Bugfixes:
     - Fixed that beacon module defaults would reset themselves when the active mods changed
-    - Fixed recipes being moved above the top recipe in a subfloor (#312)
-    -
+    - Fixed recipes being moved above the top recipe in a subfloor (#312) (Thanks mattnotmitt!)
 
 ---------------------------------------------------------------------------------------------------
 Version: 1.1.78

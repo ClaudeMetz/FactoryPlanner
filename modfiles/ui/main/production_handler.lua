@@ -3,8 +3,7 @@ local Beacon = require("backend.data.Beacon")
 
 -- ** LOCAL UTIL **
 local function handle_line_move_click(player, tags, event)
-    --- @type Line
-    local line = OBJECT_INDEX[tags.line_id]
+    local line = OBJECT_INDEX[tags.line_id]  ---@type Line
     local floor = line.parent
 
     local spots_to_shift = (event.control) and 5 or ((not event.shift) and 1 or nil)
