@@ -797,7 +797,8 @@ function generator.fuels.generate()
                 category = proto.fuel_category,
                 fuel_value = proto.fuel_value,
                 stack_size = proto.stack_size,
-                emissions_multiplier = proto.fuel_emissions_multiplier
+                emissions_multiplier = proto.fuel_emissions_multiplier,
+                burnt_result = (proto.burnt_result) and proto.burnt_result.name or nil
             }
             fuel_categories[fuel.category] = fuel_categories[fuel.category] or {}
             table.insert(fuel_categories[fuel.category], fuel)
@@ -835,7 +836,8 @@ function generator.fuels.generate()
                 combined_category = "fluid-fuel",
                 fuel_value = proto.fuel_value,
                 stack_size = nil,
-                emissions_multiplier = proto.emissions_multiplier
+                emissions_multiplier = proto.emissions_multiplier,
+                burnt_result = nil
             }
             insert_prototype(fuels, fuel, fuel.combined_category)
         end
