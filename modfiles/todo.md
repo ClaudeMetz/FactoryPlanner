@@ -5,7 +5,6 @@
 - Think about disabling _all checkboxes too if appropriate - kinda lot of work to figure out
 - Add defaults panel kinda thing to modal_dialog to reduce code duplication
 - Make modal dialog create left and right content frames, since it's used quite a lot now
-- Use modal dialog reset button functionality on machine and beacon dialogs
 
 ## Bugs
 
@@ -31,6 +30,7 @@
   - Should have a 'multiply District amount by X' variable too so you can overproduce on purpose
   - Alternatively could have a district amount + the normal amount instead, a bit messy but could work well
 - Make recalculate_on_factory_change a factory property, not a UI one
+  - Also set factories to be recalculated when a prod research finishes
 - Add feature to transfer items from district to district, mimmicing space platform transfers
   - In addition, it would be good if the mod could calculate your rocket and platform needs for the given items
   - Not super simple, needs constraints given by the user, like platform specs, and maybe others
@@ -67,6 +67,9 @@
 - Preferences export would be great. Maybe without migration if that makes it much easier
 - Agriculture tower implementation
   - Missing energy and pollution production, is different to normal entities
+- More stuff with technologies
+  - Could order recipes by technology difficulty - not sure how to determine that
+  - Could hide items that are not currently craftable
 
 ## Waiting on
 

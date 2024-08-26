@@ -31,7 +31,7 @@ local function refresh_defaults_table(player, modal_elements, type, category_id)
         local tooltip = {type=prototype.elem_type, name=prototype.name}
 
         table_prototypes.add{type="sprite-button", sprite=prototype.sprite, style=style, elem_tooltip=tooltip,
-            tags={mod="fp", on_gui_click="select_preference_default", type=type, prototype_id=prototype_id,
+            tags={mod="fp", on_gui_click="select_preference_default", type=type, prototype_name=prototype.name,
             category_id=category_id}, mouse_button_filter={"left"}}
     end
 end
@@ -194,7 +194,7 @@ local function handle_default_prototype_change(player, tags, _)
     local category_id = tags.category_id
 
     local modal_elements = util.globals.modal_elements(player)
-    prototyper.defaults.set(player, data_type, {prototype=tags.prototype_id}, category_id)
+    prototyper.defaults.set(player, data_type, {prototype=tags.prototype_name}, category_id)
     refresh_defaults_table(player, modal_elements, data_type, category_id)
 
     if data_type == "belts" or data_type == "wagons" then

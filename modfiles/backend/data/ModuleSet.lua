@@ -221,6 +221,12 @@ function ModuleSet:compile_filter()
 end
 
 
+function ModuleSet:clear()
+    self.first = nil
+    self:normalize({effects=true})
+end
+
+
 ---@return DefaultModuleData[]
 function ModuleSet:compile_default()
     local modules_default = {}
@@ -261,7 +267,7 @@ function ModuleSet:ingest_default(module_default)
         self:insert(Module.init(default_module.proto, default_module.amount, default_module.quality))
     end
     -- Compatibility check necessary because the module might not be compatible with the recipe
-    self:normalize({compatibility=true, trim=true, sort=true})  -- normalize for outdated defaults
+    self:normalize({compatibility=true, trim=true, sort=true, effects=true})  -- normalize for outdated defaults
 end
 
 

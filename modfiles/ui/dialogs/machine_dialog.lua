@@ -56,8 +56,8 @@ local function add_defaults_panel(parent_frame, player)
     add_checkbox(modal_elements, {"fp.save_as_default"}, {"fp.save_as_default_fuel_tt"}, "fuel")
     add_checkbox(modal_elements, {"fp.save_for_all"}, {"fp.save_for_all_fuel_tt"}, "fuel_all", "machine_checkbox_all")
 
-    parent_frame.add{type="empty-widget", style="flib_vertical_pusher"}
     local flow_submit = parent_frame.add{type="flow", direction="horizontal"}
+    flow_submit.style.top_margin = 12
     flow_submit.add{type="empty-widget", style="flib_horizontal_pusher"}
     local button_submit = flow_submit.add{type="button", caption={"fp.set_defaults"}, style="fp_button_green",
         tags={mod="fp", on_gui_click="save_machine_defaults"}, mouse_button_filter={"left"}}
@@ -79,8 +79,8 @@ local function save_defaults(player)
     local machine = util.globals.modal_data(player).object
 
     local machine_data = {
-        prototype = machine.proto.id,
-        quality = machine.quality_proto.id,
+        prototype = machine.proto.name,
+        quality = machine.quality_proto.name,
         modules = machine.module_set:compile_default()
     }
     if modal_elements.machine_all.state then
@@ -90,10 +90,10 @@ local function save_defaults(player)
     end
 
     if modal_elements.fuel_all.state then
-        prototyper.defaults.set_all(player, "fuels", {prototype=machine.fuel.proto.id})
+        prototyper.defaults.set_all(player, "fuels", {prototype=machine.fuel.proto.name})
     elseif modal_elements.fuel.state then
         local category = machine.proto.burner.combined_category
-        prototyper.defaults.set(player, "fuels", {prototype=machine.fuel.proto.id}, category)
+        prototyper.defaults.set(player, "fuels", {prototype=machine.fuel.proto.name}, category)
     end
 
     refresh_defaults_frame(player)
@@ -115,6 +115,23 @@ local function refresh_fuel_frame(player)
 
     modal_elements.fuel_button.elem_value = fuel_proto.name
     modal_elements.fuel_button.elem_filters = machine:compile_fuel_filter()
+end
+
+
+local function reset_machine(player)
+    local machine = util.globals.modal_data(player).object  --[[@as Machine]]
+    machine.parent:change_machine_to_default(player)
+    machine:reset(player)
+
+    -- Some manual refreshing which don't have their own method
+    local modal_elements = util.globals.modal_elements(player)  --[[@as table]]
+    modal_elements["machine_button"].elem_value = machine:elem_value()
+    modal_elements["limit_textfield"].text = machine.limit or ""
+    modal_elements["force_limit_switch"].switch_state = util.gui.switch.convert_to_state(machine.force_limit)
+
+    refresh_fuel_frame(player)
+    module_configurator.refresh_modules_flow(player, false)
+    refresh_defaults_frame(player)
 end
 
 
@@ -178,7 +195,7 @@ local function add_limit_frame(parent_frame, player)
         tooltip={"fp.machine_force_limit_tt"}, style="semibold_label"}
     label_force.style.left_margin = 12
 
-    local state =  util.gui.switch.convert_to_state(machine.force_limit)
+    local state = util.gui.switch.convert_to_state(machine.force_limit)
     local switch_force_limit = util.gui.switch.add_on_off(frame_limit, nil, {}, state)
     modal_data.modal_elements["force_limit_switch"] = switch_force_limit
 end
@@ -366,7 +383,8 @@ listeners.dialog = {
         return {
             caption = {"", {"fp.edit"}, " ", {"fp.pl_machine", 1}},
             create_content_frame = false,
-            show_submit_button = true
+            show_submit_button = true,
+            reset_handler_name = "reset_machine"
         }
     end),
     open = open_machine_dialog,
@@ -374,7 +392,8 @@ listeners.dialog = {
 }
 
 listeners.global = {
-    machine_defaults_refresher = refresh_defaults_frame
+    machine_defaults_refresher = refresh_defaults_frame,
+    reset_machine = reset_machine
 }
 
 return { listeners }

@@ -36,8 +36,8 @@ local function add_defaults_panel(parent_frame, player)
         caption={"fp.save_beacon_amount"}, tooltip={"fp.save_beacon_amount_tt"}}
     modal_elements["beacon_default_amount"] = checkbox_amount
 
-    parent_frame.add{type="empty-widget", style="flib_vertical_pusher"}
     local flow_submit = parent_frame.add{type="flow", direction="horizontal"}
+    flow_submit.style.top_margin = 12
     flow_submit.add{type="empty-widget", style="flib_horizontal_pusher"}
     local button_submit = flow_submit.add{type="button", caption={"fp.set_defaults"}, style="fp_button_green",
         tags={mod="fp", on_gui_click="save_beacon_defaults"}, mouse_button_filter={"left"}}
@@ -59,8 +59,8 @@ local function save_defaults(player)
     local beacon = util.globals.modal_data(player).object  --[[@as Beacon]]
 
     local data = {
-        prototype = modal_elements.beacon_default.state and beacon.proto.id or nil,
-        quality = modal_elements.beacon_default.state and beacon.quality_proto.id or nil,
+        prototype = modal_elements.beacon_default.state and beacon.proto.name or nil,
+        quality = modal_elements.beacon_default.state and beacon.quality_proto.name or nil,
         modules = modal_elements.beacon_default.state and beacon.module_set:compile_default() or nil,
         beacon_amount = modal_elements.beacon_default_amount.state and beacon.amount or nil
     }
@@ -135,6 +135,21 @@ local function update_dialog_submit_button(modal_data)
         message = {"fp.beacon_issue_no_modules"}
     end
     modal_dialog.set_submit_button_state(modal_data.modal_elements, (message == nil), message)
+end
+
+
+local function reset_beacon(player)
+    local modal_data = util.globals.modal_data(player)  --[[@as table]]
+    local beacon = modal_data.object  --[[@as Beacon]]
+    beacon:reset(player)
+
+    -- Some manual refreshing which don't have their own method
+    modal_data.modal_elements["beacon_button"].elem_value = beacon:elem_value()
+    modal_data.modal_elements["beacon_amount"].text = tostring(beacon.amount)
+
+    module_configurator.refresh_modules_flow(player, false)
+    refresh_defaults_frame(player)
+    update_dialog_submit_button(modal_data)
 end
 
 
@@ -320,7 +335,8 @@ listeners.dialog = {
             caption = {"", {"fp." .. "edit"}, " ", {"fp.pl_beacon", 1}},
             create_content_frame = false,
             show_submit_button = true,
-            show_delete_button = (line.beacon ~= nil)
+            show_delete_button = (line.beacon ~= nil),
+            reset_handler_name = "reset_beacon"
         }
     end),
     open = open_beacon_dialog,
@@ -329,7 +345,8 @@ listeners.dialog = {
 
 listeners.global = {
     beacon_defaults_refresher = refresh_defaults_frame,
-    beacon_submit_checker = update_dialog_submit_button
+    beacon_submit_checker = update_dialog_submit_button,
+    reset_beacon = reset_beacon
 }
 
 listeners.misc = {

@@ -84,6 +84,19 @@ function Beacon:uses_effects()
 end
 
 
+---@param player LuaPlayer
+function Beacon:reset(player)
+    local beacon_default = prototyper.defaults.get(player, "beacons", nil)
+
+    self.proto = beacon_default.proto  --[[@as FPBeaconPrototype]]
+    self.quality_proto = beacon_default.quality
+    if beacon_default.beacon_amount then self.amount = beacon_default.beacon_amount end
+
+    self.module_set:clear()
+    if beacon_default.modules then self.module_set:ingest_default(beacon_default.modules) end
+end
+
+
 ---@param object CopyableObject
 ---@return boolean success
 ---@return string? error
