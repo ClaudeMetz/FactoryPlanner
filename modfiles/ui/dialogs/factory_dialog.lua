@@ -58,7 +58,6 @@ listeners.dialog = {
         return {
             caption = {"", action, " ", {"fp.pl_factory", 1}},
             subheader_text = {"fp.factory_dialog_description"},
-            create_content_frame = true,
             show_submit_button = true,
             show_delete_button = (modal_data.factory_id ~= nil)
         }

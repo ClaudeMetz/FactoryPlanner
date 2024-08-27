@@ -2,10 +2,9 @@
 
 ## Active
 
-- Add defaults panel kinda thing to modal_dialog to reduce code duplication
-- Make modal dialog create left and right content frames, since it's used quite a lot now
 
 ## Bugs
+
 
 ## Uncertainty Sphere
 

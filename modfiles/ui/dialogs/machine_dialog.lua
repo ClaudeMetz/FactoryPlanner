@@ -83,14 +83,6 @@ local function add_defaults_panel(parent_frame, player)
     refresh_defaults_frame(player)
 end
 
-local function toggle_defaults_panel(player)
-    local modal_elements = util.globals.modal_elements(player)  --[[@as table]]
-    local defaults_frame = modal_elements.defaults_box
-    defaults_frame.visible = not defaults_frame.visible
-    modal_elements.defaults_button.caption = (defaults_frame.visible)
-        and {"fp.defaults_close"} or {"fp.defaults_open"}
-end
-
 local function save_defaults(player)
     local modal_elements = util.globals.modal_elements(player)
     local machine = util.globals.modal_data(player).object
@@ -114,7 +106,7 @@ local function save_defaults(player)
     end
 
     refresh_defaults_frame(player)
-    toggle_defaults_panel(player)
+    modal_dialog.toggle_foldout_panel(player)
 end
 
 
@@ -271,46 +263,27 @@ local function open_machine_dialog(player, modal_data)
     modal_data.beacon_backup = modal_data.line.beacon and modal_data.line.beacon:clone()
     modal_data.module_set = modal_data.object.module_set
 
-    local flow_content = modal_data.modal_elements.dialog_flow.add{type="flow", direction="horizontal"}
-    flow_content.style.horizontal_spacing = 12
-
-    local left_frame = flow_content.add{type="frame", direction="vertical", style="inside_shallow_frame"}
-    left_frame.style.vertically_stretchable = true
-
-    local subheader_caption = {"fp.machine_dialog_description", modal_data.line.recipe_proto.localised_name}
-    local subheader = util.gui.add_modal_subheader(left_frame, subheader_caption, nil)
-
-    subheader.add{type="empty-widget", style="flib_horizontal_pusher"}
-    local button_defaults = subheader.add{type="button", caption={"fp.defaults_open"}, style="fp_button_transparent",
-        tags={mod="fp", on_gui_click="toggle_machine_defaults_panel"}}
-    modal_data.modal_elements["defaults_button"] = button_defaults
-
-    local left_flow = left_frame.add{type="flow", direction="vertical"}
-    left_flow.style.padding = 12
+    local content_frame = modal_data.modal_elements.content_frame
 
     -- Machine & Fuel
-    local flow_machine = left_flow.add{type="flow", direction="horizontal"}
+    local flow_machine = content_frame.add{type="flow", direction="horizontal"}
     add_machine_frame(flow_machine, player, modal_data.line)
     add_fuel_frame(flow_machine, player)
 
     -- Limit
     if modal_data.line.parent.parent.matrix_free_items == nil then
-        add_limit_frame(left_flow, player)
+        add_limit_frame(content_frame, player)
     end
 
     -- Modules
-    module_configurator.add_modules_flow(left_flow, modal_data)
+    module_configurator.add_modules_flow(content_frame, modal_data)
     module_configurator.refresh_modules_flow(player, false)
 
 
-    local right_frame = flow_content.add{type="frame", direction="vertical", visible=false, style="inside_shallow_frame"}
-    right_frame.style.padding = 12
-    right_frame.style.vertically_stretchable = true
-    modal_data.modal_elements["defaults_box"] = right_frame
-
     -- Defaults
+    local secondary_frame = modal_data.modal_elements.secondary_frame
     modal_data.defaults_refresher = "machine_defaults_refresher"
-    add_defaults_panel(right_frame, player)
+    add_defaults_panel(secondary_frame, player)
 end
 
 local function close_machine_dialog(player, action)
@@ -368,20 +341,6 @@ listeners.gui = {
     },
     on_gui_click = {
         {
-            name = "toggle_machine_defaults_panel",
-            handler = (function(player, _, _)
-                local modal_elements = util.globals.modal_elements(player)  --[[@as table]]
-                local defaults_frame = modal_elements.defaults_box
-                defaults_frame.visible = not defaults_frame.visible
-                modal_elements.defaults_button.caption = (defaults_frame.visible)
-                    and {"fp.defaults_close"} or {"fp.defaults_open"}
-            end)
-        },
-        {
-            name = "toggle_machine_defaults_panel",
-            handler = toggle_defaults_panel
-        },
-        {
             name = "save_machine_defaults",
             handler = save_defaults
         }
@@ -396,10 +355,13 @@ listeners.gui = {
 
 listeners.dialog = {
     dialog = "machine",
-    metadata = (function(_)
+    metadata = (function(modal_data)
+        local machine = OBJECT_INDEX[modal_data.machine_id]  --[[@as Machine]]
+        local recipe_name = machine.parent.recipe_proto.name
         return {
             caption = {"", {"fp.edit"}, " ", {"fp.pl_machine", 1}},
-            create_content_frame = false,
+            subheader_text = {"fp.machine_dialog_description", recipe_name},
+            foldout_title = {"fp.defaults"},
             show_submit_button = true,
             reset_handler_name = "reset_machine"
         }

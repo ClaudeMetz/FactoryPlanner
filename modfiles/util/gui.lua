@@ -247,17 +247,4 @@ function _gui.confirm_expression_field(textfield)
     return false
 end
 
----@param parent LuaGuiElement
----@param caption LocalisedString
----@param tooltip LocalisedString
----@return LuaGuiElement subheader
-function _gui.add_modal_subheader(parent, caption, tooltip)
-    local subheader = parent.add{type="frame", direction="horizontal", style="subheader_frame"}
-    subheader.style.horizontally_stretchable = true
-    subheader.style.padding = 12
-    subheader.add{type="label", caption=caption, tooltip=tooltip, style="semibold_label"}
-    return subheader
-end
-
-
 return _gui

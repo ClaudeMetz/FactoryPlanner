@@ -1,7 +1,7 @@
 -- ** LOCAL UTIL **
 -- Adds a box with title and optional scope switch for the given type of utility
-local function add_utility_box(player, modal_elements, side, type, show_tooltip, show_switch)
-    local bordered_frame = modal_elements[side .. "_side"].add{type="frame", direction="vertical",
+local function add_utility_box(player, modal_elements, parent_name, type, show_tooltip, show_switch)
+    local bordered_frame = modal_elements[parent_name].add{type="frame", direction="vertical",
         style="fp_frame_bordered_stretch"}
     modal_elements[type .. "_box"] = bordered_frame
 
@@ -44,7 +44,7 @@ function utility_structures.components(player, modal_data)
 
     if modal_elements.components_box == nil then
         local components_box, custom_flow, scope_switch = add_utility_box(player, modal_data.modal_elements,
-            "left", "components", true, true)
+            "content_frame", "components", true, true)
         modal_elements.components_box = components_box
         modal_elements.scope_switch = scope_switch
 
@@ -147,7 +147,7 @@ function utility_structures.blueprints(player, modal_data)
     local blueprint_limit = MAGIC_NUMBERS.blueprint_limit
 
     if modal_elements.blueprints_box == nil then
-        local blueprints_box = add_utility_box(player, modal_data.modal_elements, "left", "blueprints", true, false)
+        local blueprints_box = add_utility_box(player, modal_elements, "content_frame", "blueprints", true, false)
         blueprints_box.style.margin = {4, 0}
         modal_elements["blueprints_box"] = blueprints_box
 
@@ -214,7 +214,7 @@ function utility_structures.blueprints(player, modal_data)
 end
 
 function utility_structures.notes(player, modal_data)
-    local utility_box = add_utility_box(player, modal_data.modal_elements, "left", "notes", false, false)
+    local utility_box = add_utility_box(player, modal_data.modal_elements, "content_frame", "notes", false, false)
 
     local notes = util.context.get(player, "Factory").notes
     local text_box = utility_box.add{type="text-box", text=notes,
@@ -230,7 +230,8 @@ function utility_structures.productivity_boni(player, modal_data)
     local attach_factory_products = util.globals.preferences(player).attach_factory_products
 
     if not modal_data.modal_elements["productivity_boni_table"] then
-        local boni_box = add_utility_box(player, modal_data.modal_elements, "right", "productivity_boni", true, false)
+        local boni_box = add_utility_box(player, modal_data.modal_elements, "secondary_frame",
+            "productivity_boni", true, false)
 
         local flow_import = boni_box.add{type="flow", direction="horizontal"}
         flow_import.style.vertical_align = "center"
@@ -427,22 +428,6 @@ local function open_utility_dialog(player, modal_data)
     modal_data.inventory_contents = player.get_main_inventory().get_contents()
     modal_data.utility_inventory = game.create_inventory(1)  -- used for blueprint decoding
 
-    local modal_elements = modal_data.modal_elements
-
-    local flow_content = modal_elements.dialog_flow.add{type="flow", direction="horizontal"}
-    flow_content.style.horizontal_spacing = 12
-
-    local left_frame = flow_content.add{type="frame", direction="vertical", style="inside_shallow_frame"}
-    local left_scrollpane = left_frame.add{type="scroll-pane", style="flib_naked_scroll_pane"}
-    left_scrollpane.style.padding = 12
-    modal_data.modal_elements.left_side = left_scrollpane
-
-    local right_frame = flow_content.add{type="frame", direction="vertical", style="inside_shallow_frame"}
-    local right_scrollpane = right_frame.add{type="scroll-pane", style="flib_naked_scroll_pane"}
-    right_scrollpane.style.vertically_stretchable = true
-    right_scrollpane.style.padding = 12
-    modal_data.modal_elements.right_side = right_scrollpane
-
     -- Left side
     utility_structures.components(player, modal_data)
     utility_structures.blueprints(player, modal_data)
@@ -533,7 +518,7 @@ listeners.dialog = {
     dialog = "utility",
     metadata = (function(_) return {
         caption = {"fp.utilities"},
-        create_content_frame = false
+        secondary_frame = true
     } end),
     open = open_utility_dialog,
     close = close_utility_dialog
