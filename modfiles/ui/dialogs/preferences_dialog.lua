@@ -208,17 +208,8 @@ local function open_preferences_dialog(player, modal_data)
     local preferences = util.globals.preferences(player)
     local modal_elements = modal_data.modal_elements
 
-    local flow_content = modal_elements.dialog_flow.add{type="flow", direction="horizontal"}
-    flow_content.style.horizontal_spacing = 12
-
-    local function add_content_frame()
-        local content_frame = flow_content.add{type="frame", direction="vertical", style="inside_shallow_frame"}
-        content_frame.style.vertically_stretchable = true
-
-        return content_frame.add{type="scroll-pane", style="flib_naked_scroll_pane"}
-    end
-
-    local left_content_frame = add_content_frame()
+    -- Left side
+    local left_content_frame = modal_elements.content_frame
     left_content_frame.style.width = 300
 
     local general_preference_names = {"show_gui_button", "attach_factory_products", "skip_factory_naming",
@@ -236,10 +227,11 @@ local function open_preferences_dialog(player, modal_data)
 
     left_content_frame.add{type="empty-widget", style="flib_vertical_pusher"}
     local support_frame = left_content_frame.add{type="frame", direction="vertical", style="fp_frame_bordered_stretch"}
-    support_frame.style.padding = 8
+    support_frame.style.top_margin = -4
     support_frame.add{type="label", caption={"fp.preferences_support"}}
 
-    local right_content_frame = add_content_frame()
+    -- Right side
+    local right_content_frame = modal_elements.secondary_frame
 
     preference_structures.belts(player, right_content_frame, modal_elements)
     preference_structures.wagons(player, right_content_frame, modal_elements)
@@ -288,7 +280,7 @@ listeners.dialog = {
     dialog = "preferences",
     metadata = (function(_) return {
         caption = {"fp.preferences"},
-        create_content_frame = false,
+        secondary_frame = true,
         reset_handler_name = "reset_preferences"
     } end),
     open = open_preferences_dialog,

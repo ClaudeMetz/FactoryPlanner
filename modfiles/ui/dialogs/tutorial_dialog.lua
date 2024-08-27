@@ -87,8 +87,7 @@ listeners.gui = {
 listeners.dialog = {
     dialog = "tutorial",
     metadata = (function(_) return {
-        caption = {"fp.tutorial"},
-        create_content_frame = true
+        caption = {"fp.tutorial"}
     } end),
     open = open_tutorial_dialog
 }

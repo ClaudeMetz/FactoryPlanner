@@ -284,7 +284,6 @@ import_listeners.dialog = {
     metadata = (function(_) return {
         caption = {"", {"fp.import"}, " ", {"fp.pl_factory", 1}},
         subheader_text = {"fp.import_instruction_1"},
-        create_content_frame = true,
         disable_scroll_pane = true,
         show_submit_button = true
     } end),
@@ -333,7 +332,6 @@ export_listeners.dialog = {
         caption = {"", {"fp.export"}, " ", {"fp.pl_factory", 1}},
         subheader_text = {"fp.info_label", {"fp.export_instruction"}},
         subheader_tooltip = {"fp.export_instruction_tt"},
-        create_content_frame = true,
         disable_scroll_pane = true
     } end),
     open = open_export_dialog

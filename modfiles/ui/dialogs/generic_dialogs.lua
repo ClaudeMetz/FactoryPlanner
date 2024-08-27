@@ -64,8 +64,7 @@ chooser_listeners.dialog = {
         return {
             caption = {"", {"fp.choose"}, " ", modal_data.title},
             subheader_text = {"", modal_data.text, " ", info_tag},
-            subheader_tooltip = (modal_data.text_tooltip or ""),
-            create_content_frame = true
+            subheader_tooltip = (modal_data.text_tooltip or "")
         }
     end),
     open = open_chooser_dialog
@@ -217,7 +216,6 @@ options_listeners.dialog = {
     metadata = (function(modal_data) return {
         caption = modal_data.title,
         subheader_text = modal_data.text,
-        create_content_frame = true,
         show_submit_button = true,
         show_delete_button = modal_data.allow_deletion
     } end),

@@ -48,14 +48,6 @@ local function add_defaults_panel(parent_frame, player)
     refresh_defaults_frame(player)
 end
 
-local function toggle_defaults_panel(player)
-    local modal_elements = util.globals.modal_elements(player)  --[[@as table]]
-    local defaults_frame = modal_elements.defaults_box
-    defaults_frame.visible = not defaults_frame.visible
-    modal_elements.defaults_button.caption = (defaults_frame.visible)
-        and {"fp.defaults_close"} or {"fp.defaults_open"}
-end
-
 local function save_defaults(player)
     local modal_elements = util.globals.modal_elements(player)
     local beacon = util.globals.modal_data(player).object  --[[@as Beacon]]
@@ -69,7 +61,7 @@ local function save_defaults(player)
     prototyper.defaults.set(player, "beacons", data, nil)
 
     refresh_defaults_frame(player)
-    toggle_defaults_panel(player)
+    modal_dialog.toggle_foldout_panel(player)
 end
 
 
@@ -199,7 +191,7 @@ end
 
 
 local function open_beacon_dialog(player, modal_data)
-    local line = OBJECT_INDEX[modal_data.line_id]
+    local line = OBJECT_INDEX[modal_data.line_id]  --[[@as Line]]
     modal_data.line = line
 
     if line.beacon ~= nil then
@@ -207,7 +199,7 @@ local function open_beacon_dialog(player, modal_data)
         modal_data.object = line.beacon
     else
         local default_beacon = prototyper.defaults.get(player, "beacons")
-        modal_data.object = Beacon.init(default_beacon.proto, line)
+        modal_data.object = Beacon.init(default_beacon.proto --[[@as FPBeaconPrototype]], line)
         modal_data.object.quality_proto = default_beacon.quality
         modal_data.object.amount = default_beacon.beacon_amount or 0
         modal_data.object.module_set:ingest_default(default_beacon.modules)
@@ -215,43 +207,23 @@ local function open_beacon_dialog(player, modal_data)
     end
     modal_data.module_set = modal_data.object.module_set
 
-
-    local flow_content = modal_data.modal_elements.dialog_flow.add{type="flow", direction="horizontal"}
-    flow_content.style.horizontal_spacing = 12
-
-    local left_frame = flow_content.add{type="frame", direction="vertical", style="inside_shallow_frame"}
-    left_frame.style.vertically_stretchable = true
-
-    local subheader_caption = {("fp.beacon_dialog_description"), line.machine.proto.localised_name}
-    local subheader = util.gui.add_modal_subheader(left_frame, subheader_caption, nil)
-
-    subheader.add{type="empty-widget", style="flib_horizontal_pusher"}
-    local button_defaults = subheader.add{type="button", caption={"fp.defaults_open"}, style="fp_button_transparent",
-        tags={mod="fp", on_gui_click="toggle_beacon_defaults_panel"}}
-    modal_data.modal_elements["defaults_button"] = button_defaults
-
-    local left_flow = left_frame.add{type="flow", direction="vertical"}
-    left_flow.style.padding = 12
+    local content_frame = modal_data.modal_elements.content_frame
 
     -- Beacon
-    add_beacon_frame(left_flow, modal_data)
+    add_beacon_frame(content_frame, modal_data)
     update_profile_label(modal_data)
     update_dialog_submit_button(modal_data)
 
     -- Modules
     modal_data.submit_checker = "beacon_submit_checker"
-    module_configurator.add_modules_flow(left_flow, modal_data)
+    module_configurator.add_modules_flow(content_frame, modal_data)
     module_configurator.refresh_modules_flow(player, false)
 
 
-    local right_frame = flow_content.add{type="frame", direction="vertical", visible=false, style="inside_shallow_frame"}
-    right_frame.style.padding = 12
-    right_frame.style.vertically_stretchable = true
-    modal_data.modal_elements["defaults_box"] = right_frame
-
     -- Defaults
+    local secondary_frame = modal_data.modal_elements.secondary_frame
     modal_data.defaults_refresher = "beacon_defaults_refresher"
-    add_defaults_panel(right_frame, player)
+    add_defaults_panel(secondary_frame, player)
 end
 
 local function close_beacon_dialog(player, action)
@@ -319,10 +291,6 @@ listeners.gui = {
             end)
         },
         {
-            name = "toggle_beacon_defaults_panel",
-            handler = toggle_defaults_panel
-        },
-        {
             name = "save_beacon_defaults",
             handler = save_defaults
         }
@@ -332,10 +300,12 @@ listeners.gui = {
 listeners.dialog = {
     dialog = "beacon",
     metadata = (function(modal_data)
-        local line = OBJECT_INDEX[modal_data.line_id]
+        local line = OBJECT_INDEX[modal_data.line_id]  --[[@as Line]]
+        local machine_name = line.machine.proto.localised_name
         return {
             caption = {"", {"fp." .. "edit"}, " ", {"fp.pl_beacon", 1}},
-            create_content_frame = false,
+            subheader_text = {("fp.beacon_dialog_description"), machine_name},
+            foldout_title = {"fp.defaults"},
             show_submit_button = true,
             show_delete_button = (line.beacon ~= nil),
             reset_handler_name = "reset_beacon"

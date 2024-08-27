@@ -312,8 +312,7 @@ listeners.dialog = {
             caption = {"", {"fp.add"}, " ", {"fp.pl_recipe", 1}},
             subheader_text = {"fp.recipe_instruction", {"fp." .. modal_data.production_type},
                 product_proto.localised_name},
-            search_handler_name = "apply_recipe_filter",
-            create_content_frame = true
+            search_handler_name = "apply_recipe_filter"
         }
     end),
     early_abort_check = recipe_early_abort_check,
