@@ -90,4 +90,4 @@
 - Write changelog description for districts
 - Update screenshots, maybe for SA even? Or some of both non-SA and SA?
 - Update mod descriptions to mention SA/2.0 general compatibility
-- Custom Arcosphere logic disabled for now
+- Sort out Github board for done tasks and deal with pending reports
