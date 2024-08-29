@@ -625,6 +625,7 @@ end
 ---@field type "item" | "fluid" | "entity"
 ---@field hidden boolean
 ---@field stack_size uint?
+---@field weight double?
 ---@field ingredient_only boolean
 ---@field order string
 ---@field group ItemGroup
@@ -739,6 +740,7 @@ function generator.items.generate()
                 type = type,
                 hidden = (not rocket_parts[item_name]) and proto.hidden,
                 stack_size = (type == "item") and proto.stack_size or nil,
+                weight = (type == "item") and proto.weight or nil,
                 ingredient_only = not item_details.is_product,
                 order = proto.order
             }
@@ -771,7 +773,9 @@ end
 ---@field elem_type ElemType
 ---@field fuel_value float
 ---@field stack_size uint?
+---@field weight double?
 ---@field emissions_multiplier double
+---@field burnt_result string?
 
 -- Generates a table containing all fuels that can be used in a burner
 ---@return NamedPrototypesWithCategory<FPFuelPrototype>
@@ -797,6 +801,7 @@ function generator.fuels.generate()
                 category = proto.fuel_category,
                 fuel_value = proto.fuel_value,
                 stack_size = proto.stack_size,
+                weight = proto.weight,
                 emissions_multiplier = proto.fuel_emissions_multiplier,
                 burnt_result = (proto.burnt_result) and proto.burnt_result.name or nil
             }
@@ -836,6 +841,7 @@ function generator.fuels.generate()
                 combined_category = "fluid-fuel",
                 fuel_value = proto.fuel_value,
                 stack_size = nil,
+                weight = nil,
                 emissions_multiplier = proto.emissions_multiplier,
                 burnt_result = nil
             }
