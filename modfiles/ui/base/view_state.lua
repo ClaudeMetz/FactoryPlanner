@@ -24,79 +24,65 @@ local function cycle_views(player, direction)
 end
 
 
-local function format_entity_item(metadata, raw_amount, item_proto)
-    local amount = (item_proto.fixed_unit) and raw_amount or raw_amount * metadata.timescale
-    local number = util.format.number(amount, metadata.formatting_precision)
-    local unit = item_proto.fixed_unit or {"fp.per_timescale", {"fp." .. TIMESCALE_MAP[metadata.timescale]}}
-    return number, {"", number, " ", unit}
-end
-
 local processors = {}  -- individual functions for each kind of view state
+
 function processors.items_per_timescale(metadata, raw_amount, item_proto, _)
-    if item_proto.type == "entity" then
-        local number, tooltip = format_entity_item(metadata, raw_amount, item_proto)
-        return number, tooltip
-    else
-        local number = util.format.number(raw_amount * metadata.timescale, metadata.formatting_precision)
-        local plural_parameter = (number == "1") and 1 or 2
-        local type_string = (item_proto.type == "fluid") and {"fp.l_fluid"} or {"fp.pl_item", plural_parameter}
-        return number, {"", number, " ", type_string, "/", metadata.timescale_string}
-    end
+    local number = util.format.number(raw_amount * metadata.timescale, metadata.formatting_precision)
+    local plural_parameter = (number == "1") and 1 or 2
+    local type_string = (item_proto.type == "fluid") and {"fp.l_fluid"} or {"fp.pl_item", plural_parameter}
+    return number, {"", number, " ", type_string, "/", metadata.timescale_string}
 end
 
 function processors.belts_or_lanes(metadata, raw_amount, item_proto, _)
     if item_proto.type == "fluid" then return nil, nil end  -- fluids don't make sense here
 
-    if item_proto.type == "entity" then
-        local number, tooltip = format_entity_item(metadata, raw_amount, item_proto)
-        return number, tooltip
-    else
-        local raw_number = raw_amount * metadata.throughput_multiplier
-        local number = util.format.number(raw_number, metadata.formatting_precision)
+    local raw_number = raw_amount * metadata.throughput_multiplier
+    local number = util.format.number(raw_number, metadata.formatting_precision)
 
-        local plural_parameter = (number == "1") and 1 or 2
-        local tooltip = {"", number, " ", {"fp.pl_" .. metadata.belt_or_lane, plural_parameter}}
+    local plural_parameter = (number == "1") and 1 or 2
+    local tooltip = {"", number, " ", {"fp.pl_" .. metadata.belt_or_lane, plural_parameter}}
 
-        local return_number = (metadata.round_button_numbers) and math.ceil(raw_number - 0.001) or number
-        return return_number, tooltip
-    end
-end
-
-function processors.wagons_per_timescale(metadata, raw_amount, item_proto, _)
-    if item_proto.type == "entity" then
-        local number, tooltip = format_entity_item(metadata, raw_amount, item_proto)
-        return number, tooltip
-    else
-        local wagon_capacity = (item_proto.type == "fluid") and metadata.fluid_wagon_capacity
-            or metadata.cargo_wagon_capactiy * item_proto.stack_size
-        local wagon_count = (raw_amount * metadata.timescale) / wagon_capacity
-        local number = util.format.number(wagon_count, metadata.formatting_precision)
-
-        local plural_parameter = (number == "1") and 1 or 2
-        local tooltip = {"", number, " ", {"fp.pl_wagon", plural_parameter}, "/", metadata.timescale_string}
-
-        return number, tooltip
-    end
+    local return_number = (metadata.round_button_numbers) and math.ceil(raw_number - 0.001) or number
+    return return_number, tooltip
 end
 
 function processors.items_per_second_per_machine(metadata, raw_amount, item_proto, machine_count)
     if machine_count == 0 then return 0, "" end  -- avoid division by zero
 
-    if item_proto.type == "entity" then
-        local number, tooltip = format_entity_item(metadata, raw_amount, item_proto)
-        return number, tooltip
-    else
-        local raw_number = raw_amount / (math.ceil((machine_count or 1) - 0.001))
-        local number = util.format.number(raw_number, metadata.formatting_precision)
+    local raw_number = raw_amount / (math.ceil((machine_count or 1) - 0.001))
+    local number = util.format.number(raw_number, metadata.formatting_precision)
 
-        local plural_parameter = (number == "1") and 1 or 2
-        local type_string = (item_proto.type == "fluid") and {"fp.l_fluid"} or {"fp.pl_item", plural_parameter}
-        -- If machine_count is nil, this shouldn't show /machine
-        local per_machine = (machine_count ~= nil) and {"", "/", {"fp.pl_machine", 1}} or ""
-        local tooltip = {"", number, " ", type_string, "/", {"fp.second"}, per_machine}
+    local plural_parameter = (number == "1") and 1 or 2
+    local type_string = (item_proto.type == "fluid") and {"fp.l_fluid"} or {"fp.pl_item", plural_parameter}
+    -- If machine_count is nil, this shouldn't show /machine
+    local per_machine = (machine_count ~= nil) and {"", "/", {"fp.pl_machine", 1}} or ""
+    local tooltip = {"", number, " ", type_string, "/", {"fp.second"}, per_machine}
 
-        return number, tooltip
-    end
+    return number, tooltip
+end
+
+function processors.stacks_per_timescale(metadata, raw_amount, item_proto, _)
+    if item_proto.type == "fluid" then return nil, nil end  -- fluids don't make sense here
+
+    local raw_number = (raw_amount * metadata.timescale) / item_proto.stack_size
+    local number = util.format.number(raw_number, metadata.formatting_precision)
+
+    local plural_parameter = (number == "1") and 1 or 2
+    local tooltip = {"", number, " ", {"fp.pl_stack", plural_parameter}}
+
+    return number, tooltip
+end
+
+function processors.wagons_per_timescale(metadata, raw_amount, item_proto, _)
+    local wagon_capacity = (item_proto.type == "fluid") and metadata.fluid_wagon_capacity
+        or metadata.cargo_wagon_capactiy * item_proto.stack_size
+    local wagon_count = (raw_amount * metadata.timescale) / wagon_capacity
+    local number = util.format.number(wagon_count, metadata.formatting_precision)
+
+    local plural_parameter = (number == "1") and 1 or 2
+    local tooltip = {"", number, " ", {"fp.pl_wagon", plural_parameter}, "/", metadata.timescale_string}
+
+    return number, tooltip
 end
 
 
@@ -172,7 +158,15 @@ function view_state.process_item(metadata, item, item_amount, machine_count)
         return -1, nil
     end
 
-    return metadata.processor(metadata, raw_amount, item.proto, machine_count)
+    if item.proto.type == "entity" then
+        -- Special handling for entity-type items
+        local amount = (item.proto.fixed_unit) and raw_amount or raw_amount * metadata.timescale
+        local number = util.format.number(amount, metadata.formatting_precision)
+        local unit = item.proto.fixed_unit or {"fp.per_timescale", {"fp." .. TIMESCALE_MAP[metadata.timescale]}}
+        return number, {"", number, " ", unit}
+    else
+        return metadata.processor(metadata, raw_amount, item.proto, machine_count)
+    end
 end
 
 
@@ -199,16 +193,21 @@ function view_state.rebuild_state(player)
                  belt_proto.rich_text, belt_proto.localised_name}}
         },
         [3] = {
+            name = "items_per_second_per_machine",
+            caption = {"", {"fp.pu_item", 2}, "/", {"fp.unit_second"}, "/[img=fp_generic_assembler]"},
+            tooltip = {"fp.view_state_tt", {"fp.items_per_second_per_machine"}}
+        },
+        [4] = {
+            name = "stacks_per_timescale",
+            caption = {"", {"fp.pu_stack", 2}, "/", {"fp.unit_" .. timescale_string}},
+            tooltip = {"fp.view_state_tt", {"fp.stacks_per_timescale", {"fp." .. timescale_string}}}
+        },
+        [5] = {
             name = "wagons_per_timescale",
             caption = {"", {"fp.pu_wagon", 2}, "/", {"fp.unit_" .. timescale_string}},
             tooltip = {"fp.view_state_tt", {"fp.wagons_per_timescale", {"fp." .. timescale_string},
                 default_cargo_wagon.rich_text, default_cargo_wagon.localised_name,
                 default_fluid_wagon.rich_text, default_fluid_wagon.localised_name}}
-        },
-        [4] = {
-            name = "items_per_second_per_machine",
-            caption = {"", {"fp.pu_item", 2}, "/", {"fp.unit_second"}, "/[img=fp_generic_assembler]"},
-            tooltip = {"fp.view_state_tt", {"fp.items_per_second_per_machine"}}
         },
         -- Retain for use in metadata generation
         timescale = timescale,
