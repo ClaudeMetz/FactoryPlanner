@@ -91,7 +91,7 @@ local function create_base_modal_dialog(player, dialog_settings, modal_data)
     if dialog_settings.secondary_frame or dialog_settings.foldout_title then
         -- Only default-visible if it's a secondary frame, not a foldout frame
         local frame_secondary = flow_modal_dialog.add{type="frame", direction="vertical",
-            visible=(dialog_settings.secondary_frame), style="inside_shallow_frame"}
+            visible=(dialog_settings.secondary_frame ~= nil), style="inside_shallow_frame"}
 
         local scroll_pane_secondary = frame_secondary.add{type="scroll-pane", style="flib_naked_scroll_pane"}
         scroll_pane_secondary.style.vertically_stretchable = true
@@ -237,7 +237,7 @@ end
 
 function modal_dialog.toggle_foldout_panel(player)
     local modal_data = util.globals.modal_data(player)  --[[@as table]]
-    local secondary_frame = modal_data.modal_elements.secondary_frame
+    local secondary_frame = modal_data.modal_elements.secondary_frame.parent
     secondary_frame.visible = not secondary_frame.visible
     local caption = {"", modal_data.foldout_title, (secondary_frame.visible) and " <" or " >"}
     modal_data.modal_elements.foldout_button.caption = caption
