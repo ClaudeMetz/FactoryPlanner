@@ -2,6 +2,8 @@
 
 ## Active
 
+- Add new view of rockets/timescale, useful for items you need to transfer across planets
+  - Needs new view state preferences idea. Could also be timescale/rocket instead
 
 ## Bugs
 
@@ -45,8 +47,6 @@
   - Shortcut should work from anywhere. Calculator needs to be independent window pretty much, kinda tricky
   - UI just simple but nice, with history. Use evaluate_expression for calculation, making things easy
 - Make custom recipe tooltips look a bit nicer, maybe look at RB for inspiration or something
-- Add new view of rockets/timescale, useful for items you need to transfer across planets
-  - Needs new view state preferences idea. Could also be timescale/rocket instead
 - Adjust utility dialog handcrafting to behave like vanilla crafting does in all ways
 - Get rid of player_table.active_factory hack since it's very easy to avoid
 - Main interface toggles/builds? 4 times when starting a save, which is weird
