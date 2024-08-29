@@ -4,8 +4,6 @@
 
 - Needs new view state preferences idea.
 
-- Show quality names in tooltips with icon instead of color
-
 ## Bugs
 
 
