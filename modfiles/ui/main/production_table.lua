@@ -142,7 +142,7 @@ end
 local function add_module_flow(parent_flow, module_set, metadata)
     for module in module_set:iterator() do
         local title_line = (not module.quality_proto.always_show) and {"fp.tt_title", module.proto.localised_name}
-            or {"fp.tt_title_with_note", module.proto.localised_name, module.quality_proto.localised_name}
+            or {"fp.tt_title_with_note", module.proto.localised_name, module.quality_proto.rich_text}
         local number_line = {"", "\n", module.amount, " ", {"fp.pl_module", module.amount}}
         local tooltip = {"", title_line, number_line, format_effects_tooltip(module.effects_tooltip),
             metadata.module_tutorial_tt}
@@ -186,7 +186,7 @@ function builders.machine(line, parent_flow, metadata)
 
         if note ~= nil then table.insert(tooltip_line, {"", " - ", note}) end
         local title_line = (not machine.quality_proto.always_show) and {"fp.tt_title", machine_proto.localised_name}
-        or {"fp.tt_title_with_note", machine_proto.localised_name, machine.quality_proto.localised_name}
+        or {"fp.tt_title_with_note", machine_proto.localised_name, machine.quality_proto.rich_text}
         local tooltip = {"", title_line, tooltip_line, format_effects_tooltip(machine.effects_tooltip),
             metadata.machine_tutorial_tt}
 
@@ -224,7 +224,7 @@ function builders.beacon(line, parent_flow, metadata)
         button.style.padding = 4
     else
         local title_line = (not beacon.quality_proto.always_show) and {"fp.tt_title", beacon.proto.localised_name}
-            or {"fp.tt_title_with_note", beacon.proto.localised_name, beacon.quality_proto.localised_name}
+            or {"fp.tt_title_with_note", beacon.proto.localised_name, beacon.quality_proto.rich_text}
         local plural_parameter = (beacon.amount == 1) and 1 or 2  -- needed because the amount can be decimal
         local number_line = {"", "\n", beacon.amount, " ", {"fp.pl_beacon", plural_parameter}}
         if beacon.total_amount then table.insert(number_line, {"", " - ", {"fp.in_total", beacon.total_amount}}) end

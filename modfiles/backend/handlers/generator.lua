@@ -1134,8 +1134,12 @@ end
 
 ---@class FPQualityPrototype: FPPrototype
 ---@field data_type "qualities"
+---@field rich_text LocalisedString
 ---@field level uint
+---@field always_show boolean
 ---@field multiplier double
+---@field beacon_power_usage_multiplier double
+---@field mining_drill_resource_drain_multiplier double
 
 ---@return NamedPrototypes<FPQualityPrototype>
 function generator.qualities.generate()
@@ -1149,9 +1153,9 @@ function generator.qualities.generate()
                     name = proto.name,
                     localised_name = proto.localised_name,
                     sprite = sprite,
-                    --color = proto.color, -- useful for tooltips, probably formatted into rich text
-                    always_show = proto.draw_sprite_by_default,
+                    rich_text = {"", "[img=" .. sprite .. "]", proto.localised_name},
                     level = proto.level,
+                    always_show = proto.draw_sprite_by_default,
                     multiplier = 1 + (proto.level * 0.3),
                     beacon_power_usage_multiplier = proto.beacon_power_usage_multiplier,
                     mining_drill_resource_drain_multiplier = proto.mining_drill_resource_drain_multiplier
