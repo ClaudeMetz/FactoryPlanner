@@ -83,13 +83,9 @@ end
 
 function preference_structures.belts(player, content_frame, modal_elements)
     local preference_box = add_preference_box(content_frame, "default_belts")
-    local table_prototypes = preference_box.add{type="table", column_count=3}
-    table_prototypes.style.horizontal_spacing = 20
-    table_prototypes.style.vertical_spacing = 8
-    table_prototypes.style.top_margin = 4
 
-    local frame = table_prototypes.add{type="frame", direction="horizontal", style="fp_frame_light_slots_small"}
-    local table = frame.add{type="table", column_count=10, style="fp_table_slots_small"}
+    local frame = preference_box.add{type="frame", direction="horizontal", style="fp_frame_light_slots_small"}
+    local table = frame.add{type="table", column_count=8, style="fp_table_slots_small"}
     modal_elements["belts"] = table
     refresh_defaults_table(player, modal_elements, "belts", nil)
 
@@ -104,9 +100,6 @@ end
 function preference_structures.wagons(player, content_frame, modal_elements)
     local preference_box = add_preference_box(content_frame, "default_wagons")
     local table_prototypes = preference_box.add{type="table", column_count=3}
-    table_prototypes.style.horizontal_spacing = 20
-    table_prototypes.style.vertical_spacing = 8
-    table_prototypes.style.top_margin = 4
 
     local categories = global.prototypes.wagons
     if not next(categories) then preference_box.visible = false; return end
@@ -117,11 +110,12 @@ function preference_structures.wagons(player, content_frame, modal_elements)
             any_category_visible = true
 
             local category_caption = {"?", {"wagon-category-name." .. category.name}, "'" .. category.name .. "'"}
-            table_prototypes.add{type="label", caption=category_caption}
+            local label = table_prototypes.add{type="label", caption=category_caption}
+            label.style.horizontally_squashable = true
             table_prototypes.add{type="empty-widget", style="flib_horizontal_pusher"}
 
             local frame = table_prototypes.add{type="frame", direction="horizontal", style="fp_frame_light_slots_small"}
-            local table = frame.add{type="table", column_count=6, style="fp_table_slots_small"}
+            local table = frame.add{type="table", column_count=4, style="fp_table_slots_small"}
             modal_elements.wagons = modal_elements.wagons or {}
             modal_elements.wagons[category_id] = table
 
@@ -228,10 +222,12 @@ local function open_preferences_dialog(player, modal_data)
     left_content_frame.add{type="empty-widget", style="flib_vertical_pusher"}
     local support_frame = left_content_frame.add{type="frame", direction="vertical", style="fp_frame_bordered_stretch"}
     support_frame.style.top_margin = -4
+    support_frame.style.horizontal_align = "center"
     support_frame.add{type="label", caption={"fp.preferences_support"}}
 
     -- Right side
     local right_content_frame = modal_elements.secondary_frame
+    right_content_frame.style.width = 336
 
     preference_structures.belts(player, right_content_frame, modal_elements)
     preference_structures.wagons(player, right_content_frame, modal_elements)
