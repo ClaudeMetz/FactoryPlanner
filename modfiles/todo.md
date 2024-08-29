@@ -2,8 +2,9 @@
 
 ## Active
 
-- Needs new view state preferences idea. Could also be timescale/rocket instead
-- Try using for stacks/wagons/rockets
+- Needs new view state preferences idea.
+
+- Show quality names in tooltips with icon instead of color
 
 ## Bugs
 
