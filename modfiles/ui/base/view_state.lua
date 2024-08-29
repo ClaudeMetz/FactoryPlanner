@@ -68,7 +68,7 @@ function processors.stacks_per_timescale(metadata, raw_amount, item_proto, _)
     local number = util.format.number(raw_number, metadata.formatting_precision)
 
     local plural_parameter = (number == "1") and 1 or 2
-    local tooltip = {"", number, " ", {"fp.pl_stack", plural_parameter}}
+    local tooltip = {"", number, " ", {"fp.pl_stack", plural_parameter}, "/", metadata.timescale_string}
 
     return number, tooltip
 end
@@ -94,7 +94,7 @@ function processors.rockets_per_timescale(metadata, raw_amount, item_proto, _)
     local number = util.format.number(raw_number, metadata.formatting_precision)
 
     local plural_parameter = (number == "1") and 1 or 2
-    local tooltip = {"", number, " ", {"fp.pl_rocket", plural_parameter}}
+    local tooltip = {"", number, " ", {"fp.pl_rocket", plural_parameter}, "/", metadata.timescale_string}
 
     return number, tooltip
 end
@@ -202,7 +202,7 @@ function view_state.rebuild_state(player)
         },
         [2] = {
             name = "belts_or_lanes",
-            caption = {"", belt_proto.rich_text, " ", {"fp.pu_" .. singular_bol, 2}},
+            caption = {"", "  ", belt_proto.rich_text, "  "},
             tooltip = {"fp.view_state_tt", {"fp.belts_or_lanes", {"fp.pl_" .. singular_bol, 2},
                  belt_proto.rich_text, belt_proto.localised_name}}
         },
@@ -213,19 +213,20 @@ function view_state.rebuild_state(player)
         },
         [4] = {
             name = "stacks_per_timescale",
-            caption = {"", {"fp.pu_stack", 2}, "/", {"fp.unit_" .. timescale_string}},
+            caption = {"", "[img=fp_stack]", "/", {"fp.unit_" .. timescale_string}},
             tooltip = {"fp.view_state_tt", {"fp.stacks_per_timescale", {"fp." .. timescale_string}}}
         },
         [5] = {
             name = "wagons_per_timescale",
-            caption = {"", {"fp.pu_wagon", 2}, "/", {"fp.unit_" .. timescale_string}},
+            caption = {"", default_cargo_wagon.rich_text, default_fluid_wagon.rich_text,
+                "/", {"fp.unit_" .. timescale_string}},
             tooltip = {"fp.view_state_tt", {"fp.wagons_per_timescale", {"fp." .. timescale_string},
                 default_cargo_wagon.rich_text, default_cargo_wagon.localised_name,
                 default_fluid_wagon.rich_text, default_fluid_wagon.localised_name}}
         },
         [6] = {
             name = "rockets_per_timescale",
-            caption = {"", {"fp.pu_rocket", 2}, "/", {"fp.unit_" .. timescale_string}},
+            caption = {"", "[img=fp_silo_rocket]", "/", {"fp.unit_" .. timescale_string}},
             tooltip = {"fp.view_state_tt", {"fp.rockets_per_timescale", {"fp." .. timescale_string}}}
         },
         -- Retain for use in metadata generation
