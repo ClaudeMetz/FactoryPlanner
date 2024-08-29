@@ -2,8 +2,8 @@
 
 ## Active
 
-- Add new view of rockets/timescale, useful for items you need to transfer across planets
-  - Needs new view state preferences idea. Could also be timescale/rocket instead
+- Needs new view state preferences idea. Could also be timescale/rocket instead
+- Try using for stacks/wagons/rockets
 
 ## Bugs
 

@@ -85,6 +85,20 @@ function processors.wagons_per_timescale(metadata, raw_amount, item_proto, _)
     return number, tooltip
 end
 
+local lift_capactity = 1000000  -- There is no API to read this utility constant
+function processors.rockets_per_timescale(metadata, raw_amount, item_proto, _)
+    if item_proto.type == "fluid" then return nil, nil end  -- fluids don't make sense here
+
+    local total_weight = raw_amount * metadata.timescale * item_proto.weight
+    local raw_number = total_weight / lift_capactity
+    local number = util.format.number(raw_number, metadata.formatting_precision)
+
+    local plural_parameter = (number == "1") and 1 or 2
+    local tooltip = {"", number, " ", {"fp.pl_rocket", plural_parameter}}
+
+    return number, tooltip
+end
+
 
 local function refresh_view_state(player)
     local ui_state = util.globals.ui_state(player)
@@ -208,6 +222,11 @@ function view_state.rebuild_state(player)
             tooltip = {"fp.view_state_tt", {"fp.wagons_per_timescale", {"fp." .. timescale_string},
                 default_cargo_wagon.rich_text, default_cargo_wagon.localised_name,
                 default_fluid_wagon.rich_text, default_fluid_wagon.localised_name}}
+        },
+        [6] = {
+            name = "rockets_per_timescale",
+            caption = {"", {"fp.pu_rocket", 2}, "/", {"fp.unit_" .. timescale_string}},
+            tooltip = {"fp.view_state_tt", {"fp.rockets_per_timescale", {"fp." .. timescale_string}}}
         },
         -- Retain for use in metadata generation
         timescale = timescale,
