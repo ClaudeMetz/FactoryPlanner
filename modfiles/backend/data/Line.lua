@@ -150,7 +150,7 @@ end
 ---@return boolean success
 function Line:change_machine_to_default(player)
     -- All categories are guaranteed to have at least one machine, so this is never nil
-    local machine_default = prototyper.defaults.get(player, "machines", self.recipe_proto.category)
+    local machine_default = defaults.get(player, "machines", self.recipe_proto.category)
     local default_proto = machine_default.proto  --[[@as FPMachinePrototype]]
 
     local success = false
@@ -185,7 +185,7 @@ end
 
 ---@param player LuaPlayer
 function Line:setup_beacon(player)
-    local beacon_defaults = prototyper.defaults.get(player, "beacons", nil)
+    local beacon_defaults = defaults.get(player, "beacons", nil)
     if beacon_defaults.modules and beacon_defaults.beacon_amount ~= 0 then
         local blank_beacon = Beacon.init(beacon_defaults.proto, self)
         self:set_beacon(blank_beacon)

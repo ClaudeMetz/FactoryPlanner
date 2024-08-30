@@ -42,7 +42,7 @@ end
 
 local function set_machine_default(player, proto_name, category_name)
     local proto = prototyper.util.find("machines", proto_name, category_name)
-    prototyper.defaults.set(player, "machines", {prototype=proto.name, quality="normal"}, proto.category_id)
+    defaults.set(player, "machines", {prototype=proto.name, quality="normal"}, proto.category_id)
 end
 
 
@@ -69,7 +69,7 @@ local actions = {
         player_table.preferences.ignore_barreling_recipes = true
         player_table.preferences.ignore_recycling_recipes = true
 
-        prototyper.defaults.set(player, "belts", {prototype="fast-transport-belt"}, nil)
+        defaults.set(player, "belts", {prototype="fast-transport-belt"}, nil)
         set_machine_default(player, "electric-mining-drill", "basic-solid")
         set_machine_default(player, "steel-furnace", "smelting")
         set_machine_default(player, "assembling-machine-2", "crafting")
