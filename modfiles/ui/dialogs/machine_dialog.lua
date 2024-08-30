@@ -19,9 +19,9 @@ local function refresh_defaults_frame(player, reset_all)
     end
 
     -- Machine
-    local machine_tooltip = prototyper.defaults.generate_tooltip(player, "machines", machine.proto.category)
-    local equals_machine = prototyper.defaults.equals_default(player, "machines", machine, machine.proto.category)
-    local equals_all_machines = prototyper.defaults.equals_all_defaults(player, "machines", machine)
+    local machine_tooltip = defaults.generate_tooltip(player, "machines", machine.proto.category)
+    local equals_machine = defaults.equals_default(player, "machines", machine, machine.proto.category)
+    local equals_all_machines = defaults.equals_all_defaults(player, "machines", machine)
     local all_machines = modal_elements.machine_all.state or equals_all_machines
 
     modal_elements.machine_title.tooltip = machine_tooltip
@@ -36,9 +36,9 @@ local function refresh_defaults_frame(player, reset_all)
     local equals_fuel, equals_all_fuels = false, false
     if fuel_required then
         local category = machine.proto.burner.combined_category
-        fuel_tooltip = prototyper.defaults.generate_tooltip(player, "fuels", category)
-        equals_fuel = prototyper.defaults.equals_default(player, "fuels", machine.fuel, category)
-        equals_all_fuels = prototyper.defaults.equals_all_defaults(player, "fuels", machine.fuel)
+        fuel_tooltip = defaults.generate_tooltip(player, "fuels", category)
+        equals_fuel = defaults.equals_default(player, "fuels", machine.fuel, category)
+        equals_all_fuels = defaults.equals_all_defaults(player, "fuels", machine.fuel)
     end
     local all_fuels = modal_elements.fuel_all.state or equals_all_fuels
 
@@ -93,16 +93,16 @@ local function save_defaults(player)
         modules = machine.module_set:compile_default()
     }
     if modal_elements.machine_all.state then
-        prototyper.defaults.set_all(player, "machines", machine_data)
+        defaults.set_all(player, "machines", machine_data)
     elseif modal_elements.machine.state then
-        prototyper.defaults.set(player, "machines", machine_data, machine.proto.category)
+        defaults.set(player, "machines", machine_data, machine.proto.category)
     end
 
     if modal_elements.fuel_all.state then
-        prototyper.defaults.set_all(player, "fuels", {prototype=machine.fuel.proto.name})
+        defaults.set_all(player, "fuels", {prototype=machine.fuel.proto.name})
     elseif modal_elements.fuel.state then
         local category = machine.proto.burner.combined_category
-        prototyper.defaults.set(player, "fuels", {prototype=machine.fuel.proto.name}, category)
+        defaults.set(player, "fuels", {prototype=machine.fuel.proto.name}, category)
     end
 
     refresh_defaults_frame(player)

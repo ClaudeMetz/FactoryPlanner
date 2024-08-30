@@ -25,7 +25,7 @@ script.register_metatable("Machine", Machine)
 local function init(proto, parent)
     local object = Object.init({
         proto = proto,
-        quality_proto = prototyper.defaults.get_fallback("qualities").proto,
+        quality_proto = defaults.get_fallback("qualities").proto,
         limit = nil,
         force_limit = true,  -- ignored if limit is not set
         fuel = nil,  -- needs to be set by calling Machine.normalize_fuel afterwards
@@ -67,7 +67,7 @@ function Machine:normalize_fuel(player)
 
     -- If this machine has fuel already, don't replace it
     if self.fuel == nil then
-        local default_fuel_proto = prototyper.defaults.get(player, "fuels", burner.combined_category).proto
+        local default_fuel_proto = defaults.get(player, "fuels", burner.combined_category).proto
         self.fuel = Fuel.init(default_fuel_proto, self)
     end
 end
@@ -125,12 +125,12 @@ function Machine:reset(player)
     self.limit = nil
     self.force_limit = true
 
-    local machine_default = prototyper.defaults.get(player, "machines", self.proto.category)
+    local machine_default = defaults.get(player, "machines", self.proto.category)
     self.module_set:clear()
     if machine_default.modules then self.module_set:ingest_default(machine_default.modules) end
 
     if self.proto.burner ~= nil then
-        local fuel_default = prototyper.defaults.get(player, "fuels", self.proto.burner.combined_category)
+        local fuel_default = defaults.get(player, "fuels", self.proto.burner.combined_category)
         self.fuel = Fuel.init(fuel_default.proto, self)
     end
 end
@@ -243,7 +243,7 @@ function Machine:repair(player)
     -- It just might need to cleanup some fuel, modules and/or quality
 
     if self.quality_proto.simplified then
-        self.quality_proto = prototyper.defaults.get_fallback("qualities").proto
+        self.quality_proto = defaults.get_fallback("qualities").proto
     end
 
     if self.fuel and not self.fuel.valid and not self.fuel:repair(player) then

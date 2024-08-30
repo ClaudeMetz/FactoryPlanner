@@ -137,7 +137,7 @@ function Module:repair(player)
     if self.proto.simplified or not self.parent:check_compatibility(self.proto) then
         return false  -- the module can not be salvaged in this case and will be removed
     else  -- otherwise, the quality just needs to be reset
-        self.quality_proto = prototyper.defaults.get_fallback("qualities").proto
+        self.quality_proto = defaults.get_fallback("qualities").proto
     end
 
     self.valid = true  -- if it gets to here, the module was successfully repaired

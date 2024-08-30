@@ -23,7 +23,7 @@ local function refresh_defaults_table(player, modal_elements, type, category_id)
     end
 
     table_prototypes.clear()
-    local default_proto = prototyper.defaults.get(player, type, category_id).proto
+    local default_proto = defaults.get(player, type, category_id).proto
 
     for prototype_id, prototype in ipairs(prototypes) do
         local selected = (default_proto.id == prototype_id)
@@ -188,7 +188,7 @@ local function handle_default_prototype_change(player, tags, _)
     local category_id = tags.category_id
 
     local modal_elements = util.globals.modal_elements(player)
-    prototyper.defaults.set(player, data_type, {prototype=tags.prototype_name}, category_id)
+    defaults.set(player, data_type, {prototype=tags.prototype_name}, category_id)
     refresh_defaults_table(player, modal_elements, data_type, category_id)
 
     if data_type == "belts" or data_type == "wagons" then

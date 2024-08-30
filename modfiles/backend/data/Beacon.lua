@@ -21,7 +21,7 @@ script.register_metatable("Beacon", Beacon)
 local function init(proto, parent)
     local object = Object.init({
         proto = proto,
-        quality_proto = prototyper.defaults.get_fallback("qualities").proto,
+        quality_proto = defaults.get_fallback("qualities").proto,
         amount = 0,
         total_amount = nil,
         module_set = nil,
@@ -86,7 +86,7 @@ end
 
 ---@param player LuaPlayer
 function Beacon:reset(player)
-    local beacon_default = prototyper.defaults.get(player, "beacons", nil)
+    local beacon_default = defaults.get(player, "beacons", nil)
 
     self.proto = beacon_default.proto  --[[@as FPBeaconPrototype]]
     self.quality_proto = beacon_default.quality
@@ -182,7 +182,7 @@ function Beacon:repair(player)
         return false
     else  -- otherwise, the quality and modules need to be checked and corrected if necessary
         if self.quality_proto.simplified then
-            self.quality_proto = prototyper.defaults.get_fallback("qualities").proto
+            self.quality_proto = defaults.get_fallback("qualities").proto
         end
 
         -- Remove invalid modules and normalize the remaining ones

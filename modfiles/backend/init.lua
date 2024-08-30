@@ -3,6 +3,7 @@ local Realm = require("backend.data.Realm")
 local loader = require("backend.handlers.loader")
 local migrator = require("backend.handlers.migrator")
 require("backend.handlers.prototyper")
+require("backend.handlers.defaults")
 require("backend.handlers.screenshotter")
 
 require("backend.calculation.solver")
@@ -30,11 +31,11 @@ require("backend.calculation.solver")
 ---@field percentage_column boolean
 ---@field line_comment_column boolean
 ---@field belts_or_lanes "belts" | "lanes"
----@field default_machines PrototypeWithCategoryDefault
----@field default_fuels PrototypeWithCategoryDefault
----@field default_belts PrototypeDefault
----@field default_wagons PrototypeWithCategoryDefault
----@field default_beacons PrototypeDefault
+---@field default_machines PrototypeDefaultWithCategory
+---@field default_fuels PrototypeDefaultWithCategory
+---@field default_beacons DefaultPrototype
+---@field default_belts DefaultPrototype
+---@field default_wagons PrototypeDefaultWithCategory
 
 ---@alias Timescale 1 | 60
 
@@ -85,11 +86,11 @@ function reload_preferences(player_table)
 
     reload("belts_or_lanes", "belts")
 
-    reload("default_machines", prototyper.defaults.get_fallback("machines"))
-    reload("default_fuels", prototyper.defaults.get_fallback("fuels"))
-    reload("default_belts", prototyper.defaults.get_fallback("belts"))
-    reload("default_wagons", prototyper.defaults.get_fallback("wagons"))
-    reload("default_beacons", prototyper.defaults.get_fallback("beacons"))
+    reload("default_machines", defaults.get_fallback("machines"))
+    reload("default_fuels", defaults.get_fallback("fuels"))
+    reload("default_beacons", defaults.get_fallback("beacons"))
+    reload("default_belts", defaults.get_fallback("belts"))
+    reload("default_wagons", defaults.get_fallback("wagons"))
 
     player_table.preferences = updated_prefs
 end
@@ -156,7 +157,7 @@ local function player_init(player)
     reset_ui_state(player_table)
 
     -- Set default fuel to coal because anything else is awkward
-    prototyper.defaults.set_all(player, "fuels", {prototype="coal"})
+    defaults.set_all(player, "fuels", {prototype="coal"})
 
     util.gui.toggle_mod_gui(player)
     util.messages.raise(player, "hint", {"fp.hint_tutorial"}, 6)
@@ -174,7 +175,7 @@ end
 local function refresh_player_table(player)
     local player_table = global.players[player.index]
 
-    prototyper.defaults.migrate(player_table)
+    defaults.migrate(player_table)
 
     reload_preferences(player_table)
     reset_ui_state(player_table)

@@ -7,9 +7,9 @@ local function refresh_defaults_frame(player)
     local modal_elements = modal_data.modal_elements
     local beacon = modal_data.object  --[[@as Beacon]]
 
-    local beacon_tooltip = prototyper.defaults.generate_tooltip(player, "beacons", nil)
-    local beacon_default = prototyper.defaults.get(player, "beacons", nil)
-    local equals_beacon = prototyper.defaults.equals_default(player, "beacons", beacon, nil)
+    local beacon_tooltip = defaults.generate_tooltip(player, "beacons", nil)
+    local beacon_default = defaults.get(player, "beacons", nil)
+    local equals_beacon = defaults.equals_default(player, "beacons", beacon, nil)
     local equals_amount = (beacon_default.beacon_amount == beacon.amount)
 
     modal_elements.beacon_title.tooltip = beacon_tooltip
@@ -58,7 +58,7 @@ local function save_defaults(player)
         modules = modal_elements.beacon_default.state and beacon.module_set:compile_default() or nil,
         beacon_amount = modal_elements.beacon_default_amount.state and beacon.amount or nil
     }
-    prototyper.defaults.set(player, "beacons", data, nil)
+    defaults.set(player, "beacons", data, nil)
 
     refresh_defaults_frame(player)
     modal_dialog.toggle_foldout_panel(player)
@@ -198,7 +198,7 @@ local function open_beacon_dialog(player, modal_data)
         modal_data.backup_beacon = line.beacon:clone()
         modal_data.object = line.beacon
     else
-        local default_beacon = prototyper.defaults.get(player, "beacons")
+        local default_beacon = defaults.get(player, "beacons")
         modal_data.object = Beacon.init(default_beacon.proto --[[@as FPBeaconPrototype]], line)
         modal_data.object.quality_proto = default_beacon.quality
         modal_data.object.amount = default_beacon.beacon_amount or 0
