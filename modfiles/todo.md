@@ -2,7 +2,8 @@
 
 ## Active
 
-- Needs new view state preferences idea.
+- Remove specify_amount functionality for now (make sure to remove locale)
+- Finally get rid of generic dialogs, even without the extended features
 
 ## Bugs
 
@@ -10,7 +11,6 @@
 ## Uncertainty Sphere
 
 - Quality calculations: not sure how far I want to go with these
-  - Could at least give the probabilities maybe? It's a lot of tooltip clutter, and potentially solver clutter
   - There's bigger ideas where you could enter X quality Y items per timescale and it would backsolve it
   - Plus more such ideas, but they seem kinda out there currently, need to play with quality myself first
 - Better infinite mining drill support
@@ -39,6 +39,7 @@
 - Turn item spoilage results into recipes since mods will use that as a critical path for sure
   - Kinda annoying since it doesn't use machines, just times, so the recipes would be very near useless
   - Could use 'time' as a custom ingredient on an otherwise blank line
+- Do quality odds for products at least
 
 ## Low Priority
 
@@ -53,7 +54,6 @@
 - Note when rocket silo launch time becomes a problem for speed; it's not at lower speeds
   - Is quite a complicated feature, especially when productivity is involved. Probably do need it though
 - Rocket silo power usage seems very low, likely doesn't consider launch usage
-- Finally get rid of generic dialogs, even without the extended features
 - When context menus come in, make sure to filter actions properly for all item buttons
   - This is a bit messy with entity-type items currently and can't easily be fixed atm
   - Also drop the tutorial dialog entirely, along with the example factory and everything
@@ -67,6 +67,10 @@
 - More stuff with technologies
   - Could order recipes by technology difficulty - not sure how to determine that
   - Could hide items that are not currently craftable
+- Make technology prototypes into their own generator category and make use of them via the loader
+- Try using flib's built-in translation/search feature instead of doing it myself, saves me having it in global
+- Don't aggregate entity type items to the top
+- Improve performance by not making item_views.process iterate the prefs every time
 
 ## Waiting on
 

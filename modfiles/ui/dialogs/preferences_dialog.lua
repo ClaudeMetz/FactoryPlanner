@@ -36,6 +36,44 @@ local function refresh_defaults_table(player, modal_elements, type, category_id)
     end
 end
 
+local function refresh_views_table(player)
+    local views_preference = util.globals.preferences(player).item_views
+    local views_table = util.globals.modal_elements(player).views_table
+    local views = util.globals.ui_state(player).views_data.views
+
+    local function add_move_button(parent, index, direction, enabled)
+        local move_up_button = parent.add{type="sprite-button", sprite="fp_arrow_" .. direction,
+            tags={mod="fp", on_gui_click="move_view", index=index, direction=direction},
+            enabled=enabled, style="fp_sprite-button_move", mouse_button_filter={"left"}}
+        move_up_button.style.size = {20, 18}
+        move_up_button.style.padding = 0
+    end
+
+    local active_view_count = 0
+    for _, view_preference in ipairs(views_preference) do
+        if view_preference.enabled then active_view_count = active_view_count + 1 end
+    end
+
+    views_table.clear()
+    for index, view_preference in ipairs(views_preference) do
+        local view_data = views[view_preference.name]
+
+        local enabled = (active_view_count < 4 or view_preference.enabled) and
+            (active_view_count > 1 or not view_preference.enabled)
+        views_table.add{type="checkbox", state=view_preference.enabled, enabled=enabled,
+            tags={mod="fp", on_gui_checked_state_changed="toggle_view", name=view_preference.name}}
+
+        local flow_name = views_table.add{type="flow", direction="horizontal"}
+        flow_name.add{type="label", caption=view_data.caption, tooltip=view_data.tooltip}
+        flow_name.style.horizontally_stretchable = true
+
+        local flow_move = views_table.add{type="flow", direction="horizontal"}
+        flow_move.style.horizontal_spacing = 0
+        add_move_button(flow_move, index, "up", (index > 1))
+        add_move_button(flow_move, index, "down", (index < #views_preference))
+    end
+end
+
 
 local preference_structures = {}
 
@@ -125,6 +163,19 @@ function preference_structures.wagons(player, content_frame, modal_elements)
     if not any_category_visible then preference_box.visible = false end
 end
 
+function preference_structures.views(player, content_frame, modal_elements)
+    local preference_box = add_preference_box(content_frame, "views")
+
+    local label = preference_box.add{type="label", caption={"fp.preference_pick_views"}}
+    label.style.bottom_margin = 4
+
+    local frame_views = preference_box.add{type="frame", style="deep_frame_in_shallow_frame"}
+    local table_views = frame_views.add{type="table", style="table_with_selection", column_count=3}
+    modal_elements["views_table"] = table_views
+
+    refresh_views_table(player)
+end
+
 
 local function handle_checkbox_preference_change(player, tags, event)
     local preference_name = tags.name
@@ -166,12 +217,42 @@ local function handle_dropdown_preference_change(player, tags, event)
     end
 end
 
+local function handle_view_toggle(player, tags, _)
+    local views_preference = util.globals.preferences(player).item_views
+    for _, view_preference in ipairs(views_preference) do
+        if view_preference.name == tags.name then
+            view_preference.enabled = not view_preference.enabled
+            -- Select a valid view if the current one is disabled
+            if not view_preference.enabled and view_preference.selected then
+                item_views.cycle_views(player, "standard")
+            end
+            break
+        end
+    end
+
+    refresh_views_table(player)
+    item_views.refresh_interface(player)
+    util.raise.refresh(player, "factory")
+end
+
+local function handle_view_move(player, tags, _)
+    local views_preference = util.globals.preferences(player).item_views
+    local view_preference = table.remove(views_preference, tags.index)
+    local new_index = (tags.direction == "up") and (tags.index-1) or (tags.index+1)
+    table.insert(views_preference, new_index, view_preference)
+
+    refresh_views_table(player)
+    item_views.rebuild_interface(player)  -- rebuild because of the move
+    util.raise.refresh(player, "factory")
+end
+
 local function handle_bol_change(player, _, event)
     local player_table = util.globals.player_table(player)
     local defined_by = (event.element.switch_state == "left") and "belts" or "lanes"
 
     player_table.preferences.belts_or_lanes = defined_by
-    view_state.rebuild_state(player)
+    item_views.rebuild_data(player)
+    item_views.rebuild_interface(player)
 
     for district in player_table.realm:iterator() do
         for factory in district:iterator() do
@@ -192,7 +273,8 @@ local function handle_default_prototype_change(player, tags, _)
     refresh_defaults_table(player, modal_elements, data_type, category_id)
 
     if data_type == "belts" or data_type == "wagons" then
-        view_state.rebuild_state(player)
+        item_views.rebuild_data(player)
+        item_views.rebuild_interface(player)
         util.raise.refresh(player, "all")
     end
 end
@@ -229,6 +311,7 @@ local function open_preferences_dialog(player, modal_data)
     local right_content_frame = modal_elements.secondary_frame
     right_content_frame.style.width = 336
 
+    preference_structures.views(player, right_content_frame, modal_elements)
     preference_structures.belts(player, right_content_frame, modal_elements)
     preference_structures.wagons(player, right_content_frame, modal_elements)
 end
@@ -250,12 +333,20 @@ listeners.gui = {
         {
             name = "select_preference_default",
             handler = handle_default_prototype_change
+        },
+        {
+            name = "move_view",
+            handler = handle_view_move
         }
     },
     on_gui_checked_state_changed = {
         {
             name = "toggle_preference",
             handler = handle_checkbox_preference_change
+        },
+        {
+            name = "toggle_view",
+            handler = handle_view_toggle
         }
     },
     on_gui_selection_state_changed = {

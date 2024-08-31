@@ -1,5 +1,3 @@
-require("ui.base.view_state")
-
 -- The main GUI parts for the compact dialog
 local function determine_available_columns(floor, frame_width)
     local frame_border_size = 12
@@ -166,7 +164,7 @@ local function add_item_flow(line, relevant_line, item_category, button_color, m
         local proto, type = item.proto, item.proto.type
         -- items/s/machine does not make sense for lines with subfloors, show items/s instead
         local machine_count = (line.class == "Line") and line.machine.amount or nil
-        local amount, number_tooltip = view_state.process_item(metadata.view_state_metadata, item, nil, machine_count)
+        local amount, number_tooltip = item_views.process_item(metadata.player, item, nil, machine_count)
         if amount == -1 then goto skip_item end  -- an amount of -1 means it was below the margin of error
 
         local number_line = (number_tooltip) and {"", "\n", number_tooltip} or ""
@@ -196,7 +194,7 @@ local function add_item_flow(line, relevant_line, item_category, button_color, m
 
     if item_category == "ingredient" and line.class == "Line" and line.machine.fuel then
         local fuel, machine_count = line.machine.fuel, line.machine.amount
-        local amount, number_tooltip = view_state.process_item(metadata.view_state_metadata, fuel, nil, machine_count)
+        local amount, number_tooltip = item_views.process_item(metadata.player, fuel, nil, machine_count)
         if amount == -1 then goto skip_fuel end  -- an amount of -1 means it was below the margin of error
 
         local name_line = {"fp.tt_title_with_note", fuel.proto.localised_name, {"fp.pl_fuel", 1}}
@@ -219,8 +217,6 @@ local function refresh_compact_factory(player)
     local compact_elements = player_table.ui_state.compact_elements
     local factory = util.context.get(player, "Factory")  --[[@as Factory?]]
     if not factory or not factory.valid then return end
-
-    util.raise.refresh(player, "view_state")
 
     local attach_factory_products = player_table.preferences.attach_factory_products
     compact_elements.name_label.caption = factory:tostring(attach_factory_products, true)
@@ -245,9 +241,9 @@ local function refresh_compact_factory(player)
     tooltips.compact_dialog = {}
 
     local metadata = {
+        player = player,
         parent = production_table,
         column_counts = column_counts,
-        view_state_metadata = view_state.generate_metadata(player),
         tooltips = tooltips.compact_dialog
     }
 
@@ -302,14 +298,13 @@ local function build_compact_factory(player)
     local subheader = content_frame.add{type="frame", direction="vertical", style="subheader_frame"}
     subheader.style.maximal_height = 100  -- large value to nullify maximal_height
 
-    -- Flow view state
-    local flow_view_state = subheader.add{type="flow", direction="horizontal"}
-    flow_view_state.style.padding = {4, 4, 0, 0}
-    flow_view_state.add{type="empty-widget", style="flib_horizontal_pusher"}
+    -- View state
+    local container_views = subheader.add{type="flow", direction="horizontal"}
+    container_views.style.padding = {4, 4, 0, 0}
+    container_views.add{type="empty-widget", style="flib_horizontal_pusher"}
 
-    view_state.rebuild_state(player)  -- initializes the view_state
-    util.raise.build(player, "view_state", flow_view_state)
-    compact_elements["view_state_table"] = flow_view_state["table_view_state"]
+    local flow_views = container_views.add{type="flow", direction="horizontal"}
+    compact_elements["views_flow"] = flow_views
 
     subheader.add{type="line", direction="horizontal"}
 
@@ -578,6 +573,7 @@ local function rebuild_compact_dialog(player, default_visibility)
     button_close.style.padding = 1
 
     util.raise.build(player, "compact_factory", nil)
+    item_views.rebuild_interface(player)
 
     return frame_compact_dialog
 end

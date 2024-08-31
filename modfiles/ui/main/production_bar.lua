@@ -53,8 +53,7 @@ local function refresh_production_bar(player)
 
     production_bar_elements.timescale_switch.visible = valid_factory_selected
 
-    util.raise.refresh(player, "view_state")
-    ui_state.main_elements.view_state_table.visible = factory_valid
+    ui_state.main_elements.views_flow.visible = factory_valid
 end
 
 
@@ -123,8 +122,8 @@ local function build_production_bar(player)
     switch_timescale.style.margin = {0, 4}
     main_elements.production_bar["timescale_switch"] = switch_timescale
 
-    util.raise.build(player, "view_state", subheader)
-    main_elements["view_state_table"] = subheader["table_view_state"]
+    local flow_views = subheader.add{type="flow", direction="horizontal"}
+    main_elements["views_flow"] = flow_views
 
     refresh_production_bar(player)
 end
@@ -168,7 +167,8 @@ listeners.gui = {
                 local new_timescale = (event.element.switch_state == "left") and 1 or 60
                 util.globals.preferences(player).timescale = new_timescale
 
-                view_state.rebuild_state(player)
+                item_views.rebuild_data(player)
+                item_views.rebuild_interface(player)
                 util.raise.refresh(player, "factory")
             end)
         }

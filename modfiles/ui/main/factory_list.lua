@@ -9,7 +9,6 @@ local function delete_factory_for_good(metadata)
     local selected_factory = util.context.get(player, "Factory")  --[[@as Factory?]]
     if selected_factory and selected_factory.id == factory.id then
         util.context.set(player, adjacent_factory or factory.parent)
-        view_state.rebuild_state(player)
     end
     factory.parent:remove(factory)
 
@@ -29,7 +28,6 @@ local function change_factory_archived(player, to_archive)
     if to_archive or factory.parent:count({archived=true}) > 1 then
         local adjacent_factory = util.context.remove(player, factory)
         util.context.set(player, adjacent_factory or factory.parent, true)
-        view_state.rebuild_state(player)
     end  -- if it's pulling the last factory from the archive, keep the context on it
 
     factory.archived = to_archive
@@ -89,12 +87,10 @@ local function handle_factory_click(player, tags, action)
         end
 
         util.context.set(player, selected_factory)
-        view_state.rebuild_state(player)
         util.raise.refresh(player, "all")  -- refresh to update the selected factory
 
     elseif action == "edit" then
         util.context.set(player, selected_factory)
-        view_state.rebuild_state(player)
         util.raise.refresh(player, "all")  -- refresh to update the selected factory
 
         util.raise.open_dialog(player, {dialog="factory", modal_data={factory_id=selected_factory.id}})
@@ -284,7 +280,6 @@ function factory_list.add_factory(player, name)
     district:insert(factory)
 
     util.context.set(player, factory)
-    view_state.rebuild_state(player)
 
     return factory
 end
@@ -301,7 +296,6 @@ function factory_list.delete_factory(player)
         factory.parent:remove(factory)
 
         util.context.set(player, adjacent_factory or district)
-        view_state.rebuild_state(player)
         util.raise.refresh(player, "all")
     else
         local desired_tick_of_deletion = game.tick + MAGIC_NUMBERS.factory_deletion_delay
@@ -327,7 +321,6 @@ listeners.gui = {
                 local new_factory = district:find({archived=not archive_open})  --[[@as Factory]]
 
                 util.context.set(player, new_factory or district, true)
-                view_state.rebuild_state(player)
                 util.raise.refresh(player, "all")
             end)
         },

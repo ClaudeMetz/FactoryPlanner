@@ -33,7 +33,6 @@ local function build_items_flow(player, parent, district)
     local preferences = util.globals.preferences(player)
     local total_columns = preferences.products_per_row * 4
     local columns_per, remainder = math.floor(total_columns / 3), total_columns % 3
-    local metadata = view_state.generate_metadata(player)
 
     local function build_item_flow(items, category, column_count)
         local item_flow = items_flow.add{type="flow", direction="vertical"}
@@ -47,7 +46,7 @@ local function build_items_flow(player, parent, district)
         local item_count = 0
         for _, item in items:iterator() do
             -- Adjust the item amounts since they are stored as per second
-            local amount, number_tooltip = view_state.process_item(metadata, item, item.amount, nil)
+            local amount, number_tooltip = item_views.process_item(player, item, item.amount, nil)
             if amount ~= -1 then  -- an amount of -1 means it was below the margin of error
                 if item.amount > MAGIC_NUMBERS.margin_of_error then
                     local style = (item.proto.type == "entity") and "flib_slot_button_transparent"

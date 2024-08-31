@@ -248,7 +248,7 @@ local function handle_item_click(player, tags, action)
 
     elseif action == "specify_amount" then
         -- Set the view state so that the amount shown in the dialog makes sense
-        view_state.select(player, "items_per_timescale")
+        --view_state.select(player, "items_per_timescale")
         util.raise.refresh(player, "factory")
 
         local type_localised_string = {"fp.pl_" .. tags.item_category, 1}
