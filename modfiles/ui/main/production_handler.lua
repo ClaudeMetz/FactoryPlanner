@@ -118,6 +118,8 @@ local function handle_machine_click(player, tags, action)
 
     elseif action == "recipebook" then
         util.open_in_recipebook(player, "entity", machine.proto.name)
+    elseif action == "factorysearch" then
+        util.open_in_factorysearch(player, "item", machine.proto.name)
     end
 end
 
@@ -156,6 +158,8 @@ local function handle_beacon_click(player, tags, action)
 
     elseif action == "recipebook" then
         util.open_in_recipebook(player, "entity", beacon.proto.name)
+    elseif action == "factorysearch" then
+        util.open_in_factorysearch(player, "item", beacon.proto.name)
     end
 end
 
@@ -202,6 +206,8 @@ local function handle_module_click(player, tags, action)
 
     elseif action == "recipebook" then
         util.open_in_recipebook(player, "item", module.proto.name)
+    elseif action == "factorysearch" then
+        util.open_in_factorysearch(player, "item", module.proto.name)
     end
 end
 
@@ -293,6 +299,8 @@ local function handle_item_click(player, tags, action)
 
     elseif action == "recipebook" then
         util.open_in_recipebook(player, item.proto.type, item.proto.name)
+    elseif action == "factorysearch" then
+        util.open_in_factorysearch(player, item.proto.type, item.proto.name)
     end
 end
 
@@ -321,6 +329,8 @@ local function handle_fuel_click(player, tags, action)
 
     elseif action == "recipebook" then
         util.open_in_recipebook(player, fuel.proto.type, fuel.proto.name)
+    elseif action == "factorysearch" then
+        util.open_in_factorysearch(player, fuel.proto.type, fuel.proto.name)
     end
 end
 
@@ -342,7 +352,8 @@ listeners.gui = {
                 paste = {"shift-left", {archive_open=false}},
                 toggle = {"control-left", {archive_open=false}},
                 delete = {"control-right", {archive_open=false}},
-                recipebook = {"alt-right", {recipebook=true}}
+                recipebook = {"alt-right", {recipebook=true}},
+                factorysearch = {"control-shift-left", {factorysearch=true}}
             },
             handler = handle_recipe_click
         },
@@ -354,7 +365,8 @@ listeners.gui = {
                 paste = {"shift-left", {archive_open=false}},
                 reset_to_default = {"control-right", {archive_open=false}},
                 put_into_cursor = {"alt-left"},
-                recipebook = {"alt-right", {recipebook=true}}
+                recipebook = {"alt-right", {recipebook=true}},
+                factorysearch = {"control-shift-left", {factorysearch=true}}
             },
             handler = handle_machine_click
         },
@@ -370,7 +382,8 @@ listeners.gui = {
                 paste = {"shift-left", {archive_open=false}},
                 delete = {"control-right", {archive_open=false}},
                 put_into_cursor = {"alt-left"},
-                recipebook = {"alt-right", {recipebook=true}}
+                recipebook = {"alt-right", {recipebook=true}},
+                factorysearch = {"control-shift-left", {factorysearch=true}}
             },
             handler = handle_beacon_click
         },
@@ -385,7 +398,8 @@ listeners.gui = {
                 copy = {"shift-right"},
                 paste = {"shift-left", {archive_open=false}},
                 delete = {"control-right", {archive_open=false}},
-                recipebook = {"alt-right", {recipebook=true}}
+                recipebook = {"alt-right", {recipebook=true}},
+                factorysearch = {"control-shift-left", {factorysearch=true}}
             },
             handler = handle_module_click
         },
@@ -396,7 +410,8 @@ listeners.gui = {
                 specify_amount = {"right", {archive_open=false, matrix_active=false}},
                 copy = {"shift-right"},
                 put_into_cursor = {"alt-left"},
-                recipebook = {"alt-right", {recipebook=true}}
+                recipebook = {"alt-right", {recipebook=true}},
+                factorysearch = {"control-shift-left", {factorysearch=true}}
             },
             handler = (function(player, tags, action)
                 tags.item_category = "product"
@@ -411,7 +426,8 @@ listeners.gui = {
                 specify_amount = {"right", {archive_open=false, matrix_active=false}},
                 copy = {"shift-right"},
                 put_into_cursor = {"alt-left"},
-                recipebook = {"alt-right", {recipebook=true}}
+                recipebook = {"alt-right", {recipebook=true}},
+                factorysearch = {"control-shift-left", {factorysearch=true}}
             },
             handler = (function(player, tags, action)
                 tags.item_category = "byproduct"
@@ -426,7 +442,8 @@ listeners.gui = {
                 specify_amount = {"right", {archive_open=false, matrix_active=false}},
                 copy = {"shift-right"},
                 put_into_cursor = {"alt-left"},
-                recipebook = {"alt-right", {recipebook=true}}
+                recipebook = {"alt-right", {recipebook=true}},
+                factorysearch = {"control-shift-left", {factorysearch=true}}
             },
             handler = (function(player, tags, action)
                 tags.item_category = "ingredient"
@@ -442,7 +459,8 @@ listeners.gui = {
                 copy = {"shift-right"},
                 paste = {"shift-left", {archive_open=false}},
                 put_into_cursor = {"alt-left"},
-                recipebook = {"alt-right", {recipebook=true}}
+                recipebook = {"alt-right", {recipebook=true}},
+                factorysearch = {"control-shift-left", {factorysearch=true}}
             },
             handler = handle_fuel_click
         }
