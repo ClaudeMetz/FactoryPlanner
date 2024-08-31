@@ -9,6 +9,8 @@
 ## Uncertainty Sphere
 
 - Quality calculations: not sure how far I want to go with these
+  - Quality odds for products - that's kinda dumb without items themselves supporting quality, soo idk
+    - Also solver doesn't support this kinda stuff atm anyways, needs rewrite
   - There's bigger ideas where you could enter X quality Y items per timescale and it would backsolve it
   - Plus more such ideas, but they seem kinda out there currently, need to play with quality myself first
 - Better infinite mining drill support
@@ -37,7 +39,6 @@
 - Turn item spoilage results into recipes since mods will use that as a critical path for sure
   - Kinda annoying since it doesn't use machines, just times, so the recipes would be very near useless
   - Could use 'time' as a custom ingredient on an otherwise blank line
-- Do quality odds for products at least
 
 ## Low Priority
 
