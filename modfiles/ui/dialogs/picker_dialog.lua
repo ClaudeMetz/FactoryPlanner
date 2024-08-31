@@ -364,17 +364,16 @@ local function open_picker_dialog(player, modal_data)
     modal_data.timescale = preferences.timescale
     modal_data.lob = preferences.belts_or_lanes
 
-    local dialog_flow = modal_data.modal_elements.dialog_flow
-    dialog_flow.style.vertical_spacing = 12
-
-    local item_content_frame = dialog_flow.add{type="frame", direction="vertical", style="inside_shallow_frame"}
-    item_content_frame.style.minimal_width = 325
-    item_content_frame.style.padding = {12, 12, 6, 12}
-    add_item_pane(item_content_frame, modal_data, modal_data.item_category, modal_data.item)
+    local content_frame = modal_data.modal_elements.content_frame
+    content_frame.style.minimal_width = 325
+    content_frame.style.bottom_padding = 6
+    add_item_pane(content_frame, modal_data, modal_data.item_category, modal_data.item)
 
     -- The item picker only needs to show when adding a new item
     if modal_data.item_id == nil then
-        local picker_content_frame = dialog_flow.add{type="frame", direction="vertical", style="inside_deep_frame"}
+        local auxiliary_flow = modal_data.modal_elements.auxiliary_flow
+        local picker_content_frame = auxiliary_flow.add{type="frame", direction="vertical", style="inside_deep_frame"}
+        picker_content_frame.style.top_margin = 8
         add_item_picker(picker_content_frame, player)
     end
 end
@@ -489,6 +488,7 @@ listeners.dialog = {
         return {
             caption = {"", action, " ", {"fp.pl_" .. modal_data.item_category, 1}},
             search_handler_name = (not modal_data.item_id) and "search_picker_items" or nil,
+            disable_scroll_pane = true,
             show_submit_button = true,
             show_delete_button = (modal_data.item_id ~= nil)
         }

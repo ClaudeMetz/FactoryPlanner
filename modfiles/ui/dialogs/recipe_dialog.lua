@@ -226,7 +226,7 @@ local function apply_recipe_filter(player, search_term)
 
     modal_data.modal_elements.warning_label.visible = not any_recipe_visible
 
-    local scroll_pane_height = math.min(desired_scroll_pane_height, modal_data.dialog_maximal_height)
+    local scroll_pane_height = math.min(desired_scroll_pane_height, modal_data.dialog_maximal_height - 80)
     modal_data.modal_elements.content_frame.style.height = scroll_pane_height
 end
 

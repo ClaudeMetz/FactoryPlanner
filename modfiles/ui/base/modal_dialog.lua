@@ -56,13 +56,11 @@ local function create_base_modal_dialog(player, dialog_settings, modal_data)
         end
     end
 
-    local flow_modal_dialog = frame_modal_dialog.add{type="flow", direction="horizontal"}
-    flow_modal_dialog.style.horizontal_spacing = 12
-    modal_elements.dialog_flow = flow_modal_dialog
-    local main_content_element = flow_modal_dialog
+    local flow_content = frame_modal_dialog.add{type="flow", direction="horizontal"}
+    flow_content.style.horizontal_spacing = 12
 
     -- Content frame
-    local content_frame = flow_modal_dialog.add{type="frame", direction="vertical", style="inside_shallow_frame"}
+    local content_frame = flow_content.add{type="frame", direction="vertical", style="inside_shallow_frame"}
     content_frame.style.vertically_stretchable = true
 
     if dialog_settings.subheader_text then
@@ -83,14 +81,12 @@ local function create_base_modal_dialog(player, dialog_settings, modal_data)
 
     local scroll_pane = content_frame.add{type="scroll-pane", direction="vertical", style="flib_naked_scroll_pane"}
     if dialog_settings.disable_scroll_pane then scroll_pane.vertical_scroll_policy = "never" end
-
     modal_elements.content_frame = scroll_pane
-    main_content_element = scroll_pane
 
     -- Secondary frame
     if dialog_settings.secondary_frame or dialog_settings.foldout_title then
         -- Only default-visible if it's a secondary frame, not a foldout frame
-        local frame_secondary = flow_modal_dialog.add{type="frame", direction="vertical",
+        local frame_secondary = flow_content.add{type="frame", direction="vertical",
             visible=(dialog_settings.secondary_frame ~= nil), style="inside_shallow_frame"}
 
         local scroll_pane_secondary = frame_secondary.add{type="scroll-pane", style="flib_naked_scroll_pane"}
@@ -100,10 +96,11 @@ local function create_base_modal_dialog(player, dialog_settings, modal_data)
         modal_elements.secondary_frame = scroll_pane_secondary
     end
 
-    -- Set the maximum height of the main content element
-    local dialog_max_height = (util.globals.ui_state(player).main_dialog_dimensions.height - 80) * 0.95
+    modal_elements.auxiliary_flow = frame_modal_dialog.add{type="flow", direction="vertical"}
+
+    local dialog_max_height = (util.globals.ui_state(player).main_dialog_dimensions.height) * 0.95
     modal_data.dialog_maximal_height = dialog_max_height
-    main_content_element.style.maximal_height = dialog_max_height
+    frame_modal_dialog.style.maximal_height = dialog_max_height
 
     if dialog_settings.show_submit_button then  -- if there is a submit button, there should be a button bar
         -- Button bar
