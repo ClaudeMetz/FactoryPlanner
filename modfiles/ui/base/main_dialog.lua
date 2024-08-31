@@ -1,6 +1,3 @@
-require("ui.main.factory_list")
-require("ui.base.view_state")
-
 main_dialog = {}
 
 -- Accepts custom width and height parameters so dimensions can be tried out without changing actual preferences
@@ -103,8 +100,9 @@ function main_dialog.rebuild(player, default_visibility)
     right_vertical.style.vertical_spacing = frame_spacing
     main_elements.flows["right_vertical"] = right_vertical
 
-    view_state.rebuild_state(player)  -- initializes the view_state
+    item_views.rebuild_data(player)
     util.raise.build(player, "main_dialog", nil)  -- tells all elements to build themselves
+    item_views.rebuild_interface(player)
 
     if interface_visible then player.opened = frame_main_dialog end
     main_dialog.set_pause_state(player, frame_main_dialog)
@@ -163,7 +161,6 @@ function main_dialog.toggle_districts_view(player)
     local ui_state = util.globals.ui_state(player)
     ui_state.districts_view = not ui_state.districts_view
 
-    view_state.rebuild_state(player)
     util.raise.refresh(player, "district_info")
 end
 

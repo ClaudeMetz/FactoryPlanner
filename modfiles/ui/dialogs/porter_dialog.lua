@@ -243,7 +243,6 @@ local function close_import_dialog(player, action)
         ---@cast first_factory Factory
 
         util.context.set(player, first_factory)
-        view_state.rebuild_state(player)
         util.raise.refresh(player, "all")
     end
 end

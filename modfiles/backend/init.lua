@@ -30,6 +30,7 @@ require("backend.calculation.solver")
 ---@field done_column boolean
 ---@field percentage_column boolean
 ---@field line_comment_column boolean
+---@field item_views ItemViewPreference[]
 ---@field belts_or_lanes "belts" | "lanes"
 ---@field default_machines PrototypeDefaultWithCategory
 ---@field default_fuels PrototypeDefaultWithCategory
@@ -38,12 +39,6 @@ require("backend.calculation.solver")
 ---@field default_wagons PrototypeDefaultWithCategory
 
 ---@alias Timescale 1 | 60
-
----@class MBDefaults
----@field machine FPModulePrototype?
----@field machine_secondary FPModulePrototype?
----@field beacon FPModulePrototype?
----@field beacon_count integer?
 
 ---@param player_table PlayerTable
 function reload_preferences(player_table)
@@ -84,6 +79,8 @@ function reload_preferences(player_table)
     reload("percentage_column", false)
     reload("line_comment_column", false)
 
+    reload("item_views", item_views.default_preferences())
+
     reload("belts_or_lanes", "belts")
 
     reload("default_machines", defaults.get_fallback("machines"))
@@ -99,7 +96,7 @@ end
 ---@class UIStateTable
 ---@field main_dialog_dimensions DisplayResolution?
 ---@field last_action string?
----@field view_states ViewStates?
+---@field views_data ItemViewsData?
 ---@field messages PlayerMessage[]
 ---@field main_elements table
 ---@field compact_elements table
@@ -118,7 +115,7 @@ local function reset_ui_state(player_table)
     player_table.ui_state = {
         main_dialog_dimensions = nil,
         last_action = nil,
-        view_states = nil,
+        views_data = nil,
         messages = {},
         main_elements = {},
         compact_elements = {},

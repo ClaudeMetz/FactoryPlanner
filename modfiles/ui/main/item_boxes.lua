@@ -60,7 +60,6 @@ local function refresh_item_box(player, factory, show_floor_items, item_category
     local floor = (show_floor_items) and util.context.get(player, "Floor") or factory.top_floor
 
     local table_item_count = 0
-    local metadata = view_state.generate_metadata(player)
     local default_style = (item_category == "byproduct") and "flib_slot_button_red" or "flib_slot_button_default"
 
     local shows_floor_items = (floor.parent.class ~= "Factory")
@@ -71,7 +70,7 @@ local function refresh_item_box(player, factory, show_floor_items, item_category
 
     local function build_item(item, index)
         local required_amount = (item.class == "Product") and item:get_required_amount() or nil
-        local amount, number_tooltip = view_state.process_item(metadata, item, required_amount, nil)
+        local amount, number_tooltip = item_views.process_item(player, item, required_amount, nil)
         if amount == -1 then return end  -- an amount of -1 means it was below the margin of error
 
         local style = default_style
@@ -175,7 +174,7 @@ local function handle_item_button_click(player, tags, action)
 
     elseif action == "specify_amount" then
         -- Set the view state so that the amount shown in the dialog makes sense
-        view_state.select(player, "items_per_timescale")
+        --view_state.select(player, "items_per_timescale")
         util.raise.refresh(player, "factory")
 
         local modal_data = {

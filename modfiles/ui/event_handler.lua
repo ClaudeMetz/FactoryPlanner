@@ -1,7 +1,7 @@
 -- Assembles event handlers from all the relevant files and calls them when needed
 
 local event_listener_names = {
-    "ui.base.main_dialog", "ui.base.compact_dialog", "ui.base.modal_dialog", "ui.base.view_state",
+    "ui.base.main_dialog", "ui.base.compact_dialog", "ui.base.modal_dialog", "ui.base.item_views",
     "ui.main.title_bar", "ui.main.district_info", "ui.main.factory_list", "ui.main.production_bar",
     "ui.main.districts_box", "ui.main.item_boxes", "ui.main.production_box", "ui.main.production_table",
     "ui.main.production_handler", "ui.elements.module_configurator",

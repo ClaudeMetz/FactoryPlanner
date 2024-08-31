@@ -101,7 +101,6 @@ local actions = {
 
     setup_02_compact_interface = function(player)
         util.globals.main_elements(player).main_frame.location = player.display_resolution  -- hack city
-        view_state.select(player, 2)
         local toggle_handler = get_handler("ui.main.title_bar", 1, "on_gui_click", "switch_to_compact_view")
         toggle_handler(player, nil, nil)
     end,
