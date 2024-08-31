@@ -376,7 +376,7 @@ end
 ---@param recipe FPRecipePrototype
 ---@return LocalisedString
 function generator_util.recipe_tooltip(recipe)
-    local tooltip = {"", {"fp.tt_title", recipe.localised_name}}  ---@type LocalisedString
+    local tooltip = {"", {"fp.recipe_title", recipe.sprite, recipe.localised_name}}  ---@type LocalisedString
     local current_table, next_index = tooltip, 3
 
     if recipe.energy ~= nil then
