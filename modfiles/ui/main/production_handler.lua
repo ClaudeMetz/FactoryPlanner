@@ -246,36 +246,6 @@ local function handle_item_click(player, tags, action)
         util.raise.open_dialog(player, {dialog="recipe", modal_data={add_after_line_id=add_after_line_id,
             production_type=production_type, category_id=item.proto.category_id, product_id=item.proto.id}})
 
-    elseif action == "specify_amount" then
-        -- Set the view state so that the amount shown in the dialog makes sense
-        --view_state.select(player, "items_per_timescale")
-        util.raise.refresh(player, "factory")
-
-        local type_localised_string = {"fp.pl_" .. tags.item_category, 1}
-        local produce_consume = (tags.item_category == "ingredient") and {"fp.consume"} or {"fp.produce"}
-
-        local modal_data = {
-            title = {"fp.options_item_title", type_localised_string},
-            text = {"fp.options_item_text", item.proto.localised_name},
-            submission_handler_name = "apply_item_options",
-            line_id = line.id,
-            item_category = tags.item_category,
-            current_amount = item.amount,
-            item_proto = item.proto,
-            fields = {
-                {
-                    type = "numeric_textfield",
-                    name = "target_amount",
-                    caption = {"fp.options_target_amount"},
-                    tooltip = {"fp.options_target_amount_tt", type_localised_string, produce_consume},
-                    text = item.amount,
-                    width = 140,
-                    focus = true
-                }
-            }
-        }
-        util.raise.open_dialog(player, {dialog="options", modal_data=modal_data})
-
     elseif action == "copy" then
         if item.proto.type == "entity" then return end
         util.clipboard.copy(player, item)
@@ -385,7 +355,6 @@ listeners.gui = {
             name = "act_on_line_product",
             modifier_actions = {
                 prioritize = {"left", {archive_open=false, matrix_active=false}},
-                specify_amount = {"right", {archive_open=false, matrix_active=false}},
                 copy = {"shift-right"},
                 put_into_cursor = {"alt-right"},
                 factoriopedia = {"alt-left"}
@@ -400,7 +369,6 @@ listeners.gui = {
             modifier_actions = {
                 add_recipe_to_end = {"left", {archive_open=false, matrix_active=true}},
                 add_recipe_below = {"control-left", {archive_open=false, matrix_active=true}},
-                specify_amount = {"right", {archive_open=false, matrix_active=false}},
                 copy = {"shift-right"},
                 put_into_cursor = {"alt-right"},
                 factoriopedia = {"alt-left"}
@@ -415,7 +383,6 @@ listeners.gui = {
             modifier_actions = {
                 add_recipe_to_end = {"left", {archive_open=false}},
                 add_recipe_below = {"control-left", {archive_open=false}},
-                specify_amount = {"right", {archive_open=false, matrix_active=false}},
                 copy = {"shift-right"},
                 put_into_cursor = {"alt-right"},
                 factoriopedia = {"alt-left"}

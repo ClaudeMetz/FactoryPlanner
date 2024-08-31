@@ -47,7 +47,7 @@ Date: 20. 07. 2024
     - Adjusted mod for new module mechanics such as beacon profiles, machine base productivity, new productivity researches, maximum recipe productivity, and more
     - Changed the utility dialog function to request missing item delivery to create a new logistic section instead of having construction bots fulfill the order
     - Dropped Recipe Book support in favor of Factoriopedia, the new built-in recipe browser
-    - Dropped support for boiler recipes, for now
+    - Dropped support for boiler recipes and specifying amounts by ingredients, for now
     - Fixed and improved various parts of the interface
     - Updated the Factorio Library mod to 2.0.0
   Bugfixes:

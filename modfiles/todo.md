@@ -2,8 +2,6 @@
 
 ## Active
 
-- Remove specify_amount functionality for now (make sure to remove locale)
-- Finally get rid of generic dialogs, even without the extended features
 
 ## Bugs
 
