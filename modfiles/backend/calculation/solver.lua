@@ -33,6 +33,7 @@ local function set_blank_factory(player, factory)
 
     solver.set_factory_result {
         player_index = player.index,
+        factory_id = factory.id,
         energy_consumption = 0,
         emissions = 0,
         Product = product_class,
@@ -191,10 +192,6 @@ end
 function solver.update(player, factory, blank)
     factory = factory or util.context.get(player, "Factory")
     if factory.valid then
-        local player_table = util.globals.player_table(player)
-        -- Save the active factory in global so the solver doesn't have to pass it around
-        player_table.active_factory = factory
-
         local factory_data = solver.generate_factory_data(player, factory)
 
         if blank then  -- sets factory to a blank state
@@ -224,8 +221,6 @@ function solver.update(player, factory, blank)
         else
             sequential_engine.update_factory(factory_data)
         end
-
-        player_table.active_factory = nil  -- reset after calculations have been carried out
     end
 end
 
@@ -240,6 +235,7 @@ end
 function solver.generate_factory_data(player, factory)
     local factory_data = {
         player_index = player.index,
+        factory_id = factory.id,
         top_level_products = {},
         top_floor = generate_floor_data(player, factory, factory.top_floor),
         matrix_free_items = factory.matrix_free_items
@@ -258,8 +254,7 @@ end
 
 -- Updates the active factories top-level data with the given result
 function solver.set_factory_result(result)
-    local player_table = global.players[result.player_index]
-    local factory = player_table.active_factory
+    local factory = OBJECT_INDEX[result.factory_id]  --[[@as Factory]]
 
     if factory.parent then factory.parent.needs_refresh = true end
 
@@ -277,16 +272,13 @@ function solver.set_factory_result(result)
     update_object_items(factory.top_floor, "byproducts", result.Byproduct)
 
     -- Determine satisfaction-amounts for all line ingredients
-    if player_table.preferences.ingredient_satisfaction then
-        solver.determine_ingredient_satisfaction(factory)
-    end
+    local preferences = global.players[result.player_index].preferences
+    if preferences.ingredient_satisfaction then solver.determine_ingredient_satisfaction(factory) end
 end
 
 -- Updates the given line of the given floor of the active factory
 function solver.set_line_result(result)
-    local factory = global.players[result.player_index].active_factory
-    if factory == nil then return end
-    local line = OBJECT_INDEX[result.line_id]
+    local line = OBJECT_INDEX[result.line_id]  --[[@as LineObject]]
 
     if line.class == "Floor" then
         line.machine_count = result.machine_count
