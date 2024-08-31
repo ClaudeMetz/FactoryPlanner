@@ -431,6 +431,7 @@ function matrix_engine.run_matrix_solver(factory_data, check_linear_dependence)
 
     solver.set_factory_result {
         player_index = factory_data.player_index,
+        factory_id = factory_data.factory_id,
         energy_consumption = top_floor_aggregate.energy_consumption,
         emissions = top_floor_aggregate.emissions,
         Product = main_aggregate.Product,

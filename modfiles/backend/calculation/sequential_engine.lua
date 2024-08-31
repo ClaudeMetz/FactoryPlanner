@@ -270,9 +270,10 @@ function sequential_engine.update_factory(factory_data)
 
     update_floor(factory_data.top_floor, aggregate)  -- updates aggregate
 
-    -- Fuels are combined with Ingredients for top-level purposes
+    -- Fuels are combined with ingredients for top-level purposes
     solver.set_factory_result {
         player_index = factory_data.player_index,
+        factory_id = factory_data.factory_id,
         energy_consumption = aggregate.energy_consumption,
         emissions = aggregate.emissions,
         Product = aggregate.Product,
