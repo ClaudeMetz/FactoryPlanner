@@ -5,6 +5,8 @@
 
 ## Bugs
 
+- Matrix solver broken with entity-type ingredients present seemingly
+  - Alternatively could be because of 0-ed machine counts or similar
 
 ## Uncertainty Sphere
 
@@ -16,6 +18,9 @@
 - Better infinite mining drill support
   - Kind of incredibly annoying, since there is nothing I can really calculate about it
   - Could still make it so it shows the oil patch as an ingredient without amount (same for offshore pumps)
+- Item Spoiling - Not super much to do without a lot of effort.
+  - Could do a thing where the user enters the time between steps and it takes the spoilage that incurrs into account
+  - Maybe some other stuff too, but I'll have to play with it to figure this out. Low priority anyways
 
 ## Features
 
@@ -45,9 +50,6 @@
 - Add calculator window - button in main and compact windows, with keyboard shortcut
   - Shortcut should work from anywhere. Calculator needs to be independent window pretty much, kinda tricky
   - UI just simple but nice, with history. Use evaluate_expression for calculation, making things easy
-- Adjust utility dialog handcrafting to behave like vanilla crafting does in all ways
-- Main interface toggles/builds? 4 times when starting a save, which is weird
-  - Check refreshes in general, maybe write a tool that flags when multiple refreshes happen in sequence
 - Note when rocket silo launch time becomes a problem for speed; it's not at lower speeds
   - Is quite a complicated feature, especially when productivity is involved. Probably do need it though
 - Rocket silo power usage seems very low, likely doesn't consider launch usage
@@ -55,9 +57,6 @@
   - This is a bit messy with entity-type items currently and can't easily be fixed atm
   - Also drop the tutorial dialog entirely, along with the example factory and everything
   - Also use them to quick-change default belts on the view, for example
-- Item Spoiling - Not super much to do without a lot of effort.
-  - Could do a thing where the user enters the time between steps and it takes the spoilage that incurrs into account
-  - Maybe some other stuff too, but I'll have to play with it to figure this out. Low priority anyways
 - Preferences export would be great. Maybe without migration if that makes it much easier
 - Agriculture tower implementation
   - Missing energy and pollution production, is different to normal entities
@@ -66,8 +65,13 @@
   - Could hide items that are not currently craftable
 - Make technology prototypes into their own generator category and make use of them via the loader
 - Try using flib's built-in translation/search feature instead of doing it myself, saves me having it in global
-- Don't aggregate entity type items to the top
 - Improve performance by not making item_views.process iterate the prefs every time
+
+## To be made into Issues
+
+- Adjust utility dialog handcrafting to behave like vanilla crafting does in all ways
+- Main interface toggles/builds? 4 times when starting a save, which is weird
+  - Check refreshes in general, maybe write a tool that flags when multiple refreshes happen in sequence
 
 ## Waiting on
 

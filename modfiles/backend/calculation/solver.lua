@@ -126,8 +126,10 @@ local function update_object_items(object, item_category, item_results)
     simple_items:clear()
 
     for _, item_result in pairs(structures.class.to_array(item_results)) do
-        local item_proto = prototyper.util.find("items", item_result.name, item_result.type)
-        simple_items:insert({class="SimpleItem", proto=item_proto, amount=item_result.amount})
+        local item_proto = prototyper.util.find("items", item_result.name, item_result.type)  --[[@as FPItemPrototype]]
+        if object.class ~= "Floor" or item_proto.type ~= "entity" then
+            simple_items:insert({class="SimpleItem", proto=item_proto, amount=item_result.amount})
+        end
     end
 end
 
@@ -268,8 +270,8 @@ function solver.set_factory_result(result)
         product.amount = product:get_required_amount() - product_result_amount
     end
 
-    update_object_items(factory.top_floor, "ingredients", result.Ingredient)
     update_object_items(factory.top_floor, "byproducts", result.Byproduct)
+    update_object_items(factory.top_floor, "ingredients", result.Ingredient)
 
     -- Determine satisfaction-amounts for all line ingredients
     local preferences = global.players[result.player_index].preferences
