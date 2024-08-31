@@ -9,6 +9,8 @@ local SimpleItems = require("backend.data.SimpleItems")
 ---@class Line: Object, ObjectMethods
 ---@field class "Line"
 ---@field parent Floor
+---@field next LineObject?
+---@field previous LineObject?
 ---@field recipe_proto FPRecipePrototype | FPPackedPrototype
 ---@field production_type ProductionType
 ---@field done boolean

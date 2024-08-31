@@ -254,7 +254,7 @@ function prototyper.util.migrate_mb_defaults(player_table)
 
     local beacon = mb_defaults.beacon
     if beacon then
-        mb_defaults.beacon = find("modules", beacon.name, nil)  --[[@as FPModulePrototype ]]
+        mb_defaults.beacon = find("modules", beacon.name, beacon.category)  --[[@as FPModulePrototype ]]
     end
 end
 
