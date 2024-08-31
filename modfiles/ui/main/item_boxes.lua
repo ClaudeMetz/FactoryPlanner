@@ -172,30 +172,6 @@ local function handle_item_button_click(player, tags, action)
         solver.update(player, factory)
         util.raise.refresh(player, "all")  -- make sure product icons are updated
 
-    elseif action == "specify_amount" then
-        -- Set the view state so that the amount shown in the dialog makes sense
-        --view_state.select(player, "items_per_timescale")
-        util.raise.refresh(player, "factory")
-
-        local modal_data = {
-            title = {"fp.options_item_title", {"fp.pl_ingredient", 1}},
-            text = {"fp.options_item_text", item.proto.localised_name},
-            submission_handler_name = "scale_factory_by_ingredient_amount",
-            current_amount = item.amount,
-            fields = {
-                {
-                    type = "numeric_textfield",
-                    name = "target_amount",
-                    caption = {"fp.options_target_amount"},
-                    tooltip = {"fp.options_factory_ingredient_amount_tt"},
-                    text = item.amount,
-                    width = 140,
-                    focus = true
-                }
-            }
-        }
-        util.raise.open_dialog(player, {dialog="options", modal_data=modal_data})
-
     elseif action == "put_into_cursor" then
         if item.proto.type == "entity" then return end
         local amount = (item.class == "Product") and item:get_required_amount() or item.amount
@@ -337,7 +313,6 @@ listeners.gui = {
             name = "act_on_top_level_ingredient",
             modifier_actions = {
                 add_recipe = {"left", {archive_open=false}},
-                specify_amount = {"right", {archive_open=false}},
                 copy = {"shift-right"},
                 put_into_cursor = {"alt-right"},
                 factoriopedia = {"alt-left"}
