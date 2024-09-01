@@ -98,7 +98,7 @@ local function create_base_modal_dialog(player, dialog_settings, modal_data)
 
     modal_elements.auxiliary_flow = frame_modal_dialog.add{type="flow", direction="vertical"}
 
-    local dialog_max_height = (util.globals.ui_state(player).main_dialog_dimensions.height) * 0.95
+    local dialog_max_height = (util.globals.ui_state(player).main_dialog_dimensions.height) * 0.96
     modal_data.dialog_maximal_height = dialog_max_height
     frame_modal_dialog.style.maximal_height = dialog_max_height
 

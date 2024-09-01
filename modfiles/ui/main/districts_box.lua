@@ -129,6 +129,7 @@ local function build_district_frame(player, district, location_items)
     elements[district.id]["edit_flow"] = flow_edit
     local textfield_name = flow_edit.add{type="textfield", text=district.name, icon_selector=true,
         tags={mod="fp", on_gui_confirmed="confirm_district_name", district_id=district.id}}
+    textfield_name.style.width = 160
     elements[district.id]["name_textfield"] = textfield_name
     flow_edit.add{type="sprite-button", style="mini_button_aligned_to_text_vertically_when_centered",
         tags={mod="fp", on_gui_click="save_district_name", district_id=district.id}, sprite="utility/rename_icon",

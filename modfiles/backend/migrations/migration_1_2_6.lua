@@ -13,6 +13,10 @@ function migration.player_table(player_table)
     player_table.preferences.default_belts = nil
     player_table.preferences.default_wagons = nil
 
+    -- Reset these since the permitted values changed
+    player_table.preferences.products_per_row = 6
+    player_table.preferences.factory_list_rows = 28
+
     for district in player_table.realm:iterator() do
         for factory in district:iterator() do
             factory.productivity_boni = {}
