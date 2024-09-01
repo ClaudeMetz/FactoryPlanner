@@ -61,8 +61,8 @@ function reload_preferences(player_table)
     reload("utility_scopes", {components = "Factory"})
     reload("recipe_filters", {disabled = false, hidden = false})
 
-    reload("products_per_row", 7)
-    reload("factory_list_rows", 26)
+    reload("products_per_row", 6)
+    reload("factory_list_rows", 28)
 
     reload("show_gui_button", false)
     reload("attach_factory_products", false)
