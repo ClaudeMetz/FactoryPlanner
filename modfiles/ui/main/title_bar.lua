@@ -77,6 +77,11 @@ local function build_title_bar(player)
     button_pause.style.padding = -1
     main_elements.title_bar["pause_button"] = button_pause
 
+    local button_calculator = flow_right.add{type="sprite-button", sprite="fp_calculator",
+        tooltip={"fp.open_calculator"}, style="fp_button_frame", mouse_button_filter={"left"},
+        tags={mod="fp", on_gui_click="open_calculator_dialog"}}
+    button_calculator.style.padding = -3
+
     local button_close = flow_right.add{type="sprite-button", tags={mod="fp", on_gui_click="close_main_dialog"},
         sprite="utility/close", tooltip={"fp.close_interface"}, style="fp_button_frame",
         mouse_button_filter={"left"}}

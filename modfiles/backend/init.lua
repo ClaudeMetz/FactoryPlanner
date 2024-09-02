@@ -100,6 +100,7 @@ end
 ---@field messages PlayerMessage[]
 ---@field main_elements table
 ---@field compact_elements table
+---@field calculator_elements table
 ---@field last_selected_picker_group integer?
 ---@field tooltips table
 ---@field modal_dialog_type ModalDialogType?
@@ -119,6 +120,7 @@ local function reset_ui_state(player_table)
         messages = {},
         main_elements = {},
         compact_elements = {},
+        calculator_elements = {},
         last_selected_picker_group = nil,
         tooltips = {},
 

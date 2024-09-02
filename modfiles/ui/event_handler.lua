@@ -2,6 +2,7 @@
 
 local event_listener_names = {
     "ui.base.main_dialog", "ui.base.compact_dialog", "ui.base.modal_dialog", "ui.base.item_views",
+    "ui.base.calculator_dialog",
     "ui.main.title_bar", "ui.main.district_info", "ui.main.factory_list", "ui.main.production_bar",
     "ui.main.districts_box", "ui.main.item_boxes", "ui.main.production_box", "ui.main.production_table",
     "ui.main.production_handler", "ui.elements.module_configurator",
@@ -250,6 +251,7 @@ local misc_identifier_map = {
     ["fp_confirm_dialog"] = "fp_confirm_dialog",
     ["fp_confirm_gui"] = "fp_confirm_gui",
     ["fp_focus_searchfield"] = "fp_focus_searchfield",
+    ["fp_toggle_calculator"] = "fp_toggle_calculator",
 
     [CUSTOM_EVENTS.build_gui_element] = "build_gui_element",
     [CUSTOM_EVENTS.refresh_gui_element] = "refresh_gui_element"
