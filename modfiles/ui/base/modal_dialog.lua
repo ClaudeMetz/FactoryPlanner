@@ -163,20 +163,22 @@ function modal_dialog.enter(player, metadata, dialog_open, early_abort)
     if early_abort ~= nil and early_abort(player, metadata.modal_data or {}) then return end
 
     local ui_state = util.globals.ui_state(player)
-    ui_state.modal_dialog_type = metadata.dialog
     ui_state.modal_data = metadata.modal_data or {}
     ui_state.modal_data.modal_elements = {}
     ui_state.modal_data.confirmed_dialog = false
     ui_state.modal_data.foldout_title = metadata.foldout_title
 
     -- Create interface_dimmer first so the layering works out correctly
-    local interface_dimmer = player.gui.screen.add{type="frame", style="fp_frame_semitransparent",
-        tags={mod="fp", on_gui_click="re-layer_interface_dimmer"}, visible=(not metadata.skip_dimmer)}
-    interface_dimmer.style.size = ui_state.main_dialog_dimensions
-    interface_dimmer.location = ui_state.main_elements.main_frame.location
-    ui_state.modal_data.modal_elements.interface_dimmer = interface_dimmer
+    if main_dialog.is_in_focus(player) then
+        local interface_dimmer = player.gui.screen.add{type="frame", style="fp_frame_semitransparent",
+            tags={mod="fp", on_gui_click="re-layer_interface_dimmer"}, visible=(not metadata.skip_dimmer)}
+        interface_dimmer.style.size = ui_state.main_dialog_dimensions
+        interface_dimmer.location = ui_state.main_elements.main_frame.location
+        ui_state.modal_data.modal_elements.interface_dimmer = interface_dimmer
+    end
 
     -- Create modal dialog framework and let the dialog itself fill it out
+    ui_state.modal_dialog_type = metadata.dialog
     local frame_modal_dialog = create_base_modal_dialog(player, metadata, ui_state.modal_data)
     dialog_open(player, ui_state.modal_data)
     player.opened = frame_modal_dialog
@@ -203,7 +205,7 @@ function modal_dialog.exit(player, action, skip_opened, dialog_close)
     ui_state.modal_dialog_type = nil
     ui_state.modal_data = nil
 
-    modal_elements.interface_dimmer.destroy()
+   if modal_elements.interface_dimmer then modal_elements.interface_dimmer.destroy() end
     modal_elements.modal_frame.destroy()
 
     if not skip_opened then player.opened = ui_state.main_elements.main_frame end

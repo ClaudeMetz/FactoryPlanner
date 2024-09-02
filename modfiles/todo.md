@@ -27,18 +27,19 @@
 - Change SimpleItems to be a dict instead of an array so there needs to be no fuss finding stuff
 - Balance District items against each other
 - Allow Factory products to take their amounts from the District's ingredients
-  - Not easy since it can result in loops so no definite state can be resolved.
-  - Just need the simplest version that works for now, so users will have to trigger the infinite loops
-    themselves with manual refreshes if they want to, thus also no loop detection for now
-  - Not exactly sure on the details of the refresh logic, will find it while implementing
-  - Should have a 'multiply District amount by X' variable too so you can overproduce on purpose
-  - Alternatively could have a district amount + the normal amount instead, a bit messy but could work well
+  - This link should not automatically pull new values from the District, for a couple reasons:
+    - First, it is annoying since your actual build won't update and thus the totals will be misleading
+    - Second, it's technically super difficult since it creates a dependency loop that can't easily be resolved
+  - You should just be able to enable this, and then have a way to pull the new amount on demand
+  - It should still be possible to have a normal amount too, so you can overproduce as you wish
 - Make recalculate_on_factory_change a factory property, not a UI one
   - Also set factories to be recalculated when a prod research finishes
 - Add feature to transfer items from district to district, mimmicing space platform transfers
   - In addition, it would be good if the mod could calculate your rocket and platform needs for the given items
   - Not super simple, needs constraints given by the user, like platform specs, and maybe others
   - Otherwise there won't be a unique solution. Kinda orthogonal in general, but would be helpful to have
+- Allow clicking on District items to see their origin/usage. Ideally click to go there directly, but that's
+  tricky since they can be from multiple places. Maybe a separate UI is warranted
 - Need an 'are you sure' dialog for deleting a District, resetting preferences, etc
 - Disable SA-specific features by checking feature flags in the right spots
 - Turn item spoilage results into recipes since mods will use that as a critical path for sure
@@ -47,9 +48,6 @@
 
 ## Low Priority
 
-- Add calculator window - button in main and compact windows, with keyboard shortcut
-  - Shortcut should work from anywhere. Calculator needs to be independent window pretty much, kinda tricky
-  - UI just simple but nice, with history. Use evaluate_expression for calculation, making things easy
 - Note when rocket silo launch time becomes a problem for speed; it's not at lower speeds
   - Is quite a complicated feature, especially when productivity is involved. Probably do need it though
 - Rocket silo power usage seems very low, likely doesn't consider launch usage
