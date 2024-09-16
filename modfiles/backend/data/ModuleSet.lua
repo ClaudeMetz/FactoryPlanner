@@ -162,7 +162,7 @@ function ModuleSet:sort()
     end
 
     self.first = nil
-    for _, category in ipairs(global.prototypes.modules) do
+    for _, category in ipairs(storage.prototypes.modules) do
         for _, module_proto in ipairs(category.members) do
             local module = modules_by_name[module_proto.name]
             if module then

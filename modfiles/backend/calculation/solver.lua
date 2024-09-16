@@ -274,8 +274,10 @@ function solver.set_factory_result(result)
     update_object_items(factory.top_floor, "ingredients", result.Ingredient)
 
     -- Determine satisfaction-amounts for all line ingredients
-    local preferences = global.players[result.player_index].preferences
-    if preferences.ingredient_satisfaction then solver.determine_ingredient_satisfaction(factory) end
+    local player = game.players[result.player_index]
+    if util.globals.preferences(player).ingredient_satisfaction then
+        solver.determine_ingredient_satisfaction(factory)
+    end
 end
 
 -- Updates the given line of the given floor of the active factory

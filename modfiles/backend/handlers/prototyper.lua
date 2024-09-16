@@ -4,10 +4,10 @@ prototyper = {
     util = {}
 }
 
--- The purpose of the prototyper is to recreate the global tables containing all relevant data types.
+-- The purpose of the prototyper is to recreate the storage tables containing all relevant data types.
 -- It also handles some other things related to prototypes, such as updating preferred ones, etc.
 -- Its purpose is to not lose any data, so if a dataset of a factory doesn't exist anymore
--- in the newly loaded global tables, it saves the name in string-form instead and makes the
+-- in the newly loaded storage tables, it saves the name in string-form instead and makes the
 -- concerned factory-dataset invalid. This accomplishes that invalid data is only permanently
 -- removed when the user tells the factory to repair itself, giving him a chance to re-add the
 -- missing mods. It is also a better separation of responsibilities and avoids some redundant code.
@@ -82,10 +82,10 @@ local function convert_and_sort(data_type, prototype_sorting_function)
     end
 
     if prototyper.data_types[data_type] == false then
-        final_list = apply(global.prototypes[data_type], prototype_sorting_function, nil)
+        final_list = apply(storage.prototypes[data_type], prototype_sorting_function, nil)
         ---@cast final_list IndexedPrototypes<FPPrototype>
     else
-        final_list = apply(global.prototypes[data_type], category_sorting_function, nil)
+        final_list = apply(storage.prototypes[data_type], category_sorting_function, nil)
         ---@cast final_list IndexedPrototypesWithCategory<FPPrototypeWithCategory>
         for id, category in pairs(final_list) do
             category.members = apply(category.members, prototype_sorting_function, id)
@@ -117,22 +117,22 @@ end
 function prototyper.build()
     for data_type, _ in pairs(prototyper.data_types) do
         ---@type AnyNamedPrototypes
-        global.prototypes[data_type] = generator[data_type].generate()
+        storage.prototypes[data_type] = generator[data_type].generate()
     end
 
     -- Second pass to do some things that can't be done in the first pass due to the strict sequencing
     for data_type, _ in pairs(prototyper.data_types) do
         local second_pass = generator[data_type].second_pass  ---@type fun(prototypes: NamedPrototypes)
-        if second_pass ~= nil then second_pass(global.prototypes[data_type]) end
+        if second_pass ~= nil then second_pass(storage.prototypes[data_type]) end
     end
 
     -- Finish up generation by converting lists to use ids as keys, and sort if desired
     for data_type, _ in pairs(prototyper.data_types) do
         local sorting_function = generator[data_type].sorting_function  ---@type SortingFunction
-        global.prototypes[data_type] = convert_and_sort(data_type, sorting_function)  ---@type AnyIndexedPrototypes
+        storage.prototypes[data_type] = convert_and_sort(data_type, sorting_function)  ---@type AnyIndexedPrototypes
     end
 
-    global.productivity_recipes = generate_productivity_recipes()
+    storage.productivity_recipes = generate_productivity_recipes()
 end
 
 
@@ -142,7 +142,7 @@ end
 ---@param category (integer | string)?
 ---@return (AnyFPPrototype | NamedCategory)?
 function prototyper.util.find(data_type, prototype, category)
-    local prototypes, prototype_map = global.prototypes[data_type], PROTOTYPE_MAPS[data_type]
+    local prototypes, prototype_map = storage.prototypes[data_type], PROTOTYPE_MAPS[data_type]
 
     if util.xor((category ~= nil), (prototype ~= nil)) then  -- either category or prototype provided
         local identifier = category or prototype
@@ -241,7 +241,7 @@ end
 
 -- Build the necessary RawDictionaries for translation
 function prototyper.util.build_translation_dictionaries()
-    for _, item_category in ipairs(global.prototypes.items) do
+    for _, item_category in ipairs(storage.prototypes.items) do
         translator.new(item_category.name)
         for _, proto in pairs(item_category.members) do
             translator.add(item_category.name, proto.name, proto.localised_name)
@@ -249,7 +249,7 @@ function prototyper.util.build_translation_dictionaries()
     end
 
     translator.new("recipe")
-    for _, proto in pairs(global.prototypes.recipes) do
+    for _, proto in pairs(storage.prototypes.recipes) do
         translator.add("recipe", proto.name, proto.localised_name)
     end
 end

@@ -1,4 +1,4 @@
--- This code handles the general migration process of the mod's global table
+-- This code handles the general migration process of the mod's storage table
 -- It decides whether and which migrations should be applied, in appropriate order
 
 local migrator = {}
@@ -69,7 +69,7 @@ end
 ---@param comparison_version VersionString?
 ---@return Migration[]?
 function migrator.determine_migrations(comparison_version)
-    local previous_version = global.installed_mods["factoryplanner"]
+    local previous_version = storage.installed_mods["factoryplanner"]
 
     -- 1.1.60 is the first version that can be properly migrated (doesn't apply to export strings)
     if not comparison_version and not compare_versions("1.1.59", previous_version) then return nil end

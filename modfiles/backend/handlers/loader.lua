@@ -14,7 +14,7 @@ local loader = {}
 local function ordered_recipe_groups()
     -- Make a dict with all recipe groups
     local group_dict = {}  ---@type { [string]: ItemGroup }
-    for _, recipe in pairs(global.prototypes.recipes) do
+    for _, recipe in pairs(storage.prototypes.recipes) do
         if group_dict[recipe.group.name] == nil then
             group_dict[recipe.group.name] = recipe.group
         end
@@ -46,7 +46,7 @@ end
 local function recipe_map_from(item_type)
     local map = {}  ---@type RecipeMap
 
-    for _, recipe in pairs(global.prototypes.recipes) do
+    for _, recipe in pairs(storage.prototypes.recipes) do
         for _, item in ipairs(recipe[item_type]) do
             local item_proto = prototyper.util.find("items", item.name, item.type)  ---@cast item_proto -nil
             map[item_proto.category_id] = map[item_proto.category_id] or {}
@@ -117,7 +117,7 @@ local function prototype_maps(data_types)
             ---@cast map MappedPrototypes<FPPrototype>
 
             ---@type IndexedPrototypes<FPPrototype>
-            local prototypes = global.prototypes[data_type]
+            local prototypes = storage.prototypes[data_type]
 
             for _, prototype in pairs(prototypes) do
                 map[prototype.name] = prototype
@@ -126,7 +126,7 @@ local function prototype_maps(data_types)
             ---@cast map MappedPrototypesWithCategory<FPPrototypeWithCategory>
 
             ---@type IndexedPrototypesWithCategory<FPPrototypeWithCategory>
-            local prototypes = global.prototypes[data_type]
+            local prototypes = storage.prototypes[data_type]
 
             for _, category in pairs(prototypes) do
                 map[category.name] = { name=category.name, id=category.id, members={} }
@@ -148,7 +148,7 @@ end
 local function module_name_map()
     local map = {}  ---@type ModuleMap
 
-    for _, category in pairs(global.prototypes.modules) do
+    for _, category in pairs(storage.prototypes.modules) do
         for _, module in pairs(category.members) do
             map[module.name] = module
         end
@@ -161,13 +161,13 @@ end
 
 local function generate_object_index()
     OBJECT_INDEX = {}  ---@type { [integer]: Object}
-    for _, player_table in pairs(global.players) do
+    for _, player_table in pairs(storage.players) do
         if not player_table.realm then return end  -- migration issue mitigation
         player_table.realm:index()  -- recursively indexes all objects
     end
 
-    if global.tutorial_factory then
-        global.tutorial_factory:index()
+    if storage.tutorial_factory then
+        storage.tutorial_factory:index()
     end
 end
 
@@ -175,7 +175,7 @@ end
 -- ** TOP LEVEL **
 ---@param skip_check boolean Whether the mod version check is skipped
 function loader.run(skip_check)
-    if not skip_check and script.active_mods["factoryplanner"] ~= global.installed_mods["factoryplanner"] then
+    if not skip_check and script.active_mods["factoryplanner"] ~= storage.installed_mods["factoryplanner"] then
         return  -- if the mod version changed, the loader will be re-run after migration anyways
     end
 

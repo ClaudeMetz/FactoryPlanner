@@ -384,7 +384,7 @@ function generator_util.recipe_tooltip(recipe)
         current_table, next_index = util.build_localised_string(energy_line, current_table, next_index)
     end
 
-    local item_protos = global.prototypes.items
+    local item_protos = storage.prototypes.items
     for _, item_type in ipairs{"ingredients", "products"} do
         local locale_key = (item_type == "ingredients") and "fp.pu_ingredient" or "fp.pu_product"
         local header_line = {"fp.recipe_header", {locale_key, 2}}

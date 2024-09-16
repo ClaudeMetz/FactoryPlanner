@@ -3,10 +3,10 @@
 local migration = {}
 
 function migration.global()
-    global.tutorial_factory_validity = nil
+    storage.tutorial_factory_validity = nil
 
     local data_types = {"machines", "recipes", "items", "fuels", "belts", "wagons", "modules", "beacons"}
-    for _, data_type in pairs(data_types) do global["all_" .. data_type] = nil end
+    for _, data_type in pairs(data_types) do storage["all_" .. data_type] = nil end
 end
 
 function migration.player_table(player_table)

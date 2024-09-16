@@ -173,7 +173,7 @@ local function refresh_districts_box(player)
 
     main_flow.clear()
     local location_items = {}
-    for _, proto in pairs(global.prototypes.locations) do
+    for _, proto in pairs(storage.prototypes.locations) do
         table.insert(location_items, {"", "[img=" .. proto.sprite .. "] ", proto.localised_name})
     end
 

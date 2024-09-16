@@ -19,7 +19,7 @@ local function open_tutorial_dialog(player, modal_data)
     flow_interactive.add{type="empty-widget", style="flib_horizontal_pusher"}
 
     -- Run solver to see if any lines don't do anything, indicating an unuseful example
-    local tutorial_factory = global.tutorial_factory
+    local tutorial_factory = storage.tutorial_factory
     if tutorial_factory then
         --solver.update(player, tutorial_factory)  -- disabled because annoying
         for line in tutorial_factory.top_floor:iterator() do
@@ -60,7 +60,7 @@ listeners.gui = {
             timeout = 20,
             handler = (function(player, _, _)
                 -- If this button can be pressed, the tutorial factory is valid implicitly
-                local clone = global.tutorial_factory:clone()
+                local clone = storage.tutorial_factory:clone()
                 util.context.get(player, "District"):insert(clone)
                 solver.update(player, clone)
 

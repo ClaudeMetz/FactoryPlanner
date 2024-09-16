@@ -121,7 +121,7 @@ local function handle_gui_event(event)
     if tags.mod ~= "fp" then return end
 
     -- Guard against an event being called before the player is initialized
-    if not global.players[event.player_index] then return end
+    if not storage.players[event.player_index] then return end
 
     -- GUI events always have an associated player
     local player = game.get_player(event.player_index)  ---@cast player -nil
@@ -191,7 +191,7 @@ end
 
 local function handle_dialog_event(event)
     -- Guard against an event being called before the player is initialized
-    if not global.players[event.player_index] then return end
+    if not storage.players[event.player_index] then return end
 
     -- These custom events always have an associated player
     local player = game.get_player(event.player_index)  ---@cast player -nil
@@ -296,7 +296,7 @@ local function handle_misc_event(event)
     if not event_handlers then return end  -- make sure the given event is even handled
 
     -- Guard against an event being called before the player is initialized
-    if not global.players[event.player_index] then return end
+    if not storage.players[event.player_index] then return end
 
     -- We'll assume every one of the events has a player attached
     local player = game.get_player(event.player_index)   ---@cast player -nil
@@ -322,7 +322,7 @@ for event_id, _ in pairs(misc_identifier_map) do script.on_event(event_id, handl
 
 -- ** GLOBAL HANDLERS **
 -- In some situations, you need to be able to refer to a function indirectly by string name.
--- As functions can't be stored in global, these need to be collected and stored in a central placem
+-- As functions can't be stored in storage, these need to be collected and stored in a central placem
 -- so code that wants to call them knows where to find them. This collects and stores these functions.
 for _, listener in pairs(event_listeners) do
     if listener.global then

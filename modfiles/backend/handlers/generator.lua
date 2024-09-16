@@ -273,7 +273,7 @@ end
 function generator.machines.second_pass(machines)
     -- Go over all recipes to find unused categories
     local used_category_names = {}  ---@type { [string]: boolean }
-    for _, recipe_proto in pairs(global.prototypes.recipes) do
+    for _, recipe_proto in pairs(storage.prototypes.recipes) do
         used_category_names[recipe_proto.category] = true
     end
 
@@ -289,7 +289,7 @@ function generator.machines.second_pass(machines)
             if machine_proto.energy_type == "burner" then
                 local category_found = false
                 for fuel_category in pairs(machine_proto.burner.categories) do
-                    if global.prototypes.fuels[fuel_category] then category_found = true; break end
+                    if storage.prototypes.fuels[fuel_category] then category_found = true; break end
                 end
                 if not category_found then remove_prototype(machines, machine_proto.name, machine_category.name) end
             end
@@ -301,7 +301,7 @@ function generator.machines.second_pass(machines)
 
 
     -- Replace built_by_item names with prototype references
-    local item_prototypes = global.prototypes.items["item"].members  ---@type { [string]: FPItemPrototype }
+    local item_prototypes = storage.prototypes.items["item"].members  ---@type { [string]: FPItemPrototype }
     for _, machine_category in pairs(machines) do
         for _, machine_proto in pairs(machine_category.members) do
             if machine_proto.built_by_item then
@@ -382,7 +382,7 @@ function generator.recipes.generate()
     local recipe_filter = {{filter="energy", comparison=">", value=0},
         {filter="energy", comparison="<", value=1e+21, mode="and"}}
     for recipe_name, proto in pairs(game.get_filtered_recipe_prototypes(recipe_filter)) do
-        local machine_category = global.prototypes.machines[proto.category]  ---@type { [string]: FPMachinePrototype }
+        local machine_category = storage.prototypes.machines[proto.category]  ---@type { [string]: FPMachinePrototype }
         -- Avoid any recipes that have no machine to produce them, or are irrelevant
         if machine_category ~= nil and not generator_util.is_irrelevant_recipe(proto) and not proto.is_parameter then
             local recipe = {
@@ -608,7 +608,7 @@ end
 
 ---@param recipes NamedPrototypes<FPRecipePrototype>
 function generator.recipes.second_pass(recipes)
-    local machines = global.prototypes.machines
+    local machines = storage.prototypes.machines
     for _, recipe in pairs(recipes) do
         -- Check again if all recipes still have a machine to produce them after machine second pass
         if not machines[recipe.category] then
@@ -658,7 +658,7 @@ function generator.items.generate()
 
     -- Create a table containing every item that is either a product or an ingredient to at least one recipe
     local relevant_items = {}  ---@type RelevantItems
-    for _, recipe_proto in pairs(global.prototypes.recipes) do
+    for _, recipe_proto in pairs(storage.prototypes.recipes) do
         for _, product in pairs(recipe_proto.products) do
             add_item(relevant_items, {proto=product, is_product=true})
         end
@@ -787,7 +787,7 @@ function generator.fuels.generate()
         {filter="hidden", invert=true, mode="and"} ]]}
 
     -- Build solid fuels - to be combined into categories afterwards
-    local item_list = global.prototypes.items["item"].members  ---@type NamedPrototypesWithCategory<FPItemPrototype>
+    local item_list = storage.prototypes.items["item"].members  ---@type NamedPrototypesWithCategory<FPItemPrototype>
     local fuel_categories = {}  -- temporary list to be combined later
     for _, proto in pairs(game.get_filtered_item_prototypes(fuel_filter)) do
         -- Only use fuels that were actually detected/accepted to be items
@@ -812,7 +812,7 @@ function generator.fuels.generate()
 
     -- Create category for each combination of fuel used by machines
     -- Also filters out any fuels that aren't used by any actual machine
-    for _, machine_category in pairs(global.prototypes.machines) do
+    for _, machine_category in pairs(storage.prototypes.machines) do
         for _, machine_proto in pairs(machine_category.members) do
             if machine_proto.burner then
                 local combined_category = machine_proto.burner.combined_category
@@ -827,7 +827,7 @@ function generator.fuels.generate()
     end
 
     -- Add liquid fuels - they are a category of their own always
-    local fluid_list = global.prototypes.items["fluid"].members  ---@type NamedPrototypesWithCategory<FPItemPrototype>
+    local fluid_list = storage.prototypes.items["fluid"].members  ---@type NamedPrototypesWithCategory<FPItemPrototype>
     for _, proto in pairs(game.get_filtered_fluid_prototypes(fuel_filter)) do
         -- Only use fuels that have actually been detected/accepted as fluids
         if fluid_list[proto.name] then
@@ -1008,7 +1008,7 @@ function generator.beacons.generate()
     local beacons = {}  ---@type NamedPrototypes<FPBeaconPrototype>
 
     ---@type NamedPrototypesWithCategory<FPItemPrototype>
-    local item_prototypes = global.prototypes.items["item"].members
+    local item_prototypes = storage.prototypes.items["item"].members
 
     local beacon_filter = {{filter="type", type="beacon"}, {filter="hidden", invert=true, mode="and"}}
     for _, proto in pairs(game.get_filtered_entity_prototypes(beacon_filter)) do

@@ -228,15 +228,15 @@ function Factory:validate()
 
     -- Remove any invalid boni, no need to mark the factory as invalid
     for recipe_name, _ in pairs(self.productivity_boni) do
-        if not global.productivity_recipes[recipe_name] then
+        if not storage.productivity_recipes[recipe_name] then
             self.productivity_boni[recipe_name] = nil
         end
     end
 
     if self.valid then self.last_valid_modset = nil
     -- If this factory became invalid with the current configuration, retain the modset before the current one
-    -- The one in global is still the previous one as it's only updated after migrations
-    elseif previous_validity and not self.valid then self.last_valid_modset = global.installed_mods end
+    -- The one in storage is still the previous one as it's only updated after migrations
+    elseif previous_validity and not self.valid then self.last_valid_modset = storage.installed_mods end
 
     return self.valid
 end
