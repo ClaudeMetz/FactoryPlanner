@@ -20,7 +20,7 @@ local Object = {}  -- class annotation purposefully not attached
 function Object.init(data, class, metatable)
     local object = ftable.shallow_merge{
         {
-            id = global.next_object_ID,
+            id = storage.next_object_ID,
             class = class,
             valid = true,
             parent = nil,
@@ -29,7 +29,7 @@ function Object.init(data, class, metatable)
         },
         data
     }
-    global.next_object_ID = global.next_object_ID + 1
+    storage.next_object_ID = storage.next_object_ID + 1
 
     setmetatable(object, metatable)
 

@@ -7,12 +7,12 @@ script.on_event(defines.events.on_game_created_from_scenario, function()
 
     -- Excuse the stupid move naming, this has been a long process
     -- (it totally doesn't correlate to the actual meanings in a sensible way)
-    global.scene = 1
-    global.shot = 1
-    global.pause = 10
+    storage.scene = 1
+    storage.shot = 1
+    storage.pause = 10
 
-    global.setup = function() remote.call("screenshotter_input", "execute_action", 1, "player_setup") end
-    global.dimensions = {}
+    storage.setup = function() remote.call("screenshotter_input", "execute_action", 1, "player_setup") end
+    storage.dimensions = {}
 
     remote.call("screenshotter_input", "initial_setup")
 end)
@@ -20,14 +20,14 @@ end)
 
 remote.add_interface("screenshotter_output", {
     return_dimensions = function(scene, dimensions)
-        global.dimensions[scene] = dimensions
+        storage.dimensions[scene] = dimensions
     end
 })
 
 local function write_metadata_file()
     local frame_corners = {}
 
-    for scene, dimensions in pairs(global.dimensions) do
+    for scene, dimensions in pairs(storage.dimensions) do
         local location, size = dimensions.location, dimensions.actual_size
         frame_corners[scene] = {
             top_left = {x = location.x, y = location.y},
@@ -54,7 +54,7 @@ local scenes = {
 local shots = {
     function(scene)
         remote.call("screenshotter_input", "execute_action", 1, ("setup_" .. scene))
-        global.pause = 20
+        storage.pause = 20
     end,
     function(scene)
         game.take_screenshot{path=(scene .. ".png"), show_gui=true, zoom=3}
@@ -65,24 +65,24 @@ local shots = {
 }
 
 script.on_event(defines.events.on_tick, function()
-    if global.setup then
-        global.setup()
-        global.setup = nil
+    if storage.setup then
+        storage.setup()
+        storage.setup = nil
     end
 
-    if global.pause > 0 then
-        global.pause = global.pause - 1
+    if storage.pause > 0 then
+        storage.pause = storage.pause - 1
     else
-        local scene, shot = scenes[global.scene], shots[global.shot]
+        local scene, shot = scenes[storage.scene], shots[storage.shot]
         shot(scene)  -- execute the current shot
 
-        global.shot = global.shot + 1
-        if global.shot > table_size(shots) then
-            global.scene = global.scene + 1
-            global.shot = 1
+        storage.shot = storage.shot + 1
+        if storage.shot > table_size(shots) then
+            storage.scene = storage.scene + 1
+            storage.shot = 1
         end
 
-        if global.scene > table_size(scenes) then
+        if storage.scene > table_size(scenes) then
             write_metadata_file()
             script.on_event(defines.events.on_tick, nil)
             print("screenshotter_done")  -- let script know to kill Factorio

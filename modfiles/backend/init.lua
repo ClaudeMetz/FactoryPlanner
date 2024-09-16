@@ -145,8 +145,8 @@ end
 
 ---@param player LuaPlayer
 local function player_init(player)
-    global.players[player.index] = {}  --[[@as table]]
-    local player_table = global.players[player.index]
+    storage.players[player.index] = {}  --[[@as table]]
+    local player_table = storage.players[player.index]
 
     player_table.realm = Realm.init()
     util.context.init(player_table)
@@ -172,7 +172,7 @@ end
 
 ---@param player LuaPlayer
 local function refresh_player_table(player)
-    local player_table = global.players[player.index]
+    local player_table = storage.players[player.index]
 
     defaults.migrate(player_table)
 
@@ -208,7 +208,7 @@ end
 ---@field productivity_recipes ProductivityRecipes
 ---@field installed_mods ModToVersion
 ---@field tutorial_factory Factory?
-global = {}  -- just for the type checker, doesn't do anything
+storage = {}  -- just for the type checker, doesn't do anything
 
 local function global_init()
     -- Set up a new save for development if necessary
@@ -218,16 +218,16 @@ local function global_init()
         if freeplay["set_disable_crashsite"] then remote.call("freeplay", "set_disable_crashsite", true) end
     end
 
-    global.players = {}  -- Table containing all player-specific data
-    global.next_object_ID = 1  -- Counter used for assigning incrementing IDs to all objects
-    global.nth_tick_events = {}  -- Save metadata about currently registered on_nth_tick events
+    storage.players = {}  -- Table containing all player-specific data
+    storage.next_object_ID = 1  -- Counter used for assigning incrementing IDs to all objects
+    storage.nth_tick_events = {}  -- Save metadata about currently registered on_nth_tick events
 
-    global.prototypes = {}  -- Table containing all relevant prototypes indexed by ID
-    prototyper.build()  -- Generate all relevant prototypes and save them in global
+    storage.prototypes = {}  -- Table containing all relevant prototypes indexed by ID
+    prototyper.build()  -- Generate all relevant prototypes and save them in storage
     loader.run(true)  -- Run loader which creates useful indexes of prototype data
 
-    global.installed_mods = script.active_mods  -- Retain current modset to detect mod changes for invalid factories
-    global.tutorial_factory = import_tutorial_factory()  -- Import the tutorial factory to validate and cache it
+    storage.installed_mods = script.active_mods  -- Retain current modset to detect mod changes for invalid factories
+    storage.tutorial_factory = import_tutorial_factory()  -- Import the tutorial factory to validate and cache it
 
     translator.on_init()  -- Initialize flib's translation module
     prototyper.util.build_translation_dictionaries()
@@ -241,7 +241,7 @@ local function handle_configuration_change()
 
     if not migrations then  -- implies this save can't be migrated anymore
         for _, player in pairs(game.players) do util.gui.reset_player(player) end
-        global = {}; global_init()
+        storage = {}; global_init()
         game.print{"fp.mod_reset"};
         return
     end
@@ -250,7 +250,7 @@ local function handle_configuration_change()
     migrator.migrate_player_tables(migrations)
 
     -- Re-build prototypes
-    global.prototypes = {}
+    storage.prototypes = {}
     prototyper.build()
     loader.run(true)
 
@@ -261,13 +261,13 @@ local function handle_configuration_change()
         util.gui.toggle_mod_gui(player)  -- Recreates the mod-GUI if necessary
 
         -- Update calculations in case prototypes changed in a relevant way
-        for district in global.players[index].realm:iterator() do
+        for district in storage.players[index].realm:iterator() do
             for factory in district:iterator() do solver.update(player, factory) end
         end
     end
 
-    global.installed_mods = script.active_mods
-    global.tutorial_factory = import_tutorial_factory()
+    storage.installed_mods = script.active_mods
+    storage.tutorial_factory = import_tutorial_factory()
 
     translator.on_configuration_changed()
     prototyper.util.build_translation_dictionaries()
@@ -289,7 +289,7 @@ script.on_event(defines.events.on_player_created, function(event)
 end)
 
 script.on_event(defines.events.on_player_removed, function(event)
-    global.players[event.player_index] = nil
+    storage.players[event.player_index] = nil
 end)
 
 

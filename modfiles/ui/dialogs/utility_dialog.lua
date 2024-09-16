@@ -269,7 +269,7 @@ function utility_structures.productivity_boni(player, modal_data)
     table.add{type="label", caption={"fp.current"}, style="bold_label"}
     table.add{type="label", caption={"fp.custom"}, style="bold_label"}
 
-    for recipe_name in pairs(global.productivity_recipes) do
+    for recipe_name in pairs(storage.productivity_recipes) do
         local recipe_proto = prototyper.util.find("recipes", recipe_name, nil)  --[[@as FPRecipePrototype]]
         local caption = (recipe_name == "custom-mining")
             and {"", "[img=utility/mining_drill_productivity_bonus_modifier_icon]  ", {"fp.mining_recipes"}}

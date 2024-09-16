@@ -16,10 +16,10 @@ local function refresh_defaults_table(player, modal_elements, type, category_id)
 
     if not category_id then
         table_prototypes = modal_elements[type]
-        prototypes = global.prototypes[type]
+        prototypes = storage.prototypes[type]
     else
         table_prototypes = modal_elements[type][category_id]
-        prototypes = global.prototypes[type][category_id].members
+        prototypes = storage.prototypes[type][category_id].members
     end
 
     table_prototypes.clear()
@@ -139,7 +139,7 @@ function preference_structures.wagons(player, content_frame, modal_elements)
     local preference_box = add_preference_box(content_frame, "default_wagons")
     local table_prototypes = preference_box.add{type="table", column_count=3}
 
-    local categories = global.prototypes.wagons
+    local categories = storage.prototypes.wagons
     if not next(categories) then preference_box.visible = false; return end
 
     local any_category_visible = false

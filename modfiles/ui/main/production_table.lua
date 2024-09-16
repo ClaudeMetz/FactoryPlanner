@@ -435,7 +435,7 @@ local function refresh_production_table(player)
     for _, column_data in ipairs(all_production_columns) do
         -- Explicit preferences comparison needed here, as both true and nil columns should be shown
         -- Some mods might remove all beacons, in which case the column shouldn't be shown at all
-        if preferences[column_data.name .. "_column"] ~= false and (next(global.prototypes.beacons) ~= nil) then
+        if preferences[column_data.name .. "_column"] ~= false and (next(storage.prototypes.beacons) ~= nil) then
             table.insert(production_columns, column_data)
         end
     end

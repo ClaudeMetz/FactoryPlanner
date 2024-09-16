@@ -18,7 +18,7 @@ local _porter = {}
 ---@return ExportString
 function _porter.generate_export_string(factories)
     local export_table = {
-        export_modset = global.installed_mods,
+        export_modset = storage.installed_mods,
         factories = {}
     }
 

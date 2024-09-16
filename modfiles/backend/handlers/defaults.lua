@@ -74,7 +74,7 @@ function defaults.set_all(player, data_type, data)
     -- Doesn't make sense for prototypes without categories, just use .set() instead
     if prototyper.data_types[data_type] == false then return end
 
-    for _, category_data in pairs(global.prototypes[data_type]) do
+    for _, category_data in pairs(storage.prototypes[data_type]) do
         if table_size(category_data.members) > 1 then  -- don't change single-member categories
             local matched_prototype = prototyper.util.find(data_type, data.prototype, category_data.id)
             if matched_prototype then
@@ -105,7 +105,7 @@ end
 ---@param object Machine | Fuel
 ---@return boolean equals_all
 function defaults.equals_all_defaults(player, data_type, object)
-    for _, category_data in pairs(global.prototypes[data_type]) do
+    for _, category_data in pairs(storage.prototypes[data_type]) do
         local in_category = (prototyper.util.find(data_type, object.proto.name, category_data.id) ~= nil)
         local equals_default = defaults.equals_default(player, data_type, object, category_data.id)
         if in_category and not equals_default then
@@ -122,8 +122,8 @@ local prototypes_with_quality = {machines=true, beacons=true, modules=true}
 ---@param data_type DataType
 ---@return AnyPrototypeDefault
 function defaults.get_fallback(data_type)
-    local prototypes = global.prototypes[data_type]  ---@type AnyIndexedPrototypes
-    local default_quality = prototypes_with_quality[data_type] and global.prototypes.qualities[1] or nil
+    local prototypes = storage.prototypes[data_type]  ---@type AnyIndexedPrototypes
+    local default_quality = prototypes_with_quality[data_type] and storage.prototypes.qualities[1] or nil
 
     local fallback = nil
     if prototyper.data_types[data_type] == false then
@@ -208,7 +208,7 @@ function defaults.migrate(player_table)
             end
 
             local new_defaults = {}
-            for _, category in pairs(global.prototypes[data_type]) do
+            for _, category in pairs(storage.prototypes[data_type]) do
                 local previous_default = default_map[category.name]
                 new_defaults[category.id] = (not previous_default) and fallback[category.id]
                     or migrate_prototype_default(data_type, fallback[category.id], previous_default, category.name)
