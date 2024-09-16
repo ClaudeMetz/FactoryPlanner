@@ -301,12 +301,6 @@ local function open_preferences_dialog(player, modal_data)
     local production_preference_names = {"done_column", "percentage_column", "line_comment_column"}
     preference_structures.checkboxes(preferences, left_content_frame, "production", production_preference_names)
 
-    left_content_frame.add{type="empty-widget", style="flib_vertical_pusher"}
-    local support_frame = left_content_frame.add{type="frame", direction="vertical", style="fp_frame_bordered_stretch"}
-    support_frame.style.top_margin = -4
-    support_frame.style.horizontal_align = "center"
-    support_frame.add{type="label", caption={"fp.preferences_support"}}
-
     -- Right side
     local right_content_frame = modal_elements.secondary_frame
     right_content_frame.style.width = 336
@@ -314,6 +308,11 @@ local function open_preferences_dialog(player, modal_data)
     preference_structures.views(player, right_content_frame, modal_elements)
     preference_structures.belts(player, right_content_frame, modal_elements)
     preference_structures.wagons(player, right_content_frame, modal_elements)
+
+    right_content_frame.add{type="empty-widget", style="flib_vertical_pusher"}
+    local support_frame = right_content_frame.add{type="frame", direction="vertical", style="fp_frame_bordered_stretch"}
+    support_frame.style.top_padding = 8
+    support_frame.add{type="label", caption={"fp.preferences_support"}}
 end
 
 local function close_preferences_dialog(player, _)
