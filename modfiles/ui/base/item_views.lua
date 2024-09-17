@@ -10,7 +10,7 @@ function processors.items_per_timescale(metadata, raw_amount, item_proto, _)
 end
 
 function processors.belts_or_lanes(metadata, raw_amount, item_proto, _)
-    if item_proto.type == "fluid" then return nil, nil end  -- fluids don't make sense here
+    if item_proto.type == "fluid" then return nil, {"fp.fluid_item"} end
 
     local raw_number = raw_amount * metadata.throughput_multiplier
     local number = util.format.number(raw_number, metadata.formatting_precision)
@@ -23,7 +23,7 @@ function processors.belts_or_lanes(metadata, raw_amount, item_proto, _)
 end
 
 function processors.items_per_second_per_machine(metadata, raw_amount, item_proto, machine_count)
-    if machine_count == 0 then return 0, "" end  -- avoid division by zero
+    if machine_count == 0 then return 0, nil end  -- avoid division by zero
 
     local raw_number = raw_amount / (math.ceil((machine_count or 1) - 0.001))
     local number = util.format.number(raw_number, metadata.formatting_precision)
@@ -38,7 +38,7 @@ function processors.items_per_second_per_machine(metadata, raw_amount, item_prot
 end
 
 function processors.stacks_per_timescale(metadata, raw_amount, item_proto, _)
-    if item_proto.type == "fluid" then return nil, nil end  -- fluids don't make sense here
+    if item_proto.type == "fluid" then return nil, {"fp.fluid_item"} end
 
     local raw_number = (raw_amount * metadata.timescale) / item_proto.stack_size
     local number = util.format.number(raw_number, metadata.formatting_precision)
@@ -63,7 +63,8 @@ end
 
 local lift_capactity = 1000000  -- There is no API to read this utility constant
 function processors.rockets_per_timescale(metadata, raw_amount, item_proto, _)
-    if item_proto.type == "fluid" then return nil, nil end  -- fluids don't make sense here
+    if item_proto.type == "fluid" then return nil, {"fp.fluid_item"} end
+    if item_proto.weight > lift_capactity then return nil, {"fp.item_too_heavy"} end
 
     local total_weight = raw_amount * metadata.timescale * item_proto.weight
     local raw_number = total_weight / lift_capactity
