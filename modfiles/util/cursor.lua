@@ -26,7 +26,7 @@ end
 ---@param object Machine | Beacon
 ---@return boolean success
 function _cursor.set_entity(player, line, object)
-    local entity_prototype = game.entity_prototypes[object.proto.name]
+    local entity_prototype = prototypes.entity[object.proto.name]
     if entity_prototype.has_flag("not-blueprintable") or not entity_prototype.has_flag("player-creation")
             or entity_prototype.items_to_place_this == nil then
         _cursor.create_flying_text(player, {"fp.put_into_cursor_failed", entity_prototype.localised_name})

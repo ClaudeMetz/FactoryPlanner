@@ -70,6 +70,9 @@
 - Adjust utility dialog handcrafting to behave like vanilla crafting does in all ways
 - Main interface toggles/builds? 4 times when starting a save, which is weird
   - Check refreshes in general, maybe write a tool that flags when multiple refreshes happen in sequence
+- Look into building prototypes on_load instead of saving them in global
+  - Theoretically better, but the data structures still save direct pointers to them in global
+  - Not sure if I want to avoid that by replacing it with a reference that needs to be resolved every time
 
 ## Waiting on
 
