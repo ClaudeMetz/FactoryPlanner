@@ -193,7 +193,7 @@ function generator.machines.generate()
         return machine
     end
 
-    for _, proto in pairs(game.entity_prototypes) do
+    for _, proto in pairs(prototypes.entity) do
         if proto.crafting_categories and not proto.hidden and proto.energy_usage ~= nil
                 and not generator_util.is_irrelevant_machine(proto) then
             for category, _ in pairs(proto.crafting_categories) do
@@ -360,7 +360,7 @@ function generator.recipes.generate()
     -- Determine researchable recipes
     local researchable_recipes = {}  ---@type { [string]: string[] }
     local tech_filter = {{filter="hidden", invert=true}, {filter="has-effects", mode="and"}}
-    for _, tech_proto in pairs(game.get_filtered_technology_prototypes(tech_filter)) do
+    for _, tech_proto in pairs(prototypes.get_technology_filtered(tech_filter)) do
         for _, effect in pairs(tech_proto.effects) do
             if effect.type == "unlock-recipe" then
                 local recipe_name = effect.recipe
@@ -372,7 +372,7 @@ function generator.recipes.generate()
 
     -- Determine which plant is created by which seed
     local plant_seed_map = {}
-    for _, item_proto in pairs(game.item_prototypes) do
+    for _, item_proto in pairs(prototypes.item) do
         if item_proto.plant_result then
             plant_seed_map[item_proto.plant_result.name] = item_proto.name
         end
@@ -381,7 +381,7 @@ function generator.recipes.generate()
     -- Add all standard recipes
     local recipe_filter = {{filter="energy", comparison=">", value=0},
         {filter="energy", comparison="<", value=1e+21, mode="and"}}
-    for recipe_name, proto in pairs(game.get_filtered_recipe_prototypes(recipe_filter)) do
+    for recipe_name, proto in pairs(prototypes.get_recipe_filtered(recipe_filter)) do
         local machine_category = storage.prototypes.machines[proto.category]  ---@type { [string]: FPMachinePrototype }
         -- Avoid any recipes that have no machine to produce them, or are irrelevant
         if machine_category ~= nil and not generator_util.is_irrelevant_recipe(proto) and not proto.is_parameter then
@@ -413,7 +413,7 @@ function generator.recipes.generate()
         end
     end
 
-    for _, proto in pairs(game.entity_prototypes) do
+    for _, proto in pairs(prototypes.entity) do
         if proto.type == "resource" and not proto.hidden then
             local products = proto.mineable_properties.products
             if not products then goto incompatible_proto end
@@ -478,13 +478,13 @@ function generator.recipes.generate()
             ::incompatible_proto::
 
         elseif proto.type == "rocket-silo" and not proto.hidden then
-            local parts_recipe = game.recipe_prototypes[proto.fixed_recipe]
+            local parts_recipe = prototypes.recipe[proto.fixed_recipe]
 
             -- Add special research rocket recipe
             local research_recipe = custom_recipe()
             local research_products = proto.rocket_entity_prototype.research_products
             if research_products == nil then goto incompatible_proto end
-            local main_proto = game.item_prototypes[research_products[1].name]
+            local main_proto = prototypes.item[research_products[1].name]
 
             research_recipe.name = "impostor-" .. main_proto.name .. "-rocket"
             research_recipe.localised_name = {"", main_proto.localised_name, " ", {"fp.research_rocket"}}
@@ -553,7 +553,7 @@ function generator.recipes.generate()
 
     -- Add offshore pump recipes
     local pumped_fluids = {}
-    for _, proto in pairs(game.tile_prototypes) do
+    for _, proto in pairs(prototypes.tile) do
         if proto.fluid and not pumped_fluids[proto.fluid.name] and not proto.hidden then
             pumped_fluids[proto.fluid.name] = true
 
@@ -574,7 +574,7 @@ function generator.recipes.generate()
     end
 
     -- Add a general steam recipe that works with every boiler
-    --[[ if game["fluid_prototypes"]["steam"] then  -- make sure the steam prototype exists
+    --[[ if prototypes.fluid["steam"] then  -- make sure the steam prototype exists
         local recipe = custom_recipe()
         recipe.name = "fp-general-steam"
         recipe.localised_name = {"fluid-name.steam"}
@@ -671,7 +671,7 @@ function generator.items.generate()
     -- Build custom items, representing in-world entities mostly
     local custom_items, rocket_parts = {}, {}
 
-    for _, proto in pairs(game.entity_prototypes) do
+    for _, proto in pairs(prototypes.entity) do
         if proto.type == "resource" and not proto.hidden then
             local item_name = "custom-" .. proto.name
             custom_items[item_name] = {
@@ -685,13 +685,13 @@ function generator.items.generate()
 
         -- Mark rocket silo part items here so they can be marked as non-hidden
         elseif proto.type == "rocket-silo" and not proto.hidden then
-            local parts_recipe = game.recipe_prototypes[proto.fixed_recipe]
+            local parts_recipe = prototypes.recipe[proto.fixed_recipe]
             rocket_parts[parts_recipe.main_product.name] = true
         end
     end
 
     local pumped_fluids = {}
-    for _, proto in pairs(game.tile_prototypes) do
+    for _, proto in pairs(prototypes.tile) do
         if proto.fluid and not pumped_fluids[proto.fluid.name] and not proto.hidden then
             pumped_fluids[proto.fluid.name] = true
 
@@ -732,7 +732,7 @@ function generator.items.generate()
     for type, item_table in pairs(relevant_items) do
         for item_name, item_details in pairs(item_table) do
             local proto = (type == "entity") and custom_items[item_name] or
-                game[type .. "_prototypes"][item_name]  ---@type LuaItemPrototype | LuaFluidPrototype
+                prototypes[type][item_name]  ---@type LuaItemPrototype | LuaFluidPrototype
 
             local item = {
                 name = item_name,
@@ -789,7 +789,7 @@ function generator.fuels.generate()
     -- Build solid fuels - to be combined into categories afterwards
     local item_list = storage.prototypes.items["item"].members  ---@type NamedPrototypesWithCategory<FPItemPrototype>
     local fuel_categories = {}  -- temporary list to be combined later
-    for _, proto in pairs(game.get_filtered_item_prototypes(fuel_filter)) do
+    for _, proto in pairs(prototypes.get_item_filtered(fuel_filter)) do
         -- Only use fuels that were actually detected/accepted to be items
         if item_list[proto.name] then
             local fuel = {
@@ -828,7 +828,7 @@ function generator.fuels.generate()
 
     -- Add liquid fuels - they are a category of their own always
     local fluid_list = storage.prototypes.items["fluid"].members  ---@type NamedPrototypesWithCategory<FPItemPrototype>
-    for _, proto in pairs(game.get_filtered_fluid_prototypes(fuel_filter)) do
+    for _, proto in pairs(prototypes.get_fluid_filtered(fuel_filter)) do
         -- Only use fuels that have actually been detected/accepted as fluids
         if fluid_list[proto.name] then
             local fuel = {
@@ -866,7 +866,7 @@ function generator.belts.generate()
 
     local belt_filter = {{filter="type", type="transport-belt"},
         {filter="hidden", invert=true, mode="and"}}
-    for _, proto in pairs(game.get_filtered_entity_prototypes(belt_filter)) do
+    for _, proto in pairs(prototypes.get_entity_filtered(belt_filter)) do
         local sprite = generator_util.determine_entity_sprite(proto)
         if sprite ~= nil then
             local belt = {
@@ -909,7 +909,7 @@ function generator.wagons.generate()
     -- Add cargo wagons
     local cargo_wagon_filter = {{filter="type", type="cargo-wagon"},
         {filter="hidden", invert=true, mode="and"}}
-    for _, proto in pairs(game.get_filtered_entity_prototypes(cargo_wagon_filter)) do
+    for _, proto in pairs(prototypes.get_entity_filtered(cargo_wagon_filter)) do
         local inventory_size = proto.get_inventory_size(defines.inventory.cargo_wagon)
         if inventory_size > 0 then
             local wagon = {
@@ -928,7 +928,7 @@ function generator.wagons.generate()
     -- Add fluid wagons
     local fluid_wagon_filter = {{filter="type", type="fluid-wagon"},
         {filter="hidden", invert=true, mode="and"}}
-    for _, proto in pairs(game.get_filtered_entity_prototypes(fluid_wagon_filter)) do
+    for _, proto in pairs(prototypes.get_entity_filtered(fluid_wagon_filter)) do
         if proto.fluid_capacity > 0 then
             local wagon = {
                 name = proto.name,
@@ -968,7 +968,7 @@ function generator.modules.generate()
     local modules = {}  ---@type NamedPrototypesWithCategory<FPModulePrototype>
 
     local module_filter = {{filter="type", type="module"}--[[ , {filter="hidden", invert=true, mode="and"} ]]}
-    for _, proto in pairs(game.get_filtered_item_prototypes(module_filter)) do
+    for _, proto in pairs(prototypes.get_item_filtered(module_filter)) do
         local sprite = "item/" .. proto.name
         if game.is_valid_sprite_path(sprite) then
             local module = {
@@ -1011,7 +1011,7 @@ function generator.beacons.generate()
     local item_prototypes = storage.prototypes.items["item"].members
 
     local beacon_filter = {{filter="type", type="beacon"}, {filter="hidden", invert=true, mode="and"}}
-    for _, proto in pairs(game.get_filtered_entity_prototypes(beacon_filter)) do
+    for _, proto in pairs(prototypes.get_entity_filtered(beacon_filter)) do
         local sprite = generator_util.determine_entity_sprite(proto)
         if sprite ~= nil and proto.module_inventory_size > 0 and proto.distribution_effectivity > 0 then
             -- Beacons can refer to the actual item prototype right away because they are built after items are
@@ -1054,7 +1054,7 @@ local function generate_surface_properties()
         return false
     end
 
-    for _, proto in pairs(game.surface_property_prototypes) do
+    for _, proto in pairs(prototypes.surface_property) do
         table.insert(properties, {
             name = proto.name,
             order = proto.order,
@@ -1117,14 +1117,14 @@ function generator.locations.generate()
         }
     end
 
-    for _, proto in pairs(game.space_location_prototypes) do
+    for _, proto in pairs(prototypes.space_location) do
         if proto.name ~= "space-location-unknown" then  -- Shouldn't this be hidden by the game?
             local location = build_location(proto, "space-location")
             if location then insert_prototype(locations, location, nil) end
         end
     end
 
-    for _, proto in pairs(game.surface_prototypes) do
+    for _, proto in pairs(prototypes.surface) do
         local location = build_location(proto, "surface")
         if location then insert_prototype(locations, location, nil) end
     end
@@ -1145,7 +1145,7 @@ end
 function generator.qualities.generate()
     local qualities = {}  ---@type NamedPrototypes<FPQualityPrototype>
 
-    for _, proto in pairs(game.quality_prototypes) do
+    for _, proto in pairs(prototypes.quality) do
         if proto.name ~= "quality-unknown" then  -- Shouldn't this be hidden by the game?
             local sprite = "quality/" .. proto.name
             if game.is_valid_sprite_path(sprite) then

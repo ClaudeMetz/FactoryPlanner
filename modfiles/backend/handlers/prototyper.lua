@@ -101,7 +101,7 @@ end
 ---@return ProductivityRecipes
 local function generate_productivity_recipes()
     local productivity_recipes = {}
-    for _, technology in pairs(game.technology_prototypes) do
+    for _, technology in pairs(prototypes.technology) do
         for _, effect in pairs(technology.effects or {}) do
             if effect.type == "mining-drill-productivity-bonus" then
                 productivity_recipes["custom-mining"] = true
