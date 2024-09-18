@@ -8,8 +8,7 @@ local function open_factory_dialog(player, modal_data)
 
     local flow_name = content_frame.add{type="flow", direction="horizontal"}
     flow_name.style.vertical_align = "center"
-    flow_name.add{type="label", caption={"fp.info_label", {"fp.factory_dialog_name"}},
-        tooltip={"fp.factory_dialog_name_tt"}}
+    flow_name.add{type="label", caption={"fp.info_label", {"fp.name"}}, tooltip={"fp.factory_dialog_name_tt"}}
 
     local factory_name = (modal_data.factory ~= nil) and modal_data.factory.name or ""
     local textfield_name = flow_name.add{type="textfield", text=factory_name, icon_selector=true,
