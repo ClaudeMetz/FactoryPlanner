@@ -153,9 +153,15 @@ local function build_district_frame(player, district, location_items)
 
     -- Delete button
     subheader.add{type="empty-widget", style="flib_horizontal_pusher"}
-    subheader.add{type="sprite-button", tags={mod="fp", on_gui_click="delete_district", district_id=district.id},
-        sprite="utility/trash", style="tool_button_red", enabled=(district.parent:count() > 1),
-        mouse_button_filter={"left"}}
+    local delete_toggle = subheader.add{type="sprite-button", sprite="utility/trash", style="tool_button_red",
+        tags={mod="fp", on_gui_click="delete_district_toggle", district_id=district.id},
+        enabled=(district.parent:count() > 1), mouse_button_filter={"left"}}
+    elements[district.id]["delete_toggle"] = delete_toggle
+    local delete_confirm = subheader.add{type="sprite-button", sprite="utility/check_mark",
+        tags={mod="fp", on_gui_click="delete_district_confirm", district_id=district.id},
+        style="flib_tool_button_light_green", visible=false, mouse_button_filter={"left"}}
+    delete_confirm.style.padding = 0
+    elements[district.id]["delete_confirm"] = delete_confirm
 
     build_items_flow(player, window_frame, district)
 end
@@ -235,9 +241,25 @@ listeners.gui = {
             handler = save_district_name
         },
         {
-            name = "delete_district",
+            name = "delete_district_toggle",
             handler = (function(player, tags, _)
                 local district = OBJECT_INDEX[tags.district_id]  --[[@as District]]
+
+                local main_elements = util.globals.main_elements(player)
+                local district_elements = main_elements.districts_box[tags.district_id]
+                district_elements.delete_toggle.visible = false
+                district_elements.delete_confirm.visible = true
+            end)
+        },
+        {
+            name = "delete_district_confirm",
+            handler = (function(player, tags, _)
+                local district = OBJECT_INDEX[tags.district_id]  --[[@as District]]
+
+                local main_elements = util.globals.main_elements(player)
+                local district_elements = main_elements.districts_box[tags.district_id]
+                district_elements.delete_toggle.visible = true
+                district_elements.delete_confirm.visible = false
 
                 -- Removal will always find an alterantive because there always exists at least one District
                 local adjacent_district = util.context.remove(player, district)  --[[@as District]]
