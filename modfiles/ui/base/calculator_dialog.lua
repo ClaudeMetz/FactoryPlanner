@@ -13,7 +13,7 @@ local function run_calculation(player)
     local textfield = calculator_elements.textfield
     local expression = tostring(util.gui.parse_expression_field(textfield))
 
-    if expression == nil then
+    if expression == "nil" then
         style_textfield(textfield, "invalid_value_textfield")
     else
         if expression ~= textfield.text then  -- avoid x = x label
