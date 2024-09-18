@@ -181,7 +181,7 @@ function Factory:pack()
         matrix_free_items = prototyper.util.simplify_prototypes(self.matrix_free_items, "type"),
         blueprints = self.blueprints,
         notes = self.notes,
-        productivitiy_boni = self.productivity_boni,
+        productivity_boni = self.productivity_boni,
         products = self:_pack(),
         top_floor = self.top_floor:pack()
     }
