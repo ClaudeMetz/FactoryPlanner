@@ -10,20 +10,6 @@
 - Hack in quality display onto sprite buttons, via sprites with whitespace to get it into the right spot
 - Take care of faded disabled sprite buttons, probably by using toggled or sprite elements
 
-## Uncertainty Sphere
-
-- Quality calculations: not sure how far I want to go with these
-  - Quality odds for products - that's kinda dumb without items themselves supporting quality, soo idk
-    - Also solver doesn't support this kinda stuff atm anyways, needs rewrite
-  - There's bigger ideas where you could enter X quality Y items per timescale and it would backsolve it
-  - Plus more such ideas, but they seem kinda out there currently, need to play with quality myself first
-- Better infinite mining drill support
-  - Kind of incredibly annoying, since there is nothing I can really calculate about it
-  - Could still make it so it shows the oil patch as an ingredient without amount (same for offshore pumps)
-- Item Spoiling - Not super much to do without a lot of effort.
-  - Could do a thing where the user enters the time between steps and it takes the spoilage that incurrs into account
-  - Maybe some other stuff too, but I'll have to play with it to figure this out. Low priority anyways
-
 ## Features
 
 - Change SimpleItems to be a dict instead of an array so there needs to be no fuss finding stuff
@@ -71,6 +57,17 @@
 
 ## Future Tasks
 
+- Better infinite mining drill support
+  - Kind of incredibly annoying, since there is nothing I can really calculate about it
+  - Could still make it so it shows the oil patch as an ingredient without amount (same for offshore pumps)
+- Quality calculations: not sure how far I want to go with these
+  - Quality odds for products - that's kinda dumb without items themselves supporting quality, soo idk
+    - Also solver doesn't support this kinda stuff atm anyways, needs rewrite
+  - There's bigger ideas where you could enter X quality Y items per timescale and it would backsolve it
+  - Plus more such ideas, but they seem kinda out there currently, need to play with quality myself first
+- Item Spoiling - Not super much to do without a lot of effort.
+  - Could do a thing where the user enters the time between steps and it takes the spoilage that incurrs into account
+  - Maybe some other stuff too, but I'll have to play with it to figure this out. Low priority anyways
 - Try using flib's built-in translation/search feature instead of doing it myself, saves me having it in global
 - Preferences export would be great. Maybe without migration if that makes it much easier
 - Make recalculate_on_factory_change a factory property, not a UI one

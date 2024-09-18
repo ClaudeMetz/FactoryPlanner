@@ -103,8 +103,8 @@ local function build_district_frame(player, district, location_items)
     create_move_button(move_flow, "next")
 
     local selected = util.context.get(player, "District").id == district.id
-    local caption = (selected) and {"fp.u_selected"} or {"fp.u_select"}
-    local select_button = subheader.add{type="button", caption=caption, style="list_box_item",
+    local selection_caption = (selected) and {"fp.u_selected"} or {"fp.u_select"}
+    local select_button = subheader.add{type="button", caption=selection_caption, style="list_box_item",
         tags={mod="fp", on_gui_click="select_district", district_id=district.id},
         enabled=(not selected), mouse_button_filter={"left"}}
     select_button.style.font = "default-bold"
@@ -113,7 +113,7 @@ local function build_district_frame(player, district, location_items)
     select_button.style.horizontal_align = "center"
 
     -- Name
-    subheader.add{type="label", caption={"", {"fp.pu_district", 1}, ": "}, style="subheader_caption_label"}
+    subheader.add{type="label", caption={"", {"fp.name"}, ": "}, style="subheader_caption_label"}
 
     local flow_name = subheader.add{type="flow", direction="horizontal"}
     flow_name.style.vertical_align = "center"
@@ -137,7 +137,7 @@ local function build_district_frame(player, district, location_items)
 
     -- Location
     local label_location = subheader.add{type="label", caption={"", {"fp.pu_location", 1}, ": "},
-        style="subheader_caption_label"}
+        tooltip={"fp.location_tt"}, style="subheader_caption_label"}
     label_location.style.left_margin = 8
     -- Using the location id for the index works because the location prototypes are in id order
     subheader.add{type="drop-down", items=location_items, selected_index=district.location_proto.id,
