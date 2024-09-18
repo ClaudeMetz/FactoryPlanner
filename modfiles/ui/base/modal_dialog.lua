@@ -40,11 +40,19 @@ local function create_base_modal_dialog(player, dialog_settings, modal_data)
         if dialog_settings.reset_handler_name then  -- add a reset button if requested
             modal_data.reset_handler_name = dialog_settings.reset_handler_name
 
-            local reset_button = flow_title_bar.add{type="sprite-button", tooltip={"fp.reset_button_tt"},
-                tags={mod="fp", on_gui_click="reset_modal_dialog"}, sprite="utility/reset",
+            local reset_toggle = flow_title_bar.add{type="sprite-button", tooltip={"fp.reset_toggle_tt"},
+                tags={mod="fp", on_gui_click="modal_dialog_toggle_reset"}, sprite="utility/reset",
                 style="tool_button_red", mouse_button_filter={"left"}}
-            reset_button.style.size = 24
-            reset_button.style.padding = 1
+            reset_toggle.style.size = 24
+            reset_toggle.style.padding = 1
+            modal_elements.toggle_reset = reset_toggle
+
+            local reset_confirm = flow_title_bar.add{type="sprite-button", tooltip={"fp.reset_confirm_tt"},
+                tags={mod="fp", on_gui_click="modal_dialog_confirm_reset"}, sprite="utility/check_mark",
+                style="flib_tool_button_light_green", visible=false, mouse_button_filter={"left"}}
+            reset_confirm.style.size = 24
+            reset_confirm.style.padding = -1
+            modal_elements.confirm_reset = reset_confirm
         end
 
         if not dialog_settings.show_submit_button then  -- add X-to-close button if this is not a submit dialog
@@ -312,9 +320,19 @@ listeners.gui = {
             end)
         },
         {
-            name = "reset_modal_dialog",
+            name = "modal_dialog_toggle_reset",
+            handler = (function(player, _, _)
+                local modal_elements = util.globals.modal_elements(player)
+                modal_elements.toggle_reset.visible = false
+                modal_elements.confirm_reset.visible = true
+            end)
+        },
+        {
+            name = "modal_dialog_confirm_reset",
             handler = (function(player, _, _)
                 local modal_data = util.globals.modal_data(player)  --[[@as table]]
+                modal_data.modal_elements.toggle_reset.visible = true
+                modal_data.modal_elements.confirm_reset.visible = false
                 GLOBAL_HANDLERS[modal_data.reset_handler_name](player)
             end)
         },

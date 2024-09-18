@@ -2,12 +2,12 @@
 
 ## Active
 
+- Invalid calculator result broken
 
 ## Bugs
 
 - Matrix solver broken with entity-type ingredients present seemingly
   - Alternatively could be because of 0-ed machine counts or similar
-- Hack in quality display onto sprite buttons, via sprites with whitespace to get it into the right spot
 - Take care of faded disabled sprite buttons, probably by using toggled or sprite elements
 
 ## Features
@@ -26,7 +26,6 @@
   - Otherwise there won't be a unique solution. Kinda orthogonal in general, but would be helpful to have
 - Allow clicking on District items to see their origin/usage. Ideally click to go there directly, but that's
   tricky since they can be from multiple places. Maybe a separate UI is warranted
-- Need an 'are you sure' dialog for deleting a District, resetting preferences, etc
 - Disable SA-specific features by checking feature flags in the right spots
 - Turn item spoilage results into recipes since mods will use that as a critical path for sure
   - Kinda annoying since it doesn't use machines, just times, so the recipes would be very near useless
@@ -163,6 +162,7 @@
 - API to open things in Factoriopedia
 - Disabled sprite buttons fade their icons, can't be turned off
 - No way to show quality on sprite buttons, which is essential in tons of places
+  - Seemingly the hacky way to add a sprite to the button does not work, oof
   - Same thing for quality color, which should be used in relevant tooltips
 - global_effect on planets, yet another effect that needs to be considered
   - runtime-only, which is problematic since we don't set actual planets
