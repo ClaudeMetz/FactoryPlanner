@@ -2,7 +2,6 @@
 
 ## Active
 
-- Invalid calculator result broken
 
 ## Bugs
 
