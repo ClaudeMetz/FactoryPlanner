@@ -48,7 +48,7 @@ BLANK_EFFECTS = {consumption = 0, speed = 0, productivity = 0, pollution = 0, qu
 
 
 ftable = require("__flib__.table")  -- has more functionality than built-in table
-translator = require("__flib__.dictionary-lite")  -- translation module for localised search
+translator = require("__flib__.dictionary")  -- translation module for localised search
 
 util = require("util.util")
 
