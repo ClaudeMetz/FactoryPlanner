@@ -53,34 +53,31 @@ local function build_title_bar(player)
         sprite="fp_pin", mouse_button_filter={"left"}}
     main_elements.title_bar["compact_button"] = button_compact
 
+    local preferences = util.globals.preferences(player)
+    local button_pause = flow_title_bar.add{type="sprite-button", sprite="fp_play", tooltip={"fp.pause_on_interface"},
+        tags={mod="fp", on_gui_click="toggle_pause_game"}, auto_toggle=true, style="fp_button_frame",
+        toggled=(not preferences.pause_on_interface), mouse_button_filter={"left"}}
+    button_pause.style.padding = -1
+    main_elements.title_bar["pause_button"] = button_pause
+
+    local button_calculator = flow_title_bar.add{type="sprite-button", sprite="fp_calculator",
+        tooltip={"fp.open_calculator"}, style="fp_button_frame", mouse_button_filter={"left"},
+        tags={mod="fp", on_gui_click="open_calculator_dialog"}}
+    button_calculator.style.padding = -3
+
     local handle_widths = determine_handle_widths(player)
     add_handle(flow_title_bar, handle_widths["left"])
     flow_title_bar.add{type="label", caption="Factory Planner", style="fp_label_frame_title",
         ignored_by_interaction=true}
     add_handle(flow_title_bar, handle_widths["right"])
 
-    local flow_right = flow_title_bar.add{type="flow", direction="horizontal"}
-    flow_right.style.horizontal_spacing = 8
-
-    flow_right.add{type="button", caption={"fp.preferences"}, style="fp_button_frame_tool",
+    flow_title_bar.add{type="button", caption={"fp.preferences"}, style="fp_button_frame_tool",
         tags={mod="fp", on_gui_click="title_bar_open_preferences"}, mouse_button_filter={"left"}}
 
-    local separation = flow_right.add{type="line", direction="vertical"}
+    local separation = flow_title_bar.add{type="line", direction="vertical"}
     separation.style.height = MAGIC_NUMBERS.title_bar_height - 4
 
-    local preferences = util.globals.preferences(player)
-    local button_pause = flow_right.add{type="sprite-button", sprite="fp_play", tooltip={"fp.pause_on_interface"},
-        tags={mod="fp", on_gui_click="toggle_pause_game"}, auto_toggle=true, style="fp_button_frame",
-        toggled=(not preferences.pause_on_interface), mouse_button_filter={"left"}}
-    button_pause.style.padding = -1
-    main_elements.title_bar["pause_button"] = button_pause
-
-    local button_calculator = flow_right.add{type="sprite-button", sprite="fp_calculator",
-        tooltip={"fp.open_calculator"}, style="fp_button_frame", mouse_button_filter={"left"},
-        tags={mod="fp", on_gui_click="open_calculator_dialog"}}
-    button_calculator.style.padding = -3
-
-    local button_close = flow_right.add{type="sprite-button", tags={mod="fp", on_gui_click="close_main_dialog"},
+    local button_close = flow_title_bar.add{type="sprite-button", tags={mod="fp", on_gui_click="close_main_dialog"},
         sprite="utility/close", tooltip={"fp.close_interface"}, style="fp_button_frame",
         mouse_button_filter={"left"}}
     button_close.style.padding = 1
