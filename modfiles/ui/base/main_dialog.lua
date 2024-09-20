@@ -23,18 +23,17 @@ end
 
 -- Downscale width and height preferences until the main interface fits onto the player's screen
 function main_dialog.shrinkwrap_interface(player)
-    local resolution, scale = player.display_resolution, player.display_scale
-    local actual_resolution = {width=math.ceil(resolution.width / scale), height=math.ceil(resolution.height / scale)}
+    local scaled_resolution = util.gui.calculate_scaled_resolution(player)
     local preferences = util.globals.preferences(player)
 
     local width_minimum = PRODUCTS_PER_ROW_OPTIONS[1]
-    while (actual_resolution.width * 0.95) < determine_main_dimensions(player).width
+    while (scaled_resolution.width * 0.95) < determine_main_dimensions(player).width
             and preferences.products_per_row > width_minimum do
         preferences.products_per_row = preferences.products_per_row - 1
     end
 
     local height_minimum = FACTORY_LIST_ROWS_OPTIONS[1]
-    while (actual_resolution.height * 0.95) < determine_main_dimensions(player).height
+    while (scaled_resolution.height * 0.95) < determine_main_dimensions(player).height
             and preferences.factory_list_rows > height_minimum do
         preferences.factory_list_rows = preferences.factory_list_rows - 2
     end

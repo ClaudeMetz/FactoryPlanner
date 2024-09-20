@@ -95,7 +95,7 @@ end
 
 ---@class UIStateTable
 ---@field main_dialog_dimensions DisplayResolution?
----@field last_action string?
+---@field last_action LastAction?
 ---@field views_data ItemViewsData?
 ---@field messages PlayerMessage[]
 ---@field main_elements table
@@ -109,6 +109,10 @@ end
 ---@field compact_view boolean
 ---@field districts_view boolean
 ---@field recalculate_on_factory_change boolean
+
+---@class LastAction
+---@field action_name string
+---@field tick Tick
 
 ---@param player_table PlayerTable
 local function reset_ui_state(player_table)

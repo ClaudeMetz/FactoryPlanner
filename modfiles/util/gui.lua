@@ -102,6 +102,13 @@ function _gui.properly_center_frame(player, frame, dimensions)
     frame.location = {x_offset, y_offset}
 end
 
+---@param player LuaPlayer
+---@return DisplayResolution
+function _gui.calculate_scaled_resolution(player)
+    local resolution, scale = player.display_resolution, player.display_scale
+    return {width=math.ceil(resolution.width / scale), height=math.ceil(resolution.height / scale)}
+end
+
 ---@param textfield LuaGuiElement
 ---@param decimal boolean
 ---@param negative boolean
