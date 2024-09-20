@@ -552,15 +552,17 @@ local function rebuild_compact_dialog(player, default_visibility)
         tags={mod="fp", on_gui_click="switch_to_main_view"}, tooltip={"fp.switch_to_main_view"},
         sprite="fp_pin", mouse_button_filter={"left"}}
 
-    flow_title_bar.add{type="label", caption={"mod-name.factoryplanner"}, style="fp_label_frame_title",
-        ignored_by_interaction=true}
-    flow_title_bar.add{type="empty-widget", style="flib_titlebar_drag_handle",
-        ignored_by_interaction=true}
-
     local button_calculator = flow_title_bar.add{type="sprite-button", sprite="fp_calculator",
         tooltip={"fp.open_calculator"}, style="fp_button_frame", mouse_button_filter={"left"},
         tags={mod="fp", on_gui_click="open_calculator_dialog"}}
     button_calculator.style.padding = -3
+
+    flow_title_bar.add{type="empty-widget", style="flib_titlebar_drag_handle",
+        ignored_by_interaction=true}
+    flow_title_bar.add{type="label", caption={"mod-name.factoryplanner"}, style="fp_label_frame_title",
+        ignored_by_interaction=true}
+    flow_title_bar.add{type="empty-widget", style="flib_titlebar_drag_handle",
+        ignored_by_interaction=true}
 
     local button_close = flow_title_bar.add{type="sprite-button", tags={mod="fp", on_gui_click="close_compact_dialog"},
         sprite="utility/close", tooltip={"fp.close_interface"}, style="fp_button_frame", mouse_button_filter={"left"}}

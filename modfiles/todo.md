@@ -48,8 +48,6 @@
   - One additional dropdown action could be to craft machines, same as the utility dialog
     - Will need to improve and generalize that code for this for sure
   - Also use them to quick-change default belts on the view, for example
-  - Move calculator and pause button to the left side of the titlebar, same for compact dialog
-    - This changes it now so the forwards/backwards buttons will have room on the right later
 - Agriculture tower implementation
   - Missing energy and pollution production, is different to normal entities
 - Improve performance by not making item_views.process iterate the prefs every time
