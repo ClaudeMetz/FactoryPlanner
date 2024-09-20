@@ -136,12 +136,14 @@ local function build_district_frame(player, district, location_items)
         tooltip={"fp.save_name"}, mouse_button_filter={"left"}}
 
     -- Location
-    local label_location = subheader.add{type="label", caption={"", {"fp.pu_location", 1}, ": "},
-        tooltip={"fp.location_tt"}, style="subheader_caption_label"}
-    label_location.style.left_margin = 8
-    -- Using the location id for the index works because the location prototypes are in id order
-    subheader.add{type="drop-down", items=location_items, selected_index=district.location_proto.id,
-        tags={mod="fp", on_gui_selection_state_changed="change_district_location", district_id=district.id}}
+    if SPACE_TRAVEL then
+        local label_location = subheader.add{type="label", caption={"", {"fp.pu_location", 1}, ": "},
+            tooltip={"fp.location_tt"}, style="subheader_caption_label"}
+        label_location.style.left_margin = 8
+        -- Using the location id for the index works because the location prototypes are in id order
+        subheader.add{type="drop-down", items=location_items, selected_index=district.location_proto.id,
+            tags={mod="fp", on_gui_selection_state_changed="change_district_location", district_id=district.id}}
+    end
 
     -- Power & Pollution
     local label_power = subheader.add{type="label", caption=util.format.SI_value(district.power, "W", 3),

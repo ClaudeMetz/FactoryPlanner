@@ -7,8 +7,12 @@ local function refresh_district_info(player)
     local district_info_elements = ui_state.main_elements.district_info
 
     district_info_elements.name_label.caption = district.name
-    district_info_elements.location_sprite.sprite = district.location_proto.sprite
-    district_info_elements.location_sprite.tooltip = district.location_proto.tooltip
+
+    if SPACE_TRAVEL then
+        district_info_elements.location_sprite.sprite = district.location_proto.sprite
+        district_info_elements.location_sprite.tooltip = district.location_proto.tooltip
+    end
+
     district_info_elements.districts_button.toggled = ui_state.districts_view
 end
 
@@ -28,11 +32,13 @@ local function build_district_info(player)
     label_name.style.maximal_width = 100
     main_elements.district_info["name_label"] = label_name
 
-    flow_horizontal.add{type="label", caption={"", {"fp.on"}, ": "}, style="subheader_caption_label"}
-    local button_sprite = flow_horizontal.add{type="sprite"}
-    button_sprite.style.size = 24
-    button_sprite.style.stretch_image_to_widget_size = true
-    main_elements.district_info["location_sprite"] = button_sprite
+    if SPACE_TRAVEL then
+        flow_horizontal.add{type="label", caption={"", {"fp.on"}, ": "}, style="subheader_caption_label"}
+        local button_sprite = flow_horizontal.add{type="sprite"}
+        button_sprite.style.size = 24
+        button_sprite.style.stretch_image_to_widget_size = true
+        main_elements.district_info["location_sprite"] = button_sprite
+    end
 
     flow_horizontal.add{type="empty-widget", style="flib_horizontal_pusher"}
     local button_districts = flow_horizontal.add{type="sprite-button", sprite="utility/dropdown",
