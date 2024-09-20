@@ -518,14 +518,13 @@ factory_listeners.misc = {
 
 -- The frame surrounding the main part of the compact factory
 local frame_dimensions = {width = 0.25, height = 0.8}  -- as a percentage of the screen
-local frame_location = {x = 10, y = 63}  -- absolute, relative to 1080p with scale 1
+local frame_location = {x = 10, y = 63}  -- relative to 1080p with scale 1
 
 -- Set frame dimensions in a relative way, taking player resolution and scaling into account
 local function set_compact_frame_dimensions(player, frame)
-    local resolution, scale = player.display_resolution, player.display_scale
-    local actual_resolution = {width=math.ceil(resolution.width / scale), height=math.ceil(resolution.height / scale)}
-    frame.style.width = actual_resolution.width * frame_dimensions.width
-    frame.style.maximal_height = actual_resolution.height * frame_dimensions.height
+    local scaled_resolution = util.gui.calculate_scaled_resolution(player)
+    frame.style.width = scaled_resolution.width * frame_dimensions.width
+    frame.style.maximal_height = scaled_resolution.height * frame_dimensions.height
 end
 
 local function set_compact_frame_location(player, frame)
