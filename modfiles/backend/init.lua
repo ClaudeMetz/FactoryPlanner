@@ -298,7 +298,6 @@ script.on_event(translator.on_player_dictionaries_ready, dictionaries_ready)
 
 
 -- ** COMMANDS **
-commands.add_command("fp-reset-prototypes", {"command-help.fp_reset_prototypes"}, handle_configuration_change)
 commands.add_command("fp-restart-translation", {"command-help.fp_restart_translation"}, function()
     translator.on_init()
     prototyper.util.build_translation_dictionaries()
