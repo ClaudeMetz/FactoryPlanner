@@ -25,11 +25,11 @@
   - Otherwise there won't be a unique solution. Kinda orthogonal in general, but would be helpful to have
 - Allow clicking on District items to see their origin/usage. Ideally click to go there directly, but that's
   tricky since they can be from multiple places. Maybe a separate UI is warranted
-- Disable SA-specific features by checking feature flags in the right spots
 - Turn item spoilage results into recipes since mods will use that as a critical path for sure
   - Kinda annoying since it doesn't use machines, just times, so the recipes would be very near useless
   - Could use 'time' as a custom ingredient on an otherwise blank line
   - The machine icon could just be a steel chest, would be kinda funny
+  - Use `spoiling` feature flag to gate this
 - Fluid temps - needs dealing with before 2.0
   - Add back distinct items for each fluid temp, so I don't need to carry that info along separately in the solver
   - Have the complex matching logic only when no specific temperature is needed, for the solver and recipe picker
@@ -39,6 +39,7 @@
 
 ## Low Priority
 
+- Do I need to show solar system edge/interstallar as locations since they are basically the same as space platform?
 - Note when rocket silo launch time becomes a problem for speed; it's not at lower speeds
   - Is quite a complicated feature, especially when productivity is involved. Probably do need it though
 - Rocket silo power usage seems very low, likely doesn't consider launch usage

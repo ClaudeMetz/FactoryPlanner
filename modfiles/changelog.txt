@@ -2,11 +2,11 @@
 Version: 0.00.00
 Date: 00. 00. 0000
   Features:
-    - 
+    -
   Changes:
-    - 
+    -
   Bugfixes:
-    - 
+    -
 
 ---------------------------------------------------------------------------------------------------
 Version: 1.2.7
@@ -45,7 +45,7 @@ Date: 20. 07. 2024
     - Added indication of cyclic/catalyst ingredients in recipes, making it easier to plan their logistics
     - Added support for arithmetic operations in relevant textfields
     - Added the ability to set custom productivity boni for relevant recipes
-    - Added stacks/timnescale and rockets/timescale item rate views
+    - Added stacks/timescale and rockets/timescale item rate views
     - Added configuration options for item rate views in preferences
     - Added a simple pocket calculator utility
   Changes:

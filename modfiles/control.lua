@@ -4,6 +4,7 @@ DEBUGGER_ACTIVE = (active_mods["debugadapter"] ~= nil)
 DEV_ACTIVE = true  -- enables certain conveniences for development
 llog = require("util.llog")
 
+SPACE_TRAVEL = defines.feature_flags.space_travel
 
 MAGIC_NUMBERS = {
     margin_of_error = 1e-6,  -- the margin of error for floating point calculations
