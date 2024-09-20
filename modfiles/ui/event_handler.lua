@@ -8,7 +8,7 @@ local event_listener_names = {
     "ui.main.production_handler", "ui.elements.module_configurator",
     "ui.dialogs.beacon_dialog", "ui.dialogs.machine_dialog", "ui.dialogs.picker_dialog", "ui.dialogs.picker_dialog",
     "ui.dialogs.porter_dialog", "ui.dialogs.preferences_dialog", "ui.dialogs.recipe_dialog",
-    "ui.dialogs.factory_dialog", "ui.dialogs.tutorial_dialog", "ui.dialogs.utility_dialog"
+    "ui.dialogs.factory_dialog", "ui.dialogs.utility_dialog"
 }
 
 local event_listeners = {}
@@ -89,10 +89,6 @@ for _, listener in pairs(event_listeners) do
                             limitations = modifier_action[2] or {}
                         }
                     end
-
-                    -- Generate all the tooltip lines for these modifier actions
-                    local tooltip = util.actions.all_tutorial_tooltips(action_table.modifier_actions)
-                    TUTORIAL_TOOLTIPS[action.name] = tooltip
                 end
 
                 event_table.actions[action.name] = action_table

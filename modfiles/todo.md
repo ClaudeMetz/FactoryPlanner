@@ -47,7 +47,6 @@
   - This is a bit messy with entity-type items currently and can't easily be fixed atm
   - One additional dropdown action could be to craft machines, same as the utility dialog
     - Will need to improve and generalize that code for this for sure
-  - Also drop the tutorial dialog entirely, along with the example factory and everything
   - Also use them to quick-change default belts on the view, for example
   - Move calculator and pause button to the left side of the titlebar, same for compact dialog
     - This changes it now so the forwards/backwards buttons will have room on the right later
@@ -55,6 +54,7 @@
   - Missing energy and pollution production, is different to normal entities
 - Improve performance by not making item_views.process iterate the prefs every time
 - Do all technology prototype handling in on_load now that I can
+- Disable byproduct lines with matrix solver instead of deleting, same as the surface-disabled ones
 
 ## Future Tasks
 

@@ -120,8 +120,6 @@ local function refresh_factory_list(player)
     if selected_factory ~= nil then  -- only need to run this if any factory exists
         local attach_factory_products = player_table.preferences.attach_factory_products
         local filter = {archived = archived}
-        local tutorial_tt = (player_table.preferences.tutorial_mode)
-            and util.actions.tutorial_tooltip("act_on_factory", nil, player) or nil
 
         local function create_move_button(flow, direction, factory)
             local enabled = (factory.parent:find(filter, factory[direction], direction) ~= nil)
@@ -142,7 +140,7 @@ local function refresh_factory_list(player)
         for factory in selected_factory.parent:iterator(filter) do
             local selected = (selected_factory.id == factory.id)
             local caption, info_tooltip = factory:tostring(attach_factory_products, false)
-            local tooltip = {"", info_tooltip, tutorial_tt}
+            local tooltip = {"", info_tooltip}
 
             local button_flow = listbox.add{type="flow", direction="horizontal"}
             button_flow.style.horizontal_spacing = 0

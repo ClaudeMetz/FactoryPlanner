@@ -30,7 +30,7 @@ MAGIC_NUMBERS = {
     blueprint_limit = 12,  -- Maxmimum number of blueprints allowed per factory
     module_dialog_element_width = 440,  -- Width of machine and beacon dialog elements
     left_titlebar_width = 30,  -- Width of the left titlebar buttons
-    right_titlebar_width = 301,  -- Width of the right titlebar buttons
+    right_titlebar_width = 218,  -- Width of the right titlebar buttons
     titlebar_label_width = 124  -- Width of the 'Factory Planner' titlebar label
 }
 
@@ -57,8 +57,6 @@ require("ui.base.main_dialog")
 require("ui.base.compact_dialog")
 require("ui.base.modal_dialog")
 
--- Not sure yet how to make these not global variables (filled via event_handler)
-TUTORIAL_TOOLTIPS = {}  ---@type { [string]: LocalisedString }
 GLOBAL_HANDLERS = {}  ---@type { [string]: function }
 
 require("backend.init")

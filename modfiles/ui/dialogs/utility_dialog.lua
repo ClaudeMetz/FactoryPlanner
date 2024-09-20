@@ -161,9 +161,6 @@ function utility_structures.blueprints(player, modal_data)
     local table_blueprints =  modal_elements["blueprints_table"]
     table_blueprints.clear()
 
-    local tutorial_tt = (util.globals.preferences(player).tutorial_mode)
-        and util.actions.tutorial_tooltip("act_on_blueprint", nil, player) or nil
-
     local function format_signal(signal)
         -- signal.type is nil if it's really "item", plus we need to translate the virtual type
         local type = (signal.type == "virtual") and "virtual-signal" or "item"
@@ -175,7 +172,7 @@ function utility_structures.blueprints(player, modal_data)
         blueprint.import_stack(blueprint_string)
         local blueprint_book = blueprint.is_blueprint_book
 
-        local tooltip = {"", (blueprint.label or "Blueprint"), tutorial_tt}
+        local tooltip = {"", (blueprint.label or "Blueprint")}
         local sprite = (blueprint_book) and "item/blueprint-book" or "item/blueprint"
         local button = table_blueprints.add{type="sprite-button", sprite=sprite, tooltip=tooltip,
             tags={mod="fp", on_gui_click="act_on_blueprint", index=index}, mouse_button_filter={"left-and-right"}}

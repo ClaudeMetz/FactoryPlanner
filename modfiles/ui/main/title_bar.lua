@@ -62,10 +62,8 @@ local function build_title_bar(player)
     local flow_right = flow_title_bar.add{type="flow", direction="horizontal"}
     flow_right.style.horizontal_spacing = 8
 
-    flow_right.add{type="button", caption={"fp.tutorial"}, style="fp_button_frame_tool",
-        tags={mod="fp", on_gui_click="title_bar_open_dialog", type="tutorial"}, mouse_button_filter={"left"}}
     flow_right.add{type="button", caption={"fp.preferences"}, style="fp_button_frame_tool",
-        tags={mod="fp", on_gui_click="title_bar_open_dialog", type="preferences"}, mouse_button_filter={"left"}}
+        tags={mod="fp", on_gui_click="title_bar_open_preferences"}, mouse_button_filter={"left"}}
 
     local separation = flow_right.add{type="line", direction="vertical"}
     separation.style.height = MAGIC_NUMBERS.title_bar_height - 4
@@ -126,9 +124,9 @@ listeners.gui = {
             handler = toggle_paused_state
         },
         {
-            name = "title_bar_open_dialog",
-            handler = (function(player, tags, _)
-                util.raise.open_dialog(player, {dialog=tags.type})
+            name = "title_bar_open_preferences",
+            handler = (function(player, _, _)
+                util.raise.open_dialog(player, {dialog="preferences"})
             end)
         }
     }

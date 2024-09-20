@@ -12,7 +12,6 @@ require("backend.calculation.solver")
 ---@class PreferencesTable
 ---@field timescale Timescale
 ---@field pause_on_interface boolean
----@field tutorial_mode boolean
 ---@field utility_scopes { components: "Factory" | "Floor" }
 ---@field recipe_filters { disabled: boolean, hidden: boolean }
 ---@field products_per_row integer
@@ -57,7 +56,6 @@ function reload_preferences(player_table)
 
     reload("timescale", 60)
     reload("pause_on_interface", false)
-    reload("tutorial_mode", true)
     reload("utility_scopes", {components = "Factory"})
     reload("recipe_filters", {disabled = false, hidden = false})
 
@@ -163,7 +161,6 @@ local function player_init(player)
     defaults.set_all(player, "fuels", {prototype="coal"})
 
     util.gui.toggle_mod_gui(player)
-    util.messages.raise(player, "hint", {"fp.hint_tutorial"}, 6)
 
     if DEV_ACTIVE then
         util.porter.add_factories(player, DEV_EXPORT_STRING)
@@ -191,19 +188,6 @@ local function refresh_player_table(player)
     player_table.realm:validate()
 end
 
-
----@return Factory?
-local function import_tutorial_factory()
-    local import_table, error = util.porter.process_export_string(TUTORIAL_EXPORT_STRING)
-    if error then return nil end
-
-    ---@cast import_table -nil
-    local factory = import_table.factories[1]
-    if not factory.valid then return nil end
-
-    return factory  -- can still not be admissible if any lines don't produce anything
-end
-
 ---@class GlobalTable
 ---@field players { [PlayerIndex]: PlayerTable }
 ---@field prototypes PrototypeLists
@@ -211,7 +195,6 @@ end
 ---@field nth_tick_events { [Tick]: NthTickEvent }
 ---@field productivity_recipes ProductivityRecipes
 ---@field installed_mods ModToVersion
----@field tutorial_factory Factory?
 storage = {}  -- just for the type checker, doesn't do anything
 
 local function global_init()
@@ -231,7 +214,6 @@ local function global_init()
     loader.run(true)  -- Run loader which creates useful indexes of prototype data
 
     storage.installed_mods = script.active_mods  -- Retain current modset to detect mod changes for invalid factories
-    storage.tutorial_factory = import_tutorial_factory()  -- Import the tutorial factory to validate and cache it
 
     translator.on_init()  -- Initialize flib's translation module
     prototyper.util.build_translation_dictionaries()
@@ -271,7 +253,6 @@ local function handle_configuration_change()
     end
 
     storage.installed_mods = script.active_mods
-    storage.tutorial_factory = import_tutorial_factory()
 
     translator.on_configuration_changed()
     prototyper.util.build_translation_dictionaries()

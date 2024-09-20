@@ -64,8 +64,6 @@ local function refresh_item_box(player, factory, show_floor_items, item_category
 
     local shows_floor_items = (floor.parent.class ~= "Factory")
     local action = (shows_floor_items) and ("act_on_floor_item") or ("act_on_top_level_" .. item_category)
-    local tutorial_tt = (util.globals.preferences(player).tutorial_mode)
-        and util.actions.tutorial_tooltip(action, nil, player) or nil
     local real_products = (not shows_floor_items and item_category == "product")
 
     local function build_item(item, index)
@@ -87,7 +85,7 @@ local function refresh_item_box(player, factory, show_floor_items, item_category
 
         local name_line = {"fp.tt_title", item.proto.localised_name}
         local number_line = (number_tooltip) and {"", "\n", number_tooltip} or ""
-        local tooltip = {"", name_line, number_line, satisfaction_line, tutorial_tt}
+        local tooltip = {"", name_line, number_line, satisfaction_line}
         if item.class ~= "Product" and item.proto.type == "entity" then
             style = "flib_slot_button_transparent"
         end

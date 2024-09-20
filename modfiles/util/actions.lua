@@ -26,7 +26,7 @@ function _actions.allowed(action_limitations, active_limitations)
     return true
 end
 
----@param action_name string
+--[[ ---@param action_name string
 ---@param active_limitations ActiveLimitations?
 ---@param player LuaPlayer?
 ---@return LocalisedString
@@ -41,9 +41,9 @@ function _actions.tutorial_tooltip(action_name, active_limitations, player)
     end
 
     return (table_size(tooltip) > 2) and tooltip or ""
-end
+end ]]
 
----@param data table
+--[[ ---@param data table
 ---@param player LuaPlayer
 ---@param action_list ActionList
 function _actions.tutorial_tooltip_list(data, player, action_list)
@@ -51,9 +51,9 @@ function _actions.tutorial_tooltip_list(data, player, action_list)
     for reference_name, action_name in pairs(action_list) do
         data[reference_name] = util.actions.tutorial_tooltip(action_name, active_limitations, nil)
     end
-end
+end ]]
 
-function _actions.all_tutorial_tooltips(modifier_actions)
+--[[ function _actions.all_tutorial_tooltips(modifier_actions)
     local action_lines = {}
 
     for modifier_click, modifier_action in pairs(modifier_actions) do
@@ -70,7 +70,7 @@ function _actions.all_tutorial_tooltips(modifier_actions)
     end
 
     return action_lines
-end
+end ]]
 
 -- Returns whether rate limiting is active for the given action, stopping it from proceeding
 -- This is essentially to prevent duplicate commands in quick succession, enabled by lag
