@@ -165,10 +165,6 @@ local function generate_object_index()
         if not player_table.realm then return end  -- migration issue mitigation
         player_table.realm:index()  -- recursively indexes all objects
     end
-
-    if storage.tutorial_factory then
-        storage.tutorial_factory:index()
-    end
 end
 
 
