@@ -51,7 +51,6 @@
 - Agriculture tower implementation
   - Missing energy and pollution production, is different to normal entities
 - Improve performance by not making item_views.process iterate the prefs every time
-- Do all technology prototype handling in on_load now that I can
 - Disable byproduct lines with matrix solver instead of deleting, same as the surface-disabled ones
 
 ## Future Tasks
