@@ -158,6 +158,21 @@ local function module_name_map()
 end
 
 
+---@return { [string]: boolean }
+local function generate_productivity_recipes()
+    local productivity_recipes = {}
+    for _, technology in pairs(prototypes.technology) do
+        for _, effect in pairs(technology.effects or {}) do
+            if effect.type == "mining-drill-productivity-bonus" then
+                productivity_recipes["custom-mining"] = true
+            elseif effect.type == "change-recipe-productivity" then
+                productivity_recipes[effect.recipe] = true
+            end
+        end
+    end
+    return productivity_recipes
+end
+
 
 local function generate_object_index()
     OBJECT_INDEX = {}  ---@type { [integer]: Object}
@@ -188,6 +203,8 @@ function loader.run(skip_check)
     }
 
     SORTED_ITEMS = sorted_items()
+
+    PRODUCTIVITY_RECIPES = generate_productivity_recipes()
 end
 
 return loader

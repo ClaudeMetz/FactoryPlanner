@@ -193,7 +193,6 @@ end
 ---@field prototypes PrototypeLists
 ---@field next_object_ID integer
 ---@field nth_tick_events { [Tick]: NthTickEvent }
----@field productivity_recipes ProductivityRecipes
 ---@field installed_mods ModToVersion
 storage = {}  -- just for the type checker, doesn't do anything
 

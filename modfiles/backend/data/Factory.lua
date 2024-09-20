@@ -228,7 +228,7 @@ function Factory:validate()
 
     -- Remove any invalid boni, no need to mark the factory as invalid
     for recipe_name, _ in pairs(self.productivity_boni) do
-        if not storage.productivity_recipes[recipe_name] then
+        if not PRODUCTIVITY_RECIPES[recipe_name] then
             self.productivity_boni[recipe_name] = nil
         end
     end
