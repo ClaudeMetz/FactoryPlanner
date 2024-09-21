@@ -475,9 +475,9 @@ listeners.gui = {
         },
         {
             name = "act_on_blueprint",
-            modifier_actions = {
-                pick_up = {"left"},
-                delete = {"control-right"}
+            actions_table = {
+                pick_up = {shortcut="left"},
+                delete = {shortcut="control-right"}
             },
             handler = handle_blueprint_click
         },

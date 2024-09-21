@@ -286,43 +286,43 @@ listeners.gui = {
         },
         {
             name = "act_on_top_level_product",
-            modifier_actions = {
-                add_recipe = {"left", {archive_open=false}},
-                edit = {"control-left", {archive_open=false}},
-                delete = {"control-right", {archive_open=false}},
-                copy = {"shift-right"},
-                paste = {"shift-left", {archive_open=false}},
-                put_into_cursor = {"alt-right"},
-                factoriopedia = {"alt-left"}
+            actions_table = {
+                add_recipe = {shortcut="left", limitations={archive_open=false}},
+                edit = {shortcut="control-left", limitations={archive_open=false}},
+                delete = {shortcut="control-right", limitations={archive_open=false}},
+                copy = {shortcut="shift-right"},
+                paste = {shortcut="shift-left", limitations={archive_open=false}},
+                put_into_cursor = {shortcut="alt-right"},
+                factoriopedia = {shortcut="alt-left"}
             },
             handler = handle_item_button_click
         },
         {
             name = "act_on_top_level_byproduct",
-            modifier_actions = {
-                add_recipe = {"left", {archive_open=false, matrix_active=true}},
-                copy = {"shift-right"},
-                put_into_cursor = {"alt-right"},
-                factoriopedia = {"alt-left"}
+            actions_table = {
+                add_recipe = {shortcut="left", limitations={archive_open=false, matrix_active=true}},
+                copy = {shortcut="shift-right"},
+                put_into_cursor = {shortcut="alt-right"},
+                factoriopedia = {shortcut="alt-left"}
             },
             handler = handle_item_button_click
         },
         {
             name = "act_on_top_level_ingredient",
-            modifier_actions = {
-                add_recipe = {"left", {archive_open=false}},
-                copy = {"shift-right"},
-                put_into_cursor = {"alt-right"},
-                factoriopedia = {"alt-left"}
+            actions_table = {
+                add_recipe = {shortcut="left", limitations={archive_open=false}},
+                copy = {shortcut="shift-right"},
+                put_into_cursor = {shortcut="alt-right"},
+                factoriopedia = {shortcut="alt-left"}
             },
             handler = handle_item_button_click
         },
         {
             name = "act_on_floor_item",
-            modifier_actions = {
-                copy = {"shift-right"},
-                put_into_cursor = {"alt-right"},
-                factoriopedia = {"alt-left"}
+            actions_table = {
+                copy = {shortcut="shift-right"},
+                put_into_cursor = {shortcut="alt-right"},
+                factoriopedia = {shortcut="alt-left"}
             },
             handler = handle_item_button_click
         },

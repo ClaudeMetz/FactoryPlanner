@@ -363,10 +363,10 @@ listeners.gui = {
         },
         {
             name = "act_on_factory",
-            modifier_actions = {
-                select = {"left"},
-                edit = {"control-left"},
-                delete = {"control-right"}
+            actions_table = {
+                select = {shortcut="left", limitations={}},
+                edit = {shortcut="control-left"},
+                delete = {shortcut="control-right"}
             },
             handler = handle_factory_click
         }

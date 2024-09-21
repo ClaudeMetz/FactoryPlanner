@@ -97,4 +97,17 @@ function _actions.rate_limited(player, tick, action_name, timeout)
     end
 end
 
+
+---@param shortcut string
+---@return LocalisedString?
+function _actions.action_string(shortcut)
+    if not shortcut then return nil end
+    local split_modifiers, modifier_string = util.split_string(shortcut, "-"), {""}
+    for _, modifier in pairs(ftable.slice(split_modifiers, 1, -1)) do
+        table.insert(modifier_string, {"", {"fp.action_" .. modifier}, " + "})
+    end
+    table.insert(modifier_string, {"fp.action_" .. split_modifiers[#split_modifiers]})
+    return {"fp.action_click", modifier_string}
+end
+
 return _actions
