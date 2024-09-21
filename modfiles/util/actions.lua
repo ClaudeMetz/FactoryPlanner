@@ -100,7 +100,7 @@ end
 
 ---@param shortcut string
 ---@return LocalisedString?
-function _actions.action_string(shortcut)
+function _actions.shortcut_string(shortcut)
     if not shortcut then return nil end
     local split_modifiers, modifier_string = util.split_string(shortcut, "-"), {""}
     for _, modifier in pairs(ftable.slice(split_modifiers, 1, -1)) do

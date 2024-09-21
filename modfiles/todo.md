@@ -5,7 +5,6 @@
 - Context menus
   - Try using the new system for all kinds of buttons with more than one action
   - Needs way to show actions in the tooltip or not
-  - Try showing keyboard shortcut inside the buttons
 
 - When context menus come in, make sure to filter actions properly for all item buttons
   - This is a bit messy with entity-type items currently and can't easily be fixed atm
