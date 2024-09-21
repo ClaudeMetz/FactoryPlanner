@@ -424,40 +424,40 @@ factory_listeners.gui = {
         },
         {
             name = "act_on_compact_recipe",
-            modifier_actions = {
-                open_subfloor = {"left"},
-                factoriopedia = {"alt-right"}
+            actions_table = {
+                open_subfloor = {shortcut="left"},
+                factoriopedia = {shortcut="alt-right"}
             },
             handler = handle_recipe_click
         },
         {
             name = "act_on_compact_module",
-            modifier_actions = {
-                factoriopedia = {"alt-right"}
+            actions_table = {
+                factoriopedia = {shortcut="alt-right"}
             },
             handler = handle_module_click
         },
         {
             name = "act_on_compact_machine",
-            modifier_actions = {
-                put_into_cursor = {"left"},
-                factoriopedia = {"alt-right"}
+            actions_table = {
+                put_into_cursor = {shortcut="left"},
+                factoriopedia = {shortcut="alt-right"}
             },
             handler = handle_machine_click
         },
         {
             name = "act_on_compact_beacon",
-            modifier_actions = {
-                put_into_cursor = {"left"},
-                factoriopedia = {"alt-right"}
+            actions_table = {
+                put_into_cursor = {shortcut="left"},
+                factoriopedia = {shortcut="alt-right"}
             },
             handler = handle_beacon_click
         },
         {
             name = "act_on_compact_item",
-            modifier_actions = {
-                put_into_cursor = {"left"},
-                factoriopedia = {"alt-right"}
+            actions_table = {
+                put_into_cursor = {shortcut="left"},
+                factoriopedia = {shortcut="alt-right"}
             },
             handler = handle_item_click
         }

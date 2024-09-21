@@ -80,23 +80,19 @@ for _, listener in pairs(event_listeners) do
                 local action_table = {handler = action.handler, timeout = timeout}
                 ACTION_HANDLERS[action.name] = action.handler
 
-                if event_name == "on_gui_click" and action.modifier_actions then
-                    action_table.modifier_actions = {}
-                    -- Transform modifier actions into a more useable form
-                    for modifier_action_name, modifier_action in pairs(action.modifier_actions) do
-                        local modifier_click = modifier_action[1]
-
-                        local split_modifiers, modifier_string = util.split_string(modifier_click, "-"), {""}
-                        for _, modifier in pairs(ftable.slice(split_modifiers, 1, -1)) do
-                            table.insert(modifier_string, {"", {"fp.action_" .. modifier}, " + "})
-                        end
-                        table.insert(modifier_string, {"fp.action_" .. split_modifiers[#split_modifiers]})
-
-                        action_table.modifier_actions[modifier_click] = {
-                            name = modifier_action_name,
-                            limitations = modifier_action[2] or {},
-                            string = {"fp.action_click", modifier_string}
+                if event_name == "on_gui_click" and action.actions_table then
+                    action_table.actions, action_table.shortcuts = {}, {}
+                    -- Transform actions table into a more useable form
+                    for action_name, modifier_action in pairs(action.actions_table) do
+                        local action_details = {
+                            name = action_name,
+                            limitations = modifier_action.limitations or {},
+                            string = util.actions.action_string(modifier_action.shortcut)
                         }
+                        table.insert(action_table.actions, action_details)
+                        if modifier_action.shortcut then
+                            action_table.shortcuts[modifier_action.shortcut] = action_details
+                        end
                     end
                 end
 
@@ -152,14 +148,14 @@ local function handle_gui_event(event)
     if util.actions.rate_limited(player, event.tick, action_name, action_table.timeout) then return end
 
     -- Special modifier handling for on_gui_click if configured
-    if event_name == "on_gui_click" and action_table.modifier_actions then
+    if event_name == "on_gui_click" and action_table.actions then
         local click = convert_click_to_string(event)
 
         if click == "right" then
             modal_dialog.open_context_menu(player, tags, action_name,
-                action_table.modifier_actions, event.cursor_display_location)
+                action_table.actions, event.cursor_display_location)
         else
-            local modifier_action = action_table.modifier_actions[click]
+            local modifier_action = action_table.shortcuts[click]
             if not modifier_action then return end  -- meaning the used modifiers do not have an associated action
 
             local active_limitations = util.actions.current_limitations(player)

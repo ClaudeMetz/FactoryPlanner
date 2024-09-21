@@ -210,7 +210,7 @@ function modal_dialog.exit(player, action, skip_opened, dialog_close)
 end
 
 
-function modal_dialog.open_context_menu(player, tags, handler, modifier_actions, location)
+function modal_dialog.open_context_menu(player, tags, handler, actions, location)
     local ui_state = util.globals.ui_state(player)
     local frame_modal_dialog = player.gui.screen.add{type="frame", direction="vertical",
         tags={mod="fp", on_gui_closed="close_context_menu"}, style="fp_naked_frame"}
@@ -223,12 +223,12 @@ function modal_dialog.open_context_menu(player, tags, handler, modifier_actions,
     local action_counter = 0
     local active_limitations = util.actions.current_limitations(player)
 
-    for _, modifier_action in pairs(modifier_actions) do
-        if util.actions.allowed(modifier_action.limitations, active_limitations) then
-            local caption = {"fp.tt_title", {"fp.action_" .. modifier_action.name}}
-            local button = button_flow.add{type="button", caption=caption, tooltip=modifier_action.string,
+    for _, action in pairs(actions) do
+        if util.actions.allowed(action.limitations, active_limitations) then
+            local caption = {"fp.tt_title", {"fp.action_" .. action.name}}
+            local button = button_flow.add{type="button", caption=caption, tooltip=action.string,
                 tags={mod="fp", on_gui_click="choose_context_action", tags=tags, handler=handler,
-                action=modifier_action.name}, style="list_box_item", mouse_button_filter={"left"}}
+                action=action.name}, style="list_box_item", mouse_button_filter={"left"}}
             button.style.width = MAGIC_NUMBERS.context_menu_width
             action_counter = action_counter + 1
         end
