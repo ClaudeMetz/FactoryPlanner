@@ -103,6 +103,7 @@ end
 ---@field tooltips table
 ---@field modal_dialog_type ModalDialogType?
 ---@field modal_data table?
+---@field context_menu LuaGuiElement?
 ---@field selection_mode boolean
 ---@field compact_view boolean
 ---@field districts_view boolean
@@ -128,6 +129,7 @@ local function reset_ui_state(player_table)
 
         modal_dialog_type = nil,
         modal_data = nil,
+        context_menu = nil,
 
         selection_mode = false,
         compact_view = false,

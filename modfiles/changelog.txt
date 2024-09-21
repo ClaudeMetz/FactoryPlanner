@@ -2,11 +2,11 @@
 Version: 0.00.00
 Date: 00. 00. 0000
   Features:
-    - 
+    -
   Changes:
-    - 
+    -
   Bugfixes:
-    - 
+    -
 
 ---------------------------------------------------------------------------------------------------
 Version: 1.2.8
@@ -46,9 +46,11 @@ Date: 20. 07. 2024
     - TODO districts,  +surface conditions, +pollution
     - Added the ability to set a quality level on machines, beacons, and modules
     - Added support for the new machines and recipes, like the agriculture tower
+    - Added support for new module mechanics such as beacon profiles, machine base productivity, new productivity researches, maximum recipe productivity, and more
+    - Added the ability to set custom productivity boni for relevant recipes
+    - Added a right-click context menu to all buttons with complex interactions to make them more easily accessible
     - Added indication of cyclic/catalyst ingredients in recipes, making it easier to plan their logistics
     - Added support for arithmetic operations in relevant textfields
-    - Added the ability to set custom productivity boni for relevant recipes
     - Added stacks/timescale and rockets/timescale item rate views
     - Added configuration options for item rate views in preferences
     - Added a simple pocket calculator utility
@@ -57,10 +59,10 @@ Date: 20. 07. 2024
     - Moved the global machine, fuel, beacon and module defaults from the preferences dialog into the machine/beacon dialogs
     - Enabled proper configuration of default fuels for machines with multiple fuel categories
     - Changed the timescale setting to be global instead of per factory, while dropping the per hour option
-    - Adjusted mod for new module mechanics such as beacon profiles, machine base productivity, new productivity researches, maximum recipe productivity, and more
     - Changed the utility dialog function to request missing item delivery to create a new logistic section instead of having construction bots fulfill the order
     - Dropped Recipe Book support in favor of Factoriopedia, the new built-in recipe browser
     - Dropped support for boiler recipes and specifying amounts by ingredients, for now
+    - Dropped the tutorial dialog including the example factory, as context menus are a better introduction to the feature set
     - Fixed and improved various parts of the interface
     - Updated the Factorio Library mod to 2.0.0
   Bugfixes:

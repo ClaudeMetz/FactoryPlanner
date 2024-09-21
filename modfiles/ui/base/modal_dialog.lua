@@ -3,7 +3,7 @@ modal_dialog = {}
 ---@alias ModalDialogType string
 
 -- ** LOCAL UTIL **
-local function create_base_modal_dialog(player, dialog_settings, modal_data)
+local function create_base_dialog(player, dialog_settings, modal_data)
     local modal_elements = modal_data.modal_elements
 
     local frame_modal_dialog = player.gui.screen.add{type="frame", direction="vertical",
@@ -154,17 +154,6 @@ local function create_base_modal_dialog(player, dialog_settings, modal_data)
     return frame_modal_dialog
 end
 
-local function run_delayed_modal_search(metadata)
-    local player = game.get_player(metadata.player_index)  --[[@as LuaPlayer]]
-    local modal_data = util.globals.modal_data(player)
-    if not modal_data or not modal_data.modal_elements then return end
-
-    local searchfield = modal_data.modal_elements.search_textfield
-    local search_term = searchfield.text:gsub("^%s*(.-)%s*$", "%1"):lower()
-    GLOBAL_HANDLERS[modal_data.search_handler_name](player, search_term)
-end
-
-
 -- ** TOP LEVEL **
 -- Opens a barebone modal dialog and calls upon the given function to populate it
 function modal_dialog.enter(player, metadata, dialog_open, early_abort)
@@ -187,10 +176,11 @@ function modal_dialog.enter(player, metadata, dialog_open, early_abort)
 
     -- Create modal dialog framework and let the dialog itself fill it out
     ui_state.modal_dialog_type = metadata.dialog
-    local frame_modal_dialog = create_base_modal_dialog(player, metadata, ui_state.modal_data)
+    local frame_modal_dialog = create_base_dialog(player, metadata, ui_state.modal_data)
     dialog_open(player, ui_state.modal_data)
+
     player.opened = frame_modal_dialog
-    frame_modal_dialog.force_auto_center()  -- seems to be necessary now, not sure why
+    frame_modal_dialog.force_auto_center()
 end
 
 -- Handles the closing process of a modal dialog, reopening the main dialog thereafter
@@ -217,6 +207,60 @@ function modal_dialog.exit(player, action, skip_opened, dialog_close)
     modal_elements.modal_frame.destroy()
 
     if not skip_opened then player.opened = ui_state.main_elements.main_frame end
+end
+
+
+function modal_dialog.open_context_menu(player, tags, handler, modifier_actions, location)
+    local ui_state = util.globals.ui_state(player)
+    local frame_modal_dialog = player.gui.screen.add{type="frame", direction="vertical",
+        tags={mod="fp", on_gui_closed="close_context_menu"}, style="fp_naked_frame"}
+    frame_modal_dialog.style.padding = 0  -- make sure the visible part starts right on the cursor
+    ui_state.context_menu = frame_modal_dialog
+
+    local button_flow = frame_modal_dialog.add{type="flow", direction="vertical"}
+    button_flow.style.vertical_spacing = 0
+
+    local action_counter = 0
+    local active_limitations = util.actions.current_limitations(player)
+
+    for _, modifier_action in pairs(modifier_actions) do
+        if util.actions.allowed(modifier_action.limitations, active_limitations) then
+            local caption = {"fp.tt_title", {"fp.action_" .. modifier_action.name}}
+            local button = button_flow.add{type="button", caption=caption, tooltip=modifier_action.string,
+                tags={mod="fp", on_gui_click="choose_context_action", tags=tags, handler=handler,
+                action=modifier_action.name}, style="list_box_item", mouse_button_filter={"left"}}
+            button.style.width = MAGIC_NUMBERS.context_menu_width
+            action_counter = action_counter + 1
+        end
+    end
+    local dialog_height = action_counter * 28
+    button_flow.style.height = dialog_height
+
+    -- Make sure the dialog doesn't go off-screen at the bottom or the right
+    local scaled_dialog_height = dialog_height * player.display_scale
+    local distance_to_bottom = player.display_resolution.height - location.y
+    if distance_to_bottom < scaled_dialog_height then location.y = location.y - scaled_dialog_height end
+
+    local scaled_dialog_width = MAGIC_NUMBERS.context_menu_width * player.display_scale
+    local distance_to_right = player.display_resolution.width - location.x
+    if distance_to_right < scaled_dialog_width then location.x = location.x - scaled_dialog_width end
+
+    frame_modal_dialog.location = location
+    player.opened = frame_modal_dialog
+end
+
+function modal_dialog.close_context_menu(player)
+    local ui_state = util.globals.ui_state(player)
+    if not ui_state.context_menu then return end
+
+    ui_state.context_menu.destroy()
+    ui_state.context_menu = nil
+
+    if ui_state.modal_dialog_type ~= nil then
+        player.opened = ui_state.modal_data.modal_elements.modal_frame
+    else
+        player.opened = ui_state.main_elements.main_frame
+    end
 end
 
 
@@ -314,6 +358,13 @@ listeners.gui = {
             end)
         },
         {
+            name = "choose_context_action",
+            handler = (function(player, tags, _)
+                modal_dialog.close_context_menu(player)
+                ACTION_HANDLERS[tags.handler](player, tags.tags, tags.action)
+            end)
+        },
+        {
             name = "focus_modal_searchfield",
             handler = (function(player, _, _)
                 util.gui.select_all(util.globals.modal_elements(player).search_textfield)
@@ -368,7 +419,7 @@ listeners.gui = {
 
                 if ui_state.selection_mode then
                     modal_dialog.leave_selection_mode(player)
-                else
+                elseif ui_state.context_menu == nil then  -- don't close if opening context menu
                     -- Here, we need to distinguish between submitting a dialog with E or ESC
                     util.raise.close_dialog(player, (ui_state.modal_data.confirmed_dialog) and "submit" or "cancel")
                     -- If the dialog was not closed, it means submission was disabled, and we need to re-set .opened
@@ -378,6 +429,10 @@ listeners.gui = {
                 -- Reset .confirmed_dialog if this event didn't actually lead to the dialog closing
                 if event.element.valid then ui_state.modal_data.confirmed_dialog = false end
             end)
+        },
+        {
+            name = "close_context_menu",
+            handler = modal_dialog.close_context_menu
         }
     }
 }
@@ -406,7 +461,15 @@ listeners.misc = {
 }
 
 listeners.global = {
-    run_delayed_modal_search = run_delayed_modal_search
+    run_delayed_modal_search = (function(metadata)
+        local player = game.get_player(metadata.player_index)  --[[@as LuaPlayer]]
+        local modal_data = util.globals.modal_data(player)
+        if not modal_data or not modal_data.modal_elements then return end
+
+        local searchfield = modal_data.modal_elements.search_textfield
+        local search_term = searchfield.text:gsub("^%s*(.-)%s*$", "%1"):lower()
+        GLOBAL_HANDLERS[modal_data.search_handler_name](player, search_term)
+    end)
 }
 
 return { listeners }
