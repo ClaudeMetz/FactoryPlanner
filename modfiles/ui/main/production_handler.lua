@@ -270,9 +270,6 @@ local function handle_fuel_click(player, tags, action)
         util.raise.open_dialog(player, {dialog="recipe", modal_data={add_after_line_id=add_after_line_id,
             production_type="produce", category_id=proto.category_id, product_id=proto.id}})
 
-    elseif action == "edit" then  -- fuel is changed through the machine dialog
-        util.raise.open_dialog(player, {dialog="machine", modal_data={machine_id=fuel.parent.id}})
-
     elseif action == "copy" then
         util.clipboard.copy(player, fuel)
 
@@ -312,7 +309,7 @@ listeners.gui = {
         {
             name = "act_on_line_machine",
             modifier_actions = {
-                edit = {"right", {archive_open=false}},
+                edit = {"left", {archive_open=false}},
                 copy = {"shift-right"},
                 paste = {"shift-left", {archive_open=false}},
                 put_into_cursor = {"alt-right"},
@@ -327,7 +324,7 @@ listeners.gui = {
         {
             name = "act_on_line_beacon",
             modifier_actions = {
-                edit = {"right", {archive_open=false}},
+                edit = {"left", {archive_open=false}},
                 copy = {"shift-right"},
                 paste = {"shift-left", {archive_open=false}},
                 delete = {"control-right", {archive_open=false}},
@@ -343,7 +340,7 @@ listeners.gui = {
         {
             name = "act_on_line_module",
             modifier_actions = {
-                edit = {"right", {archive_open=false}},
+                edit = {"left", {archive_open=false}},
                 copy = {"shift-right"},
                 paste = {"shift-left", {archive_open=false}},
                 delete = {"control-right", {archive_open=false}},
@@ -397,7 +394,6 @@ listeners.gui = {
             modifier_actions = {
                 add_recipe_to_end = {"left", {archive_open=false}},
                 add_recipe_below = {"control-left", {archive_open=false}},
-                edit = {"right", {archive_open=false}},
                 copy = {"shift-right"},
                 paste = {"shift-left", {archive_open=false}},
                 put_into_cursor = {"alt-right"},

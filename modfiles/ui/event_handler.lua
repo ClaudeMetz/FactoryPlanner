@@ -78,15 +78,24 @@ for _, listener in pairs(event_listeners) do
             for _, action in pairs(actions) do
                 local timeout = action.timeout or gui_timeouts[event_name]  -- can be nil
                 local action_table = {handler = action.handler, timeout = timeout}
+                ACTION_HANDLERS[action.name] = action.handler
 
                 if event_name == "on_gui_click" and action.modifier_actions then
                     action_table.modifier_actions = {}
                     -- Transform modifier actions into a more useable form
                     for modifier_action_name, modifier_action in pairs(action.modifier_actions) do
                         local modifier_click = modifier_action[1]
+
+                        local split_modifiers, modifier_string = util.split_string(modifier_click, "-"), {""}
+                        for _, modifier in pairs(ftable.slice(split_modifiers, 1, -1)) do
+                            table.insert(modifier_string, {"", {"fp.action_" .. modifier}, " + "})
+                        end
+                        table.insert(modifier_string, {"fp.action_" .. split_modifiers[#split_modifiers]})
+
                         action_table.modifier_actions[modifier_click] = {
                             name = modifier_action_name,
-                            limitations = modifier_action[2] or {}
+                            limitations = modifier_action[2] or {},
+                            string = {"fp.action_click", modifier_string}
                         }
                     end
                 end
@@ -127,6 +136,9 @@ local function handle_gui_event(event)
     local event_table = gui_event_cache[event_name]
     local action_name = tags[event_name]  -- could be nil
 
+    -- Close an open context menu on any GUI click
+    if event_name == "on_gui_click" then modal_dialog.close_context_menu(player) end
+
     -- If a special handler is set, it needs to return true before proceeding with the registered handlers
     local special_handler = event_table.special_handler
     if special_handler and special_handler(event, player, action_name) == false then return end
@@ -139,21 +151,25 @@ local function handle_gui_event(event)
     -- Check if rate limiting allows this action to proceed
     if util.actions.rate_limited(player, event.tick, action_name, action_table.timeout) then return end
 
-    local third_parameter = event  -- all GUI events except on_gui_click have the event as the third parameter
-
     -- Special modifier handling for on_gui_click if configured
     if event_name == "on_gui_click" and action_table.modifier_actions then
-        local modifier_action = action_table.modifier_actions[convert_click_to_string(event)]
-        if not modifier_action then return end  -- meaning the used modifiers do not have an associated action
+        local click = convert_click_to_string(event)
 
-        local active_limitations = util.actions.current_limitations(player)
-        -- Check whether the selected action is allowed according to its limitations
-        if not util.actions.allowed(modifier_action.limitations, active_limitations) then return end
+        if click == "right" then
+            modal_dialog.open_context_menu(player, tags, action_name,
+                action_table.modifier_actions, event.cursor_display_location)
+        else
+            local modifier_action = action_table.modifier_actions[click]
+            if not modifier_action then return end  -- meaning the used modifiers do not have an associated action
 
-        third_parameter = modifier_action.name
+            local active_limitations = util.actions.current_limitations(player)
+            if util.actions.allowed(modifier_action.limitations, active_limitations) then
+                action_table.handler(player, tags, modifier_action.name)
+            end
+        end
+    else
+        action_table.handler(player, tags, event)  -- gets event as third parameter
     end
-
-    action_table.handler(player, tags, third_parameter)  -- send the actual event
 
     -- Only refresh messages if the event wasn't a hover event
     if event_name ~= "on_gui_hover" and event_name ~= "on_gui_leave" then util.messages.refresh(player) end
@@ -296,6 +312,9 @@ local function handle_misc_event(event)
 
     -- We'll assume every one of the events has a player attached
     local player = game.get_player(event.player_index)   ---@cast player -nil
+
+    -- Close context menu on any keyboard shortcut
+    if event.input_name then modal_dialog.close_context_menu(player) end
 
     -- Check if the action is allowed to be carried out by rate limiting
     if util.actions.rate_limited(player, event.tick, event_name, event_handlers.timeout) then return end

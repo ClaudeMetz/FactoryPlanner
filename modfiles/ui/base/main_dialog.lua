@@ -114,7 +114,8 @@ function main_dialog.toggle(player, skip_opened)
     if frame_main_dialog == nil or not frame_main_dialog.valid then
         main_dialog.rebuild(player, true)  -- sets opened and paused-state itself
 
-    elseif ui_state.modal_dialog_type == nil then  -- don't toggle if modal dialog is open
+    -- Don't toggle if a modal dialog or context menu is opened
+    elseif ui_state.modal_dialog_type == nil and ui_state.context_menu == nil then
         local new_dialog_visibility = not frame_main_dialog.visible
         frame_main_dialog.visible = new_dialog_visibility
         if not skip_opened then  -- flag used only for hacky internal reasons

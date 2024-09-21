@@ -288,10 +288,10 @@ listeners.gui = {
             name = "act_on_top_level_product",
             modifier_actions = {
                 add_recipe = {"left", {archive_open=false}},
-                edit = {"right", {archive_open=false}},
+                edit = {"control-left", {archive_open=false}},
+                delete = {"control-right", {archive_open=false}},
                 copy = {"shift-right"},
                 paste = {"shift-left", {archive_open=false}},
-                delete = {"control-right", {archive_open=false}},
                 put_into_cursor = {"alt-right"},
                 factoriopedia = {"alt-left"}
             },

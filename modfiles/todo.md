@@ -2,6 +2,18 @@
 
 ## Active
 
+- Context menus
+  - Try using the new system for all kinds of buttons with more than one action
+  - Needs way to show actions in the tooltip or not
+  - Allow actions without keyboard shortcut
+  - Trying showing keyboard shortcut inside the buttons
+  - Move remaining actions util back to event handler file?
+
+- When context menus come in, make sure to filter actions properly for all item buttons
+  - This is a bit messy with entity-type items currently and can't easily be fixed atm
+  - One additional dropdown action could be to craft machines, same as the utility dialog
+    - Will need to improve and generalize that code for this for sure
+  - Also use them to quick-change default belts on the view, for example
 
 ## Bugs
 
@@ -43,11 +55,6 @@
 - Note when rocket silo launch time becomes a problem for speed; it's not at lower speeds
   - Is quite a complicated feature, especially when productivity is involved. Probably do need it though
 - Rocket silo power usage seems very low, likely doesn't consider launch usage
-- When context menus come in, make sure to filter actions properly for all item buttons
-  - This is a bit messy with entity-type items currently and can't easily be fixed atm
-  - One additional dropdown action could be to craft machines, same as the utility dialog
-    - Will need to improve and generalize that code for this for sure
-  - Also use them to quick-change default belts on the view, for example
 - Agriculture tower implementation
   - Missing energy and pollution production, is different to normal entities
 - Improve performance by not making item_views.process iterate the prefs every time

@@ -107,9 +107,9 @@ local function add_modules_flow(parent_flow, parent_type, line, metadata)
         local style = (line.done) and "flib_slot_button_grayscale_small" or "flib_slot_button_default_small"
 
         local button = parent_flow.add{type="sprite-button", sprite=module.proto.sprite, style=style,
-            tags={mod="fp", on_gui_click="act_on_compact_module", module_id=module.id, on_gui_hover="set_tooltip",
-            context="compact_dialog"}, number=module.amount, mouse_button_filter={"left-and-right"},
-            raise_hover_events=true}
+            tags={mod="fp", on_gui_click="act_on_compact_module", module_id=module.id,
+            on_gui_hover="set_tooltip", context="compact_dialog"}, number=module.amount,
+            mouse_button_filter={"left-and-right"}, raise_hover_events=true}
         metadata.tooltips[button.index] = tooltip
     end
 end
@@ -179,10 +179,9 @@ local function add_item_flow(line, relevant_line, item_category, button_color, m
         end
 
         local button = item_table.add{type="sprite-button", sprite=proto.sprite, number=amount,
-            tags={mod="fp", on_gui_click="act_on_compact_item", on_gui_hover="hover_compact_item",
-            on_gui_leave="leave_compact_item", simple_items_id=simple_items.id, item_index=index,
-            context="compact_dialog"}, style=style, enabled=enabled, mouse_button_filter={"left-and-right"},
-            raise_hover_events=true}
+            tags={mod="fp", on_gui_click="act_on_compact_item", items_id=simple_items.id, item_index=index,
+            on_gui_hover="hover_compact_item", on_gui_leave="leave_compact_item", context="compact_dialog"},
+            style=style, enabled=enabled, mouse_button_filter={"left-and-right"}, raise_hover_events=true}
         metadata.tooltips[button.index] = tooltip
 
         item_buttons[type] = item_buttons[type] or {}
@@ -387,7 +386,7 @@ end
 
 local function handle_item_click(player, tags, action)
     local item = (tags.fuel_id) and OBJECT_INDEX[tags.fuel_id]
-        or OBJECT_INDEX[tags.simple_items_id].items[tags.item_index]
+        or OBJECT_INDEX[tags.items_id].items[tags.item_index]
     if item.proto.type == "entity" then return end
 
     if action == "put_into_cursor" then
@@ -400,7 +399,7 @@ end
 
 local function handle_hover_change(player, tags, event)
     local proto = (tags.fuel_id) and OBJECT_INDEX[tags.fuel_id].proto
-        or OBJECT_INDEX[tags.simple_items_id].items[tags.item_index].proto
+        or OBJECT_INDEX[tags.items_id].items[tags.item_index].proto
     local compact_elements = util.globals.ui_state(player).compact_elements
 
     local relevant_buttons = compact_elements.item_buttons[proto.type][proto.name]
