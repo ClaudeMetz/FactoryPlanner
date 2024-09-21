@@ -32,7 +32,7 @@ MAGIC_NUMBERS = {
     left_titlebar_width = 94,  -- Width of the left titlebar buttons
     right_titlebar_width = 154,  -- Width of the right titlebar buttons
     titlebar_label_width = 124,  -- Width of the 'Factory Planner' titlebar label
-    context_menu_width = 160  -- total width of the context menu
+    context_menu_width = 275  -- total width of the context menu
 }
 
 CUSTOM_EVENTS = {

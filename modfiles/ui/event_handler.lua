@@ -87,7 +87,7 @@ for _, listener in pairs(event_listeners) do
                         local action_details = {
                             name = action_name,
                             limitations = modifier_action.limitations or {},
-                            string = util.actions.action_string(modifier_action.shortcut)
+                            shortcut_string = util.actions.shortcut_string(modifier_action.shortcut)
                         }
                         table.insert(action_table.actions, action_details)
                         if modifier_action.shortcut then

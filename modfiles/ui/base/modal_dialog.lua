@@ -226,10 +226,17 @@ function modal_dialog.open_context_menu(player, tags, handler, actions, location
     for _, action in pairs(actions) do
         if util.actions.allowed(action.limitations, active_limitations) then
             local caption = {"fp.tt_title", {"fp.action_" .. action.name}}
-            local button = button_flow.add{type="button", caption=caption, tooltip=action.string,
-                tags={mod="fp", on_gui_click="choose_context_action", tags=tags, handler=handler,
-                action=action.name}, style="list_box_item", mouse_button_filter={"left"}}
+            local button = button_flow.add{type="button", style="list_box_item", mouse_button_filter={"left"},
+                tags={mod="fp", on_gui_click="choose_context_action", tags=tags, handler=handler, action=action.name}}
             button.style.width = MAGIC_NUMBERS.context_menu_width
+
+            local flow = button.add{type="flow", direction="horizontal"}
+            flow.style.width = MAGIC_NUMBERS.context_menu_width
+            flow.style.right_padding = 20
+            flow.add{type="label", caption=caption, style="bold_label"}
+            flow.add{type="empty-widget", style="flib_horizontal_pusher"}
+            flow.add{type="label", caption=action.shortcut_string}
+
             action_counter = action_counter + 1
         end
     end
