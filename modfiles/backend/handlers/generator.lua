@@ -1090,21 +1090,16 @@ function generator.locations.generate()
     local function build_location(proto, type_)
         local sprite = type_ .. "/" .. proto.name
         if not proto.hidden and not game.is_valid_sprite_path(sprite) then return nil end
+        if not proto.surface_properties then return nil end
 
-        local surface_properties, tooltip = nil, {"", {"fp.tt_title", proto.localised_name}}
+        local surface_properties, tooltip = {}, {"", {"fp.tt_title", proto.localised_name}, "\n"}
+        for _, property_proto in pairs(property_prototypes) do
+            local value = proto.surface_properties[property_proto.name] or property_proto.default_value
+            surface_properties[property_proto.name] = value
 
-        if proto.surface_properties then
-            surface_properties = {}
-            table.insert(tooltip, "\n")
-
-            for _, property_proto in pairs(property_prototypes) do
-                local value = proto.surface_properties[property_proto.name] or property_proto.default_value
-                surface_properties[property_proto.name] = value
-
-                local value_and_unit = {"", value, property_proto.localised_unit}  ---@type LocalisedString
-                if property_proto.is_time then value_and_unit = util.format.time(value) end
-                table.insert(tooltip, {"fp.surface_property", property_proto.localised_name, value_and_unit})
-            end
+            local value_and_unit = {"", value, property_proto.localised_unit}  ---@type LocalisedString
+            if property_proto.is_time then value_and_unit = util.format.time(value) end
+            table.insert(tooltip, {"fp.surface_property", property_proto.localised_name, value_and_unit})
         end
 
         return {
