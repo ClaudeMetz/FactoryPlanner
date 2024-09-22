@@ -7,10 +7,12 @@
 
 - Matrix solver broken with entity-type ingredients present seemingly
   - Alternatively could be because of 0-ed machine counts or similar
+- Wrong localised names for custom machines/recipes etc
 - Take care of faded disabled sprite buttons, probably by using toggled or sprite elements
 
 ## Features
 
+- Add second way to detect offshore pumps (https://github.com/wube/Factorio/commit/b8e7cac1fcb4bae0ec0146f00ec69f6d266d0252)
 - Change SimpleItems to be a dict instead of an array so there needs to be no fuss finding stuff
 - Balance District items against each other
 - Allow Factory products to take their amounts from the District's ingredients
@@ -25,11 +27,6 @@
   - Otherwise there won't be a unique solution. Kinda orthogonal in general, but would be helpful to have
 - Allow clicking on District items to see their origin/usage. Ideally click to go there directly, but that's
   tricky since they can be from multiple places. Maybe a separate UI is warranted
-- Turn item spoilage results into recipes since mods will use that as a critical path for sure
-  - Kinda annoying since it doesn't use machines, just times, so the recipes would be very near useless
-  - Could use 'time' as a custom ingredient on an otherwise blank line
-  - The machine icon could just be a steel chest, would be kinda funny
-  - Use `spoiling` feature flag to gate this
 - Fluid temps - needs dealing with before 2.0
   - Add back distinct items for each fluid temp, so I don't need to carry that info along separately in the solver
   - Have the complex matching logic only when no specific temperature is needed, for the solver and recipe picker
