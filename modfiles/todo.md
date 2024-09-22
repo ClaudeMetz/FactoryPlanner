@@ -2,18 +2,12 @@
 
 ## Active
 
-- Context menus
-  - Try using the new system for all kinds of buttons with more than one action
-  - Add quick-change context menu to view buttons for belts and wagons?
-  - Add floating text for all actions that are taken that are not possible
-    - Ideally the tooltips and context menu wouldn't show them, but that is tricky
 
 ## Bugs
 
 - Matrix solver broken with entity-type ingredients present seemingly
   - Alternatively could be because of 0-ed machine counts or similar
 - Take care of faded disabled sprite buttons, probably by using toggled or sprite elements
-- Remove locations without surface conditions
 
 ## Features
 
@@ -54,6 +48,9 @@
 - Disable byproduct lines with matrix solver instead of deleting, same as the surface-disabled ones
 - Could use icons for control, shift, etc for context menus to make them smaller
 - Could now store blueprints from the library I think?
+- Context menu to change belt directly on belt view button
+- Add floating text for all actions that are taken that are not possible
+  - Ideally the tooltips and context menu wouldn't show them, but that is tricky
 
 ## Future Tasks
 
