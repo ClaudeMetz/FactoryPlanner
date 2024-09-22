@@ -193,6 +193,8 @@ function generator.machines.generate()
         return machine
     end
 
+    local biggest_chest = nil
+
     for _, proto in pairs(prototypes.entity) do
         if proto.crafting_categories and not proto.hidden and proto.energy_usage ~= nil
                 and not generator_util.is_irrelevant_machine(proto) then
@@ -227,6 +229,12 @@ function generator.machines.generate()
                 machine.energy_usage = 0  -- implemented later: energy_usage, crane_energy_usage
                 insert_prototype(machines, machine, proto.type)
             end
+
+        elseif proto.type == "container" and not proto.hidden then
+            -- Just find the biggest container as a spoilage machine
+            local size = proto.get_inventory_size(defines.inventory.chest)
+            local current_size = biggest_chest and biggest_chest.get_inventory_size(defines.inventory.chest) or 0
+            if current_size < size then biggest_chest = proto end
         end
 
         -- Add machines that produce steam (ie. boilers)
@@ -264,6 +272,14 @@ function generator.machines.generate()
                 end
             end
         end ]]
+    end
+
+    if biggest_chest then
+        local machine = generate_category_entry("purposeful-spoiling", biggest_chest, nil)
+        if machine then
+            machine.speed, machine.energy_usage = 1, 0
+            insert_prototype(machines, machine, "purposeful-spoiling")
+        end
     end
 
     return machines
@@ -567,6 +583,25 @@ function generator.recipes.generate()
 
             local products = {{type="fluid", name=proto.fluid.name, amount=60}}
             local ingredients = {{type="entity", name="custom-" .. proto.name, amount=0}}
+            generator_util.format_recipe(recipe, products, products[1], ingredients)
+
+            insert_prototype(recipes, recipe, nil)
+        end
+    end
+
+    -- Add purposeful spoiling recipes
+    for _, proto in pairs(prototypes.item) do
+        if proto.get_spoil_ticks() > 0 and proto.spoil_result then
+            local recipe = custom_recipe()
+            recipe.name = "impostor-spoiling-" .. proto.name
+            recipe.localised_name = {"", proto.spoil_result.localised_name, " ", {"fp.spoiling_recipe"}}
+            recipe.sprite = "item/" .. proto.spoil_result.name
+            recipe.order = proto.spoil_result.order
+            recipe.category = "purposeful-spoiling"
+            recipe.energy = 0
+
+            local products = {{type="item", name=proto.spoil_result.name, amount=1}}
+            local ingredients = {{type="item", name=proto.name, amount=1}}
             generator_util.format_recipe(recipe, products, products[1], ingredients)
 
             insert_prototype(recipes, recipe, nil)
