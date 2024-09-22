@@ -91,8 +91,9 @@ local function add_recipe_button(parent_flow, line, relevant_line, metadata)
     local recipe_proto = relevant_line.recipe_proto
     local style = (line.class == "Floor") and "flib_slot_button_blue_small" or "flib_slot_button_default_small"
     style = (relevant_line.done) and "flib_slot_button_grayscale_small" or style
-    local tooltip = (line.class == "Line") and {"fp.tt_title", recipe_proto.localised_name}
+    local tooltip = (line.class == "Line") and {"", {"fp.tt_title", recipe_proto.localised_name}}
         or {"", {"fp.tt_title", recipe_proto.localised_name}}
+    table.insert(tooltip, {"", "\n", metadata.action_tooltips["act_on_compact_recipe"]})
 
     local button = parent_flow.add{type="sprite-button", sprite=recipe_proto.sprite, style=style,
         tags={mod="fp", on_gui_click="act_on_compact_recipe", line_id=line.id, on_gui_hover="set_tooltip",
@@ -103,7 +104,8 @@ end
 local function add_modules_flow(parent_flow, parent_type, line, metadata)
     for module in line[parent_type].module_set:iterator() do
         local number_line = {"", "\n", module.amount, " ", {"fp.pl_module", module.amount}}
-        local tooltip = {"", {"fp.tt_title", module.proto.localised_name}, number_line}
+        local tooltip = {"", {"fp.tt_title", module.proto.localised_name}, number_line,
+            "\n", metadata.action_tooltips["act_on_compact_module"]}
         local style = (line.done) and "flib_slot_button_grayscale_small" or "flib_slot_button_default_small"
 
         local button = parent_flow.add{type="sprite-button", sprite=module.proto.sprite, style=style,
@@ -120,7 +122,8 @@ local function add_machine_flow(parent_flow, line, metadata)
         local machine_proto = line.machine.proto
 
         local amount, tooltip_line = util.format.machine_count(line.machine.amount, true)
-        local tooltip = {"", {"fp.tt_title", machine_proto.localised_name}, tooltip_line}
+        local tooltip = {"", {"fp.tt_title", machine_proto.localised_name}, tooltip_line,
+            "\n", metadata.action_tooltips["act_on_compact_machine"]}
         local style = (line.done) and "flib_slot_button_grayscale_small" or "flib_slot_button_default_small"
 
         local button = machine_flow.add{type="sprite-button", sprite=machine_proto.sprite, number=amount, style=style,
@@ -140,7 +143,8 @@ local function add_beacon_flow(parent_flow, line, metadata)
 
         local plural_parameter = (line.beacon.amount == 1) and 1 or 2  -- needed because the amount can be decimal
         local number_line = {"", "\n", line.beacon.amount, " ", {"fp.pl_beacon", plural_parameter}}
-        local tooltip = {"", {"fp.tt_title", beacon_proto.localised_name}, number_line}
+        local tooltip = {"", {"fp.tt_title", beacon_proto.localised_name}, number_line,
+            "\n", metadata.action_tooltips["act_on_compact_beacon"]}
         local style = (line.done) and "flib_slot_button_grayscale_small" or "flib_slot_button_default_small"
 
         local button = beacon_flow.add{type="sprite-button", sprite=beacon_proto.sprite, number=line.beacon.amount,
@@ -168,14 +172,14 @@ local function add_item_flow(line, relevant_line, item_category, button_color, m
         if amount == -1 then goto skip_item end  -- an amount of -1 means it was below the margin of error
 
         local number_line = (number_tooltip) and {"", "\n", number_tooltip} or ""
-        local tooltip = {"", {"fp.tt_title", proto.localised_name}, number_line}
+        local tooltip = {"", {"fp.tt_title", proto.localised_name}, number_line,
+            "\n", metadata.action_tooltips["act_on_compact_item"]}
         local style, enabled = "flib_slot_button_" .. button_color .. "_small", true
         if relevant_line.done then style = "flib_slot_button_grayscale_small" end
 
         if type == "entity" then
             style = (relevant_line.done) and "flib_slot_button_transparent_grayscale_small"
                 or "flib_slot_button_transparent_small"
-            tooltip = {"", {"fp.tt_title", proto.localised_name}, number_line}
         end
 
         local button = item_table.add{type="sprite-button", sprite=proto.sprite, number=amount,
@@ -243,7 +247,14 @@ local function refresh_compact_factory(player)
         player = player,
         parent = production_table,
         column_counts = column_counts,
-        tooltips = tooltips.compact_dialog
+        tooltips = tooltips.compact_dialog,
+        action_tooltips = {
+            act_on_compact_recipe = MODIFIER_ACTIONS["act_on_compact_recipe"].tooltip,
+            act_on_compact_module = MODIFIER_ACTIONS["act_on_compact_module"].tooltip,
+            act_on_compact_machine = MODIFIER_ACTIONS["act_on_compact_machine"].tooltip,
+            act_on_compact_beacon = MODIFIER_ACTIONS["act_on_compact_beacon"].tooltip,
+            act_on_compact_item = MODIFIER_ACTIONS["act_on_compact_item"].tooltip
+        }
     }
 
     compact_elements.item_buttons = {}  -- (re)set the item_buttons table
@@ -425,39 +436,39 @@ factory_listeners.gui = {
         {
             name = "act_on_compact_recipe",
             actions_table = {
-                open_subfloor = {shortcut="left"},
-                factoriopedia = {shortcut="alt-right"}
+                open_subfloor = {shortcut="left", show=true},
+                factoriopedia = {shortcut="alt-right", show=true}
             },
             handler = handle_recipe_click
         },
         {
             name = "act_on_compact_module",
             actions_table = {
-                factoriopedia = {shortcut="alt-right"}
+                factoriopedia = {shortcut="alt-right", show=true}
             },
             handler = handle_module_click
         },
         {
             name = "act_on_compact_machine",
             actions_table = {
-                put_into_cursor = {shortcut="left"},
-                factoriopedia = {shortcut="alt-right"}
+                put_into_cursor = {shortcut="left", show=true},
+                factoriopedia = {shortcut="alt-right", show=true}
             },
             handler = handle_machine_click
         },
         {
             name = "act_on_compact_beacon",
             actions_table = {
-                put_into_cursor = {shortcut="left"},
-                factoriopedia = {shortcut="alt-right"}
+                put_into_cursor = {shortcut="left", show=true},
+                factoriopedia = {shortcut="alt-right", show=true}
             },
             handler = handle_beacon_click
         },
         {
             name = "act_on_compact_item",
             actions_table = {
-                put_into_cursor = {shortcut="left"},
-                factoriopedia = {shortcut="alt-right"}
+                put_into_cursor = {shortcut="left", show=true},
+                factoriopedia = {shortcut="alt-right", show=true}
             },
             handler = handle_item_click
         }

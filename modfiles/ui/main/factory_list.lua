@@ -140,7 +140,7 @@ local function refresh_factory_list(player)
         for factory in selected_factory.parent:iterator(filter) do
             local selected = (selected_factory.id == factory.id)
             local caption, info_tooltip = factory:tostring(attach_factory_products, false)
-            local tooltip = {"", info_tooltip}
+            local tooltip = {"", info_tooltip, "\n", MODIFIER_ACTIONS["act_on_factory"].tooltip}
 
             local button_flow = listbox.add{type="flow", direction="horizontal"}
             button_flow.style.horizontal_spacing = 0

@@ -368,7 +368,7 @@ listeners.gui = {
             name = "choose_context_action",
             handler = (function(player, tags, _)
                 modal_dialog.close_context_menu(player)
-                ACTION_HANDLERS[tags.handler](player, tags.tags, tags.action)
+                MODIFIER_ACTIONS[tags.handler].handler(player, tags.tags, tags.action)
             end)
         },
         {

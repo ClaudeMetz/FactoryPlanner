@@ -32,7 +32,7 @@ MAGIC_NUMBERS = {
     left_titlebar_width = 94,  -- Width of the left titlebar buttons
     right_titlebar_width = 154,  -- Width of the right titlebar buttons
     titlebar_label_width = 124,  -- Width of the 'Factory Planner' titlebar label
-    context_menu_width = 275  -- total width of the context menu
+    context_menu_width = 270  -- total width of the context menu
 }
 
 CUSTOM_EVENTS = {
@@ -43,7 +43,7 @@ CUSTOM_EVENTS = {
 }
 
 -- Handlers saved in a central location for access via name
-ACTION_HANDLERS = {}  ---@type { [string]: function }
+MODIFIER_ACTIONS = {}  ---@type ActionTable
 GLOBAL_HANDLERS = {}  ---@type { [string]: function }
 
 PRODUCTS_PER_ROW_OPTIONS = {5, 6, 7, 8, 9, 10}

@@ -64,6 +64,7 @@ local function refresh_item_box(player, factory, show_floor_items, item_category
 
     local shows_floor_items = (floor.parent.class ~= "Factory")
     local action = (shows_floor_items) and ("act_on_floor_item") or ("act_on_top_level_" .. item_category)
+    local action_tooltip = MODIFIER_ACTIONS[action].tooltip
     local real_products = (not shows_floor_items and item_category == "product")
 
     local function build_item(item, index)
@@ -85,7 +86,7 @@ local function refresh_item_box(player, factory, show_floor_items, item_category
 
         local name_line = {"fp.tt_title", item.proto.localised_name}
         local number_line = (number_tooltip) and {"", "\n", number_tooltip} or ""
-        local tooltip = {"", name_line, number_line, satisfaction_line}
+        local tooltip = {"", name_line, number_line, satisfaction_line, "\n", action_tooltip}
         if item.class ~= "Product" and item.proto.type == "entity" then
             style = "flib_slot_button_transparent"
         end
@@ -287,8 +288,8 @@ listeners.gui = {
         {
             name = "act_on_top_level_product",
             actions_table = {
-                add_recipe = {shortcut="left", limitations={archive_open=false}},
-                edit = {shortcut="control-left", limitations={archive_open=false}},
+                add_recipe = {shortcut="left", limitations={archive_open=false}, show=true},
+                edit = {shortcut="control-left", limitations={archive_open=false}, show=true},
                 delete = {shortcut="control-right", limitations={archive_open=false}},
                 copy = {shortcut="shift-right"},
                 paste = {shortcut="shift-left", limitations={archive_open=false}},
@@ -300,7 +301,7 @@ listeners.gui = {
         {
             name = "act_on_top_level_byproduct",
             actions_table = {
-                add_recipe = {shortcut="left", limitations={archive_open=false, matrix_active=true}},
+                add_recipe = {shortcut="left", limitations={archive_open=false, matrix_active=true}, show=true},
                 copy = {shortcut="shift-right"},
                 put_into_cursor = {shortcut="alt-right"},
                 factoriopedia = {shortcut="alt-left"}
@@ -310,7 +311,7 @@ listeners.gui = {
         {
             name = "act_on_top_level_ingredient",
             actions_table = {
-                add_recipe = {shortcut="left", limitations={archive_open=false}},
+                add_recipe = {shortcut="left", limitations={archive_open=false}, show=true},
                 copy = {shortcut="shift-right"},
                 put_into_cursor = {shortcut="alt-right"},
                 factoriopedia = {shortcut="alt-left"}

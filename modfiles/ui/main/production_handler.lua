@@ -297,7 +297,7 @@ listeners.gui = {
         {
             name = "act_on_line_recipe",
             actions_table = {
-                open_subfloor = {shortcut="left"},  -- does its own archive check
+                open_subfloor = {shortcut="left", show=true},  -- does its own archive check
                 copy = {shortcut="shift-right"},
                 paste = {shortcut="shift-left", limitations={archive_open=false}},
                 toggle = {shortcut="control-left", limitations={archive_open=false}},
@@ -309,7 +309,7 @@ listeners.gui = {
         {
             name = "act_on_line_machine",
             actions_table = {
-                edit = {shortcut="left", limitations={archive_open=false}},
+                edit = {shortcut="left", limitations={archive_open=false}, show=true},
                 copy = {shortcut="shift-right"},
                 paste = {shortcut="shift-left", limitations={archive_open=false}},
                 put_into_cursor = {shortcut="alt-right"},
@@ -324,7 +324,7 @@ listeners.gui = {
         {
             name = "act_on_line_beacon",
             actions_table = {
-                edit = {shortcut="left", limitations={archive_open=false}},
+                edit = {shortcut="left", limitations={archive_open=false}, show=true},
                 copy = {shortcut="shift-right"},
                 paste = {shortcut="shift-left", limitations={archive_open=false}},
                 delete = {shortcut="control-right", limitations={archive_open=false}},
@@ -340,7 +340,7 @@ listeners.gui = {
         {
             name = "act_on_line_module",
             actions_table = {
-                edit = {shortcut="left", limitations={archive_open=false}},
+                edit = {shortcut="left", limitations={archive_open=false}, show=true},
                 copy = {shortcut="shift-right"},
                 paste = {shortcut="shift-left", limitations={archive_open=false}},
                 delete = {shortcut="control-right", limitations={archive_open=false}},
@@ -351,7 +351,7 @@ listeners.gui = {
         {
             name = "act_on_line_product",
             actions_table = {
-                prioritize = {shortcut="left", limitations={archive_open=false, matrix_active=false}},
+                prioritize = {shortcut="left", limitations={archive_open=false, matrix_active=false}, show=true},
                 copy = {shortcut="shift-right"},
                 put_into_cursor = {shortcut="alt-right"},
                 factoriopedia = {shortcut="alt-left"}
@@ -364,7 +364,7 @@ listeners.gui = {
         {
             name = "act_on_line_byproduct",
             actions_table = {
-                add_recipe_to_end = {shortcut="left", limitations={archive_open=false, matrix_active=true}},
+                add_recipe_to_end = {shortcut="left", limitations={archive_open=false, matrix_active=true}, show=true},
                 add_recipe_below = {shortcut="control-left", limitations={archive_open=false, matrix_active=true}},
                 copy = {shortcut="shift-right"},
                 put_into_cursor = {shortcut="alt-right"},
@@ -378,7 +378,7 @@ listeners.gui = {
         {
             name = "act_on_line_ingredient",
             actions_table = {
-                add_recipe_to_end = {shortcut="left", limitations={archive_open=false}},
+                add_recipe_to_end = {shortcut="left", limitations={archive_open=false}, show=true},
                 add_recipe_below = {shortcut="control-left", limitations={archive_open=false}},
                 copy = {shortcut="shift-right"},
                 put_into_cursor = {shortcut="alt-right"},
@@ -392,7 +392,7 @@ listeners.gui = {
         {
             name = "act_on_line_fuel",
             actions_table = {
-                add_recipe_to_end = {shortcut="left", limitations={archive_open=false}},
+                add_recipe_to_end = {shortcut="left", limitations={archive_open=false}, show=true},
                 add_recipe_below = {shortcut="control-left", limitations={archive_open=false}},
                 copy = {shortcut="shift-right"},
                 paste = {shortcut="shift-left", limitations={archive_open=false}},

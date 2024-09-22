@@ -36,12 +36,6 @@ local gui_identifier_map = {
     [defines.events.on_gui_leave] = "on_gui_leave"
 }
 
-local gui_timeouts = {
-    on_gui_click = 2,
-    on_gui_confirmed = 20
-}
-
-
 -- ** SPECIAL HANDLERS **
 local special_gui_handlers = {}
 
@@ -59,48 +53,56 @@ special_gui_handlers.on_gui_confirmed = (function(_, player, action_name)
     return false
 end)
 
+local gui_timeouts = {
+    on_gui_click = 2,
+    on_gui_confirmed = 20
+}
 
-local gui_event_cache = {}
--- Create tables for all events that are being registered
-for _, event_name in pairs(gui_identifier_map) do
-    gui_event_cache[event_name] = {
-        actions = {},
-        special_handler = special_gui_handlers[event_name]
-    }
-end
 
--- Compile the list of GUI actions
+---@class ActionTable
+---@field handler function
+---@field timeout Tick
+---@field actions ActionDetails
+---@field shortcuts { string: ActionDetails }
+---@field tooltip LocalisedString
+
+---@class ActionDetails
+---@field name string
+---@field limitations ActionLimitations
+---@field shortcut_string LocalisedString
+---@field show boolean
+
+-- Compile and format the list of GUI actions
 for _, listener in pairs(event_listeners) do
-    if listener.gui then
-        for event_name, actions in pairs(listener.gui) do
-            local event_table = gui_event_cache[event_name]
+    for event_name, actions in pairs(listener.gui or {}) do
+        for _, action in pairs(actions) do
+            local timeout = action.timeout or gui_timeouts[event_name]  -- can be nil
+            local action_table = {handler = action.handler, timeout = timeout}
 
-            for _, action in pairs(actions) do
-                local timeout = action.timeout or gui_timeouts[event_name]  -- can be nil
-                local action_table = {handler = action.handler, timeout = timeout}
-                ACTION_HANDLERS[action.name] = action.handler
+            if event_name == "on_gui_click" and action.actions_table then
+                action_table.actions, action_table.shortcuts = {}, {}
+                -- Transform actions table into a more useable form
+                for action_name, modifier_action in pairs(action.actions_table) do
+                    local action_details = {
+                        name = action_name,
+                        limitations = modifier_action.limitations or {},
+                        shortcut_string = util.actions.shortcut_string(modifier_action.shortcut),
+                        show = modifier_action.show
+                    }
+                    table.insert(action_table.actions, action_details)
 
-                if event_name == "on_gui_click" and action.actions_table then
-                    action_table.actions, action_table.shortcuts = {}, {}
-                    -- Transform actions table into a more useable form
-                    for action_name, modifier_action in pairs(action.actions_table) do
-                        local action_details = {
-                            name = action_name,
-                            limitations = modifier_action.limitations or {},
-                            shortcut_string = util.actions.shortcut_string(modifier_action.shortcut)
-                        }
-                        table.insert(action_table.actions, action_details)
-                        if modifier_action.shortcut then
-                            action_table.shortcuts[modifier_action.shortcut] = action_details
-                        end
+                    if modifier_action.shortcut then
+                        action_table.shortcuts[modifier_action.shortcut] = action_details
                     end
                 end
-
-                event_table.actions[action.name] = action_table
+                action_table.tooltip = util.actions.generate_tooltip(action_table.actions)
             end
+
+            MODIFIER_ACTIONS[action.name] = action_table
         end
     end
 end
+
 
 local mouse_click_map = {
     [defines.mouse_button_type.left] = "left",
@@ -129,20 +131,19 @@ local function handle_gui_event(event)
 
     -- The event table actually contains its identifier, not its name
     local event_name = gui_identifier_map[event.name]
-    local event_table = gui_event_cache[event_name]
     local action_name = tags[event_name]  -- could be nil
 
     -- Close an open context menu on any GUI click
     if event_name == "on_gui_click" then modal_dialog.close_context_menu(player) end
 
     -- If a special handler is set, it needs to return true before proceeding with the registered handlers
-    local special_handler = event_table.special_handler
+    local special_handler = special_gui_handlers[event_name]
     if special_handler and special_handler(event, player, action_name) == false then return end
 
     -- Special handlers need to run even without an action handler, so we
     -- wait until this point to check whether there is an associated action
     if not action_name then return end  -- meaning this event type has no action on this element
-    local action_table = event_table.actions[action_name]
+    local action_table = MODIFIER_ACTIONS[action_name] or {}
 
     -- Check if rate limiting allows this action to proceed
     if util.actions.rate_limited(player, event.tick, action_name, action_table.timeout) then return end
