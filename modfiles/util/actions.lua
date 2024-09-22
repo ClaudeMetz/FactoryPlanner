@@ -26,52 +26,6 @@ function _actions.allowed(action_limitations, active_limitations)
     return true
 end
 
---[[ ---@param action_name string
----@param active_limitations ActiveLimitations?
----@param player LuaPlayer?
----@return LocalisedString
-function _actions.tutorial_tooltip(action_name, active_limitations, player)
-    active_limitations = active_limitations or util.actions.current_limitations(player)
-
-    local tooltip = {"", "\n"}
-    for _, action_line in pairs(TUTORIAL_TOOLTIPS[action_name]) do
-        if util.actions.allowed(action_line.limitations, active_limitations) then
-            table.insert(tooltip, action_line.string)
-        end
-    end
-
-    return (table_size(tooltip) > 2) and tooltip or ""
-end ]]
-
---[[ ---@param data table
----@param player LuaPlayer
----@param action_list ActionList
-function _actions.tutorial_tooltip_list(data, player, action_list)
-    local active_limitations = util.actions.current_limitations(player)  -- done here so it's 'cached'
-    for reference_name, action_name in pairs(action_list) do
-        data[reference_name] = util.actions.tutorial_tooltip(action_name, active_limitations, nil)
-    end
-end ]]
-
---[[ function _actions.all_tutorial_tooltips(modifier_actions)
-    local action_lines = {}
-
-    for modifier_click, modifier_action in pairs(modifier_actions) do
-        local split_modifiers = util.split_string(modifier_click, "-")
-
-        local modifier_string = {""}
-        for _, modifier in pairs(ftable.slice(split_modifiers, 1, -1)) do
-            table.insert(modifier_string, {"", {"fp.tut_" .. modifier}, " + "})
-        end
-        table.insert(modifier_string, {"fp.tut_" .. split_modifiers[#split_modifiers]})
-
-        local action_string = {"fp.tut_action_line", modifier_string, {"fp.tut_" .. modifier_action.name}}
-        table.insert(action_lines, {string=action_string, limitations=modifier_action.limitations})
-    end
-
-    return action_lines
-end ]]
-
 -- Returns whether rate limiting is active for the given action, stopping it from proceeding
 -- This is essentially to prevent duplicate commands in quick succession, enabled by lag
 function _actions.rate_limited(player, tick, action_name, timeout)
@@ -108,6 +62,23 @@ function _actions.shortcut_string(shortcut)
     end
     table.insert(modifier_string, {"fp.action_" .. split_modifiers[#split_modifiers]})
     return {"fp.action_click", modifier_string}
+end
+
+---@param actions ActionDetails[]
+---@return LocalisedString
+function _actions.generate_tooltip(actions)
+    local tooltip, any_hidden = {""}, false
+    for _, action in pairs(actions) do
+        if action.show then
+            table.insert(tooltip, {"fp.action_line", action.shortcut_string, {"fp.action_" .. action.name}})
+        else
+            any_hidden = true
+        end
+    end
+
+    if any_hidden then table.insert(tooltip, {"fp.action_all"}) end
+
+    return tooltip
 end
 
 return _actions

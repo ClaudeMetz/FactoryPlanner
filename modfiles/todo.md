@@ -4,13 +4,9 @@
 
 - Context menus
   - Try using the new system for all kinds of buttons with more than one action
-  - Needs way to show actions in the tooltip or not
-
-- When context menus come in, make sure to filter actions properly for all item buttons
-  - This is a bit messy with entity-type items currently and can't easily be fixed atm
-  - One additional dropdown action could be to craft machines, same as the utility dialog
-    - Will need to improve and generalize that code for this for sure
-  - Also use them to quick-change default belts on the view, for example
+  - Add quick-change context menu to view buttons for belts and wagons?
+  - Add floating text for all actions that are taken that are not possible
+    - Ideally the tooltips and context menu wouldn't show them, but that is tricky
 
 ## Bugs
 
@@ -56,6 +52,8 @@
   - Missing energy and pollution production, is different to normal entities
 - Improve performance by not making item_views.process iterate the prefs every time
 - Disable byproduct lines with matrix solver instead of deleting, same as the surface-disabled ones
+- Could use icons for control, shift, etc for context menus to make them smaller
+- Could now store blueprints from the library I think?
 
 ## Future Tasks
 
@@ -78,6 +76,7 @@
   - Could be useful in other situations that touch all factories as well, such as changing District planet
   - Might want to do a progress bar even, but that's getting complicated now
 - Adjust utility dialog handcrafting to behave like vanilla crafting does in all ways
+  - Then, add crafting actions to context menu of machines/modules/recipes maybe even
 - Main interface toggles/builds? 4 times when starting a save, which is weird
   - Check refreshes in general, maybe write a tool that flags when multiple refreshes happen in sequence
 - Look into building prototypes on_load instead of saving them in global

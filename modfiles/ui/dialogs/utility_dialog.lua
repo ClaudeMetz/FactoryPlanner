@@ -172,7 +172,7 @@ function utility_structures.blueprints(player, modal_data)
         blueprint.import_stack(blueprint_string)
         local blueprint_book = blueprint.is_blueprint_book
 
-        local tooltip = {"", (blueprint.label or "Blueprint")}
+        local tooltip = {"", (blueprint.label or "Blueprint"), "\n", MODIFIER_ACTIONS["act_on_blueprint"].tooltip}
         local sprite = (blueprint_book) and "item/blueprint-book" or "item/blueprint"
         local button = table_blueprints.add{type="sprite-button", sprite=sprite, tooltip=tooltip,
             tags={mod="fp", on_gui_click="act_on_blueprint", index=index}, mouse_button_filter={"left-and-right"}}
@@ -476,8 +476,8 @@ listeners.gui = {
         {
             name = "act_on_blueprint",
             actions_table = {
-                pick_up = {shortcut="left"},
-                delete = {shortcut="control-right"}
+                pick_up = {shortcut="left", show=true},
+                delete = {shortcut="control-right", show=true}
             },
             handler = handle_blueprint_click
         },
