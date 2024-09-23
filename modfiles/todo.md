@@ -46,6 +46,9 @@
 - Add floating text for all actions that are taken that are not possible
   - Ideally the tooltips and context menu wouldn't show them, but that is tricky
 - Better icons for custom recipes - mining, spoiling, etc
+- Recipe energy of 0 is still awkward (doesn't work properly with matrix solver either)
+- Ingredients without amount don't show, but should because any amount would be meaningless
+- Also, having a value that's independent of production_ratio (like time) would be nice
 
 ## Future Tasks
 

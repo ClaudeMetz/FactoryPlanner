@@ -459,7 +459,7 @@ function generator.recipes.generate()
                 end
             else
                 recipe.energy = 0
-                ingredients[1].amount = 0
+                ingredients[1].amount = 1
             end
 
             generator_util.format_recipe(recipe, products, products[1], ingredients)

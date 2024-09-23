@@ -1,7 +1,6 @@
 local Object = require("backend.data.Object")
 local Machine = require("backend.data.Machine")
 local Beacon = require("backend.data.Beacon")
-local Module = require("backend.data.Module")
 local SimpleItems = require("backend.data.SimpleItems")
 
 ---@alias ProductionType "produce" | "consume"
