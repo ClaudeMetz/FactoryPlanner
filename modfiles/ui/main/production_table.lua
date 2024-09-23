@@ -173,7 +173,7 @@ function builders.machine(line, parent_flow, metadata)
                 style = "flib_slot_button_pink_small"
                 note = {"fp.machine_limit_force", machine_limit}
             else
-                style = "flib_slot_button_pink_small"
+                style = "flib_slot_button_purple_small"
                 note = {"fp.machine_limit_set", machine_limit}
             end
         end
