@@ -143,7 +143,7 @@ styles["fp_button_transparent"] = {
     default_font_color = {1, 1, 1},
     hovered_font_color = {0.98, 0.66, 0.22},
     clicked_font_color = {1, 0.74, 0.40},
-    font = "default-semibold",
+    font = "heading-2",
     minimal_width = 0
 }
 
