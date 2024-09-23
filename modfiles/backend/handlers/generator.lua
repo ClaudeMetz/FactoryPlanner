@@ -226,9 +226,7 @@ function generator.machines.generate()
         elseif proto.type == "agricultural-tower" and not proto.hidden then
             local machine = generate_category_entry(proto.type, proto, nil)
             if machine then
-                local growth_area_width = (proto.growth_grid_tile_size * 2) + 1
-                local available_tiles = growth_area_width * growth_area_width - 1
-                machine.speed = available_tiles
+                machine.speed = 1  -- could be based on available tiles, but not used for now
                 machine.energy_usage = 0  -- implemented later: energy_usage, crane_energy_usage
                 insert_prototype(machines, machine, proto.type)
             end
