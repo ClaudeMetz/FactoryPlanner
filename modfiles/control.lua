@@ -10,8 +10,6 @@ MAGIC_NUMBERS = {
     margin_of_error = 1e-6,  -- the margin of error for floating point calculations
     factory_deletion_delay = 15 * 60 * 60,  -- ticks to deletion after factory trashing
     modal_search_rate_limit = 10,  -- ticks between modal search runs
-    effects_lower_bound = -0.8,
-    effects_upper_bound = 327.67,
 
     -- Some magic numbers to determine and calculate the dimensions of the main dialog
     frame_spacing = 12,  -- Spacing between the base frames in the main dialog
@@ -50,7 +48,7 @@ PRODUCTS_PER_ROW_OPTIONS = {5, 6, 7, 8, 9, 10}
 FACTORY_LIST_ROWS_OPTIONS = {20, 22, 24, 26, 28, 30, 32}
 
 TIMESCALE_MAP = {[1] = "second", [60] = "minute"}
-BLANK_EFFECTS = {consumption = 0, speed = 0, productivity = 0, pollution = 0, quality = 0}
+BLANK_EFFECTS = {speed = 0, productivity = 0, quality = 0, consumption = 0, pollution = 0}
 
 
 ftable = require("__flib__.table")  -- has more functionality than built-in table

@@ -63,7 +63,9 @@ function _util.merge_effects(effect_tables)
     return effects
 end
 
-local positive_effects = {speed=true, productivity=true, quality=true}
+local is_effect_positive = {speed=true, productivity=true, quality=true,
+                          consumption=false, pollution=false}
+local upper_bound = 327.67
 
 ---@param name string
 ---@param value ModuleEffectValue
@@ -71,7 +73,35 @@ local positive_effects = {speed=true, productivity=true, quality=true}
 function _util.is_positive_effect(name, value)
     -- Effects are considered positive if their effect is actually in the 'desirable'
     -- direction, ie. positive speed, or negative pollution
-    return (value > 0) == positive_effects[name]
+    return (value > 0) == is_effect_positive[name]
+end
+
+---@param effects ModuleEffects
+---@param max_prod double
+---@return ModuleEffects
+---@return { ModuleEffectName: string }
+function _util.limit_effects(effects, max_prod)
+    local indications = {}
+    local bounds = {
+        speed = {lower = -0.8, upper = upper_bound},
+        productivity = {lower = 0, upper = max_prod},
+        quality = {lower = 0, upper = upper_bound},
+        consumption = {lower = -0.8, upper = upper_bound},
+        pollution = {lower = -0.8, upper = upper_bound}
+    }
+
+    -- Bound effects and note the indication if relevant
+    for name, effect in pairs(effects) do
+        if effect < bounds[name].lower then
+            effects[name] = bounds[name].lower
+            indications[name] = "[img=fp_limited_down]"
+        elseif effect > bounds[name].upper then
+            effects[name] = bounds[name].upper
+            indications[name] = "[img=fp_limited_up]"
+        end
+    end
+
+    return effects, indications
 end
 
 
