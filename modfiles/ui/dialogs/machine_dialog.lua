@@ -293,7 +293,8 @@ local function close_machine_dialog(player, action)
     if action == "submit" then
         machine.module_set:normalize({sort=true})
         machine.limit = util.gui.parse_expression_field(modal_data.modal_elements.limit_textfield)
-        machine.force_limit = util.gui.switch.convert_to_state(modal_data.modal_elements.force_limit_switch)
+        local switch_state = modal_data.modal_elements.force_limit_switch.switch_state
+        machine.force_limit = util.gui.switch.convert_to_boolean(switch_state)
 
         solver.update(player)
         util.raise.refresh(player, "factory")
