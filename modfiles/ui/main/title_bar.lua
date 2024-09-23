@@ -77,7 +77,7 @@ local function build_title_bar(player)
     local separation = flow_title_bar.add{type="line", direction="vertical"}
     separation.style.height = MAGIC_NUMBERS.title_bar_height - 4
 
-    local button_close = flow_title_bar.add{type="sprite-button", tags={mod="fp", on_gui_click="close_main_dialog"},
+    local button_close = flow_title_bar.add{type="sprite-button", tags={mod="fp", on_gui_click="exit_main_dialog"},
         sprite="utility/close", tooltip={"fp.close_interface"}, style="fp_button_frame",
         mouse_button_filter={"left"}}
     button_close.style.padding = 1
@@ -111,7 +111,7 @@ listeners.gui = {
             end)
         },
         {
-            name = "close_main_dialog",
+            name = "exit_main_dialog",
             handler = (function(player, _, _)
                 main_dialog.toggle(player)
             end)

@@ -57,7 +57,7 @@ local function create_base_dialog(player, dialog_settings, modal_data)
 
         if not dialog_settings.show_submit_button then  -- add X-to-close button if this is not a submit dialog
             local close_button = flow_title_bar.add{type="sprite-button", tooltip={"fp.close_button_tt"},
-                tags={mod="fp", on_gui_click="close_modal_dialog", action="cancel"}, sprite="utility/close",
+                tags={mod="fp", on_gui_click="exit_modal_dialog", action="cancel"}, sprite="utility/close",
                 style="fp_button_frame", mouse_button_filter={"left"}}
             close_button.style.left_margin = 4
             close_button.style.padding = 1
@@ -116,7 +116,7 @@ local function create_base_dialog(player, dialog_settings, modal_data)
             style="dialog_buttons_horizontal_flow"}
 
         -- Cancel button
-        local button_cancel = button_bar.add{type="button", tags={mod="fp", on_gui_click="close_modal_dialog",
+        local button_cancel = button_bar.add{type="button", tags={mod="fp", on_gui_click="exit_modal_dialog",
             action="cancel"}, style="back_button", caption={"fp.cancel"}, tooltip={"fp.cancel_dialog_tt"},
             mouse_button_filter={"left"}}
         button_cancel.style.minimal_width = 0
@@ -128,7 +128,7 @@ local function create_base_dialog(player, dialog_settings, modal_data)
             left_drag_handle.drag_target = frame_modal_dialog
 
             local button_delete = button_bar.add{type="button", caption={"fp.delete"}, style="red_button",
-                tags={mod="fp", on_gui_click="close_modal_dialog", action="delete"}, mouse_button_filter={"left"}}
+                tags={mod="fp", on_gui_click="exit_modal_dialog", action="delete"}, mouse_button_filter={"left"}}
             button_delete.style.font = "default-dialog-button"
             button_delete.style.height = 32
             button_delete.style.minimal_width = 0
@@ -143,7 +143,7 @@ local function create_base_dialog(player, dialog_settings, modal_data)
         right_drag_handle.drag_target = frame_modal_dialog
 
         -- Submit button
-        local button_submit = button_bar.add{type="button", tags={mod="fp", on_gui_click="close_modal_dialog",
+        local button_submit = button_bar.add{type="button", tags={mod="fp", on_gui_click="exit_modal_dialog",
             action="submit"}, caption={"fp.submit"}, tooltip={"fp.confirm_dialog_tt"}, style="confirm_button",
             mouse_button_filter={"left"}}
         button_submit.style.minimal_width = 0
@@ -359,7 +359,7 @@ listeners.gui = {
             end)
         },
         {
-            name = "close_modal_dialog",
+            name = "exit_modal_dialog",
             handler = (function(player, tags, _)
                 util.raise.close_dialog(player, tags.action)
             end)
