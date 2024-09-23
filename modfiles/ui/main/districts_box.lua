@@ -136,7 +136,7 @@ local function build_district_frame(player, district, location_items)
         tooltip={"fp.save_name"}, mouse_button_filter={"left"}}
 
     -- Location
-    if SPACE_TRAVEL then
+    if MULTIPLE_PLANETS then
         local label_location = subheader.add{type="label", caption={"", {"fp.pu_location", 1}, ": "},
             tooltip={"fp.location_tt"}, style="subheader_caption_label"}
         label_location.style.left_margin = 8

@@ -205,6 +205,8 @@ function loader.run(skip_check)
     SORTED_ITEMS = sorted_items()
 
     PRODUCTIVITY_RECIPES = generate_productivity_recipes()
+
+    MULTIPLE_PLANETS = #storage.prototypes.locations > 1
 end
 
 return loader
