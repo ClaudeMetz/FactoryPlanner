@@ -617,7 +617,7 @@ function matrix_engine.get_line_aggregate(line_data, player_index, floor_id, mac
     local speed_multiplier = 1 + total_effects.speed
     local energy = recipe_proto.energy
     -- hacky workaround for recipes with zero energy - this really messes up the matrix
-    if energy==0 then energy=0.000000001 end
+    if energy==0 then energy=0.000001 end
     local time_per_craft = energy / (machine_speed * speed_multiplier)
     local total_crafts = machine_count * (1 / time_per_craft)
     line_aggregate.production_ratio = total_crafts
