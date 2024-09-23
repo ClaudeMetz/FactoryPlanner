@@ -37,7 +37,6 @@ function SimpleItems:insert(item)
 end
 
 ---@param simple_items SimpleItems
----@param divisor number
 function SimpleItems:add_multiple(simple_items)
     local dict = {}
     for _, item in pairs(self.items) do

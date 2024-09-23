@@ -1,7 +1,6 @@
 local sequential_engine = require("backend.calculation.sequential_engine")
 local matrix_engine = require("backend.calculation.matrix_engine")
 local structures = require("backend.calculation.structures")
-local SimpleItems = require("backend.data.SimpleItems")
 
 solver, solver_util = {}, {}
 
