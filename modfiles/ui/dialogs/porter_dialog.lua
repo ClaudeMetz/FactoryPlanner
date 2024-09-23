@@ -56,7 +56,7 @@ local function add_textfield_and_button(modal_elements, dialog_type, button_firs
 
     local function add_textfield()
         local tags = (dialog_type == "import")
-            and {mod="fp", on_gui_text_changed="import_string", on_gui_confirmed="import_string"} or nil
+            and {mod="fp", on_gui_text_changed="import_string", on_gui_confirmed="confirm_import"} or nil
         local textfield = flow.add{type="textfield", tags=tags}
         textfield.style.width = 0  -- needs to be set to 0 so stretching works
         textfield.style.minimal_width = 280
@@ -270,7 +270,7 @@ import_listeners.gui = {
     },
     on_gui_confirmed = {
         {
-            name = "import_string",
+            name = "confirm_import",
             handler = (function(player, _, event)
                 if event.element.text ~= "" then import_factories(player) end
             end)

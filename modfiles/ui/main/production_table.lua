@@ -128,8 +128,8 @@ function builders.percentage(line, parent_flow, metadata)
 
     local enabled = (not metadata.archive_open and not metadata.matrix_solver_active)
     local textfield_percentage = parent_flow.add{type="textfield", text=tostring(relevant_line.percentage),
-        tags={mod="fp", on_gui_text_changed="line_percentage", on_gui_confirmed="line_percentage", line_id=line.id},
-        enabled=enabled}
+        tags={mod="fp", on_gui_text_changed="change_line_percentage", on_gui_confirmed="set_line_percentage",
+        line_id=line.id}, enabled=enabled}
     util.gui.setup_numeric_textfield(textfield_percentage, true, false)
     textfield_percentage.style.horizontal_align = "center"
     textfield_percentage.style.width = 55

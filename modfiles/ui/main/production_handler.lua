@@ -414,7 +414,7 @@ listeners.gui = {
     },
     on_gui_text_changed = {
         {
-            name = "line_percentage",
+            name = "change_line_percentage",
             handler = handle_percentage_change
         },
         {
@@ -428,7 +428,7 @@ listeners.gui = {
     },
     on_gui_confirmed = {
         {
-            name = "line_percentage",
+            name = "set_line_percentage",
             handler = handle_percentage_confirmation
         }
     }

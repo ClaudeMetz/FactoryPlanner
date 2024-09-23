@@ -195,7 +195,7 @@ local function add_limit_frame(parent_frame, player)
 
     local textfield_width = 45
     local textfield_limit = frame_limit.add{type="textfield", tags={mod="fp", on_gui_text_changed="machine_limit",
-        on_gui_confirmed="machine_limit", width=textfield_width}, tooltip={"fp.expression_textfield"},
+        on_gui_confirmed="confirm_machine", width=textfield_width}, tooltip={"fp.expression_textfield"},
         text=machine.limit}
     textfield_limit.style.width = textfield_width
     modal_data.modal_elements["limit_textfield"] = textfield_limit
@@ -332,7 +332,7 @@ listeners.gui = {
     },
     on_gui_confirmed = {
         {
-            name = "machine_limit",
+            name = "confirm_machine",
             handler = (function(player, _, event)
                 local confirmed = util.gui.confirm_expression_field(event.element)
                 if confirmed then util.raise.close_dialog(player, "submit") end

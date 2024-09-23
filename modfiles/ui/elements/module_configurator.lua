@@ -30,7 +30,7 @@ local function add_module_frame(parent_flow, module, module_filters, empty_slots
     local numeric_enabled = (maximum_value ~= 1 and module ~= nil)
 
     local slider = frame_module.add{type="slider", name="fp_slider_module_amount",
-        tags={mod="fp", on_gui_value_changed="module_amount", module_id=module_id},
+        tags={mod="fp", on_gui_value_changed="module_amount_value", module_id=module_id},
         minimum_value=minimum_value, maximum_value=maximum_value, value=slider_value, value_step=0.1}
     slider.style.minimal_width = 0
     slider.style.horizontally_stretchable = true
@@ -41,7 +41,7 @@ local function add_module_frame(parent_flow, module, module_filters, empty_slots
     slider.enabled = numeric_enabled  -- needs to be set here because sliders are buggy as fuck
 
     local textfield = frame_module.add{type="textfield", name="fp_textfield_module_amount", enabled=numeric_enabled,
-        text=tostring(slider_value), tags={mod="fp", on_gui_text_changed="module_amount", module_id=module_id}}
+        text=tostring(slider_value), tags={mod="fp", on_gui_text_changed="module_amount_text", module_id=module_id}}
     util.gui.setup_numeric_textfield(textfield, false, false)
     textfield.style.width = 40
 end
@@ -217,13 +217,13 @@ listeners.gui = {
     },
     on_gui_value_changed = {
         {
-            name = "module_amount",
+            name = "module_amount_value",
             handler = handle_module_slider_change
         }
     },
     on_gui_text_changed = {
         {
-            name = "module_amount",
+            name = "module_amount_text",
             handler = handle_module_textfield_change
         }
     }
