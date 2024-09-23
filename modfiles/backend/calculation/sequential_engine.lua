@@ -20,7 +20,7 @@ local function update_line(line_data, aggregate)
     end
 
     -- Determine production ratio
-    local production_ratio, uncapped_production_ratio = 0, 0
+    local production_ratio = 0
     local crafts_per_second = solver_util.determine_crafts_per_second(line_data.machine_speed, recipe_proto, total_effects)
 
     -- Determines the production ratio that would be needed to fully satisfy the given product
@@ -52,7 +52,6 @@ local function update_line(line_data, aggregate)
             end
         end
     end
-    uncapped_production_ratio = production_ratio  -- retain the uncapped ratio for line_data
 
     -- Limit the machine_count by reducing the production_ratio, if necessary
     local machine_limit = line_data.machine_limit
@@ -164,7 +163,6 @@ local function update_line(line_data, aggregate)
         energy_consumption = energy_consumption,
         emissions = emissions,
         production_ratio = production_ratio,
-        uncapped_production_ratio = uncapped_production_ratio,
         Product = Product,
         Byproduct = Byproduct,
         Ingredient = Ingredient,
@@ -232,7 +230,6 @@ local function update_floor(floor_data, aggregate)
                 energy_consumption = subfloor_aggregate.energy_consumption,
                 emissions = subfloor_aggregate.emissions,
                 production_ratio = nil,
-                uncapped_production_ratio = nil,
                 Product = subfloor_aggregate.Product,
                 Byproduct = subfloor_aggregate.Byproduct,
                 Ingredient = subfloor_aggregate.Ingredient,

@@ -15,7 +15,6 @@ local function set_blank_line(player, floor, line)
         energy_consumption = 0,
         emissions = 0,
         production_ratio = (line.class == "Line") and 0 or nil,
-        uncapped_production_ratio = (line.class == "Line") and 0 or nil,
         Product = blank_class,
         Byproduct = blank_class,
         Ingredient = blank_class,
@@ -290,7 +289,6 @@ function solver.set_line_result(result)
         if line.machine.fuel ~= nil then line.machine.fuel.amount = result.fuel_amount end
 
         line.production_ratio = result.production_ratio
-        line.uncapped_production_ratio = result.uncapped_production_ratio
     end
 
     line.power = result.energy_consumption
