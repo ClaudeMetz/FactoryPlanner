@@ -8,7 +8,7 @@ local function refresh_district_info(player)
 
     district_info_elements.name_label.caption = district.name
 
-    if SPACE_TRAVEL then
+    if MULTIPLE_PLANETS then
         district_info_elements.location_sprite.sprite = district.location_proto.sprite
         district_info_elements.location_sprite.tooltip = district.location_proto.tooltip
     end
@@ -32,7 +32,7 @@ local function build_district_info(player)
     label_name.style.maximal_width = 100
     main_elements.district_info["name_label"] = label_name
 
-    if SPACE_TRAVEL then
+    if MULTIPLE_PLANETS then
         flow_horizontal.add{type="label", caption={"", {"fp.on"}, ": "}, style="subheader_caption_label"}
         local button_sprite = flow_horizontal.add{type="sprite"}
         button_sprite.style.size = 24
