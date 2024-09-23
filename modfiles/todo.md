@@ -9,7 +9,6 @@
   - Alternatively could be because of 0-ed machine counts or similar
 - Wrong localised names for custom machines/recipes etc
 - Take care of faded disabled sprite buttons, probably by using toggled or sprite elements
-- Make machine defaults button more visible
 
 ## Features
 
