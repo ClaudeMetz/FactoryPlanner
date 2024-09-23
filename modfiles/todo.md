@@ -13,7 +13,6 @@
 
 ## Features
 
-- Add second way to detect offshore pumps (https://github.com/wube/Factorio/commit/b8e7cac1fcb4bae0ec0146f00ec69f6d266d0252)
 - Change SimpleItems to be a dict instead of an array so there needs to be no fuss finding stuff
 - Balance District items against each other
 - Allow Factory products to take their amounts from the District's ingredients

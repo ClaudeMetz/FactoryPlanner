@@ -214,10 +214,13 @@ function generator.machines.generate()
             end
 
         elseif proto.type == "offshore-pump" and not proto.hidden then
-            local machine = generate_category_entry(proto.type, proto, nil)
+            local fluid_box = proto.fluidbox_prototypes[1]
+            local fixed_fluid = (fluid_box and fluid_box.filter) and fluid_box.filter.name or nil
+            local category = (fixed_fluid) and ("offshore-pump-" .. fixed_fluid) or "offshore-pump"
+            local machine = generate_category_entry(category, proto, nil)
             if machine then
                 machine.speed = proto.pumping_speed
-                insert_prototype(machines, machine, proto.type)
+                insert_prototype(machines, machine, category)
             end
 
         elseif proto.type == "agricultural-tower" and not proto.hidden then
@@ -466,6 +469,26 @@ function generator.recipes.generate()
 
             ::incompatible_proto::
 
+        -- Add offshore pump recipes based on fixed fluids
+        elseif proto.type == "offshore-pump" and not proto.hidden then
+            local fluid_box = proto.fluidbox_prototypes[1]
+            local fixed_fluid = (fluid_box and fluid_box.filter) and fluid_box.filter.name or nil
+            if fixed_fluid then
+                local fluid = prototypes.fluid[fixed_fluid]
+
+                local recipe = custom_recipe()
+                recipe.name = "impostor-" .. fluid.name .. "-" .. proto.name
+                recipe.localised_name = {"", fluid.localised_name, " ", {"fp.pumping_recipe"}}
+                recipe.sprite = "fluid/" .. fluid.name
+                recipe.order = proto.order
+                recipe.category = "offshore-pump-" .. fluid.name
+                recipe.energy = 1
+
+                local products = {{type="fluid", name=fluid.name, amount=60}}
+                generator_util.format_recipe(recipe, products, products[1], {})
+                insert_prototype(recipes, recipe, nil)
+            end
+
         -- Add agricultural tower recipes
         elseif proto.type == "plant" and not proto.hidden then
             local products = proto.mineable_properties.products
@@ -567,7 +590,7 @@ function generator.recipes.generate()
         end ]]
     end
 
-    -- Add offshore pump recipes
+    -- Add offshore pump recipes based on fluid tiles
     local pumped_fluids = {}
     for _, proto in pairs(prototypes.tile) do
         if proto.fluid and not pumped_fluids[proto.fluid.name] and not proto.hidden then
@@ -582,7 +605,7 @@ function generator.recipes.generate()
             recipe.energy = 1
 
             local products = {{type="fluid", name=proto.fluid.name, amount=60}}
-            local ingredients = {{type="entity", name="custom-" .. proto.name, amount=0}}
+            local ingredients = {{type="entity", name="custom-" .. proto.name, amount=60}}
             generator_util.format_recipe(recipe, products, products[1], ingredients)
 
             insert_prototype(recipes, recipe, nil)
