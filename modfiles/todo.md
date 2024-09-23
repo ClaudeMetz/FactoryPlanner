@@ -48,6 +48,7 @@
 - Context menu to change belt directly on belt view button
 - Add floating text for all actions that are taken that are not possible
   - Ideally the tooltips and context menu wouldn't show them, but that is tricky
+- Better icons for custom recipes - mining, spoiling, etc
 
 ## Future Tasks
 

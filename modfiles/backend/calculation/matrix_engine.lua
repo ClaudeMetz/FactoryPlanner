@@ -614,7 +614,7 @@ function matrix_engine.get_line_aggregate(line_data, player_index, floor_id, mac
     local recipe_proto = line_data.recipe_proto
     local total_effects = line_data.total_effects
     local machine_speed = line_data.machine_speed
-    local speed_multiplier = (1 + math.max(total_effects.speed, -0.8))
+    local speed_multiplier = 1 + total_effects.speed
     local energy = recipe_proto.energy
     -- hacky workaround for recipes with zero energy - this really messes up the matrix
     if energy==0 then energy=0.000000001 end

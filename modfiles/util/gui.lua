@@ -140,8 +140,7 @@ end
 
 
 ---@class FormatModuleEffectsOptions
----@field limit boolean?
----@field max_prod number?
+---@field indications { ModuleEffectName: string }?
 ---@field machine_effects ModuleEffects?
 ---@field recipe_effects ModuleEffects?
 
@@ -151,32 +150,12 @@ end
 ---@return LocalisedString
 function _gui.format_module_effects(module_effects, options)
     options = options or {}
-    options.limit = options.limit or false
-    options.max_prod = options.max_prod or nil
+    options.indications = options.indications or {}
     options.machine_effects = options.machine_effects or {}
     options.recipe_effects = options.recipe_effects or {}
 
-    local positive_only_effects = {productivity=true, quality=true}
-    local lower_bound = MAGIC_NUMBERS.effects_lower_bound
-    local upper_bound = MAGIC_NUMBERS.effects_upper_bound
-
-    local function limit_effect(value, name)
-        if options.limit == true then
-            if positive_only_effects[name] and value < 0 then
-                return 0, "[img=fp_limited_down]"
-            elseif name == "productivity" and value > options.max_prod then
-                return options.max_prod, "[img=fp_limited_up]"
-            elseif value < lower_bound then
-                return lower_bound, "[img=fp_limited_down]"
-            elseif value > upper_bound then
-                return upper_bound, "[img=fp_limited_up]"
-            end
-        end
-        return value, ""  -- return value if nothing above hits
-    end
-
-    local function format_effect(name, value, color)
-        if value == nil or (value == 0 and not positive_only_effects[name]) then return "" end
+    local function format_effect(value, color)
+        if value == nil then return "" end
         -- Force display of either a '+' or '-', also round the result
         local display_value = ("%+d"):format(math.floor((value * 100) + 0.5))
         return {"fp.effect_value", color, display_value}
@@ -188,18 +167,16 @@ function _gui.format_module_effects(module_effects, options)
         local machine_effect = options.machine_effects[effect_name]
         local recipe_effect = options.recipe_effects[effect_name]
 
-        if module_effect ~= 0 or (machine_effect ~= nil and machine_effect ~= 0)
+        if options.indications[effect_name] ~= nil or module_effect ~= 0
+                or (machine_effect ~= nil and machine_effect ~= 0)
                 or (recipe_effect ~= nil and recipe_effect ~= 0) then
-            -- Limiting only for module effects, which is only used without any other effect types
-            local limited_module_effect, indication = limit_effect(module_effect, effect_name)
-
-            local module_percentage = format_effect(effect_name, limited_module_effect, "#FFE6C0")
-            local machine_percentage = format_effect(effect_name, machine_effect, "#7CFF01")
-            local recipe_percentage = format_effect(effect_name, recipe_effect, "#01FFF4")
+            local module_percentage = format_effect(module_effect, "#FFE6C0")
+            local machine_percentage = format_effect(machine_effect, "#7CFF01")
+            local recipe_percentage = format_effect(recipe_effect, "#01FFF4")
 
             if #tooltip_lines > 1 then table.insert(tooltip_lines, "\n") end
             table.insert(tooltip_lines, {"fp.effect_line", {"fp." .. effect_name}, module_percentage,
-                machine_percentage, recipe_percentage, indication})
+                machine_percentage, recipe_percentage, options.indications[effect_name] or ""})
         end
     end
 
