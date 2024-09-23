@@ -33,7 +33,6 @@ local SimpleItems = require("backend.data.SimpleItems")
 ---@field power number
 ---@field emissions number
 ---@field production_ratio number?
----@field uncapped_production_ratio number?
 local Line = Object.methods()
 Line.__index = Line
 script.register_metatable("Line", Line)
@@ -61,8 +60,7 @@ local function init(recipe_proto, production_type)
         effects_tooltip = "",
         power = 0,
         emissions = 0,
-        production_ratio = 0,
-        uncapped_production_ratio = 0
+        production_ratio = 0
     }, "Line", Line)  --[[@as Line]]
     return object
 end

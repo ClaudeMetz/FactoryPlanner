@@ -389,7 +389,6 @@ function matrix_engine.run_matrix_solver(factory_data, check_linear_dependence)
                 energy_consumption = line_aggregate.energy_consumption,
                 emissions = line_aggregate.emissions,
                 production_ratio = line_aggregate.production_ratio,
-                uncapped_production_ratio = line_aggregate.uncapped_production_ratio,
                 Product = line_aggregate.Product,
                 Byproduct = line_aggregate.Byproduct,
                 Ingredient = line_aggregate.Ingredient,
@@ -621,7 +620,6 @@ function matrix_engine.get_line_aggregate(line_data, player_index, floor_id, mac
     local time_per_craft = energy / (machine_speed * speed_multiplier)
     local total_crafts = machine_count * (1 / time_per_craft)
     line_aggregate.production_ratio = total_crafts
-    line_aggregate.uncapped_production_ratio = total_crafts
     for _, product in pairs(recipe_proto.products) do
         local prodded_amount = solver_util.determine_prodded_amount(product, total_effects,
             recipe_proto.maximum_productivity)
