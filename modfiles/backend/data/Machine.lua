@@ -77,8 +77,8 @@ function Machine:summarize_effects()
     local module_effects = self.module_set:get_effects()
     local machine_effects = self.proto.effect_receiver.base_effect
 
-    self.total_effects = util.merge_effects({module_effects, machine_effects, self.recipe_effects})
-    self.effects_tooltip = util.gui.format_module_effects(module_effects,
+    self.total_effects = util.effects.merge({module_effects, machine_effects, self.recipe_effects})
+    self.effects_tooltip = util.effects.format(module_effects,
         {machine_effects=machine_effects, recipe_effects=self.recipe_effects})
 
     self.parent:summarize_effects()
