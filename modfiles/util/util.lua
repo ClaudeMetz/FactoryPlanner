@@ -9,7 +9,8 @@ local _util = {
     format = require("util.format"),
     nth_tick = require("util.nth_tick"),
     porter = require("util.porter"),
-    actions = require("util.actions")
+    actions = require("util.actions"),
+    effects = require("util.effects")
 }
 
 
@@ -48,60 +49,6 @@ function _util.build_localised_string(string_to_insert, current_table, next_inde
     next_index = next_index + 1
 
     return current_table, next_index
-end
-
-
----@param effect_tables ModuleEffects[]
----@return ModuleEffects
-function _util.merge_effects(effect_tables)
-    local effects = ftable.shallow_copy(BLANK_EFFECTS)
-    for _, effect_table in pairs(effect_tables) do
-        for name, effect in pairs(effect_table) do
-            effects[name] = effects[name] + effect
-        end
-    end
-    return effects
-end
-
-local is_effect_positive = {speed=true, productivity=true, quality=true,
-                          consumption=false, pollution=false}
-local upper_bound = 327.67
-
----@param name string
----@param value ModuleEffectValue
----@return boolean is_positive_effect
-function _util.is_positive_effect(name, value)
-    -- Effects are considered positive if their effect is actually in the 'desirable'
-    -- direction, ie. positive speed, or negative pollution
-    return (value > 0) == is_effect_positive[name]
-end
-
----@param effects ModuleEffects
----@param max_prod double
----@return ModuleEffects
----@return { ModuleEffectName: string }
-function _util.limit_effects(effects, max_prod)
-    local indications = {}
-    local bounds = {
-        speed = {lower = -0.8, upper = upper_bound},
-        productivity = {lower = 0, upper = max_prod},
-        quality = {lower = 0, upper = upper_bound},
-        consumption = {lower = -0.8, upper = upper_bound},
-        pollution = {lower = -0.8, upper = upper_bound}
-    }
-
-    -- Bound effects and note the indication if relevant
-    for name, effect in pairs(effects) do
-        if effect < bounds[name].lower then
-            effects[name] = bounds[name].lower
-            indications[name] = "[img=fp_limited_down]"
-        elseif effect > bounds[name].upper then
-            effects[name] = bounds[name].upper
-            indications[name] = "[img=fp_limited_up]"
-        end
-    end
-
-    return effects, indications
 end
 
 

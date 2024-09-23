@@ -199,7 +199,7 @@ function ModuleSet:check_compatibility(module_proto)
         for _, allowed_effects in pairs(all_allowed_effects) do
             for name, value in pairs(module_proto.effects) do
                 -- Effects only need to be in the allowed list if they are considered positive
-                if not allowed_effects[name] and util.is_positive_effect(name, value) then
+                if not allowed_effects[name] and util.effects.is_positive(name, value) then
                     return false
                 end
             end

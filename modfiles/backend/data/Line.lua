@@ -195,11 +195,11 @@ end
 
 function Line:summarize_effects()
     local beacon_effects = (self.beacon) and self.beacon.total_effects or nil
-    local merged_effects = util.merge_effects({self.machine.total_effects, beacon_effects})
-    local limited_effects, indications = util.limit_effects(merged_effects, self.recipe_proto.maximum_productivity)
+    local merged_effects = util.effects.merge({self.machine.total_effects, beacon_effects})
+    local limited_effects, indications = util.effects.limit(merged_effects, self.recipe_proto.maximum_productivity)
 
     self.total_effects = limited_effects
-    self.effects_tooltip = util.gui.format_module_effects(limited_effects, {indications=indications})
+    self.effects_tooltip = util.effects.format(limited_effects, {indications=indications})
 end
 
 
