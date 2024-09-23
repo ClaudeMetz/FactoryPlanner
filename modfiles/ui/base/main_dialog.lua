@@ -97,6 +97,7 @@ function main_dialog.rebuild(player, default_visibility)
 
     local right_vertical = main_horizontal.add{type="flow", direction="vertical"}
     right_vertical.style.vertical_spacing = frame_spacing
+    right_vertical.style.width = dimensions.width - MAGIC_NUMBERS.list_width - (3 * MAGIC_NUMBERS.frame_spacing)
     main_elements.flows["right_vertical"] = right_vertical
 
     item_views.rebuild_data(player)
