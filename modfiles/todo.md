@@ -155,9 +155,7 @@
 
 - Sliders still bugged, this is stupid https://forums.factorio.com/viewtopic.php?p=516440#p516440
 - Constant combinator `sections` format rename
-- Some prototype filters still don't support `hidden` properly
 - API to open things in Factoriopedia
-- Disabled sprite buttons fade their icons, can't be turned off
 - No way to show quality on sprite buttons, which is essential in tons of places
   - Seemingly the hacky way to add a sprite to the button does not work, oof
   - Same thing for quality color, which should be used in relevant tooltips

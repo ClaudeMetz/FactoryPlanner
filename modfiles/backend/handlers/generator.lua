@@ -839,8 +839,8 @@ function generator.fuels.generate()
     local fuels = {}  ---@type NamedPrototypesWithCategory<FPFuelPrototype>
 
     local fuel_filter = {{filter="fuel-value", comparison=">", value=0},
-        {filter="fuel-value", comparison="<", value=1e+21, mode="and"}--[[ ,
-        {filter="hidden", invert=true, mode="and"} ]]}
+        {filter="fuel-value", comparison="<", value=1e+21, mode="and"},
+        {filter="hidden", invert=true, mode="and"}}
 
     -- Build solid fuels - to be combined into categories afterwards
     local item_list = storage.prototypes.items["item"].members  ---@type NamedPrototypesWithCategory<FPItemPrototype>
@@ -1023,7 +1023,7 @@ end
 function generator.modules.generate()
     local modules = {}  ---@type NamedPrototypesWithCategory<FPModulePrototype>
 
-    local module_filter = {{filter="type", type="module"}--[[ , {filter="hidden", invert=true, mode="and"} ]]}
+    local module_filter = {{filter="type", type="module"}, {filter="hidden", invert=true, mode="and"}}
     for _, proto in pairs(prototypes.get_item_filtered(module_filter)) do
         local sprite = "item/" .. proto.name
         if game.is_valid_sprite_path(sprite) then
