@@ -1,4 +1,3 @@
-require("ui.elements.module_configurator")
 local Beacon = require("backend.data.Beacon")
 
 -- ** LOCAL UTIL **

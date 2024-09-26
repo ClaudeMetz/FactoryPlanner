@@ -1,5 +1,3 @@
-require("ui.elements.module_configurator")
-
 -- ** LOCAL UTIL **
 local function add_checkbox(modal_elements, caption, tooltip, identifier, event_name)
     local tags = (event_name) and {mod="fp", on_gui_checked_state_changed=event_name} or nil
