@@ -482,7 +482,8 @@ function generator.recipes.generate()
                 recipe.category = "offshore-pump-" .. fluid.name
                 recipe.energy = 1
 
-                local products = {{type="fluid", name=fluid.name, amount=60}}
+                local products = {{type="fluid", name=fluid.name, amount=60,
+                    temperature=fluid.default_temperature}}
                 generator_util.format_recipe(recipe, products, products[1], {})
                 insert_prototype(recipes, recipe, nil)
             end
@@ -592,17 +593,19 @@ function generator.recipes.generate()
     local pumped_fluids = {}
     for _, proto in pairs(prototypes.tile) do
         if proto.fluid and not pumped_fluids[proto.fluid.name] and not proto.hidden then
-            pumped_fluids[proto.fluid.name] = true
+            local fluid = proto.fluid  ---@cast fluid -nil
+            pumped_fluids[fluid.name] = true
 
             local recipe = custom_recipe()
-            recipe.name = "impostor-" .. proto.fluid.name .. "-" .. proto.name
-            recipe.localised_name = {"", proto.fluid.localised_name, " ", {"fp.pumping_recipe"}}
-            recipe.sprite = "fluid/" .. proto.fluid.name
+            recipe.name = "impostor-" .. fluid.name .. "-" .. proto.name
+            recipe.localised_name = {"", fluid.localised_name, " ", {"fp.pumping_recipe"}}
+            recipe.sprite = "fluid/" .. fluid.name
             recipe.order = proto.order
             recipe.category = "offshore-pump"
             recipe.energy = 1
 
-            local products = {{type="fluid", name=proto.fluid.name, amount=60}}
+            local products = {{type="fluid", name=fluid.name, amount=60,
+                temperature=fluid.default_temperature}}
             local ingredients = {{type="entity", name="custom-" .. proto.name, amount=60}}
             generator_util.format_recipe(recipe, products, products[1], ingredients)
 
@@ -669,6 +672,7 @@ end
 ---@field hidden boolean
 ---@field stack_size uint?
 ---@field weight double?
+---@field temperature float?
 ---@field ingredient_only boolean
 ---@field order string
 ---@field group ItemGroup
@@ -686,30 +690,6 @@ end
 ---@return NamedPrototypesWithCategory<FPItemPrototype>
 function generator.items.generate()
     local items = {}   ---@type NamedPrototypesWithCategory<FPItemPrototype>
-
-    ---@param table RelevantItems
-    ---@param item RelevantItem
-    local function add_item(table, item)
-        local type = item.proto.type
-        local name = item.proto.name
-        table[type] = table[type] or {}
-        table[type][name] = table[type][name] or {}
-        local item_details = table[type][name]
-        -- Determine whether this item is used as a product at least once
-        item_details.is_product = item_details.is_product or item.is_product
-    end
-
-    -- Create a table containing every item that is either a product or an ingredient to at least one recipe
-    local relevant_items = {}  ---@type RelevantItems
-    for _, recipe_proto in pairs(storage.prototypes.recipes) do
-        for _, product in pairs(recipe_proto.products) do
-            add_item(relevant_items, {proto=product, is_product=true})
-        end
-        for _, ingredient in pairs(recipe_proto.ingredients) do
-            add_item(relevant_items, {proto=ingredient, is_product=false})
-        end
-    end
-
 
     -- Build custom items, representing in-world entities mostly
     local custom_items, rocket_parts = {}, {}
@@ -772,20 +752,43 @@ function generator.items.generate()
     generator_util.add_groups(custom_items["custom-silo-rocket"], "intermediate-products", "intermediate-product")
 
 
+    local relevant_items = {item={}, fluid={}, entity={}}
+    -- Extract items from recipes and note whether they are ever used as a product
+    for _, recipe_proto in pairs(storage.prototypes.recipes) do
+        local item_map = {[recipe_proto.products] = true, [recipe_proto.ingredients] = false}
+        for item_table, is_product in pairs(item_map) do
+            for _, item_data in pairs(item_table) do
+                local item = relevant_items[item_data.type][item_data.name]
+                if not item then
+                    item = { temperature = item_data.temperature, is_product = false }
+                    relevant_items[item_data.type][item_data.name] = item
+                end
+                item.is_product = item.is_product or is_product
+            end
+        end
+    end
+
     for type, item_table in pairs(relevant_items) do
         for item_name, item_details in pairs(item_table) do
-            local proto = (type == "entity") and custom_items[item_name] or
-                prototypes[type][item_name]  ---@type LuaItemPrototype | LuaFluidPrototype
+            local proto_name = item_details.temperature and string.gsub(item_name, "%-+[0-9]+$", "") or item_name
+            local proto = (type == "entity") and custom_items[proto_name] or
+                prototypes[type][proto_name]  ---@type LuaItemPrototype | LuaFluidPrototype
 
             local item = {
                 name = item_name,
                 localised_name = proto.localised_name,
+                sprite = (type .. "/" .. proto.name),
                 type = type,
                 hidden = (not rocket_parts[item_name]) and proto.hidden,
                 stack_size = (type == "item") and proto.stack_size or nil,
                 weight = (type == "item") and proto.weight or nil,
+                temperature = nil,
                 ingredient_only = not item_details.is_product,
-                order = proto.order
+                order = proto.order,
+                group = generator_util.generate_group_table(proto.group),
+                subgroup = generator_util.generate_group_table(proto.subgroup),
+                tooltip = nil,
+                fixed_unit = nil
             }
 
             if type == "entity" then
@@ -794,10 +797,10 @@ function generator.items.generate()
                 item.subgroup = proto.subgroup
                 item.tooltip = proto.localised_name
                 item.fixed_unit = proto.fixed_unit or nil
-            else
-                item.sprite = (type .. "/" .. proto.name)
-                item.group = generator_util.generate_group_table(proto.group)
-                item.subgroup = generator_util.generate_group_table(proto.subgroup)
+            elseif item_details.temperature then
+                item.localised_name = {"fp.fluid_name", proto.localised_name, item_details.temperature}
+                item.temperature = item_details.temperature
+                item.tooltip = item.localised_name
             end
 
             insert_prototype(items, item, item.type)

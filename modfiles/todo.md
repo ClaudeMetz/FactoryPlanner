@@ -2,7 +2,8 @@
 
 ## Active
 
-- Change SimpleItems to be a dict instead of an array so there needs to be no fuss finding stuff
+- Need generic ('Any temperature') fluids that can be selected as top level products?
+- Fluids with temp currently have a without-temperature version, gotten from recipe ingredients. Not sure if desired.
 
 ## Bugs
 
@@ -11,6 +12,7 @@
 
 ## Features
 
+- Change SimpleItems to be a dict instead of an array so there needs to be no fuss finding stuff
 - Balance District items against each other
 - Allow Factory products to take their amounts from the District's ingredients
   - This link should not automatically pull new values from the District, for a couple reasons:

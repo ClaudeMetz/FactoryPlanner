@@ -10,6 +10,7 @@ local generator_util = {}
 ---@field name string
 ---@field type string
 ---@field amount number
+---@field temperature float?
 ---@field proddable_amount number?
 
 ---@param product Product
@@ -27,12 +28,23 @@ local function generate_formatted_product(product)
     local probability = (product.probability or 1)
     local proddable_amount = base_amount - (product.ignored_by_productivity or 0)
 
-    return {
+    local formatted_product = {
         name = product.name,
         type = product.type,
         amount = base_amount * probability,
         proddable_amount = proddable_amount * probability
     }
+
+    if product.type == "fluid" then
+        local fluid = prototypes.fluid[product.name]
+        -- Only fluids with a temperature range need to be treated separately
+        if fluid.max_temperature ~= fluid.default_temperature then
+            formatted_product.temperature = product.temperature or fluid.default_temperature
+            formatted_product.name = product.name .. "-" .. formatted_product.temperature
+        end
+    end
+
+    return formatted_product
 end
 
 
@@ -50,7 +62,7 @@ local function combine_identical_products(item_list)
                 touched_item.proddable_amount = touched_item.proddable_amount + item.proddable_amount
             end
 
-            -- Using the table.remove function to preserve array-format
+            -- Using the table.remove function to preserve array format
             table.remove(item_list, index)
         else
             touched_items[item.type][item.name] = item

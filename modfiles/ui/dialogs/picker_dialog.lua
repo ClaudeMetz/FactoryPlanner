@@ -155,7 +155,7 @@ local function add_item_picker(parent_flow, player)
             local existing_product = existing_products[item_name]
             local button_style = (existing_product) and "flib_slot_button_red" or "flib_slot_button_default"
             local tooltip, elem_tooltip = nil, nil
-            if item_proto.type == "entity" then tooltip = item_proto.tooltip
+            if item_proto.type == "entity" or item_proto.temperature then tooltip = item_proto.tooltip
             else elem_tooltip = {type=item_proto.type, name=item_proto.name} end
 
             local button_item = table_subgroup.add{type="sprite-button", sprite=item_proto.sprite, style=button_style,
@@ -241,8 +241,9 @@ local function set_item_proto(modal_data, item_proto)
     local item_choice_button = modal_elements.item_choice_button
     item_choice_button.sprite = (item_proto) and item_proto.sprite or nil
     if item_proto then
-        item_choice_button.tooltip = (item_proto.type == "entity") and item_proto.tooltip or nil
-        item_choice_button.elem_tooltip = (item_proto.type ~= "entity") and
+        local special_prototype = (item_proto.type == "entity" or item_proto.temperature)
+        item_choice_button.tooltip = (special_prototype) and item_proto.tooltip or nil
+        item_choice_button.elem_tooltip = (not special_prototype) and
             {type=item_proto.type, name=item_proto.name} or nil
     end
 
