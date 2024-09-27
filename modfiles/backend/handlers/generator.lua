@@ -646,19 +646,6 @@ function generator.recipes.generate()
         insert_prototype(recipes, recipe, nil)
     end ]]
 
-    -- Custom handling for Space Exploration Arcosphere recipes
-    --[[ local se_split_recipes = {"se-arcosphere-fracture", "se-naquium-processor", "se-naquium-tessaract",
-        "se-space-dilation-data", "se-space-fold-data", "se-space-injection-data", "se-space-warp-data"}
-    for _, recipe_name in pairs(se_split_recipes) do
-        local recipe, alt_recipe = recipes[recipe_name], recipes[recipe_name .. "-alt"]
-        if recipe and alt_recipe then
-            recipe.custom = true
-            generator_util.combine_recipes(recipe, alt_recipe)
-            generator_util.multiply_recipe(recipe, 0.5)
-            remove_prototype(recipes, alt_recipe.name, nil)
-        end
-    end ]]
-
     return recipes
 end
 
