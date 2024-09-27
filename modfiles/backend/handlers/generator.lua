@@ -341,6 +341,7 @@ end
 ---@field maximum_productivity double
 ---@field type_counts { ingredients: ItemTypeCounts, products: ItemTypeCounts }
 ---@field catalysts { ingredients: Ingredient[], products: FormattedProduct[] }
+---@field fluid_annotations { [string]: LocalisedString }
 ---@field surface_conditions SurfaceCondition[]?
 ---@field recycling boolean
 ---@field barreling boolean
@@ -367,6 +368,7 @@ function generator.recipes.generate()
             maximum_productivity = math.huge,
             type_counts = {},
             catalysts = {products={}, ingredients={}},
+            fluid_annotations = {},
             emissions_multiplier = 1
         }
         generator_util.add_default_groups(recipe)
@@ -411,8 +413,9 @@ function generator.recipes.generate()
                 emissions_multiplier = proto.emissions_multiplier,
                 allowed_effects = proto.allowed_effects or {},
                 maximum_productivity = proto.maximum_productivity,
-                type_counts = {},  -- filled out by format_* below
-                catalysts = {products={}, ingredients={}},  -- filled out by format_* below
+                type_counts = {},  -- filled out by format_recipe
+                catalysts = {products={}, ingredients={}},  -- filled out by format_recipe
+                fluid_annotations = {},  -- filled out by format_recipe
                 surface_conditions = proto.surface_conditions,
                 recycling = generator_util.is_recycling_recipe(proto),
                 barreling = generator_util.is_compacting_recipe(proto),
@@ -755,15 +758,14 @@ function generator.items.generate()
     local relevant_items = {item={}, fluid={}, entity={}}
     -- Extract items from recipes and note whether they are ever used as a product
     for _, recipe_proto in pairs(storage.prototypes.recipes) do
-        local item_map = {[recipe_proto.products] = true, [recipe_proto.ingredients] = false}
-        for item_table, is_product in pairs(item_map) do
-            for _, item_data in pairs(item_table) do
+        for _, item_category in pairs({"products", "ingredients"}) do
+            for _, item_data in pairs(recipe_proto[item_category]) do
                 local item = relevant_items[item_data.type][item_data.name]
                 if not item then
                     item = { temperature = item_data.temperature, is_product = false }
                     relevant_items[item_data.type][item_data.name] = item
                 end
-                item.is_product = item.is_product or is_product
+                item.is_product = item.is_product or (item_category == "products")
             end
         end
     end
@@ -782,7 +784,7 @@ function generator.items.generate()
                 hidden = (not rocket_parts[item_name]) and proto.hidden,
                 stack_size = (type == "item") and proto.stack_size or nil,
                 weight = (type == "item") and proto.weight or nil,
-                temperature = nil,
+                temperature = item_details.temperature,  -- relevant for recipe products
                 ingredient_only = not item_details.is_product,
                 order = proto.order,
                 group = generator_util.generate_group_table(proto.group),
@@ -797,9 +799,9 @@ function generator.items.generate()
                 item.subgroup = proto.subgroup
                 item.tooltip = proto.localised_name
                 item.fixed_unit = proto.fixed_unit or nil
-            elseif item_details.temperature then
-                item.localised_name = {"fp.fluid_name", proto.localised_name, item_details.temperature}
-                item.temperature = item_details.temperature
+
+            elseif item.temperature then
+                item.localised_name = {"fp.product_fluid_name", proto.localised_name, item.temperature}
                 item.tooltip = item.localised_name
             end
 

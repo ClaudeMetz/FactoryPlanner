@@ -99,6 +99,31 @@ end
 ---@param main_product Product?
 ---@param ingredients Ingredient[]
 function generator_util.format_recipe(recipe_proto, products, main_product, ingredients)
+    local temperature_limit = 3.4e+38
+
+    for _, base_ingredient in pairs(ingredients) do
+        if base_ingredient.type == "fluid" then
+            -- Adjust temperature ranges for easy handling - nil means unlimited
+            local min_temp, max_temp = base_ingredient.minimum_temperature, base_ingredient.maximum_temperature
+            min_temp = (min_temp and min_temp > -temperature_limit) and min_temp or nil
+            max_temp = (max_temp and max_temp < temperature_limit) and max_temp or nil
+
+            base_ingredient.minimum_temperature = min_temp
+            base_ingredient.maximum_temperature = max_temp
+
+            local annotation = nil
+            if min_temp and not max_temp then
+                annotation = {"fp.min_temperature", min_temp}
+            elseif not min_temp and max_temp then
+                annotation = {"fp.max_temperature", max_temp}
+            elseif min_temp and max_temp then
+                annotation = {"fp.min_max_temperature", min_temp, max_temp}
+            end
+
+            recipe_proto.fluid_annotations[base_ingredient.name] = annotation
+        end
+    end
+
     local indexed_ingredients = create_type_indexed_list(ingredients)
     recipe_proto.type_counts.ingredients = determine_item_type_counts(indexed_ingredients)
 

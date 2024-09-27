@@ -1,3 +1,5 @@
+llog = require("util.llog")
+
 require("prototypes.styles")
 require("prototypes.sprites")
 require("prototypes.hotkeys")

@@ -171,9 +171,11 @@ local function add_item_flow(line, relevant_line, item_category, button_color, m
         local amount, number_tooltip = item_views.process_item(metadata.player, item, nil, machine_count)
         if amount == -1 then goto skip_item end  -- an amount of -1 means it was below the margin of error
 
+        local fluid_annotation = (item_category == "ingredient" and type == "fluid")
+            and line.recipe_proto.fluid_annotations[proto.name] or ""
+        local name_line = {"fp.tt_title", {"", proto.localised_name, " ", fluid_annotation}}
         local number_line = (number_tooltip) and {"", "\n", number_tooltip} or ""
-        local tooltip = {"", {"fp.tt_title", proto.localised_name}, number_line,
-            "\n", metadata.action_tooltips["act_on_compact_item"]}
+        local tooltip = {"", name_line, number_line, "\n", metadata.action_tooltips["act_on_compact_item"]}
         local style, enabled = "flib_slot_button_" .. button_color .. "_small", true
         if relevant_line.done then style = "flib_slot_button_grayscale_small" end
 

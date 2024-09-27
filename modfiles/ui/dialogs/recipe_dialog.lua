@@ -14,7 +14,7 @@ local function run_preliminary_checks(player, modal_data)
     local map = RECIPE_MAPS[modal_data.production_type][modal_data.category_id][modal_data.product_id]
     if map ~= nil then  -- this being nil means that the item has no recipes
         for recipe_id, _ in pairs(map) do
-            local recipe = prototyper.util.find("recipes", recipe_id, nil)
+            local recipe = prototyper.util.find("recipes", recipe_id, nil)  --[[@as FPRecipePrototype]]
             local force_recipe = force_recipes[recipe.name]
 
             if recipe.custom then  -- Add custom recipes by default

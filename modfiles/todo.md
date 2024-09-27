@@ -2,6 +2,8 @@
 
 ## Active
 
+- Handcrafting in utility dialog crashes
+
 - Need generic ('Any temperature') fluids that can be selected as top level products?
 - Fluids with temp currently have a without-temperature version, gotten from recipe ingredients. Not sure if desired.
 
