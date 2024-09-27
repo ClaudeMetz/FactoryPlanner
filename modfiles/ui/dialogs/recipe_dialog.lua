@@ -1,6 +1,20 @@
 local Line = require("backend.data.Line")
 
 -- ** LOCAL UTIL **
+-- NOTE: This is butt-ugly
+local function check_temperature(recipe, modal_data)
+    local compatible = true
+    for _, product in pairs(recipe.products) do
+        if product.temperature then
+            if (modal_data.min_temp and product.temperature < modal_data.min_temp)
+                    or (modal_data.max_temp and product.temperature > modal_data.max_temp) then
+                compatible = false; break
+            end
+        end
+    end
+    return compatible
+end
+
 -- Serves the dual-purpose of determining the appropriate settings for the recipe picker filter and, if there
 -- is only one that matches, to return a recipe name that can be added directly without the modal dialog
 local function run_preliminary_checks(player, modal_data)
@@ -15,40 +29,42 @@ local function run_preliminary_checks(player, modal_data)
     if map ~= nil then  -- this being nil means that the item has no recipes
         for recipe_id, _ in pairs(map) do
             local recipe = prototyper.util.find("recipes", recipe_id, nil)  --[[@as FPRecipePrototype]]
-            local force_recipe = force_recipes[recipe.name]
 
-            if recipe.custom then  -- Add custom recipes by default
-                table.insert(relevant_recipes, {proto=recipe, enabled=true})
-                -- These are always enabled and non-hidden, so no need to tally them
-                -- They can also not be disabled by user preference
+            if check_temperature(recipe, modal_data) then
+                local force_recipe = force_recipes[recipe.name]
 
-            elseif force_recipe ~= nil then  -- only add recipes that exist on the current force
-                local user_disabled = (preferences.ignore_barreling_recipes and recipe.barreling)
-                    or (preferences.ignore_recycling_recipes and recipe.recycling)
-                user_disabled_recipe = user_disabled_recipe or user_disabled
+                if recipe.custom then  -- Add custom recipes by default
+                    table.insert(relevant_recipes, {proto=recipe, enabled=true})
+                    -- These are always enabled and non-hidden, so no need to tally them
+                    -- They can also not be disabled by user preference
 
-                if not user_disabled then  -- only add recipes that are not disabled by the user
-                    local recipe_enabled, recipe_hidden = force_recipe.enabled, recipe.hidden
-                    local recipe_should_show = recipe.enabled_from_the_start or recipe_enabled
+                elseif force_recipe ~= nil then  -- only add recipes that exist on the current force
+                    local user_disabled = (preferences.ignore_barreling_recipes and recipe.barreling)
+                        or (preferences.ignore_recycling_recipes and recipe.recycling)
+                    user_disabled_recipe = user_disabled_recipe or user_disabled
 
-                    -- If the recipe is not enabled, it has to be made sure that there is at
-                    -- least one enabled technology that could potentially enable it
-                    if not recipe_should_show and recipe.enabling_technologies ~= nil then
-                        for _, technology_name in pairs(recipe.enabling_technologies) do
-                            local force_tech = force_technologies[technology_name]
-                            if force_tech and (force_tech.enabled or force_tech.visible_when_disabled) then
-                                recipe_should_show = true
-                                break
+                    if not user_disabled then  -- only add recipes that are not disabled by the user
+                        local recipe_enabled, recipe_hidden = force_recipe.enabled, recipe.hidden
+
+                        -- If the recipe is not enabled, it has to be made sure that there is at
+                        -- least one enabled technology that could potentially enable it
+                        local recipe_should_show = recipe.enabled_from_the_start or recipe_enabled
+                        if not recipe_should_show and recipe.enabling_technologies ~= nil then
+                            for _, technology_name in pairs(recipe.enabling_technologies) do
+                                local force_tech = force_technologies[technology_name]
+                                if force_tech and (force_tech.enabled or force_tech.visible_when_disabled) then
+                                    recipe_should_show = true; break
+                                end
                             end
                         end
-                    end
 
-                    if recipe_should_show then
-                        table.insert(relevant_recipes, {proto=recipe, enabled=recipe_enabled})
+                        if recipe_should_show then
+                            table.insert(relevant_recipes, {proto=recipe, enabled=recipe_enabled})
 
-                        if not recipe_enabled and recipe_hidden then counts.disabled_hidden = counts.disabled_hidden + 1
-                        elseif not recipe_enabled then counts.disabled = counts.disabled + 1
-                        elseif recipe_hidden then counts.hidden = counts.hidden + 1 end
+                            if not recipe_enabled and recipe_hidden then counts.disabled_hidden = counts.disabled_hidden + 1
+                            elseif not recipe_enabled then counts.disabled = counts.disabled + 1
+                            elseif recipe_hidden then counts.hidden = counts.hidden + 1 end
+                        end
                     end
                 end
             end

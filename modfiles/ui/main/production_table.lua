@@ -342,7 +342,8 @@ function builders.ingredients(line, parent_flow, metadata)
             satisfaction_line = {"", "\n", (formatted_percentage .. "%"), " ", {"fp.satisfied"}}
         end
 
-        local fluid_annotation = line.recipe_proto.fluid_annotations[ingredient.proto.name]
+        local fluid_annotation = (ingredient.proto.type == "fluid")
+            and line.recipe_proto.fluid_ingredients[ingredient.proto.name].annotation or ""
         local name_line = {"fp.tt_title", {"", ingredient.proto.localised_name, " ", fluid_annotation}}
         local number_line = (number_tooltip) and {"", "\n", number_tooltip} or ""
         local tooltip = {"", name_line, number_line, satisfaction_line,

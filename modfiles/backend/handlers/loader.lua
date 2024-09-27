@@ -48,7 +48,8 @@ local function recipe_map_from(item_type)
 
     for _, recipe in pairs(storage.prototypes.recipes) do
         for _, item in ipairs(recipe[item_type]) do
-            local item_proto = prototyper.util.find("items", item.name, item.type)  ---@cast item_proto -nil
+            local item_name = (item.temperature) and string.gsub(item.name, "%-+[0-9]+$", "") or item.name
+            local item_proto = prototyper.util.find("items", item_name, item.type)  ---@cast item_proto -nil
             map[item_proto.category_id] = map[item_proto.category_id] or {}
             map[item_proto.category_id][item_proto.id] = map[item_proto.category_id][item_proto.id] or {}
             map[item_proto.category_id][item_proto.id][recipe.id] = true

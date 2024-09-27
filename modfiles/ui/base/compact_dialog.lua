@@ -172,7 +172,7 @@ local function add_item_flow(line, relevant_line, item_category, button_color, m
         if amount == -1 then goto skip_item end  -- an amount of -1 means it was below the margin of error
 
         local fluid_annotation = (item_category == "ingredient" and type == "fluid")
-            and line.recipe_proto.fluid_annotations[proto.name] or ""
+            and line.recipe_proto.fluid_ingredients[proto.name].annotation or ""
         local name_line = {"fp.tt_title", {"", proto.localised_name, " ", fluid_annotation}}
         local number_line = (number_tooltip) and {"", "\n", number_tooltip} or ""
         local tooltip = {"", name_line, number_line, "\n", metadata.action_tooltips["act_on_compact_item"]}

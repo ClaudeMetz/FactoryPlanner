@@ -2,10 +2,17 @@
 
 ## Active
 
-- Handcrafting in utility dialog crashes
+- Fluid temps - needs dealing with before 2.0
+  - Add back distinct items for each fluid temp, so I don't need to carry that info along separately in the solver
+  - Have the complex matching logic only when no specific temperature is needed, for the solver and recipe picker
+    - No idea how that logic could even work for the matrix solver, probably just can't?
+  - Still need a no-temperature item probably, that can be produced with any target temp recipe
+  - After this, boiler support should be re-added and made to work with all kinds of boilers
 
-- Need generic ('Any temperature') fluids that can be selected as top level products?
-- Fluids with temp currently have a without-temperature version, gotten from recipe ingredients. Not sure if desired.
+- Recipe dialog temperature check is butt-ugly
+- Having both a specifc-temp and an any-temp product is weird. That matching is weird in general now.
+
+- Handcrafting in utility dialog crashes
 
 ## Bugs
 
@@ -28,12 +35,6 @@
   - Otherwise there won't be a unique solution. Kinda orthogonal in general, but would be helpful to have
 - Allow clicking on District items to see their origin/usage. Ideally click to go there directly, but that's
   tricky since they can be from multiple places. Maybe a separate UI is warranted
-- Fluid temps - needs dealing with before 2.0
-  - Add back distinct items for each fluid temp, so I don't need to carry that info along separately in the solver
-  - Have the complex matching logic only when no specific temperature is needed, for the solver and recipe picker
-    - No idea how that logic could even work for the matrix solver, probably just can't?
-  - Still need a no-temperature item probably, that can be produced with any target temp recipe
-  - After this, boiler support should be re-added and made to work with all kinds of boilers
 
 ## Low Priority
 
@@ -53,6 +54,7 @@
 - Recipe energy of 0 is still awkward (doesn't work properly with matrix solver either)
 - Ingredients without amount don't show, but should because any amount would be meaningless
 - Also, having a value that's independent of production_ratio (like time) would be nice
+- Replace "can't craft X on this location" notice with the planets it can be crafted on, like vanilla
 
 ## Future Tasks
 

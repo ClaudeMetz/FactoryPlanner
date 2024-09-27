@@ -1,18 +1,6 @@
 local Product = require("backend.data.Product")
 
 -- ** LOCAL UTIL **
-local function add_recipe(player, item_category, item_proto)
-    local floor = util.context.get(player, "Floor")  --[[@as Floor]]
-    if floor.level > 1 then
-        local message = {"fp.error_recipe_wrong_floor", {"fp.pu_" .. item_category, 1}}
-        util.messages.raise(player, "error", message, 1)
-    else
-        local production_type = (item_category == "byproduct") and "consume" or "produce"
-        util.raise.open_dialog(player, {dialog="recipe", modal_data={production_type=production_type,
-            category_id=item_proto.category_id, product_id=item_proto.id}})
-    end
-end
-
 local function build_item_box(player, category, column_count)
     local item_boxes_elements = util.globals.main_elements(player).item_boxes
 
@@ -82,14 +70,13 @@ local function refresh_item_box(player, factory, show_floor_items, item_category
             if percentage_string == "0" then style = "flib_slot_button_red"
             elseif percentage_string == "100" then style = "flib_slot_button_green"
             else style = "flib_slot_button_yellow" end
+        elseif item.proto.type == "entity" then
+            style = "flib_slot_button_transparent"
         end
 
         local name_line = {"fp.tt_title", item.proto.localised_name}
         local number_line = (number_tooltip) and {"", "\n", number_tooltip} or ""
         local tooltip = {"", name_line, number_line, satisfaction_line, "\n", action_tooltip}
-        if item.class ~= "Product" and item.proto.type == "entity" then
-            style = "flib_slot_button_transparent"
-        end
 
         local button = table_items.add{type="sprite-button", number=amount, style=style, sprite=item.proto.sprite,
             tags={mod="fp", on_gui_click=action, item_category=item_category, item_id=item.id, item_index=index,
@@ -151,7 +138,21 @@ local function handle_item_button_click(player, tags, action)
     end
 
     if action == "add_recipe" then
-        add_recipe(player, tags.item_category, item.proto)
+        local floor = util.context.get(player, "Floor")  --[[@as Floor]]
+        if floor.level > 1 then
+            local message = {"fp.error_recipe_wrong_floor", {"fp.pu_" .. tags.item_category, 1}}
+            util.messages.raise(player, "error", message, 1)
+        else
+            local production_type = (tags.item_category == "byproduct") and "consume" or "produce"
+            local min_temp, max_temp, proto = nil, nil, item.proto
+            if proto.type == "fluid" and proto.temperature then
+                min_temp, max_temp = proto.temperature, proto.temperature
+                proto = prototyper.util.find("items", string.gsub(proto.name, "%-+[0-9]+$", ""), "fluid")
+            end
+
+            util.raise.open_dialog(player, {dialog="recipe", modal_data={production_type=production_type,
+                category_id=proto.category_id, product_id=proto.id, min_temp=min_temp, max_temp=max_temp}})
+        end
 
     elseif action == "edit" then
         util.raise.open_dialog(player, {dialog="picker",

@@ -341,7 +341,7 @@ end
 ---@field maximum_productivity double
 ---@field type_counts { ingredients: ItemTypeCounts, products: ItemTypeCounts }
 ---@field catalysts { ingredients: Ingredient[], products: FormattedProduct[] }
----@field fluid_annotations { [string]: LocalisedString }
+---@field fluid_ingredients { string: FluidIngredients }
 ---@field surface_conditions SurfaceCondition[]?
 ---@field recycling boolean
 ---@field barreling boolean
@@ -353,6 +353,11 @@ end
 ---@field group ItemGroup
 ---@field subgroup ItemGroup
 ---@field tooltip LocalisedString?
+
+---@class FluidIngredients
+---@field minimum_temperature float?
+---@field maximum_temperature float?
+---@field annotation LocalisedString?
 
 -- Returns all standard recipes + custom mining, steam and rocket recipes
 ---@return NamedPrototypes<FPRecipePrototype>
@@ -368,7 +373,7 @@ function generator.recipes.generate()
             maximum_productivity = math.huge,
             type_counts = {},
             catalysts = {products={}, ingredients={}},
-            fluid_annotations = {},
+            fluid_ingredients = {},
             emissions_multiplier = 1
         }
         generator_util.add_default_groups(recipe)
@@ -415,7 +420,7 @@ function generator.recipes.generate()
                 maximum_productivity = proto.maximum_productivity,
                 type_counts = {},  -- filled out by format_recipe
                 catalysts = {products={}, ingredients={}},  -- filled out by format_recipe
-                fluid_annotations = {},  -- filled out by format_recipe
+                fluid_ingredients = {},  -- filled out by format_recipe
                 surface_conditions = proto.surface_conditions,
                 recycling = generator_util.is_recycling_recipe(proto),
                 barreling = generator_util.is_compacting_recipe(proto),
@@ -770,9 +775,14 @@ function generator.items.generate()
         end
     end
 
+    local no_temperature_fluids = {}
     for type, item_table in pairs(relevant_items) do
         for item_name, item_details in pairs(item_table) do
-            local proto_name = item_details.temperature and string.gsub(item_name, "%-+[0-9]+$", "") or item_name
+            local proto_name = item_name
+            if item_details.temperature then
+                proto_name = string.gsub(item_name, "%-+[0-9]+$", "")
+                table.insert(no_temperature_fluids, proto_name)
+            end
             local proto = (type == "entity") and custom_items[proto_name] or
                 prototypes[type][proto_name]  ---@type LuaItemPrototype | LuaFluidPrototype
 
@@ -800,13 +810,20 @@ function generator.items.generate()
                 item.tooltip = proto.localised_name
                 item.fixed_unit = proto.fixed_unit or nil
 
-            elseif item.temperature then
-                item.localised_name = {"fp.product_fluid_name", proto.localised_name, item.temperature}
+            elseif type == "fluid" then
+                item.localised_name = (not item.temperature) and {"fp.fluid_any_temperature", proto.localised_name}
+                    or {"fp.fluid_with_temperature", proto.localised_name, item.temperature}
                 item.tooltip = item.localised_name
             end
 
             insert_prototype(items, item, item.type)
         end
+    end
+
+    -- Make all non-temperature versions of fluids with temperature visible,
+    -- so they can be picked as products where you don't care about the temperature
+    for _, item_name in pairs(no_temperature_fluids) do
+        items.fluid.members[item_name].ingredient_only = false
     end
 
     return items
