@@ -39,12 +39,12 @@
 - Agriculture tower implementation
   - Missing energy and pollution production, is different to normal entities
 - Improve performance by not making item_views.process iterate the prefs every time
-- Disable byproduct lines with matrix solver instead of deleting, same as the surface-disabled ones
 - Could use icons for control, shift, etc for context menus to make them smaller
 - Could now store blueprints from the library I think?
 - Context menu to change belt directly on belt view button
 - Add floating text for all actions that are taken that are not possible
   - Ideally the tooltips and context menu wouldn't show them, but that is tricky
+  - It's actually kinda confusing that it shows impossible actions now, should really fix that
 - Better icons for custom recipes - mining, spoiling, etc
 - Recipe energy of 0 is still awkward (doesn't work properly with matrix solver either)
 - Ingredients without amount don't show, but should because any amount would be meaningless
@@ -52,9 +52,6 @@
 
 ## Future Tasks
 
-- Better infinite mining drill support
-  - Kind of incredibly annoying, since there is nothing I can really calculate about it
-  - Could still make it so it shows the oil patch as an ingredient without amount (same for offshore pumps)
 - Quality calculations: not sure how far I want to go with these
   - Quality odds for products - that's kinda dumb without items themselves supporting quality, soo idk
     - Also solver doesn't support this kinda stuff atm anyways, needs rewrite
@@ -77,12 +74,6 @@
 - Look into building prototypes on_load instead of saving them in global
   - Theoretically better, but the data structures still save direct pointers to them in global
   - Not sure if I want to avoid that by replacing it with a reference that needs to be resolved every time
-- Factory utility actions, like set modules for all, could do well with options to upgrade quality for all
-  module types to X, etc
-- Generator rewrite (yes, another one)
-  - It would make so many things much easier if each prototype had a unique ID, like objects do, instead of their own
-    ID plus an optional category ID, with separate ID pools per prototype type.
-  - Somewhat risky as it touches so much of the mod, but the details are all pretty easy probably.
 - Topological ordering tech (see iPad drawing for some testing)
   - This is a method to order recipes in a way that makes them work with the traditional solver, pretty much
   - Is pretty easy to implement from what it looks like, even for recipes with multiple products etc
