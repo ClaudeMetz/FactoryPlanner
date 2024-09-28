@@ -141,6 +141,7 @@ listeners.gui = {
                     game.reload_mods()  -- toggle needs to be delayed by a tick since the reload is not instant
                     game.print("Mods reloaded")
                     util.nth_tick.register((game.tick + 1), "interface_toggle", {player_index=player.index})
+                    util.nth_tick.register((game.tick + 2), "refresh_production", {player_index=player.index})
                 else
                     refresh_production(player, nil, nil)
                 end
@@ -185,6 +186,13 @@ listeners.misc = {
     refresh_gui_element = (function(player, event)
         local triggers = {production_bar=true, production=true, factory=true, all=true}
         if triggers[event.trigger] then refresh_production_bar(player) end
+    end)
+}
+
+listeners.global = {
+    refresh_production = (function(metadata)
+        local player = game.get_player(metadata.player_index)
+        refresh_production(player, nil, nil)
     end)
 }
 
