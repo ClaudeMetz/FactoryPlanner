@@ -613,7 +613,7 @@ function generator.recipes.generate()
             recipe.energy = 1
 
             local products = {{type="fluid", name=fluid.name, amount=60,
-                temperature=fluid.default_temperature}}
+                temperature=20}}
             local ingredients = {{type="entity", name="custom-" .. proto.name, amount=60}}
             generator_util.format_recipe(recipe, products, products[1], ingredients)
 
@@ -781,7 +781,7 @@ function generator.items.generate()
             local proto_name = item_name
             if item_details.temperature then
                 proto_name = string.gsub(item_name, "%-+[0-9]+$", "")
-                table.insert(no_temperature_fluids, proto_name)
+                no_temperature_fluids[proto_name] = (no_temperature_fluids[proto_name] or 0) + 1
             end
             local proto = (type == "entity") and custom_items[proto_name] or
                 prototypes[type][proto_name]  ---@type LuaItemPrototype | LuaFluidPrototype
@@ -820,10 +820,9 @@ function generator.items.generate()
         end
     end
 
-    -- Make all non-temperature versions of fluids with temperature visible,
-    -- so they can be picked as products where you don't care about the temperature
-    for _, item_name in pairs(no_temperature_fluids) do
-        items.fluid.members[item_name].ingredient_only = false
+    -- Show any-temperature fluids if there is more than one possible temperature for them
+    for item_name, count in pairs(no_temperature_fluids) do
+        if count > 1 then items.fluid.members[item_name].ingredient_only = false end
     end
 
     return items

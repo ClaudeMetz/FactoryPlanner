@@ -11,6 +11,7 @@
 
 - Recipe dialog temperature check is butt-ugly
 - Having both a specifc-temp and an any-temp product is weird. That matching is weird in general now.
+- It's dumb to use `string.gsub(item_name, "%-+[0-9]+$", "")` everywhere
 
 - Handcrafting in utility dialog crashes
 
