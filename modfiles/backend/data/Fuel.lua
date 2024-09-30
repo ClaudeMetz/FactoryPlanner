@@ -4,6 +4,8 @@ local Object = require("backend.data.Object")
 ---@field class "Fuel"
 ---@field parent Machine
 ---@field proto FPFuelPrototype | FPPackedPrototype
+---@field amount number
+---@field satisfied_amount number
 local Fuel = Object.methods()
 Fuel.__index = Fuel
 script.register_metatable("Fuel", Fuel)

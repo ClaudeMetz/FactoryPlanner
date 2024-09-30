@@ -1,7 +1,6 @@
 local Line = require("backend.data.Line")
 
 -- ** LOCAL UTIL **
--- NOTE: This is butt-ugly
 local function check_temperature(recipe, modal_data)
     local compatible = true
     for _, product in pairs(recipe.products) do

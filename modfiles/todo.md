@@ -9,14 +9,23 @@
   - Still need a no-temperature item probably, that can be produced with any target temp recipe
   - After this, boiler support should be re-added and made to work with all kinds of boilers
 
-- Recipe dialog temperature check is butt-ugly
 - Having both a specifc-temp and an any-temp product is weird. That matching is weird in general now.
-- It's dumb to use `string.gsub(item_name, "%-+[0-9]+$", "")` everywhere
+- It's dumb to use `string.gsub(item_name, "%-+[0-9]+$", "")` everywhere - just save it on the recipe item and item proto
+- Look at the situations where structure.class functions are being sent prototypes instead of recipe items
+- Make matrix solver work by just removing any temperature stuff
+- Using structures.class.find only matches exact temperature ranges, which might not be what
+  we want when trying to find demand to satisfy. Currently it only finds the first/any
+  - Finding relevant products needs to find all fluid temp ranges and add them up as appropriate/compatible
+  - balance_items is also screwy, maybe exact match is fine, maybe it isn't.
+  - In general, transitioning items from/to ingredients is weird because of min/max temperatures
+  - Same for ingredient satisfaction probably
 
-- Handcrafting in utility dialog crashes
 
 ## Bugs
 
+- Handcrafting in utility dialog crashes
+- Opening compact dialog first crashes https://discord.com/channels/600791114814980141/960547035008888842/1290044415150129283
+- New defaults section should just be buttons, not checkboxes+confirm. Also make usre it never scrolls
 - Wrong localised names for custom machines/recipes etc
 - Take care of faded disabled sprite buttons, probably by using toggled or sprite elements
 

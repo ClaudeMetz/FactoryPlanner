@@ -27,7 +27,9 @@ local function set_blank_factory(player, factory)
     local product_class = structures.class.init()
 
     -- Need to treat products differently because they work differently under the hood
-    for product in factory:iterator() do structures.class.add(product_class, product, product:get_required_amount()) end
+    for product in factory:iterator() do
+        structures.class.add(product_class, product.proto, product:get_required_amount())
+    end
 
     solver.set_factory_result {
         player_index = player.index,
@@ -123,7 +125,7 @@ local function update_object_items(object, item_category, item_results)
     local simple_items = object[item_category]
     simple_items:clear()
 
-    for _, item_result in pairs(structures.class.to_array(item_results)) do
+    for _, item_result in pairs(structures.class.list(item_results)) do
         local item_proto = prototyper.util.find("items", item_result.name, item_result.type)  --[[@as FPItemPrototype]]
         if object.class ~= "Floor" or item_proto.type ~= "entity" then
             simple_items:insert({class="SimpleItem", proto=item_proto, amount=item_result.amount})
@@ -147,15 +149,15 @@ local function update_ingredient_satisfaction(floor, product_class)
     product_class = product_class or structures.class.init()
 
     local function determine_satisfaction(ingredient)
-        local product_amount = product_class[ingredient.proto.type][ingredient.proto.name]
+        local product= structures.class.find(product_class, ingredient.proto)
 
-        if product_amount ~= nil then
-            if product_amount >= ingredient.amount then
+        if product ~= nil then
+            if product.amount >= ingredient.amount then
                 ingredient.satisfied_amount = ingredient.amount
-                structures.class.subtract(product_class, ingredient)
+                structures.class.subtract(product_class, ingredient.proto, ingredient.amount)
             else  -- product_amount < ingredient.amount
-                ingredient.satisfied_amount = product_amount
-                structures.class.subtract(product_class, ingredient, product_amount)
+                ingredient.satisfied_amount = product.amount
+                structures.class.subtract(product_class, ingredient.proto, product.amount)
             end
         else
             ingredient.satisfied_amount = 0
@@ -165,7 +167,7 @@ local function update_ingredient_satisfaction(floor, product_class)
     -- Iterates the lines from the bottom up, setting satisfaction amounts along the way
     for line in floor:iterator(nil, floor:find_last(), "previous") do
         if line.class == "Floor" then
-            local subfloor_product_class = structures.class.copy(product_class)
+            local subfloor_product_class = ftable.deep_copy(product_class)
             update_ingredient_satisfaction(line, subfloor_product_class)
         elseif line.machine.fuel then
             determine_satisfaction(line.machine.fuel)
@@ -180,7 +182,7 @@ local function update_ingredient_satisfaction(floor, product_class)
         -- Products and byproducts just get added to the list as being produced
         for _, item_category in pairs{"products", "byproducts"} do
             for _, product in line[item_category]:iterator() do
-                structures.class.add(product_class, product)
+                structures.class.add(product_class, product.proto, product.amount)
             end
         end
     end
@@ -243,7 +245,8 @@ function solver.generate_factory_data(player, factory)
 
     for product in factory:iterator() do
         local product_data = {
-            proto = product.proto,  -- reference
+            name = product.proto.name,
+            type = product.proto.type,
             amount = product:get_required_amount()
         }
         table.insert(factory_data.top_level_products, product_data)
@@ -264,8 +267,9 @@ function solver.set_factory_result(result)
 
     -- If products are not present in the result, it means they have been produced
     for product in factory:iterator() do
-        local product_result_amount = result.Product[product.proto.type][product.proto.name] or 0
-        product.amount = product:get_required_amount() - product_result_amount
+        local result_product = structures.class.find(result.Product, product.proto)
+        local result_amount = (result_product) and result_product.amount or 0
+        product.amount = product:get_required_amount() - result_amount
     end
 
     update_object_items(factory.top_floor, "byproducts", result.Byproduct)
@@ -294,7 +298,7 @@ function solver.set_line_result(result)
     line.power = result.energy_consumption
     line.emissions = result.emissions
 
-    if line.production_ratio == 0 and line.subfloor == nil then
+    if line.production_ratio == 0 then
         local recipe_proto = line.recipe_proto
         set_zeroed_items(line, "products", recipe_proto.products)
         line.byproducts:clear()
@@ -308,11 +312,6 @@ end
 
 
 -- **** UTIL ****
--- Determines the number of crafts per tick for the given data
-function solver_util.determine_crafts_per_second(machine_speed, recipe_proto, total_effects)
-    return (machine_speed * (1 + total_effects.speed)) / recipe_proto.energy
-end
-
 -- Calculates the product amount after applying productivity bonuses
 function solver_util.determine_prodded_amount(item, total_effects, maximum_productivity)
     -- No negative productivity, and none above the recipe-determined cap

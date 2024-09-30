@@ -413,18 +413,18 @@ function matrix_engine.run_matrix_solver(factory_data, check_linear_dependence)
             -- counterintuitively, a negative amount means we have a negative number of "pseudo-buildings",
             -- implying the item must be consumed to balance the matrix, hence it is a byproduct.
             -- The opposite is true for ingredients.
-            structures.aggregate.add(main_aggregate, "Byproduct", item, -amount)
+            structures.class.add(main_aggregate.Byproduct, item, -amount)
         else
-            structures.aggregate.add(main_aggregate, "Ingredient", item, amount)
+            structures.class.add(main_aggregate.Ingredient, item, amount)
         end
     end
 
     -- set products for unproduced items
     for _, product in pairs(factory_data.top_level_products) do
-        local item_key = matrix_engine.get_item_key(product.proto.type, product.proto.name)
+        local item_key = matrix_engine.get_item_key(product.type, product.name)
         if factory_metadata.unproduced_outputs[item_key] then
             local item = matrix_engine.get_item(item_key)
-            structures.aggregate.add(main_aggregate, "Product", item, product.amount)
+            structures.class.add(main_aggregate.Product, item, product.amount)
         end
     end
 
@@ -447,25 +447,16 @@ function matrix_engine.consolidate(aggregate)
     -- Items cannot be both products or byproducts, but they can be both ingredients and fuels.
     -- In the case that an item appears as an output, an ingredient, and a fuel, delete from fuel first.
     local function compare_classes(input_class, output_class)
-        for type, type_table in pairs(aggregate[output_class]) do
-            for item, output_amount in pairs(type_table) do
-                local item_table = {
-                    type=type,
-                    name=item
-                }
-                if aggregate[input_class][type] ~= nil then
-                    if aggregate[input_class][type][item] ~= nil then
-                        local input_amount = aggregate[input_class][type][item]
-                        local net_amount = output_amount - input_amount
-                        if net_amount > 0 then
-                            structures.aggregate.subtract(aggregate, input_class, item_table, input_amount)
-                            structures.aggregate.subtract(aggregate, output_class, item_table, input_amount)
-                        else
-                            structures.aggregate.subtract(aggregate, input_class, item_table, output_amount)
-                            structures.aggregate.subtract(aggregate, output_class, item_table, output_amount)
-                        end
-                    end
-                end
+        for _, output_item in pairs(structures.class.list(aggregate[output_class])) do
+            local input_data = structures.class.find(aggregate[input_class], output_item)
+            local input_amount = (input_data) and input_data.amount or 0
+            local net_amount = output_item.amount - input_amount
+            if net_amount > 0 then
+                structures.class.subtract(aggregate[input_class], output_item, input_amount)
+                structures.class.subtract(aggregate[output_class], output_item, input_amount)
+            else
+                structures.class.subtract(aggregate[input_class], output_item)
+                structures.class.subtract(aggregate[output_class], output_item)
             end
         end
     end
@@ -478,7 +469,7 @@ end
 function matrix_engine.get_factory_metadata(factory_data)
     local desired_outputs = {}
     for _, product in pairs(factory_data.top_level_products) do
-        local item_key = matrix_engine.get_item_key(product.proto.type, product.proto.name)
+        local item_key = matrix_engine.get_item_key(product.type, product.name)
         desired_outputs[item_key] = true
     end
     local lines_metadata = matrix_engine.get_lines_metadata(factory_data.top_floor.lines,
@@ -573,20 +564,16 @@ function matrix_engine.get_matrix(factory_data, rows, columns)
             local line_aggregate = matrix_engine.get_line_aggregate(line, factory_data.player_index,
                 floor.id, 1, true)
 
-            for item_type_name, items in pairs(line_aggregate.Product) do
-                for item_name, amount in pairs(items) do
-                    local item_key = matrix_engine.get_item_key(item_type_name, item_name)
-                    local row_num = rows.map[item_key]
-                    matrix[row_num][col_num] = matrix[row_num][col_num] + amount
-                end
+            for _, item in pairs(structures.class.list(line_aggregate.Product)) do
+                local item_key = matrix_engine.get_item_key(item.type, item.name)
+                local row_num = rows.map[item_key]
+                matrix[row_num][col_num] = matrix[row_num][col_num] + item.amount
             end
 
-            for item_type_name, items in pairs(line_aggregate.Ingredient) do
-                for item_name, amount in pairs(items) do
-                    local item_key = matrix_engine.get_item_key(item_type_name, item_name)
-                    local row_num = rows.map[item_key]
-                    matrix[row_num][col_num] = matrix[row_num][col_num] - amount
-                end
+            for _, item in pairs(structures.class.list(line_aggregate.Ingredient)) do
+                local item_key = matrix_engine.get_item_key(item.type, item.name)
+                local row_num = rows.map[item_key]
+                matrix[row_num][col_num] = matrix[row_num][col_num] - item.amount
             end
         end
     end
@@ -594,7 +581,8 @@ function matrix_engine.get_matrix(factory_data, rows, columns)
     -- final column for desired output. Don't have to explicitly set constrained vars to zero
     -- since matrix is initialized with zeros.
     for _, product in ipairs(factory_data.top_level_products) do
-        local item_id = product.proto.category_id .. "_" .. product.proto.id
+        local proto = prototyper.util.find("items", product.name, product.type)
+        local item_id = proto.category_id .. "_" .. proto.id
         local row_num = rows.map[item_id]
         -- will be nil for unproduced outputs
         if row_num ~= nil then
@@ -625,13 +613,13 @@ function matrix_engine.get_line_aggregate(line_data, player_index, floor_id, mac
             recipe_proto.maximum_productivity)
         local item_key = matrix_engine.get_item_key(product.type, product.name)
         if factory_metadata~= nil and (factory_metadata.byproducts[item_key] or free_variables["item_"..item_key]) then
-            structures.aggregate.add(line_aggregate, "Byproduct", product, prodded_amount * total_crafts)
+            structures.class.add(line_aggregate.Byproduct, product, prodded_amount * total_crafts)
         else
-            structures.aggregate.add(line_aggregate, "Product", product, prodded_amount * total_crafts)
+            structures.class.add(line_aggregate.Product, product, prodded_amount * total_crafts)
         end
     end
     for _, ingredient in pairs(recipe_proto.ingredients) do
-        structures.aggregate.add(line_aggregate, "Ingredient", ingredient,
+        structures.class.add(line_aggregate.Ingredient, ingredient,
             ingredient.amount * total_crafts * line_data.resource_drain_rate)
     end
 
@@ -648,7 +636,7 @@ function matrix_engine.get_line_aggregate(line_data, player_index, floor_id, mac
 
         if include_fuel_ingredient then
             local fuel = {type=fuel_proto.type, name=fuel_proto.name, amount=fuel_amount}
-            structures.aggregate.add(line_aggregate, "Ingredient", fuel, fuel_amount)
+            structures.class.add(line_aggregate.Ingredient, fuel, fuel_amount)
         end
 
         energy_consumption = 0  -- set electrical consumption to 0 when fuel is used
