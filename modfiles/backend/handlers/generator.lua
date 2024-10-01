@@ -517,7 +517,7 @@ function generator.recipes.generate()
         elseif proto.type == "rocket-silo" and not proto.hidden then
             local parts_recipe = prototypes.recipe[proto.fixed_recipe]
 
-            -- Add special research rocket recipe
+            --[[ -- Add special research rocket recipe
             local research_recipe = custom_recipe()
             local research_products = proto.rocket_entity_prototype.research_products
             if research_products == nil then goto incompatible_proto end
@@ -533,7 +533,7 @@ function generator.recipes.generate()
             generator_util.format_recipe(research_recipe, research_products,
                 research_products[1], parts_recipe.ingredients)
             generator_util.multiply_recipe_items(research_recipe.ingredients, proto.rocket_parts_required)
-            insert_prototype(recipes, research_recipe, nil)
+            insert_prototype(recipes, research_recipe, nil) ]]
 
             -- Add convenience recipe to build whole rocket instead of parts
             local rocket_recipe = custom_recipe()
@@ -551,7 +551,7 @@ function generator.recipes.generate()
             generator_util.multiply_recipe_items(rocket_recipe.ingredients, proto.rocket_parts_required)
             insert_prototype(recipes, rocket_recipe, nil)
 
-            ::incompatible_proto::
+            --::incompatible_proto::
         end
 
         -- Add a recipe for producing steam from a boiler
