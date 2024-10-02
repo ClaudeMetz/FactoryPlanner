@@ -613,7 +613,7 @@ function generator.recipes.generate()
             recipe.energy = 1
 
             local products = {{type="fluid", name=fluid.name, amount=60,
-                temperature=fluid.default_temperature}}
+                temperature=20--[[ fluid.default_temperature ]]}}
             local ingredients = {{type="entity", name="custom-" .. proto.name, amount=60}}
             generator_util.format_recipe(recipe, products, products[1], ingredients)
 

@@ -379,7 +379,14 @@ function matrix_engine.run_matrix_solver(factory_data, check_linear_dependence)
             floor_aggregate.machine_count = floor_aggregate.machine_count +
                 math.ceil(line_aggregate.machine_count - 0.001)
 
-            structures.aggregate.add_aggregate(line_aggregate, floor_aggregate)
+            floor_aggregate.energy_consumption = floor_aggregate.energy_consumption + line_aggregate.energy_consumption
+            floor_aggregate.emissions = floor_aggregate.emissions + line_aggregate.emissions
+
+            for _, class in pairs{"Product", "Byproduct", "Ingredient"} do
+                for _, item in pairs(structures.class.list(line_aggregate[class])) do
+                    structures.class.add(floor_aggregate[class], item)
+                end
+            end
 
             solver.set_line_result{
                 player_index = factory_data.player_index,
@@ -422,7 +429,7 @@ function matrix_engine.run_matrix_solver(factory_data, check_linear_dependence)
     -- set products for unproduced items
     for _, product in pairs(factory_data.top_level_products) do
         local item_key = matrix_engine.get_item_key(product.type, product.name)
-        if factory_metadata.unproduced_outputs[item_key] then
+        if not factory_metadata.unproduced_outputs[item_key] then
             local item = matrix_engine.get_item(item_key)
             structures.class.add(main_aggregate.Product, item, product.amount)
         end

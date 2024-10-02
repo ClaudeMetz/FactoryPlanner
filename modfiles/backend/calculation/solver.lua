@@ -265,11 +265,9 @@ function solver.set_factory_result(result)
     factory.top_floor.emissions = result.emissions
     factory.matrix_free_items = result.matrix_free_items
 
-    -- If products are not present in the result, it means they have been produced
     for product in factory:iterator() do
         local result_product = structures.class.find(result.Product, product.proto)
-        local result_amount = (result_product) and result_product.amount or 0
-        product.amount = product:get_required_amount() - result_amount
+        product.amount = (result_product) and result_product.amount or 0
     end
 
     update_object_items(factory.top_floor, "byproducts", result.Byproduct)

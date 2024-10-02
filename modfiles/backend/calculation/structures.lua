@@ -32,25 +32,13 @@ function structures.aggregate.init(player_index, floor_id)
     }
 end
 
--- Adds the first given aggregate to the second
----@param from_aggregate SolverAgggregate
----@param to_aggregate SolverAgggregate
-function structures.aggregate.add_aggregate(from_aggregate, to_aggregate)
-    to_aggregate.energy_consumption = to_aggregate.energy_consumption + from_aggregate.energy_consumption
-    to_aggregate.emissions = to_aggregate.emissions + from_aggregate.emissions
-
-    for _, class in pairs{"Product", "Byproduct", "Ingredient"} do
-        for _, item in pairs(structures.class.list(from_aggregate[class])) do
-            structures.class.add(to_aggregate[class], item)
-        end
-    end
-end
-
 
 ---@alias SolverClass { item: SolverMap, fluid: SolverMap, entity: SolverMap }
 ---@alias SolverMap { [string]: SolverItem }
 
 ---@class SolverItem
+---@field type string
+---@field name string
 ---@field amount number
 
 ---@return SolverClass
@@ -82,6 +70,7 @@ function structures.class.add(class, item, amount)
     for index, existing in pairs(type_table[name]) do
         -- No additional properties yet, so if an item exists, it's the one
         existing.amount = existing.amount + amount_to_add
+
         if existing.amount == 0 then table.remove(type_table[name], index) end
         if #type_table[name] == 0 then type_table[name] = nil end
         return
@@ -89,6 +78,8 @@ function structures.class.add(class, item, amount)
 
     -- If it gets to here, the given skewer is not present in the class
     table.insert(type_table[name], {
+        type = item.type,
+        name = name,
         amount = amount_to_add
     })
 end
@@ -114,18 +105,18 @@ function structures.class.find(class, item)
 end
 
 ---@param class SolverClass
+---@param copy boolean?
 ---@return RecipeItem[]
-function structures.class.list(class)
+function structures.class.list(class, copy)
     local list = {}
-    for type_name, type_list in pairs(class) do
-        for item_name, item_list in pairs(type_list) do
+    for _, type_list in pairs(class) do
+        for _, item_list in pairs(type_list) do
             for _, item in pairs(item_list) do
-                local data = {{name=item_name, type=type_name}, item}
-                table.insert(list, ftable.shallow_merge(data))
+                table.insert(list, item)
             end
         end
     end
-    return list
+    return (copy) and ftable.deep_copy(list) or list
 end
 
 -- Puts the items into their destination class in the given aggregate,
