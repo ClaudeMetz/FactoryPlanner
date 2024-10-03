@@ -26,7 +26,7 @@ function _porter.generate_export_string(factories)
         table.insert(export_table.factories, factory:pack())
     end
 
-    return game.encode_string(game.table_to_json(export_table))  --[[@as ExportString]]
+    return helpers.encode_string(helpers.table_to_json(export_table))  --[[@as ExportString]]
 end
 
 -- Converts the given factory exchange string into a temporary Factory
@@ -37,7 +37,7 @@ function _porter.process_export_string(export_string)
     local export_table = nil  ---@type AnyBasic?
 
     if not pcall(function()
-        export_table = game.json_to_table(game.decode_string(export_string) --[[@as string]])
+        export_table = helpers.json_to_table(helpers.decode_string(export_string) --[[@as string]])
         assert(type(export_table) == "table")
     end) then return nil, "decoding_failure" end
     ---@cast export_table ExportTable

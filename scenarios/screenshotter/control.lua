@@ -36,7 +36,7 @@ local function write_metadata_file()
     end
 
     local metadata = {frame_corners=frame_corners}
-    game.write_file("metadata.json", game.table_to_json(metadata))
+    helpers.write_file("metadata.json", helpers.table_to_json(metadata))
 end
 
 
