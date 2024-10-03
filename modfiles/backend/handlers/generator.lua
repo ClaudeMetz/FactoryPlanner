@@ -1013,7 +1013,7 @@ function generator.modules.generate()
     local module_filter = {{filter="type", type="module"}, {filter="hidden", invert=true, mode="and"}}
     for _, proto in pairs(prototypes.get_item_filtered(module_filter)) do
         local sprite = "item/" .. proto.name
-        if game.is_valid_sprite_path(sprite) then
+        if helpers.is_valid_sprite_path(sprite) then
             local module = {
                 name = proto.name,
                 localised_name = proto.localised_name,
@@ -1132,7 +1132,7 @@ function generator.locations.generate()
     ---@return FPLocationPrototype? location_proto
     local function build_location(proto, type_)
         local sprite = type_ .. "/" .. proto.name
-        if not proto.hidden and not game.is_valid_sprite_path(sprite) then return nil end
+        if not proto.hidden and not helpers.is_valid_sprite_path(sprite) then return nil end
         if not proto.surface_properties then return nil end
 
         local surface_properties, tooltip = {}, {"", {"fp.tt_title", proto.localised_name}, "\n"}
@@ -1186,7 +1186,7 @@ function generator.qualities.generate()
     for _, proto in pairs(prototypes.quality) do
         if proto.name ~= "quality-unknown" then  -- Shouldn't this be hidden by the game?
             local sprite = "quality/" .. proto.name
-            if game.is_valid_sprite_path(sprite) then
+            if helpers.is_valid_sprite_path(sprite) then
                 local quality = {
                     name = proto.name,
                     localised_name = proto.localised_name,

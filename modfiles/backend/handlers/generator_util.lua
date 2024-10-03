@@ -307,14 +307,14 @@ end
 ---@return SpritePath | nil
 function generator_util.determine_entity_sprite(proto)
     local entity_sprite = "entity/" .. proto.name  ---@type SpritePath
-    if game.is_valid_sprite_path(entity_sprite) then
+    if helpers.is_valid_sprite_path(entity_sprite) then
         return entity_sprite
     end
 
     local items_to_place_this = proto.items_to_place_this
     if items_to_place_this and next(items_to_place_this) then
         local item_sprite = "item/" .. items_to_place_this[1].name  ---@type SpritePath
-        if game.is_valid_sprite_path(item_sprite) then
+        if helpers.is_valid_sprite_path(item_sprite) then
             return item_sprite
         end
     end
