@@ -159,7 +159,7 @@ local expression_variables = {k=1000, K=1000, m=1000000, M=1000000, g=1000000000
 ---@return number? expression
 function _gui.parse_expression_field(textfield)
     local expression = nil
-    pcall(function() expression = game.evaluate_expression(textfield.text, expression_variables) end)
+    pcall(function() expression = helpers.evaluate_expression(textfield.text, expression_variables) end)
     return expression
 end
 
