@@ -9,10 +9,14 @@
   - Still need a no-temperature item probably, that can be produced with any target temp recipe
   - After this, boiler support should be re-added and made to work with all kinds of boilers
 
-- Having both a specifc-temp and an any-temp product is weird. That matching is weird in general now.
 - It's dumb to use `string.gsub(item_name, "%-+[0-9]+$", "")` everywhere - just save it on the recipe item and item proto
 - Look at the situations where structure.class functions are being sent prototypes instead of recipe items
+  - These might need to include min and max temperatures
+  - SolverItem type stuff is a mess, clean up
 - Make matrix solver work by just removing any temperature stuff
+- match and match_subtract share much the same structure, DRY
+  - Could use matching iterator that both methods use
+  - In a similar vein, .add might use the .find algorithm
 
 - Using structures.class.find only matches exact temperature ranges, which might not be what
   we want when trying to find demand to satisfy. Currently it only finds the first/any
@@ -21,13 +25,13 @@
   - In general, transitioning items from/to ingredients is weird because of min/max temperatures
   - Same for ingredient satisfaction probably
 
-
 ## Bugs
 
 - Handcrafting in utility dialog crashes
 - Toggling to lanes in preferences crashes
 - Opening compact dialog first crashes https://discord.com/channels/600791114814980141/960547035008888842/1290044415150129283
 - Deleting last recipe on folded out subfloor doesn't delete subfloor https://discord.com/channels/600791114814980141/960547035008888842/1290597800844726354
+- Recipe dialog crash https://discord.com/channels/600791114814980141/960547035008888842/1291063863038447648
 - Wrong localised names for custom machines/recipes etc
 
 ## Features
@@ -36,6 +40,7 @@
   - Also, make defaults section foldeout more of a button
 - Take care of faded disabled sprite buttons, probably by using toggled or sprite elements
 - Adopt new rocket silo recipes, and drop research rocket one
+- Hide custom rocket recipe in vanilla, as well as rockets/timescale view (test migration of the latter)
 - Add floating text for all actions that are taken that are not possible
   - Ideally the tooltips and context menu wouldn't show them, but that is tricky
   - It's actually kinda confusing that it shows impossible actions now, should really fix that
