@@ -2,56 +2,60 @@
 
 ## Active
 
-- Change SimpleItems to be a dict instead of an array so there needs to be no fuss finding stuff
 
 ## Bugs
 
+- Handcrafting in utility dialog crashes
+- Toggling to lanes in preferences crashes
+- Opening compact dialog first crashes https://discord.com/channels/600791114814980141/960547035008888842/1290044415150129283
+- Deleting last recipe on folded out subfloor doesn't delete subfloor https://discord.com/channels/600791114814980141/960547035008888842/1290597800844726354
+- Recipe dialog crash https://discord.com/channels/600791114814980141/960547035008888842/1291063863038447648
 - Wrong localised names for custom machines/recipes etc
-- Take care of faded disabled sprite buttons, probably by using toggled or sprite elements
 
 ## Features
 
-- Balance District items against each other
-- Allow Factory products to take their amounts from the District's ingredients
-  - This link should not automatically pull new values from the District, for a couple reasons:
-    - First, it is annoying since your actual build won't update and thus the totals will be misleading
-    - Second, it's technically super difficult since it creates a dependency loop that can't easily be resolved
-  - You should just be able to enable this, and then have a way to pull the new amount on demand
-  - It should still be possible to have a normal amount too, so you can overproduce as you wish
-- Add feature to transfer items from district to district, mimmicing space platform transfers
-  - In addition, it would be good if the mod could calculate your rocket and platform needs for the given items
-  - Not super simple, needs constraints given by the user, like platform specs, and maybe others
-  - Otherwise there won't be a unique solution. Kinda orthogonal in general, but would be helpful to have
-- Allow clicking on District items to see their origin/usage. Ideally click to go there directly, but that's
-  tricky since they can be from multiple places. Maybe a separate UI is warranted
-- Fluid temps - needs dealing with before 2.0
-  - Add back distinct items for each fluid temp, so I don't need to carry that info along separately in the solver
-  - Have the complex matching logic only when no specific temperature is needed, for the solver and recipe picker
-    - No idea how that logic could even work for the matrix solver, probably just can't?
-  - Still need a no-temperature item probably, that can be produced with any target temp recipe
-  - After this, boiler support should be re-added and made to work with all kinds of boilers
+- New defaults section should just be buttons, not checkboxes+confirm. Also make sure it never scrolls
+  - Also, make defaults section foldeout more of a button
+- Take care of faded disabled sprite buttons, probably by using toggled or sprite elements
+- Adopt new rocket silo recipes, and drop research rocket one
+- Hide custom rocket recipe in vanilla, as well as rockets/timescale view (test migration of the latter)
+- Add floating text for all actions that are taken that are not possible
+  - Ideally the tooltips and context menu wouldn't show them, but that is tricky
+  - It's actually kinda confusing that it shows impossible actions now, should really fix that
 
 ## Low Priority
 
-- Note when rocket silo launch time becomes a problem for speed; it's not at lower speeds
-  - Is quite a complicated feature, especially when productivity is involved. Probably do need it though
 - Rocket silo power usage seems very low, likely doesn't consider launch usage
 - Agriculture tower implementation
   - Missing energy and pollution production, is different to normal entities
 - Improve performance by not making item_views.process iterate the prefs every time
-- Could use icons for control, shift, etc for context menus to make them smaller
-- Could now store blueprints from the library I think?
 - Context menu to change belt directly on belt view button
-- Add floating text for all actions that are taken that are not possible
-  - Ideally the tooltips and context menu wouldn't show them, but that is tricky
-  - It's actually kinda confusing that it shows impossible actions now, should really fix that
-- Better icons for custom recipes - mining, spoiling, etc
-- Recipe energy of 0 is still awkward (doesn't work properly with matrix solver either)
 - Ingredients without amount don't show, but should because any amount would be meaningless
-- Also, having a value that's independent of production_ratio (like time) would be nice
+- Replace "can't craft X on this location" notice with the planets it can be crafted on, like vanilla
 
 ## Future Tasks
 
+- Having a recipe ingredient that's independent of production_ratio (like time) would be nice
+- Note when rocket silo launch time becomes a problem for speed; it's not at lower speeds
+  - Is quite a complicated feature, especially when productivity is involved. Probably do need it though
+- Better icons for custom recipes - mining, spoiling, etc
+- Could use icons for control, shift, etc for context menus to make them smaller
+- Could now store blueprints from the library I think
+- Districts
+  - Change SimpleItems to be a dict instead of an array so there needs to be no fuss finding stuff
+  - Balance District items against each other
+  - Allow Factory products to take their amounts from the District's ingredients
+    - This link should not automatically pull new values from the District, for a couple reasons:
+      - First, it is annoying since your actual build won't update and thus the totals will be misleading
+      - Second, it's technically super difficult since it creates a dependency loop that can't easily be resolved
+    - You should just be able to enable this, and then have a way to pull the new amount on demand
+    - It should still be possible to have a normal amount too, so you can overproduce as you wish
+  - Add feature to transfer items from district to district, mimmicing space platform transfers
+    - In addition, it would be good if the mod could calculate your rocket and platform needs for the given items
+    - Not super simple, needs constraints given by the user, like platform specs, and maybe others
+    - Otherwise there won't be a unique solution. Kinda orthogonal in general, but would be helpful to have
+  - Allow clicking on District items to see their origin/usage. Ideally click to go there directly, but that's
+    tricky since they can be from multiple places. Maybe a separate UI is warranted
 - Quality calculations: not sure how far I want to go with these
   - Quality odds for products - that's kinda dumb without items themselves supporting quality, soo idk
     - Also solver doesn't support this kinda stuff atm anyways, needs rewrite
@@ -147,6 +151,7 @@
 - Sliders still bugged, this is stupid https://forums.factorio.com/viewtopic.php?p=516440#p516440
 - Constant combinator `sections` format rename
 - API to open things in Factoriopedia
+  - Hide feature if it's not present for release
 - No way to show quality on sprite buttons, which is essential in tons of places
   - Seemingly the hacky way to add a sprite to the button does not work, oof
   - Same thing for quality color, which should be used in relevant tooltips
