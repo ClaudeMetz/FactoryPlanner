@@ -2,11 +2,11 @@
 Version: 0.00.00
 Date: 00. 00. 0000
   Features:
-    - 
+    -
   Changes:
-    - 
+    -
   Bugfixes:
-    - 
+    -
 
 ---------------------------------------------------------------------------------------------------
 Version: 1.2.11
@@ -76,7 +76,7 @@ Date: 20. 07. 2024
     - Dropped support for boiler recipes and specifying amounts by ingredients, for now
     - Dropped the tutorial dialog including the example factory, as context menus are a better introduction to the feature set
     - Fixed and improved various parts of the interface
-    - Updated the Factorio Library mod to 2.0.0
+    - Updated the Factorio Library dependency to 0.15.0
   Bugfixes:
     -
 
