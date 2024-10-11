@@ -32,6 +32,8 @@
 - Context menu to change belt directly on belt view button
 - Ingredients without amount don't show, but should because any amount would be meaningless
 - Replace "can't craft X on this location" notice with the planets it can be crafted on, like vanilla
+- FP apparently recipe item amounts are ints and should be floored? Wtf?
+  https://discord.com/channels/1214952937613295676/1281881163702730763/1294182548251086901
 
 ## Future Tasks
 
