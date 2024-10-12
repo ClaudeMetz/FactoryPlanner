@@ -47,7 +47,8 @@ function _cursor.set_entity(player, line, object)
 
         table.insert(items_list, {
             id = {
-                name = module.proto.name
+                name = module.proto.name,
+                quality = module.quality_proto.name
             },
             items = {
                 in_inventory = inventory_list
@@ -59,6 +60,7 @@ function _cursor.set_entity(player, line, object)
         entity_number = 1,
         name = object.proto.name,
         position = {0, 0},
+        quality = object.quality_proto.name,
         items = items_list,
         recipe = (object.class == "Machine") and line.recipe_proto.name or nil
     }
@@ -82,13 +84,14 @@ function _cursor.set_item_combinator(player, item_filters)
         name = "constant-combinator",
         position = {0, 0},
         control_behavior = {
-            -- TODO outer 'sections' will be renamed to logistic_sections
-            sections = { sections = {
-                {
-                    index = 1,
-                    filters = item_filters
+            sections = {
+                sections = {
+                    {
+                        index = 1,
+                        filters = item_filters
+                    }
                 }
-            } }
+            }
         }
     }
 
