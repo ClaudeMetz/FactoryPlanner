@@ -63,7 +63,12 @@ local function handle_recipe_click(player, tags, action)
         util.raise.refresh(player, "factory")
 
     elseif action == "delete" then
-        line.parent:remove(line, true)
+        local floor = line.parent
+        floor:remove(line, true)
+
+        if floor.level > 1 and floor:count() == 1 then
+            floor.parent:replace(floor, floor.first)
+        end
 
         solver.update(player, factory)
         util.raise.refresh(player, "factory")
