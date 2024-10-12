@@ -180,7 +180,7 @@ function builders.machine(line, parent_flow, metadata)
 
         if note ~= nil then table.insert(tooltip_line, {"", " - ", note}) end
         local title_line = (not machine.quality_proto.always_show) and {"fp.tt_title", machine_proto.localised_name}
-        or {"fp.tt_title_with_note", machine_proto.localised_name, machine.quality_proto.rich_text}
+            or {"fp.tt_title_with_note", machine_proto.localised_name, machine.quality_proto.rich_text}
         local tooltip = {"", title_line, tooltip_line, format_effects_tooltip(machine.effects_tooltip),
             "\n", metadata.action_tooltips["act_on_line_machine"]}
 
