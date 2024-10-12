@@ -121,9 +121,11 @@ local function add_machine_flow(parent_flow, line, metadata)
         local machine_flow = parent_flow.add{type="flow", direction="horizontal"}
         local machine_proto = line.machine.proto
 
+        local title_line = (not line.machine.quality_proto.always_show)
+            and {"fp.tt_title", machine_proto.localised_name}
+            or {"fp.tt_title_with_note", machine_proto.localised_name, line.machine.quality_proto.rich_text}
         local amount, tooltip_line = util.format.machine_count(line.machine.amount, true)
-        local tooltip = {"", {"fp.tt_title", machine_proto.localised_name}, tooltip_line,
-            "\n", metadata.action_tooltips["act_on_compact_machine"]}
+        local tooltip = {"", title_line, tooltip_line, "\n", metadata.action_tooltips["act_on_compact_machine"]}
         local style = (line.done) and "flib_slot_button_grayscale_small" or "flib_slot_button_default_small"
 
         local button = machine_flow.add{type="sprite-button", sprite=machine_proto.sprite, number=amount, style=style,
@@ -141,10 +143,11 @@ local function add_beacon_flow(parent_flow, line, metadata)
         local beacon_flow = parent_flow.add{type="flow", direction="horizontal"}
         local beacon_proto = line.beacon.proto
 
+        local title_line = (not line.beacon.quality_proto.always_show) and {"fp.tt_title", beacon_proto.localised_name}
+            or {"fp.tt_title_with_note", beacon_proto.localised_name, line.beacon.quality_proto.rich_text}
         local plural_parameter = (line.beacon.amount == 1) and 1 or 2  -- needed because the amount can be decimal
         local number_line = {"", "\n", line.beacon.amount, " ", {"fp.pl_beacon", plural_parameter}}
-        local tooltip = {"", {"fp.tt_title", beacon_proto.localised_name}, number_line,
-            "\n", metadata.action_tooltips["act_on_compact_beacon"]}
+        local tooltip = {"", title_line, number_line, "\n", metadata.action_tooltips["act_on_compact_beacon"]}
         local style = (line.done) and "flib_slot_button_grayscale_small" or "flib_slot_button_default_small"
 
         local button = beacon_flow.add{type="sprite-button", sprite=beacon_proto.sprite, number=line.beacon.amount,
