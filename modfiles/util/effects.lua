@@ -36,7 +36,7 @@ function _effects.limit(effects, max_prod)
     local indications = {}
     local bounds = {
         speed = {lower = -0.8, upper = upper_bound},
-        productivity = {lower = 0, upper = max_prod},
+        productivity = {lower = 0, upper = max_prod or upper_bound},
         quality = {lower = 0, upper = upper_bound},
         consumption = {lower = -0.8, upper = upper_bound},
         pollution = {lower = -0.8, upper = upper_bound}
