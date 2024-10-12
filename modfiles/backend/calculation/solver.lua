@@ -191,7 +191,7 @@ end
 -- Updates the whole factory calculations from top to bottom
 function solver.update(player, factory, blank)
     factory = factory or util.context.get(player, "Factory")
-    if factory.valid then
+    if factory and factory.valid then
         local factory_data = solver.generate_factory_data(player, factory)
 
         if blank then  -- sets factory to a blank state
