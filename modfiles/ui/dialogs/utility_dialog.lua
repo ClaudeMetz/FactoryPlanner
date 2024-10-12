@@ -422,7 +422,8 @@ end
 
 local function open_utility_dialog(player, modal_data)
     -- Add the players' relevant inventory components to modal_data
-    modal_data.inventory_contents = player.get_main_inventory().get_contents()
+    local main_inventory = player.get_main_inventory()
+    modal_data.inventory_contents = (main_inventory) and main_inventory.get_contents() or {}
     modal_data.utility_inventory = game.create_inventory(1)  -- used for blueprint decoding
 
     -- Left side
