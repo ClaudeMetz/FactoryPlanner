@@ -578,6 +578,7 @@ local function rebuild_compact_dialog(player, default_visibility)
         sprite="utility/close", tooltip={"fp.close_interface"}, style="fp_button_frame", mouse_button_filter={"left"}}
     button_close.style.padding = 1
 
+    item_views.rebuild_data(player)
     util.raise.build(player, "compact_factory", nil)
     item_views.rebuild_interface(player)
 
