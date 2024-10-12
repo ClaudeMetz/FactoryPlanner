@@ -2,11 +2,11 @@
 Version: 0.00.00
 Date: 00. 00. 0000
   Features:
-    - 
+    -
   Changes:
-    - 
+    -
   Bugfixes:
-    - 
+    -
 
 ---------------------------------------------------------------------------------------------------
 Version: 1.2.13
@@ -63,7 +63,7 @@ Date: 20. 07. 2024
     - Updated the mod for Factorio 2.0 and the Space Age expansion. This means adoption to changes in existing systems and support for new systems, the most significant of which will be listed here. The mod will still work just fine without Space Age, with automatic adjustements to the interface.
     - This release is considered [Experimental]. While it was beta-tested with a small group for a few months, the many changes will have introduced some bugs and crashes. Please let me know about anything you encounter on Github.
     - Lastly: This update was a huge amount of effort over many months, and puts the mod in a much better place for the future. It's a big step forward, I hope you enjoy it, and thanks for the support so far!
-    - TODO districts, +surface conditions, +pollution
+    - Implemented Districts, which are a collection of factories, summing up their products and ingredients. They also allow for specification of a planet, which determines compatible machines and the relevant type of emissions.
     - Added the ability to set a quality level on machines, beacons, and modules
     - Added support for the new machines and recipes, like the agriculture tower and intentional spoiling
     - Added support for new module mechanics such as beacon profiles, machine base productivity, new productivity researches, maximum recipe productivity, and more
@@ -86,7 +86,7 @@ Date: 20. 07. 2024
     - Fixed and improved various parts of the interface
     - Updated the Factorio Library dependency to 0.15.0
   Bugfixes:
-    -
+    - Fixed various bugs and crashes, both incidentally and on purpose
 
 ---------------------------------------------------------------------------------------------------
 Version: 1.1.79

@@ -5,11 +5,6 @@
 
 ## Bugs
 
-- Handcrafting in utility dialog crashes
-- Toggling to lanes in preferences crashes
-- Opening compact dialog first crashes https://discord.com/channels/600791114814980141/960547035008888842/1290044415150129283
-- Deleting last recipe on folded out subfloor doesn't delete subfloor https://discord.com/channels/600791114814980141/960547035008888842/1290597800844726354
-- Recipe dialog crash https://discord.com/channels/600791114814980141/960547035008888842/1291063863038447648
 - Wrong localised names for custom machines/recipes etc
 
 ## Features
@@ -18,10 +13,12 @@
   - Also, make defaults section foldeout more of a button
 - Take care of faded disabled sprite buttons, probably by using toggled or sprite elements
 - Adopt new rocket silo recipes, and drop research rocket one
+- Adopt new module effect limitation logic
 - Hide custom rocket recipe in vanilla, as well as rockets/timescale view (test migration of the latter)
 - Add floating text for all actions that are taken that are not possible
   - Ideally the tooltips and context menu wouldn't show them, but that is tricky
   - It's actually kinda confusing that it shows impossible actions now, should really fix that
+- Remove round button numbers feature
 
 ## Low Priority
 
@@ -150,8 +147,6 @@
 
 ## Waiting on
 
-- Sliders still bugged, this is stupid https://forums.factorio.com/viewtopic.php?p=516440#p516440
-- Constant combinator `sections` format rename
 - API to open things in Factoriopedia
   - Hide feature if it's not present for release
 - No way to show quality on sprite buttons, which is essential in tons of places
@@ -166,8 +161,6 @@
 
 ## Release
 
-- Update other language docs for the new `plural_for_parameter` format
-- Write changelog description for districts
 - Update screenshots, maybe for SA even? Or some of both non-SA and SA?
 - Update mod descriptions to mention SA/2.0 general compatibility
 - Sort out Github board for done tasks and deal with pending reports
