@@ -104,6 +104,11 @@ listeners.gui = {
         {
             name = "switch_to_compact_view",
             handler = (function(player, _, _)
+                local floor = util.context.get(player, "Floor")
+                if floor and floor.level > 1 and floor:count() == 1 then
+                    util.context.ascend_floors(player, "up")
+                end
+
                 main_dialog.toggle(player)
                 util.globals.ui_state(player).compact_view = true
 
