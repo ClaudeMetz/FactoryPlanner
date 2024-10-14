@@ -514,7 +514,7 @@ function generator.recipes.generate()
 
             ::incompatible_proto::
 
-        elseif proto.type == "rocket-silo" and not proto.hidden then
+        elseif proto.type == "rocket-silo" and not proto.hidden and SPACE_TRAVEL then
             local parts_recipe = prototypes.recipe[proto.fixed_recipe]
 
             --[[ -- Add special research rocket recipe
@@ -761,15 +761,17 @@ function generator.items.generate()
     }
     generator_util.add_default_groups(custom_items["custom-agriculture-square"])
 
-    -- Only need one rocket item for all silos/recipes
-    custom_items["custom-silo-rocket"] = {
-        name = "custom-silo-rocket",
-        localised_name = {"", {"entity-name.rocket"}, " ", {"fp.launch"}},
-        sprite = "fp_silo_rocket",
-        hidden = false,
-        order = "z"
-    }
-    generator_util.add_groups(custom_items["custom-silo-rocket"], "intermediate-products", "intermediate-product")
+    if SPACE_TRAVEL then
+        -- Only need one rocket item for all silos/recipes
+        custom_items["custom-silo-rocket"] = {
+            name = "custom-silo-rocket",
+            localised_name = {"", {"entity-name.rocket"}, " ", {"fp.launch"}},
+            sprite = "fp_silo_rocket",
+            hidden = false,
+            order = "z"
+        }
+        generator_util.add_groups(custom_items["custom-silo-rocket"], "intermediate-products", "intermediate-product")
+    end
 
 
     for type, item_table in pairs(relevant_items) do

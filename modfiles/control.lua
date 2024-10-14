@@ -1,5 +1,6 @@
 local active_mods = script.active_mods
 
+SPACE_TRAVEL = script.feature_flags["space_travel"]
 DEBUGGER_ACTIVE = (active_mods["debugadapter"] ~= nil)
 DEV_ACTIVE = true  -- enables certain conveniences for development
 llog = require("util.llog")
