@@ -8,7 +8,6 @@ local function generate_metadata(player, factory)
         archive_open = factory.archived,
         matrix_solver_active = (factory.matrix_free_items ~= nil),
         fold_out_subfloors = preferences.fold_out_subfloors,
-        round_button_numbers = preferences.round_button_numbers,
         ingredient_satisfaction = preferences.ingredient_satisfaction,
         player = player,
         tooltips = tooltips.production_table,
@@ -164,7 +163,7 @@ function builders.machine(line, parent_flow, metadata)
     else
         local machine = line.machine
         local machine_proto = machine.proto
-        local count, tooltip_line = util.format.machine_count(machine.amount, metadata.round_button_numbers)
+        local count, tooltip_line = util.format.machine_count(machine.amount, false)
 
         local machine_limit = machine.limit
         local style, note = "flib_slot_button_default_small", nil

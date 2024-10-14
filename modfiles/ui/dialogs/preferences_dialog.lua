@@ -181,8 +181,8 @@ local function handle_checkbox_preference_change(player, tags, event)
     local preference_name = tags.name
     util.globals.preferences(player)[preference_name] = event.element.state
 
-    if tags.type == "production" or preference_name == "round_button_numbers"
-            or preference_name == "show_floor_items" or preference_name == "fold_out_subfloors" then
+    if tags.type == "production" or preference_name == "show_floor_items"
+            or preference_name == "fold_out_subfloors" then
         util.raise.refresh(player, "production")
 
     elseif preference_name == "ingredient_satisfaction" then
@@ -289,8 +289,8 @@ local function open_preferences_dialog(player, modal_data)
     left_content_frame.style.width = 300
 
     local general_preference_names = {"show_gui_button", "attach_factory_products", "skip_factory_naming",
-    "prefer_matrix_solver", "show_floor_items", "fold_out_subfloors", "ingredient_satisfaction",
-    "round_button_numbers", "ignore_barreling_recipes", "ignore_recycling_recipes"}
+        "prefer_matrix_solver", "show_floor_items", "fold_out_subfloors", "ingredient_satisfaction",
+        "ignore_barreling_recipes", "ignore_recycling_recipes"}
     local general_box = preference_structures.checkboxes(preferences, left_content_frame, "general",
         general_preference_names)
 
