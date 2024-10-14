@@ -13,8 +13,6 @@
   - Also, make defaults section foldeout more of a button
 - Take care of faded disabled sprite buttons, probably by using toggled or sprite elements
 - Adopt new rocket silo recipes, and drop research rocket one
-- Adopt new module effect limitation logic
-- Quality module effects are clamped weirdly because of the division by 10 (see leg. quality module)
 - Add floating text for all actions that are taken that are not possible
   - Ideally the tooltips and context menu wouldn't show them, but that is tricky
   - It's actually kinda confusing that it shows impossible actions now, should really fix that
@@ -34,6 +32,7 @@
 
 ## Future Tasks
 
+- Quality module effects are clamped weirdly because of the division by 10 (see leg. quality module)
 - Add support for belt stacking to belt throughput view
   - Kinda need it for product amounts too ideally, which makes it annoying
 - Having a recipe ingredient that's independent of production_ratio (like time) would be nice
