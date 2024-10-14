@@ -23,7 +23,6 @@ require("backend.calculation.solver")
 ---@field show_floor_items boolean
 ---@field fold_out_subfloors boolean
 ---@field ingredient_satisfaction boolean
----@field round_button_numbers boolean
 ---@field ignore_barreling_recipes boolean
 ---@field ignore_recycling_recipes boolean
 ---@field done_column boolean
@@ -69,7 +68,6 @@ function reload_preferences(player_table)
     reload("show_floor_items", false)
     reload("fold_out_subfloors", false)
     reload("ingredient_satisfaction", false)
-    reload("round_button_numbers", false)
     reload("ignore_barreling_recipes", true)
     reload("ignore_recycling_recipes", true)
 

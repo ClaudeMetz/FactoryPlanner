@@ -18,8 +18,7 @@ function processors.belts_or_lanes(metadata, raw_amount, item_proto, _)
     local plural_parameter = (number == "1") and 1 or 2
     local tooltip = {"", number, " ", {"fp.pl_" .. metadata.belt_or_lane, plural_parameter}}
 
-    local return_number = (metadata.round_button_numbers) and math.ceil(raw_number - 0.001) or number
-    return return_number, tooltip
+    return number, tooltip
 end
 
 function processors.items_per_second_per_machine(metadata, raw_amount, item_proto, machine_count)
@@ -113,7 +112,6 @@ end
 ---@field timescale_string LocalisedString
 ---@field adjusted_margin_of_error number
 ---@field belt_or_lane "belt" | "lane"
----@field round_button_numbers boolean
 ---@field throughput_multiplier number
 ---@field formatting_precision integer
 ---@field cargo_wagon_capactiy number
@@ -170,7 +168,6 @@ function item_views.rebuild_data(player)
         timescale_string = {"fp.unit_" .. TIMESCALE_MAP[preferences.timescale]},
         adjusted_margin_of_error = MAGIC_NUMBERS.margin_of_error * preferences.timescale,
         belt_or_lane = belts_or_lanes:sub(1, -2),
-        round_button_numbers = preferences.round_button_numbers,
         throughput_multiplier = 1 / throughput_divisor,
         formatting_precision = 4,
         cargo_wagon_capactiy = default_cargo_wagon.storage,
