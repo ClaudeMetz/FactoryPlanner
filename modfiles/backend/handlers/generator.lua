@@ -1104,7 +1104,7 @@ local function generate_surface_properties()
             name = proto.name,
             order = proto.order,
             localised_name = proto.localised_name,
-            localised_unit = proto.localised_unit,
+            localised_unit = proto.localised_unit_key,
             default_value = proto.default_value,
             is_time = proto.is_time
         })
