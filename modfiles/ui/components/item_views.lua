@@ -132,7 +132,7 @@ function item_views.rebuild_data(player)
     local belts_or_lanes = preferences.belts_or_lanes
     local throughput_divisor = (belts_or_lanes == "belts") and belt_proto.throughput or (belt_proto.throughput / 2)
 
-    local views_data = {
+    util.globals.ui_state(player).views_data = {
         views = {
             items_per_timescale = {
                 index = 1,
@@ -162,6 +162,11 @@ function item_views.rebuild_data(player)
                 tooltip = {"fp.view_tt", {"fp.wagons_per_timescale", {"fp." .. timescale_string},
                     default_cargo_wagon.rich_text, default_cargo_wagon.localised_name,
                     default_fluid_wagon.rich_text, default_fluid_wagon.localised_name}}
+            },
+            rockets_per_timescale = {
+                index = 6,
+                caption = {"", "[img=fp_silo_rocket]", "/", {"fp.unit_" .. timescale_string}},
+                tooltip = {"fp.view_tt", {"fp.rockets_per_timescale", {"fp." .. timescale_string}}}
             }
         },
         timescale = preferences.timescale,
@@ -173,22 +178,6 @@ function item_views.rebuild_data(player)
         cargo_wagon_capactiy = default_cargo_wagon.storage,
         fluid_wagon_capacity = default_fluid_wagon.storage
     }
-
-    if SPACE_TRAVEL then
-        views_data.rockets_per_timescale = {
-            index = 6,
-            caption = {"", "[img=fp_silo_rocket]", "/", {"fp.unit_" .. timescale_string}},
-            tooltip = {"fp.view_tt", {"fp.rockets_per_timescale", {"fp." .. timescale_string}}}
-        }
-    else  -- remove preference for rockets_per_timescale if not relevant
-        for index, preference in pairs(preferences.item_views) do
-            if preference.name == "rockets_per_timescale" then
-                table.remove(preferences.item_views, index); break
-            end
-        end
-    end
-
-    util.globals.ui_state(player).views_data = views_data
 end
 
 ---@class ItemViewPreference
@@ -198,14 +187,14 @@ end
 
 ---@return ItemViewPreference[]
 function item_views.default_preferences()
-    local defaults = {
+    return {
         {name="items_per_timescale", enabled=true, selected=true},
         {name="belts_or_lanes", enabled=true, selected=false},
         {name="items_per_second_per_machine", enabled=true, selected=false},
         {name="stacks_per_timescale", enabled=false, selected=false},
-        {name="wagons_per_timescale", enabled=false, selected=false}
+        {name="wagons_per_timescale", enabled=false, selected=false},
+        {name="rockets_per_timescale", enabled=false, selected=false}
     }
-    return defaults
 end
 
 
