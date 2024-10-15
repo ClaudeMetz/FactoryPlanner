@@ -401,6 +401,7 @@ function matrix_engine.run_matrix_solver(factory_data, check_linear_dependence)
     local top_floor_aggregate = set_line_results("line", factory_data.top_floor)
 
     local main_aggregate = structures.aggregate.init(factory_data.player_index, 1)
+    main_aggregate.Byproduct = top_floor_aggregate.Byproduct
 
     -- set main_aggregate free variables
     for item_line_key, _ in pairs(free_variables) do
@@ -624,7 +625,7 @@ function matrix_engine.get_line_aggregate(line_data, player_index, floor_id, mac
         local prodded_amount = solver_util.determine_prodded_amount(product, total_effects,
             recipe_proto.maximum_productivity)
         local item_key = matrix_engine.get_item_key(product.type, product.name)
-        if factory_metadata~= nil and (factory_metadata.byproducts[item_key] or free_variables["item_"..item_key]) then
+        if factory_metadata ~= nil and (factory_metadata.byproducts[item_key] or free_variables["item_"..item_key]) then
             structures.aggregate.add(line_aggregate, "Byproduct", product, prodded_amount * total_crafts)
         else
             structures.aggregate.add(line_aggregate, "Product", product, prodded_amount * total_crafts)
@@ -648,7 +649,11 @@ function matrix_engine.get_line_aggregate(line_data, player_index, floor_id, mac
 
         if include_fuel_ingredient then
             local fuel = {type=fuel_proto.type, name=fuel_proto.name, amount=fuel_amount}
-            structures.aggregate.add(line_aggregate, "Ingredient", fuel, fuel_amount)
+            structures.aggregate.add(line_aggregate, "Ingredient", fuel)
+        end
+        if fuel_proto.burnt_result then
+            local burnt = {type="item", name=fuel_proto.burnt_result, amount=fuel_amount}
+            structures.aggregate.add(line_aggregate, "Byproduct", burnt)
         end
 
         energy_consumption = 0  -- set electrical consumption to 0 when fuel is used
