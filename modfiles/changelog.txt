@@ -2,11 +2,11 @@
 Version: 0.00.00
 Date: 00. 00. 0000
   Features:
-    - 
+    -
   Changes:
-    - 
+    -
   Bugfixes:
-    - 
+    -
 
 ---------------------------------------------------------------------------------------------------
 Version: 1.2.14
@@ -84,6 +84,7 @@ Date: 20. 07. 2024
     - Enabled proper configuration of default fuels for machines with multiple fuel categories (#83)
     - Changed the timescale setting to be global instead of per factory, while dropping the per hour option
     - Changed the utility dialog function to request missing item delivery to create a new logistic section instead of having construction bots fulfill the order
+    - Changed it so disabling the matrix solver doesn't remove byproduct recipes anymore, and instead disables them (#142)
     - Dropped Recipe Book support in favor of Factoriopedia, the new built-in recipe browser
     - Dropped support for boiler recipes and specifying amounts by ingredients, for now
     - Dropped the tutorial dialog including the example factory, as context menus are a better introduction to the feature set

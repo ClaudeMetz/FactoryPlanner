@@ -72,7 +72,8 @@ local function generate_floor_data(player, factory, floor)
             -- If a line has a percentage of zero or is inactive, it is not useful to the result of the factory
             -- Alternatively, if this line is on a subfloor and the top line of the floor is useless, it is useless too
             if (relevant_line and (relevant_line.percentage == 0 or not relevant_line.active))
-                    or line.percentage == 0 or not line.active or not line:get_surface_compatibility().overall then
+                    or line.percentage == 0 or not line.active or not line:get_surface_compatibility().overall
+                    or (not factory.matrix_free_items and line.production_type == "consume") then
                 set_blank_line(player, floor, line)  -- useless lines don't need to run through the solver
             else
                 local machine = line.machine

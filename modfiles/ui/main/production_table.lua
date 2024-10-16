@@ -91,7 +91,8 @@ function builders.recipe(line, parent_flow, metadata, indent)
         enabled = false  -- first subfloor line is static
     else
         local surface_compatibility = relevant_line:get_surface_compatibility()
-        local line_active = (relevant_line.active and surface_compatibility.overall)
+        local solver_compatibility = (metadata.matrix_solver_active or line.production_type ~= "consume")
+        local line_active = (relevant_line.active and surface_compatibility.overall and solver_compatibility)
         style = (line_active) and "flib_slot_button_default_small" or "flib_slot_button_red_small"
         note = (relevant_line.active) and "" or {"fp.recipe_inactive"}
 
@@ -100,6 +101,9 @@ function builders.recipe(line, parent_flow, metadata, indent)
         end
         if not surface_compatibility.machine then
             table.insert(surface_info, {"fp.blocking_condition", {"fp.pl_machine", 1}})
+        end
+        if not solver_compatibility then
+            table.insert(surface_info, {"fp.incompatible_solver"})
         end
 
         if line.class == "Floor" then
