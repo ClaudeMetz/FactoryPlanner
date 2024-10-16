@@ -98,11 +98,6 @@ local function handle_solver_change(player, _, event)
     else
         factory.matrix_free_items = nil  -- disable the matrix solver
         factory.linearly_dependant = false
-
-        local any_lines_removed = factory.top_floor:remove_consuming_lines()
-        if any_lines_removed then  -- inform the user if any byproduct recipes are being removed
-            util.messages.raise(player, "hint", {"fp.hint_byproducts_removed"}, 1)
-        end
     end
 
     local ui_state = util.globals.ui_state(player)

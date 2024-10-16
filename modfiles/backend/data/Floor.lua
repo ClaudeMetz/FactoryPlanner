@@ -108,21 +108,6 @@ function Floor:count(filter, pivot, direction)
 end
 
 
----@return boolean any_removed
-function Floor:remove_consuming_lines()
-    local any_removed = false
-    for line in self:iterator() do
-        if line.class == "Floor" then  ---@cast line Floor
-            any_removed = line:remove_consuming_lines() or any_removed
-        elseif line.production_type == "consume" then
-            self:remove(line)
-            any_removed = true
-        end
-    end
-    return any_removed
-end
-
-
 ---@alias ComponentDataSet { proto: FPPrototype, amount: number }
 
 ---@class ComponentData
