@@ -286,6 +286,7 @@ end
 -- Utility function to centralize factory deletion behavior
 function factory_list.delete_factory(player)
     local factory = util.context.get(player, "Factory")  --[[@as Factory]]
+    if not factory then return end  -- latency protection
 
     if factory.archived then
         if factory.tick_of_deletion then util.nth_tick.cancel(factory.tick_of_deletion) end
