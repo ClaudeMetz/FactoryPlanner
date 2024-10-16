@@ -75,12 +75,10 @@ function defaults.set_all(player, data_type, data)
     if prototyper.data_types[data_type] == false then return end
 
     for _, category_data in pairs(storage.prototypes[data_type]) do
-        if table_size(category_data.members) > 1 then  -- don't change single-member categories
-            local matched_prototype = prototyper.util.find(data_type, data.prototype, category_data.id)
-            if matched_prototype then
-                data.prototype = matched_prototype.name
-                defaults.set(player, data_type, data, category_data.id)
-            end
+        local matched_prototype = prototyper.util.find(data_type, data.prototype, category_data.id)
+        if matched_prototype then
+            data.prototype = matched_prototype.name
+            defaults.set(player, data_type, data, category_data.id)
         end
     end
 end
