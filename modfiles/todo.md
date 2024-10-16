@@ -6,6 +6,7 @@
 ## Bugs
 
 - Wrong localised names for custom machines/recipes etc
+- Setting machine limit to 0 crashes
 
 ## Features
 
@@ -155,7 +156,6 @@
 - global_effect on planets, yet another effect that needs to be considered
   - runtime-only, which is problematic since we don't set actual planets
   - Maybe the planet selection should be based on actually-existing surfaces instead of prototypes
-- game.evaluate_expression should not error but return something else if expression is invalid
 - Ask about whether hover key combos would be possible
   - Could imitate it by keeping track of hover states myself, wouldn't be too horrible
 

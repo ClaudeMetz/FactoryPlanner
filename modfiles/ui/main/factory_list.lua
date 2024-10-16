@@ -54,11 +54,12 @@ local function add_factory(player, _, event)
     end
 end
 
-local function duplicate_factory(player, _, _)
+local function duplicate_factory(player, _, event)
     local factory = util.context.get(player, "Factory")  --[[@as Factory]]
     local clone = factory:clone()
     clone.archived = false  -- always clone as unarchived
-    factory.parent:insert(clone)
+    local pivot = (event.shift and not factory.archived) and factory or nil
+    factory.parent:insert(clone, pivot, "next")
 
     solver.update(player, clone)
     util.context.set(player, clone)
