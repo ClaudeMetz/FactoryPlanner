@@ -6,7 +6,6 @@
 ## Bugs
 
 - Wrong localised names for custom machines/recipes etc
-- Setting machine limit to 0 crashes
 
 ## Features
 
