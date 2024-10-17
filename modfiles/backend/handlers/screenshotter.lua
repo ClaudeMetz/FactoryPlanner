@@ -64,7 +64,7 @@ local actions = {
         -- Preferences
         player_table.preferences.display_gui_button = false
         player_table.preferences.products_per_row = 5
-        player_table.preferences.factory_list_rows = 18
+        player_table.preferences.factory_list_rows = 20
         player_table.preferences.recipe_filters = {disabled = true, hidden = false}
         player_table.preferences.ignore_barreling_recipes = true
         player_table.preferences.ignore_recycling_recipes = true
@@ -95,6 +95,9 @@ local actions = {
         main_dialog.toggle(player)
     end,
     teardown_01_main_interface = function(player)
+        util.globals.preferences(player).factory_list_rows = 30
+        main_dialog.rebuild(player, true)  -- avoid modal dialogs being squished
+
         local main_frame = util.globals.main_elements(player).main_frame
         return_dimensions("01_main_interface", main_frame)
     end,
