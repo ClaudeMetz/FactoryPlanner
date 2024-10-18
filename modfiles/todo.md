@@ -20,7 +20,6 @@
 - Rocket silo power usage seems very low, likely doesn't consider launch usage
 - Agriculture tower implementation
   - Missing energy and pollution production, is different to normal entities
-- Context menu to change belt directly on belt view button
 - Replace "can't craft X on this location" notice with the planets it can be crafted on, like vanilla
 - FP apparently recipe item amounts are ints and should be floored? Wtf?
   https://discord.com/channels/1214952937613295676/1281881163702730763/1294182548251086901
@@ -39,8 +38,6 @@
 
 ## Waiting on
 
-- API to open things in Factoriopedia
-  - Hide feature if it's not present for release
 - No way to show quality on sprite buttons, which is essential in tons of places
   - Seemingly the hacky way to add a sprite to the button does not work, oof
   - Same thing for quality color, which should be used in relevant tooltips

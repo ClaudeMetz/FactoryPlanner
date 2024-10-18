@@ -291,7 +291,7 @@ listeners.gui = {
                 copy = {shortcut="shift-right"},
                 paste = {shortcut="shift-left", limitations={archive_open=false}},
                 put_into_cursor = {shortcut="alt-right"},
-                factoriopedia = {shortcut="alt-left"}
+                --factoriopedia = {shortcut="alt-left"}
             },
             handler = handle_item_button_click
         },
@@ -301,7 +301,7 @@ listeners.gui = {
                 add_recipe = {shortcut="left", limitations={archive_open=false, matrix_active=true}, show=true},
                 copy = {shortcut="shift-right"},
                 put_into_cursor = {shortcut="alt-right"},
-                factoriopedia = {shortcut="alt-left"}
+                --factoriopedia = {shortcut="alt-left"}
             },
             handler = handle_item_button_click
         },
@@ -311,7 +311,7 @@ listeners.gui = {
                 add_recipe = {shortcut="left", limitations={archive_open=false}, show=true},
                 copy = {shortcut="shift-right"},
                 put_into_cursor = {shortcut="alt-right"},
-                factoriopedia = {shortcut="alt-left"}
+                --factoriopedia = {shortcut="alt-left"}
             },
             handler = handle_item_button_click
         },
@@ -320,7 +320,7 @@ listeners.gui = {
             actions_table = {
                 copy = {shortcut="shift-right"},
                 put_into_cursor = {shortcut="alt-right"},
-                factoriopedia = {shortcut="alt-left"}
+                --factoriopedia = {shortcut="alt-left"}
             },
             handler = handle_item_button_click
         },

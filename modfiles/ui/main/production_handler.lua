@@ -307,7 +307,7 @@ listeners.gui = {
                 paste = {shortcut="shift-left", limitations={archive_open=false}},
                 toggle = {shortcut="control-left", limitations={archive_open=false}},
                 delete = {shortcut="control-right", limitations={archive_open=false}},
-                factoriopedia = {shortcut="alt-left"}
+                --factoriopedia = {shortcut="alt-left"}
             },
             handler = handle_recipe_click
         },
@@ -318,7 +318,7 @@ listeners.gui = {
                 copy = {shortcut="shift-right"},
                 paste = {shortcut="shift-left", limitations={archive_open=false}},
                 put_into_cursor = {shortcut="alt-right"},
-                factoriopedia = {shortcut="alt-left"}
+                --factoriopedia = {shortcut="alt-left"}
             },
             handler = handle_machine_click
         },
@@ -334,7 +334,7 @@ listeners.gui = {
                 paste = {shortcut="shift-left", limitations={archive_open=false}},
                 delete = {shortcut="control-right", limitations={archive_open=false}},
                 put_into_cursor = {shortcut="alt-right"},
-                factoriopedia = {shortcut="alt-left"}
+                --factoriopedia = {shortcut="alt-left"}
             },
             handler = handle_beacon_click
         },
@@ -349,7 +349,7 @@ listeners.gui = {
                 copy = {shortcut="shift-right"},
                 paste = {shortcut="shift-left", limitations={archive_open=false}},
                 delete = {shortcut="control-right", limitations={archive_open=false}},
-                factoriopedia = {shortcut="alt-left"}
+                --factoriopedia = {shortcut="alt-left"}
             },
             handler = handle_module_click
         },
@@ -359,7 +359,7 @@ listeners.gui = {
                 prioritize = {shortcut="left", limitations={archive_open=false, matrix_active=false}, show=true},
                 copy = {shortcut="shift-right"},
                 put_into_cursor = {shortcut="alt-right"},
-                factoriopedia = {shortcut="alt-left"}
+                --factoriopedia = {shortcut="alt-left"}
             },
             handler = (function(player, tags, action)
                 tags.item_category = "product"
@@ -373,7 +373,7 @@ listeners.gui = {
                 add_recipe_below = {shortcut="control-left", limitations={archive_open=false, matrix_active=true}},
                 copy = {shortcut="shift-right"},
                 put_into_cursor = {shortcut="alt-right"},
-                factoriopedia = {shortcut="alt-left"}
+                --factoriopedia = {shortcut="alt-left"}
             },
             handler = (function(player, tags, action)
                 tags.item_category = "byproduct"
@@ -387,7 +387,7 @@ listeners.gui = {
                 add_recipe_below = {shortcut="control-left", limitations={archive_open=false}},
                 copy = {shortcut="shift-right"},
                 put_into_cursor = {shortcut="alt-right"},
-                factoriopedia = {shortcut="alt-left"}
+                --factoriopedia = {shortcut="alt-left"}
             },
             handler = (function(player, tags, action)
                 tags.item_category = "ingredient"
@@ -402,7 +402,7 @@ listeners.gui = {
                 copy = {shortcut="shift-right"},
                 paste = {shortcut="shift-left", limitations={archive_open=false}},
                 put_into_cursor = {shortcut="alt-right"},
-                factoriopedia = {shortcut="alt-left"}
+                --factoriopedia = {shortcut="alt-left"}
             },
             handler = handle_fuel_click
         }
