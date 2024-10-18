@@ -28,7 +28,7 @@ require("backend.calculation.solver")
 ---@field done_column boolean
 ---@field percentage_column boolean
 ---@field line_comment_column boolean
----@field item_views ItemViewPreference[]
+---@field item_views ItemViewPreferences
 ---@field belts_or_lanes "belts" | "lanes"
 ---@field default_machines PrototypeDefaultWithCategory
 ---@field default_fuels PrototypeDefaultWithCategory

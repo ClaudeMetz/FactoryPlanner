@@ -95,14 +95,10 @@ function item_views.process_item(player, item, item_amount, machine_count)
         local unit = item.proto.fixed_unit or {"fp.per_timescale", {"fp." .. TIMESCALE_MAP[views_data.timescale]}}
         return number, {"", number, " ", unit}
     else
-        local views_preference = util.globals.preferences(player).item_views
-        for _, view_preference in pairs(views_preference) do
-            if view_preference.selected then
-                return processors[view_preference.name](views_data, raw_amount, item.proto, machine_count)
-            end
-        end
+        local view_preferences = util.globals.preferences(player).item_views
+        local selected_view = view_preferences.views[view_preferences.selected_index].name
+        return processors[selected_view](views_data, raw_amount, item.proto, machine_count)
     end
-    return -1, nil
 end
 
 
@@ -180,20 +176,26 @@ function item_views.rebuild_data(player)
     }
 end
 
+---@class ItemViewPreferences
+---@field views ItemViewPreference[]
+---@field selected_index integer
+
 ---@class ItemViewPreference
 ---@field name string
 ---@field enabled boolean
----@field selected boolean
 
 ---@return ItemViewPreference[]
 function item_views.default_preferences()
     return {
-        {name="items_per_timescale", enabled=true, selected=true},
-        {name="belts_or_lanes", enabled=true, selected=false},
-        {name="items_per_second_per_machine", enabled=true, selected=false},
-        {name="stacks_per_timescale", enabled=false, selected=false},
-        {name="wagons_per_timescale", enabled=false, selected=false},
-        {name="rockets_per_timescale", enabled=false, selected=false}
+        views = {
+            {name="items_per_timescale", enabled=true},
+            {name="belts_or_lanes", enabled=true},
+            {name="items_per_second_per_machine", enabled=true},
+            {name="stacks_per_timescale", enabled=false},
+            {name="wagons_per_timescale", enabled=false},
+            {name="rockets_per_timescale", enabled=false}
+        },
+        selected_index = 1
     }
 end
 
@@ -213,7 +215,7 @@ end
 
 ---@param player LuaPlayer
 function item_views.rebuild_interface(player)
-    local views_preference = util.globals.preferences(player).item_views
+    local view_preferences = util.globals.preferences(player).item_views
     local views = util.globals.ui_state(player).views_data.views
 
     local function rebuild(flow)
@@ -222,7 +224,7 @@ function item_views.rebuild_interface(player)
         table.style.horizontal_spacing = 0
 
         -- Iterate preferences for proper ordering
-        for index, view_preference in pairs(views_preference) do
+        for index, view_preference in pairs(view_preferences.views) do
             local view = views[view_preference.name]
             local button = table.add{type="button", caption=view.caption, tooltip=view.tooltip,
                 tags={mod="fp", on_gui_click="change_view", view_index=index},
@@ -239,12 +241,13 @@ end
 
 ---@param player LuaPlayer
 function item_views.refresh_interface(player)
-    local views_preference = util.globals.preferences(player).item_views
+    local view_preferences = util.globals.preferences(player).item_views
 
     local function refresh(flow)
         for _, view_button in pairs(flow["table_views"].children) do
-            local preference = views_preference[view_button.tags.view_index]
-            view_button.toggled = preference.selected
+            local index = view_button.tags.view_index
+            local preference = view_preferences.views[index]
+            view_button.toggled = (view_preferences.selected_index == index)
             view_button.visible = preference.enabled
         end
     end
@@ -256,12 +259,8 @@ end
 ---@param player LuaPlayer
 ---@param new_index integer
 local function select_view(player, new_index)
-    local views_preference = util.globals.preferences(player).item_views
-
-    for index, preference in pairs(views_preference) do
-        if preference.selected then preference.selected = false end
-        if index == new_index then preference.selected = true end
-    end
+    local view_preferences = util.globals.preferences(player).item_views
+    view_preferences.selected_index = new_index
 
     item_views.refresh_interface(player)
     local compact_view = util.globals.ui_state(player).compact_view
@@ -272,21 +271,18 @@ end
 ---@param player LuaPlayer
 ---@param direction "standard" | "reverse"
 function item_views.cycle_views(player, direction)
-    local views_preference = util.globals.preferences(player).item_views
+    local view_preferences = util.globals.preferences(player).item_views
 
-    local next_option = nil  -- find the currently selected view first
-    for index, preference in pairs(views_preference) do
-        if preference.selected then next_option = index end
-    end
-
-    local total_options = #views_preference
+    local next_option = view_preferences.selected_index
+    local total_options = #view_preferences.views
     local mover = (direction == "standard") and 1 or -1
+
     while true do
         next_option = next_option + mover
         if next_option > total_options then next_option = 1
         elseif next_option < 1 then next_option = total_options end
 
-        local preference = views_preference[next_option]
+        local preference = view_preferences.views[next_option]
         if preference.enabled then
             select_view(player, next_option)
             break

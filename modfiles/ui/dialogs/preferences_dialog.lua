@@ -37,7 +37,7 @@ local function refresh_defaults_table(player, modal_elements, type, category_id)
 end
 
 local function refresh_views_table(player)
-    local views_preference = util.globals.preferences(player).item_views
+    local view_preferences = util.globals.preferences(player).item_views
     local views_table = util.globals.modal_elements(player).views_table
     local views = util.globals.ui_state(player).views_data.views
 
@@ -50,12 +50,12 @@ local function refresh_views_table(player)
     end
 
     local active_view_count = 0
-    for _, view_preference in ipairs(views_preference) do
+    for _, view_preference in ipairs(view_preferences.views) do
         if view_preference.enabled then active_view_count = active_view_count + 1 end
     end
 
     views_table.clear()
-    for index, view_preference in ipairs(views_preference) do
+    for index, view_preference in ipairs(view_preferences.views) do
         local view_data = views[view_preference.name]
 
         local enabled = (active_view_count < 4 or view_preference.enabled) and
@@ -70,7 +70,7 @@ local function refresh_views_table(player)
         local flow_move = views_table.add{type="flow", direction="horizontal"}
         flow_move.style.horizontal_spacing = 0
         add_move_button(flow_move, index, "up", (index > 1))
-        add_move_button(flow_move, index, "down", (index < #views_preference))
+        add_move_button(flow_move, index, "down", (index < #view_preferences.views))
     end
 end
 
@@ -218,12 +218,12 @@ local function handle_dropdown_preference_change(player, tags, event)
 end
 
 local function handle_view_toggle(player, tags, _)
-    local views_preference = util.globals.preferences(player).item_views
-    for _, view_preference in ipairs(views_preference) do
+    local view_preferences = util.globals.preferences(player).item_views
+    for index, view_preference in ipairs(view_preferences.views) do
         if view_preference.name == tags.name then
             view_preference.enabled = not view_preference.enabled
             -- Select a valid view if the current one is disabled
-            if not view_preference.enabled and view_preference.selected then
+            if not view_preference.enabled and view_preferences.selected_index == index then
                 item_views.cycle_views(player, "standard")
             end
             break
@@ -236,10 +236,10 @@ local function handle_view_toggle(player, tags, _)
 end
 
 local function handle_view_move(player, tags, _)
-    local views_preference = util.globals.preferences(player).item_views
-    local view_preference = table.remove(views_preference, tags.index)
+    local view_preferences = util.globals.preferences(player).item_views
+    local view_preference = table.remove(view_preferences.views, tags.index)
     local new_index = (tags.direction == "up") and (tags.index-1) or (tags.index+1)
-    table.insert(views_preference, new_index, view_preference)
+    table.insert(view_preferences.views, new_index, view_preference)
 
     refresh_views_table(player)
     item_views.rebuild_interface(player)  -- rebuild because of the move
