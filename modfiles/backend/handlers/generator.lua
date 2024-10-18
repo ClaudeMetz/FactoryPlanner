@@ -387,11 +387,13 @@ function generator.recipes.generate()
         end
     end
 
-    -- Determine which plant is created by which seed
-    local plant_seed_map = {}
+    -- Determine plant->seed map and item->launch_result map
+    local plant_seed_map, launch_products = {}, {}
     for _, item_proto in pairs(prototypes.item) do
         if item_proto.plant_result then
             plant_seed_map[item_proto.plant_result.name] = item_proto.name
+        elseif #item_proto.rocket_launch_products > 0 then
+            launch_products[item_proto.name] = item_proto.rocket_launch_products
         end
     end
 
@@ -514,44 +516,45 @@ function generator.recipes.generate()
 
             ::incompatible_proto::
 
-        elseif proto.type == "rocket-silo" and not proto.hidden and SPACE_TRAVEL then
+        elseif proto.type == "rocket-silo" and not proto.hidden then
             local parts_recipe = prototypes.recipe[proto.fixed_recipe]
 
-            --[[ -- Add special research rocket recipe
-            local research_recipe = custom_recipe()
-            local research_products = proto.rocket_entity_prototype.research_products
-            if research_products == nil then goto incompatible_proto end
-            local main_proto = prototypes.item[research_products[1].name]
+            -- Add rocket launch product recipes
+            --if proto.launch_to_space_platforms then  -- TODO API missing
+                for item_name, products in pairs(launch_products) do
+                    local main_proto = prototypes.item[item_name]
 
-            research_recipe.name = "impostor-" .. main_proto.name .. "-rocket"
-            research_recipe.localised_name = {"", main_proto.localised_name, " ", {"fp.research_rocket"}}
-            research_recipe.sprite = "item/" .. main_proto.name
-            research_recipe.order = parts_recipe.order .. "-" .. proto.order .. "-a"
-            research_recipe.category = parts_recipe.category
-            research_recipe.energy = parts_recipe.energy * proto.rocket_parts_required
+                    local launch_recipe = custom_recipe()
+                    launch_recipe.name = "impostor-" .. item_name .. "-launch"
+                    launch_recipe.localised_name = {"", main_proto.localised_name, " ", {"fp.launch"}}
+                    launch_recipe.sprite = "item/" .. item_name
+                    launch_recipe.order = parts_recipe.order .. "-" .. proto.order .. "-a"
+                    launch_recipe.category = parts_recipe.category
+                    launch_recipe.energy = parts_recipe.energy * proto.rocket_parts_required
 
-            generator_util.format_recipe(research_recipe, research_products,
-                research_products[1], parts_recipe.ingredients)
-            generator_util.multiply_recipe_items(research_recipe.ingredients, proto.rocket_parts_required)
-            insert_prototype(recipes, research_recipe, nil) ]]
+                    generator_util.format_recipe(launch_recipe, products, products[1], parts_recipe.ingredients)
+                    generator_util.multiply_recipe_items(launch_recipe.ingredients, proto.rocket_parts_required)
+                    insert_prototype(recipes, launch_recipe, nil)
+                end
+            --end
 
             -- Add convenience recipe to build whole rocket instead of parts
-            local rocket_recipe = custom_recipe()
+            if SPACE_TRAVEL then
+                local rocket_recipe = custom_recipe()
 
-            rocket_recipe.name = "impostor-" .. proto.name .. "-rocket"
-            rocket_recipe.localised_name = {"", proto.localised_name, " ", {"fp.launch"}}
-            rocket_recipe.sprite = "fp_silo_rocket"
-            rocket_recipe.order = parts_recipe.order .. "-" .. proto.order .. "-b"
-            rocket_recipe.category = parts_recipe.category
-            rocket_recipe.energy = parts_recipe.energy * proto.rocket_parts_required
+                rocket_recipe.name = "impostor-" .. proto.name .. "-rocket"
+                rocket_recipe.localised_name = {"", proto.localised_name, " ", {"fp.launch"}}
+                rocket_recipe.sprite = "fp_silo_rocket"
+                rocket_recipe.order = parts_recipe.order .. "-" .. proto.order .. "-b"
+                rocket_recipe.category = parts_recipe.category
+                rocket_recipe.energy = parts_recipe.energy * proto.rocket_parts_required
 
-            local rocket_products = {{type="entity", name="custom-silo-rocket", amount=1}}
-            generator_util.format_recipe(rocket_recipe, rocket_products,
-                rocket_products[1], parts_recipe.ingredients)
-            generator_util.multiply_recipe_items(rocket_recipe.ingredients, proto.rocket_parts_required)
-            insert_prototype(recipes, rocket_recipe, nil)
-
-            --::incompatible_proto::
+                local rocket_products = {{type="entity", name="custom-silo-rocket", amount=1}}
+                generator_util.format_recipe(rocket_recipe, rocket_products,
+                    rocket_products[1], parts_recipe.ingredients)
+                generator_util.multiply_recipe_items(rocket_recipe.ingredients, proto.rocket_parts_required)
+                insert_prototype(recipes, rocket_recipe, nil)
+            end
         end
 
         -- Add a recipe for producing steam from a boiler
