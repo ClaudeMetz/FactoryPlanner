@@ -10,7 +10,6 @@
 
 - New defaults section should just be buttons, not checkboxes+confirm. Also make sure it never scrolls
   - Also, make defaults section foldeout more of a button
-- Take care of faded disabled sprite buttons, probably by using toggled or sprite elements
 - Adopt new rocket silo recipes, and drop research rocket one
 - Add floating text for all actions that are taken that are not possible
   - Ideally the tooltips and context menu wouldn't show them, but that is tricky

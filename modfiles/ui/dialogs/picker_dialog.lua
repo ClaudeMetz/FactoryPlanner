@@ -7,7 +7,7 @@ local function select_item_group(modal_data, new_group_id)
 
     for group_id, group_elements in pairs(modal_data.modal_elements.groups) do
         local selected_group = (group_id == new_group_id)
-        group_elements.button.enabled = not selected_group
+        group_elements.button.toggled = selected_group
         group_elements.scroll_pane.visible = selected_group
     end
 end

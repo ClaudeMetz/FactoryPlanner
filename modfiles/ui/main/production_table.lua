@@ -84,17 +84,18 @@ function builders.recipe(line, parent_flow, metadata, indent)
     if indent > 0 then parent_flow.style.left_margin = indent * 18 end
     local first_subfloor_line = (line.parent.level > 1 and line.previous == nil)
 
-    local style, enabled, surface_info = nil, true, {""}
-    local note = ""  ---@type LocalisedString
+    local style, tags, tooltip = nil, nil, nil
     if first_subfloor_line then
-        style = "flib_slot_button_transparent_small"
-        enabled = false  -- first subfloor line is static
+        style = "flib_slot_button_disabled_small"
+        tooltip = {"fp.tt_title", recipe_proto.localised_name}
+        tags = {mod="fp", on_gui_hover="set_tooltip", context="production_table"}
     else
         local surface_compatibility = relevant_line:get_surface_compatibility()
         local solver_compatibility = (metadata.matrix_solver_active or line.production_type ~= "consume")
         local line_active = (relevant_line.active and surface_compatibility.overall and solver_compatibility)
         style = (line_active) and "flib_slot_button_default_small" or "flib_slot_button_red_small"
-        note = (relevant_line.active) and "" or {"fp.recipe_inactive"}
+        local note = (relevant_line.active) and "" or {"fp.recipe_inactive"}  ---@type LocalisedString
+        local surface_info = {""}
 
         if not surface_compatibility.recipe then
             table.insert(surface_info, {"fp.blocking_condition", {"fp.pl_recipe", 1}})
@@ -114,15 +115,18 @@ function builders.recipe(line, parent_flow, metadata, indent)
             style = (line_active) and "flib_slot_button_yellow_small" or "flib_slot_button_orange_small"
             note = {"fp.recipe_consumes_byproduct"}
         end
+
+        tags = {mod="fp", on_gui_click="act_on_line_recipe", line_id=line.id,
+            on_gui_hover="set_tooltip", context="production_table"}
+
+        local first_line = (note == "") and {"fp.tt_title", recipe_proto.localised_name}
+            or {"fp.tt_title_with_note", recipe_proto.localised_name, note}
+        tooltip = {"", first_line, surface_info, format_effects_tooltip(relevant_line.effects_tooltip),
+            "\n", metadata.action_tooltips["act_on_line_recipe"]}
     end
 
-    local first_line = (note == "") and {"fp.tt_title", recipe_proto.localised_name}
-        or {"fp.tt_title_with_note", recipe_proto.localised_name, note}
-    local tooltip = {"", first_line, surface_info, format_effects_tooltip(relevant_line.effects_tooltip),
-        "\n", metadata.action_tooltips["act_on_line_recipe"]}
-    local button = parent_flow.add{type="sprite-button", enabled=enabled, sprite=recipe_proto.sprite,style=style,
-        tags={mod="fp", on_gui_click="act_on_line_recipe", line_id=line.id, on_gui_hover="set_tooltip",
-        context="production_table"}, mouse_button_filter={"left-and-right"}, raise_hover_events=true}
+    local button = parent_flow.add{type="sprite-button", sprite=recipe_proto.sprite, style=style,
+        tags=tags, mouse_button_filter={"left-and-right"}, raise_hover_events=true}
     metadata.tooltips[button.index] = tooltip
 end
 
@@ -162,8 +166,8 @@ function builders.machine(line, parent_flow, metadata)
         -- Machine count doesn't need any special formatting in this case because it'll always be an integer
         local machine_count = line.machine_count
         local tooltip = {"fp.subfloor_machine_count", machine_count, {"fp.pl_machine", machine_count}}
-        parent_flow.add{type="sprite-button", sprite="fp_generic_assembler", style="flib_slot_button_default_small",
-        enabled=false, number=machine_count, tooltip=tooltip}
+        parent_flow.add{type="sprite-button", sprite="fp_generic_assembler", style="flib_slot_button_disabled_small",
+            number=machine_count, tooltip=tooltip}
     else
         local machine = line.machine
         local machine_proto = machine.proto
@@ -329,7 +333,7 @@ function builders.ingredients(line, parent_flow, metadata)
         local satisfaction_line = ""  ---@type LocalisedString
 
         if ingredient.proto.type == "entity" then
-            style = "flib_slot_button_transparent_small"
+            style = "flib_slot_button_disabled_small"
         elseif metadata.ingredient_satisfaction and ingredient.amount > 0 then
             local satisfaction_percentage = (ingredient.satisfied_amount / ingredient.amount) * 100
             local formatted_percentage = util.format.number(satisfaction_percentage, 3)
