@@ -20,7 +20,6 @@
 - Rocket silo power usage seems very low, likely doesn't consider launch usage
 - Agriculture tower implementation
   - Missing energy and pollution production, is different to normal entities
-- Improve performance by not making item_views.process iterate the prefs every time
 - Context menu to change belt directly on belt view button
 - Replace "can't craft X on this location" notice with the planets it can be crafted on, like vanilla
 - FP apparently recipe item amounts are ints and should be floored? Wtf?
