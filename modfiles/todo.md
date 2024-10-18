@@ -5,7 +5,6 @@
 
 ## Bugs
 
-- Wrong localised names for custom machines/recipes etc
 
 ## Features
 
