@@ -1104,7 +1104,7 @@ local function generate_surface_properties()
             name = proto.name,
             order = proto.order,
             localised_name = proto.localised_name,
-            localised_unit = proto.localised_unit_key,
+            localised_unit_key = proto.localised_unit_key,
             default_value = proto.default_value,
             is_time = proto.is_time
         })
@@ -1142,7 +1142,7 @@ function generator.locations.generate()
             local value = proto.surface_properties[property_proto.name] or property_proto.default_value
             surface_properties[property_proto.name] = value
 
-            local value_and_unit = {"", value, property_proto.localised_unit}  ---@type LocalisedString
+            local value_and_unit = {property_proto.localised_unit_key, value}  ---@type LocalisedString
             if property_proto.is_time then value_and_unit = util.format.time(value) end
             table.insert(tooltip, {"fp.surface_property", property_proto.localised_name, value_and_unit})
         end
