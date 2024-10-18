@@ -49,13 +49,11 @@ local function build_items_flow(player, parent, district)
             local amount, number_tooltip = item_views.process_item(player, item, item.amount, nil)
             if amount ~= -1 then  -- an amount of -1 means it was below the margin of error
                 if item.amount > MAGIC_NUMBERS.margin_of_error then
-                    local style = (item.proto.type == "entity") and "flib_slot_button_transparent"
-                        or "flib_slot_button_default"
                     local number_line = (number_tooltip) and {"", "\n", number_tooltip} or ""
                     local tooltip = {"", {"fp.tt_title", item.proto.localised_name}, number_line}
 
-                    table_items.add{type="sprite-button", number=amount, style=style, sprite=item.proto.sprite,
-                        tooltip=tooltip}
+                    table_items.add{type="sprite-button", number=amount, style="flib_slot_button_default",
+                        sprite=item.proto.sprite, tooltip=tooltip}
                     item_count = item_count + 1
                 end
             end

@@ -181,8 +181,8 @@ local function add_item_flow(line, relevant_line, item_category, button_color, m
         if relevant_line.done then style = "flib_slot_button_grayscale_small" end
 
         if type == "entity" then
-            style = (relevant_line.done) and "flib_slot_button_transparent_grayscale_small"
-                or "flib_slot_button_transparent_small"
+            style = (relevant_line.done) and "flib_slot_button_disabled_grayscale_small"
+                or "flib_slot_button_disabled_small"
         end
 
         local button = item_table.add{type="sprite-button", sprite=proto.sprite, number=amount,

@@ -87,9 +87,6 @@ local function refresh_item_box(player, factory, show_floor_items, item_category
         local name_line = {"fp.tt_title", item.proto.localised_name}
         local number_line = (number_tooltip) and {"", "\n", number_tooltip} or ""
         local tooltip = {"", name_line, number_line, satisfaction_line, "\n", action_tooltip}
-        if item.class ~= "Product" and item.proto.type == "entity" then
-            style = "flib_slot_button_transparent"
-        end
 
         local button = table_items.add{type="sprite-button", number=amount, style=style, sprite=item.proto.sprite,
             tags={mod="fp", on_gui_click=action, item_category=item_category, item_id=item.id, item_index=index,

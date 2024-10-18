@@ -199,17 +199,19 @@ for _, color in pairs{"default", "grey", "red", "orange", "yellow", "green", "cy
     }
 end
 
-styles["flib_slot_button_transparent"] = {
+styles["flib_slot_button_disabled"] = {
     type = "button_style",
     parent = "flib_slot_button_default",
     default_graphical_set = {},
+    hovered_graphical_set = {},
+    clicked_graphical_set = {},
     disabled_graphical_set = {},
     padding = 4
 }
 
-styles["flib_slot_button_transparent_small"] = {
+styles["flib_slot_button_disabled_small"] = {
     type = "button_style",
-    parent = "flib_slot_button_transparent",
+    parent = "flib_slot_button_disabled",
     size = 36
 }
 
@@ -219,9 +221,9 @@ styles["flib_slot_button_grayscale_small"] = {
     draw_grayscale_picture = true
 }
 
-styles["flib_slot_button_transparent_grayscale_small"] = {
+styles["flib_slot_button_disabled_grayscale_small"] = {
     type = "button_style",
-    parent = "flib_slot_button_transparent_small",
+    parent = "flib_slot_button_disabled_small",
     draw_grayscale_picture = true
 }
 
