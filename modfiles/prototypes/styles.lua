@@ -133,20 +133,6 @@ styles["fp_button_frame_tool"] = {
     left_padding = 8
 }
 
-styles["fp_button_transparent"] = {
-    type = "button_style",
-    parent = "button",
-    default_graphical_set = {},
-    clicked_graphical_set = {},
-    hovered_graphical_set = {},
-    clicked_vertical_offset = 0,
-    default_font_color = {1, 1, 1},
-    hovered_font_color = {0.98, 0.66, 0.22},
-    clicked_font_color = {1, 0.74, 0.40},
-    font = "heading-2",
-    minimal_width = 0
-}
-
 styles["fp_sprite-button_rounded_sprite"] = {
     type = "button_style",
     parent = "rounded_button",
