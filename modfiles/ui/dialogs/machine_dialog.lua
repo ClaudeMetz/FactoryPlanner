@@ -1,32 +1,33 @@
 -- ** LOCAL UTIL **
-local function add_checkbox(modal_elements, caption, tooltip, identifier, event_name)
-    local tags = (event_name) and {mod="fp", on_gui_checked_state_changed=event_name} or nil
-    local checkbox = modal_elements.defaults_flow.add{type="checkbox", state=false,
-        caption=caption, tooltip=tooltip, tags=tags}
-    modal_elements[identifier] = checkbox
+local function add_defaults_section(modal_elements, identifier, info_caption)
+    local label_info = modal_elements.defaults_flow.add{type="label", caption=info_caption, style="semibold_label"}
+    label_info.style.margin = {0, 8, 0, 24}
+    modal_elements[identifier .. "_title"] = label_info
+
+    local button = modal_elements.defaults_flow.add{type="sprite-button", sprite="fp_default",
+        tags={mod="fp", on_gui_click="set_machine_default", action=identifier},
+        tooltip={"fp.save_as_default_" .. identifier}, style="tool_button"}
+    modal_elements[identifier] = button
+
+    local button_all = modal_elements.defaults_flow.add{type="sprite-button", sprite="fp_default_all",
+        tags={mod="fp", on_gui_click="set_machine_default", action=(identifier .. "_all")},
+        tooltip={"fp.save_for_all_" .. identifier}, style="tool_button"}
+    modal_elements[identifier .. "_all"] = button_all
 end
 
-local function refresh_defaults_frame(player, reset_all)
+local function refresh_defaults_frame(player)
     local modal_data = util.globals.modal_data(player)  --[[@as table]]
     local modal_elements = modal_data.modal_elements
     local machine = modal_data.object  --[[@as Machine]]
-
-    if reset_all == true then
-        modal_elements.machine_all.state = false
-        modal_elements.fuel_all.state = false
-    end
 
     -- Machine
     local machine_tooltip = defaults.generate_tooltip(player, "machines", machine.proto.category)
     local equals_machine = defaults.equals_default(player, "machines", machine, machine.proto.category)
     local equals_all_machines = defaults.equals_all_defaults(player, "machines", machine)
-    local all_machines = modal_elements.machine_all.state or equals_all_machines
 
     modal_elements.machine_title.tooltip = machine_tooltip
-    modal_elements.machine.enabled = not equals_machine and not all_machines
-    modal_elements.machine.state = equals_machine or all_machines
+    modal_elements.machine.enabled = not equals_machine
     modal_elements.machine_all.enabled = not equals_all_machines
-    modal_elements.machine_all.state = all_machines
 
     -- Fuel
     local fuel_required = (machine.proto.burner ~= nil)
@@ -38,51 +39,33 @@ local function refresh_defaults_frame(player, reset_all)
         equals_fuel = defaults.equals_default(player, "fuels", machine.fuel, category)
         equals_all_fuels = defaults.equals_all_defaults(player, "fuels", machine.fuel)
     end
-    local all_fuels = modal_elements.fuel_all.state or equals_all_fuels
 
     modal_elements.fuel_title.tooltip = fuel_tooltip
-    modal_elements.fuel.enabled = fuel_required and (not equals_fuel and not all_fuels)
-    modal_elements.fuel.state = fuel_required and (equals_fuel or all_fuels)
+    modal_elements.fuel.enabled = fuel_required and not equals_fuel
     modal_elements.fuel_all.enabled = fuel_required and not equals_all_fuels
-    modal_elements.fuel_all.state = fuel_required and all_fuels
 end
 
-local function add_defaults_panel(parent_frame, player)
+local function add_defaults_frame(parent_frame, player)
     local modal_elements = util.globals.modal_elements(player)
 
-    local flow_default = parent_frame.add{type="flow", direction="vertical"}
-    flow_default.style.vertical_spacing = 4
-    flow_default.style.right_padding = 12
-    modal_elements["defaults_flow"] = flow_default
+    local frame_defaults = parent_frame.add{type="frame", direction="horizontal", style="fp_frame_bordered_stretch"}
+    frame_defaults.style.top_padding = 7
+    local flow_defaults = frame_defaults.add{type="flow", direction="horizontal"}
+    flow_defaults.style.vertical_align = "center"
+    modal_elements["defaults_flow"] = flow_defaults
 
-    local machine_caption = {"fp.info_label", {"", {"fp.pu_machine", 1}, " & ", {"fp.pu_module", 2}}}
-    local label_machine = flow_default.add{type="label", caption=machine_caption, style="caption_label"}
-    modal_elements["machine_title"] = label_machine
+    flow_defaults.add{type="label", caption={"fp.defaults"}, style="semibold_label"}
 
-    add_checkbox(modal_elements, {"fp.save_as_default"}, {"fp.save_as_default_machine_tt"}, "machine", nil)
-    add_checkbox(modal_elements, {"fp.save_for_all"}, {"fp.save_for_all_machine_tt"}, "machine_all",
-        "machine_checkbox_all")
+    local machine_info = {"fp.info_label", {"", {"fp.pu_machine", 1}, " & ", {"fp.pu_module", 2}}}
+    add_defaults_section(modal_elements, "machine", machine_info)
 
-    local fuel_caption = {"fp.info_label", {"fp.pu_fuel", 1}}
-    local fuel_label = flow_default.add{type="label", caption=fuel_caption, style="caption_label"}
-    fuel_label.style.top_margin = 8
-    modal_elements["fuel_title"] = fuel_label
-
-    add_checkbox(modal_elements, {"fp.save_as_default"}, {"fp.save_as_default_fuel_tt"}, "fuel")
-    add_checkbox(modal_elements, {"fp.save_for_all"}, {"fp.save_for_all_fuel_tt"}, "fuel_all", "machine_checkbox_all")
-
-    local flow_submit = parent_frame.add{type="flow", direction="horizontal"}
-    flow_submit.style.top_margin = 12
-    flow_submit.add{type="empty-widget", style="flib_horizontal_pusher"}
-    local button_submit = flow_submit.add{type="button", caption={"fp.set_defaults"}, style="fp_button_green",
-        tags={mod="fp", on_gui_click="save_machine_defaults"}, mouse_button_filter={"left"}}
-    button_submit.style.minimal_width = 0
+    local fuel_info = {"fp.info_label", {"fp.pu_fuel", 1}}
+    add_defaults_section(modal_elements, "fuel", fuel_info)
 
     refresh_defaults_frame(player)
 end
 
-local function save_defaults(player)
-    local modal_elements = util.globals.modal_elements(player)
+local function set_defaults(player, tags, _)
     local machine = util.globals.modal_data(player).object
 
     local machine_data = {
@@ -90,21 +73,20 @@ local function save_defaults(player)
         quality = machine.quality_proto.name,
         modules = machine.module_set:compile_default()
     }
-    if modal_elements.machine_all.state then
-        defaults.set_all(player, "machines", machine_data)
-    elseif modal_elements.machine.state then
-        defaults.set(player, "machines", machine_data, machine.proto.category)
-    end
 
-    if modal_elements.fuel_all.state then
+    if tags.action == "machine_all" then
+        defaults.set_all(player, "machines", machine_data)
+    elseif tags.action == "machine" then
+        defaults.set(player, "machines", machine_data, machine.proto.category)
+
+    elseif tags.action == "fuel_all" then
         defaults.set_all(player, "fuels", {prototype=machine.fuel.proto.name})
-    elseif modal_elements.fuel.state then
+    elseif tags.action == "fuel" then
         local category = machine.proto.burner.combined_category
         defaults.set(player, "fuels", {prototype=machine.fuel.proto.name}, category)
     end
 
     refresh_defaults_frame(player)
-    modal_dialog.toggle_foldout_panel(player)
 end
 
 
@@ -233,7 +215,7 @@ local function handle_machine_choice(player, _, event)
 
     refresh_fuel_frame(player)
     module_configurator.refresh_modules_flow(player, false)
-    refresh_defaults_frame(player, true)
+    refresh_defaults_frame(player)
 end
 
 local function handle_fuel_choice(player, _, event)
@@ -249,7 +231,7 @@ local function handle_fuel_choice(player, _, event)
     local combined_category = machine.proto.burner.combined_category
     machine.fuel.proto = prototyper.util.find("fuels", elem_value, combined_category)
 
-    refresh_defaults_frame(player, true)
+    refresh_defaults_frame(player)
 end
 
 
@@ -277,11 +259,9 @@ local function open_machine_dialog(player, modal_data)
     module_configurator.add_modules_flow(content_frame, modal_data)
     module_configurator.refresh_modules_flow(player, false)
 
-
     -- Defaults
-    local secondary_frame = modal_data.modal_elements.secondary_frame
     modal_data.defaults_refresher = "machine_defaults_refresher"
-    add_defaults_panel(secondary_frame, player)
+    add_defaults_frame(content_frame, player)
 end
 
 local function close_machine_dialog(player, action)
@@ -343,8 +323,8 @@ listeners.gui = {
     },
     on_gui_click = {
         {
-            name = "save_machine_defaults",
-            handler = save_defaults
+            name = "set_machine_default",
+            handler = set_defaults
         }
     },
     on_gui_checked_state_changed = {
@@ -363,7 +343,6 @@ listeners.dialog = {
         return {
             caption = {"", {"fp.edit"}, " ", {"fp.pl_machine", 1}},
             subheader_text = {"fp.machine_dialog_description", recipe_name},
-            foldout_title = {"fp.defaults"},
             show_submit_button = true,
             reset_handler_name = "reset_machine"
         }

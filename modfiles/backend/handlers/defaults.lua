@@ -226,8 +226,9 @@ function defaults.generate_tooltip(player, data_type, category)
     local default = defaults.get(player, data_type, category)
     local tooltip = {"", {"fp.current_default"}, "\n"}
 
-    local proto_line = (not default.quality) and {"fp.tt_title", default.proto.localised_name}
-        or {"fp.tt_title_with_note", default.proto.localised_name, default.quality.localised_name}
+    local name_line = {"", "[img=" .. default.proto.sprite .. "] ", default.proto.localised_name}
+    local proto_line = (not default.quality) and {"fp.tt_title", name_line}
+        or {"fp.tt_title_with_note", name_line, default.quality.rich_text}
     table.insert(tooltip, proto_line)
     if default.beacon_amount then table.insert(tooltip, " x" .. default.beacon_amount) end
 

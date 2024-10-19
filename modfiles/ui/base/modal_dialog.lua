@@ -77,14 +77,6 @@ local function create_base_dialog(player, dialog_settings, modal_data)
         subheader.style.padding = 12
         subheader.add{type="label", caption=dialog_settings.subheader_text,
             tooltip=dialog_settings.subheader_tooltip, style="semibold_label"}
-
-        if dialog_settings.foldout_title then
-            subheader.add{type="empty-widget", style="flib_horizontal_pusher"}
-            local caption = {"", dialog_settings.foldout_title, " >"}
-            local button_foldout = subheader.add{type="button", caption=caption, style="fp_button_transparent",
-                tags={mod="fp", on_gui_click="toggle_foldout_panel"}}
-            modal_elements.foldout_button = button_foldout
-        end
     end
 
     local scroll_pane = content_frame.add{type="scroll-pane", direction="vertical", style="flib_naked_scroll_pane"}
@@ -92,13 +84,12 @@ local function create_base_dialog(player, dialog_settings, modal_data)
     modal_elements.content_frame = scroll_pane
 
     -- Secondary frame
-    if dialog_settings.secondary_frame or dialog_settings.foldout_title then
+    if dialog_settings.secondary_frame then
         -- Only default-visible if it's a secondary frame, not a foldout frame
         local frame_secondary = flow_content.add{type="frame", direction="vertical",
             visible=(dialog_settings.secondary_frame ~= nil), style="inside_shallow_frame"}
 
         local scroll_pane_secondary = frame_secondary.add{type="scroll-pane", style="flib_naked_scroll_pane"}
-        scroll_pane_secondary.style.vertically_stretchable = true
         scroll_pane_secondary.style.padding = 12
 
         modal_elements.secondary_frame = scroll_pane_secondary
@@ -293,14 +284,6 @@ function modal_dialog.set_submit_button_state(modal_elements, enabled, message)
     button.tooltip = tooltip
 end
 
-function modal_dialog.toggle_foldout_panel(player)
-    local modal_data = util.globals.modal_data(player)  --[[@as table]]
-    local secondary_frame = modal_data.modal_elements.secondary_frame.parent
-    secondary_frame.visible = not secondary_frame.visible
-    local caption = {"", modal_data.foldout_title, (secondary_frame.visible) and " <" or " >"}
-    modal_data.modal_elements.foldout_button.caption = caption
-end
-
 
 function modal_dialog.enter_selection_mode(player, selector_name)
     local ui_state = util.globals.ui_state(player)
@@ -393,11 +376,7 @@ listeners.gui = {
                 modal_data.modal_elements.confirm_reset.visible = false
                 GLOBAL_HANDLERS[modal_data.reset_handler_name](player)
             end)
-        },
-        {
-            name = "toggle_foldout_panel",
-            handler = modal_dialog.toggle_foldout_panel
-        },
+        }
     },
     on_gui_text_changed = {
         {
