@@ -29,7 +29,7 @@ local function add_module_frame(parent_flow, module, module_filters, empty_slots
     local slider_value, maximum_value, minimum_value = determine_slider_config(module, empty_slots)
     local numeric_enabled = (maximum_value ~= 1 and module ~= nil)
 
-    local slider = frame_module.add{type="slider", name="fp_slider_module_amount",
+    local slider = frame_module.add{type="slider", name="fp_slider_module_amount", style="notched_slider",
         tags={mod="fp", on_gui_value_changed="module_amount_value", module_id=module_id},
         minimum_value=minimum_value, maximum_value=maximum_value, value=slider_value, value_step=0.1}
     slider.style.minimal_width = 0
