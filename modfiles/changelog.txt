@@ -2,6 +2,16 @@
 Version: 0.00.00
 Date: 00. 00. 0000
   Features:
+    - 
+  Changes:
+    - 
+  Bugfixes:
+    - 
+
+---------------------------------------------------------------------------------------------------
+Version: 2.0.1
+Date: 21. 10. 2024
+  Features:
     - Updated the mod for Factorio 2.0 and the Space Age expansion. This means adoption to changes in existing systems and support for new systems, the most significant of which will be listed here. The mod will still work just fine without Space Age, with automatic adjustements to the interface.
     - This release is considered [Experimental]. While it was beta-tested with a small group for a few months, the many changes will have introduced some bugs and crashes. Please let me know about anything you encounter on Github.
     - Lastly: This update was a huge amount of effort over many months, and puts the mod in a much better place for the future. It's a big step forward, I hope you enjoy it, and thanks for the support so far!
