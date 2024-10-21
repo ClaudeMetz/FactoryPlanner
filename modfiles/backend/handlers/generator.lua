@@ -518,6 +518,7 @@ function generator.recipes.generate()
 
         elseif proto.type == "rocket-silo" and not proto.hidden then
             local parts_recipe = prototypes.recipe[proto.fixed_recipe]
+            if not parts_recipe then goto incompatible_proto end
 
             -- Add rocket launch product recipes
             --if proto.launch_to_space_platforms then  -- TODO API missing
@@ -555,6 +556,8 @@ function generator.recipes.generate()
                 generator_util.multiply_recipe_items(rocket_recipe.ingredients, proto.rocket_parts_required)
                 insert_prototype(recipes, rocket_recipe, nil)
             end
+
+            ::incompatible_proto::
         end
 
         -- Add a recipe for producing steam from a boiler
@@ -732,7 +735,7 @@ function generator.items.generate()
         -- Mark rocket silo part items here so they can be marked as non-hidden
         elseif proto.type == "rocket-silo" and not proto.hidden then
             local parts_recipe = prototypes.recipe[proto.fixed_recipe]
-            rocket_parts[parts_recipe.main_product.name] = true
+            if parts_recipe then rocket_parts[parts_recipe.main_product.name] = true end
         end
     end
 
@@ -858,22 +861,6 @@ function generator.fuels.generate()
         end
     end
 
-    -- Create category for each combination of fuel used by machines
-    -- Also filters out any fuels that aren't used by any actual machine
-    for _, machine_category in pairs(storage.prototypes.machines) do
-        for _, machine_proto in pairs(machine_category.members) do
-            if machine_proto.burner then
-                local combined_category = machine_proto.burner.combined_category
-                for fuel_category, _ in pairs(machine_proto.burner.categories) do
-                    for _, fuel in pairs(fuel_categories[fuel_category]) do
-                        fuel.combined_category = combined_category
-                        insert_prototype(fuels, fuel, combined_category)
-                    end
-                end
-            end
-        end
-    end
-
     -- Add liquid fuels - they are a category of their own always
     local fluid_list = storage.prototypes.items["fluid"].members  ---@type NamedPrototypesWithCategory<FPItemPrototype>
     for _, proto in pairs(prototypes.get_fluid_filtered(fuel_filter)) do
@@ -893,7 +880,24 @@ function generator.fuels.generate()
                 emissions_multiplier = proto.emissions_multiplier,
                 burnt_result = nil
             }
-            insert_prototype(fuels, fuel, fuel.combined_category)
+            fuel_categories[fuel.category] = fuel_categories[fuel.category] or {}
+            table.insert(fuel_categories[fuel.category], fuel)
+        end
+    end
+
+    -- Create category for each combination of fuel used by machines
+    -- Also filters out any fuels that aren't used by any actual machine
+    for _, machine_category in pairs(storage.prototypes.machines) do
+        for _, machine_proto in pairs(machine_category.members) do
+            if machine_proto.burner then
+                local combined_category = machine_proto.burner.combined_category
+                for fuel_category, _ in pairs(machine_proto.burner.categories) do
+                    for _, fuel in pairs(fuel_categories[fuel_category]) do
+                        fuel.combined_category = combined_category
+                        insert_prototype(fuels, fuel, combined_category)
+                    end
+                end
+            end
         end
     end
 
