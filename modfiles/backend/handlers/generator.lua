@@ -776,7 +776,7 @@ function generator.items.generate()
             hidden = false,
             order = "z"
         }
-        generator_util.add_groups(custom_items["custom-silo-rocket"], "intermediate-products", "intermediate-product")
+        generator_util.add_default_groups(custom_items["custom-silo-rocket"])
     end
 
 

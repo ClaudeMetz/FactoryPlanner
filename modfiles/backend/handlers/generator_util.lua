@@ -420,18 +420,7 @@ end
 ---@param proto FPItemPrototype | FPRecipePrototype
 function generator_util.add_default_groups(proto)
     proto.group = generator_util.generate_group_table(prototypes.item_group["other"])
-    proto.subgroup = {name="custom_subgroup", localised_name="", order="a", valid=true}
-end
-
----@param proto FPItemPrototype | FPRecipePrototype
----@param group_name string
----@param subgroup_name string
-function generator_util.add_groups(proto, group_name, subgroup_name)
-    generator_util.add_default_groups(proto)
-    local group = prototypes.item_group[group_name]
-    if group then proto.group = generator_util.generate_group_table(group) end
-    local subgroup = prototypes.item_subgroup[subgroup_name]
-    if subgroup then proto.subgroup = generator_util.generate_group_table(subgroup) end
+    proto.subgroup = generator_util.generate_group_table(prototypes.item_subgroup["other"])
 end
 
 return generator_util
