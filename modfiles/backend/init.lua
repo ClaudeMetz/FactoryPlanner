@@ -61,7 +61,7 @@ function reload_preferences(player_table)
     reload("products_per_row", 6)
     reload("factory_list_rows", 28)
 
-    reload("show_gui_button", false)
+    reload("show_gui_button", true)
     reload("attach_factory_products", false)
     reload("skip_factory_naming", false)
     reload("prefer_matrix_solver", false)
