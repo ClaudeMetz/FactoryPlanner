@@ -2,9 +2,6 @@
 
 local migration = {}
 
-function migration.global()
-end
-
 function migration.player_table(player_table)
     local item_views = player_table.preferences.item_views
     if item_views == nil then return end
@@ -15,9 +12,6 @@ function migration.player_table(player_table)
         table.insert(preferences.views, {name=view.name, enabled=view.enabled})
     end
     player_table.preferences.item_views = preferences
-end
-
-function migration.packed_factory(packed_factory)
 end
 
 return migration

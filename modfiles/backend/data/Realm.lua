@@ -35,6 +35,8 @@ end
 
 ---@param district District
 function Realm:remove(district)
+    -- Delete factories separately so they can clean up any nth_tick events
+    for factory in district:iterator() do district:remove(factory) end
     district.parent = nil
     self:_remove(district)
 end
