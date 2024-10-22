@@ -4,7 +4,7 @@ Date: 00. 00. 0000
   Features:
     -
   Changes:
-    -
+    - Changed the button in the top left corner to show again by default
   Bugfixes:
     - Fixed a crash caused by migration
     - Fixed a crash after deleting a District that had trashed factories inside it
