@@ -6,6 +6,7 @@ Date: 00. 00. 0000
   Changes:
     -
   Bugfixes:
+    - Fixed a crash caused by migration
     - Fixed a crash when trying to open the product picker with Pyanodon's active
 
 ---------------------------------------------------------------------------------------------------
