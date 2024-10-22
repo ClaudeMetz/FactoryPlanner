@@ -2,7 +2,15 @@
 Version: 0.00.00
 Date: 00. 00. 0000
   Features:
-    -
+    - 
+  Changes:
+    - 
+  Bugfixes:
+    - 
+
+---------------------------------------------------------------------------------------------------
+Version: 2.0.2
+Date: 22. 10. 2024
   Changes:
     - Changed the button in the top left corner to show again by default
   Bugfixes:
