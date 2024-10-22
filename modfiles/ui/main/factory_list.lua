@@ -289,8 +289,6 @@ function factory_list.delete_factory(player)
     if not factory then return end  -- latency protection
 
     if factory.archived then
-        if factory.tick_of_deletion then util.nth_tick.cancel(factory.tick_of_deletion) end
-
         local adjacent_factory = util.context.remove(player, factory)
         local district = factory.parent
         factory.parent:remove(factory)
