@@ -102,7 +102,7 @@ function Machine:update_recipe_effects(force, factory)
     else return end  -- no recipe effects for custom recipes
 
     local recipe_bonus = factory:get_productivity_bonus(force, recipe_name)
-    if recipe_bonus > 0 then
+    if recipe_bonus >= 0 then
         self.recipe_effects = {productivity=recipe_bonus}
         self:summarize_effects()
     end
