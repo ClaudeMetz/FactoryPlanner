@@ -48,7 +48,7 @@ end
 ---@alias NeighbourDirection "next" | "previous"
 
 ---@alias ObjectFilter {id: integer, archived: boolean}
-local filter_options = {"id", "archived", "proto", "quality_proto"}
+local filter_options = {"id", "archived", "valid", "proto", "quality_proto"}
 
 ---@param object Object
 ---@param filter ObjectFilter?
