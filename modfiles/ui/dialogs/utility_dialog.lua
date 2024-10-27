@@ -247,7 +247,7 @@ function utility_structures.productivity_boni(player, modal_data)
         end
         local enabled = (#factory_names > 0)
         local dropdown_factory = flow_import.add{type="drop-down", items=factory_names, enabled=enabled}
-        dropdown_factory.style.maximal_width = 220
+        dropdown_factory.style.maximal_width = 225
         modal_data.modal_elements["factory_dropdown"] = dropdown_factory
 
         flow_import.add{type="sprite-button", tags={mod="fp", on_gui_click="import_productivity_boni"},
@@ -260,6 +260,8 @@ function utility_structures.productivity_boni(player, modal_data)
         table.style.column_alignments[3] = "center"
         table.style.horizontal_spacing = 16
         modal_data.modal_elements["productivity_boni_table"] = table
+
+        boni_box.add{type="empty-widget", style="flib_vertical_pusher"}
     end
     local table = modal_data.modal_elements["productivity_boni_table"]
     table.clear()
@@ -273,7 +275,7 @@ function utility_structures.productivity_boni(player, modal_data)
         local caption = (recipe_name == "custom-mining")
             and {"", "[img=utility/mining_drill_productivity_bonus_modifier_icon]  ", {"fp.mining_recipes"}}
             or {"", "[recipe=" .. recipe_name .. "]  ", recipe_proto.localised_name}
-        table.add{type="label", caption=caption}
+        table.add{type="label", caption=caption}.style.width = 250
 
         local productivity = util.get_recipe_productivity(player.force, recipe_name)
         local percentage = ("%+d"):format(math.floor((productivity * 100) + 0.5)) .. "%"
