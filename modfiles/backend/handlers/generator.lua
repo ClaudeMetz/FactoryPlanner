@@ -73,6 +73,7 @@ end
 ---@field built_by_item FPItemPrototype?
 ---@field effect_receiver EffectReceiver?
 ---@field allowed_effects AllowedEffects
+---@field allowed_module_categories { [string]: boolean }?
 ---@field module_limit integer
 ---@field surface_conditions SurfaceCondition[]
 ---@field resource_drain_rate number?
@@ -185,6 +186,7 @@ function generator.machines.generate()
             built_by_item = built_by_item,
             effect_receiver = effect_receiver,
             allowed_effects = proto.allowed_effects or {},
+            allowed_module_categories = proto.allowed_module_categories,
             module_limit = (proto.module_inventory_size or 0),
             surface_conditions = proto.surface_conditions
         }
@@ -339,6 +341,7 @@ end
 ---@field main_product FormattedProduct?
 ---@field allowed_effects AllowedEffects?
 ---@field maximum_productivity double
+---@field allowed_module_categories { [string]: boolean }?
 ---@field type_counts { ingredients: ItemTypeCounts, products: ItemTypeCounts }
 ---@field catalysts { ingredients: Ingredient[], products: FormattedProduct[] }
 ---@field surface_conditions SurfaceCondition[]?
@@ -413,6 +416,7 @@ function generator.recipes.generate()
                 emissions_multiplier = proto.emissions_multiplier,
                 allowed_effects = proto.allowed_effects or {},
                 maximum_productivity = proto.maximum_productivity,
+                allowed_module_categories = proto.allowed_module_categories,
                 type_counts = {},  -- filled out by format_* below
                 catalysts = {products={}, ingredients={}},  -- filled out by format_* below
                 surface_conditions = proto.surface_conditions,
