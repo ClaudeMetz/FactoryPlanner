@@ -115,8 +115,12 @@ local function reset_machine(player)
     -- Some manual refreshing which don't have their own method
     local modal_elements = util.globals.modal_elements(player)  --[[@as table]]
     modal_elements["machine_button"].elem_value = machine:elem_value()
-    modal_elements["limit_textfield"].text = machine.limit or ""
-    modal_elements["force_limit_switch"].switch_state = util.gui.switch.convert_to_state(machine.force_limit)
+
+    local limit_switch = modal_elements.force_limit_switch
+    if limit_switch ~= nil then
+        modal_elements["limit_textfield"].text = machine.limit or ""
+        limit_switch.switch_state = util.gui.switch.convert_to_state(machine.force_limit)
+    end
 
     refresh_fuel_frame(player)
     module_configurator.refresh_modules_flow(player, false)

@@ -59,7 +59,7 @@ function reload_preferences(player_table)
     reload("recipe_filters", {disabled = false, hidden = false})
 
     reload("products_per_row", 6)
-    reload("factory_list_rows", 28)
+    reload("factory_list_rows", 30)
 
     reload("show_gui_button", true)
     reload("attach_factory_products", false)
