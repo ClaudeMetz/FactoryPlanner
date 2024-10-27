@@ -7,10 +7,11 @@ Date: 00. 00. 0000
     -
   Bugfixes:
     - Fixed that manually setting a recipe productivity of 0 would not work (#364) (Thanks Dutch0903!)
-    - Fixed a crash when opening the machine dialog for a machine that uses fluid fuels
     - Fixed a crash when opening the districts view on a migrated save (#369)
     - Fixed a crash when trying to reset a machine while the matrix solver is active (#374)
     - Fixed a crash when setting a machine limit on recipes that don't calculate a machine amount (#354)
+    - Fixed an issue where deleting the last recipe on a subfloor would show recipes from the floor above (#368)
+    - Fixed a crash when opening the machine dialog for a machine that uses fluid fuels
     - Fixed that entering a decimal beacon amount would crash
     - Fixed a couple of migration-related crashes
     - Fixed that compatible module detection would not always work properly

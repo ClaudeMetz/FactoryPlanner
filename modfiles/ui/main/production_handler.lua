@@ -66,7 +66,8 @@ local function handle_recipe_click(player, tags, action)
         local floor = line.parent
         floor:remove(line, true)
 
-        if floor.level > 1 and floor:count() == 1 then
+        local selected_floor = util.context.get(player, "Floor")
+        if floor.level > selected_floor.level and floor:count() == 1 then
             floor.parent:replace(floor, floor.first)
         end
 
