@@ -247,7 +247,9 @@ function utility_structures.productivity_boni(player, modal_data)
         end
         local enabled = (#factory_names > 0)
         local dropdown_factory = flow_import.add{type="drop-down", items=factory_names, enabled=enabled}
+        dropdown_factory.style.maximal_width = 220
         modal_data.modal_elements["factory_dropdown"] = dropdown_factory
+
         flow_import.add{type="sprite-button", tags={mod="fp", on_gui_click="import_productivity_boni"},
             style="flib_tool_button_light_green", tooltip={"fp.import_from_tt"}, enabled=enabled,
             sprite="utility/check_mark", mouse_button_filter={"left"}}
