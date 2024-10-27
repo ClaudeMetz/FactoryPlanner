@@ -7,7 +7,7 @@ solver, solver_util = {}, {}
 -- ** LOCAL UTIL **
 local function set_blank_line(player, floor, line)
     local blank_class = structures.class.init()
-    solver.set_line_result{
+    solver.set_line_result {
         player_index = player.index,
         floor_id = floor.id,
         line_id = line.id,
@@ -20,6 +20,17 @@ local function set_blank_line(player, floor, line)
         Ingredient = blank_class,
         fuel_amount = 0
     }
+end
+
+local function set_blank_floor(player, floor)
+    for line in floor:iterator() do
+        if line.class == "Floor" then
+            set_blank_line(player, floor, line)
+            set_blank_floor(player, line)
+        else
+            set_blank_line(player, floor, line)
+        end
+    end
 end
 
 local function set_blank_factory(player, factory)
@@ -40,16 +51,7 @@ local function set_blank_factory(player, factory)
         matrix_free_items = factory.matrix_free_items
     }
 
-    local function set_blank_floor(floor)
-        for line in floor:iterator() do
-            if line.class == "Floor" then
-                set_blank_floor(line)
-            else
-                set_blank_line(player, floor, line)
-            end
-        end
-    end
-    set_blank_floor(factory.top_floor)
+    set_blank_floor(player, factory.top_floor)
 end
 
 
