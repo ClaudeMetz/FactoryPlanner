@@ -120,7 +120,7 @@ local function update_profile_label(modal_data)
 end
 
 local function update_dialog_submit_button(modal_data)
-    local beacon_amount = util.gui.parse_expression_field(modal_data.modal_elements.beacon_amount)
+    local beacon_amount = modal_data.object.amount
 
     local message = nil
     if not beacon_amount or beacon_amount == 0 then
@@ -169,12 +169,13 @@ local function handle_beacon_change(player, _, _)
     refresh_defaults_frame(player)
 end
 
-local function handle_amount_change(player, _, event)
+local function handle_amount_change(player, _, _)
     local modal_data = util.globals.modal_data(player)  --[[@as table]]
-    modal_data.object.amount = util.gui.parse_expression_field(modal_data.modal_elements.beacon_amount) or 0
+    local textfield = modal_data.modal_elements.beacon_amount
+    textfield.text = tostring(util.split_string(textfield.text, ".")[1] or "")  -- no decimals allowed
+    modal_data.object.amount = util.gui.parse_expression_field(textfield) or 0
     modal_data.module_set:normalize({effects=true})
 
-    util.gui.update_expression_field(event.element)
     update_profile_label(modal_data)
     module_configurator.refresh_modules_flow(player, false)
     refresh_defaults_frame(player)
