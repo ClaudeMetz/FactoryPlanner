@@ -2,9 +2,15 @@
 Version: 0.00.00
 Date: 00. 00. 0000
   Features:
-    -
+    - 
   Changes:
-    -
+    - 
+  Bugfixes:
+    - 
+
+---------------------------------------------------------------------------------------------------
+Version: 2.0.3
+Date: 27. 10. 2024
   Bugfixes:
     - Fixed that manually setting a recipe productivity of 0 would not work (#364) (Thanks Dutch0903!)
     - Fixed a crash when opening the districts view on a migrated save (#369)
