@@ -6,7 +6,7 @@ Date: 00. 00. 0000
   Changes:
     -
   Bugfixes:
-    -
+    - Fixed a crash when opening the machine dialog for a machine that uses fluid fuels
 
 ---------------------------------------------------------------------------------------------------
 Version: 2.0.2
