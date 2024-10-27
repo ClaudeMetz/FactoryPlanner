@@ -773,14 +773,21 @@ function generator.items.generate()
 
     if SPACE_TRAVEL then
         -- Only need one rocket item for all silos/recipes
-        custom_items["custom-silo-rocket"] = {
+        local rocket_recipe = {
             name = "custom-silo-rocket",
             localised_name = {"", {"entity-name.rocket"}, " ", {"fp.launch"}},
             sprite = "fp_silo_rocket",
             hidden = false,
             order = "z"
         }
-        generator_util.add_default_groups(custom_items["custom-silo-rocket"])
+        local vanilla_parts_recipe = prototypes.recipe["rocket-part"]
+        if vanilla_parts_recipe then  -- make it nicer for vanilla at least
+            rocket_recipe.group = generator_util.generate_group_table(vanilla_parts_recipe.group)
+            rocket_recipe.subgroup = generator_util.generate_group_table(vanilla_parts_recipe.subgroup)
+        else
+            generator_util.add_default_groups(rocket_recipe)
+        end
+        custom_items["custom-silo-rocket"] = rocket_recipe
     end
 
 
