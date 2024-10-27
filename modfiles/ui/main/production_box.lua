@@ -264,7 +264,9 @@ local function build_production_box(player)
 
     -- Main scrollpane
     local scroll_pane_production = frame_vertical.add{type="scroll-pane", style="flib_naked_scroll_pane_no_padding"}
-    scroll_pane_production.style.extra_right_padding_when_activated = -12
+    scroll_pane_production.style.extra_right_padding_when_activated = 0
+    scroll_pane_production.style.bottom_padding = 12
+    scroll_pane_production.style.extra_bottom_padding_when_activated = -12
     main_elements.production_box["production_scroll_pane"] = scroll_pane_production
 
     -- Instruction label
@@ -322,11 +324,11 @@ local function build_production_box(player)
     local line_solver = scroll_pane_solver.add{type="line", direction="horizontal"}
     line_solver.style.margin = -1  -- hack around some scrollpane styling issues
 
-    local flow_solver = scroll_pane_solver.add{type="flow", direction="horizontal"}
-    flow_solver.style.padding = {0, 12, 4, 12}
-    flow_solver.style.vertical_align = "center"
-    flow_solver.style.horizontal_spacing = 12
-    main_elements["solver_flow"] = flow_solver
+    local flow_solver_options = scroll_pane_solver.add{type="flow", direction="horizontal"}
+    flow_solver_options.style.padding = {0, 12, 4, 12}
+    flow_solver_options.style.vertical_align = "center"
+    flow_solver_options.style.horizontal_spacing = 12
+    main_elements["solver_flow"] = flow_solver_options
 
     refresh_production_box(player)
 end
