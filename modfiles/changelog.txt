@@ -6,6 +6,7 @@ Date: 00. 00. 0000
   Changes:
     -
   Bugfixes:
+    - Fixed that manually setting a recipe productivity of 0 would not work (#364) (Thanks Dutch0903!)
     - Fixed a crash when opening the machine dialog for a machine that uses fluid fuels
     - Fixed a crash when opening the districts view on a migrated save (#369)
     - Fixed a crash when trying to reset a machine while the matrix solver is active (#374)
