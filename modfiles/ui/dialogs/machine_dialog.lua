@@ -257,7 +257,9 @@ local function open_machine_dialog(player, modal_data)
     add_fuel_frame(flow_machine, player, modal_data.line)
 
     -- Limit
-    if modal_data.line.parent.parent.matrix_free_items == nil then
+    local factory = util.context.get(player, "Factory")
+    -- Unavailable with matrix solver or special recipes
+    if factory.matrix_free_items == nil and modal_data.line.recipe_proto.energy > 0 then
         add_limit_frame(content_frame, player)
     end
 
