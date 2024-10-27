@@ -148,7 +148,7 @@ local function add_machine_frame(parent_frame, player, line)
     modal_elements["machine_button"] = button_machine
 end
 
-local function add_fuel_frame(parent_frame, player)
+local function add_fuel_frame(parent_frame, player, line)
     local modal_elements = util.globals.modal_data(player).modal_elements
     local flow_choices = create_choice_frame(parent_frame, {"fp.pu_fuel", 1})
 
@@ -156,7 +156,9 @@ local function add_fuel_frame(parent_frame, player)
     label_fuel.style.padding = {6, 4}
     modal_elements["fuel_label"] = label_fuel
 
-    local button_fuel = flow_choices.add{type="choose-elem-button", elem_type="item",
+    local burner = line.machine.proto.burner
+    local elem_type = (burner and burner.categories["fluid-fuel"]) and "fluid" or "item"
+    local button_fuel = flow_choices.add{type="choose-elem-button", elem_type=elem_type,
         tags={mod="fp", on_gui_elem_changed="choose_fuel"}, style="fp_sprite-button_inset"}
     -- Need to set elem filters dynamically depending on the machine
     modal_elements["fuel_button"] = button_fuel
@@ -248,7 +250,7 @@ local function open_machine_dialog(player, modal_data)
     -- Machine & Fuel
     local flow_machine = content_frame.add{type="flow", direction="horizontal"}
     add_machine_frame(flow_machine, player, modal_data.line)
-    add_fuel_frame(flow_machine, player)
+    add_fuel_frame(flow_machine, player, modal_data.line)
 
     -- Limit
     if modal_data.line.parent.parent.matrix_free_items == nil then
