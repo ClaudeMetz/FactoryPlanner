@@ -188,6 +188,7 @@ function generator.machines.generate()
             surface_conditions = proto.surface_conditions
         }
         generator_util.check_machine_effects(machine)
+        generator_util.sort_machine_burner_categories(machine)
 
         return machine
     end

@@ -371,6 +371,24 @@ function generator_util.check_machine_effects(proto)
     end
 end
 
+--- Needs to be weird because ordering of non-integer keys depends on insertion order
+---@param proto FPMachinePrototype
+function generator_util.sort_machine_burner_categories(proto)
+    if not proto.burner then return end
+
+    local category_list = {}
+    for category, _ in pairs(proto.burner.categories) do
+        table.insert(category_list, category)
+    end
+    table.sort(category_list)
+
+    local category_index = {}
+    for _, category in ipairs(category_list) do
+        category_index[category] = true
+    end
+    proto.burner.categories = category_index
+end
+
 
 -- Adds the tooltip for the given recipe
 ---@param recipe FPRecipePrototype
