@@ -8,7 +8,8 @@ Date: 00. 00. 0000
   Bugfixes:
     - Fixed a startup crash when using certain very powerful fuels
     - Fixed an issue where certain fuel categories would be duplicated internally
-    - Fixed a crash when using mods to hide content until you've discovered it
+    - Fixed a crash when using mods to hide content until you've discovered it (#377)
+    - Fixed a crash in multiplayer when closing a modal dialog (#360)
 
 ---------------------------------------------------------------------------------------------------
 Version: 2.0.3
