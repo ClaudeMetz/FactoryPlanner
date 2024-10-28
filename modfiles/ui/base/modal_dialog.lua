@@ -413,7 +413,7 @@ listeners.gui = {
                 end
 
                 -- Reset .confirmed_dialog if this event didn't actually lead to the dialog closing
-                if event.element.valid then ui_state.modal_data.confirmed_dialog = false end
+                if event.element.valid and ui_state.modal_data then ui_state.modal_data.confirmed_dialog = false end
             end)
         },
         {
