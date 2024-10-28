@@ -2,9 +2,15 @@
 Version: 0.00.00
 Date: 00. 00. 0000
   Features:
-    -
+    - 
   Changes:
-    -
+    - 
+  Bugfixes:
+    - 
+
+---------------------------------------------------------------------------------------------------
+Version: 2.0.4
+Date: 28. 10. 2024
   Bugfixes:
     - Fixed a startup crash when using certain very powerful fuels
     - Fixed an issue where certain fuel categories would be duplicated internally
