@@ -118,11 +118,8 @@ function generator.machines.generate()
         if burner_prototype then
             energy_type = "burner"
             emissions_per_joule = burner_prototype.emissions_per_joule
-            burner = {effectivity = burner_prototype.effectivity, categories = burner_prototype.fuel_categories,
-                combined_category = ""}
-            for fuel_category, _ in pairs(burner_prototype.fuel_categories) do
-                burner.combined_category = burner.combined_category .. fuel_category
-            end
+            burner = {effectivity=burner_prototype.effectivity, categories=burner_prototype.fuel_categories,
+                combined_category=""}  -- combined filled in by fuel generator
 
         -- Only supports fluid energy that burns_fluid for now, as it works the same way as solid burners
         -- Also doesn't respect scale_fluid_usage and fluid_usage_per_tick for now, let the reports come
@@ -131,8 +128,8 @@ function generator.machines.generate()
 
             if fluid_burner_prototype.burns_fluid and not fluid_burner_prototype.fluid_box.filter then
                 energy_type = "burner"
-                burner = {effectivity = fluid_burner_prototype.effectivity, categories = {["fluid-fuel"] = true},
-                    combined_category = "fluid-fuel"}
+                burner = {effectivity=fluid_burner_prototype.effectivity, categories={["fluid-fuel"] = true},
+                    combined_category=""}  -- combined filled in by fuel generator
 
             else  -- Avoid adding this type of complex fluid energy as electrical energy
                 energy_type = "void"
@@ -666,6 +663,7 @@ function generator.recipes.second_pass(recipes)
         -- Check again if all recipes still have a machine to produce them after machine second pass
         if not machines[recipe.category] then
             remove_prototype(recipes, recipe.name, nil)
+        -- Give custom recipes a tooltip in a nice central place
         elseif recipe.custom then
             recipe.tooltip = generator_util.recipe_tooltip(recipe)
         end
@@ -861,6 +859,7 @@ function generator.fuels.generate()
                 type = "item",
                 elem_type = "item",
                 category = proto.fuel_category,
+                combined_category = nil,  -- set below
                 fuel_value = proto.fuel_value,
                 stack_size = proto.stack_size,
                 weight = proto.weight,
@@ -884,7 +883,7 @@ function generator.fuels.generate()
                 type = "fluid",
                 elem_type = "fluid",
                 category = "fluid-fuel",
-                combined_category = "fluid-fuel",
+                combined_category = nil,  -- set below
                 fuel_value = proto.fuel_value,
                 stack_size = nil,
                 weight = nil,
@@ -896,19 +895,34 @@ function generator.fuels.generate()
         end
     end
 
-    -- Create category for each combination of fuel used by machines
-    -- Also filters out any fuels that aren't used by any actual machine
+    -- This manipulates the machine burner, which is improper but necessary
+    local function add_category(burner)
+        local combined_category = ""
+
+        -- Determine combined category for the burner
+        for fuel_category, _ in pairs(burner.categories) do
+            if fuel_categories[fuel_category] then
+                combined_category = combined_category .. fuel_category
+            else
+                burner.categories[fuel_category] = nil
+            end
+        end
+        burner.combined_category = combined_category
+
+        -- Add all relevant fuels to the combined category
+        for fuel_category, _ in pairs(burner.categories) do
+            for _, fuel in pairs(fuel_categories[fuel_category]) do
+                fuel.combined_category = combined_category
+                insert_prototype(fuels, fuel, combined_category)
+            end
+        end
+    end
+
+    -- Create category for each combination of fuels used by machines
+    -- Also implicitly filters out fuels that aren't used by any actual machine
     for _, machine_category in pairs(storage.prototypes.machines) do
         for _, machine_proto in pairs(machine_category.members) do
-            if machine_proto.burner then
-                local combined_category = machine_proto.burner.combined_category
-                for fuel_category, _ in pairs(machine_proto.burner.categories) do
-                    for _, fuel in pairs(fuel_categories[fuel_category]) do
-                        fuel.combined_category = combined_category
-                        insert_prototype(fuels, fuel, combined_category)
-                    end
-                end
-            end
+            if machine_proto.burner then add_category(machine_proto.burner) end
         end
     end
 
