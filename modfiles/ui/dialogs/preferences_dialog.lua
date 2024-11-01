@@ -80,6 +80,7 @@ local preference_structures = {}
 function preference_structures.checkboxes(preferences, content_frame, type, preference_names)
     local preference_box = add_preference_box(content_frame, type)
     local flow_checkboxes = preference_box.add{type="flow", direction="vertical"}
+    flow_checkboxes.style.right_padding = 16
 
     for _, pref_name in ipairs(preference_names) do
         local identifier = type .. "_" .. pref_name
@@ -286,7 +287,6 @@ local function open_preferences_dialog(player, modal_data)
 
     -- Left side
     local left_content_frame = modal_elements.content_frame
-    left_content_frame.style.width = 300
 
     local general_preference_names = {"show_gui_button", "attach_factory_products", "skip_factory_naming",
         "prefer_matrix_solver", "show_floor_items", "fold_out_subfloors", "ingredient_satisfaction",
@@ -303,8 +303,6 @@ local function open_preferences_dialog(player, modal_data)
 
     -- Right side
     local right_content_frame = modal_elements.secondary_frame
-    right_content_frame.style.width = 336
-
     preference_structures.views(player, right_content_frame, modal_elements)
     preference_structures.belts(player, right_content_frame, modal_elements)
     preference_structures.wagons(player, right_content_frame, modal_elements)
