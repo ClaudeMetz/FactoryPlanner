@@ -368,6 +368,9 @@ function matrix_engine.run_matrix_solver(factory_data, check_linear_dependence)
                 local col_num = columns.map[line_key]
                  -- want the j-th entry in the last column (output of row-reduction)
                 local machine_count = matrix[col_num][#columns.values+1]
+                if machine_count < 0 then
+                    machine_count = 0
+                end
                 line_aggregate = matrix_engine.get_line_aggregate(line, factory_data.player_index, floor.id,
                     machine_count, false, factory_metadata, free_variables)
             else
