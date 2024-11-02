@@ -414,20 +414,19 @@ function matrix_engine.run_matrix_solver(factory_data, check_linear_dependence)
         structures.class.subtract(total, item)
     end
 
-    local is_product = {}
+    local required_amount = {}
     for _, product in pairs(factory_data.top_level_products) do
         local key = matrix_engine.get_item_key(product.proto.type, product.proto.name)
-        is_product[key] = true
+        required_amount[key] = product.amount
     end
 
     local main_aggregate = structures.aggregate.init(factory_data.player_index, 1)
     for _, item in ipairs(structures.class.to_array(total)) do
-        local amount = item.amount
+        local key = matrix_engine.get_item_key(item.type, item.name)
+        local req = required_amount[key] or 0
+        local amount = item.amount - req
         if amount > 0 then
-            local key = matrix_engine.get_item_key(item.type, item.name)
-            if not is_product[key] then
-                structures.aggregate.add(main_aggregate, "Byproduct", item, amount)
-            end
+            structures.aggregate.add(main_aggregate, "Byproduct", item, amount)
         else
             structures.aggregate.add(main_aggregate, "Ingredient", item, -amount)
         end
