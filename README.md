@@ -1,6 +1,6 @@
 # Factory Planner
 
-Factory Planner is a mod for the game [Factorio](https://www.factorio.com). It is published in zip-format on the Factorio [mod portal](https://mods.factorio.com/), which allows it to be downloaded and updated by players in-game.
+Factory Planner is a mod for the game [Factorio](https://www.factorio.com). It is published in zip-format on the Factorio [mod portal](https://mods.factorio.com/mod/factoryplanner), which allows it to be downloaded and updated by players in-game.
 
 It enables players to plan out their production in detail, specifying the recipes, machines and modules to use. It allows for conceptual separation of assembly lines through the use of separate floors that can be nested infinitely. There exist calculators on the web that can do this already, but a big advantage a mod has is that it can incorporate the exact combination of mods the user has installed, with up-to-date information, which is something that external solutions struggle to provide.
 
