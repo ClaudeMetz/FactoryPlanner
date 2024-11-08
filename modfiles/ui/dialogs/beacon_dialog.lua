@@ -172,8 +172,14 @@ end
 local function handle_amount_change(player, _, _)
     local modal_data = util.globals.modal_data(player)  --[[@as table]]
     local textfield = modal_data.modal_elements.beacon_amount
-    textfield.text = tostring(util.split_string(textfield.text, ".")[1] or "")  -- no decimals allowed
-    modal_data.object.amount = util.gui.parse_expression_field(textfield) or 0
+
+    local expression = util.gui.parse_expression_field(textfield)
+    local invalid = (textfield.text ~= "" and (expression == nil or expression % 1 ~= 0))
+
+    textfield.style = (invalid) and "invalid_value_textfield" or "textbox"
+    textfield.style.width = textfield.tags.width  --[[@as number]]  -- this is stupid but styles work out that way
+
+    modal_data.object.amount = (invalid) and 0 or (expression or 0)
     modal_data.module_set:normalize({effects=true})
 
     update_profile_label(modal_data)
@@ -276,7 +282,7 @@ listeners.gui = {
         {
             name = "confirm_beacon",
             handler = (function(player, _, event)
-                local confirmed = util.gui.confirm_expression_field(event.element)
+                local confirmed = util.gui.confirm_expression_field(event.element, true)
                 if confirmed then util.raise.close_dialog(player, "submit") end
             end)
         }
