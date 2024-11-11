@@ -22,21 +22,15 @@ local function refresh_title_bar(player)
 end
 
 
-local function determine_handle_widths(player)
+local function determine_left_handle_width(player)
     local ui_state = util.globals.ui_state(player)
     local half_total_width = ui_state.main_dialog_dimensions.width / 2
-    local shared_width = MAGIC_NUMBERS.titlebar_label_width / 2 + 12 + 2*8
 
-    local left_width = half_total_width - MAGIC_NUMBERS.left_titlebar_width - shared_width
-    local right_width = half_total_width - MAGIC_NUMBERS.right_titlebar_width - shared_width
+    local half_label_width = MAGIC_NUMBERS.titlebar_label_width / 2
+    local left_margins = 3 * 8 + 2 * 4  -- horizontal spacing + drag handle margin
+    local left_buttons_width = 3 * 24 + 2 * 8  -- button width + spacing
 
-    return {left=left_width, right=right_width}
-end
-
-local function add_handle(flow, width)
-    local drag_handle = flow.add{type="empty-widget", style="flib_titlebar_drag_handle",
-        ignored_by_interaction=true}
-    drag_handle.style.width = width
+    return half_total_width - half_label_width - left_margins - left_buttons_width
 end
 
 local function build_title_bar(player)
@@ -65,11 +59,13 @@ local function build_title_bar(player)
         tags={mod="fp", on_gui_click="open_calculator_dialog"}}
     button_calculator.style.padding = -3
 
-    local handle_widths = determine_handle_widths(player)
-    add_handle(flow_title_bar, handle_widths["left"])
+    local left_handle = flow_title_bar.add{type="empty-widget", style="flib_titlebar_drag_handle",
+        ignored_by_interaction=true}
+    left_handle.style.horizontally_stretchable = false  -- necessary so the other side stretches properly
+    left_handle.style.width = determine_left_handle_width(player)
     flow_title_bar.add{type="label", caption="Factory Planner", style="fp_label_frame_title",
         ignored_by_interaction=true}
-    add_handle(flow_title_bar, handle_widths["right"])
+    flow_title_bar.add{type="empty-widget", style="flib_titlebar_drag_handle", ignored_by_interaction=true}
 
     flow_title_bar.add{type="button", caption={"fp.preferences"}, style="fp_button_frame_tool",
         tags={mod="fp", on_gui_click="title_bar_open_preferences"}, mouse_button_filter={"left"}}
