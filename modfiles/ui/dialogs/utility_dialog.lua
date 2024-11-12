@@ -73,29 +73,30 @@ function utility_structures.components(player, modal_data)
         add_component_row("module")
     end
 
-    local component_data, relevant_object = nil, util.context.get(player, scope)
+    local relevant_object = util.context.get(player, scope)
     if scope == "Factory" then relevant_object = relevant_object--[[@as Factory]].top_floor end
-    component_data = relevant_object--[[@as Floor]]:get_component_data(skip_done, nil)
+    local component_data = relevant_object--[[@as Floor]]:get_component_data(skip_done, nil)
 
     local function refresh_component_flow(type)
         local component_row = modal_elements["components_" .. type .. "_flow"]
         component_row.clear()
 
-        local inventory_contents = modal_data.inventory_contents
+        local main_inventory = player.get_main_inventory()
         local frame_components = component_row.add{type="frame", direction="horizontal", style="fp_frame_light_slots"}
         local table_components = frame_components.add{type="table", column_count=10, style="filter_slot_table"}
 
         for _, component in pairs(component_data[type .. "s"]) do
             if component.amount > 0 then
-                local proto, required_amount = component.proto, component.amount
-                local amount_in_inventory = inventory_contents[proto.name] or 0
+                local proto, quality_proto, required_amount = component.proto, component.quality_proto, component.amount
+                local item_id = {name = proto.name, quality = quality_proto.name}
+                local amount_in_inventory = main_inventory.get_item_count(item_id)
                 local missing_amount = required_amount - amount_in_inventory
 
                 if missing_amount > 0 then
                     table.insert(modal_data.missing_items, {
                         type = "item",
                         name = proto.name,
-                        quality = "normal",
+                        quality = quality_proto.name,
                         comparator = "=",
                         count = missing_amount
                     })
@@ -106,8 +107,9 @@ function utility_structures.components(player, modal_data)
                 elseif missing_amount > 0 then button_style = "flib_slot_button_yellow"
                 else button_style = "flib_slot_button_green" end
 
-                local tooltip = {"fp.components_needed_tt", {"fp.tt_title", proto.localised_name},
-                    amount_in_inventory, required_amount}
+                local title_line = (not quality_proto.always_show) and {"fp.tt_title",proto.localised_name}
+                    or {"fp.tt_title_with_note", proto.localised_name, quality_proto.rich_text}
+                local tooltip = {"fp.components_needed_tt", title_line, amount_in_inventory, required_amount}
 
                 local category_id = (proto.data_type == "items") and proto.category_id
                     or prototyper.util.find("items", nil, "item").id
@@ -311,8 +313,8 @@ local function handle_item_request(player, _, _)
         local new_section = requester_point.add_section()
 
         local missing_items = util.globals.modal_data(player).missing_items
-        for _, item in pairs(missing_items) do
-            new_section.set_slot(1, {
+        for index, item in pairs(missing_items) do
+            new_section.set_slot(index, {
                 value = {
                     name = item.name,
                     quality = item.quality,
@@ -362,7 +364,6 @@ local function handle_inventory_change(player)
     local ui_state = util.globals.ui_state(player)
 
     if ui_state.modal_dialog_type == "utility" then
-        ui_state.modal_data.inventory_contents = player.get_main_inventory().get_contents()
         utility_structures.components(player, ui_state.modal_data)
     end
 end
@@ -425,9 +426,6 @@ end
 
 
 local function open_utility_dialog(player, modal_data)
-    -- Add the players' relevant inventory components to modal_data
-    local main_inventory = player.get_main_inventory()
-    modal_data.inventory_contents = (main_inventory) and main_inventory.get_contents() or {}
     modal_data.utility_inventory = game.create_inventory(1)  -- used for blueprint decoding
 
     -- Left side

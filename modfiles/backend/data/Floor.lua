@@ -121,40 +121,39 @@ end
 function Floor:get_component_data(skip_done, component_table)
     local components = component_table or {machines={}, modules={}}
 
-    local function add_component(table, proto, amount)
-        local component = table[proto.name]
+    local function add_component(table, proto, quality_proto, amount)
+        local combined_name = proto.name .. quality_proto.name
+        local component = table[combined_name]
         if component == nil then
-            table[proto.name] = {proto = proto, amount = amount}
+            table[combined_name] = {proto = proto, quality_proto = quality_proto, amount = amount}
         else
             component.amount = component.amount + amount
         end
     end
 
-    local function add_machine(entity_proto, amount)
-        if not entity_proto.built_by_item then return end
-        add_component(components.machines, entity_proto.built_by_item, amount)
+    local function add_machine(object, amount)
+        if object.proto.built_by_item then
+            add_component(components.machines, object.proto.built_by_item, object.quality_proto, amount)
+        end
+
+        for module in object.module_set:iterator() do
+            add_component(components.modules, module.proto, module.quality_proto, amount * module.amount)
+        end
     end
 
     for line in self:iterator() do
         if line.class == "Floor" then  ---@cast line Floor
             line:get_component_data(skip_done, components)
+
         elseif not skip_done or not line.done then
             local machine = line.machine
             local ceil_machine_count = math.ceil(machine.amount - 0.001)
-
-            add_machine(machine.proto, ceil_machine_count)
-            for module in machine.module_set:iterator() do
-                add_component(components.modules, module.proto, ceil_machine_count * module.amount)
-            end
+            add_machine(machine, ceil_machine_count)
 
             local beacon = line.beacon
             if beacon and beacon.total_amount then
                 local ceil_total_amount = math.ceil(beacon.total_amount - 0.001)
-
-                add_machine(beacon.proto, ceil_total_amount)
-                for module in beacon.module_set:iterator() do
-                    add_component(components.modules, module.proto, ceil_total_amount * module.amount)
-                end
+                add_machine(beacon, ceil_total_amount)
             end
         end
     end
