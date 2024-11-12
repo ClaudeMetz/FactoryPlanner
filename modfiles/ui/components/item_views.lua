@@ -167,7 +167,7 @@ function item_views.rebuild_data(player)
         },
         timescale = preferences.timescale,
         timescale_string = {"fp.unit_" .. TIMESCALE_MAP[preferences.timescale]},
-        adjusted_margin_of_error = MAGIC_NUMBERS.margin_of_error * preferences.timescale,
+        adjusted_margin_of_error = MAGIC_NUMBERS.margin_of_error / preferences.timescale,
         belt_or_lane = belts_or_lanes:sub(1, -2),
         throughput_multiplier = 1 / throughput_divisor,
         formatting_precision = 4,
