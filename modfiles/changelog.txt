@@ -7,10 +7,11 @@ Date: 00. 00. 0000
     -
   Bugfixes:
     - Tried fixing a common crash related to multiplayer latency (#219)
-    - Fixed that items in inventory weren't detected in the utility dialog
-    - Fixed that the utility dialog machine and module section didn't take quality into account
     - Fixed a crash when trying to confirm a decimal beacon amount by way of a mathematical expression
     - Fixed a crash when changing to a machine that uses fluid fuels
+    - Fixed that items in inventory weren't detected in the utility dialog
+    - Fixed that the utility dialog machine and module section didn't take quality into account
+    - Fixed that the custom rocket recipes didn't consider rocket part recipe productivity
 
 ---------------------------------------------------------------------------------------------------
 Version: 2.0.4

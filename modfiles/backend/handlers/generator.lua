@@ -340,6 +340,7 @@ end
 ---@field allowed_effects AllowedEffects?
 ---@field maximum_productivity double
 ---@field allowed_module_categories { [string]: boolean }?
+---@field productivity_recipe string?
 ---@field type_counts { ingredients: ItemTypeCounts, products: ItemTypeCounts }
 ---@field catalysts { ingredients: Ingredient[], products: FormattedProduct[] }
 ---@field surface_conditions SurfaceCondition[]?
@@ -534,6 +535,7 @@ function generator.recipes.generate()
                     launch_recipe.order = parts_recipe.order .. "-" .. proto.order .. "-a"
                     launch_recipe.category = parts_recipe.category
                     launch_recipe.energy = parts_recipe.energy * proto.rocket_parts_required
+                    launch_recipe.productivity_recipe = parts_recipe.name
 
                     generator_util.format_recipe(launch_recipe, products, products[1], parts_recipe.ingredients)
                     generator_util.multiply_recipe_items(launch_recipe.ingredients, proto.rocket_parts_required)
@@ -551,6 +553,7 @@ function generator.recipes.generate()
                 rocket_recipe.order = parts_recipe.order .. "-" .. proto.order .. "-b"
                 rocket_recipe.category = parts_recipe.category
                 rocket_recipe.energy = parts_recipe.energy * proto.rocket_parts_required
+                rocket_recipe.productivity_recipe = parts_recipe.name
 
                 local rocket_products = {{type="entity", name="custom-silo-rocket", amount=1}}
                 generator_util.format_recipe(rocket_recipe, rocket_products,
