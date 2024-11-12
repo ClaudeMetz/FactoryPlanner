@@ -6,6 +6,7 @@ Date: 00. 00. 0000
   Changes:
     -
   Bugfixes:
+    - Tried fixing a common crash related to multiplayer latency (#219)
     - Fixed a crash when trying to confirm a decimal beacon amount by way of a mathematical expression
     - Fixed a crash when changing to a machine that uses fluid fuels
 
