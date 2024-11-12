@@ -95,15 +95,18 @@ local function refresh_fuel_frame(player)
     local modal_elements = modal_data.modal_elements
     local machine = modal_data.object
 
-    local machine_burner = machine.proto.burner
-    modal_elements.fuel_label.visible = (machine_burner == nil)
-    modal_elements.fuel_button.visible = (machine_burner ~= nil)
+    local burner = machine.proto.burner
+    modal_elements.fuel_label.visible = (burner == nil)
+    modal_elements.fuel_button_flow.clear()
 
-    if machine_burner == nil then return end
+    if burner == nil then return end
+
     local fuel_proto = machine.fuel.proto
+    local elem_type = (burner and burner.categories["fluid-fuel"]) and "fluid" or "item"
 
-    modal_elements.fuel_button.elem_value = fuel_proto.name
-    modal_elements.fuel_button.elem_filters = machine:compile_fuel_filter()
+    modal_elements.fuel_button_flow.add{type="choose-elem-button", elem_type=elem_type,
+        [elem_type] = fuel_proto.name, elem_filters=machine:compile_fuel_filter(),
+        tags={mod="fp", on_gui_elem_changed="choose_fuel"}, style="fp_sprite-button_inset"}
 end
 
 
@@ -160,12 +163,9 @@ local function add_fuel_frame(parent_frame, player, line)
     label_fuel.style.padding = {6, 4}
     modal_elements["fuel_label"] = label_fuel
 
-    local burner = line.machine.proto.burner
-    local elem_type = (burner and burner.categories["fluid-fuel"]) and "fluid" or "item"
-    local button_fuel = flow_choices.add{type="choose-elem-button", elem_type=elem_type,
-        tags={mod="fp", on_gui_elem_changed="choose_fuel"}, style="fp_sprite-button_inset"}
-    -- Need to set elem filters dynamically depending on the machine
-    modal_elements["fuel_button"] = button_fuel
+    local flow_fuel_button = flow_choices.add{type="flow", direction="horizontal"}
+    modal_elements["fuel_button_flow"] = flow_fuel_button
+    -- Button recreated on refresh because its type can change
 
     refresh_fuel_frame(player)
 end
