@@ -255,12 +255,6 @@ local function handle_bol_change(player, _, event)
     item_views.rebuild_data(player)
     item_views.rebuild_interface(player)
 
-    for district in player_table.realm:iterator() do
-        for factory in district:iterator() do
-            solver.determine_ingredient_satisfaction(factory)
-        end
-    end
-
     solver.update(player, nil)
     util.raise.refresh(player, "all")
 end
