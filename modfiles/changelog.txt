@@ -7,6 +7,7 @@ Date: 00. 00. 0000
     -
   Bugfixes:
     - Tried fixing a common crash related to multiplayer latency (#219)
+    - Fixed that satellite science recipes didn't include a satellite ingredient (#397)
     - Fixed a crash when trying to confirm a decimal beacon amount by way of a mathematical expression
     - Fixed a crash when changing to a machine that uses fluid fuels
     - Fixed that items in inventory weren't detected in the utility dialog

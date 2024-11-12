@@ -523,8 +523,15 @@ function generator.recipes.generate()
             local parts_recipe = prototypes.recipe[proto.fixed_recipe]
             if not parts_recipe then goto incompatible_proto end
 
+            -- Multiply amounts to signify one whole rocket launch
+            local parts_ingredients = {}
+            for _, item in pairs(parts_recipe.ingredients) do
+                item.amount = item.amount * proto.rocket_parts_required
+                table.insert(parts_ingredients, item)
+            end
+
             -- Add rocket launch product recipes
-            --if proto.launch_to_space_platforms then  -- TODO API missing
+            --if not proto.launch_to_space_platforms then  -- TODO API missing
                 for item_name, products in pairs(launch_products) do
                     local main_proto = prototypes.item[item_name]
 
@@ -537,8 +544,9 @@ function generator.recipes.generate()
                     launch_recipe.energy = parts_recipe.energy * proto.rocket_parts_required
                     launch_recipe.productivity_recipe = parts_recipe.name
 
-                    generator_util.format_recipe(launch_recipe, products, products[1], parts_recipe.ingredients)
-                    generator_util.multiply_recipe_items(launch_recipe.ingredients, proto.rocket_parts_required)
+                    local ingredients = ftable.deep_copy(parts_ingredients)
+                    table.insert(ingredients, {type="item", name=item_name, amount=1})
+                    generator_util.format_recipe(launch_recipe, products, products[1], ingredients)
                     insert_prototype(recipes, launch_recipe, nil)
                 end
             --end
@@ -557,8 +565,7 @@ function generator.recipes.generate()
 
                 local rocket_products = {{type="entity", name="custom-silo-rocket", amount=1}}
                 generator_util.format_recipe(rocket_recipe, rocket_products,
-                    rocket_products[1], parts_recipe.ingredients)
-                generator_util.multiply_recipe_items(rocket_recipe.ingredients, proto.rocket_parts_required)
+                    rocket_products[1], parts_ingredients)
                 insert_prototype(recipes, rocket_recipe, nil)
             end
 
