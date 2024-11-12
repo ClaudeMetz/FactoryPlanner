@@ -170,8 +170,8 @@ function modal_dialog.enter(player, metadata, dialog_open, early_abort)
     local frame_modal_dialog = create_base_dialog(player, metadata, ui_state.modal_data)
     dialog_open(player, ui_state.modal_data)
 
-    player.opened = frame_modal_dialog
     frame_modal_dialog.force_auto_center()
+    player.opened = frame_modal_dialog
 end
 
 -- Handles the closing process of a modal dialog, reopening the main dialog thereafter
