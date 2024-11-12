@@ -388,7 +388,10 @@ local function close_picker_dialog(player, action)
         local defined_by = modal_data.amount_defined_by
         local relevant_textfield_name = ((defined_by == "amount") and "item" or "belt") .. "_amount_textfield"
         local relevant_amount = util.gui.parse_expression_field(modal_data.modal_elements[relevant_textfield_name]) or 0
-        if defined_by == "amount" then relevant_amount = relevant_amount / modal_data.timescale end
+        if defined_by == "amount" then
+            relevant_amount = relevant_amount / modal_data.timescale
+            relevant_amount = math.max(relevant_amount, MAGIC_NUMBERS.margin_of_error*10)
+        end
 
         local refresh_scope = "factory"
         if modal_data.item ~= nil then  -- ie. this is an edit
