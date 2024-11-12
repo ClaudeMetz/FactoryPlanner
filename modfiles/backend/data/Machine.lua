@@ -249,8 +249,7 @@ function Machine:repair(player)
 
     if self.fuel and not self.fuel.valid and not self.fuel:repair(player) then
         -- If fuel is unrepairable, replace it with a default value
-        self.fuel = nil
-        self:normalize_fuel(player)
+        self.fuel = nil; self:normalize_fuel(player)
     end
 
     self.module_set:repair(player)

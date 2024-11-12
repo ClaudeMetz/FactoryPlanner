@@ -153,10 +153,10 @@ end
 ---@field data_type DataType
 ---@field simplified boolean
 
----@alias CategoryDesignation ("category" | "type")
+---@alias CategoryDesignation ("category" | "type" | "combined_category")
 
 -- Returns a new table that only contains the given prototypes' identifiers
----@param prototype AnyFPPrototype
+---@param prototype AnyFPPrototype?
 ---@param category_designation CategoryDesignation?
 ---@return FPPackedPrototype?
 function prototyper.util.simplify_prototype(prototype, category_designation)
