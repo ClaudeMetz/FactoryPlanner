@@ -57,11 +57,12 @@ end
 function Fuel:pack()
     return {
         class = self.class,
-        proto = prototyper.util.simplify_prototype(self.proto, "category")
+        proto = prototyper.util.simplify_prototype(self.proto, "combined_category")
     }
 end
 
 ---@param packed_self PackedFuel
+---@param parent Machine
 ---@return Fuel machine
 local function unpack(packed_self, parent)
     local unpacked_self = init(packed_self.proto, parent)
@@ -72,7 +73,7 @@ end
 
 ---@return boolean valid
 function Fuel:validate()
-    self.proto = prototyper.util.validate_prototype_object(self.proto, "category")
+    self.proto = prototyper.util.validate_prototype_object(self.proto, "combined_category")
     self.valid = (not self.proto.simplified)
 
     if self.valid and self.parent.valid then

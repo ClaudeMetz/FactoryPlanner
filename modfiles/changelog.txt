@@ -14,6 +14,7 @@ Date: 00. 00. 0000
     - Fixed that the utility dialog machine and module section didn't take quality into account
     - Fixed that the custom rocket recipes didn't consider rocket part recipe productivity
     - Fixed an issue where copying fuels didn't properly check for compatibility
+    - Fixed a migration issue that erroniously marked fuel as invalid
 
 ---------------------------------------------------------------------------------------------------
 Version: 2.0.4
