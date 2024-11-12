@@ -37,7 +37,7 @@ function Fuel:paste(object)
         local burner = self.parent.proto.burner  -- will exist if there is fuel to paste on
         -- Check invididual categories so you can paste between combined_categories
         for category_name, _ in pairs(burner.categories) do
-            if self.proto.category == category_name then
+            if object.proto.category == category_name then
                 self.proto = object.proto
                 return true, nil
             end
@@ -57,8 +57,7 @@ end
 function Fuel:pack()
     return {
         class = self.class,
-        proto = prototyper.util.simplify_prototype(self.proto, "category"),
-
+        proto = prototyper.util.simplify_prototype(self.proto, "category")
     }
 end
 
