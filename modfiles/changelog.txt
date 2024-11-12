@@ -7,6 +7,7 @@ Date: 00. 00. 0000
     -
   Bugfixes:
     - Fixed a crash when trying to confirm a decimal beacon amount by way of a mathematical expression
+    - Fixed a crash when changing to a machine that uses fluid fuels
 
 ---------------------------------------------------------------------------------------------------
 Version: 2.0.4
