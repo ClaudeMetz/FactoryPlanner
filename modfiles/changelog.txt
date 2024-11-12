@@ -15,6 +15,7 @@ Date: 00. 00. 0000
     - Fixed that the custom rocket recipes didn't consider rocket part recipe productivity
     - Fixed an issue where copying fuels didn't properly check for compatibility
     - Fixed a migration issue that erroniously marked fuel as invalid
+    - Fixed an issue where cancelling the machine dialog would reset fuel amounts
 
 ---------------------------------------------------------------------------------------------------
 Version: 2.0.4

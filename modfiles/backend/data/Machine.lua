@@ -205,6 +205,10 @@ function Machine:clone()
     -- Copy these over so we don't need to run the solver
     clone.amount = self.amount
     clone.recipe_effects = self.recipe_effects
+    if self.fuel then
+        clone.fuel.amount = self.fuel.amount
+        clone.fuel.satisfied_amount = self.fuel.satisfied_amount
+    end
 
     clone:validate()
     return clone
