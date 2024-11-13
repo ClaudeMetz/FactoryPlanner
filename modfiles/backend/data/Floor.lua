@@ -28,9 +28,9 @@ local function init(level)
         level = level,
         first = nil,
 
-        products = nil,
-        byproducts = nil,
-        ingredients = nil,
+        products = {},
+        byproducts = {},
+        ingredients = {},
         power = 0,
         emissions = 0,
         machine_count = 0
