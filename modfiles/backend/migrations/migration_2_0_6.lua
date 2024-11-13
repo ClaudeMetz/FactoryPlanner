@@ -16,9 +16,9 @@ function migration.player_table(player_table)
         for factory in district:iterator() do
             local function iterate_floor(floor)
                 for line in floor:iterator() do
-                    line.products = nil
-                    line.byproducts = nil
-                    line.ingredients = nil
+                    line.products = {}
+                    line.byproducts = {}
+                    line.ingredients = {}
 
                     if line.class == "Floor" then
                         iterate_floor(line)

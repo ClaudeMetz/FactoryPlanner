@@ -72,6 +72,8 @@ end
 ---@param relative_object Object?
 ---@param direction NeighbourDirection?
 function methods:_insert(new_object, relative_object, direction)
+    new_object.next, new_object.previous = nil, nil
+
     if self.first == nil then
         self.first = new_object
     else
@@ -108,7 +110,6 @@ function methods:_remove(object)
         object.previous.next = object.next
         if object.next then object.next.previous = object.previous end
     end
-    object.next, object.previous = nil, nil  -- so the object can be re-used elsewhere
 end
 
 ---@protected
@@ -168,8 +169,9 @@ end
 ---@protected
 ---@return Object? last_object
 function methods:_find_last()
+    if not self.first then return nil end
     local last_object = self.first
-    while last_object and last_object.next ~= nil do
+    while last_object.next ~= nil do
         last_object = last_object.next
     end
     return last_object

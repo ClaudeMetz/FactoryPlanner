@@ -55,9 +55,9 @@ local function init(recipe_proto, production_type)
         total_effects = nil,
         effects_tooltip = "",
 
-        products = nil,
-        byproducts = nil,
-        ingredients = nil,
+        products = {},
+        byproducts = {},
+        ingredients = {},
         power = 0,
         emissions = 0,
         production_ratio = 0
