@@ -6,7 +6,7 @@ Date: 00. 00. 0000
   Changes:
     -
   Bugfixes:
-    -
+    - Fixed a couple of migration issues when migrating from 1.1
 
 ---------------------------------------------------------------------------------------------------
 Version: 2.0.5

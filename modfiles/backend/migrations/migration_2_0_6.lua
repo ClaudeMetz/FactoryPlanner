@@ -22,6 +22,8 @@ function migration.player_table(player_table)
 
                     if line.class == "Floor" then
                         iterate_floor(line)
+                    else
+                        line.machine.total_effects = nil
                     end
                 end
             end
