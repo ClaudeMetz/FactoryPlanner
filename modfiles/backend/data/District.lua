@@ -1,4 +1,5 @@
 local Object = require("backend.data.Object")
+local DistrictItemSet = require("backend.data.DistrictItemSet")
 
 ---@class District: Object, ObjectMethods
 ---@field class "District"
@@ -7,6 +8,8 @@ local Object = require("backend.data.Object")
 ---@field previous District?
 ---@field name string
 ---@field location_proto FPLocationPrototype
+---@field product_set DistrictItemSet
+---@field ingredient_set DistrictItemSet
 ---@field first Factory?
 ---@field power number
 ---@field emissions number
@@ -21,11 +24,10 @@ local function init(name)
     local object = Object.init({
         name = name or "New District",
         location_proto = defaults.get_fallback("locations").proto,
+        product_set = DistrictItemSet.init("product"),
+        ingredient_set = DistrictItemSet.init("ingredient"),
         first = nil,
 
-        --[[ products = SimpleItems.init(),
-        byproducts = SimpleItems.init(),
-        ingredients = SimpleItems.init(), ]]
         power = 0,
         emissions = 0,
 
@@ -37,6 +39,8 @@ end
 
 function District:index()
     OBJECT_INDEX[self.id] = self
+    self.product_set:index()
+    self.ingredient_set:index()
     for factory in self:iterator() do factory:index() end
 end
 
@@ -94,28 +98,29 @@ end
 
 -- Updates the power, emissions and items of this District if requested
 function District:refresh()
-    --[[ if not self.needs_refresh then return end
+    if not self.needs_refresh then return end
     self.needs_refresh = false
 
     self.power = 0
     self.emissions = 0
-    self.products:clear()
-    self.byproducts:clear()
-    self.ingredients:clear()
+    self.product_set:clear()
+    self.ingredient_set:clear()
 
     for factory in self:iterator({archived=false, valid=true}) do
         self.power = self.power + factory.top_floor.power
         self.emissions = self.emissions + factory.top_floor.emissions
 
-        local product_items = SimpleItems.init()
         for product in factory:iterator() do
-            product_items:insert({class="SimpleItem", proto=product.proto, amount=product.amount})
+            if product.amount > 0 then self.product_set:add_item(product.proto, product.amount) end
         end
-        self.products:add_multiple(product_items)
+        for _, byproduct in pairs(factory.top_floor.byproducts) do
+            self.product_set:add_item(byproduct.proto, byproduct.amount)
+        end
+        for _, ingredient in pairs(factory.top_floor.ingredients) do
+            self.ingredient_set:add_item(ingredient.proto, ingredient.amount)
+        end
+    end
 
-        self.byproducts:add_multiple(factory.top_floor.byproducts)
-        self.ingredients:add_multiple(factory.top_floor.ingredients)
-    end ]]
 end
 
 

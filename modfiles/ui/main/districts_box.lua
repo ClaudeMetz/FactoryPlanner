@@ -31,10 +31,9 @@ local function build_items_flow(player, parent, district)
     items_flow.style.padding = {6, 12, 12, 12}
 
     local preferences = util.globals.preferences(player)
-    local total_columns = preferences.products_per_row * 4
-    local columns_per, remainder = math.floor(total_columns / 3), total_columns % 3
+    local column_count = (preferences.products_per_row * 4) / 2
 
-    local function build_item_flow(items, category, column_count)
+    local function build_item_flow(item_set, category)
         local item_flow = items_flow.add{type="flow", direction="vertical"}
         item_flow.add{type="label", caption={"fp.pu_" .. category, 2}, style="caption_label"}
 
@@ -44,7 +43,7 @@ local function build_items_flow(player, parent, district)
         local table_items = item_frame.add{type="table", column_count=column_count, style="filter_slot_table"}
 
         local item_count = 0
-        for _, item in ipairs(items) do
+        for item in item_set:iterator() do
             -- Adjust the item amounts since they are stored as per second
             local amount, number_tooltip = item_views.process_item(player, item, item.amount, nil)
             if amount ~= -1 then  -- an amount of -1 means it was below the margin of error
@@ -61,14 +60,15 @@ local function build_items_flow(player, parent, district)
         return table_items, math.ceil(item_count / column_count)
     end
 
-    local prod_table, prod_rows = build_item_flow({}--[[ district.products ]], "product", columns_per)
     items_flow.add{type="empty-widget", style="flib_horizontal_pusher"}
-    local byprod_table, byprod_rows = build_item_flow({}--[[ district.byproducts ]], "byproduct", columns_per)
+    local prod_table, prod_rows = build_item_flow(district.product_set, "product")
     items_flow.add{type="empty-widget", style="flib_horizontal_pusher"}
-    local ingr_table, ingr_rows = build_item_flow({}--[[ district.ingredients ]], "ingredient", columns_per + remainder)
+    items_flow.add{type="empty-widget", style="flib_horizontal_pusher"}
+    local ingr_table, ingr_rows = build_item_flow(district.ingredient_set, "ingredient")
+    items_flow.add{type="empty-widget", style="flib_horizontal_pusher"}
 
-    local height = math.max(prod_rows, byprod_rows, ingr_rows) * MAGIC_NUMBERS.item_button_size
-    prod_table.style.height = height; byprod_table.style.height = height; ingr_table.style.height = height
+    local height = math.max(prod_rows, ingr_rows) * MAGIC_NUMBERS.item_button_size
+    prod_table.style.height = height; ingr_table.style.height = height
 end
 
 local function build_district_frame(player, district, location_items)
