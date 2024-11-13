@@ -44,18 +44,30 @@ local function build_items_flow(player, parent, district)
 
         local item_count = 0
         for item in item_set:iterator() do
-            -- Adjust the item amounts since they are stored as per second
-            local amount, number_tooltip = item_views.process_item(player, item, item.amount, nil)
-            if amount ~= -1 then  -- an amount of -1 means it was below the margin of error
-                if item.amount > MAGIC_NUMBERS.margin_of_error then
-                    local number_line = (number_tooltip) and {"", "\n", number_tooltip} or ""
-                    local tooltip = {"", {"fp.tt_title", item.proto.localised_name}, number_line}
+            local main_amount = item.amount - item.converse_amount
+            local amount, amount_tooltip = item_views.process_item(player, item, main_amount, nil)
+            if amount == -1 then goto skip_item end  -- an amount of -1 means it was below the margin of error
 
-                    table_items.add{type="sprite-button", number=amount, style="flib_slot_button_default",
-                        sprite=item.proto.sprite, tooltip=tooltip}
-                    item_count = item_count + 1
-                end
-            end
+            local data = {
+                product = {amount=item.amount, comparison=amount,
+                    half_color="flib_slot_button_cyan", full_color="flib_slot_button_blue"},
+                ingredient = {amount=item.converse_amount, comparison="0",
+                    half_color="flib_slot_button_yellow", full_color="flib_slot_button_red"}
+            }
+            local metadata = data[category]
+
+            local total_amount, total_tooltip = item_views.process_item(player, item, metadata.amount, nil)
+            local number_line = (metadata.amount) and {"", {"fp.item_amount_" .. category, amount_tooltip},
+                {"fp.item_amount_total", total_tooltip}} or ""
+            local style = (amount and total_amount ~= metadata.comparison) and
+                metadata.half_color or metadata.full_color
+            local tooltip = {"", {"fp.tt_title", item.proto.localised_name}, number_line}
+
+            table_items.add{type="sprite-button", number=amount, style=style,
+                sprite=item.proto.sprite, tooltip=tooltip}
+            item_count = item_count + 1
+
+            ::skip_item::
         end
         return table_items, math.ceil(item_count / column_count)
     end

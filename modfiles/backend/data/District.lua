@@ -121,6 +121,16 @@ function District:refresh()
         end
     end
 
+    local function fill_converse_amount(category, converse)
+        local map = self[converse .. "_set"].map
+        for item in self[category .. "_set"]:iterator() do
+            local match = map[item.proto]
+            item.converse_amount = (match and match.amount or 0)
+        end
+    end
+    fill_converse_amount("product", "ingredient")
+    fill_converse_amount("ingredient", "product")
+
     self.product_set:sort()
     self.ingredient_set:sort()
 end
