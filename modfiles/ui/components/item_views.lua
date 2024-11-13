@@ -89,15 +89,16 @@ function item_views.process_item(player, item, item_amount, machine_count)
         return -1, nil
     end
 
-    if item.proto.type == "entity" then
-        local amount = (item.proto.fixed_unit) and raw_amount or raw_amount * views_data.timescale
+    local proto = item.proto
+    if proto.type == "entity" then
+        local amount = (proto.fixed_unit) and raw_amount or raw_amount * views_data.timescale
         local number = util.format.number(amount, views_data.formatting_precision)
-        local unit = item.proto.fixed_unit or {"fp.per_timescale", {"fp." .. TIMESCALE_MAP[views_data.timescale]}}
+        local unit = proto.fixed_unit or {"fp.per_timescale", {"fp." .. TIMESCALE_MAP[views_data.timescale]}}
         return number, {"", number, " ", unit}
     else
         local view_preferences = util.globals.preferences(player).item_views
         local selected_view = view_preferences.views[view_preferences.selected_index].name
-        return processors[selected_view](views_data, raw_amount, item.proto, machine_count)
+        return processors[selected_view](views_data, raw_amount, proto, machine_count)
     end
 end
 

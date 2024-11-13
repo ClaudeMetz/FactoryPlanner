@@ -1,5 +1,4 @@
 local Object = require("backend.data.Object")
-local SimpleItems = require("backend.data.SimpleItems")
 local Line = require("backend.data.Line")
 
 ---@alias LineObject Line | Floor
@@ -12,9 +11,9 @@ local Line = require("backend.data.Line")
 ---@field previous LineObject?
 ---@field level integer
 ---@field first LineObject?
----@field products SimpleItems
----@field byproducts SimpleItems
----@field ingredients SimpleItems
+---@field products SimpleItem[]
+---@field byproducts SimpleItem[]
+---@field ingredients SimpleItem[]
 ---@field power number
 ---@field emissions number
 ---@field machine_count integer
@@ -27,11 +26,11 @@ script.register_metatable("Floor", Floor)
 local function init(level)
     local object = Object.init({
         level = level,
-        products = SimpleItems.init(),
-        byproducts = SimpleItems.init(),
-        ingredients = SimpleItems.init(),
         first = nil,
 
+        products = nil,
+        byproducts = nil,
+        ingredients = nil,
         power = 0,
         emissions = 0,
         machine_count = 0
@@ -43,9 +42,6 @@ end
 function Floor:index()
     OBJECT_INDEX[self.id] = self
     for line in self:iterator() do line:index() end
-    self.products:index()
-    self.byproducts:index()
-    self.ingredients:index()
 end
 
 
@@ -248,11 +244,6 @@ end
 function Floor:repair(player)
     self:_repair(player)
     self.valid = (self.level == 1 or self.first ~= nil)
-
-    -- Reset so solver doesn't have to
-    self.products:clear()
-    self.byproducts:clear()
-    self.ingredients:clear()
 
     return self.valid
 end

@@ -202,40 +202,12 @@ local function handle_module_click(player, tags, action)
 end
 
 
-local function apply_item_options(player, options, action)
-    if action == "submit" then
-        local modal_data = util.globals.modal_data(player)  --[[@as table]]
-        local line = OBJECT_INDEX[modal_data.line_id]
-        local item_category = modal_data.item_category
-
-        local current_amount = modal_data.current_amount
-        local target_amount = options.target_amount or modal_data.current_amount
-        if item_category ~= "ingredient" then
-            local other_category = (item_category == "product") and "byproduct" or "product"
-            local corresponding_item = line[other_category .. "s"]:find({proto=modal_data.item_proto})
-
-            if corresponding_item then  -- Further adjustments if item is both product and byproduct
-                -- In either case, we need to consider the sum of both types as the current amount
-                current_amount = current_amount + corresponding_item.amount
-
-                -- If it's a byproduct, we want to set its amount to the exact number entered, which this does
-                if item_category == "byproduct" then target_amount = target_amount + corresponding_item.amount end
-            end
-        end
-
-        line.percentage = (current_amount == 0) and 100 or (line.percentage * target_amount) / current_amount
-
-        solver.update(player)
-        util.raise.refresh(player, "factory")
-    end
-end
-
 local function handle_item_click(player, tags, action)
     local line = OBJECT_INDEX[tags.line_id]
-    local item = line[tags.item_category .. "s"].items[tags.item_index]
+    local item = line[tags.item_category .. "s"][tags.item_index]
 
     if action == "prioritize" then
-        if line.products:count() < 2 then
+        if #line.products < 2 then
             util.messages.raise(player, "warning", {"fp.warning_no_prioritizing_single_product"}, 1)
         else
             -- Remove the priority_product if the already selected one is clicked
@@ -254,7 +226,7 @@ local function handle_item_click(player, tags, action)
 
     elseif action == "copy" then
         if item.proto.type == "entity" then return end
-        util.clipboard.copy(player, item)
+        util.clipboard.copy(player, item)  -- TODO turn into SimpleItem object
 
     elseif action == "put_into_cursor" then
         if item.proto.type == "entity" then return end
@@ -438,10 +410,6 @@ listeners.gui = {
             handler = handle_percentage_confirmation
         }
     }
-}
-
-listeners.global = {
-    apply_item_options = apply_item_options
 }
 
 return { listeners }

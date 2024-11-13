@@ -270,7 +270,9 @@ local function add_catalysts(flow, line, category, metadata)
 end
 
 function builders.products(line, parent_flow, metadata)
-    for index, product in line["products"]:iterator() do
+    for index, product in pairs(line.products) do
+        local proto = product.proto
+
         -- items/s/machine does not make sense for lines with subfloors, show items/s instead
         local machine_count = (line.class ~= "Floor") and line.machine.amount or nil
         local amount, number_tooltip = item_views.process_item(metadata.player, product, nil, machine_count)
@@ -278,18 +280,18 @@ function builders.products(line, parent_flow, metadata)
 
         local style, note = "flib_slot_button_default_small", nil
         if line.class ~= "Floor" and not metadata.matrix_solver_active then
-            if line.priority_product == product.proto then
+            if line.priority_product == proto then
                 style = "flib_slot_button_pink_small"
                 note = {"fp.priority_product"}
             end
         end
 
-        local name_line = (note == nil) and {"fp.tt_title", product.proto.localised_name}
-            or {"fp.tt_title_with_note", product.proto.localised_name, note}
+        local name_line = (note == nil) and {"fp.tt_title", proto.localised_name}
+            or {"fp.tt_title_with_note", proto.localised_name, note}
         local number_line = (number_tooltip) and {"", "\n", number_tooltip} or ""
         local tooltip = {"", name_line, number_line, "\n", metadata.action_tooltips["act_on_line_product"]}
 
-        local button = parent_flow.add{type="sprite-button", sprite=product.proto.sprite, style=style,
+        local button = parent_flow.add{type="sprite-button", sprite=proto.sprite, style=style,
             tags={mod="fp", on_gui_click="act_on_line_product", line_id=line.id, item_index=index,
             on_gui_hover="set_tooltip", context="production_table"}, number=amount,
             mouse_button_filter={"left-and-right"}, raise_hover_events=true}
@@ -302,17 +304,19 @@ function builders.products(line, parent_flow, metadata)
 end
 
 function builders.byproducts(line, parent_flow, metadata)
-    for index, byproduct in line["byproducts"]:iterator() do
+    for index, byproduct in pairs(line.byproducts) do
+        local proto = byproduct.proto
+
         -- items/s/machine does not make sense for lines with subfloors, show items/s instead
         local machine_count = (line.class ~= "Floor") and line.machine.amount or nil
         local amount, number_tooltip = item_views.process_item(metadata.player, byproduct, nil, machine_count)
         if amount == -1 then goto skip_byproduct end  -- an amount of -1 means it was below the margin of error
 
         local number_line = (number_tooltip) and {"", "\n", number_tooltip} or ""
-        local tooltip = {"", {"fp.tt_title", byproduct.proto.localised_name}, number_line,
+        local tooltip = {"", {"fp.tt_title", proto.localised_name}, number_line,
             "\n", metadata.action_tooltips["act_on_line_byproduct"]}
 
-        local button = parent_flow.add{type="sprite-button", sprite=byproduct.proto.sprite,
+        local button = parent_flow.add{type="sprite-button", sprite=proto.sprite,
             tags={mod="fp", on_gui_click="act_on_line_byproduct", line_id=line.id, item_index=index,
             on_gui_hover="set_tooltip", context="production_table"}, number=amount,
             mouse_button_filter={"left-and-right"}, style="flib_slot_button_red_small", raise_hover_events=true}
@@ -323,7 +327,9 @@ function builders.byproducts(line, parent_flow, metadata)
 end
 
 function builders.ingredients(line, parent_flow, metadata)
-    for index, ingredient in line["ingredients"]:iterator() do
+    for index, ingredient in pairs(line.ingredients) do
+        local proto = ingredient.proto
+
         -- items/s/machine does not make sense for lines with subfloors, show items/s instead
         local machine_count = (line.class ~= "Floor") and line.machine.amount or nil
         local amount, number_tooltip = item_views.process_item(metadata.player, ingredient, nil, machine_count)
@@ -332,7 +338,7 @@ function builders.ingredients(line, parent_flow, metadata)
         local style = "flib_slot_button_green_small"
         local satisfaction_line = ""  ---@type LocalisedString
 
-        if ingredient.proto.type == "entity" then
+        if proto.type == "entity" then
             style = "flib_slot_button_disabled_small"
         elseif metadata.ingredient_satisfaction and ingredient.amount > 0 then
             local satisfaction_percentage = (ingredient.satisfied_amount / ingredient.amount) * 100
@@ -349,12 +355,12 @@ function builders.ingredients(line, parent_flow, metadata)
             satisfaction_line = {"", "\n", (formatted_percentage .. "%"), " ", {"fp.satisfied"}}
         end
 
-        local name_line = {"fp.tt_title", ingredient.proto.localised_name}
+        local name_line = {"fp.tt_title", proto.localised_name}
         local number_line = (number_tooltip) and {"", "\n", number_tooltip} or ""
         local tooltip = {"", name_line, number_line, satisfaction_line,
             "\n", metadata.action_tooltips["act_on_line_ingredient"]}
 
-        local button = parent_flow.add{type="sprite-button", sprite=ingredient.proto.sprite, style=style,
+        local button = parent_flow.add{type="sprite-button", sprite=proto.sprite, style=style,
             tags={mod="fp", on_gui_click="act_on_line_ingredient", line_id=line.id, item_index=index,
             on_gui_hover="set_tooltip", context="production_table"}, number=amount,
             mouse_button_filter={"left-and-right"}, raise_hover_events=true}
