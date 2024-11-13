@@ -121,6 +121,8 @@ function District:refresh()
         end
     end
 
+    self.product_set:sort()
+    self.ingredient_set:sort()
 end
 
 
