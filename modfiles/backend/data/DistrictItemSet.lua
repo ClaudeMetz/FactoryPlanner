@@ -54,6 +54,39 @@ function DistrictItemSet:iterator(filter, pivot, direction)
 end
 
 
+-- Sorts (awkwardly) based on type first ("item" before "fluid") and then amount
+local function item_compare(a, b)
+    local a_type, b_type = a.proto.type, b.proto.type
+    if a_type < b_type then return true
+    elseif a_type > b_type then return false
+    elseif a.amount < b.amount then return true
+    elseif a.amount > b.amount then return false end
+    return false
+end
+
+function DistrictItemSet:sort()
+    local next_object = self.first
+    self.first = nil  -- clear to re-insert into below
+
+    while next_object ~= nil do
+        local current_object = next_object
+        next_object = next_object.next
+
+        local inserted = false
+        for object in self:iterator() do
+            if item_compare(object, current_object) then
+                self:_insert(current_object, object, "previous")
+                inserted = true
+                break
+            end
+        end
+        if not inserted then  -- first or last element
+            self:_insert(current_object)
+        end
+    end
+end
+
+
 function DistrictItemSet:clear()
     self.first = nil
     self.map = {}
