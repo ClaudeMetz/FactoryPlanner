@@ -4,6 +4,7 @@ local Object = require("backend.data.Object")
 ---@field class "DistrictItem"
 ---@field proto FPItemPrototype
 ---@field amount number
+---@field converse_amount number
 local DistrictItem = Object.methods()
 DistrictItem.__index = DistrictItem
 script.register_metatable("DistrictItem", DistrictItem)
@@ -14,7 +15,8 @@ script.register_metatable("DistrictItem", DistrictItem)
 local function init(proto, amount)
     local object = Object.init({
         proto = proto,
-        amount = amount
+        amount = amount,  -- amount filled in by the factories
+        converse_amount = 0  -- amount of this item in converse category
     }, "DistrictItem", DistrictItem)  --[[@as DistrictItem]]
     return object
 end
