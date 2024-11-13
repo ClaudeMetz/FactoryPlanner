@@ -35,7 +35,7 @@ local function determine_table_height(floor, column_counts)
     for line in floor:iterator() do
         local items_height = 0
         for column, count in pairs(column_counts) do
-            local column_height = math.ceil(line[column .. "s"]:count() / count)
+            local column_height = math.ceil(#line[column .. "s"] / count)
             items_height = math.max(items_height, column_height)
         end
 
@@ -166,8 +166,7 @@ local function add_item_flow(line, relevant_line, item_category, button_color, m
     if column_count == 0 then metadata.parent.add{type="empty-widget"}; return end
     local item_table = metadata.parent.add{type="table", column_count=column_count}
 
-    local simple_items = line[item_category .. "s"]
-    for index, item in simple_items:iterator() do
+    for index, item in pairs(line[item_category .. "s"]) do
         local proto, type = item.proto, item.proto.type
         -- items/s/machine does not make sense for lines with subfloors, show items/s instead
         local machine_count = (line.class == "Line") and line.machine.amount or nil
@@ -186,9 +185,10 @@ local function add_item_flow(line, relevant_line, item_category, button_color, m
         end
 
         local button = item_table.add{type="sprite-button", sprite=proto.sprite, number=amount,
-            tags={mod="fp", on_gui_click="act_on_compact_item", items_id=simple_items.id, item_index=index,
-            on_gui_hover="hover_compact_item", on_gui_leave="leave_compact_item", context="compact_dialog"},
-            style=style, enabled=enabled, mouse_button_filter={"left-and-right"}, raise_hover_events=true}
+            tags={mod="fp", on_gui_click="act_on_compact_item", line_id=line.id, item_category=item_category .. "s",
+            item_index=index, on_gui_hover="hover_compact_item", on_gui_leave="leave_compact_item",
+            context="compact_dialog"}, style=style, enabled=enabled, mouse_button_filter={"left-and-right"},
+            raise_hover_events=true}
         metadata.tooltips[button.index] = tooltip
 
         item_buttons[type] = item_buttons[type] or {}
@@ -403,7 +403,7 @@ end
 
 local function handle_item_click(player, tags, action)
     local item = (tags.fuel_id) and OBJECT_INDEX[tags.fuel_id]
-        or OBJECT_INDEX[tags.items_id].items[tags.item_index]
+        or OBJECT_INDEX[tags.line_id][tags.item_category][tags.item_index]
     if item.proto.type == "entity" then return end
 
     if action == "put_into_cursor" then
@@ -416,7 +416,7 @@ end
 
 local function handle_hover_change(player, tags, event)
     local proto = (tags.fuel_id) and OBJECT_INDEX[tags.fuel_id].proto
-        or OBJECT_INDEX[tags.items_id].items[tags.item_index].proto
+        or OBJECT_INDEX[tags.line_id][tags.item_category][tags.item_index].proto
     local compact_elements = util.globals.ui_state(player).compact_elements
 
     local relevant_buttons = compact_elements.item_buttons[proto.type][proto.name]

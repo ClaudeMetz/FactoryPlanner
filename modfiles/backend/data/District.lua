@@ -1,5 +1,4 @@
 local Object = require("backend.data.Object")
-local SimpleItems = require("backend.data.SimpleItems")
 
 ---@class District: Object, ObjectMethods
 ---@field class "District"
@@ -8,9 +7,6 @@ local SimpleItems = require("backend.data.SimpleItems")
 ---@field previous District?
 ---@field name string
 ---@field location_proto FPLocationPrototype
----@field products SimpleItems
----@field byproducts SimpleItems
----@field ingredients SimpleItems
 ---@field first Factory?
 ---@field power number
 ---@field emissions number
@@ -25,13 +21,14 @@ local function init(name)
     local object = Object.init({
         name = name or "New District",
         location_proto = defaults.get_fallback("locations").proto,
-        products = SimpleItems.init(),
-        byproducts = SimpleItems.init(),
-        ingredients = SimpleItems.init(),
         first = nil,
 
+        --[[ products = SimpleItems.init(),
+        byproducts = SimpleItems.init(),
+        ingredients = SimpleItems.init(), ]]
         power = 0,
         emissions = 0,
+
         needs_refresh = false
     }, "District", District)  --[[@as District]]
     return object
@@ -41,9 +38,6 @@ end
 function District:index()
     OBJECT_INDEX[self.id] = self
     for factory in self:iterator() do factory:index() end
-    self.products:index()
-    self.byproducts:index()
-    self.ingredients:index()
 end
 
 
@@ -100,7 +94,7 @@ end
 
 -- Updates the power, emissions and items of this District if requested
 function District:refresh()
-    if not self.needs_refresh then return end
+    --[[ if not self.needs_refresh then return end
     self.needs_refresh = false
 
     self.power = 0
@@ -121,7 +115,7 @@ function District:refresh()
 
         self.byproducts:add_multiple(factory.top_floor.byproducts)
         self.ingredients:add_multiple(factory.top_floor.ingredients)
-    end
+    end ]]
 end
 
 

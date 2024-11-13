@@ -122,26 +122,33 @@ local function generate_floor_data(player, factory, floor)
 end
 
 
+---@class SimpleItem
+---@field proto FPItemPrototype
+---@field amount number
+---@field satisfied_amount number?
+
 local function update_object_items(object, item_category, item_results)
-    local simple_items = object[item_category]
-    simple_items:clear()
+    local item_list = {}
 
     for _, item_result in pairs(structures.class.to_array(item_results)) do
         local item_proto = prototyper.util.find("items", item_result.name, item_result.type)  --[[@as FPItemPrototype]]
         if object.class ~= "Floor" or item_proto.type ~= "entity" then
-            simple_items:insert({class="SimpleItem", proto=item_proto, amount=item_result.amount})
+            table.insert(item_list, {proto=item_proto, amount=item_result.amount})
         end
     end
+
+    object[item_category] = item_list
 end
 
 local function set_zeroed_items(line, item_category, items)
-    local simple_items = line[item_category]
-    simple_items:clear()
+    local item_list = {}
 
     for _, item in pairs(items) do
         local item_proto = prototyper.util.find("items", item.name, item.type)
-        simple_items:insert({class="SimpleItem", proto=item_proto, amount=0})
+        table.insert(item_list, {proto=item_proto, amount=0})
     end
+
+    line[item_category] = item_list
 end
 
 
@@ -174,7 +181,7 @@ local function update_ingredient_satisfaction(floor, product_class)
             determine_satisfaction(line.machine.fuel)
         end
 
-        for _, ingredient in line.ingredients:iterator() do
+        for _, ingredient in pairs(line.ingredients) do
             if ingredient.proto.type ~= "entity" then
                 determine_satisfaction(ingredient)
             end
@@ -182,7 +189,7 @@ local function update_ingredient_satisfaction(floor, product_class)
 
         -- Products and byproducts just get added to the list as being produced
         for _, item_category in pairs{"products", "byproducts"} do
-            for _, product in line[item_category]:iterator() do
+            for _, product in pairs(line[item_category]) do
                 structures.class.add(product_class, product)
             end
         end
@@ -300,7 +307,7 @@ function solver.set_line_result(result)
     if line.production_ratio == 0 and line.subfloor == nil then
         local recipe_proto = line.recipe_proto
         set_zeroed_items(line, "products", recipe_proto.products)
-        line.byproducts:clear()
+        line.byproducts = {}
         set_zeroed_items(line, "ingredients", recipe_proto.ingredients)
     else
         update_object_items(line, "products", result.Product)

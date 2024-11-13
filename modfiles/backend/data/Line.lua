@@ -1,7 +1,6 @@
 local Object = require("backend.data.Object")
 local Machine = require("backend.data.Machine")
 local Beacon = require("backend.data.Beacon")
-local SimpleItems = require("backend.data.SimpleItems")
 
 ---@alias ProductionType "produce" | "consume"
 
@@ -27,9 +26,9 @@ local SimpleItems = require("backend.data.SimpleItems")
 ---@field surface_compatibility SurfaceCompatibility?
 ---@field total_effects ModuleEffects
 ---@field effects_tooltip LocalisedString
----@field products SimpleItems
----@field byproducts SimpleItems
----@field ingredients SimpleItems
+---@field products SimpleItem[]
+---@field byproducts SimpleItem[]
+---@field ingredients SimpleItem[]
 ---@field power number
 ---@field emissions number
 ---@field production_ratio number?
@@ -49,15 +48,16 @@ local function init(recipe_proto, production_type)
         percentage = 100,
         machine = nil,
         beacon = nil,
-        products = SimpleItems.init(),
-        byproducts = SimpleItems.init(),
-        ingredients = SimpleItems.init(),
         priority_product = nil,
         comment = "",
 
         surface_compatibility = nil,  -- determined on demand
         total_effects = nil,
         effects_tooltip = "",
+
+        products = nil,
+        byproducts = nil,
+        ingredients = nil,
         power = 0,
         emissions = 0,
         production_ratio = 0
@@ -70,9 +70,6 @@ function Line:index()
     OBJECT_INDEX[self.id] = self
     self.machine:index()
     if self.beacon then self.beacon:index() end
-    self.products:index()
-    self.byproducts:index()
-    self.ingredients:index()
 end
 
 
@@ -343,11 +340,6 @@ function Line:repair(player)
     if self.valid and self.priority_product and self.priority_product.simplified then
         self.priority_product = nil
     end
-
-    -- Reset so solver doesn't have to
-    self.products:clear()
-    self.byproducts:clear()
-    self.ingredients:clear()
 
     return self.valid
 end
