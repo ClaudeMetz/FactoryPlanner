@@ -2,9 +2,17 @@
 Version: 0.00.00
 Date: 00. 00. 0000
   Features:
-    - Redid the District items view, splitting them into products and ingredients only, and indicating where a surplus or deficit is present
+    - 
   Changes:
-    -
+    - 
+  Bugfixes:
+    - 
+
+---------------------------------------------------------------------------------------------------
+Version: 2.0.6
+Date: 13. 11. 2024
+  Features:
+    - Redid the District items view, splitting them into products and ingredients only, and indicating where a surplus or deficit is present
   Bugfixes:
     - Fixed a couple of migration issues when migrating from 1.1
 
