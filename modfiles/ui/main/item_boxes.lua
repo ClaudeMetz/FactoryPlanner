@@ -156,7 +156,8 @@ local function handle_item_button_click(player, tags, action)
 
     elseif action == "copy" then
         if item.proto.type == "entity" then return end
-        util.clipboard.copy(player, item)  -- TODO turn into SimpleItem object
+        local copyable_item = {class="SimpleItem", proto=item.proto, amount=item.amount}
+        util.clipboard.copy(player, copyable_item)
 
     elseif action == "paste" then
         if item.proto.type == "entity" then return end
