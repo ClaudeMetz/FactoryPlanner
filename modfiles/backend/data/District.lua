@@ -22,7 +22,7 @@ script.register_metatable("District", District)
 ---@return District
 local function init(name)
     local object = Object.init({
-        name = name or "New District",
+        name = name or "Nauvis",
         location_proto = defaults.get_fallback("locations").proto,
         product_set = DistrictItemSet.init("product"),
         ingredient_set = DistrictItemSet.init("ingredient"),
