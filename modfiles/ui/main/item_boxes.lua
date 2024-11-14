@@ -171,7 +171,8 @@ local function handle_item_button_click(player, tags, action)
     elseif action == "put_into_cursor" then
         if item.proto.type == "entity" then return end
         local amount = (item.class == "Product") and item:get_required_amount() or item.amount
-        util.cursor.add_to_item_combinator(player, item.proto, amount)
+        local timescale = util.globals.preferences(player).timescale
+        util.cursor.add_to_item_combinator(player, item.proto, amount * timescale)
 
     elseif action == "factoriopedia" then
         if item.proto.type == "entity" then return end
@@ -181,19 +182,20 @@ end
 
 
 local function put_ingredients_into_cursor(player, _, _)
-    local show_floor_items = util.globals.preferences(player).show_floor_items
-    local relevant_floor = (show_floor_items) and util.context.get(player, "Floor")
+    local preferences = util.globals.preferences(player)
+    local relevant_floor = (preferences.show_floor_items) and util.context.get(player, "Floor")
         or util.context.get(player, "Factory").top_floor  --[[@as Floor]]
 
     local ingredient_filters = {}
     for _, ingredient in pairs(relevant_floor.ingredients) do
-        if ingredient.proto.type ~= "entity" and ingredient.amount > MAGIC_NUMBERS.margin_of_error then
+        local amount = ingredient.amount * preferences.timescale
+        if ingredient.proto.type ~= "entity" and amount > MAGIC_NUMBERS.margin_of_error then
             table.insert(ingredient_filters, {
                 type = ingredient.proto.type,
                 name = ingredient.proto.name,
                 quality = "normal",
                 comparator = "=",
-                count = ingredient.amount
+                count = amount
             })
         end
     end

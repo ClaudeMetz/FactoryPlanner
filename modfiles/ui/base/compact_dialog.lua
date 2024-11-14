@@ -407,7 +407,8 @@ local function handle_item_click(player, tags, action)
     if item.proto.type == "entity" then return end
 
     if action == "put_into_cursor" then
-        util.cursor.add_to_item_combinator(player, item.proto, item.amount)
+        local timescale = util.globals.preferences(player).timescale
+        util.cursor.add_to_item_combinator(player, item.proto, item.amount * timescale)
 
     elseif action == "factoriopedia" then
         --util.open_in_factoriopedia(player, item.proto.type, item.proto.name)
