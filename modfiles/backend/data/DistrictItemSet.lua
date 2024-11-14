@@ -45,6 +45,13 @@ function DistrictItemSet:add_item(proto, amount)
 end
 
 
+---@param district_item DistrictItem
+function DistrictItemSet:remove(district_item)
+    district_item.parent = nil
+    self:_remove(district_item)
+end
+
+
 ---@param filter ObjectFilter?
 ---@param pivot DistrictItem?
 ---@param direction NeighbourDirection?

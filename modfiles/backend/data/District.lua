@@ -126,6 +126,11 @@ function District:refresh()
         for item in self[category .. "_set"]:iterator() do
             local match = map[item.proto]
             item.converse_amount = (match and match.amount or 0)
+
+            local main_amount = item.amount - item.converse_amount
+            if main_amount < MAGIC_NUMBERS.margin_of_error then
+                self[category .. "_set"]:remove(item)
+            end
         end
     end
     fill_converse_amount("product", "ingredient")
