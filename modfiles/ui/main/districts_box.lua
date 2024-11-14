@@ -26,12 +26,33 @@ local function change_district_location(player, tags, event)
 end
 
 
+local function handle_item_button_click(player, tags, action)
+    local item = OBJECT_INDEX[tags.item_id]
+
+    if action == "copy" then  -- copy as SimpleItems makes most sense
+        local copyable_item = {class="SimpleItem", proto=item.proto, amount=item.amount}
+        util.clipboard.copy(player, copyable_item)
+
+    elseif action == "put_into_cursor" then
+        local timescale = util.globals.preferences(player).timescale
+        local amount = (item.amount - item.converse_amount) * timescale
+        util.cursor.add_to_item_combinator(player, item.proto, amount)
+
+    elseif action == "factoriopedia" then
+        --util.open_in_factoriopedia(player, item.proto.type, item.proto.name)
+    end
+end
+
+
 local function build_items_flow(player, parent, district)
     local items_flow = parent.add{type="flow", direction="horizontal"}
     items_flow.style.padding = {6, 12, 12, 12}
 
     local preferences = util.globals.preferences(player)
     local column_count = (preferences.products_per_row * 4) / 2
+    local action_tooltip = MODIFIER_ACTIONS["act_on_district_item"].tooltip
+    local tooltips = util.globals.ui_state(player).tooltips
+    tooltips.districts_box = {}
 
     local function build_item_flow(item_set, category)
         local item_flow = items_flow.add{type="flow", direction="vertical"}
@@ -61,14 +82,19 @@ local function build_items_flow(player, parent, district)
                 {"fp.item_amount_total", total_tooltip}} or ""
             local style = (amount and total_amount ~= metadata.comparison) and
                 metadata.half_color or metadata.full_color
-            local tooltip = {"", {"fp.tt_title", item.proto.localised_name}, number_line}
+            local tooltip = {"", {"fp.tt_title", item.proto.localised_name}, number_line, "\n", action_tooltip}
 
-            table_items.add{type="sprite-button", number=amount, style=style,
-                sprite=item.proto.sprite, tooltip=tooltip}
+            local button = table_items.add{type="sprite-button", number=amount, style=style, sprite=item.proto.sprite,
+                tags={mod="fp", on_gui_click="act_on_district_item", category=category, item_id=item.id,
+                on_gui_hover="set_tooltip", context="districts_box"}, mouse_button_filter={"left-and-right"},
+                raise_hover_events=true}
+            tooltips.districts_box[button.index] = tooltip
+
             item_count = item_count + 1
 
             ::skip_item::
         end
+
         return table_items, math.ceil(item_count / column_count)
     end
 
@@ -280,7 +306,16 @@ listeners.gui = {
                 util.context.set(player, adjacent_district)
                 util.raise.refresh(player, "all")
             end)
-        }
+        },
+        {
+            name = "act_on_district_item",
+            actions_table = {
+                copy = {shortcut="shift-right"},
+                put_into_cursor = {shortcut="alt-right"},
+                --factoriopedia = {shortcut="alt-left"}
+            },
+            handler = handle_item_button_click
+        },
     },
     on_gui_confirmed = {
         {
