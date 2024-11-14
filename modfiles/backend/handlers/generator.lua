@@ -1058,7 +1058,8 @@ function generator.modules.generate()
     local module_filter = {{filter="type", type="module"}, {filter="hidden", invert=true, mode="and"}}
     for _, proto in pairs(prototypes.get_item_filtered(module_filter)) do
         local sprite = "item/" .. proto.name
-        if helpers.is_valid_sprite_path(sprite) then
+        local items = storage.prototypes.items["item"].members
+        if helpers.is_valid_sprite_path(sprite) and items[proto.name] then
             local module = {
                 name = proto.name,
                 localised_name = proto.localised_name,
