@@ -2,9 +2,15 @@
 Version: 0.00.00
 Date: 00. 00. 0000
   Features:
-    -
+    - 
   Changes:
-    -
+    - 
+  Bugfixes:
+    - 
+
+---------------------------------------------------------------------------------------------------
+Version: 2.0.7
+Date: 14. 11. 2024
   Bugfixes:
     - Fixed a couple of crashes when repairing very broken factories (#216)
     - Fixed that invalid modules weren't being filtered out properly (#320)
