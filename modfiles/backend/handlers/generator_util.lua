@@ -430,4 +430,12 @@ function generator_util.add_default_groups(proto)
     proto.subgroup = generator_util.generate_group_table(prototypes.item_subgroup["other"])
 end
 
+
+---@param text LocalisedString
+---@param color Color
+---@return LocalisedString
+function generator_util.colored_rich_text(text, color)
+    return {"", "[color=", color.r, ",", color.g, ",", color.b, "]", text, "[/color]"}
+end
+
 return generator_util
