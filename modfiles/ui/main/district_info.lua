@@ -29,7 +29,7 @@ local function build_district_info(player)
 
     flow_horizontal.add{type="label", caption={"", {"fp.pu_district", 1}, ": "}, style="subheader_caption_label"}
     local label_name = flow_horizontal.add{type="label", style="bold_label"}
-    label_name.style.maximal_width = 100
+    label_name.style.maximal_width = (MULTIPLE_PLANETS) and 120 or 190
     main_elements.district_info["name_label"] = label_name
 
     if MULTIPLE_PLANETS then
