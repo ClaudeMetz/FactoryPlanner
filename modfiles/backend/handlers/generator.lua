@@ -1117,7 +1117,7 @@ function generator.beacons.generate()
                 module_limit = proto.module_inventory_size,
                 effectivity = proto.distribution_effectivity,
                 quality_bonus = proto.distribution_effectivity_bonus_per_quality_level,
-                profile = proto.profile,
+                profile = (#proto.profile == 0) and {1} or proto.profile,
                 energy_usage = proto.energy_usage or proto.get_max_energy_usage() or 0
             }
             insert_prototype(beacons, beacon, nil)

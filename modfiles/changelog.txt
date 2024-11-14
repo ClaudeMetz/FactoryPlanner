@@ -9,6 +9,7 @@ Date: 00. 00. 0000
     - Fixed a crash when trying to open the calculator dialog
     - Fixed a crash when trying to copy/paste items
     - Fixed that 0-ed items were still being shown on Districts
+    - Fixed beacon profiles not being applied correctly in all cases
     - Fixed that putting items into a combinator would always add them as per second instead of per current timescale
 
 ---------------------------------------------------------------------------------------------------
