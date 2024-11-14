@@ -257,8 +257,9 @@ end
 
 ---@protected
 ---@param player LuaPlayer
-function methods:_repair(player)
-    for object in self:_iterator() do
+---@param pivot Object?
+function methods:_repair(player, pivot)
+    for object in self:_iterator(nil, pivot) do
         if not object.valid and not object:repair(player) then
             object.parent:_remove(object)
         end

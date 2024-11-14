@@ -6,6 +6,7 @@ Date: 00. 00. 0000
   Changes:
     -
   Bugfixes:
+    - Fixed a couple of crashes when repairing very broken factories (#216)
     - Fixed that invalid modules weren't being filtered out properly (#320)
     - Fixed a crash when trying to open the calculator dialog
     - Fixed a crash when trying to copy/paste items

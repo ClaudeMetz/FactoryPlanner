@@ -242,8 +242,16 @@ end
 ---@param player LuaPlayer
 ---@return boolean success
 function Floor:repair(player)
-    self:_repair(player)
-    self.valid = (self.level == 1 or self.first ~= nil)
+    local pivot = self.first
+    if self.level > 1 and self.first and not self.first.valid then
+        local line_valid = self.first:repair(player)
+        -- If the defining line can't be repaired, the floor is dead
+        if not line_valid then return false end
+        pivot = self.first.next
+    end
+
+    if pivot then self:_repair(player, pivot) end
+    self.valid = true
 
     return self.valid
 end
