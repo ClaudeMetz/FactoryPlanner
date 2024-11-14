@@ -66,7 +66,6 @@ local function generate_floor_data(player, factory, floor)
         local line_data = { id = line.id }
 
         if line.class == "Floor" then
-            line_data.recipe_proto = line.first.recipe_proto
             line_data.subfloor = generate_floor_data(player, factory, line)
             table.insert(floor_data.lines, line_data)
         else
