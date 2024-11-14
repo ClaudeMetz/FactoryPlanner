@@ -114,7 +114,7 @@ function preference_structures.dropdowns(preferences, parent_flow)
 
     local height_items, height_index = {}, nil
     for index, value in pairs(FACTORY_LIST_ROWS_OPTIONS) do
-        height_items[index] = {"", value .. " ", {"fp.rows"}}
+        height_items[index] = {"", value .. " ", {"fp.pl_factory", 2}}
         if value == preferences.factory_list_rows then height_index = index end
     end
     add_dropdown("factory_list_rows", height_items, height_index)
