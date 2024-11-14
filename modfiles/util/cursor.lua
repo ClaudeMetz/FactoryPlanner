@@ -104,27 +104,30 @@ end
 function _cursor.add_to_item_combinator(player, proto, amount)
     local item_signals, filter_matched = {}, false
 
-    if not player.is_cursor_empty() then
+    do
+        if player.is_cursor_empty() then goto skip_cursor end
         local cursor = player.cursor_stack  --[[@cast cursor -nil]]
-        if cursor.is_blueprint and cursor.is_blueprint_setup() then
-            local entities = cursor.get_blueprint_entities()
-            if entities and #entities == 1 and entities[1].name == "constant-combinator" then
-                -- TODO outer 'sections' will be renamed to logistic_sections
-                local sections = entities[1].control_behavior.sections
-                if sections and sections.sections and #sections.sections == 1 then
-                    local section = sections.sections[1]
-                    if not section.group then
-                        for _, filter in pairs(section.filters) do
-                            if proto.type == (filter.type or "item") and proto.name == filter.name then
-                                filter.count = filter.count + amount
-                                filter_matched = true
-                            end
-                            table.insert(item_signals, filter)
-                        end
-                    end
-                end
+
+        if not (cursor.is_blueprint and cursor.is_blueprint_setup()) then goto skip_cursor end
+        local entities = cursor.get_blueprint_entities()
+
+        if not (entities and #entities == 1 and entities[1].name == "constant-combinator") then goto skip_cursor end
+        local sections = entities[1].control_behavior.sections
+
+        if not (sections and sections.sections and #sections.sections == 1) then goto skip_cursor end
+        local section = sections.sections[1]
+
+        if section.group then goto skip_cursor end
+
+        for _, filter in pairs(section.filters) do
+            if proto.type == (filter.type or "item") and proto.name == filter.name then
+                filter.count = filter.count + amount
+                filter_matched = true
             end
+            table.insert(item_signals, filter)
         end
+
+        ::skip_cursor::
     end
 
     if not filter_matched then
