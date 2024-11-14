@@ -230,7 +230,8 @@ local function handle_item_click(player, tags, action)
 
     elseif action == "put_into_cursor" then
         if item.proto.type == "entity" then return end
-        util.cursor.add_to_item_combinator(player, item.proto, item.amount)
+        local timescale = util.globals.preferences(player).timescale
+        util.cursor.add_to_item_combinator(player, item.proto, item.amount * timescale)
 
     elseif action == "factoriopedia" then
         if item.proto.type == "entity" then return end
@@ -255,7 +256,8 @@ local function handle_fuel_click(player, tags, action)
         util.clipboard.paste(player, fuel)
 
     elseif action == "put_into_cursor" then
-        util.cursor.add_to_item_combinator(player, fuel.proto, fuel.amount)
+        local timescale = util.globals.preferences(player).timescale
+        util.cursor.add_to_item_combinator(player, fuel.proto, fuel.amount * timescale)
 
     elseif action == "factoriopedia" then
         --util.open_in_factoriopedia(player, fuel.proto.type, fuel.proto.name)
