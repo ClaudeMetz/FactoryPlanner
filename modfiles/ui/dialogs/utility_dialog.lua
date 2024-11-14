@@ -113,7 +113,7 @@ function utility_structures.components(player, modal_data)
 
                 local category_id = (proto.data_type == "items") and proto.category_id
                     or prototyper.util.find("items", nil, "item").id
-                local proto_id = (proto.data_Type == "items") and proto.id
+                local proto_id = (proto.data_type == "items") and proto.id
                     or prototyper.util.find("items", proto.name, "item").id
                 table_components.add{type="sprite-button", sprite=proto.sprite, number=required_amount, tooltip=tooltip,
                     tags={mod="fp", on_gui_click="utility_craft_items", category_id=category_id, item_id=proto_id,

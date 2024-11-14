@@ -55,7 +55,7 @@ function Beacon:profile_multiplier()
     else
         local profile_count = #self.proto.profile
         local index = (self.amount > profile_count) and profile_count or self.amount
-        return self.proto.profile[index] or 0
+        return self.proto.profile[index]
     end
 end
 
