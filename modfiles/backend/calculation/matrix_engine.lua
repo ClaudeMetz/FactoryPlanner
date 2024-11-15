@@ -420,8 +420,8 @@ function matrix_engine.run_matrix_solver(factory_data, check_linear_dependence)
     end
 
     -- set products for unproduced items
-    for _, product in pairs(factory_data.top_level_products) do
-        local item_key = matrix_engine.get_item_key(product.proto.type, product.proto.name)
+    for _, product in pairs(factory_data.top_floor.products) do
+        local item_key = matrix_engine.get_item_key(product.type, product.name)
         if factory_metadata.unproduced_outputs[item_key] then
             local item = matrix_engine.get_item(item_key)
             structures.aggregate.add(main_aggregate, "Product", item, product.amount)
@@ -477,8 +477,8 @@ end
 -- finds inputs and outputs for each line and desired outputs
 function matrix_engine.get_factory_metadata(factory_data)
     local desired_outputs = {}
-    for _, product in pairs(factory_data.top_level_products) do
-        local item_key = matrix_engine.get_item_key(product.proto.type, product.proto.name)
+    for _, product in pairs(factory_data.top_floor.products) do
+        local item_key = matrix_engine.get_item_key(product.type, product.name)
         desired_outputs[item_key] = true
     end
     local lines_metadata = matrix_engine.get_lines_metadata(factory_data.top_floor.lines,
@@ -593,8 +593,8 @@ function matrix_engine.get_matrix(factory_data, rows, columns)
 
     -- final column for desired output. Don't have to explicitly set constrained vars to zero
     -- since matrix is initialized with zeros.
-    for _, product in ipairs(factory_data.top_level_products) do
-        local item_id = product.proto.category_id .. "_" .. product.proto.id
+    for _, product in ipairs(factory_data.top_floor.products) do
+        local item_id = matrix_engine.get_item_key(product.type, product.name)
         local row_num = rows.map[item_id]
         -- will be nil for unproduced outputs
         if row_num ~= nil then
