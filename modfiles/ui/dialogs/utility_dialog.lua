@@ -417,6 +417,8 @@ local function import_productivity_boni(player, _, event)
     local modal_data = util.globals.modal_data(player)  --[[@as table]]
     local selected_index = modal_data.modal_elements.factory_dropdown.selected_index
     local export_factory = OBJECT_INDEX[modal_data.factory_index[selected_index]]  --[[@as Factory]]
+    if not export_factory then return end  -- dropdown starts blank
+
     local import_factory = util.context.get(player, "Factory")  --[[@as Factory]]
     import_factory.productivity_boni = ftable.deep_copy(export_factory.productivity_boni)
 
