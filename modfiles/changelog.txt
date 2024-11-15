@@ -2,9 +2,17 @@
 Version: 0.00.00
 Date: 00. 00. 0000
   Features:
-    - Added copy and put-into-cursor actions to district items
+    - 
   Changes:
-    -
+    - 
+  Bugfixes:
+    - 
+
+---------------------------------------------------------------------------------------------------
+Version: 2.0.8
+Date: 15. 11. 2024
+  Features:
+    - Added copy and put-into-cursor actions to district items
   Bugfixes:
     - Fixed a crash in the solver code (#405)
     - Fixed a crash when opening the utility dialog while in map view (#401)
