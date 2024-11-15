@@ -30,12 +30,12 @@ local function handle_item_button_click(player, tags, action)
     local item = OBJECT_INDEX[tags.item_id]
 
     if action == "copy" then  -- copy as SimpleItems makes most sense
-        local copyable_item = {class="SimpleItem", proto=item.proto, amount=item.amount}
+        local copyable_item = {class="SimpleItem", proto=item.proto, amount=item.abs_diff}
         util.clipboard.copy(player, copyable_item)
 
     elseif action == "put_into_cursor" then
         local timescale = util.globals.preferences(player).timescale
-        local amount = (item.amount - item.converse_amount) * timescale
+        local amount = item.abs_diff * timescale
         util.cursor.add_to_item_combinator(player, item.proto, amount)
 
     elseif action == "factoriopedia" then
@@ -50,11 +50,8 @@ local function build_items_flow(player, parent, district)
 
     local preferences = util.globals.preferences(player)
     local column_count = (preferences.products_per_row * 4) / 2
-    local action_tooltip = MODIFIER_ACTIONS["act_on_district_item"].tooltip
-    local tooltips = util.globals.ui_state(player).tooltips
-    tooltips.districts_box = {}
 
-    local function build_item_flow(item_set, category)
+    local function build_item_flow(category)
         local item_flow = items_flow.add{type="flow", direction="vertical"}
         item_flow.add{type="label", caption={"fp.pu_" .. category, 2}, style="caption_label"}
 
@@ -63,49 +60,49 @@ local function build_items_flow(player, parent, district)
         item_frame.style.minimal_height = MAGIC_NUMBERS.item_button_size
         local table_items = item_frame.add{type="table", column_count=column_count, style="filter_slot_table"}
 
-        local item_count = 0
-        for item in item_set:iterator() do
-            local main_amount = item.amount - item.converse_amount
-            local amount, amount_tooltip = item_views.process_item(player, item, main_amount, nil)
-            if amount == -1 then goto skip_item end  -- an amount of -1 means it was below the margin of error
-
-            local data = {
-                product = {amount=item.amount, comparison=amount,
-                    half_color="flib_slot_button_cyan", full_color="flib_slot_button_blue"},
-                ingredient = {amount=item.converse_amount, comparison="0",
-                    half_color="flib_slot_button_yellow", full_color="flib_slot_button_red"}
-            }
-            local metadata = data[category]
-
-            local total_amount, total_tooltip = item_views.process_item(player, item, metadata.amount, nil)
-            local number_line = (metadata.amount) and {"", {"fp.item_amount_" .. category, amount_tooltip},
-                {"fp.item_amount_total", total_tooltip}} or ""
-            local style = (amount and total_amount ~= metadata.comparison) and
-                metadata.half_color or metadata.full_color
-            local tooltip = {"", {"fp.tt_title", item.proto.localised_name}, number_line, "\n", action_tooltip}
-
-            local button = table_items.add{type="sprite-button", number=amount, style=style, sprite=item.proto.sprite,
-                tags={mod="fp", on_gui_click="act_on_district_item", category=category, item_id=item.id,
-                on_gui_hover="set_tooltip", context="districts_box"}, mouse_button_filter={"left-and-right"},
-                raise_hover_events=true}
-            tooltips.districts_box[button.index] = tooltip
-
-            item_count = item_count + 1
-
-            ::skip_item::
-        end
-
-        return table_items, math.ceil(item_count / column_count)
+        return table_items
     end
 
     items_flow.add{type="empty-widget", style="flib_horizontal_pusher"}
-    local prod_table, prod_rows = build_item_flow(district.product_set, "product")
+    local prod_table = build_item_flow("product")
     items_flow.add{type="empty-widget", style="flib_horizontal_pusher"}
     items_flow.add{type="empty-widget", style="flib_horizontal_pusher"}
-    local ingr_table, ingr_rows = build_item_flow(district.ingredient_set, "ingredient")
+    local ingr_table = build_item_flow("ingredient")
     items_flow.add{type="empty-widget", style="flib_horizontal_pusher"}
 
-    local height = math.max(prod_rows, ingr_rows) * MAGIC_NUMBERS.item_button_size
+    local action_tooltip = MODIFIER_ACTIONS["act_on_district_item"].tooltip
+    local tooltips = util.globals.ui_state(player).tooltips
+    tooltips.districts_box = {}
+
+    local color_map = {
+        production = {half="flib_slot_button_cyan", full="flib_slot_button_blue"},
+        consumption = {half="flib_slot_button_yellow", full="flib_slot_button_red"}
+    }
+
+    for item in district.item_set:iterator() do
+        local diff_string, amount_tooltip = item_views.process_item(player, item, item.abs_diff, nil)
+
+        local total_amount = item[item.overall].amount
+        local total_string, total_tooltip = item_views.process_item(player, item, total_amount, nil)
+
+        local title_line = {"fp.tt_title", item.proto.localised_name}
+        local diff_line = {"fp.item_amount_" .. item.overall, amount_tooltip}
+        local total_line = {"fp.item_amount_total", total_tooltip}
+        local tooltip = {"", title_line, diff_line, total_line, "\n", action_tooltip}
+
+        local colors = color_map[item.overall]
+        local style = (item.abs_diff ~= total_amount) and colors.half or colors.full
+
+        local relevant_table = (item.overall == "production") and prod_table or ingr_table
+        local button = relevant_table.add{type="sprite-button", number=diff_string, style=style,
+            sprite=item.proto.sprite, tags={mod="fp", on_gui_click="act_on_district_item",
+            item_id=item.id, on_gui_hover="set_tooltip", context="districts_box"},
+            raise_hover_events=true, mouse_button_filter={"left-and-right"}}
+        tooltips.districts_box[button.index] = tooltip
+    end
+
+    local max_count = math.max(#prod_table.children, #ingr_table.children)
+    local height = math.ceil(max_count / column_count) * MAGIC_NUMBERS.item_button_size
     prod_table.style.height = height; ingr_table.style.height = height
 end
 

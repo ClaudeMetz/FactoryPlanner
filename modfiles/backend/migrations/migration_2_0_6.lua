@@ -1,7 +1,5 @@
 ---@diagnostic disable
 
-local DistrictItemSet = require("backend.data.DistrictItemSet")
-
 local migration = {}
 
 function migration.player_table(player_table)
@@ -10,8 +8,9 @@ function migration.player_table(player_table)
         district.byproducts = nil
         district.ingredients = nil
 
-        district.product_set = DistrictItemSet.init("product")
-        district.ingredient_set = DistrictItemSet.init("ingredient")
+        -- Used to migrate to Object, but that changed so this is weird
+        district.product_set = {}
+        district.ingredient_set = {}
 
         for factory in district:iterator() do
             local function iterate_floor(floor)

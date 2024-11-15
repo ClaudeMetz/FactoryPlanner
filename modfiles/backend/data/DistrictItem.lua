@@ -1,22 +1,29 @@
 local Object = require("backend.data.Object")
 
+---@alias DistrictItemMode "production" | "consumption"
+
+---@class DistrictItemData
+---@field amount number
+
 ---@class DistrictItem: Object, ObjectMethods
 ---@field class "DistrictItem"
 ---@field proto FPItemPrototype
----@field amount number
----@field converse_amount number
+---@field production DistrictItemData
+---@field consumption DistrictItemData
 local DistrictItem = Object.methods()
 DistrictItem.__index = DistrictItem
 script.register_metatable("DistrictItem", DistrictItem)
 
 ---@param proto FPItemPrototype
----@param amount number
 ---@return DistrictItem
-local function init(proto, amount)
+local function init(proto)
     local object = Object.init({
         proto = proto,
-        amount = amount,  -- amount filled in by the factories
-        converse_amount = 0  -- amount of this item in converse category
+        production = {amount=0},
+        consumption = {amount=0},
+
+        overall = nil,
+        abs_diff = 0
     }, "DistrictItem", DistrictItem)  --[[@as DistrictItem]]
     return object
 end
@@ -24,6 +31,13 @@ end
 
 function DistrictItem:index()
     OBJECT_INDEX[self.id] = self
+end
+
+
+---@param amount number
+---@param mode DistrictItemMode
+function DistrictItem:add(amount, mode)
+    self[mode].amount = self[mode].amount + amount
 end
 
 return {init = init}
