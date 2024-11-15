@@ -8,6 +8,7 @@ Date: 00. 00. 0000
   Bugfixes:
     - Fixed a crash in the solver code (#405)
     - Fixed a crash when opening the utility dialog while in map view (#401)
+    - Fixed a crash when trying to import recipe productivity recipes without a selected factory (#404)
 
 ---------------------------------------------------------------------------------------------------
 Version: 2.0.7
