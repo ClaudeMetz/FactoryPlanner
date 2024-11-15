@@ -101,6 +101,14 @@ end
 ---@param filter ObjectFilter?
 ---@param pivot Product?
 ---@param direction NeighbourDirection?
+---@return Product[]
+function Factory:as_list(filter, pivot, direction)
+    return self:_as_list(filter, pivot, direction)
+end
+
+---@param filter ObjectFilter?
+---@param pivot Product?
+---@param direction NeighbourDirection?
 ---@return number count
 function Factory:count(filter, pivot, direction)
     return self:_count(filter, pivot, direction)

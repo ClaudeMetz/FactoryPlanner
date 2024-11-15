@@ -1,22 +1,17 @@
 local Object = require("backend.data.Object")
 local DistrictItem = require("backend.data.DistrictItem")
 
----@alias DistrictItemCategory "product" | "ingredient"
-
 ---@class DistrictItemSet: Object, ObjectMethods
 ---@field class "DistrictItemSet"
----@field category DistrictItemCategory
 ---@field first DistrictItem?
 ---@field map { [FPItemPrototype]: DistrictItem }
 local DistrictItemSet = Object.methods()
 DistrictItemSet.__index = DistrictItemSet
 script.register_metatable("DistrictItemSet", DistrictItemSet)
 
----@param category DistrictItemCategory
 ---@return DistrictItemSet
-local function init(category)
+local function init()
     local object = Object.init({
-        category = category,
         first = nil,
         map = {}
     }, "DistrictItemSet", DistrictItemSet)  --[[@as DistrictItemSet]]
@@ -30,17 +25,20 @@ function DistrictItemSet:index()
 end
 
 
----@param proto FPItemPrototype
----@param amount number
-function DistrictItemSet:add_item(proto, amount)
-    local existing_item = self.map[proto]
-    if existing_item then
-        existing_item.amount = existing_item.amount + amount
-    else
-        local district_item = DistrictItem.init(proto, amount)
-        district_item.parent = self
-        self:_insert(district_item)
-        self.map[district_item.proto] = district_item
+---@param items SimpleItem[]
+---@param mode DistrictItemMode
+function DistrictItemSet:add_items(items, mode)
+    for _, item in pairs(items) do
+        local district_item = self.map[item.proto]
+
+        if not district_item then
+            district_item = DistrictItem.init(item.proto)
+            district_item.parent = self
+            self:_insert(district_item)
+            self.map[district_item.proto] = district_item
+        end
+
+        district_item:add(item.amount, mode)
     end
 end
 
@@ -61,13 +59,23 @@ function DistrictItemSet:iterator(filter, pivot, direction)
 end
 
 
+function DistrictItemSet:diff()
+    for item in self:iterator() do
+        local diff = item.production.amount - item.consumption.amount
+        item.overall = (diff > 0) and "production" or "consumption"
+        item.abs_diff = math.abs(diff)
+
+        if item.abs_diff < MAGIC_NUMBERS.margin_of_error then self:remove(item) end
+    end
+end
+
 -- Sorts (awkwardly) based on type first ("item" before "fluid") and then amount
 local function item_compare(a, b)
     local a_type, b_type = a.proto.type, b.proto.type
     if a_type < b_type then return true
     elseif a_type > b_type then return false
-    elseif a.amount < b.amount then return true
-    elseif a.amount > b.amount then return false end
+    elseif a.abs_diff < b.abs_diff then return true
+    elseif a.abs_diff > b.abs_diff then return false end
     return false
 end
 
@@ -79,7 +87,7 @@ function DistrictItemSet:sort()
         local current_object = next_object
         next_object = next_object.next
 
-        local inserted = false
+        local inserted = false  -- TODO drop items that average out to 0
         for object in self:iterator() do
             if item_compare(object, current_object) then
                 self:_insert(current_object, object, "previous")

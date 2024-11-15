@@ -8,8 +8,7 @@ local DistrictItemSet = require("backend.data.DistrictItemSet")
 ---@field previous District?
 ---@field name string
 ---@field location_proto FPLocationPrototype
----@field product_set DistrictItemSet
----@field ingredient_set DistrictItemSet
+---@field item_set DistrictItemSet
 ---@field first Factory?
 ---@field power number
 ---@field emissions number
@@ -24,8 +23,7 @@ local function init(name)
     local object = Object.init({
         name = name or "Nauvis",
         location_proto = defaults.get_fallback("locations").proto,
-        product_set = DistrictItemSet.init("product"),
-        ingredient_set = DistrictItemSet.init("ingredient"),
+        item_set = DistrictItemSet.init(),
         first = nil,
 
         power = 0,
@@ -39,8 +37,7 @@ end
 
 function District:index()
     OBJECT_INDEX[self.id] = self
-    self.product_set:index()
-    self.ingredient_set:index()
+    self.item_set:index()
     for factory in self:iterator() do factory:index() end
 end
 
@@ -103,41 +100,19 @@ function District:refresh()
 
     self.power = 0
     self.emissions = 0
-    self.product_set:clear()
-    self.ingredient_set:clear()
+    self.item_set:clear()
 
     for factory in self:iterator({archived=false, valid=true}) do
         self.power = self.power + factory.top_floor.power
         self.emissions = self.emissions + factory.top_floor.emissions
 
-        for product in factory:iterator() do
-            if product.amount > 0 then self.product_set:add_item(product.proto, product.amount) end
-        end
-        for _, byproduct in pairs(factory.top_floor.byproducts) do
-            self.product_set:add_item(byproduct.proto, byproduct.amount)
-        end
-        for _, ingredient in pairs(factory.top_floor.ingredients) do
-            self.ingredient_set:add_item(ingredient.proto, ingredient.amount)
-        end
+        self.item_set:add_items(factory:as_list(), "production")
+        self.item_set:add_items(factory.top_floor.byproducts, "production")
+        self.item_set:add_items(factory.top_floor.ingredients, "consumption")
     end
 
-    local function fill_converse_amount(category, converse)
-        local map = self[converse .. "_set"].map
-        for item in self[category .. "_set"]:iterator() do
-            local match = map[item.proto]
-            item.converse_amount = (match and match.amount or 0)
-
-            local main_amount = item.amount - item.converse_amount
-            if main_amount < MAGIC_NUMBERS.margin_of_error then
-                self[category .. "_set"]:remove(item)
-            end
-        end
-    end
-    fill_converse_amount("product", "ingredient")
-    fill_converse_amount("ingredient", "product")
-
-    self.product_set:sort()
-    self.ingredient_set:sort()
+    self.item_set:diff()
+    self.item_set:sort()
 end
 
 

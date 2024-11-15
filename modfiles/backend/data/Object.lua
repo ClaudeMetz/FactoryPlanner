@@ -199,6 +199,19 @@ end
 ---@param filter ObjectFilter?
 ---@param pivot Object?
 ---@param direction NeighbourDirection?
+---@return Object[]
+function methods:_as_list(filter, pivot, direction)
+    local list = {}
+    for object in self:_iterator(filter, pivot, direction) do
+        table.insert(list, object)
+    end
+    return list
+end
+
+---@protected
+---@param filter ObjectFilter?
+---@param pivot Object?
+---@param direction NeighbourDirection?
 ---@return number count
 function methods:_count(filter, pivot, direction)
     local count = 0
