@@ -9,6 +9,7 @@ Date: 00. 00. 0000
     - Fixed a crash in the solver code (#405)
     - Fixed a crash when opening the utility dialog while in map view (#401)
     - Fixed a crash when trying to import recipe productivity recipes without a selected factory (#404)
+    - Fixed a crash when trying to paste a recipe line on a subfloor (#403)
 
 ---------------------------------------------------------------------------------------------------
 Version: 2.0.7

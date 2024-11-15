@@ -167,7 +167,7 @@ function Floor:check_product_compatibility(object)
     -- The triple loop is crappy, but it's the simplest way to check
     for _, product in pairs(relevant_line.recipe_proto.products) do
         for line in self:iterator() do
-            for _, ingredient in line.ingredients:iterator() do
+            for _, ingredient in pairs(line.ingredients) do
                 if ingredient.proto.type == product.type and ingredient.proto.name == product.name then
                     return true
                 end
