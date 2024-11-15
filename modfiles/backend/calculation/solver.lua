@@ -55,10 +55,25 @@ local function set_blank_factory(player, factory)
 end
 
 
+local function factory_products(factory)
+    local products = {}
+    for product in factory:iterator() do
+        local product_data = {
+            name = product.proto.name,
+            type = product.proto.type,
+            amount = product:get_required_amount()
+        }
+        table.insert(products, product_data)
+    end
+    return products
+end
+
+
 -- Generates structured data of the given floor for calculation
 local function generate_floor_data(player, factory, floor)
     local floor_data = {
         id = floor.id,
+        products = (floor.level == 1) and factory_products(factory) or floor.first.recipe_proto.products,
         lines = {}
     }
 
@@ -245,18 +260,9 @@ function solver.generate_factory_data(player, factory)
     local factory_data = {
         player_index = player.index,
         factory_id = factory.id,
-        top_level_products = {},
         top_floor = generate_floor_data(player, factory, factory.top_floor),
         matrix_free_items = factory.matrix_free_items
     }
-
-    for product in factory:iterator() do
-        local product_data = {
-            proto = product.proto,  -- reference
-            amount = product:get_required_amount()
-        }
-        table.insert(factory_data.top_level_products, product_data)
-    end
 
     return factory_data
 end
