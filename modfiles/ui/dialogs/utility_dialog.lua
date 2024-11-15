@@ -81,7 +81,7 @@ function utility_structures.components(player, modal_data)
         local component_row = modal_elements["components_" .. type .. "_flow"]
         component_row.clear()
 
-        local main_inventory = player.get_main_inventory()
+        local main_inventory = player.character.get_main_inventory()
         local frame_components = component_row.add{type="frame", direction="horizontal", style="fp_frame_light_slots"}
         local table_components = frame_components.add{type="table", column_count=10, style="filter_slot_table"}
 
