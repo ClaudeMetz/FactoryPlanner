@@ -81,7 +81,7 @@ function utility_structures.components(player, modal_data)
         local component_row = modal_elements["components_" .. type .. "_flow"]
         component_row.clear()
 
-        local main_inventory = player.character.get_main_inventory()
+        local main_inventory = (player.character) and player.character.get_main_inventory() or nil
         local frame_components = component_row.add{type="frame", direction="horizontal", style="fp_frame_light_slots"}
         local table_components = frame_components.add{type="table", column_count=10, style="filter_slot_table"}
 
@@ -89,7 +89,7 @@ function utility_structures.components(player, modal_data)
             if component.amount > 0 then
                 local proto, quality_proto, required_amount = component.proto, component.quality_proto, component.amount
                 local item_id = {name = proto.name, quality = quality_proto.name}
-                local amount_in_inventory = main_inventory.get_item_count(item_id)
+                local amount_in_inventory = (main_inventory) and main_inventory.get_item_count(item_id) or 0
                 local missing_amount = required_amount - amount_in_inventory
 
                 if missing_amount > 0 then
