@@ -98,8 +98,14 @@ local function attempt_adding_line(player, recipe_id, modal_data)
         local relative_object = OBJECT_INDEX[modal_data.add_after_line_id]  --[[@as LineObject]]
         floor:insert(line, relative_object, "next")  -- if not relative, insert uses last line
 
+        local recipe_name = recipe_proto.localised_name
         if not (recipe_proto.custom or player.force.recipes[recipe_proto.name].enabled) then
-            util.messages.raise(player, "warning", {"fp.warning_recipe_disabled", recipe_proto.localised_name}, 2)
+            util.messages.raise(player, "warning", {"fp.warning_recipe_disabled", recipe_name}, 2)
+        end
+
+        local surface_compatibility = line:get_surface_compatibility()
+        if not surface_compatibility.recipe or not not surface_compatibility.recipe then
+            util.messages.raise(player, "warning", {"fp.warning_surface_not_compatible", recipe_name}, 2)
         end
 
         -- Set machine and beacon up as their default
