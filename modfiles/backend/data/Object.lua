@@ -222,6 +222,31 @@ function methods:_count(filter, pivot, direction)
 end
 
 
+---@protected
+---@param comparator function
+function methods:_sort(comparator)
+    local next_object = self.first
+    self.first = nil  -- clear to re-insert into below
+
+    while next_object ~= nil do
+        local current_object = next_object
+        next_object = next_object.next
+
+        local inserted = false
+        for object in self:iterator() do
+            if comparator(object, current_object) then
+                self:_insert(current_object, object, "previous")
+                inserted = true
+                break
+            end
+        end
+        if not inserted then  -- first or last element
+            self:_insert(current_object)
+        end
+    end
+end
+
+
 ---@class PackedObject
 ---@field class string
 

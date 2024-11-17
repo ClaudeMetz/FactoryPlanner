@@ -154,24 +154,22 @@ function ModuleSet:trim()
     for _, module in pairs(modules_to_remove) do self:remove(module) end
 end
 
+
+local function module_comparator(a, b)
+    local a_module, b_module = a.proto.id, b.proto.id  -- IDs are ordered sensibly
+    local a_quality, b_quality = a.quality_proto.level, b.quality_proto.level
+    if a_module < b_module then return true
+    elseif a_module > b_module then return false
+    elseif a_quality < b_quality then return true
+    elseif a_quality > b_quality then return false end
+    return false
+end
+
 -- Sorts modules in a deterministic fashion so they are in the same order for every line
 function ModuleSet:sort()
-    local modules_by_name = {}
-    for module in self:iterator() do
-        modules_by_name[module.proto.name] = module
-    end
-
-    self.first = nil
-    for _, category in ipairs(storage.prototypes.modules) do
-        for _, module_proto in ipairs(category.members) do
-            local module = modules_by_name[module_proto.name]
-            if module then
-                module.previous, module.next = nil, nil
-                self:_insert(module)
-            end
-        end
-    end
+    self:_sort(module_comparator)
 end
+
 
 ---@return ModuleEffects
 function ModuleSet:get_effects()

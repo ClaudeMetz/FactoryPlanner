@@ -59,18 +59,8 @@ function DistrictItemSet:iterator(filter, pivot, direction)
 end
 
 
-function DistrictItemSet:diff()
-    for item in self:iterator() do
-        local diff = item.production.amount - item.consumption.amount
-        item.overall = (diff > 0) and "production" or "consumption"
-        item.abs_diff = math.abs(diff)
-
-        if item.abs_diff < MAGIC_NUMBERS.margin_of_error then self:remove(item) end
-    end
-end
-
 -- Sorts (awkwardly) based on type first ("item" before "fluid") and then amount
-local function item_compare(a, b)
+local function item_comparator(a, b)
     local a_type, b_type = a.proto.type, b.proto.type
     if a_type < b_type then return true
     elseif a_type > b_type then return false
@@ -80,24 +70,17 @@ local function item_compare(a, b)
 end
 
 function DistrictItemSet:sort()
-    local next_object = self.first
-    self.first = nil  -- clear to re-insert into below
+    self:_sort(item_comparator)
+end
 
-    while next_object ~= nil do
-        local current_object = next_object
-        next_object = next_object.next
 
-        local inserted = false  -- TODO drop items that average out to 0
-        for object in self:iterator() do
-            if item_compare(object, current_object) then
-                self:_insert(current_object, object, "previous")
-                inserted = true
-                break
-            end
-        end
-        if not inserted then  -- first or last element
-            self:_insert(current_object)
-        end
+function DistrictItemSet:diff()
+    for item in self:iterator() do
+        local diff = item.production.amount - item.consumption.amount
+        item.overall = (diff > 0) and "production" or "consumption"
+        item.abs_diff = math.abs(diff)
+
+        if item.abs_diff < MAGIC_NUMBERS.margin_of_error then self:remove(item) end
     end
 end
 
