@@ -9,6 +9,7 @@ Date: 00. 00. 0000
     - Fixed a crash when trying to open the utility dialog without an associated player character
     - Fixed some modded beacons being over-permissive with what modules they support
     - Fixed some modded machines not allowing beacons even though they should
+    - Fixed that Pyanodon's empty planter box recipe was detected as a barreling recipe (#406)
 
 ---------------------------------------------------------------------------------------------------
 Version: 2.0.8

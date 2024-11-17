@@ -211,7 +211,8 @@ end
 
 -- Determines whether the given recipe is a barreling or stacking one
 local compacting_recipe_mods = {
-    ["base"] = {"^fill%-.*", "^empty%-.*"},
+    ["base"] = {patterns = {"^fill%-.*", "^empty%-.*"}, item = "barrel"},
+    ["pycoalprocessing"] = {patterns = {"^fill%-.*%-canister$", "^empty%-.*%-canister$"}}
     --[[ ["deadlock-beltboxes-loaders"] = {"^deadlock%-stacks%-.*", "^deadlock%-packrecipe%-.*",
                                       "^deadlock%-unpackrecipe%-.*"},
     ["DeadlockCrating"] = {"^deadlock%-packrecipe%-.*", "^deadlock%-unpackrecipe%-.*"},
@@ -220,20 +221,26 @@ local compacting_recipe_mods = {
     ["Satisfactorio"] = {"^packaged%-.*", "^unpack%-.*"} ]]
 }
 
-local active_compacting_recipe_mods = {}  ---@type string[]
-for modname, patterns in pairs(compacting_recipe_mods) do
-    for _, pattern in pairs(patterns) do
-        if active_mods[modname] then
-            table.insert(active_compacting_recipe_mods, pattern)
-        end
-    end
-end
-
 ---@param proto LuaRecipePrototype
 ---@return boolean
 function generator_util.is_compacting_recipe(proto)
-    for _, pattern in pairs(active_compacting_recipe_mods) do
-        if string.match(proto.name, pattern) then return true end
+    for mod, filter_data in pairs(compacting_recipe_mods) do
+        if active_mods[mod] then
+            for _, pattern in pairs(filter_data.patterns) do
+                if string.match(proto.name, pattern) then
+                    if not filter_data.item then
+                        return true
+                    else
+                        for _, product in pairs(proto.products) do
+                            if product.name == filter_data.item then return true end
+                        end
+                        for _, ingredient in pairs(proto.ingredients) do
+                            if ingredient.name == filter_data.item then return true end
+                        end
+                    end
+                end
+            end
+        end
     end
     return false
 end
