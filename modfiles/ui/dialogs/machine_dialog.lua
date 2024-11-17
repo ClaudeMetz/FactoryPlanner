@@ -223,7 +223,7 @@ local function handle_machine_choice(player, _, event)
     machine.module_set:normalize({compatibility=true, trim=true, effects=true})
 
     -- Make sure the line's beacon is removed if this machine no longer supports it
-    if not machine:uses_effects() then machine.parent:set_beacon(nil) end
+    if not machine.parent:uses_beacon_effects() then machine.parent:set_beacon(nil) end
 
     refresh_fuel_frame(player)
     module_configurator.refresh_modules_flow(player, false)

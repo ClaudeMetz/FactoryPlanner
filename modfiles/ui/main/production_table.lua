@@ -213,7 +213,7 @@ function builders.machine(line, parent_flow, metadata)
 end
 
 function builders.beacon(line, parent_flow, metadata)
-    if line.class == "Floor" or not line.machine:uses_effects() then return end
+    if line.class == "Floor" or not line:uses_beacon_effects() then return end
 
     local beacon = line.beacon
     if beacon == nil then
