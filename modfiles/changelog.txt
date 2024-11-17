@@ -7,7 +7,8 @@ Date: 00. 00. 0000
     -
   Bugfixes:
     - Fixed a crash when trying to open the utility dialog without an associated player character
-    - Fixed beacons being over-permissive with what modules they support in modded configurations
+    - Fixed some modded beacons being over-permissive with what modules they support
+    - Fixed some modded machines not allowing beacons even though they should
 
 ---------------------------------------------------------------------------------------------------
 Version: 2.0.8

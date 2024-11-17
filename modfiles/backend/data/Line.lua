@@ -96,7 +96,7 @@ function Line:change_machine_to_proto(player, proto)
         self.machine.proto = proto
 
         self.machine.module_set:normalize({compatibility=true, trim=true, effects=true})
-        if not self.machine:uses_effects() then self:set_beacon(nil) end
+        if not self.parent:uses_beacon_effects() then self:set_beacon(nil) end
         self.surface_compatibility = nil  -- reset it since the machine changed
     end
 
@@ -186,6 +186,15 @@ function Line:setup_beacon(player)
         blank_beacon:reset(player)
     end
 end
+
+
+---@return boolean uses_effects
+function Line:uses_beacon_effects(player)
+    local effect_receiver = self.machine.proto.effect_receiver  --[[@as EffectReceiver]]
+    if effect_receiver == nil then return false end
+    return effect_receiver.uses_beacon_effects
+end
+
 
 function Line:summarize_effects()
     local beacon_effects = (self.beacon) and self.beacon.total_effects or nil

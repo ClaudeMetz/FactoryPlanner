@@ -78,10 +78,8 @@ end
 
 ---@return boolean uses_effects
 function Beacon:uses_effects()
-
-    local effect_receiver = self.parent.machine.proto.effect_receiver  --[[@as EffectReceiver]]
-    if effect_receiver == nil then return false end
-    return effect_receiver.uses_module_effects and effect_receiver.uses_beacon_effects
+    -- This method is here for ModuleSet to use generically
+    return self.parent:uses_beacon_effects()
 end
 
 
