@@ -2,7 +2,15 @@
 Version: 0.00.00
 Date: 00. 00. 0000
   Features:
-    -
+    - 
+  Changes:
+    - 
+  Bugfixes:
+    - 
+
+---------------------------------------------------------------------------------------------------
+Version: 2.0.9
+Date: 17. 11. 2024
   Changes:
     - Added a warning message when trying to use a recipe in an incompatible location (#393)
   Bugfixes:
