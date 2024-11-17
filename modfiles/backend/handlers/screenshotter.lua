@@ -191,9 +191,9 @@ local function execute_action(player_index, action_name)
     actions[action_name](player)
 end
 
--- Remove first to make file resilient to double load (from test harness)
-remote.remove_interface("screenshotter_input")
-remote.add_interface("screenshotter_input", {
-    initial_setup = initial_setup,
-    execute_action = execute_action
-})
+if not remote.interfaces["screenshotter_input"] then
+    remote.add_interface("screenshotter_input", {
+        initial_setup = initial_setup,
+        execute_action = execute_action
+    })
+end
