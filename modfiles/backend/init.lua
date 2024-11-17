@@ -297,13 +297,14 @@ script.on_event(translator.on_player_dictionaries_ready, dictionaries_ready)
 
 
 -- ** COMMANDS **
--- Remove first to make file resilient to double load (from test harness)
-commands.remove_command("fp-restart-translation")
-commands.add_command("fp-restart-translation", {"command-help.fp_restart_translation"}, function()
-    translator.on_init()
-    prototyper.util.build_translation_dictionaries()
-end)
-commands.remove_command("fp-shrinkwrap-interface")
-commands.add_command("fp-shrinkwrap-interface", {"command-help.fp_shrinkwrap_interface"}, function(command)
-    if command.player_index then main_dialog.shrinkwrap_interface(game.get_player(command.player_index)) end
-end)
+if not commands.commands['fp-restart-translation'] then
+    commands.add_command("fp-restart-translation", {"command-help.fp_restart_translation"}, function()
+        translator.on_init()
+        prototyper.util.build_translation_dictionaries()
+    end)
+end
+if not commands.commands['fp-reload-prototypes'] then
+    commands.add_command("fp-shrinkwrap-interface", {"command-help.fp_shrinkwrap_interface"}, function(command)
+        if command.player_index then main_dialog.shrinkwrap_interface(game.get_player(command.player_index)) end
+    end)
+end
