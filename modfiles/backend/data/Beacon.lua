@@ -101,8 +101,9 @@ end
 ---@return string? error
 function Beacon:paste(object)
     if object.class == "Beacon" then
-        self.parent:set_beacon(object)  -- sets nil if incompatible
-        if self.parent.beacon then
+        self.parent:set_beacon(object)
+        if not object.module_set.first then
+            self.parent:set_beacon(nil)
             return false, "incompatible"
         else
             return true, nil
