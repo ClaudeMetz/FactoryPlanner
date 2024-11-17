@@ -292,7 +292,7 @@ function ModuleSet:paste(module)
     end
 
     local desired_amount = math.min(module.amount, self.empty_slots)
-    local existing_module = self:find({proto=module.proto})
+    local existing_module = self:find({proto=module.proto, quality_proto=module.quality_proto})
     if existing_module then
         existing_module:set_amount(existing_module.amount + desired_amount)
     else

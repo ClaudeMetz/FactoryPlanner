@@ -68,7 +68,7 @@ function Module:paste(object)
     if object.class == "Module" then
         ---@cast object Module
         if self.parent:check_compatibility(object.proto) then
-            if self.parent:find({proto=object.proto}) and object.proto.name ~= self.proto.name then
+            if self.parent:find({proto=object.proto, quality_proto=self.quality_proto}) then
                 return false, "already_exists"
             else
                 object.amount = math.min(object.amount, self.amount + self.parent.empty_slots)
