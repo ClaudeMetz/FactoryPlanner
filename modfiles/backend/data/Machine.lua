@@ -140,16 +140,17 @@ end
 ---@param object CopyableObject
 ---@return boolean success
 ---@return string? error
-function Machine:paste(object)
+function Machine:paste(object, player)
     if object.class == "Machine" then
-        local found_machine = prototyper.util.find("machines", object.proto.name, self.proto.category)
+        local corresponding_proto = prototyper.util.find("machines", object.proto.name, self.proto.category)
+        if corresponding_proto and self.parent:is_machine_applicable(object.proto) then
+            self.parent:change_machine_to_proto(player, corresponding_proto)
+            -- The above adjusts modules and fuel as well
 
-        if found_machine and self.parent:is_machine_applicable(object.proto) then
-            object.parent = self.parent
-            self.parent.machine = object
+            self.quality_proto = object.quality_proto
+            self.limit = object.limit
+            self.force_limit = object.force_limit
 
-            self.parent.surface_compatibility = nil  -- reset since the machine changed
-            object.module_set:normalize({compatibility=true, effects=true})
             return true, nil
         else
             return false, "incompatible"

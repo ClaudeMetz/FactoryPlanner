@@ -7,6 +7,8 @@ Date: 00. 00. 0000
     - Added a warning message when trying to use a recipe in an incompatible location (#393)
   Bugfixes:
     - Fixed that adding the same module, but of different quality would just drop one of them (#392)
+    - Fixed that pasting a machine onto another one could leave it in a broken state (#383)
+    - Fixed that pasting modules would not handle their quality correctly
     - Fixed a crash when trying to open the utility dialog without an associated player character
     - Fixed some modded beacons being over-permissive with what modules they support
     - Fixed some modded machines not allowing beacons even though they should

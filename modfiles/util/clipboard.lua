@@ -49,7 +49,7 @@ function _clipboard.paste(player, target)
         else
             clone = ftable.shallow_copy(clip.packed_object)
         end
-        local success, error = target:paste(clone)
+        local success, error = target:paste(clone, player)
 
         if success then  -- objects in the clipboard are always valid since it resets on_config_changed
             util.cursor.create_flying_text(player, {"fp.pasted_from_clipboard", {"fp.pu_" .. clip.class:lower(), 1}})
