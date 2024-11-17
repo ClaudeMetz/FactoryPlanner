@@ -1078,6 +1078,18 @@ function generator.modules.generate()
     return modules
 end
 
+---@param a FPModulePrototype
+---@param b FPModulePrototype
+---@return boolean
+function generator.modules.sorting_function(a, b)
+    -- Sorting done so IDs can be used for order comparison
+    if a.category < b.category then return true
+    elseif a.category > b.category then return false
+    elseif a.tier < b.tier then return true
+    elseif a.tier > b.tier then return false end
+    return false
+end
+
 
 ---@class FPBeaconPrototype: FPPrototype
 ---@field data_type "beacons"

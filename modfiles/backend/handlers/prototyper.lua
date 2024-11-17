@@ -48,13 +48,13 @@ prototyper.data_types = {machines = true, recipes = false, items = true, fuels =
 
 -- Converts given prototype list to use ids as keys, and sorts it if desired
 ---@param data_type DataType
----@param prototype_sorting_function SortingFunction
+---@param prototype_sorting_function SortingFunction?
 ---@return AnyIndexedPrototypes
 local function convert_and_sort(data_type, prototype_sorting_function)
     local final_list = {}
 
     ---@param list AnyNamedPrototypes[]
-    ---@param sorting_function SortingFunction
+    ---@param sorting_function SortingFunction?
     ---@param category_id integer?
     ---@return AnyIndexedPrototypes
     local function apply(list, sorting_function, category_id)
@@ -110,7 +110,7 @@ function prototyper.build()
 
     -- Finish up generation by converting lists to use ids as keys, and sort if desired
     for data_type, _ in pairs(prototyper.data_types) do
-        local sorting_function = generator[data_type].sorting_function  ---@type SortingFunction
+        local sorting_function = generator[data_type].sorting_function  ---@type SortingFunction?
         storage.prototypes[data_type] = convert_and_sort(data_type, sorting_function)  ---@type AnyIndexedPrototypes
     end
 end
