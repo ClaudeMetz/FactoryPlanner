@@ -1085,6 +1085,7 @@ end
 ---@field elem_type ElemType
 ---@field built_by_item FPItemPrototype
 ---@field allowed_effects AllowedEffects
+---@field allowed_module_categories { [string]: boolean }?
 ---@field module_limit uint
 ---@field effectivity double
 ---@field quality_bonus double
@@ -1115,6 +1116,7 @@ function generator.beacons.generate()
                 elem_type = "entity",
                 built_by_item = built_by_item,
                 allowed_effects = proto.allowed_effects,
+                allowed_module_categories = proto.allowed_module_categories,
                 module_limit = proto.module_inventory_size,
                 effectivity = proto.distribution_effectivity,
                 quality_bonus = proto.distribution_effectivity_bonus_per_quality_level,
