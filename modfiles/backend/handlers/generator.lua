@@ -1188,12 +1188,13 @@ function generator.locations.generate()
     local property_prototypes = generate_surface_properties()
 
     ---@param proto LuaSpaceLocationPrototype | LuaSurfacePrototype
-    ---@param type_ string
+    ---@param category string
     ---@return FPLocationPrototype? location_proto
-    local function build_location(proto, type_)
-        local sprite = type_ .. "/" .. proto.name
-        if not proto.hidden and not helpers.is_valid_sprite_path(sprite) then return nil end
-        if not proto.surface_properties then return nil end
+    local function build_location(proto, category)
+        if proto.hidden or not proto.surface_properties then return nil end
+
+        local sprite = category .. "/" .. proto.name
+        if not helpers.is_valid_sprite_path(sprite) then return nil end
 
         local surface_properties, tooltip = {}, {"", {"fp.tt_title", proto.localised_name}, "\n"}
         for _, property_proto in pairs(property_prototypes) do
@@ -1211,15 +1212,14 @@ function generator.locations.generate()
             sprite = sprite,
             tooltip = tooltip,
             surface_properties = surface_properties,
-            pollutant_type = (type_ == "space-location" and proto.pollutant_type) and proto.pollutant_type.name or nil
+            pollutant_type = (category == "space-location" and proto.pollutant_type)
+                and proto.pollutant_type.name or nil
         }
     end
 
     for _, proto in pairs(prototypes.space_location) do
-        if proto.name ~= "space-location-unknown" then  -- Shouldn't this be hidden by the game?
-            local location = build_location(proto, "space-location")
-            if location then insert_prototype(locations, location, nil) end
-        end
+        local location = build_location(proto, "space-location")
+        if location then insert_prototype(locations, location, nil) end
     end
 
     for _, proto in pairs(prototypes.surface) do
