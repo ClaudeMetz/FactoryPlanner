@@ -103,8 +103,7 @@ local function attempt_adding_line(player, recipe_id, modal_data)
             util.messages.raise(player, "warning", {"fp.warning_recipe_disabled", recipe_name}, 2)
         end
 
-        local surface_compatibility = line:get_surface_compatibility()
-        if not surface_compatibility.recipe or not not surface_compatibility.recipe then
+        if not line:get_surface_compatibility().overall then
             util.messages.raise(player, "warning", {"fp.warning_surface_not_compatible", recipe_name}, 2)
         end
 
