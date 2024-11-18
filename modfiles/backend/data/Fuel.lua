@@ -73,12 +73,14 @@ end
 
 ---@return boolean valid
 function Fuel:validate()
-    self.proto = prototyper.util.validate_prototype_object(self.proto, "combined_category")
-    self.valid = (not self.proto.simplified)
-
-    if self.valid and self.parent.valid then
-        local burner = self.parent.proto.burner
-        self.valid = burner and burner.categories[self.proto.category] ~= nil
+    -- Machine is simplified, doesn't have a burner anymore, or has a different category, is all bad
+    local burner = (not self.parent.proto.simplified) and self.parent.proto.burner or nil
+    if not burner or burner.combined_category ~= self.proto.combined_category then
+        self.proto = prototyper.util.simplify_prototype(self.proto, "combined_category")
+        self.valid = false
+    else
+        self.proto = prototyper.util.validate_prototype_object(self.proto, "combined_category")
+        self.valid = (not self.proto.simplified)
     end
 
     return self.valid
@@ -87,7 +89,6 @@ end
 ---@param player LuaPlayer
 ---@return boolean success
 function Fuel:repair(player)
-    -- If the fuel-proto is still simplified, validate couldn't repair it, so it has to be removed
     return false  -- the parent machine will try to replace it with another fuel of the same category
 end
 

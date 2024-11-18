@@ -143,7 +143,7 @@ end
 function Machine:paste(object, player)
     if object.class == "Machine" then
         local corresponding_proto = prototyper.util.find("machines", object.proto.name, self.proto.category)
-        if corresponding_proto and self.parent:is_machine_applicable(object.proto) then
+        if corresponding_proto and self.parent:is_machine_compatible(object.proto) then
             self.parent:change_machine_to_proto(player, corresponding_proto)
             -- The above adjusts modules and fuel as well
 
@@ -218,19 +218,30 @@ end
 
 ---@return boolean valid
 function Machine:validate()
-    self.proto = prototyper.util.validate_prototype_object(self.proto, "category")
-    self.valid = (not self.proto.simplified)
+    if self.parent.recipe_proto.category ~= self.proto.category then
+        -- When the category changed, this is invalid by default
+        self.proto = prototyper.util.simplify_prototype(self.proto, "category")
+        self.valid = false
+    else
+        self.proto = prototyper.util.validate_prototype_object(self.proto, "category")
+        self.valid = (not self.proto.simplified)
+    end
 
     self.quality_proto = prototyper.util.validate_prototype_object(self.quality_proto, nil)
     self.valid = (not self.quality_proto.simplified) and self.valid
 
-    if self.valid and self.parent.valid then
-        self.valid = self.parent:is_machine_applicable(self.proto)
+    -- Only need to check compatibility when the below is valid, else it'll be replaced anyways
+    if not self.proto.simplified and not self.parent.recipe_proto.simplified then
+        self.valid = self.parent:is_machine_compatible(self.proto) and self.valid
     end
 
-    -- If the machine changed to not use a burner, remove its fuel
-    if not self.proto.burner then self.fuel = nil end
-    if self.fuel and self.valid then self.valid = self.fuel:validate() end
+    if self.proto.burner and not self.fuel then
+        -- If this machine changed to require fuel, add this dummy
+       local dummy = {name = "", category = self.proto.burner.combined_category,
+            data_type = "fuels", simplified = true}
+        self.fuel = Fuel.init(dummy, self)
+    end
+    if self.fuel then self.valid = self.fuel:validate() and self.valid end
 
     self.valid = self.module_set:validate() and self.valid
 
@@ -240,24 +251,30 @@ end
 ---@param player LuaPlayer
 ---@return boolean success
 function Machine:repair(player)
-    -- If the prototype is still simplified, it couldn't be fixed by validate
-    -- A final possible fix is to replace this machine with the default for its category
-    if self.proto.simplified and not self.parent:change_machine_to_default(player) then
-        return false  -- if this happens, the whole line can not be salvaged
-    end
-    self.valid = true  -- if it gets to this, change_machine was successful and the machine is valid
-    -- It just might need to cleanup some fuel, modules and/or quality
+    self.valid = true
 
-    if self.quality_proto.simplified then
+    -- Simplified or incompatible machine can potentially be replaced with a different one
+    if self.proto.simplified or not self.parent:is_machine_compatible(self.proto) then
+        -- Changing to the default machine also fixes the category not matching the recipe
+        if not self.parent:change_machine_to_default(player, true) then
+            self.valid = false  -- this situation can't be repaired
+        end
+    end
+
+    if self.valid and self.quality_proto.simplified then
         self.quality_proto = defaults.get_fallback("qualities").proto
     end
 
-    if self.fuel and not self.fuel.valid and not self.fuel:repair(player) then
-        -- If fuel is unrepairable, replace it with a default value
-        self.fuel = nil; self:normalize_fuel(player)
+    if self.valid and self.fuel and not self.fuel.valid then
+        if not self.fuel:repair(player) then
+            self.fuel = nil  -- replace fuel with its default
+            self:normalize_fuel(player)
+        end
     end
 
-    self.module_set:repair(player)
+    if self.valid then
+        self.module_set:repair(player)  -- always becomes valid
+    end
 
     return self.valid
 end

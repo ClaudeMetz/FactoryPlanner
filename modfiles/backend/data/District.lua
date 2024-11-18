@@ -126,7 +126,9 @@ function District:validate()
         self.location_proto = defaults.get_fallback("locations").proto
     end
 
-    return true  -- always makes itself valid
+    -- The item set doesn't need validationa as it is automaticaly redone by :refresh()
+
+    return self.valid  -- always true
 end
 
 return {init = init}

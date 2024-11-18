@@ -76,7 +76,7 @@ end
 -- Returns whether the given machine can be used for this line/recipe
 ---@param machine_proto FPMachinePrototype
 ---@return boolean applicable
-function Line:is_machine_applicable(machine_proto)
+function Line:is_machine_compatible(machine_proto)
     local type_counts = self.recipe_proto.type_counts
     local valid_ingredient_count = (machine_proto.ingredient_limit >= type_counts.ingredients.items)
     local valid_input_channels = (machine_proto.fluid_channels.input >= type_counts.ingredients.fluids)
@@ -117,7 +117,7 @@ function Line:change_machine_by_action(player, action, current_proto)
     local function try_machine(new_machine_id)
         current_machine_proto = prototyper.util.find("machines", new_machine_id, category_id) --[[@as FPMachinePrototype]]
 
-        if self:is_machine_applicable(current_machine_proto) then
+        if self:is_machine_compatible(current_machine_proto) then
             self:change_machine_to_proto(player, current_machine_proto)
             return true
         end
@@ -142,15 +142,16 @@ end
 -- Returns false if no compatible machine can be found, true otherwise
 ---@param player LuaPlayer
 ---@return boolean success
-function Line:change_machine_to_default(player)
+function Line:change_machine_to_default(player, proto_only)
     -- All categories are guaranteed to have at least one machine, so this is never nil
     local machine_default = defaults.get(player, "machines", self.recipe_proto.category)
     local default_proto = machine_default.proto  --[[@as FPMachinePrototype]]
 
     local success = false
     -- If the default is applicable, just set it straight away
-    if self:is_machine_applicable(default_proto) then
-        self:change_machine_to_proto(player, default_proto)
+    if self:is_machine_compatible(default_proto) then
+        if proto_only then self.machine.proto = default_proto
+        else self:change_machine_to_proto(player, default_proto) end
         success = true
     -- Otherwise, go up, then down the category to find an alternative
     elseif self:change_machine_by_action(player, "upgrade", default_proto) then
@@ -213,7 +214,7 @@ function Line:compile_machine_filter()
 
     local machine_category = prototyper.util.find("machines", nil, self.machine.proto.category)
     for _, machine_proto in pairs(machine_category.members) do
-        if self:is_machine_applicable(machine_proto) then
+        if self:is_machine_compatible(machine_proto) then
             table.insert(compatible_machines, machine_proto.name)
         end
     end
@@ -324,7 +325,7 @@ function Line:validate()
 
     if self.beacon then self.valid = self.beacon:validate() and self.valid end
 
-    if self.priority_product ~= nil then
+    if self.priority_product then
         self.priority_product = prototyper.util.validate_prototype_object(self.priority_product, "type")
         self.valid = (not self.priority_product.simplified) and self.valid
     end
@@ -335,8 +336,11 @@ end
 ---@param player LuaPlayer
 ---@return boolean success
 function Line:repair(player)
-    -- An invalid recipe_proto is unrepairable and means this line should be removed
-    if self.recipe_proto.simplified then return false end
+    self.valid = true
+
+    if self.recipe_proto.simplified then
+        self.valid = false  -- this situation can't be repaired
+    end
 
     if self.valid and not self.machine.valid then
         self.valid = self.machine:repair(player)

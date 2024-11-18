@@ -166,9 +166,7 @@ function Beacon:validate()
     self.quality_proto = prototyper.util.validate_prototype_object(self.quality_proto, nil)
     self.valid = (not self.quality_proto.simplified) and self.valid
 
-    local machine = self.parent.machine  -- make sure the machine can still be influenced by beacons
-    if machine.valid then self.valid = (machine.proto.allowed_effects ~= nil) and self.valid end
-
+    self.valid = self.parent:uses_beacon_effects() and self.valid
     self.valid = self.module_set:validate() and self.valid
 
     return self.valid
@@ -177,20 +175,23 @@ end
 ---@param player LuaPlayer
 ---@return boolean success
 function Beacon:repair(player)
-    if self.proto.simplified then -- if still simplified, the beacon can't be repaired and needs to be removed
-        return false
-    else  -- otherwise, the quality and modules need to be checked and corrected if necessary
-        if self.quality_proto.simplified then
-            self.quality_proto = defaults.get_fallback("qualities").proto
-        end
+    self.valid = true
 
-        -- Remove invalid modules and normalize the remaining ones
-        self.valid = self.module_set:repair(player)
-        if self.module_set.module_count == 0 then return false end  -- if the beacon became empty, remove it
+    if self.proto.simplified or not self.parent:uses_beacon_effects() then
+        self.valid = false  -- this situation can't be repaired
+        -- This could try another beacon, but it's not really worth it
     end
 
-    self.valid = true  -- if it gets to here, the beacon was successfully repaired
-    return true
+    if self.valid and self.quality_proto.simplified then
+        self.quality_proto = defaults.get_fallback("qualities").proto
+    end
+
+    if self.valid then
+        self.module_set:repair(player)  -- always becomes valid
+        if self.module_set.module_count == 0 then self.valid = false end
+    end
+
+    return self.valid
 end
 
 return {init = init, unpack = unpack}
