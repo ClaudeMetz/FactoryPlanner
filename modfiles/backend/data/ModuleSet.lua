@@ -324,6 +324,7 @@ local function unpack(packed_self, parent)
     local unpacked_self = init(parent)
 
     unpacked_self.first = Object.unpack(packed_self.modules, Module.unpack, unpacked_self)  --[[@as Module]]
+    unpacked_self:count_modules()
 
     return unpacked_self
 end
@@ -333,13 +334,10 @@ end
 function ModuleSet:validate()
     self.valid = self:_validate()
 
-    if self.valid and self.parent.valid then
-        if not self.module_count or not self.empty_slots then  -- when validating an unpacked ModuleSet
-            self.module_limit = self.parent.proto.module_limit
-            self:count_modules()
-        end
+    -- Can't be valid with an invalid parent
+    self.valid = self.parent.valid and self.valid
 
-        -- .normalize doesn't remove incompatible modules here, the above validation already marks them
+    if self.valid then
         self:normalize({trim=true, sort=true, effects=true})
     end
 

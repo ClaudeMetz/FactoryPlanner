@@ -161,8 +161,9 @@ end
 ---@return FPPackedPrototype?
 function prototyper.util.simplify_prototype(prototype, category_designation)
     if not prototype then return nil end
-    return { name = prototype.name, category = prototype[category_designation],
-        data_type = prototype.data_type, simplified = true }
+    if prototype.simplified then return prototype end  -- failsafe
+    return {name = prototype.name, category = prototype[category_designation],
+        data_type = prototype.data_type, simplified = true}
 end
 
 ---@param prototypes FPPrototype[]
@@ -191,7 +192,7 @@ function prototyper.util.validate_prototype_object(prototype, category_designati
 
     if prototype.simplified then  -- try to unsimplify, otherwise it stays that way
         ---@cast prototype FPPackedPrototype
-        if not category_designation or prototype.category then  -- avoid broken simplified prototypes
+        if not category_designation or prototype.category then  -- avoid broken simplified prototypes (now fixed)
             local new_proto = prototyper.util.find(prototype.data_type, prototype.name, prototype.category)
             if new_proto then updated_proto = new_proto end
         end
@@ -199,7 +200,7 @@ function prototyper.util.validate_prototype_object(prototype, category_designati
         ---@cast prototype AnyFPPrototype
         local category = prototype[category_designation]  ---@type string
         local new_proto = prototyper.util.find(prototype.data_type, prototype.name, category)
-        updated_proto = new_proto or prototyper.util.simplify_prototype(prototype, category)
+        updated_proto = new_proto or prototyper.util.simplify_prototype(prototype, category_designation)
     end
 
     return updated_proto
