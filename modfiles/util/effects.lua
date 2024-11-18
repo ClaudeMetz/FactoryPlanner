@@ -63,7 +63,7 @@ end
 ---@field recipe_effects ModuleEffects?
 
 local function format_effect(value, color)
-    if value == nil then return "" end
+    if value == nil or value == 0 then return "" end
     -- Force display of either a '+' or '-', also round the result
     local display_value = ("%+d"):format(math.floor((value * 100) + 0.5))
     return {"fp.effect_value", color, display_value}

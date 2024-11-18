@@ -157,7 +157,7 @@ local function refresh_factory_list(player)
                 context="factory_list"}, style="list_box_item", mouse_button_filter={"left-and-right"},
                 raise_hover_events=true}
             factory_button.style.padding = {0, 4}
-            factory_button.style.width = MAGIC_NUMBERS.list_width - 20
+            factory_button.style.width = MAGIC_NUMBERS.list_width - 32
             tooltips.factory_list[factory_button.index] = tooltip
         end
     end
