@@ -172,8 +172,7 @@ local function handle_item_button_click(player, tags, action)
     elseif action == "put_into_cursor" then
         if item.proto.type == "entity" then return end
         local amount = (item.class == "Product") and item:get_required_amount() or item.amount
-        local timescale = util.globals.preferences(player).timescale
-        util.cursor.add_to_item_combinator(player, item.proto, amount * timescale)
+        util.cursor.handle_item_click(player, item.proto, amount)
 
     elseif action == "factoriopedia" then
         if item.proto.type == "entity" then return end
