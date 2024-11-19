@@ -2,9 +2,17 @@
 Version: 0.00.00
 Date: 00. 00. 0000
   Features:
-    - Activating a 'Put into cursor' action on any item button while holding an inserter now whitelists that item
+    - 
   Changes:
-    -
+    - 
+  Bugfixes:
+    - 
+
+---------------------------------------------------------------------------------------------------
+Version: 2.0.11
+Date: 19. 11. 2024
+  Features:
+    - Activating a 'Put into cursor' action on any item button while holding an inserter now whitelists that item
   Bugfixes:
     - Fixed various migration and repair issues (spicy!)
 
