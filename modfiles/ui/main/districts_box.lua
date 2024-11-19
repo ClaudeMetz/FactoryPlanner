@@ -34,9 +34,7 @@ local function handle_item_button_click(player, tags, action)
         util.clipboard.copy(player, copyable_item)
 
     elseif action == "put_into_cursor" then
-        local timescale = util.globals.preferences(player).timescale
-        local amount = item.abs_diff * timescale
-        util.cursor.add_to_item_combinator(player, item.proto, amount)
+        util.cursor.handle_item_click(player, item.proto, item.abs_diff)
 
     elseif action == "factoriopedia" then
         --util.open_in_factoriopedia(player, item.proto.type, item.proto.name)
