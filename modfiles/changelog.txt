@@ -8,6 +8,7 @@ Date: 00. 00. 0000
   Bugfixes:
     - Fixed a crash when trying to edit a machine that uses fuel (#412)
     - Fixed a crash when entering a negative beacon amount (#415)
+    - Fixed a crash when trying to filter a fluid on an inserter
     - Fixed a fuel migration issue, marking it as invalid when it wasn't
 
 ---------------------------------------------------------------------------------------------------
