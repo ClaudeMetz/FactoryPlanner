@@ -149,6 +149,11 @@ local function set_filter_on_inserter(player, cursor_entity, item_proto)
     local entity_proto = (cursor_entity.type == "entity") and cursor_entity.entity
         or prototypes.entity[cursor_entity.entity.name]
 
+    if item_proto.type == "fluid" then
+        _cursor.create_flying_text(player, {"fp.inserter_only_filters_items"})
+        return
+    end
+
     if not entity_proto.filter_count then
         _cursor.create_flying_text(player, {"fp.inserter_has_no_filters"})
         return
