@@ -73,14 +73,17 @@ end
 
 ---@return boolean valid
 function Fuel:validate()
-    -- Machine is simplified, doesn't have a burner anymore, or has a different category, is all bad
-    local burner = (not self.parent.proto.simplified) and self.parent.proto.burner or nil
-    if not burner or burner.combined_category ~= self.proto.combined_category then
-        self.proto = prototyper.util.simplify_prototype(self.proto, "combined_category")
-        self.valid = false
-    else
-        self.proto = prototyper.util.validate_prototype_object(self.proto, "combined_category")
-        self.valid = (not self.proto.simplified)
+    self.proto = prototyper.util.validate_prototype_object(self.proto, "combined_category")
+    self.valid = (not self.proto.simplified)
+
+    if self.valid then
+        local burner = (not self.parent.proto.simplified) and self.parent.proto.burner or nil
+
+        -- Machine is simplified, doesn't have a burner anymore, or has a different category, is all bad
+        if not burner or burner.combined_category ~= self.proto.combined_category then
+            self.proto = prototyper.util.simplify_prototype(self.proto, "combined_category")
+            self.valid = false
+        end
     end
 
     return self.valid
