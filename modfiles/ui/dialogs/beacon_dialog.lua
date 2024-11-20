@@ -174,7 +174,7 @@ local function handle_amount_change(player, _, _)
     local textfield = modal_data.modal_elements.beacon_amount
 
     local expression = util.gui.parse_expression_field(textfield)
-    local invalid = (textfield.text ~= "" and (expression == nil or expression % 1 ~= 0))
+    local invalid = (textfield.text ~= "" and (expression == nil or expression < 0 or expression % 1 ~= 0))
 
     textfield.style = (invalid) and "invalid_value_textfield" or "textbox"
     textfield.style.width = textfield.tags.width  --[[@as number]]  -- this is stupid but styles work out that way
