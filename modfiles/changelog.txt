@@ -2,9 +2,15 @@
 Version: 0.00.00
 Date: 00. 00. 0000
   Features:
-    -
+    - 
   Changes:
-    -
+    - 
+  Bugfixes:
+    - 
+
+---------------------------------------------------------------------------------------------------
+Version: 2.0.12
+Date: 20. 11. 2024
   Bugfixes:
     - Fixed a crash when trying to edit a machine that uses fuel (#412)
     - Fixed a crash when entering a negative beacon amount (#415)
