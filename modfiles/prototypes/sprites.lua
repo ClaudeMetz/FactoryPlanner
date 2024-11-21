@@ -8,7 +8,7 @@ local function add_sprite(name, filename, size, mipmaps)
     }}
 end
 
-add_sprite("mod_gui", "shortcut_open_x32.png", 32, nil)
+add_sprite("mod_gui", "shortcut_open_x56.png", 56, nil)
 add_sprite("zone_selection", nil, 32, nil)
 add_sprite("generic_assembler", nil, 64, 2)
 add_sprite("white_square", nil, 8, 2)
