@@ -122,10 +122,10 @@ function Module:validate()
     self.valid = (not self.quality_proto.simplified) and self.valid
 
     -- Can't be valid with an invalid parent
-    self.valid = self.parent.valid and self.valid
+    if self.parent then self.valid = self.parent.valid and self.valid end
 
     -- Check whether the module is still compatible with its machine or beacon
-    if self.valid then self.valid = self.parent:check_compatibility(self.proto) end
+    if self.valid and self.parent then self.valid = self.parent:check_compatibility(self.proto) end
 
     if self.valid then self:summarize_effects() end
 
