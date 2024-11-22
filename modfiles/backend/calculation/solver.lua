@@ -141,6 +141,15 @@ end
 ---@field amount number
 ---@field satisfied_amount number?
 
+local function item_comparator(a, b)
+    local a_type, b_type = a.proto.type, b.proto.type
+    if a_type < b_type then return false
+    elseif a_type > b_type then return true
+    elseif a.amount < b.amount then return false
+    elseif a.amount > b.amount then return true end
+    return false
+end
+
 local function update_object_items(object, item_category, item_results)
     local item_list = {}
 
@@ -151,6 +160,7 @@ local function update_object_items(object, item_category, item_results)
         end
     end
 
+    table.sort(item_list, item_comparator)
     object[item_category] = item_list
 end
 

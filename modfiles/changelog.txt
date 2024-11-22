@@ -6,7 +6,7 @@ Date: 00. 00. 0000
     - Added context menu actions to shift factory products left and right
     - Added a context menu action on fuels to edit them
   Changes:
-    -
+    - All item lists (like on recipes) are now sorted by item type and amount
   Bugfixes:
     -
 
