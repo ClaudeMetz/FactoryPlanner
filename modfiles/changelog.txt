@@ -2,9 +2,15 @@
 Version: 0.00.00
 Date: 00. 00. 0000
   Features:
-    -
+    - 
   Changes:
-    -
+    - 
+  Bugfixes:
+    - 
+
+---------------------------------------------------------------------------------------------------
+Version: 2.0.13
+Date: 22. 11. 2024
   Bugfixes:
     - Fixed a crash when pasting a module (#417)
     - Fixed a crash when trying to paste a line that uses fuel in certain modded situations
