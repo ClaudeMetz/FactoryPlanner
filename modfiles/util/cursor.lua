@@ -35,12 +35,12 @@ function _cursor.set_entity(player, line, object)
     end
 
     local items_list, slot_index = {}, 0
+    local inventory = defines.inventory[object.proto.prototype_category .. "_modules"]
     for module in object.module_set:iterator() do
         local inventory_list = {}
         for i = 1, module.amount do
             table.insert(inventory_list, {
-                -- This should be from defines.inventory depending on the entity, but this somehow works
-                inventory = (object.class == "Machine") and 4 or 1,
+                inventory = inventory,
                 stack = slot_index
             })
             slot_index = slot_index + 1
@@ -57,9 +57,8 @@ function _cursor.set_entity(player, line, object)
         })
     end
 
-    local machine_category = (object.class == "Machine") and object.proto.quality_category or nil
     -- Put item directly into the cursor if it's simple
-    if #items_list == 0 and machine_category ~= "assembling-machine" then
+    if #items_list == 0 and object.proto.prototype_category ~= "assembling_machine" then
         player.cursor_ghost = {
             name = object.proto.name,
             quality = object.quality_proto.name
