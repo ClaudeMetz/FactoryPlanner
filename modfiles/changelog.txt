@@ -3,6 +3,7 @@ Version: 0.00.00
 Date: 00. 00. 0000
   Features:
     - Added a preference to change the width of the compact dialog
+    - Added context menu actions to shift factory products left and right
     - Added a context menu action on fuels to edit them
   Changes:
     -

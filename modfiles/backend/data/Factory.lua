@@ -75,6 +75,13 @@ function Factory:replace(product, new_product)
     self:_replace(product, new_product)
 end
 
+---@param product Product
+---@param direction NeighbourDirection
+---@param spots integer?
+function Factory:shift(product, direction, spots)
+    self:_shift(product, direction, spots)
+end
+
 
 ---@param filter ObjectFilter
 ---@param pivot Product?

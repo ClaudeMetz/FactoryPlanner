@@ -154,6 +154,11 @@ local function handle_item_button_click(player, tags, action)
         util.raise.open_dialog(player, {dialog="picker",
             modal_data={item_id=item.id, item_category=tags.item_category}})
 
+    elseif action == "move_left" or action == "move_right" then
+        local direction = (action == "move_left") and "previous" or "next"
+        item.parent:shift(item, direction, 1)
+        util.raise.refresh(player, "item_boxes")
+
     elseif action == "copy" then
         if item.proto.type == "entity" then return end
         local copyable_item = {class="SimpleItem", proto=item.proto, amount=item.amount}
@@ -272,6 +277,8 @@ listeners.gui = {
                 add_recipe = {shortcut="left", limitations={archive_open=false}, show=true},
                 edit = {shortcut="control-left", limitations={archive_open=false}, show=true},
                 delete = {shortcut="control-right", limitations={archive_open=false}},
+                move_left = {limitations={archive_open=false}},
+                move_right = {limitations={archive_open=false}},
                 copy = {shortcut="shift-right"},
                 paste = {shortcut="shift-left", limitations={archive_open=false}},
                 put_into_cursor = {shortcut="alt-right"},
