@@ -65,10 +65,13 @@ function Machine:normalize_fuel(player)
     -- Check if fuel has a valid category for this machine, replace otherwise
     if self.fuel and not burner.categories[self.fuel.proto.category] then self.fuel = nil end
 
-    -- If this machine has fuel already, don't replace it
-    if self.fuel == nil then
+    if self.fuel == nil then  -- add a fuel for this machine if it doesn't have one here
         local default_fuel_proto = defaults.get(player, "fuels", burner.combined_category).proto
         self.fuel = Fuel.init(default_fuel_proto, self)
+    else  -- make sure the fuel is of the right combined category
+        if burner.combined_category ~= self.fuel.proto.category then
+            self.fuel.proto = prototyper.util.find("fuels", self.fuel.proto.name, burner.combined_category)
+        end
     end
 end
 
@@ -121,17 +124,15 @@ end
 
 ---@param player LuaPlayer
 function Machine:reset(player)
+    self.parent:change_machine_to_default(player)
+    self:normalize_fuel(player)
+
     self.limit = nil
     self.force_limit = true
 
-    local machine_default = defaults.get(player, "machines", self.proto.category)
     self.module_set:clear()
+    local machine_default = defaults.get(player, "machines", self.proto.category)
     if machine_default.modules then self.module_set:ingest_default(machine_default.modules) end
-
-    if self.proto.burner ~= nil then
-        local fuel_default = defaults.get(player, "fuels", self.proto.burner.combined_category)
-        self.fuel = Fuel.init(fuel_default.proto, self)
-    end
 end
 
 

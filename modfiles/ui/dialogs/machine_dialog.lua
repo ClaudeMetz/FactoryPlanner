@@ -112,7 +112,6 @@ end
 
 local function reset_machine(player)
     local machine = util.globals.modal_data(player).object  --[[@as Machine]]
-    machine.parent:change_machine_to_default(player)
     machine:reset(player)
 
     -- Some manual refreshing which don't have their own method
