@@ -16,6 +16,7 @@ require("backend.calculation.solver")
 ---@field recipe_filters { disabled: boolean, hidden: boolean }
 ---@field products_per_row integer
 ---@field factory_list_rows integer
+---@field compact_width_percentage integer
 ---@field show_gui_button boolean
 ---@field attach_factory_products boolean
 ---@field skip_factory_naming boolean
@@ -60,6 +61,7 @@ function reload_preferences(player_table)
 
     reload("products_per_row", 6)
     reload("factory_list_rows", 30)
+    reload("compact_width_percentage", 26)
 
     reload("show_gui_button", true)
     reload("attach_factory_products", false)

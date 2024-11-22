@@ -43,6 +43,7 @@ GLOBAL_HANDLERS = {}  ---@type { [string]: function }
 
 PRODUCTS_PER_ROW_OPTIONS = {5, 6, 7, 8, 9, 10}
 FACTORY_LIST_ROWS_OPTIONS = {20, 22, 24, 26, 28, 30, 32}
+COMPACT_WIDTH_PERCENTAGE = {20, 22, 24, 26, 28, 30, 32, 34, 36}
 
 TIMESCALE_MAP = {[1] = "second", [60] = "minute"}
 BLANK_EFFECTS = {speed = 0, productivity = 0, quality = 0, consumption = 0, pollution = 0}

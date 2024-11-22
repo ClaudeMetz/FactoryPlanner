@@ -118,6 +118,13 @@ function preference_structures.dropdowns(preferences, parent_flow)
         if value == preferences.factory_list_rows then height_index = index end
     end
     add_dropdown("factory_list_rows", height_items, height_index)
+
+    local compact_items, compact_index = {}, nil
+    for index, value in pairs(COMPACT_WIDTH_PERCENTAGE) do
+        compact_items[index] = {"", value .. " %"}
+        if value == preferences.compact_width_percentage then compact_index = index end
+    end
+    add_dropdown("compact_width_percentage", compact_items, compact_index)
 end
 
 function preference_structures.belts(player, content_frame, modal_elements)
@@ -215,6 +222,9 @@ local function handle_dropdown_preference_change(player, tags, event)
     elseif tags.name == "factory_list_rows" then
         preferences.factory_list_rows = FACTORY_LIST_ROWS_OPTIONS[selected_index]
         util.globals.modal_data(player).rebuild = true
+    elseif tags.name == "compact_width_percentage" then
+        preferences.compact_width_percentage = COMPACT_WIDTH_PERCENTAGE[selected_index]
+        util.globals.modal_data(player).rebuild_compact = true
     end
 end
 
@@ -312,6 +322,8 @@ local function close_preferences_dialog(player, _)
     if ui_state.modal_data.rebuild then
         main_dialog.rebuild(player, true)
         ui_state.modal_data = {}  -- fix as rebuild deletes the table
+    elseif ui_state.modal_data.rebuild_compact then
+        compact_dialog.rebuild(player, false)
     end
 end
 
