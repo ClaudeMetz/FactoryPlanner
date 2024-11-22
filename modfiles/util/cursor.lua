@@ -57,16 +57,25 @@ function _cursor.set_entity(player, line, object)
         })
     end
 
-    local blueprint_entity = {
-        entity_number = 1,
-        name = object.proto.name,
-        position = {0, 0},
-        quality = object.quality_proto.name,
-        items = items_list,
-        recipe = (object.class == "Machine") and line.recipe_proto.name or nil
-    }
+    local machine_category = (object.class == "Machine") and object.proto.quality_category or nil
+    -- Put item directly into the cursor if it's simple
+    if #items_list == 0 and machine_category ~= "assembling-machine" then
+        player.cursor_ghost = {
+            name = object.proto.name,
+            quality = object.quality_proto.name
+        }
+    else  -- if it's more complex, it needs a blueprint
+        local blueprint_entity = {
+            entity_number = 1,
+            name = object.proto.name,
+            position = {0, 0},
+            quality = object.quality_proto.name,
+            items = items_list,
+            recipe = (object.class == "Machine") and line.recipe_proto.name or nil
+        }
+        set_cursor_blueprint(player, {blueprint_entity})
+    end
 
-    set_cursor_blueprint(player, {blueprint_entity})
     return true
 end
 
