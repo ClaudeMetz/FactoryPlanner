@@ -249,6 +249,9 @@ local function handle_fuel_click(player, tags, action)
         util.raise.open_dialog(player, {dialog="recipe", modal_data={add_after_line_id=add_after_line_id,
             production_type="produce", category_id=proto.category_id, product_id=proto.id}})
 
+    elseif action == "edit" then
+        util.raise.open_dialog(player, {dialog="machine", modal_data={machine_id=line.machine.id}})
+
     elseif action == "copy" then
         util.clipboard.copy(player, fuel)
 
@@ -373,6 +376,7 @@ listeners.gui = {
             actions_table = {
                 add_recipe_to_end = {shortcut="left", limitations={archive_open=false}, show=true},
                 add_recipe_below = {shortcut="control-left", limitations={archive_open=false}},
+                edit = {limitations={archive_open=false}},
                 copy = {shortcut="shift-right"},
                 paste = {shortcut="shift-left", limitations={archive_open=false}},
                 put_into_cursor = {shortcut="alt-right"},
