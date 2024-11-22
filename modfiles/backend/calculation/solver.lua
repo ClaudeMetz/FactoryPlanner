@@ -106,12 +106,12 @@ local function generate_floor_data(player, factory, floor)
                 local machine_speed = machine.proto.speed
                 local resource_drain_rate = machine.proto.resource_drain_rate or 1
 
-                local quality_category = machine.proto.quality_category
-                if quality_category == "assembling-machine" then
-                    machine_speed = machine_speed * machine.quality_proto.multiplier
-                elseif quality_category == "mining-drill" then
+                local prototype_category = machine.proto.prototype_category
+                if prototype_category == "mining_drill" then
                     resource_drain_rate = resource_drain_rate
                         * machine.quality_proto.mining_drill_resource_drain_multiplier
+                elseif prototype_category ~= nil then  -- anything non-custom
+                    machine_speed = machine_speed * machine.quality_proto.multiplier
                 end
                 line_data.machine_speed = machine_speed
                 line_data.resource_drain_rate = resource_drain_rate

@@ -60,7 +60,7 @@ end
 ---@field data_type "machines"
 ---@field category string
 ---@field elem_type ElemType
----@field quality_category QualityCategory
+---@field prototype_category PrototypeCategory?
 ---@field ingredient_limit integer
 ---@field fluid_channels FluidChannels
 ---@field speed double
@@ -88,7 +88,7 @@ end
 ---@field combined_category string
 
 ---@alias EmissionsMap { [string]: double }
----@alias QualityCategory ("assembling-machine" | "mining-drill")?
+---@alias PrototypeCategory ("assembling_machine" | "furnace" | "rocket_silo" | "mining_drill")
 
 -- Generates a table containing all machines for all categories
 ---@return NamedPrototypesWithCategory<FPMachinePrototype>
@@ -97,9 +97,9 @@ function generator.machines.generate()
 
     ---@param category string
     ---@param proto LuaEntityPrototype
-    ---@param quality_category QualityCategory
+    ---@param prototype_category PrototypeCategory?
     ---@return FPMachinePrototype?
-    local function generate_category_entry(category, proto, quality_category)
+    local function generate_category_entry(category, proto, prototype_category)
         -- First, determine if there is a valid sprite for this machine
         local sprite = generator_util.determine_entity_sprite(proto)
         if sprite == nil then return end
@@ -170,7 +170,7 @@ function generator.machines.generate()
             sprite = sprite,
             category = category,
             elem_type = "entity",
-            quality_category = quality_category,
+            prototype_category = prototype_category,
             ingredient_limit = (proto.ingredient_count or 255),
             fluid_channels = fluid_channels,
             speed = proto.get_crafting_speed(),
@@ -199,13 +199,14 @@ function generator.machines.generate()
         if proto.crafting_categories and not proto.hidden and proto.energy_usage ~= nil
                 and not generator_util.is_irrelevant_machine(proto) then
             for category, _ in pairs(proto.crafting_categories) do
-                local machine = generate_category_entry(category, proto, "assembling-machine")
+                local prototype_category = proto.type:gsub("-", "_")
+                local machine = generate_category_entry(category, proto, prototype_category)
                 if machine then insert_prototype(machines, machine, machine.category) end
             end
 
         elseif proto.type == "mining-drill" and not proto.hidden then
             for category, _ in pairs(proto.resource_categories) do
-                local machine = generate_category_entry(category, proto, "mining-drill")
+                local machine = generate_category_entry(category, proto, "mining_drill")
                 if machine then
                     machine.speed = proto.mining_speed
                     machine.resource_drain_rate = proto.resource_drain_rate_percent / 100
@@ -1096,6 +1097,7 @@ end
 ---@field data_type "beacons"
 ---@field category "beacon"
 ---@field elem_type ElemType
+---@field prototype_category "beacon"
 ---@field built_by_item FPItemPrototype
 ---@field allowed_effects AllowedEffects
 ---@field allowed_module_categories { [string]: boolean }?
@@ -1127,6 +1129,7 @@ function generator.beacons.generate()
                 sprite = sprite,
                 category = "beacon",  -- custom category to be similar to machines
                 elem_type = "entity",
+                prototype_category = "beacon",
                 built_by_item = built_by_item,
                 allowed_effects = proto.allowed_effects,
                 allowed_module_categories = proto.allowed_module_categories,
