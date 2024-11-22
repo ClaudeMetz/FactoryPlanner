@@ -521,24 +521,25 @@ factory_listeners.misc = {
 }
 
 
-
--- The frame surrounding the main part of the compact factory
-local frame_dimensions = {width = 0.25, height = 0.8}  -- as a percentage of the screen
-local frame_location = {x = 10, y = 63}  -- relative to 1080p with scale 1
-
+-- ** UTIL **
 -- Set frame dimensions in a relative way, taking player resolution and scaling into account
 local function set_compact_frame_dimensions(player, frame)
     local scaled_resolution = util.gui.calculate_scaled_resolution(player)
-    frame.style.width = scaled_resolution.width * frame_dimensions.width
-    frame.style.maximal_height = scaled_resolution.height * frame_dimensions.height
+    local compact_width_percentage = util.globals.preferences(player).compact_width_percentage
+    frame.style.width = scaled_resolution.width * (compact_width_percentage / 100)
+    frame.style.maximal_height = scaled_resolution.height * 0.8
 end
 
 local function set_compact_frame_location(player, frame)
     local scale = player.display_scale
-    frame.location = {frame_location.x * scale, frame_location.y * scale}
+    frame.location = {10 * scale, 63 * scale}
 end
 
-local function rebuild_compact_dialog(player, default_visibility)
+
+-- ** TOP LEVEL **
+compact_dialog = {}
+
+function compact_dialog.rebuild(player, default_visibility)
     local ui_state = util.globals.ui_state(player)
 
     local interface_visible = default_visibility
@@ -591,16 +592,12 @@ local function rebuild_compact_dialog(player, default_visibility)
     return frame_compact_dialog
 end
 
-
--- ** TOP LEVEL **
-compact_dialog = {}
-
 function compact_dialog.toggle(player)
     local frame_compact_dialog = util.globals.ui_state(player).compact_elements.compact_frame
     -- Doesn't set player.opened so other GUIs like the inventory can be opened when building
 
     if frame_compact_dialog == nil or not frame_compact_dialog.valid then
-        rebuild_compact_dialog(player, true)  -- refreshes on its own
+        compact_dialog.rebuild(player, true)  -- refreshes on its own
     else
         local new_dialog_visibility = not frame_compact_dialog.visible
         frame_compact_dialog.visible = new_dialog_visibility
@@ -650,11 +647,11 @@ dialog_listeners.gui = {
 
 dialog_listeners.misc = {
     on_player_display_resolution_changed = (function(player, _)
-        rebuild_compact_dialog(player, false)
+        compact_dialog.rebuild(player, false)
     end),
 
     on_player_display_scale_changed = (function(player, _)
-        rebuild_compact_dialog(player, false)
+        compact_dialog.rebuild(player, false)
     end),
 
     on_lua_shortcut = (function(player, event)
