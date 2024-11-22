@@ -105,9 +105,10 @@ end
 
 ---@param packed_self PackedModule
 ---@return Module module
-local function unpack(packed_self)
+local function unpack(packed_self, parent)
     local unpacked_self = init(packed_self.proto, packed_self.amount)
     unpacked_self.quality_proto = packed_self.quality_proto
+    unpacked_self.parent = parent
 
     return unpacked_self
 end
