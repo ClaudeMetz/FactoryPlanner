@@ -923,8 +923,9 @@ function generator.fuels.generate()
         -- Add all relevant fuels to the combined category
         for fuel_category, _ in pairs(burner.categories) do
             for _, fuel in pairs(fuel_categories[fuel_category]) do
-                fuel.combined_category = combined_category
-                insert_prototype(fuels, fuel, combined_category)
+                local fuel_copy = ftable.deep_copy(fuel)
+                fuel_copy.combined_category = combined_category
+                insert_prototype(fuels, fuel_copy, combined_category)
             end
         end
     end
