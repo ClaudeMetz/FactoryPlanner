@@ -142,7 +142,7 @@ end
 -- Returns false if no compatible machine can be found, true otherwise
 ---@param player LuaPlayer
 ---@return boolean success
-function Line:change_machine_to_default(player, proto_only)
+function Line:change_machine_to_default(player)
     -- All categories are guaranteed to have at least one machine, so this is never nil
     local machine_default = defaults.get(player, "machines", self.recipe_proto.category)
     local default_proto = machine_default.proto  --[[@as FPMachinePrototype]]
@@ -150,8 +150,7 @@ function Line:change_machine_to_default(player, proto_only)
     local success = false
     -- If the default is applicable, just set it straight away
     if self:is_machine_compatible(default_proto) then
-        if proto_only then self.machine.proto = default_proto
-        else self:change_machine_to_proto(player, default_proto) end
+        self:change_machine_to_proto(player, default_proto)
         success = true
     -- Otherwise, go up, then down the category to find an alternative
     elseif self:change_machine_by_action(player, "upgrade", default_proto) then

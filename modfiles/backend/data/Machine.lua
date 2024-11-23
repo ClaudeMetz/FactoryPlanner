@@ -239,13 +239,15 @@ function Machine:validate()
         self.valid = self.parent:is_machine_compatible(self.proto) and self.valid
     end
 
-    if self.proto.burner and not self.fuel then
-        -- If this machine changed to require fuel, add this dummy
-       local dummy = {name = "", category = self.proto.burner.combined_category,
-            data_type = "fuels", simplified = true}
-        self.fuel = Fuel.init(dummy, self)
+    if self.valid then  -- only makes sense if the machine is valid
+        if self.proto.burner and not self.fuel then
+            -- If this machine changed to require fuel, add this dummy
+        local dummy = {name = "", category = self.proto.burner.combined_category,
+                data_type = "fuels", simplified = true}
+            self.fuel = Fuel.init(dummy, self)
+        end
+        if self.fuel then self.valid = self.fuel:validate() and self.valid end
     end
-    if self.fuel then self.valid = self.fuel:validate() and self.valid end
 
     self.valid = self.module_set:validate() and self.valid
 
@@ -260,7 +262,7 @@ function Machine:repair(player)
     -- Simplified or incompatible machine can potentially be replaced with a different one
     if self.proto.simplified or not self.parent:is_machine_compatible(self.proto) then
         -- Changing to the default machine also fixes the category not matching the recipe
-        if not self.parent:change_machine_to_default(player, true) then
+        if not self.parent:change_machine_to_default(player) then
             self.valid = false  -- this situation can't be repaired
         end
     end
