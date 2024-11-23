@@ -330,6 +330,8 @@ function Line:validate()
         self.valid = (not self.priority_product.simplified) and self.valid
     end
 
+    self.surface_compatibility = nil
+
     return self.valid
 end
 

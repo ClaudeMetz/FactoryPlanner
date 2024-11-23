@@ -217,10 +217,15 @@ end
 
 ---@return boolean valid
 function Machine:validate()
-    if self.parent.recipe_proto.category ~= self.proto.category then
-        -- When the category changed, this is invalid by default
-        self.proto = prototyper.util.simplify_prototype(self.proto, "category")
-        self.valid = false
+    local recipe_category = self.parent.recipe_proto.category
+    if recipe_category ~= self.proto.category then
+        local corresponding_proto = prototyper.util.find("machines", self.proto.name, recipe_category)
+        if corresponding_proto then  -- check if the machine just moved categories
+            self.proto = corresponding_proto  -- this is okay in this specific context
+        else  -- otherwise, this machine is invalid
+            self.proto = prototyper.util.simplify_prototype(self.proto, "category")
+            self.valid = false
+        end
     else
         self.proto = prototyper.util.validate_prototype_object(self.proto, "category")
         self.valid = (not self.proto.simplified)

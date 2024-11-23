@@ -9,6 +9,7 @@ Date: 00. 00. 0000
     - Putting simple machines into the cursor now makes them a ghost instead of a blueprint (#387)
     - All item lists (like on recipes) are now sorted by item type and amount
   Bugfixes:
+    - Fixed an issue where machines would not be migrated correctly when their category changed
     - Fixed that putting certain entities into the cursor wouldn't include its modules
 
 ---------------------------------------------------------------------------------------------------
