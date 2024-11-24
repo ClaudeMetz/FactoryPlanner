@@ -41,10 +41,10 @@ local function build_district_info(player)
     end
 
     flow_horizontal.add{type="empty-widget", style="flib_horizontal_pusher"}
-    local button_districts = flow_horizontal.add{type="sprite-button", sprite="utility/dropdown",
+    local button_districts = flow_horizontal.add{type="sprite-button", sprite="fp_panel",
         tooltip={"fp.view_districts"}, tags={mod="fp", on_gui_click="toggle_districts_view"},
         style="tool_button", auto_toggle=true, mouse_button_filter={"left"}}
-    button_districts.style.padding = 1
+    button_districts.style.padding = -4
     main_elements.district_info["districts_button"] = button_districts
 
     refresh_district_info(player)
