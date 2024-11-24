@@ -292,7 +292,7 @@ local function open_preferences_dialog(player, modal_data)
     -- Left side
     local left_content_frame = modal_elements.content_frame
 
-    local general_preference_names = {"show_gui_button", "attach_factory_products", "skip_factory_naming",
+    local general_preference_names = {"show_gui_button", "skip_factory_naming", "attach_factory_products",
         "prefer_matrix_solver", "show_floor_items", "fold_out_subfloors", "ingredient_satisfaction",
         "ignore_barreling_recipes", "ignore_recycling_recipes"}
     local general_box = preference_structures.checkboxes(preferences, left_content_frame, "general",
