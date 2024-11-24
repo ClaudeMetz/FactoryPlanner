@@ -86,6 +86,7 @@ function reload_preferences(player_table)
     reload("default_fuels", defaults.get_fallback("fuels"))
     reload("default_beacons", defaults.get_fallback("beacons"))
     reload("default_belts", defaults.get_fallback("belts"))
+    reload("default_pumps", defaults.get_fallback("pumps"))
     reload("default_wagons", defaults.get_fallback("wagons"))
 
     player_table.preferences = updated_prefs

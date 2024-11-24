@@ -99,6 +99,7 @@ end
 ---@field items MappedPrototypesWithCategory<FPItemPrototype>
 ---@field fuels MappedPrototypesWithCategory<FPFuelPrototype>
 ---@field belts MappedPrototypes<FPBeltPrototype>
+---@field pumps MappedPrototypes<FPPumpPrototype>
 ---@field wagons MappedPrototypesWithCategory<FPWagonPrototype>
 ---@field modules MappedPrototypesWithCategory<FPModulePrototype>
 ---@field beacons MappedPrototypes<FPBeaconPrototype>

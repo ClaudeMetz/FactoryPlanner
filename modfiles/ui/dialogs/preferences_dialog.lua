@@ -12,7 +12,7 @@ local function add_preference_box(content_frame, type)
 end
 
 local function refresh_defaults_table(player, modal_elements, type, category_id)
-    local table_prototypes, prototypes
+    local table_prototypes, prototypes = nil, nil
 
     if not category_id then
         table_prototypes = modal_elements[type]
@@ -21,6 +21,8 @@ local function refresh_defaults_table(player, modal_elements, type, category_id)
         table_prototypes = modal_elements[type][category_id]
         prototypes = storage.prototypes[type][category_id].members
     end
+
+    if #prototypes == 1 then table_prototypes.parent.parent.visible = false; return end
 
     table_prototypes.clear()
     local default_proto = defaults.get(player, type, category_id).proto
@@ -141,6 +143,15 @@ function preference_structures.belts(player, content_frame, modal_elements)
     preference_box.title_flow.add{type="switch", switch_state=switch_state, tooltip={"fp.preference_belts_or_lanes_tt"},
         tags={mod="fp", on_gui_switch_state_changed="choose_belts_or_lanes"},
         left_label_caption={"fp.pu_belt", 2}, right_label_caption={"fp.pu_lane", 2}}
+end
+
+function preference_structures.pumps(player, content_frame, modal_elements)
+    local preference_box = add_preference_box(content_frame, "default_pumps")
+
+    local frame = preference_box.add{type="frame", direction="horizontal", style="fp_frame_light_slots_small"}
+    local table = frame.add{type="table", column_count=8, style="fp_table_slots_small"}
+    modal_elements["pumps"] = table
+    refresh_defaults_table(player, modal_elements, "pumps", nil)
 end
 
 function preference_structures.wagons(player, content_frame, modal_elements)
@@ -277,7 +288,7 @@ local function handle_default_prototype_change(player, tags, _)
     defaults.set(player, data_type, {prototype=tags.prototype_name}, category_id)
     refresh_defaults_table(player, modal_elements, data_type, category_id)
 
-    if data_type == "belts" or data_type == "wagons" then
+    if data_type == "belts" or data_type == "pumps" or data_type == "wagons" then
         item_views.rebuild_data(player)
         item_views.rebuild_interface(player)
         util.raise.refresh(player, "all")
@@ -309,6 +320,7 @@ local function open_preferences_dialog(player, modal_data)
     local right_content_frame = modal_elements.secondary_frame
     preference_structures.views(player, right_content_frame, modal_elements)
     preference_structures.belts(player, right_content_frame, modal_elements)
+    preference_structures.pumps(player, right_content_frame, modal_elements)
     preference_structures.wagons(player, right_content_frame, modal_elements)
 
     right_content_frame.add{type="empty-widget", style="flib_vertical_pusher"}

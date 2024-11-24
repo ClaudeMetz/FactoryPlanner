@@ -3,6 +3,7 @@ Version: 0.00.00
 Date: 00. 00. 0000
   Features:
     - Added a toggle to view factory ingredients in the compact view (#180)
+    - The belt throughput display option now shows pump throughput for fluids (#411)
   Changes:
     -
   Bugfixes:
