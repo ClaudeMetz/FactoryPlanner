@@ -35,3 +35,11 @@ add_sprite("divide", nil, 32, 1)
 add_sprite("default", nil, 32, 1)
 add_sprite("default_all", nil, 32, 1)
 add_sprite("amount", nil, 32, 1)
+
+
+-- Base game sprites
+data:extend{{
+    type = "sprite", name = "fp_panel",
+    filename = "__core__/graphics/icons/mip/expand-panel-black.png",
+    size = 64, flags = {"gui-icon"}
+}}
