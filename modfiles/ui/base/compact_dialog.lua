@@ -367,6 +367,7 @@ local function build_compact_factory(player)
     local scroll_pane_production = content_frame.add{type="scroll-pane", direction="vertical",
         style="flib_naked_scroll_pane_no_padding"}
     scroll_pane_production.style.horizontally_stretchable = true
+    scroll_pane_production.horizontal_scroll_policy = "never"
 
     local table_production = scroll_pane_production.add{type="table", column_count=6, style="fp_table_production"}
     table_production.vertical_centering = false
