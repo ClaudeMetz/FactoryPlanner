@@ -35,7 +35,15 @@ local function determine_table_height(floor, column_counts)
     for line in floor:iterator() do
         local items_height = 0
         for column, count in pairs(column_counts) do
-            local column_height = math.ceil(#line[column .. "s"] / count)
+            local item_count = #line[column .. "s"]
+
+            if line.class == "Line" then
+                if column == "ingredient" and line.machine.fuel then item_count = item_count + 1 end
+                local catalysts = line.recipe_proto.catalysts[column .. "s"]
+                if catalysts then item_count = item_count + table_size(catalysts) end
+            end
+
+            local column_height = math.ceil(item_count / count)
             items_height = math.max(items_height, column_height)
         end
 
@@ -198,7 +206,23 @@ local function add_item_flow(line, relevant_line, item_category, button_color, m
         ::skip_item::
     end
 
-    if item_category == "ingredient" and line.class == "Line" and line.machine.fuel then
+    if line.class == "Floor" then return end
+
+    if item_category == "product" or item_category == "ingredient" then
+        for _, item in pairs(line.recipe_proto.catalysts[item_category .. "s"]) do
+            local item_proto = prototyper.util.find("items", item.name, item.type)  --[[@as FPItemPrototype]]
+
+            local amount, number_tooltip = item_views.process_item(metadata.player, {proto=item_proto},
+                (item.amount * line.production_ratio), line.machine.amount)
+            local title_line = {"fp.tt_title_with_note", item_proto.localised_name, {"fp.catalyst"}}
+            local number_line = (number_tooltip) and {"", "\n", number_tooltip} or ""
+
+            item_table.add{type="sprite-button", sprite=item_proto.sprite, number=amount,
+                tooltip={"", title_line, number_line}, style="flib_slot_button_blue_small"}
+        end
+    end
+
+    if item_category == "ingredient" and line.machine.fuel then
         local fuel, machine_count = line.machine.fuel, line.machine.amount
         local amount, number_tooltip = item_views.process_item(metadata.player, fuel, nil, machine_count)
         if amount == -1 then goto skip_fuel end  -- an amount of -1 means it was below the margin of error
