@@ -35,6 +35,7 @@ add_sprite("divide", nil, 32, 1)
 add_sprite("default", nil, 32, 1)
 add_sprite("default_all", nil, 32, 1)
 add_sprite("amount", nil, 32, 1)
+add_sprite("dropup", nil, 32, 2)
 
 
 -- Base game sprites
