@@ -58,6 +58,7 @@ function reload_preferences(player_table)
     reload("pause_on_interface", false)
     reload("utility_scopes", {components = "Factory"})
     reload("recipe_filters", {disabled = false, hidden = false})
+    reload("compact_ingredients", false)
 
     reload("products_per_row", 6)
     reload("factory_list_rows", 30)

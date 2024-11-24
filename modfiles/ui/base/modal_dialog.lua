@@ -79,7 +79,7 @@ local function create_base_dialog(player, dialog_settings, modal_data)
             tooltip=dialog_settings.subheader_tooltip, style="semibold_label"}
     end
 
-    local scroll_pane = content_frame.add{type="scroll-pane", direction="vertical", style="flib_naked_scroll_pane"}
+    local scroll_pane = content_frame.add{type="scroll-pane", style="flib_naked_scroll_pane"}
     if dialog_settings.disable_scroll_pane then scroll_pane.vertical_scroll_policy = "never" end
     modal_elements.content_frame = scroll_pane
 
