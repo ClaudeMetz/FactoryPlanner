@@ -9,14 +9,20 @@ function processors.items_per_timescale(metadata, raw_amount, item_proto, _)
     return number, {"", number, " ", type_string, "/", metadata.timescale_string}
 end
 
-function processors.belts_or_lanes(metadata, raw_amount, item_proto, _)
-    if item_proto.type == "fluid" then return nil, {"fp.fluid_item"} end
+function processors.throughput(metadata, raw_amount, item_proto, _)
+    local raw_number, unit_name = nil, nil
 
-    local raw_number = raw_amount * metadata.throughput_multiplier
+    if item_proto.type == "fluid" then
+        raw_number = raw_amount / metadata.pumping_speed
+        unit_name = "pump"
+    else
+        raw_number = raw_amount * metadata.throughput_multiplier
+        unit_name = metadata.belt_or_lane
+    end
+
     local number = util.format.number(raw_number, metadata.formatting_precision)
-
     local plural_parameter = (number == "1") and 1 or 2
-    local tooltip = {"", number, " ", {"fp.pl_" .. metadata.belt_or_lane, plural_parameter}}
+    local tooltip = {"", number, " ", {"fp.pl_" .. unit_name, plural_parameter}}
 
     return number, tooltip
 end
@@ -123,11 +129,12 @@ end
 function item_views.rebuild_data(player)
     local preferences = util.globals.preferences(player)
     local timescale_string = TIMESCALE_MAP[preferences.timescale]
-    local default_cargo_wagon = defaults.get(player, "wagons", "cargo-wagon").proto  --[[@as FPWagonPrototype]]
-    local default_fluid_wagon = defaults.get(player, "wagons", "fluid-wagon").proto  --[[@as FPWagonPrototype]]
     local belt_proto = defaults.get(player, "belts").proto  --[[@as FPBeltPrototype]]
     local belts_or_lanes = preferences.belts_or_lanes
     local throughput_divisor = (belts_or_lanes == "belts") and belt_proto.throughput or (belt_proto.throughput / 2)
+    local pump_proto = defaults.get(player, "pumps").proto
+    local default_cargo_wagon = defaults.get(player, "wagons", "cargo-wagon").proto  --[[@as FPWagonPrototype]]
+    local default_fluid_wagon = defaults.get(player, "wagons", "fluid-wagon").proto  --[[@as FPWagonPrototype]]
 
     util.globals.ui_state(player).views_data = {
         views = {
@@ -136,11 +143,12 @@ function item_views.rebuild_data(player)
                 caption = {"", {"fp.pu_item", 2}, "/", {"fp.unit_" .. timescale_string}},
                 tooltip = {"fp.view_tt", {"fp.items_per_timescale", {"fp." .. timescale_string}}}
             },
-            belts_or_lanes = {
+            throughput = {
                 index = 2,
-                caption = {"", belt_proto.rich_text},
-                tooltip = {"fp.view_tt", {"fp.belts_or_lanes", {"fp.pl_" .. belts_or_lanes:sub(1, -2), 2},
-                    belt_proto.rich_text, belt_proto.localised_name}}
+                caption = {"", belt_proto.rich_text, " ", pump_proto.rich_text},
+                tooltip = {"fp.view_tt", {"fp.throughput",
+                    {"fp.pl_" .. belts_or_lanes:sub(1, -2), 2}, belt_proto.rich_text, belt_proto.localised_name,
+                    pump_proto.rich_text, pump_proto.localised_name}}
             },
             items_per_second_per_machine = {
                 index = 3,
@@ -171,9 +179,10 @@ function item_views.rebuild_data(player)
         adjusted_margin_of_error = MAGIC_NUMBERS.margin_of_error / preferences.timescale,
         belt_or_lane = belts_or_lanes:sub(1, -2),
         throughput_multiplier = 1 / throughput_divisor,
-        formatting_precision = 4,
+        pumping_speed = pump_proto.pumping_speed,
         cargo_wagon_capactiy = default_cargo_wagon.storage,
-        fluid_wagon_capacity = default_fluid_wagon.storage
+        fluid_wagon_capacity = default_fluid_wagon.storage,
+        formatting_precision = 4
     }
 end
 
@@ -190,7 +199,7 @@ function item_views.default_preferences()
     return {
         views = {
             {name="items_per_timescale", enabled=true},
-            {name="belts_or_lanes", enabled=true},
+            {name="throughput", enabled=true},
             {name="items_per_second_per_machine", enabled=true},
             {name="stacks_per_timescale", enabled=false},
             {name="wagons_per_timescale", enabled=false},

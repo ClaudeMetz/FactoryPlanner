@@ -6,6 +6,7 @@ local generator = {
     items = {},
     fuels = {},
     belts = {},
+    pumps = {},
     wagons = {},
     modules = {},
     beacons = {},
@@ -980,6 +981,47 @@ end
 function generator.belts.sorting_function(a, b)
     if a.throughput < b.throughput then return true
     elseif a.throughput > b.throughput then return false end
+    return false
+end
+
+
+---@class FPPumpPrototype: FPPrototype
+---@field data_type "pumps"
+---@field elem_type ElemType
+---@field rich_text string
+---@field pumping_speed double
+
+-- Generates a table containing all available standard pumps
+---@return NamedPrototypes<FPPumpPrototype>
+function generator.pumps.generate()
+    local pumps = {} ---@type NamedPrototypes<FPPumpPrototype>
+
+    local pump_filter = {{filter="type", type="pump"},
+        {filter="hidden", invert=true, mode="and"}}
+    for _, proto in pairs(prototypes.get_entity_filtered(pump_filter)) do
+        local sprite = generator_util.determine_entity_sprite(proto)
+        if sprite ~= nil then
+            local pump = {
+                name = proto.name,
+                localised_name = proto.localised_name,
+                sprite = sprite,
+                elem_type = "entity",
+                rich_text = "[entity=" .. proto.name .. "]",
+                pumping_speed = proto.pumping_speed * 60
+            }
+            insert_prototype(pumps, pump, nil)
+        end
+    end
+
+    return pumps
+end
+
+---@param a FPPumpPrototype
+---@param b FPPumpPrototype
+---@return boolean
+function generator.pumps.sorting_function(a, b)
+    if a.pumping_speed < b.tpumping_speed then return true
+    elseif a.pumping_speed > b.pumping_speed then return false end
     return false
 end
 
