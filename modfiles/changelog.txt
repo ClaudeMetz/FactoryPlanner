@@ -7,6 +7,7 @@ Date: 00. 00. 0000
   Changes:
     -
   Bugfixes:
+    - Fixed that copy/pasting a machine didn't bring along its fuel and modules (#424)
     - Fixed that catalysts weren't being shown in the compact dialog
 
 ---------------------------------------------------------------------------------------------------

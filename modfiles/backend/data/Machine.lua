@@ -144,11 +144,18 @@ function Machine:paste(object, player)
         local corresponding_proto = prototyper.util.find("machines", object.proto.name, self.proto.category)
         if corresponding_proto and self.parent:is_machine_compatible(object.proto) then
             self.parent:change_machine_to_proto(player, corresponding_proto)
-            -- The above adjusts modules and fuel as well
-
             self.quality_proto = object.quality_proto
+
             self.limit = object.limit
             self.force_limit = object.force_limit
+
+            if object.fuel then
+                self.fuel = object.fuel
+                self.fuel.parent = self
+            end
+
+            self.module_set = object.module_set
+            self.module_set.parent = self
 
             return true, nil
         else
