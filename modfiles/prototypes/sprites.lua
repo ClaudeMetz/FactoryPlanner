@@ -36,6 +36,7 @@ add_sprite("default", nil, 32, 1)
 add_sprite("default_all", nil, 32, 1)
 add_sprite("amount", nil, 32, 1)
 add_sprite("dropup", nil, 32, 2)
+add_sprite("fold_out_subfloors", nil, 32, 1)
 
 
 -- Base game sprites

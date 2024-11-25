@@ -7,7 +7,6 @@ local function generate_metadata(player, factory)
     local metadata = {
         archive_open = factory.archived,
         matrix_solver_active = (factory.matrix_free_items ~= nil),
-        fold_out_subfloors = preferences.fold_out_subfloors,
         ingredient_satisfaction = preferences.ingredient_satisfaction,
         player = player,
         tooltips = tooltips.production_table,
@@ -81,7 +80,7 @@ function builders.recipe(line, parent_flow, metadata, indent)
     parent_flow.style.vertical_align = "center"
     parent_flow.style.horizontal_spacing = 3
 
-    if indent > 0 then parent_flow.style.left_margin = indent * 18 end
+    parent_flow.style.left_margin = indent * 12
     local first_subfloor_line = (line.parent.level > 1 and line.previous == nil)
 
     local style, tags, tooltip = nil, nil, nil
@@ -412,7 +411,7 @@ local all_production_columns = {
     -- name, caption, tooltip, alignment
     {name="move", caption="", alignment="center"},
     {name="done", caption="", tooltip={"fp.column_done_tt"}, alignment="center"},
-    {name="recipe", caption={"fp.pu_recipe", 1}, alignment="center"},
+    {name="recipe", caption={"fp.pu_recipe", 1}, alignment="left"},
     {name="percentage", caption="% ", tooltip={"fp.column_percentage_tt"}, alignment="center"},
     {name="machine", caption={"fp.pu_machine", 1}, alignment="left"},
     {name="beacon", caption={"fp.pu_beacon", 1}, alignment="left"},
@@ -478,7 +477,9 @@ local function refresh_production_table(player)
             end
             table_production.add{type="empty-widget"}
 
-            if line.class == "Floor" and metadata.fold_out_subfloors then render_lines(line, indent + 1) end
+            if line.class == "Floor" and preferences.fold_out_subfloors then
+                render_lines(line, indent + 1)
+            end
         end
     end
 

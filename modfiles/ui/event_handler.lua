@@ -260,6 +260,7 @@ local misc_identifier_map = {
     ["fp_refresh_production"] = "fp_refresh_production",
     ["fp_up_floor"] = "fp_up_floor",
     ["fp_top_floor"] = "fp_top_floor",
+    ["fp_toggle_fold_out_subfloors"] = "fp_toggle_fold_out_subfloors",
     ["fp_cycle_production_views"] = "fp_cycle_production_views",
     ["fp_reverse_cycle_production_views"] = "fp_reverse_cycle_production_views",
     ["fp_confirm_dialog"] = "fp_confirm_dialog",
