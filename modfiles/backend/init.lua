@@ -14,6 +14,8 @@ require("backend.calculation.solver")
 ---@field pause_on_interface boolean
 ---@field utility_scopes { components: "Factory" | "Floor" }
 ---@field recipe_filters { disabled: boolean, hidden: boolean }
+---@field compact_ingredients boolean
+---@field fold_out_subfloors boolean
 ---@field products_per_row integer
 ---@field factory_list_rows integer
 ---@field compact_width_percentage integer
@@ -22,7 +24,6 @@ require("backend.calculation.solver")
 ---@field skip_factory_naming boolean
 ---@field prefer_matrix_solver boolean
 ---@field show_floor_items boolean
----@field fold_out_subfloors boolean
 ---@field ingredient_satisfaction boolean
 ---@field ignore_barreling_recipes boolean
 ---@field ignore_recycling_recipes boolean
@@ -59,6 +60,7 @@ function reload_preferences(player_table)
     reload("utility_scopes", {components = "Factory"})
     reload("recipe_filters", {disabled = false, hidden = false})
     reload("compact_ingredients", false)
+    reload("fold_out_subfloors", false)
 
     reload("products_per_row", 6)
     reload("factory_list_rows", 30)
@@ -69,7 +71,6 @@ function reload_preferences(player_table)
     reload("attach_factory_products", false)
     reload("prefer_matrix_solver", false)
     reload("show_floor_items", false)
-    reload("fold_out_subfloors", false)
     reload("ingredient_satisfaction", false)
     reload("ignore_barreling_recipes", false)
     reload("ignore_recycling_recipes", false)

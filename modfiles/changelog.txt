@@ -6,6 +6,7 @@ Date: 00. 00. 0000
     - The belt throughput display option now shows pump throughput for fluids (#411)
   Changes:
     - Several actions now close the District view when it's open, for more intuitive use of the UI (#379)
+    - Moved the 'fold out subfloors' preference to a toggle button in the main UI (#299)
     - Machines/fuels/beacons are now guaranteed to have sensible, low-level defaults
   Bugfixes:
     - Fixed that copy/pasting a machine didn't bring along its fuel and modules (#424)

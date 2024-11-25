@@ -89,6 +89,12 @@ local function change_floor(player, destination)
     end
 end
 
+local function toggle_fold_out_subfloors(player)
+    local preferences = util.globals.preferences(player)
+    preferences.fold_out_subfloors = not preferences.fold_out_subfloors
+    util.raise.refresh(player, "production_detail")
+end
+
 local function handle_solver_change(player, _, event)
     local factory = util.context.get(player, "Factory")  --[[@as Factory]]
     local new_solver = (event.element.switch_state == "left") and "traditional" or "matrix"
@@ -144,6 +150,7 @@ end
 
 local function refresh_production_box(player)
     local ui_state = util.globals.ui_state(player)
+    local preferences = util.globals.preferences(player)
     local factory = util.context.get(player, "Factory")  --[[@as Factory?]]
     local floor = util.context.get(player, "Floor")  --[[@as Floor?]]
 
@@ -166,6 +173,9 @@ local function refresh_production_box(player)
 
     production_box_elements.floor_top_button.visible = factory_valid
     production_box_elements.floor_top_button.enabled = (current_level > 1)
+
+    production_box_elements.fold_out_subfloors_button.visible = factory_valid
+    production_box_elements.fold_out_subfloors_button.toggled = preferences.fold_out_subfloors
 
     production_box_elements.solver_flow.visible = factory_valid
     if factory_valid then
@@ -245,6 +255,12 @@ local function build_production_box(player)
     button_floor_top.style.padding = {3, 2, 1, 2}
     button_floor_top.style.top_margin = 2
     main_elements.production_box["floor_top_button"] = button_floor_top
+
+    local button_fold_out_subfloors = flow_production.add{type="sprite-button", sprite="fp_fold_out_subfloors",
+        tooltip={"fp.fold_out_subfloors_tt"}, tags={mod="fp", on_gui_click="toggle_fold_out_subfloors"},
+        style="fp_sprite-button_rounded_icon", mouse_button_filter={"left"}, auto_toggle=true}
+    button_fold_out_subfloors.style.margin = {2, 0, 0, 16}
+    main_elements.production_box["fold_out_subfloors_button"] = button_fold_out_subfloors
 
     flow_production.add{type="empty-widget", style="flib_horizontal_pusher"}
 
@@ -344,6 +360,10 @@ listeners.gui = {
             end)
         },
         {
+            name = "toggle_fold_out_subfloors",
+            handler = toggle_fold_out_subfloors
+        },
+        {
             name = "open_utility_dialog",
             handler = (function(player, _, _)
                 util.raise.open_dialog(player, {dialog="utility"})
@@ -377,6 +397,9 @@ listeners.misc = {
     end),
     fp_top_floor = (function(player, _, _)
         if main_dialog.is_in_focus(player) then change_floor(player, "top") end
+    end),
+    fp_toggle_fold_out_subfloors = (function(player, _, _)
+        if main_dialog.is_in_focus(player) then toggle_fold_out_subfloors(player) end
     end),
 
     build_gui_element = (function(player, event)
