@@ -330,6 +330,15 @@ function generator.machines.second_pass(machines)
     end
 end
 
+---@param a FPMachinePrototype
+---@param b FPMachinePrototype
+---@return boolean
+function generator.machines.sorting_function(a, b)
+    if a.speed < b.speed then return true
+    elseif a.speed > b.speed then return false end
+    return false
+end
+
 
 ---@class FPRecipePrototype: FPPrototype
 ---@field data_type "recipes"
@@ -943,6 +952,15 @@ function generator.fuels.generate()
     return fuels
 end
 
+---@param a FPFuelPrototype
+---@param b FPFuelPrototype
+---@return boolean
+function generator.fuels.sorting_function(a, b)
+    if a.fuel_value < b.fuel_value then return true
+    elseif a.fuel_value > b.fuel_value then return false end
+    return false
+end
+
 
 ---@class FPBeltPrototype: FPPrototype
 ---@field data_type "belts"
@@ -1186,6 +1204,17 @@ function generator.beacons.generate()
     end
 
     return beacons
+end
+
+---@param a FPBeaconPrototype
+---@param b FPBeaconPrototype
+---@return boolean
+function generator.beacons.sorting_function(a, b)
+    if a.module_limit < b.module_limit then return true
+    elseif a.module_limit > b.module_limit then return false
+    elseif a.effectivity < b.effectivity then return true
+    elseif a.effectivity > b.effectivity then return false end
+    return false
 end
 
 
