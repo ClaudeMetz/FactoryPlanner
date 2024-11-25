@@ -104,6 +104,7 @@ listeners.gui = {
                 if floor and floor.level > 1 and floor:count() == 1 then
                     util.context.ascend_floors(player, "up")
                 end
+                main_dialog.toggle_districts_view(player, true)
 
                 main_dialog.toggle(player)
                 util.globals.ui_state(player).compact_view = true

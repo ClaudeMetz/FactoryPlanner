@@ -62,6 +62,7 @@ local function duplicate_factory(player, _, event)
     factory.parent:insert(clone, pivot, "next")
 
     solver.update(player, clone)
+    main_dialog.toggle_districts_view(player, true)
     util.context.set(player, clone)
     util.raise.refresh(player, "all")
 end
@@ -87,6 +88,7 @@ local function handle_factory_click(player, tags, action)
             solver.update(player, previous_factory)
         end
 
+        main_dialog.toggle_districts_view(player, true)
         util.context.set(player, selected_factory)
         util.raise.refresh(player, "all")  -- refresh to update the selected factory
 
@@ -319,6 +321,7 @@ listeners.gui = {
                 local district = (factory) and factory.parent or util.context.get(player, "District")
                 local new_factory = district:find({archived=not archive_open})  --[[@as Factory]]
 
+                main_dialog.toggle_districts_view(player, true)
                 util.context.set(player, new_factory or district, true)
                 util.raise.refresh(player, "all")
             end)

@@ -418,7 +418,7 @@ local function close_picker_dialog(player, action)
         end
 
         solver.update(player, factory)
-        if ui_state.districts_view then main_dialog.toggle_districts_view(player) end
+        main_dialog.toggle_districts_view(player, true)
         util.raise.refresh(player, refresh_scope)
 
     elseif action == "delete" then
