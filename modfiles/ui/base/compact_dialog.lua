@@ -255,10 +255,10 @@ local function refresh_compact_header(player, factory)
     local attach_factory_products = player_table.preferences.attach_factory_products
     compact_elements.name_label.caption = factory:tostring(attach_factory_products, true)
 
-    local current_level = util.context.get(player, "Floor").level
-    compact_elements.level_label.caption = {"fp.bold_label", {"", "-   ", {"fp.level"}, " ", current_level}}
-    compact_elements.floor_up_button.enabled = (current_level > 1)
-    compact_elements.floor_top_button.enabled = (current_level > 1)
+    local current_floor = util.context.get(player, "Floor")
+    compact_elements.level_label.caption = {"fp.bold_label", {"", "-   ", {"fp.level"}, " ", current_floor.level}}
+    compact_elements.floor_up_button.enabled = (current_floor.level > 1)
+    compact_elements.floor_top_button.enabled = (current_floor.level > 1)
 
     local compact_ingredients = player_table.preferences.compact_ingredients
     compact_elements.ingredient_toggle.toggled = compact_ingredients
@@ -280,7 +280,9 @@ local function refresh_compact_header(player, factory)
 
     local item_buttons = compact_elements.item_buttons
 
-    for index, ingredient in pairs(factory.top_floor.ingredients) do
+    local show_floor_items = player_table.preferences.show_floor_items
+    local relevant_floor = (show_floor_items) and current_floor or factory.top_floor
+    for index, ingredient in pairs(relevant_floor.ingredients) do
         local amount, number_tooltip = item_views.process_item(player, ingredient, nil, nil)
         if amount == -1 then goto skip_ingredient end  -- an amount of -1 means it was below the margin of error
 
