@@ -7,6 +7,7 @@ Date: 00. 00. 0000
     -
   Bugfixes:
     - Fixed a startup crash (#428)
+    - Fixed a migration issue with the previous release (#431)
 
 ---------------------------------------------------------------------------------------------------
 Version: 2.0.15
