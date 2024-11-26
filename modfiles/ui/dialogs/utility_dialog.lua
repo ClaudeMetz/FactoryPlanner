@@ -511,7 +511,7 @@ listeners.gui = {
             handler = (function(player, tags, event)
                 local factory = util.context.get(player, "Factory")  --[[@as Factory]]
                 local bonus = tonumber(event.element.text)  -- nil if invalid or empty
-                if bonus then factory.productivity_boni[tags.recipe_name] = bonus / 100 end
+                factory.productivity_boni[tags.recipe_name] = (bonus) and bonus / 100 or nil
                 util.globals.modal_data(player).recalculate = true
             end)
         }
