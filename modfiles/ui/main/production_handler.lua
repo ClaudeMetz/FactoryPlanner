@@ -231,7 +231,7 @@ local function handle_item_click(player, tags, action)
 
     elseif action == "put_into_cursor" then
         if item.proto.type == "entity" then return end
-        util.cursor.handle_item_click(player, item.proto, item.amounte)
+        util.cursor.handle_item_click(player, item.proto, item.amount)
 
     elseif action == "factoriopedia" then
         if item.proto.type == "entity" then return end
