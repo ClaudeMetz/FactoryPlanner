@@ -10,6 +10,7 @@ Date: 00. 00. 0000
     - Machines/fuels/beacons are now guaranteed to have sensible, low-level defaults
   Bugfixes:
     - Fixed that copy/pasting a machine didn't bring along its fuel and modules (#424)
+    - Fixed a crash when trying to put an item into the cursor (#426)
     - Fixed that catalysts weren't being shown in the compact dialog
 
 ---------------------------------------------------------------------------------------------------
