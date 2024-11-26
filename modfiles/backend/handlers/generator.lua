@@ -1038,7 +1038,7 @@ end
 ---@param b FPPumpPrototype
 ---@return boolean
 function generator.pumps.sorting_function(a, b)
-    if a.pumping_speed < b.tpumping_speed then return true
+    if a.pumping_speed < b.pumping_speed then return true
     elseif a.pumping_speed > b.pumping_speed then return false end
     return false
 end
