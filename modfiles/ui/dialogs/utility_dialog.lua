@@ -424,6 +424,8 @@ local function import_productivity_boni(player, _, event)
 
     utility_structures.productivity_boni(player, modal_data)
     modal_data.recalculate = true
+
+    util.cursor.create_flying_text(player, {"fp.utility_productivity_imported"})
 end
 
 
