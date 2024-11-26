@@ -275,6 +275,7 @@ local function handle_bol_change(player, _, event)
     item_views.rebuild_data(player)
     item_views.rebuild_interface(player)
 
+    refresh_views_table(player)
     solver.update(player, nil)
     util.raise.refresh(player, "all")
 end
@@ -287,11 +288,10 @@ local function handle_default_prototype_change(player, tags, _)
     defaults.set(player, data_type, {prototype=tags.prototype_name}, category_id)
     refresh_defaults_table(player, modal_elements, data_type, category_id)
 
-    if data_type == "belts" or data_type == "pumps" or data_type == "wagons" then
-        item_views.rebuild_data(player)
-        item_views.rebuild_interface(player)
-        util.raise.refresh(player, "all")
-    end
+    item_views.rebuild_data(player)
+    item_views.rebuild_interface(player)
+    refresh_views_table(player)
+    util.raise.refresh(player, "all")
 end
 
 
