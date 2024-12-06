@@ -12,7 +12,11 @@ function migration.player_table(player_table)
                 enabled = view.enabled
             end
         end
-        item_views.views[found_index] = {name="throughput", enabled=enabled}
+        if found_index then
+            item_views.views[found_index] = {name="throughput", enabled=enabled}
+        else
+            table.insert(item_views.views, {name="throughput", enabled=false})
+        end
     end
 end
 
