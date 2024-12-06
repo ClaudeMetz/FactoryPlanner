@@ -35,26 +35,28 @@ function _cursor.set_entity(player, line, object)
     end
 
     local items_list, slot_index = {}, 0
-    local inventory = defines.inventory[object.proto.prototype_category .. "_modules"]
-    for module in object.module_set:iterator() do
-        local inventory_list = {}
-        for i = 1, module.amount do
-            table.insert(inventory_list, {
-                inventory = inventory,
-                stack = slot_index
-            })
-            slot_index = slot_index + 1
-        end
+    if object.proto.effect_receiver.uses_module_effects then
+        local inventory = defines.inventory[object.proto.prototype_category .. "_modules"]
+        for module in object.module_set:iterator() do
+            local inventory_list = {}
+            for i = 1, module.amount do
+                table.insert(inventory_list, {
+                    inventory = inventory,
+                    stack = slot_index
+                })
+                slot_index = slot_index + 1
+            end
 
-        table.insert(items_list, {
-            id = {
-                name = module.proto.name,
-                quality = module.quality_proto.name
-            },
-            items = {
-                in_inventory = inventory_list
-            }
-        })
+            table.insert(items_list, {
+                id = {
+                    name = module.proto.name,
+                    quality = module.quality_proto.name
+                },
+                items = {
+                    in_inventory = inventory_list
+                }
+            })
+        end
     end
 
     -- Put item directly into the cursor if it's simple
