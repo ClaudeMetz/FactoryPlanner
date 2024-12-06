@@ -292,7 +292,7 @@ local function refresh_compact_header(player, factory)
         local style = "flib_slot_button_default"
 
         local button = table_items.add{type="sprite-button", number=amount, tooltip=tooltip,
-            tags={mod="fp", on_gui_click="act_on_compact_ingredient", factory_id=factory.id, item_index=index,
+            tags={mod="fp", on_gui_click="act_on_compact_ingredient", floor_id=relevant_floor.id, item_index=index,
             on_gui_hover="hover_compact_item", on_gui_leave="leave_compact_item", context="compact_dialog"},
             sprite=ingredient.proto.sprite, style=style, mouse_button_filter={"left-and-right"},
             raise_hover_events=true}
@@ -527,8 +527,8 @@ end
 
 local function handle_hover_change(player, tags, event)
     local proto = nil
-    if tags.factory_id then
-        proto = OBJECT_INDEX[tags.factory_id].top_floor.ingredients[tags.item_index].proto
+    if tags.floor_id then
+        proto = OBJECT_INDEX[tags.floor_id].ingredients[tags.item_index].proto
     elseif tags.fuel_id then
         proto = OBJECT_INDEX[tags.fuel_id].proto
     else
