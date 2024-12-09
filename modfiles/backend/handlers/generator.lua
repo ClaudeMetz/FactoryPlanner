@@ -159,11 +159,12 @@ function generator.machines.generate()
         end
 
         local effect_receiver = proto.effect_receiver or {
-            base_effects = {},
             uses_module_effects = false,
             uses_beacon_effects = false,
             uses_surface_effects = false
         }
+        local base_effect = effect_receiver.base_effect  -- can be nil
+        effect_receiver.base_effect = generator_util.formatted_effects(base_effect)
 
         local machine = {
             name = proto.name,
@@ -1128,11 +1129,8 @@ function generator.modules.generate()
                 sprite = sprite,
                 category = proto.category,
                 tier = proto.tier,
-                effects = proto.module_effects or {}
+                effects = generator_util.formatted_effects(proto.module_effects)
             }
-            if module.effects["quality"] then  -- fix base game weirdness
-                module.effects["quality"] = module.effects["quality"] / 10
-            end
             insert_prototype(modules, module, module.category)
         end
     end

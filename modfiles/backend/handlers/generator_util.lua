@@ -367,6 +367,16 @@ function generator_util.check_machine_effects(proto)
     end
 end
 
+---@param effects ModuleEffects
+---@return ModuleEffects
+function generator_util.formatted_effects(effects)
+    effects = effects or {}
+    if effects["quality"] then  -- fix base game weirdness
+        effects["quality"] = effects["quality"] / 10
+    end
+    return effects
+end
+
 --- Needs to be weird because ordering of non-integer keys depends on insertion order
 ---@param proto FPMachinePrototype
 function generator_util.sort_machine_burner_categories(proto)
