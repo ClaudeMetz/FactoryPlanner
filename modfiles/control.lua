@@ -79,3 +79,10 @@ DEV_EXPORT_STRING = "eNrtWV9v2jAQ/ypTngkjaZk6pL1saqVJmzStjxWKHOdCvdlxZjuoCPHdd05
 ---@alias AllowedEffects { [string]: boolean }
 ---@alias ItemType string
 ---@alias ItemName string
+
+local api = {}
+
+function api.ping()
+    return "pong"
+end
+remote.add_interface("factoryplanner", api)
