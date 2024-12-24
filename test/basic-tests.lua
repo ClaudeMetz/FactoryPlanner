@@ -15,3 +15,18 @@ test("Can access data", function()
 
     assert.are_equal("New District", realm.first.name)
 end)
+
+function print_keys(tbl)
+    local keys = {}
+    for k in pairs(tbl) do
+        table.insert(keys, tostring(k))
+    end
+    table.sort(keys)  -- Optional, for consistent ordering
+    log("Keys: " .. table.concat(keys, ", "))
+end
+
+test("Can add factory", function()
+    remote.call("factoryplanner", "reset", 1)
+    --local factory_id = remote.call("factoryplanner", "add_factory", 1, "Test Factory")
+
+end)

@@ -9,4 +9,6 @@ This is done as a separate mod to `factoryplanner` for two reasons:
 * Easy way to separate out all the test infrastructure from the main mod.
 
 A limitation of this is we can only test via an exposed API ... but that's
-probably a good thing for resilient tests anyway.
+probably a good thing for resilient tests anyway. While we _can_ pass data
+tables through the API, they're not super useful without their associated
+functions, which we don't have access to (unless I'm doing it wrong).
