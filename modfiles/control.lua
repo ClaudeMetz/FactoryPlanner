@@ -85,4 +85,16 @@ local api = {}
 function api.ping()
     return "pong"
 end
+
+function api.get_realm(player_index)
+    local player = game.get_player(player_index)
+    if not player then return nil end
+
+    local table = util.globals.player_table(player)
+
+    if not table then return nil end
+
+    return table.realm
+end
+
 remote.add_interface("factoryplanner", api)

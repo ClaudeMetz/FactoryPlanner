@@ -8,3 +8,10 @@ test("Can call API", function()
         assert.are_equal("pong", remote.call("factoryplanner", "ping"))
     end
 end)
+
+test("Can access data", function()
+    -- Can assume single player, so player index of 1.
+    local realm = remote.call("factoryplanner", "get_realm", 1)
+
+    assert.are_equal("New District", realm.first.name)
+end)
