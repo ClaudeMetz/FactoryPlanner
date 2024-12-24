@@ -6,6 +6,7 @@ local generator = {
     items = {},
     fuels = {},
     belts = {},
+    pumps = {},
     wagons = {},
     modules = {},
     beacons = {},
@@ -60,7 +61,7 @@ end
 ---@field data_type "machines"
 ---@field category string
 ---@field elem_type ElemType
----@field quality_category QualityCategory
+---@field prototype_category PrototypeCategory?
 ---@field ingredient_limit integer
 ---@field fluid_channels FluidChannels
 ---@field speed double
@@ -73,6 +74,7 @@ end
 ---@field built_by_item FPItemPrototype?
 ---@field effect_receiver EffectReceiver?
 ---@field allowed_effects AllowedEffects
+---@field allowed_module_categories { [string]: boolean }?
 ---@field module_limit integer
 ---@field surface_conditions SurfaceCondition[]
 ---@field resource_drain_rate number?
@@ -87,7 +89,7 @@ end
 ---@field combined_category string
 
 ---@alias EmissionsMap { [string]: double }
----@alias QualityCategory ("assembling-machine" | "mining-drill")?
+---@alias PrototypeCategory ("assembling_machine" | "furnace" | "rocket_silo" | "mining_drill")
 
 -- Generates a table containing all machines for all categories
 ---@return NamedPrototypesWithCategory<FPMachinePrototype>
@@ -96,9 +98,9 @@ function generator.machines.generate()
 
     ---@param category string
     ---@param proto LuaEntityPrototype
-    ---@param quality_category QualityCategory
+    ---@param prototype_category PrototypeCategory?
     ---@return FPMachinePrototype?
-    local function generate_category_entry(category, proto, quality_category)
+    local function generate_category_entry(category, proto, prototype_category)
         -- First, determine if there is a valid sprite for this machine
         local sprite = generator_util.determine_entity_sprite(proto)
         if sprite == nil then return end
@@ -117,11 +119,8 @@ function generator.machines.generate()
         if burner_prototype then
             energy_type = "burner"
             emissions_per_joule = burner_prototype.emissions_per_joule
-            burner = {effectivity = burner_prototype.effectivity, categories = burner_prototype.fuel_categories,
-                combined_category = ""}
-            for fuel_category, _ in pairs(burner_prototype.fuel_categories) do
-                burner.combined_category = burner.combined_category .. fuel_category
-            end
+            burner = {effectivity=burner_prototype.effectivity, categories=burner_prototype.fuel_categories,
+                combined_category=""}  -- combined filled in by fuel generator
 
         -- Only supports fluid energy that burns_fluid for now, as it works the same way as solid burners
         -- Also doesn't respect scale_fluid_usage and fluid_usage_per_tick for now, let the reports come
@@ -130,8 +129,8 @@ function generator.machines.generate()
 
             if fluid_burner_prototype.burns_fluid and not fluid_burner_prototype.fluid_box.filter then
                 energy_type = "burner"
-                burner = {effectivity = fluid_burner_prototype.effectivity, categories = {["fluid-fuel"] = true},
-                    combined_category = "fluid-fuel"}
+                burner = {effectivity=fluid_burner_prototype.effectivity, categories={["fluid-fuel"] = true},
+                    combined_category=""}  -- combined filled in by fuel generator
 
             else  -- Avoid adding this type of complex fluid energy as electrical energy
                 energy_type = "void"
@@ -172,7 +171,7 @@ function generator.machines.generate()
             sprite = sprite,
             category = category,
             elem_type = "entity",
-            quality_category = quality_category,
+            prototype_category = prototype_category,
             ingredient_limit = (proto.ingredient_count or 255),
             fluid_channels = fluid_channels,
             speed = proto.get_crafting_speed(),
@@ -185,10 +184,12 @@ function generator.machines.generate()
             built_by_item = built_by_item,
             effect_receiver = effect_receiver,
             allowed_effects = proto.allowed_effects or {},
+            allowed_module_categories = proto.allowed_module_categories,
             module_limit = (proto.module_inventory_size or 0),
             surface_conditions = proto.surface_conditions
         }
         generator_util.check_machine_effects(machine)
+        generator_util.sort_machine_burner_categories(machine)
 
         return machine
     end
@@ -199,13 +200,14 @@ function generator.machines.generate()
         if proto.crafting_categories and not proto.hidden and proto.energy_usage ~= nil
                 and not generator_util.is_irrelevant_machine(proto) then
             for category, _ in pairs(proto.crafting_categories) do
-                local machine = generate_category_entry(category, proto, "assembling-machine")
+                local prototype_category = proto.type:gsub("-", "_")
+                local machine = generate_category_entry(category, proto, prototype_category)
                 if machine then insert_prototype(machines, machine, machine.category) end
             end
 
         elseif proto.type == "mining-drill" and not proto.hidden then
             for category, _ in pairs(proto.resource_categories) do
-                local machine = generate_category_entry(category, proto, "mining-drill")
+                local machine = generate_category_entry(category, proto, "mining_drill")
                 if machine then
                     machine.speed = proto.mining_speed
                     machine.resource_drain_rate = proto.resource_drain_rate_percent / 100
@@ -328,6 +330,15 @@ function generator.machines.second_pass(machines)
     end
 end
 
+---@param a FPMachinePrototype
+---@param b FPMachinePrototype
+---@return boolean
+function generator.machines.sorting_function(a, b)
+    if a.speed < b.speed then return true
+    elseif a.speed > b.speed then return false end
+    return false
+end
+
 
 ---@class FPRecipePrototype: FPPrototype
 ---@field data_type "recipes"
@@ -339,6 +350,8 @@ end
 ---@field main_product FormattedProduct?
 ---@field allowed_effects AllowedEffects?
 ---@field maximum_productivity double
+---@field allowed_module_categories { [string]: boolean }?
+---@field productivity_recipe string?
 ---@field type_counts { ingredients: ItemTypeCounts, products: ItemTypeCounts }
 ---@field catalysts { ingredients: Ingredient[], products: FormattedProduct[] }
 ---@field surface_conditions SurfaceCondition[]?
@@ -413,6 +426,7 @@ function generator.recipes.generate()
                 emissions_multiplier = proto.emissions_multiplier,
                 allowed_effects = proto.allowed_effects or {},
                 maximum_productivity = proto.maximum_productivity,
+                allowed_module_categories = proto.allowed_module_categories,
                 type_counts = {},  -- filled out by format_* below
                 catalysts = {products={}, ingredients={}},  -- filled out by format_* below
                 surface_conditions = proto.surface_conditions,
@@ -520,8 +534,15 @@ function generator.recipes.generate()
             local parts_recipe = prototypes.recipe[proto.fixed_recipe]
             if not parts_recipe then goto incompatible_proto end
 
+            -- Multiply amounts to signify one whole rocket launch
+            local parts_ingredients = {}
+            for _, item in pairs(parts_recipe.ingredients) do
+                item.amount = item.amount * proto.rocket_parts_required
+                table.insert(parts_ingredients, item)
+            end
+
             -- Add rocket launch product recipes
-            --if proto.launch_to_space_platforms then  -- TODO API missing
+            --if not proto.launch_to_space_platforms then  -- TODO API missing
                 for item_name, products in pairs(launch_products) do
                     local main_proto = prototypes.item[item_name]
 
@@ -532,9 +553,11 @@ function generator.recipes.generate()
                     launch_recipe.order = parts_recipe.order .. "-" .. proto.order .. "-a"
                     launch_recipe.category = parts_recipe.category
                     launch_recipe.energy = parts_recipe.energy * proto.rocket_parts_required
+                    launch_recipe.productivity_recipe = parts_recipe.name
 
-                    generator_util.format_recipe(launch_recipe, products, products[1], parts_recipe.ingredients)
-                    generator_util.multiply_recipe_items(launch_recipe.ingredients, proto.rocket_parts_required)
+                    local ingredients = ftable.deep_copy(parts_ingredients)
+                    table.insert(ingredients, {type="item", name=item_name, amount=1})
+                    generator_util.format_recipe(launch_recipe, products, products[1], ingredients)
                     insert_prototype(recipes, launch_recipe, nil)
                 end
             --end
@@ -549,11 +572,11 @@ function generator.recipes.generate()
                 rocket_recipe.order = parts_recipe.order .. "-" .. proto.order .. "-b"
                 rocket_recipe.category = parts_recipe.category
                 rocket_recipe.energy = parts_recipe.energy * proto.rocket_parts_required
+                rocket_recipe.productivity_recipe = parts_recipe.name
 
                 local rocket_products = {{type="entity", name="custom-silo-rocket", amount=1}}
                 generator_util.format_recipe(rocket_recipe, rocket_products,
-                    rocket_products[1], parts_recipe.ingredients)
-                generator_util.multiply_recipe_items(rocket_recipe.ingredients, proto.rocket_parts_required)
+                    rocket_products[1], parts_ingredients)
                 insert_prototype(recipes, rocket_recipe, nil)
             end
 
@@ -662,6 +685,7 @@ function generator.recipes.second_pass(recipes)
         -- Check again if all recipes still have a machine to produce them after machine second pass
         if not machines[recipe.category] then
             remove_prototype(recipes, recipe.name, nil)
+        -- Give custom recipes a tooltip in a nice central place
         elseif recipe.custom then
             recipe.tooltip = generator_util.recipe_tooltip(recipe)
         end
@@ -769,14 +793,21 @@ function generator.items.generate()
 
     if SPACE_TRAVEL then
         -- Only need one rocket item for all silos/recipes
-        custom_items["custom-silo-rocket"] = {
+        local rocket_recipe = {
             name = "custom-silo-rocket",
             localised_name = {"", {"entity-name.rocket"}, " ", {"fp.launch"}},
             sprite = "fp_silo_rocket",
             hidden = false,
             order = "z"
         }
-        generator_util.add_default_groups(custom_items["custom-silo-rocket"])
+        local vanilla_parts_recipe = prototypes.recipe["rocket-part"]
+        if vanilla_parts_recipe then  -- make it nicer for vanilla at least
+            rocket_recipe.group = generator_util.generate_group_table(vanilla_parts_recipe.group)
+            rocket_recipe.subgroup = generator_util.generate_group_table(vanilla_parts_recipe.subgroup)
+        else
+            generator_util.add_default_groups(rocket_recipe)
+        end
+        custom_items["custom-silo-rocket"] = rocket_recipe
     end
 
 
@@ -850,6 +881,7 @@ function generator.fuels.generate()
                 type = "item",
                 elem_type = "item",
                 category = proto.fuel_category,
+                combined_category = nil,  -- set below
                 fuel_value = proto.fuel_value,
                 stack_size = proto.stack_size,
                 weight = proto.weight,
@@ -873,7 +905,7 @@ function generator.fuels.generate()
                 type = "fluid",
                 elem_type = "fluid",
                 category = "fluid-fuel",
-                combined_category = "fluid-fuel",
+                combined_category = nil,  -- set below
                 fuel_value = proto.fuel_value,
                 stack_size = nil,
                 weight = nil,
@@ -885,23 +917,48 @@ function generator.fuels.generate()
         end
     end
 
-    -- Create category for each combination of fuel used by machines
-    -- Also filters out any fuels that aren't used by any actual machine
-    for _, machine_category in pairs(storage.prototypes.machines) do
-        for _, machine_proto in pairs(machine_category.members) do
-            if machine_proto.burner then
-                local combined_category = machine_proto.burner.combined_category
-                for fuel_category, _ in pairs(machine_proto.burner.categories) do
-                    for _, fuel in pairs(fuel_categories[fuel_category]) do
-                        fuel.combined_category = combined_category
-                        insert_prototype(fuels, fuel, combined_category)
-                    end
-                end
+    -- This manipulates the machine burner, which is improper but necessary
+    local function add_category(burner)
+        local combined_category = ""
+
+        -- Determine combined category for the burner
+        for fuel_category, _ in pairs(burner.categories) do
+            if fuel_categories[fuel_category] then
+                combined_category = combined_category .. fuel_category
+            else
+                burner.categories[fuel_category] = nil
+            end
+        end
+        burner.combined_category = combined_category
+
+        -- Add all relevant fuels to the combined category
+        for fuel_category, _ in pairs(burner.categories) do
+            for _, fuel in pairs(fuel_categories[fuel_category]) do
+                local fuel_copy = ftable.deep_copy(fuel)
+                fuel_copy.combined_category = combined_category
+                insert_prototype(fuels, fuel_copy, combined_category)
             end
         end
     end
 
+    -- Create category for each combination of fuels used by machines
+    -- Also implicitly filters out fuels that aren't used by any actual machine
+    for _, machine_category in pairs(storage.prototypes.machines) do
+        for _, machine_proto in pairs(machine_category.members) do
+            if machine_proto.burner then add_category(machine_proto.burner) end
+        end
+    end
+
     return fuels
+end
+
+---@param a FPFuelPrototype
+---@param b FPFuelPrototype
+---@return boolean
+function generator.fuels.sorting_function(a, b)
+    if a.fuel_value < b.fuel_value then return true
+    elseif a.fuel_value > b.fuel_value then return false end
+    return false
 end
 
 
@@ -942,6 +999,47 @@ end
 function generator.belts.sorting_function(a, b)
     if a.throughput < b.throughput then return true
     elseif a.throughput > b.throughput then return false end
+    return false
+end
+
+
+---@class FPPumpPrototype: FPPrototype
+---@field data_type "pumps"
+---@field elem_type ElemType
+---@field rich_text string
+---@field pumping_speed double
+
+-- Generates a table containing all available standard pumps
+---@return NamedPrototypes<FPPumpPrototype>
+function generator.pumps.generate()
+    local pumps = {} ---@type NamedPrototypes<FPPumpPrototype>
+
+    local pump_filter = {{filter="type", type="pump"},
+        {filter="hidden", invert=true, mode="and"}}
+    for _, proto in pairs(prototypes.get_entity_filtered(pump_filter)) do
+        local sprite = generator_util.determine_entity_sprite(proto)
+        if sprite ~= nil then
+            local pump = {
+                name = proto.name,
+                localised_name = proto.localised_name,
+                sprite = sprite,
+                elem_type = "entity",
+                rich_text = "[entity=" .. proto.name .. "]",
+                pumping_speed = proto.pumping_speed * 60
+            }
+            insert_prototype(pumps, pump, nil)
+        end
+    end
+
+    return pumps
+end
+
+---@param a FPPumpPrototype
+---@param b FPPumpPrototype
+---@return boolean
+function generator.pumps.sorting_function(a, b)
+    if a.pumping_speed < b.pumping_speed then return true
+    elseif a.pumping_speed > b.pumping_speed then return false end
     return false
 end
 
@@ -1022,7 +1120,8 @@ function generator.modules.generate()
     local module_filter = {{filter="type", type="module"}, {filter="hidden", invert=true, mode="and"}}
     for _, proto in pairs(prototypes.get_item_filtered(module_filter)) do
         local sprite = "item/" .. proto.name
-        if helpers.is_valid_sprite_path(sprite) then
+        local items = storage.prototypes.items["item"].members
+        if helpers.is_valid_sprite_path(sprite) and items[proto.name] then
             local module = {
                 name = proto.name,
                 localised_name = proto.localised_name,
@@ -1041,13 +1140,27 @@ function generator.modules.generate()
     return modules
 end
 
+---@param a FPModulePrototype
+---@param b FPModulePrototype
+---@return boolean
+function generator.modules.sorting_function(a, b)
+    -- Sorting done so IDs can be used for order comparison
+    if a.category < b.category then return true
+    elseif a.category > b.category then return false
+    elseif a.tier < b.tier then return true
+    elseif a.tier > b.tier then return false end
+    return false
+end
+
 
 ---@class FPBeaconPrototype: FPPrototype
 ---@field data_type "beacons"
 ---@field category "beacon"
 ---@field elem_type ElemType
+---@field prototype_category "beacon"
 ---@field built_by_item FPItemPrototype
 ---@field allowed_effects AllowedEffects
+---@field allowed_module_categories { [string]: boolean }?
 ---@field module_limit uint
 ---@field effectivity double
 ---@field quality_bonus double
@@ -1076,12 +1189,14 @@ function generator.beacons.generate()
                 sprite = sprite,
                 category = "beacon",  -- custom category to be similar to machines
                 elem_type = "entity",
+                prototype_category = "beacon",
                 built_by_item = built_by_item,
                 allowed_effects = proto.allowed_effects,
+                allowed_module_categories = proto.allowed_module_categories,
                 module_limit = proto.module_inventory_size,
                 effectivity = proto.distribution_effectivity,
                 quality_bonus = proto.distribution_effectivity_bonus_per_quality_level,
-                profile = proto.profile,
+                profile = (#proto.profile == 0) and {1} or proto.profile,
                 energy_usage = proto.energy_usage or proto.get_max_energy_usage() or 0
             }
             insert_prototype(beacons, beacon, nil)
@@ -1089,6 +1204,17 @@ function generator.beacons.generate()
     end
 
     return beacons
+end
+
+---@param a FPBeaconPrototype
+---@param b FPBeaconPrototype
+---@return boolean
+function generator.beacons.sorting_function(a, b)
+    if a.module_limit < b.module_limit then return true
+    elseif a.module_limit > b.module_limit then return false
+    elseif a.effectivity < b.effectivity then return true
+    elseif a.effectivity > b.effectivity then return false end
+    return false
 end
 
 
@@ -1137,12 +1263,13 @@ function generator.locations.generate()
     local property_prototypes = generate_surface_properties()
 
     ---@param proto LuaSpaceLocationPrototype | LuaSurfacePrototype
-    ---@param type_ string
+    ---@param category string
     ---@return FPLocationPrototype? location_proto
-    local function build_location(proto, type_)
-        local sprite = type_ .. "/" .. proto.name
-        if not proto.hidden and not helpers.is_valid_sprite_path(sprite) then return nil end
-        if not proto.surface_properties then return nil end
+    local function build_location(proto, category)
+        if proto.hidden or not proto.surface_properties then return nil end
+
+        local sprite = category .. "/" .. proto.name
+        if not helpers.is_valid_sprite_path(sprite) then return nil end
 
         local surface_properties, tooltip = {}, {"", {"fp.tt_title", proto.localised_name}, "\n"}
         for _, property_proto in pairs(property_prototypes) do
@@ -1160,15 +1287,14 @@ function generator.locations.generate()
             sprite = sprite,
             tooltip = tooltip,
             surface_properties = surface_properties,
-            pollutant_type = (type_ == "space-location" and proto.pollutant_type) and proto.pollutant_type.name or nil
+            pollutant_type = (category == "space-location" and proto.pollutant_type)
+                and proto.pollutant_type.name or nil
         }
     end
 
     for _, proto in pairs(prototypes.space_location) do
-        if proto.name ~= "space-location-unknown" then  -- Shouldn't this be hidden by the game?
-            local location = build_location(proto, "space-location")
-            if location then insert_prototype(locations, location, nil) end
-        end
+        local location = build_location(proto, "space-location")
+        if location then insert_prototype(locations, location, nil) end
     end
 
     for _, proto in pairs(prototypes.surface) do
@@ -1200,7 +1326,8 @@ function generator.qualities.generate()
                     name = proto.name,
                     localised_name = proto.localised_name,
                     sprite = sprite,
-                    rich_text = {"", "[img=" .. sprite .. "]", proto.localised_name},
+                    rich_text = {"", "[quality=" .. proto.name .. "]",
+                        generator_util.colored_rich_text(proto.localised_name, proto.color)},
                     level = proto.level,
                     always_show = proto.draw_sprite_by_default,
                     multiplier = 1 + (proto.level * 0.3),

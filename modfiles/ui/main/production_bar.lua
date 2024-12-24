@@ -134,8 +134,8 @@ listeners.gui = {
         {
             name = "refresh_production",
             timeout = 20,
-            handler = (function(player, _, _)
-                if DEV_ACTIVE then  -- implicit mod reload for easier development
+            handler = (function(player, _, event)
+                if DEV_ACTIVE and not event.shift then  -- implicit mod reload for easier development
                     util.gui.reset_player(player)  -- destroys all FP GUIs
                     util.gui.toggle_mod_gui(player)  -- fixes the mod gui button after its been destroyed
                     game.reload_mods()  -- toggle needs to be delayed by a tick since the reload is not instant

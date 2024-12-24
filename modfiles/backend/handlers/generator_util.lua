@@ -158,17 +158,6 @@ function generator_util.format_recipe(recipe_proto, products, main_product, ingr
 end
 
 
----@param item_list RecipeItem[]
----@param factor number
-function generator_util.multiply_recipe_items(item_list, factor)
-    for _, item in pairs(item_list) do
-        item.amount = item.amount * factor
-        if item.proddable_amount ~= nil then
-            item.proddable_amount = item.proddable_amount * factor
-        end
-    end
-end
-
 --[[ -- Adds the additional proto's ingredients, products and energy to the main proto
 ---@param main_proto FPRecipePrototype
 ---@param additional_proto FPRecipePrototype
@@ -222,7 +211,8 @@ end
 
 -- Determines whether the given recipe is a barreling or stacking one
 local compacting_recipe_mods = {
-    ["base"] = {"^fill%-.*", "^empty%-.*"},
+    ["base"] = {patterns = {"^fill%-.*", "^empty%-.*"}, item = "barrel"},
+    ["pycoalprocessing"] = {patterns = {"^fill%-.*%-canister$", "^empty%-.*%-canister$"}}
     --[[ ["deadlock-beltboxes-loaders"] = {"^deadlock%-stacks%-.*", "^deadlock%-packrecipe%-.*",
                                       "^deadlock%-unpackrecipe%-.*"},
     ["DeadlockCrating"] = {"^deadlock%-packrecipe%-.*", "^deadlock%-unpackrecipe%-.*"},
@@ -231,20 +221,26 @@ local compacting_recipe_mods = {
     ["Satisfactorio"] = {"^packaged%-.*", "^unpack%-.*"} ]]
 }
 
-local active_compacting_recipe_mods = {}  ---@type string[]
-for modname, patterns in pairs(compacting_recipe_mods) do
-    for _, pattern in pairs(patterns) do
-        if active_mods[modname] then
-            table.insert(active_compacting_recipe_mods, pattern)
-        end
-    end
-end
-
 ---@param proto LuaRecipePrototype
 ---@return boolean
 function generator_util.is_compacting_recipe(proto)
-    for _, pattern in pairs(active_compacting_recipe_mods) do
-        if string.match(proto.name, pattern) then return true end
+    for mod, filter_data in pairs(compacting_recipe_mods) do
+        if active_mods[mod] then
+            for _, pattern in pairs(filter_data.patterns) do
+                if string.match(proto.name, pattern) then
+                    if not filter_data.item then
+                        return true
+                    else
+                        for _, product in pairs(proto.products) do
+                            if product.name == filter_data.item then return true end
+                        end
+                        for _, ingredient in pairs(proto.ingredients) do
+                            if ingredient.name == filter_data.item then return true end
+                        end
+                    end
+                end
+            end
+        end
     end
     return false
 end
@@ -371,6 +367,24 @@ function generator_util.check_machine_effects(proto)
     end
 end
 
+--- Needs to be weird because ordering of non-integer keys depends on insertion order
+---@param proto FPMachinePrototype
+function generator_util.sort_machine_burner_categories(proto)
+    if not proto.burner then return end
+
+    local category_list = {}
+    for category, _ in pairs(proto.burner.categories) do
+        table.insert(category_list, category)
+    end
+    table.sort(category_list)
+
+    local category_index = {}
+    for _, category in ipairs(category_list) do
+        category_index[category] = true
+    end
+    proto.burner.categories = category_index
+end
+
 
 -- Adds the tooltip for the given recipe
 ---@param recipe FPRecipePrototype
@@ -421,6 +435,14 @@ end
 function generator_util.add_default_groups(proto)
     proto.group = generator_util.generate_group_table(prototypes.item_group["other"])
     proto.subgroup = generator_util.generate_group_table(prototypes.item_subgroup["other"])
+end
+
+
+---@param text LocalisedString
+---@param color Color
+---@return LocalisedString
+function generator_util.colored_rich_text(text, color)
+    return {"", "[color=", color.r, ",", color.g, ",", color.b, "]", text, "[/color]"}
 end
 
 return generator_util

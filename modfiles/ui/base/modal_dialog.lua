@@ -79,15 +79,13 @@ local function create_base_dialog(player, dialog_settings, modal_data)
             tooltip=dialog_settings.subheader_tooltip, style="semibold_label"}
     end
 
-    local scroll_pane = content_frame.add{type="scroll-pane", direction="vertical", style="flib_naked_scroll_pane"}
+    local scroll_pane = content_frame.add{type="scroll-pane", style="flib_naked_scroll_pane"}
     if dialog_settings.disable_scroll_pane then scroll_pane.vertical_scroll_policy = "never" end
     modal_elements.content_frame = scroll_pane
 
     -- Secondary frame
     if dialog_settings.secondary_frame then
-        -- Only default-visible if it's a secondary frame, not a foldout frame
-        local frame_secondary = flow_content.add{type="frame", direction="vertical",
-            visible=(dialog_settings.secondary_frame ~= nil), style="inside_shallow_frame"}
+        local frame_secondary = flow_content.add{type="frame", direction="vertical", style="inside_shallow_frame"}
 
         local scroll_pane_secondary = frame_secondary.add{type="scroll-pane", style="flib_naked_scroll_pane"}
         scroll_pane_secondary.style.padding = 12
@@ -154,7 +152,6 @@ function modal_dialog.enter(player, metadata, dialog_open, early_abort)
     ui_state.modal_data = metadata.modal_data or {}
     ui_state.modal_data.modal_elements = {}
     ui_state.modal_data.confirmed_dialog = false
-    ui_state.modal_data.foldout_title = metadata.foldout_title
 
     -- Create interface_dimmer first so the layering works out correctly
     if main_dialog.is_in_focus(player) then
@@ -170,8 +167,8 @@ function modal_dialog.enter(player, metadata, dialog_open, early_abort)
     local frame_modal_dialog = create_base_dialog(player, metadata, ui_state.modal_data)
     dialog_open(player, ui_state.modal_data)
 
-    player.opened = frame_modal_dialog
     frame_modal_dialog.force_auto_center()
+    player.opened = frame_modal_dialog
 end
 
 -- Handles the closing process of a modal dialog, reopening the main dialog thereafter
@@ -413,7 +410,7 @@ listeners.gui = {
                 end
 
                 -- Reset .confirmed_dialog if this event didn't actually lead to the dialog closing
-                if event.element.valid then ui_state.modal_data.confirmed_dialog = false end
+                if event.element.valid and ui_state.modal_data then ui_state.modal_data.confirmed_dialog = false end
             end)
         },
         {

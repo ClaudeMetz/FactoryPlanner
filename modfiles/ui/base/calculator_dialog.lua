@@ -125,7 +125,6 @@ local function build_calculator_dialog(player, elements)
     history_frame.style.padding = {14, 12}
     elements.history_frame = history_frame
 
-
     frame.force_auto_center()
     return frame
 end
@@ -134,7 +133,7 @@ local function toggle_calculator_dialog(player)
     local ui_state = util.globals.ui_state(player)
     local dialog = ui_state.calculator_elements.frame
 
-    if not dialog then
+    if not dialog or not dialog.valid then
         dialog = build_calculator_dialog(player, ui_state.calculator_elements)
         ui_state.calculator_elements.frame = dialog
     end  ---@cast dialog -nil

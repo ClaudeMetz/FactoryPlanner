@@ -121,21 +121,25 @@ end
 local function handle_gui_event(event)
     if not event.element then return end
 
-    local tags = event.element.tags
-    if tags.mod ~= "fp" then return end
+    -- GUI events always have an associated player
+    local player = game.get_player(event.player_index)  ---@cast player -nil
 
     -- Guard against an event being called before the player is initialized
     if not storage.players[event.player_index] then return end
 
-    -- GUI events always have an associated player
-    local player = game.get_player(event.player_index)  ---@cast player -nil
+    local tags = event.element.tags
+
+    -- Close an open context menu on any GUI click
+    if event.name == defines.events.on_gui_click and
+            not tags.on_gui_click ~= "choose_context_action" then
+        modal_dialog.close_context_menu(player)
+    end
+
+    if tags.mod ~= "fp" then return end
 
     -- The event table actually contains its identifier, not its name
     local event_name = gui_identifier_map[event.name]
     local action_name = tags[event_name]  -- could be nil
-
-    -- Close an open context menu on any GUI click
-    if event_name == "on_gui_click" then modal_dialog.close_context_menu(player) end
 
     -- If a special handler is set, it needs to return true before proceeding with the registered handlers
     local special_handler = special_gui_handlers[event_name]
@@ -256,6 +260,7 @@ local misc_identifier_map = {
     ["fp_refresh_production"] = "fp_refresh_production",
     ["fp_up_floor"] = "fp_up_floor",
     ["fp_top_floor"] = "fp_top_floor",
+    ["fp_toggle_fold_out_subfloors"] = "fp_toggle_fold_out_subfloors",
     ["fp_cycle_production_views"] = "fp_cycle_production_views",
     ["fp_reverse_cycle_production_views"] = "fp_reverse_cycle_production_views",
     ["fp_confirm_dialog"] = "fp_confirm_dialog",

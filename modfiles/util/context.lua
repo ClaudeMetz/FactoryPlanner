@@ -171,6 +171,8 @@ function _context.validate(player)
     for district_id, factory_cache in pairs(cache.factories) do
         if not OBJECT_INDEX[district_id] then cache.factories[district_id] = nil end
 
+        if not OBJECT_INDEX[factory_cache.factory] then factory_cache.factory = nil end
+
         for factory_id, floor_id in pairs(factory_cache.floors) do
             if not (OBJECT_INDEX[factory_id] and OBJECT_INDEX[floor_id]) then
                 factory_cache.floors[factory_id] = nil

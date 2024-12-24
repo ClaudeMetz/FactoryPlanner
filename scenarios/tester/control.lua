@@ -1,8 +1,8 @@
 ---@diagnostic disable
 
 -- ** LLOG **
-llog = require("__factoryplanner__.llog")
-LLOG_EXCLUDES = {}
+--llog = require("__factoryplanner__.llog")
+--LLOG_EXCLUDES = {}
 
 -- ** TESTS **
 local solver_tests = require("solver.tests")
@@ -11,12 +11,12 @@ local function setup()
     game.autosave_enabled = false
     game.speed = 100
 
-    global.runplan = {}
-    global.results = {}
-    global.next_test = 1
+    storage.runplan = {}
+    storage.results = {}
+    storage.next_test = 1
     for _, test_set in pairs{solver_tests} do
         for _, test in ipairs(test_set) do
-            table.insert(global.runplan, test)
+            table.insert(storage.runplan, test)
         end
     end
 end
@@ -24,24 +24,25 @@ end
 local function teardown()
     local failures = ""
 
-    for name, result in pairs(global.results) do
+    for name, result in pairs(storage.results) do
+        print(result)
         if result ~= "pass" then failures = failures .. "\nTest " .. name .. ": " .. result end
     end
 
-    local output = (failures ~= "") and "Passed all " .. #global.runplan .. " tests"
-        or "Failed " .. #failures .. " of " .. #global.runplan .. " tests" .. failures
-    game.write_file("results.txt", output)
+    local output = (failures ~= "") and "Passed all " .. #storage.runplan .. " tests"
+        or "Failed " .. #failures .. " of " .. #storage.runplan .. " tests" .. failures
+    helpers.write_file("results.txt", output)
 
     script.on_event(defines.events.on_tick, nil)
     print("tester_done")  -- let script know to kill Factorio
 end
 
 local function run_test()
-    local test = global.runplan[global.next_test]
+    local test = storage.runplan[storage.next_test]
     if not test then teardown(); return end
 
-    global.results[test.name] = test.runner(test)
-    global.next_test = global.next_test + 1
+    storage.results[test.name] = test.runner(test)
+    storage.next_test = storage.next_test + 1
 end
 
 

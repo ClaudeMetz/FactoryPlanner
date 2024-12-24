@@ -7,7 +7,7 @@ solver, solver_util = {}, {}
 -- ** LOCAL UTIL **
 local function set_blank_line(player, floor, line)
     local blank_class = structures.class.init()
-    solver.set_line_result{
+    solver.set_line_result {
         player_index = player.index,
         floor_id = floor.id,
         line_id = line.id,
@@ -20,6 +20,17 @@ local function set_blank_line(player, floor, line)
         Ingredient = blank_class,
         fuel_amount = 0
     }
+end
+
+local function set_blank_floor(player, floor)
+    for line in floor:iterator() do
+        if line.class == "Floor" then
+            set_blank_line(player, floor, line)
+            set_blank_floor(player, line)
+        else
+            set_blank_line(player, floor, line)
+        end
+    end
 end
 
 local function set_blank_factory(player, factory)
@@ -40,16 +51,21 @@ local function set_blank_factory(player, factory)
         matrix_free_items = factory.matrix_free_items
     }
 
-    local function set_blank_floor(floor)
-        for line in floor:iterator() do
-            if line.class == "Floor" then
-                set_blank_floor(line)
-            else
-                set_blank_line(player, floor, line)
-            end
-        end
+    set_blank_floor(player, factory.top_floor)
+end
+
+
+local function factory_products(factory)
+    local products = {}
+    for product in factory:iterator() do
+        local product_data = {
+            name = product.proto.name,
+            type = product.proto.type,
+            amount = product:get_required_amount()
+        }
+        table.insert(products, product_data)
     end
-    set_blank_floor(factory.top_floor)
+    return products
 end
 
 
@@ -57,6 +73,7 @@ end
 local function generate_floor_data(player, factory, floor)
     local floor_data = {
         id = floor.id,
+        products = (floor.level == 1) and factory_products(factory) or floor.first.recipe_proto.products,
         lines = {}
     }
 
@@ -64,7 +81,6 @@ local function generate_floor_data(player, factory, floor)
         local line_data = { id = line.id }
 
         if line.class == "Floor" then
-            line_data.recipe_proto = line.first.recipe_proto
             line_data.subfloor = generate_floor_data(player, factory, line)
             table.insert(floor_data.lines, line_data)
         else
@@ -90,12 +106,12 @@ local function generate_floor_data(player, factory, floor)
                 local machine_speed = machine.proto.speed
                 local resource_drain_rate = machine.proto.resource_drain_rate or 1
 
-                local quality_category = machine.proto.quality_category
-                if quality_category == "assembling-machine" then
-                    machine_speed = machine_speed * machine.quality_proto.multiplier
-                elseif quality_category == "mining-drill" then
+                local prototype_category = machine.proto.prototype_category
+                if prototype_category == "mining_drill" then
                     resource_drain_rate = resource_drain_rate
                         * machine.quality_proto.mining_drill_resource_drain_multiplier
+                elseif prototype_category ~= nil then  -- anything non-custom
+                    machine_speed = machine_speed * machine.quality_proto.multiplier
                 end
                 line_data.machine_speed = machine_speed
                 line_data.resource_drain_rate = resource_drain_rate
@@ -120,26 +136,43 @@ local function generate_floor_data(player, factory, floor)
 end
 
 
+---@class SimpleItem
+---@field proto FPItemPrototype
+---@field amount number
+---@field satisfied_amount number?
+
+local function item_comparator(a, b)
+    local a_type, b_type = a.proto.type, b.proto.type
+    if a_type < b_type then return false
+    elseif a_type > b_type then return true
+    elseif a.amount < b.amount then return false
+    elseif a.amount > b.amount then return true end
+    return false
+end
+
 local function update_object_items(object, item_category, item_results)
-    local simple_items = object[item_category]
-    simple_items:clear()
+    local item_list = {}
 
     for _, item_result in pairs(structures.class.to_array(item_results)) do
         local item_proto = prototyper.util.find("items", item_result.name, item_result.type)  --[[@as FPItemPrototype]]
         if object.class ~= "Floor" or item_proto.type ~= "entity" then
-            simple_items:insert({class="SimpleItem", proto=item_proto, amount=item_result.amount})
+            table.insert(item_list, {proto=item_proto, amount=item_result.amount})
         end
     end
+
+    table.sort(item_list, item_comparator)
+    object[item_category] = item_list
 end
 
 local function set_zeroed_items(line, item_category, items)
-    local simple_items = line[item_category]
-    simple_items:clear()
+    local item_list = {}
 
     for _, item in pairs(items) do
         local item_proto = prototyper.util.find("items", item.name, item.type)
-        simple_items:insert({class="SimpleItem", proto=item_proto, amount=0})
+        table.insert(item_list, {proto=item_proto, amount=0})
     end
+
+    line[item_category] = item_list
 end
 
 
@@ -172,7 +205,7 @@ local function update_ingredient_satisfaction(floor, product_class)
             determine_satisfaction(line.machine.fuel)
         end
 
-        for _, ingredient in line.ingredients:iterator() do
+        for _, ingredient in pairs(line.ingredients) do
             if ingredient.proto.type ~= "entity" then
                 determine_satisfaction(ingredient)
             end
@@ -180,7 +213,7 @@ local function update_ingredient_satisfaction(floor, product_class)
 
         -- Products and byproducts just get added to the list as being produced
         for _, item_category in pairs{"products", "byproducts"} do
-            for _, product in line[item_category]:iterator() do
+            for _, product in pairs(line[item_category]) do
                 structures.class.add(product_class, product)
             end
         end
@@ -237,18 +270,9 @@ function solver.generate_factory_data(player, factory)
     local factory_data = {
         player_index = player.index,
         factory_id = factory.id,
-        top_level_products = {},
         top_floor = generate_floor_data(player, factory, factory.top_floor),
         matrix_free_items = factory.matrix_free_items
     }
-
-    for product in factory:iterator() do
-        local product_data = {
-            proto = product.proto,  -- reference
-            amount = product:get_required_amount()
-        }
-        table.insert(factory_data.top_level_products, product_data)
-    end
 
     return factory_data
 end
@@ -298,7 +322,7 @@ function solver.set_line_result(result)
     if line.production_ratio == 0 and line.subfloor == nil then
         local recipe_proto = line.recipe_proto
         set_zeroed_items(line, "products", recipe_proto.products)
-        line.byproducts:clear()
+        line.byproducts = {}
         set_zeroed_items(line, "ingredients", recipe_proto.ingredients)
     else
         update_object_items(line, "products", result.Product)

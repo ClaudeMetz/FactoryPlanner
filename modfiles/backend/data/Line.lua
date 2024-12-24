@@ -1,7 +1,6 @@
 local Object = require("backend.data.Object")
 local Machine = require("backend.data.Machine")
 local Beacon = require("backend.data.Beacon")
-local SimpleItems = require("backend.data.SimpleItems")
 
 ---@alias ProductionType "produce" | "consume"
 
@@ -27,9 +26,9 @@ local SimpleItems = require("backend.data.SimpleItems")
 ---@field surface_compatibility SurfaceCompatibility?
 ---@field total_effects ModuleEffects
 ---@field effects_tooltip LocalisedString
----@field products SimpleItems
----@field byproducts SimpleItems
----@field ingredients SimpleItems
+---@field products SimpleItem[]
+---@field byproducts SimpleItem[]
+---@field ingredients SimpleItem[]
 ---@field power number
 ---@field emissions number
 ---@field production_ratio number?
@@ -49,15 +48,16 @@ local function init(recipe_proto, production_type)
         percentage = 100,
         machine = nil,
         beacon = nil,
-        products = SimpleItems.init(),
-        byproducts = SimpleItems.init(),
-        ingredients = SimpleItems.init(),
         priority_product = nil,
         comment = "",
 
         surface_compatibility = nil,  -- determined on demand
         total_effects = nil,
         effects_tooltip = "",
+
+        products = {},
+        byproducts = {},
+        ingredients = {},
         power = 0,
         emissions = 0,
         production_ratio = 0
@@ -70,16 +70,13 @@ function Line:index()
     OBJECT_INDEX[self.id] = self
     self.machine:index()
     if self.beacon then self.beacon:index() end
-    self.products:index()
-    self.byproducts:index()
-    self.ingredients:index()
 end
 
 
 -- Returns whether the given machine can be used for this line/recipe
 ---@param machine_proto FPMachinePrototype
 ---@return boolean applicable
-function Line:is_machine_applicable(machine_proto)
+function Line:is_machine_compatible(machine_proto)
     local type_counts = self.recipe_proto.type_counts
     local valid_ingredient_count = (machine_proto.ingredient_limit >= type_counts.ingredients.items)
     local valid_input_channels = (machine_proto.fluid_channels.input >= type_counts.ingredients.fluids)
@@ -99,7 +96,7 @@ function Line:change_machine_to_proto(player, proto)
         self.machine.proto = proto
 
         self.machine.module_set:normalize({compatibility=true, trim=true, effects=true})
-        if not self.machine:uses_effects() then self:set_beacon(nil) end
+        if not self:uses_beacon_effects() then self:set_beacon(nil) end
         self.surface_compatibility = nil  -- reset it since the machine changed
     end
 
@@ -120,7 +117,7 @@ function Line:change_machine_by_action(player, action, current_proto)
     local function try_machine(new_machine_id)
         current_machine_proto = prototyper.util.find("machines", new_machine_id, category_id) --[[@as FPMachinePrototype]]
 
-        if self:is_machine_applicable(current_machine_proto) then
+        if self:is_machine_compatible(current_machine_proto) then
             self:change_machine_to_proto(player, current_machine_proto)
             return true
         end
@@ -152,7 +149,7 @@ function Line:change_machine_to_default(player)
 
     local success = false
     -- If the default is applicable, just set it straight away
-    if self:is_machine_applicable(default_proto) then
+    if self:is_machine_compatible(default_proto) then
         self:change_machine_to_proto(player, default_proto)
         success = true
     -- Otherwise, go up, then down the category to find an alternative
@@ -173,8 +170,9 @@ function Line:set_beacon(beacon)
 
     if beacon ~= nil then
         self.beacon.parent = self
+
         beacon.module_set:normalize({compatibility=true, effects=true})
-        -- Normalization already summarizes effects
+        -- Normalization already summarizes beacon's effects
     else
         self:summarize_effects()
     end
@@ -189,6 +187,15 @@ function Line:setup_beacon(player)
         blank_beacon:reset(player)
     end
 end
+
+
+---@return boolean uses_effects
+function Line:uses_beacon_effects(player)
+    local effect_receiver = self.machine.proto.effect_receiver  --[[@as EffectReceiver]]
+    if effect_receiver == nil then return false end
+    return effect_receiver.uses_beacon_effects
+end
+
 
 function Line:summarize_effects()
     local beacon_effects = (self.beacon) and self.beacon.total_effects or nil
@@ -206,7 +213,7 @@ function Line:compile_machine_filter()
 
     local machine_category = prototyper.util.find("machines", nil, self.machine.proto.category)
     for _, machine_proto in pairs(machine_category.members) do
-        if self:is_machine_applicable(machine_proto) then
+        if self:is_machine_compatible(machine_proto) then
             table.insert(compatible_machines, machine_proto.name)
         end
     end
@@ -317,10 +324,12 @@ function Line:validate()
 
     if self.beacon then self.valid = self.beacon:validate() and self.valid end
 
-    if self.priority_product ~= nil then
+    if self.priority_product then
         self.priority_product = prototyper.util.validate_prototype_object(self.priority_product, "type")
         self.valid = (not self.priority_product.simplified) and self.valid
     end
+
+    self.surface_compatibility = nil
 
     return self.valid
 end
@@ -328,8 +337,11 @@ end
 ---@param player LuaPlayer
 ---@return boolean success
 function Line:repair(player)
-    -- An invalid recipe_proto is unrepairable and means this line should be removed
-    if self.recipe_proto.simplified then return false end
+    self.valid = true
+
+    if self.recipe_proto.simplified then
+        self.valid = false  -- this situation can't be repaired
+    end
 
     if self.valid and not self.machine.valid then
         self.valid = self.machine:repair(player)
@@ -343,11 +355,6 @@ function Line:repair(player)
     if self.valid and self.priority_product and self.priority_product.simplified then
         self.priority_product = nil
     end
-
-    -- Reset so solver doesn't have to
-    self.products:clear()
-    self.byproducts:clear()
-    self.ingredients:clear()
 
     return self.valid
 end

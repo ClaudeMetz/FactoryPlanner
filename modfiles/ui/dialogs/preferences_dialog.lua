@@ -12,7 +12,7 @@ local function add_preference_box(content_frame, type)
 end
 
 local function refresh_defaults_table(player, modal_elements, type, category_id)
-    local table_prototypes, prototypes
+    local table_prototypes, prototypes = nil, nil
 
     if not category_id then
         table_prototypes = modal_elements[type]
@@ -21,6 +21,8 @@ local function refresh_defaults_table(player, modal_elements, type, category_id)
         table_prototypes = modal_elements[type][category_id]
         prototypes = storage.prototypes[type][category_id].members
     end
+
+    if #prototypes == 1 then table_prototypes.parent.parent.visible = false; return end
 
     table_prototypes.clear()
     local default_proto = defaults.get(player, type, category_id).proto
@@ -80,6 +82,7 @@ local preference_structures = {}
 function preference_structures.checkboxes(preferences, content_frame, type, preference_names)
     local preference_box = add_preference_box(content_frame, type)
     local flow_checkboxes = preference_box.add{type="flow", direction="vertical"}
+    flow_checkboxes.style.right_padding = 16
 
     for _, pref_name in ipairs(preference_names) do
         local identifier = type .. "_" .. pref_name
@@ -113,10 +116,17 @@ function preference_structures.dropdowns(preferences, parent_flow)
 
     local height_items, height_index = {}, nil
     for index, value in pairs(FACTORY_LIST_ROWS_OPTIONS) do
-        height_items[index] = {"", value .. " ", {"fp.rows"}}
+        height_items[index] = {"", value .. " ", {"fp.pl_factory", 2}}
         if value == preferences.factory_list_rows then height_index = index end
     end
     add_dropdown("factory_list_rows", height_items, height_index)
+
+    local compact_items, compact_index = {}, nil
+    for index, value in pairs(COMPACT_WIDTH_PERCENTAGE) do
+        compact_items[index] = {"", value .. " %"}
+        if value == preferences.compact_width_percentage then compact_index = index end
+    end
+    add_dropdown("compact_width_percentage", compact_items, compact_index)
 end
 
 function preference_structures.belts(player, content_frame, modal_elements)
@@ -133,6 +143,15 @@ function preference_structures.belts(player, content_frame, modal_elements)
     preference_box.title_flow.add{type="switch", switch_state=switch_state, tooltip={"fp.preference_belts_or_lanes_tt"},
         tags={mod="fp", on_gui_switch_state_changed="choose_belts_or_lanes"},
         left_label_caption={"fp.pu_belt", 2}, right_label_caption={"fp.pu_lane", 2}}
+end
+
+function preference_structures.pumps(player, content_frame, modal_elements)
+    local preference_box = add_preference_box(content_frame, "default_pumps")
+
+    local frame = preference_box.add{type="frame", direction="horizontal", style="fp_frame_light_slots_small"}
+    local table = frame.add{type="table", column_count=8, style="fp_table_slots_small"}
+    modal_elements["pumps"] = table
+    refresh_defaults_table(player, modal_elements, "pumps", nil)
 end
 
 function preference_structures.wagons(player, content_frame, modal_elements)
@@ -181,8 +200,7 @@ local function handle_checkbox_preference_change(player, tags, event)
     local preference_name = tags.name
     util.globals.preferences(player)[preference_name] = event.element.state
 
-    if tags.type == "production" or preference_name == "show_floor_items"
-            or preference_name == "fold_out_subfloors" then
+    if tags.type == "production" or preference_name == "show_floor_items" then
         util.raise.refresh(player, "production")
 
     elseif preference_name == "ingredient_satisfaction" then
@@ -214,6 +232,9 @@ local function handle_dropdown_preference_change(player, tags, event)
     elseif tags.name == "factory_list_rows" then
         preferences.factory_list_rows = FACTORY_LIST_ROWS_OPTIONS[selected_index]
         util.globals.modal_data(player).rebuild = true
+    elseif tags.name == "compact_width_percentage" then
+        preferences.compact_width_percentage = COMPACT_WIDTH_PERCENTAGE[selected_index]
+        util.globals.modal_data(player).rebuild_compact = true
     end
 end
 
@@ -254,12 +275,7 @@ local function handle_bol_change(player, _, event)
     item_views.rebuild_data(player)
     item_views.rebuild_interface(player)
 
-    for district in player_table.realm:iterator() do
-        for factory in district:iterator() do
-            solver.determine_ingredient_satisfaction(factory)
-        end
-    end
-
+    refresh_views_table(player)
     solver.update(player, nil)
     util.raise.refresh(player, "all")
 end
@@ -272,11 +288,10 @@ local function handle_default_prototype_change(player, tags, _)
     defaults.set(player, data_type, {prototype=tags.prototype_name}, category_id)
     refresh_defaults_table(player, modal_elements, data_type, category_id)
 
-    if data_type == "belts" or data_type == "wagons" then
-        item_views.rebuild_data(player)
-        item_views.rebuild_interface(player)
-        util.raise.refresh(player, "all")
-    end
+    item_views.rebuild_data(player)
+    item_views.rebuild_interface(player)
+    refresh_views_table(player)
+    util.raise.refresh(player, "all")
 end
 
 
@@ -286,11 +301,10 @@ local function open_preferences_dialog(player, modal_data)
 
     -- Left side
     local left_content_frame = modal_elements.content_frame
-    left_content_frame.style.width = 300
 
-    local general_preference_names = {"show_gui_button", "attach_factory_products", "skip_factory_naming",
-        "prefer_matrix_solver", "show_floor_items", "fold_out_subfloors", "ingredient_satisfaction",
-        "ignore_barreling_recipes", "ignore_recycling_recipes"}
+    local general_preference_names = {"show_gui_button", "skip_factory_naming", "attach_factory_products",
+        "prefer_matrix_solver", "show_floor_items", "ingredient_satisfaction", "ignore_barreling_recipes",
+        "ignore_recycling_recipes"}
     local general_box = preference_structures.checkboxes(preferences, left_content_frame, "general",
         general_preference_names)
 
@@ -303,10 +317,9 @@ local function open_preferences_dialog(player, modal_data)
 
     -- Right side
     local right_content_frame = modal_elements.secondary_frame
-    right_content_frame.style.width = 336
-
     preference_structures.views(player, right_content_frame, modal_elements)
     preference_structures.belts(player, right_content_frame, modal_elements)
+    preference_structures.pumps(player, right_content_frame, modal_elements)
     preference_structures.wagons(player, right_content_frame, modal_elements)
 
     right_content_frame.add{type="empty-widget", style="flib_vertical_pusher"}
@@ -320,6 +333,8 @@ local function close_preferences_dialog(player, _)
     if ui_state.modal_data.rebuild then
         main_dialog.rebuild(player, true)
         ui_state.modal_data = {}  -- fix as rebuild deletes the table
+    elseif ui_state.modal_data.rebuild_compact then
+        compact_dialog.rebuild(player, false)
     end
 end
 

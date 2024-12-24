@@ -14,14 +14,16 @@ require("backend.calculation.solver")
 ---@field pause_on_interface boolean
 ---@field utility_scopes { components: "Factory" | "Floor" }
 ---@field recipe_filters { disabled: boolean, hidden: boolean }
+---@field compact_ingredients boolean
+---@field fold_out_subfloors boolean
 ---@field products_per_row integer
 ---@field factory_list_rows integer
+---@field compact_width_percentage integer
 ---@field show_gui_button boolean
 ---@field attach_factory_products boolean
 ---@field skip_factory_naming boolean
 ---@field prefer_matrix_solver boolean
 ---@field show_floor_items boolean
----@field fold_out_subfloors boolean
 ---@field ingredient_satisfaction boolean
 ---@field ignore_barreling_recipes boolean
 ---@field ignore_recycling_recipes boolean
@@ -57,16 +59,18 @@ function reload_preferences(player_table)
     reload("pause_on_interface", false)
     reload("utility_scopes", {components = "Factory"})
     reload("recipe_filters", {disabled = false, hidden = false})
+    reload("compact_ingredients", false)
+    reload("fold_out_subfloors", false)
 
     reload("products_per_row", 6)
-    reload("factory_list_rows", 28)
+    reload("factory_list_rows", 30)
+    reload("compact_width_percentage", 26)
 
     reload("show_gui_button", true)
+    reload("skip_factory_naming", true)
     reload("attach_factory_products", false)
-    reload("skip_factory_naming", false)
     reload("prefer_matrix_solver", false)
-    reload("show_floor_items", false)
-    reload("fold_out_subfloors", false)
+    reload("show_floor_items", true)
     reload("ingredient_satisfaction", false)
     reload("ignore_barreling_recipes", false)
     reload("ignore_recycling_recipes", false)
@@ -83,6 +87,7 @@ function reload_preferences(player_table)
     reload("default_fuels", defaults.get_fallback("fuels"))
     reload("default_beacons", defaults.get_fallback("beacons"))
     reload("default_belts", defaults.get_fallback("belts"))
+    reload("default_pumps", defaults.get_fallback("pumps"))
     reload("default_wagons", defaults.get_fallback("wagons"))
 
     player_table.preferences = updated_prefs
@@ -297,10 +302,14 @@ script.on_event(translator.on_player_dictionaries_ready, dictionaries_ready)
 
 
 -- ** COMMANDS **
-commands.add_command("fp-restart-translation", {"command-help.fp_restart_translation"}, function()
-    translator.on_init()
-    prototyper.util.build_translation_dictionaries()
-end)
-commands.add_command("fp-shrinkwrap-interface", {"command-help.fp_shrinkwrap_interface"}, function(command)
-    if command.player_index then main_dialog.shrinkwrap_interface(game.get_player(command.player_index)) end
-end)
+if not commands.commands['fp-restart-translation'] then
+    commands.add_command("fp-restart-translation", {"command-help.fp_restart_translation"}, function()
+        translator.on_init()
+        prototyper.util.build_translation_dictionaries()
+    end)
+end
+if not commands.commands['fp-reload-prototypes'] then
+    commands.add_command("fp-shrinkwrap-interface", {"command-help.fp_shrinkwrap_interface"}, function(command)
+        if command.player_index then main_dialog.shrinkwrap_interface(game.get_player(command.player_index)) end
+    end)
+end

@@ -95,28 +95,34 @@ local function refresh_fuel_frame(player)
     local modal_elements = modal_data.modal_elements
     local machine = modal_data.object
 
-    local machine_burner = machine.proto.burner
-    modal_elements.fuel_label.visible = (machine_burner == nil)
-    modal_elements.fuel_button.visible = (machine_burner ~= nil)
+    local burner = machine.proto.burner
+    modal_elements.fuel_label.visible = (burner == nil)
+    modal_elements.fuel_button_flow.clear()
 
-    if machine_burner == nil then return end
+    if burner == nil then return end
+
     local fuel_proto = machine.fuel.proto
+    local elem_type = (burner and burner.categories["fluid-fuel"]) and "fluid" or "item"
 
-    modal_elements.fuel_button.elem_value = fuel_proto.name
-    modal_elements.fuel_button.elem_filters = machine:compile_fuel_filter()
+    modal_elements.fuel_button_flow.add{type="choose-elem-button", elem_type=elem_type,
+        [elem_type] = fuel_proto.name, elem_filters=machine:compile_fuel_filter(),
+        tags={mod="fp", on_gui_elem_changed="choose_fuel"}, style="fp_sprite-button_inset"}
 end
 
 
 local function reset_machine(player)
     local machine = util.globals.modal_data(player).object  --[[@as Machine]]
-    machine.parent:change_machine_to_default(player)
     machine:reset(player)
 
     -- Some manual refreshing which don't have their own method
     local modal_elements = util.globals.modal_elements(player)  --[[@as table]]
     modal_elements["machine_button"].elem_value = machine:elem_value()
-    modal_elements["limit_textfield"].text = machine.limit or ""
-    modal_elements["force_limit_switch"].switch_state = util.gui.switch.convert_to_state(machine.force_limit)
+
+    local limit_switch = modal_elements.force_limit_switch
+    if limit_switch.enabled then
+        modal_elements["limit_textfield"].text = machine.limit or ""
+        limit_switch.switch_state = util.gui.switch.convert_to_state(machine.force_limit)
+    end
 
     refresh_fuel_frame(player)
     module_configurator.refresh_modules_flow(player, false)
@@ -148,7 +154,7 @@ local function add_machine_frame(parent_frame, player, line)
     modal_elements["machine_button"] = button_machine
 end
 
-local function add_fuel_frame(parent_frame, player)
+local function add_fuel_frame(parent_frame, player, line)
     local modal_elements = util.globals.modal_data(player).modal_elements
     local flow_choices = create_choice_frame(parent_frame, {"fp.pu_fuel", 1})
 
@@ -156,16 +162,15 @@ local function add_fuel_frame(parent_frame, player)
     label_fuel.style.padding = {6, 4}
     modal_elements["fuel_label"] = label_fuel
 
-    local button_fuel = flow_choices.add{type="choose-elem-button", elem_type="item",
-        tags={mod="fp", on_gui_elem_changed="choose_fuel"}, style="fp_sprite-button_inset"}
-    -- Need to set elem filters dynamically depending on the machine
-    modal_elements["fuel_button"] = button_fuel
+    local flow_fuel_button = flow_choices.add{type="flow", direction="horizontal"}
+    modal_elements["fuel_button_flow"] = flow_fuel_button
+    -- Button recreated on refresh because its type can change
 
     refresh_fuel_frame(player)
 end
 
 
-local function add_limit_frame(parent_frame, player)
+local function add_limit_frame(parent_frame, player, enabled)
     local modal_data = util.globals.modal_data(player)  --[[@as table]]
     local machine = modal_data.object
 
@@ -176,7 +181,7 @@ local function add_limit_frame(parent_frame, player)
     local textfield_width = 45
     local textfield_limit = frame_limit.add{type="textfield", tags={mod="fp", on_gui_text_changed="machine_limit",
         on_gui_confirmed="confirm_machine", width=textfield_width}, tooltip={"fp.expression_textfield"},
-        text=machine.limit}
+        text=machine.limit, enabled=enabled}
     textfield_limit.style.width = textfield_width
     modal_data.modal_elements["limit_textfield"] = textfield_limit
 
@@ -186,7 +191,13 @@ local function add_limit_frame(parent_frame, player)
 
     local state = util.gui.switch.convert_to_state(machine.force_limit)
     local switch_force_limit = util.gui.switch.add_on_off(frame_limit, nil, {}, state)
+    switch_force_limit.enabled = enabled
     modal_data.modal_elements["force_limit_switch"] = switch_force_limit
+
+    if not enabled then
+        frame_limit.add{type="label", caption={"fp.machine_limit_unavailable"},
+            tooltip={"fp.machine_limit_unavailable_tt"}}
+    end
 end
 
 
@@ -211,7 +222,7 @@ local function handle_machine_choice(player, _, event)
     machine.module_set:normalize({compatibility=true, trim=true, effects=true})
 
     -- Make sure the line's beacon is removed if this machine no longer supports it
-    if not machine:uses_effects() then machine.parent:set_beacon(nil) end
+    if not machine.parent:uses_beacon_effects() then machine.parent:set_beacon(nil) end
 
     refresh_fuel_frame(player)
     module_configurator.refresh_modules_flow(player, false)
@@ -248,12 +259,13 @@ local function open_machine_dialog(player, modal_data)
     -- Machine & Fuel
     local flow_machine = content_frame.add{type="flow", direction="horizontal"}
     add_machine_frame(flow_machine, player, modal_data.line)
-    add_fuel_frame(flow_machine, player)
+    add_fuel_frame(flow_machine, player, modal_data.line)
 
     -- Limit
-    if modal_data.line.parent.parent.matrix_free_items == nil then
-        add_limit_frame(content_frame, player)
-    end
+    local factory = util.context.get(player, "Factory")
+    -- Unavailable with matrix solver or special recipes
+    local limit_enabled = (factory.matrix_free_items == nil and modal_data.line.recipe_proto.energy > 0)
+    add_limit_frame(content_frame, player, limit_enabled)
 
     -- Modules
     module_configurator.add_modules_flow(content_frame, modal_data)
@@ -272,7 +284,7 @@ local function close_machine_dialog(player, action)
         machine.module_set:normalize({sort=true})
 
         local limit_switch = modal_data.modal_elements.force_limit_switch
-        if limit_switch ~= nil then
+        if limit_switch.enabled then
             machine.limit = util.gui.parse_expression_field(modal_data.modal_elements.limit_textfield)
             machine.force_limit = util.gui.switch.convert_to_boolean(limit_switch.switch_state)
         end

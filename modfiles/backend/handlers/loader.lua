@@ -99,6 +99,7 @@ end
 ---@field items MappedPrototypesWithCategory<FPItemPrototype>
 ---@field fuels MappedPrototypesWithCategory<FPFuelPrototype>
 ---@field belts MappedPrototypes<FPBeltPrototype>
+---@field pumps MappedPrototypes<FPPumpPrototype>
 ---@field wagons MappedPrototypesWithCategory<FPWagonPrototype>
 ---@field modules MappedPrototypesWithCategory<FPModulePrototype>
 ---@field beacons MappedPrototypes<FPBeaconPrototype>
@@ -166,7 +167,9 @@ local function generate_productivity_recipes()
             if effect.type == "mining-drill-productivity-bonus" then
                 productivity_recipes["custom-mining"] = true
             elseif effect.type == "change-recipe-productivity" then
-                productivity_recipes[effect.recipe] = true
+                if PROTOTYPE_MAPS.recipes[effect.recipe] then
+                    productivity_recipes[effect.recipe] = true
+                end
             end
         end
     end

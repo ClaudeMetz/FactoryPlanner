@@ -52,8 +52,9 @@ local function add_effects_section(parent_flow, object, modal_elements)
     frame_effects.style.width = (MAGIC_NUMBERS.module_dialog_element_width / 2) - 2
 
     local class_lower = object.class:lower()
-    local caption, tooltip = {"", {"fp.pu_" .. class_lower, 1}, " ", {"fp.effects"}}, {""}
-    if class_lower == "machine" then caption, tooltip = {"fp.info_label", caption}, {"fp.machine_effects_tt"} end
+    local title = (object.class == "Line") and "recipe" or class_lower
+    local caption, tooltip = {"", {"fp.pu_" .. title, 1}, " ", {"fp.effects"}}, {""}
+    if object.class == "Machine" then caption, tooltip = {"fp.info_label", caption}, {"fp.machine_effects_tt"} end
     frame_effects.add{type="label", caption=caption, tooltip=tooltip, style="semibold_label"}
 
     local label_effects = frame_effects.add{type="label", caption=object.effects_tooltip}
@@ -129,8 +130,8 @@ function module_configurator.add_modules_flow(parent, modal_data)
 end
 
 function module_configurator.refresh_effects_flow(modal_data)
-    local lower_class = modal_data.object.class:lower()
-    local object_label = modal_data.modal_elements[lower_class .. "_effects_label"]
+    local class_lower = modal_data.object.class:lower()
+    local object_label = modal_data.modal_elements[class_lower .. "_effects_label"]
     if not object_label or not object_label.valid then return end
 
     local line_effects = modal_data.line.effects_tooltip

@@ -48,7 +48,7 @@ end
 ---@alias NeighbourDirection "next" | "previous"
 
 ---@alias ObjectFilter {id: integer, archived: boolean}
-local filter_options = {"id", "archived", "proto", "quality_proto"}
+local filter_options = {"id", "archived", "valid", "proto", "quality_proto"}
 
 ---@param object Object
 ---@param filter ObjectFilter?
@@ -72,6 +72,8 @@ end
 ---@param relative_object Object?
 ---@param direction NeighbourDirection?
 function methods:_insert(new_object, relative_object, direction)
+    new_object.next, new_object.previous = nil, nil
+
     if self.first == nil then
         self.first = new_object
     else
@@ -108,7 +110,6 @@ function methods:_remove(object)
         object.previous.next = object.next
         if object.next then object.next.previous = object.previous end
     end
-    object.next, object.previous = nil, nil  -- so the object can be re-used elsewhere
 end
 
 ---@protected
@@ -168,8 +169,9 @@ end
 ---@protected
 ---@return Object? last_object
 function methods:_find_last()
+    if not self.first then return nil end
     local last_object = self.first
-    while last_object and last_object.next ~= nil do
+    while last_object.next ~= nil do
         last_object = last_object.next
     end
     return last_object
@@ -197,6 +199,19 @@ end
 ---@param filter ObjectFilter?
 ---@param pivot Object?
 ---@param direction NeighbourDirection?
+---@return Object[]
+function methods:_as_list(filter, pivot, direction)
+    local list = {}
+    for object in self:_iterator(filter, pivot, direction) do
+        table.insert(list, object)
+    end
+    return list
+end
+
+---@protected
+---@param filter ObjectFilter?
+---@param pivot Object?
+---@param direction NeighbourDirection?
 ---@return number count
 function methods:_count(filter, pivot, direction)
     local count = 0
@@ -204,6 +219,31 @@ function methods:_count(filter, pivot, direction)
         count = count + 1
     end
     return count
+end
+
+
+---@protected
+---@param comparator function
+function methods:_sort(comparator)
+    local next_object = self.first
+    self.first = nil  -- clear to re-insert into below
+
+    while next_object ~= nil do
+        local current_object = next_object
+        next_object = next_object.next
+
+        local inserted = false
+        for object in self:iterator() do
+            if comparator(object, current_object) then
+                self:_insert(current_object, object, "previous")
+                inserted = true
+                break
+            end
+        end
+        if not inserted then  -- first or last element
+            self:_insert(current_object)
+        end
+    end
 end
 
 
@@ -255,8 +295,9 @@ end
 
 ---@protected
 ---@param player LuaPlayer
-function methods:_repair(player)
-    for object in self:_iterator() do
+---@param pivot Object?
+function methods:_repair(player, pivot)
+    for object in self:_iterator(nil, pivot) do
         if not object.valid and not object:repair(player) then
             object.parent:_remove(object)
         end

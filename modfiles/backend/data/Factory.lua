@@ -75,6 +75,13 @@ function Factory:replace(product, new_product)
     self:_replace(product, new_product)
 end
 
+---@param product Product
+---@param direction NeighbourDirection
+---@param spots integer?
+function Factory:shift(product, direction, spots)
+    self:_shift(product, direction, spots)
+end
+
 
 ---@param filter ObjectFilter
 ---@param pivot Product?
@@ -96,6 +103,14 @@ end
 ---@return fun(): Product?
 function Factory:iterator(filter, pivot, direction)
     return self:_iterator(filter, pivot, direction)
+end
+
+---@param filter ObjectFilter?
+---@param pivot Product?
+---@param direction NeighbourDirection?
+---@return Product[]
+function Factory:as_list(filter, pivot, direction)
+    return self:_as_list(filter, pivot, direction)
 end
 
 ---@param filter ObjectFilter?

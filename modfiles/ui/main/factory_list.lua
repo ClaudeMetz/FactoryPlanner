@@ -62,6 +62,7 @@ local function duplicate_factory(player, _, event)
     factory.parent:insert(clone, pivot, "next")
 
     solver.update(player, clone)
+    main_dialog.toggle_districts_view(player, true)
     util.context.set(player, clone)
     util.raise.refresh(player, "all")
 end
@@ -87,6 +88,7 @@ local function handle_factory_click(player, tags, action)
             solver.update(player, previous_factory)
         end
 
+        main_dialog.toggle_districts_view(player, true)
         util.context.set(player, selected_factory)
         util.raise.refresh(player, "all")  -- refresh to update the selected factory
 
@@ -156,7 +158,7 @@ local function refresh_factory_list(player)
                 tags={mod="fp", on_gui_click="act_on_factory", factory_id=factory.id, on_gui_hover="set_tooltip",
                 context="factory_list"}, style="list_box_item", mouse_button_filter={"left-and-right"},
                 raise_hover_events=true}
-            factory_button.style.padding = {0, 4}
+            factory_button.style.padding = {0, 12, 0, 4}
             factory_button.style.width = MAGIC_NUMBERS.list_width - 20
             tooltips.factory_list[factory_button.index] = tooltip
         end
@@ -258,6 +260,7 @@ local function build_factory_list(player)
     -- This is not really a list-box, but it imitates one and allows additional features
     local listbox_factories = frame_vertical.add{type="scroll-pane", style="list_box_under_subheader_scroll_pane"}
     listbox_factories.style.vertically_stretchable = true
+    listbox_factories.style.extra_right_padding_when_activated = -12
     local flow_factories = listbox_factories.add{type="flow", direction="vertical"}
     flow_factories.style.vertical_spacing = 0
     main_elements.factory_list["factory_listbox"] = flow_factories
@@ -318,6 +321,7 @@ listeners.gui = {
                 local district = (factory) and factory.parent or util.context.get(player, "District")
                 local new_factory = district:find({archived=not archive_open})  --[[@as Factory]]
 
+                main_dialog.toggle_districts_view(player, true)
                 util.context.set(player, new_factory or district, true)
                 util.raise.refresh(player, "all")
             end)

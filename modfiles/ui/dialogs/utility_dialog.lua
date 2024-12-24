@@ -73,29 +73,30 @@ function utility_structures.components(player, modal_data)
         add_component_row("module")
     end
 
-    local component_data, relevant_object = nil, util.context.get(player, scope)
+    local relevant_object = util.context.get(player, scope)
     if scope == "Factory" then relevant_object = relevant_object--[[@as Factory]].top_floor end
-    component_data = relevant_object--[[@as Floor]]:get_component_data(skip_done, nil)
+    local component_data = relevant_object--[[@as Floor]]:get_component_data(skip_done, nil)
 
     local function refresh_component_flow(type)
         local component_row = modal_elements["components_" .. type .. "_flow"]
         component_row.clear()
 
-        local inventory_contents = modal_data.inventory_contents
+        local main_inventory = (player.character) and player.character.get_main_inventory() or nil
         local frame_components = component_row.add{type="frame", direction="horizontal", style="fp_frame_light_slots"}
         local table_components = frame_components.add{type="table", column_count=10, style="filter_slot_table"}
 
         for _, component in pairs(component_data[type .. "s"]) do
             if component.amount > 0 then
-                local proto, required_amount = component.proto, component.amount
-                local amount_in_inventory = inventory_contents[proto.name] or 0
+                local proto, quality_proto, required_amount = component.proto, component.quality_proto, component.amount
+                local item_id = {name = proto.name, quality = quality_proto.name}
+                local amount_in_inventory = (main_inventory) and main_inventory.get_item_count(item_id) or 0
                 local missing_amount = required_amount - amount_in_inventory
 
                 if missing_amount > 0 then
                     table.insert(modal_data.missing_items, {
                         type = "item",
                         name = proto.name,
-                        quality = "normal",
+                        quality = quality_proto.name,
                         comparator = "=",
                         count = missing_amount
                     })
@@ -106,12 +107,13 @@ function utility_structures.components(player, modal_data)
                 elseif missing_amount > 0 then button_style = "flib_slot_button_yellow"
                 else button_style = "flib_slot_button_green" end
 
-                local tooltip = {"fp.components_needed_tt", {"fp.tt_title", proto.localised_name},
-                    amount_in_inventory, required_amount}
+                local title_line = (not quality_proto.always_show) and {"fp.tt_title",proto.localised_name}
+                    or {"fp.tt_title_with_note", proto.localised_name, quality_proto.rich_text}
+                local tooltip = {"fp.components_needed_tt", title_line, amount_in_inventory, required_amount}
 
                 local category_id = (proto.data_type == "items") and proto.category_id
                     or prototyper.util.find("items", nil, "item").id
-                local proto_id = (proto.data_Type == "items") and proto.id
+                local proto_id = (proto.data_type == "items") and proto.id
                     or prototyper.util.find("items", proto.name, "item").id
                 table_components.add{type="sprite-button", sprite=proto.sprite, number=required_amount, tooltip=tooltip,
                     tags={mod="fp", on_gui_click="utility_craft_items", category_id=category_id, item_id=proto_id,
@@ -247,7 +249,9 @@ function utility_structures.productivity_boni(player, modal_data)
         end
         local enabled = (#factory_names > 0)
         local dropdown_factory = flow_import.add{type="drop-down", items=factory_names, enabled=enabled}
+        dropdown_factory.style.maximal_width = 225
         modal_data.modal_elements["factory_dropdown"] = dropdown_factory
+
         flow_import.add{type="sprite-button", tags={mod="fp", on_gui_click="import_productivity_boni"},
             style="flib_tool_button_light_green", tooltip={"fp.import_from_tt"}, enabled=enabled,
             sprite="utility/check_mark", mouse_button_filter={"left"}}
@@ -258,6 +262,8 @@ function utility_structures.productivity_boni(player, modal_data)
         table.style.column_alignments[3] = "center"
         table.style.horizontal_spacing = 16
         modal_data.modal_elements["productivity_boni_table"] = table
+
+        boni_box.add{type="empty-widget", style="flib_vertical_pusher"}
     end
     local table = modal_data.modal_elements["productivity_boni_table"]
     table.clear()
@@ -271,7 +277,7 @@ function utility_structures.productivity_boni(player, modal_data)
         local caption = (recipe_name == "custom-mining")
             and {"", "[img=utility/mining_drill_productivity_bonus_modifier_icon]  ", {"fp.mining_recipes"}}
             or {"", "[recipe=" .. recipe_name .. "]  ", recipe_proto.localised_name}
-        table.add{type="label", caption=caption}
+        table.add{type="label", caption=caption}.style.width = 250
 
         local productivity = util.get_recipe_productivity(player.force, recipe_name)
         local percentage = ("%+d"):format(math.floor((productivity * 100) + 0.5)) .. "%"
@@ -307,8 +313,8 @@ local function handle_item_request(player, _, _)
         local new_section = requester_point.add_section()
 
         local missing_items = util.globals.modal_data(player).missing_items
-        for _, item in pairs(missing_items) do
-            new_section.set_slot(1, {
+        for index, item in pairs(missing_items) do
+            new_section.set_slot(index, {
                 value = {
                     name = item.name,
                     quality = item.quality,
@@ -358,7 +364,6 @@ local function handle_inventory_change(player)
     local ui_state = util.globals.ui_state(player)
 
     if ui_state.modal_dialog_type == "utility" then
-        ui_state.modal_data.inventory_contents = player.get_main_inventory().get_contents()
         utility_structures.components(player, ui_state.modal_data)
     end
 end
@@ -412,18 +417,19 @@ local function import_productivity_boni(player, _, event)
     local modal_data = util.globals.modal_data(player)  --[[@as table]]
     local selected_index = modal_data.modal_elements.factory_dropdown.selected_index
     local export_factory = OBJECT_INDEX[modal_data.factory_index[selected_index]]  --[[@as Factory]]
+    if not export_factory then return end  -- dropdown starts blank
+
     local import_factory = util.context.get(player, "Factory")  --[[@as Factory]]
     import_factory.productivity_boni = ftable.deep_copy(export_factory.productivity_boni)
 
     utility_structures.productivity_boni(player, modal_data)
     modal_data.recalculate = true
+
+    util.cursor.create_flying_text(player, {"fp.utility_productivity_imported"})
 end
 
 
 local function open_utility_dialog(player, modal_data)
-    -- Add the players' relevant inventory components to modal_data
-    local main_inventory = player.get_main_inventory()
-    modal_data.inventory_contents = (main_inventory) and main_inventory.get_contents() or {}
     modal_data.utility_inventory = game.create_inventory(1)  -- used for blueprint decoding
 
     -- Left side
@@ -505,7 +511,7 @@ listeners.gui = {
             handler = (function(player, tags, event)
                 local factory = util.context.get(player, "Factory")  --[[@as Factory]]
                 local bonus = tonumber(event.element.text)  -- nil if invalid or empty
-                if bonus then factory.productivity_boni[tags.recipe_name] = bonus / 100 end
+                factory.productivity_boni[tags.recipe_name] = (bonus) and bonus / 100 or nil
                 util.globals.modal_data(player).recalculate = true
             end)
         }

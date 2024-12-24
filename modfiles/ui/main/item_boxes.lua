@@ -101,7 +101,7 @@ local function refresh_item_box(player, factory, show_floor_items, item_category
             build_item(product, nil)
         end
     else
-        for index, item in floor[item_category .. "s"]:iterator() do
+        for index, item in pairs(floor[item_category .. "s"]) do
             build_item(item, index)
         end
     end
@@ -143,8 +143,8 @@ local function handle_item_button_click(player, tags, action)
         -- Need to get items from the right floor depending on display settings
         local show_floor_items = util.globals.preferences(player).show_floor_items
         local floor = (show_floor_items) and util.context.get(player, "Floor")
-          or util.context.get(player, "Factory").top_floor
-        item = floor[tags.item_category .. "s"].items[tags.item_index]
+            or util.context.get(player, "Factory").top_floor
+        item = floor[tags.item_category .. "s"][tags.item_index]
     end
 
     if action == "add_recipe" then
@@ -154,9 +154,15 @@ local function handle_item_button_click(player, tags, action)
         util.raise.open_dialog(player, {dialog="picker",
             modal_data={item_id=item.id, item_category=tags.item_category}})
 
+    elseif action == "move_left" or action == "move_right" then
+        local direction = (action == "move_left") and "previous" or "next"
+        item.parent:shift(item, direction, 1)
+        util.raise.refresh(player, "item_boxes")
+
     elseif action == "copy" then
         if item.proto.type == "entity" then return end
-        util.clipboard.copy(player, item)
+        local copyable_item = {class="SimpleItem", proto=item.proto, amount=item.amount}
+        util.clipboard.copy(player, copyable_item)
 
     elseif action == "paste" then
         if item.proto.type == "entity" then return end
@@ -171,7 +177,7 @@ local function handle_item_button_click(player, tags, action)
     elseif action == "put_into_cursor" then
         if item.proto.type == "entity" then return end
         local amount = (item.class == "Product") and item:get_required_amount() or item.amount
-        util.cursor.add_to_item_combinator(player, item.proto, amount)
+        util.cursor.handle_item_click(player, item.proto, amount)
 
     elseif action == "factoriopedia" then
         if item.proto.type == "entity" then return end
@@ -181,43 +187,26 @@ end
 
 
 local function put_ingredients_into_cursor(player, _, _)
-    local show_floor_items = util.globals.preferences(player).show_floor_items
-    local relevant_floor = (show_floor_items) and util.context.get(player, "Floor")
+    local preferences = util.globals.preferences(player)
+    local relevant_floor = (preferences.show_floor_items) and util.context.get(player, "Floor")
         or util.context.get(player, "Factory").top_floor  --[[@as Floor]]
 
     local ingredient_filters = {}
-    for _, ingredient in relevant_floor["ingredients"]:iterator() do
-        if ingredient.proto.type ~= "entity" and ingredient.amount > MAGIC_NUMBERS.margin_of_error then
+    for _, ingredient in pairs(relevant_floor.ingredients) do
+        local amount = ingredient.amount * preferences.timescale
+        if ingredient.proto.type ~= "entity" and amount > MAGIC_NUMBERS.margin_of_error then
             table.insert(ingredient_filters, {
                 type = ingredient.proto.type,
                 name = ingredient.proto.name,
                 quality = "normal",
                 comparator = "=",
-                count = ingredient.amount
+                count = amount
             })
         end
     end
     util.cursor.set_item_combinator(player, ingredient_filters)
 
     main_dialog.toggle(player)
-end
-
-
-local function scale_factory_by_ingredient_amount(player, options, action)
-    if action == "submit" then
-        local factory = util.context.get(player, "Factory")  --[[@as Factory]]
-
-        if options.target_amount then
-            -- The division is not pre-calculated to avoid precision errors in some cases
-            local current_amount = util.globals.modal_data(player).current_amount
-            for product in factory:iterator() do
-                product.required_amount = product.required_amount * options.target_amount / current_amount
-            end
-        end
-
-        solver.update(player, factory)
-        util.raise.refresh(player, "factory")
-    end
 end
 
 
@@ -288,6 +277,8 @@ listeners.gui = {
                 add_recipe = {shortcut="left", limitations={archive_open=false}, show=true},
                 edit = {shortcut="control-left", limitations={archive_open=false}, show=true},
                 delete = {shortcut="control-right", limitations={archive_open=false}},
+                move_left = {limitations={archive_open=false}},
+                move_right = {limitations={archive_open=false}},
                 copy = {shortcut="shift-right"},
                 paste = {shortcut="shift-left", limitations={archive_open=false}},
                 put_into_cursor = {shortcut="alt-right"},
@@ -342,10 +333,6 @@ listeners.misc = {
         local triggers = {item_boxes=true, production=true, factory=true, all=true}
         if triggers[event.trigger] then refresh_item_boxes(player) end
     end)
-}
-
-listeners.global = {
-    scale_factory_by_ingredient_amount = scale_factory_by_ingredient_amount
 }
 
 return { listeners }

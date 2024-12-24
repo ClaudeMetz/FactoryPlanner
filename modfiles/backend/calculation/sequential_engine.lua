@@ -55,7 +55,7 @@ local function update_line(line_data, aggregate)
 
     -- Limit the machine_count by reducing the production_ratio, if necessary
     local machine_limit = line_data.machine_limit
-    if machine_limit.limit ~= nil then
+    if machine_limit.limit ~= nil and recipe_proto.energy > 0 then
         local capped_production_ratio = crafts_per_second * machine_limit.limit
         production_ratio = machine_limit.force_limit and capped_production_ratio
             or math.min(production_ratio, capped_production_ratio)
@@ -179,7 +179,7 @@ local function update_floor(floor_data, aggregate)
         if subfloor ~= nil then
             -- Convert proto product table to class for easier and faster access
             local proto_products = structures.class.init()
-            for _, product in pairs(line_data.recipe_proto.products) do
+            for _, product in pairs(subfloor.products) do
                 proto_products[product.type][product.name] = true
             end
 
@@ -261,7 +261,7 @@ end
 function sequential_engine.update_factory(factory_data)
     -- Initialize aggregate with the top level items
     local aggregate = structures.aggregate.init(factory_data.player_index, 1)
-    for _, product in ipairs(factory_data.top_level_products) do
+    for _, product in ipairs(factory_data.top_floor.products) do
         structures.aggregate.add(aggregate, "Product", product)
     end
 

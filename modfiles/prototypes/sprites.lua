@@ -8,7 +8,7 @@ local function add_sprite(name, filename, size, mipmaps)
     }}
 end
 
-add_sprite("mod_gui", "shortcut_open_x32.png", 32, nil)
+add_sprite("mod_gui", "shortcut_open_x56.png", 56, nil)
 add_sprite("zone_selection", nil, 32, nil)
 add_sprite("generic_assembler", nil, 64, 2)
 add_sprite("white_square", nil, 8, 2)
@@ -35,3 +35,13 @@ add_sprite("divide", nil, 32, 1)
 add_sprite("default", nil, 32, 1)
 add_sprite("default_all", nil, 32, 1)
 add_sprite("amount", nil, 32, 1)
+add_sprite("dropup", nil, 32, 2)
+add_sprite("fold_out_subfloors", nil, 32, 1)
+
+
+-- Base game sprites
+data:extend{{
+    type = "sprite", name = "fp_panel",
+    filename = "__core__/graphics/icons/mip/expand-panel-black.png",
+    size = 64, flags = {"gui-icon"}
+}}

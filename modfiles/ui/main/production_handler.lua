@@ -66,7 +66,8 @@ local function handle_recipe_click(player, tags, action)
         local floor = line.parent
         floor:remove(line, true)
 
-        if floor.level > 1 and floor:count() == 1 then
+        local selected_floor = util.context.get(player, "Floor")
+        if floor.level > selected_floor.level and floor:count() == 1 then
             floor.parent:replace(floor, floor.first)
         end
 
@@ -201,40 +202,12 @@ local function handle_module_click(player, tags, action)
 end
 
 
-local function apply_item_options(player, options, action)
-    if action == "submit" then
-        local modal_data = util.globals.modal_data(player)  --[[@as table]]
-        local line = OBJECT_INDEX[modal_data.line_id]
-        local item_category = modal_data.item_category
-
-        local current_amount = modal_data.current_amount
-        local target_amount = options.target_amount or modal_data.current_amount
-        if item_category ~= "ingredient" then
-            local other_category = (item_category == "product") and "byproduct" or "product"
-            local corresponding_item = line[other_category .. "s"]:find({proto=modal_data.item_proto})
-
-            if corresponding_item then  -- Further adjustments if item is both product and byproduct
-                -- In either case, we need to consider the sum of both types as the current amount
-                current_amount = current_amount + corresponding_item.amount
-
-                -- If it's a byproduct, we want to set its amount to the exact number entered, which this does
-                if item_category == "byproduct" then target_amount = target_amount + corresponding_item.amount end
-            end
-        end
-
-        line.percentage = (current_amount == 0) and 100 or (line.percentage * target_amount) / current_amount
-
-        solver.update(player)
-        util.raise.refresh(player, "factory")
-    end
-end
-
 local function handle_item_click(player, tags, action)
     local line = OBJECT_INDEX[tags.line_id]
-    local item = line[tags.item_category .. "s"].items[tags.item_index]
+    local item = line[tags.item_category .. "s"][tags.item_index]
 
     if action == "prioritize" then
-        if line.products:count() < 2 then
+        if #line.products < 2 then
             util.messages.raise(player, "warning", {"fp.warning_no_prioritizing_single_product"}, 1)
         else
             -- Remove the priority_product if the already selected one is clicked
@@ -253,11 +226,12 @@ local function handle_item_click(player, tags, action)
 
     elseif action == "copy" then
         if item.proto.type == "entity" then return end
-        util.clipboard.copy(player, item)
+        local copyable_item = {class="SimpleItem", proto=item.proto, amount=item.amount}
+        util.clipboard.copy(player, copyable_item)
 
     elseif action == "put_into_cursor" then
         if item.proto.type == "entity" then return end
-        util.cursor.add_to_item_combinator(player, item.proto, item.amount)
+        util.cursor.handle_item_click(player, item.proto, item.amount)
 
     elseif action == "factoriopedia" then
         if item.proto.type == "entity" then return end
@@ -275,6 +249,9 @@ local function handle_fuel_click(player, tags, action)
         util.raise.open_dialog(player, {dialog="recipe", modal_data={add_after_line_id=add_after_line_id,
             production_type="produce", category_id=proto.category_id, product_id=proto.id}})
 
+    elseif action == "edit" then
+        util.raise.open_dialog(player, {dialog="machine", modal_data={machine_id=line.machine.id}})
+
     elseif action == "copy" then
         util.clipboard.copy(player, fuel)
 
@@ -282,7 +259,7 @@ local function handle_fuel_click(player, tags, action)
         util.clipboard.paste(player, fuel)
 
     elseif action == "put_into_cursor" then
-        util.cursor.add_to_item_combinator(player, fuel.proto, fuel.amount)
+        util.cursor.handle_item_click(player, fuel.proto, fuel.amount)
 
     elseif action == "factoriopedia" then
         --util.open_in_factoriopedia(player, fuel.proto.type, fuel.proto.name)
@@ -399,6 +376,7 @@ listeners.gui = {
             actions_table = {
                 add_recipe_to_end = {shortcut="left", limitations={archive_open=false}, show=true},
                 add_recipe_below = {shortcut="control-left", limitations={archive_open=false}},
+                edit = {limitations={archive_open=false}},
                 copy = {shortcut="shift-right"},
                 paste = {shortcut="shift-left", limitations={archive_open=false}},
                 put_into_cursor = {shortcut="alt-right"},
@@ -437,10 +415,6 @@ listeners.gui = {
             handler = handle_percentage_confirmation
         }
     }
-}
-
-listeners.global = {
-    apply_item_options = apply_item_options
 }
 
 return { listeners }

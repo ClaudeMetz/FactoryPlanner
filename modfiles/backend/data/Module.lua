@@ -68,7 +68,7 @@ function Module:paste(object)
     if object.class == "Module" then
         ---@cast object Module
         if self.parent:check_compatibility(object.proto) then
-            if self.parent:find({proto=object.proto}) and object.proto.name ~= self.proto.name then
+            if self.parent:find({proto=object.proto, quality_proto=self.quality_proto}) then
                 return false, "already_exists"
             else
                 object.amount = math.min(object.amount, self.amount + self.parent.empty_slots)
@@ -105,9 +105,10 @@ end
 
 ---@param packed_self PackedModule
 ---@return Module module
-local function unpack(packed_self)
+local function unpack(packed_self, parent)
     local unpacked_self = init(packed_self.proto, packed_self.amount)
     unpacked_self.quality_proto = packed_self.quality_proto
+    unpacked_self.parent = parent
 
     return unpacked_self
 end
@@ -121,10 +122,11 @@ function Module:validate()
     self.quality_proto = prototyper.util.validate_prototype_object(self.quality_proto, nil)
     self.valid = (not self.quality_proto.simplified) and self.valid
 
+    -- Can't be valid with an invalid parent
+    self.valid = self.parent.valid and self.valid
+
     -- Check whether the module is still compatible with its machine or beacon
-    if self.valid and self.parent and self.parent.valid then
-        self.valid = self.parent:check_compatibility(self.proto)
-    end
+    if self.valid then self.valid = self.parent:check_compatibility(self.proto) end
 
     if self.valid then self:summarize_effects() end
 
