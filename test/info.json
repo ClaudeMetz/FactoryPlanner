@@ -1,0 +1,11 @@
+{
+    "name": "factoryplanner-test",
+    "version": "0.0.1",
+    "title": "Factory Planner Test",
+    "author": "Therenas",
+    "factorio_version": "2.0",
+    "dependencies": [
+        "factoryplanner >= 2.0.2",
+        "base >= 2.0.7"
+    ]
+}
