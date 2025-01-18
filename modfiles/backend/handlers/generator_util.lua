@@ -43,17 +43,19 @@ local function combine_identical_products(item_list)
 
     for index=#item_list, 1, -1 do
         local item = item_list[index]
-        local touched_item = touched_items[item.type][item.name]
-        if touched_item ~= nil then
-            touched_item.amount = touched_item.amount + item.amount
-            if touched_item.proddable_amount then
-                touched_item.proddable_amount = touched_item.proddable_amount + item.proddable_amount
-            end
+        if item.name then
+			local touched_item = touched_items[item.type][item.name]
+			if touched_item ~= nil then
+				touched_item.amount = touched_item.amount + item.amount
+				if touched_item.proddable_amount then
+					touched_item.proddable_amount = touched_item.proddable_amount + item.proddable_amount
+				end
 
-            -- Using the table.remove function to preserve array-format
-            table.remove(item_list, index)
-        else
-            touched_items[item.type][item.name] = item
+				-- Using the table.remove function to preserve array-format
+				table.remove(item_list, index)
+			else
+				touched_items[item.type][item.name] = item
+			end
         end
     end
 end
@@ -64,7 +66,9 @@ local function create_type_indexed_list(item_list)
     local indexed_list = {item = {}, fluid = {}, entity = {}}  ---@type IndexedItemList
 
     for index, item in pairs(item_list) do
-        indexed_list[item.type][item.name] = {index = index, item = ftable.shallow_copy(item)}
+        if item.name then
+			indexed_list[item.type][item.name] = { index = index, item = ftable.shallow_copy(item) }
+        end
     end
 
     return indexed_list

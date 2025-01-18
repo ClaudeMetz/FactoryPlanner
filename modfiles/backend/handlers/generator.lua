@@ -723,10 +723,13 @@ function generator.items.generate()
         local type = item.proto.type
         local name = item.proto.name
         table[type] = table[type] or {}
-        table[type][name] = table[type][name] or {}
-        local item_details = table[type][name]
-        -- Determine whether this item is used as a product at least once
-        item_details.is_product = item_details.is_product or item.is_product
+        if item.proto.name then
+			table[type][name] = table[type][name] or {}
+			local item_details = table[type][name]
+            
+			-- Determine whether this item is used as a product at least once
+			item_details.is_product = item_details.is_product or item.is_product
+        end
     end
 
     -- Create a table containing every item that is either a product or an ingredient to at least one recipe
