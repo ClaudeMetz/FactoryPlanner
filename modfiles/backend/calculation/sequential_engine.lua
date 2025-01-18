@@ -12,10 +12,12 @@ local function update_line(line_data, aggregate)
     -- Determine relevant products
     local relevant_products, byproducts = {}, {}
     for _, product in pairs(recipe_proto.products) do
-        if aggregate.Product[product.type][product.name] ~= nil then
-            table.insert(relevant_products, product)
-        else
-            table.insert(byproducts, product)
+        if product.name then
+			if aggregate.Product[product.type][product.name] ~= nil then
+				table.insert(relevant_products, product)
+			else
+				table.insert(byproducts, product)
+			end
         end
     end
 
