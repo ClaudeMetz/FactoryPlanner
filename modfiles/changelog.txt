@@ -2,9 +2,15 @@
 Version: 0.00.00
 Date: 00. 00. 0000
   Features:
-    -
+    - 
   Changes:
-    -
+    - 
+  Bugfixes:
+    - 
+
+---------------------------------------------------------------------------------------------------
+Version: 2.0.17
+Date: 23. 02. 2025
   Bugfixes:
     - Fixed a migration crash (#433)
     - Fixed putting offshore pumps into the cursor would crash (#438)
