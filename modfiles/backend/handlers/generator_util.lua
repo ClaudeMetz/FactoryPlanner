@@ -93,16 +93,18 @@ function generator_util.format_recipe(recipe_proto, products, main_product, ingr
 
     local formatted_products = {}  ---@type FormattedProduct[]
     for _, base_product in pairs(products) do
-        local formatted_product = generate_formatted_product(base_product)
+        if base_product.type ~= "research-progress" then
+            local formatted_product = generate_formatted_product(base_product)
 
-        if formatted_product.amount > 0 then
-            table.insert(formatted_products, formatted_product)
+            if formatted_product.amount > 0 then
+                table.insert(formatted_products, formatted_product)
 
-            -- Update the main product as well, if present
-            if main_product ~= nil
-                    and formatted_product.type == main_product.type
-                    and formatted_product.name == main_product.name then
-                recipe_proto.main_product = formatted_product
+                -- Update the main product as well, if present
+                if main_product ~= nil
+                        and formatted_product.type == main_product.type
+                        and formatted_product.name == main_product.name then
+                    recipe_proto.main_product = formatted_product
+                end
             end
         end
     end
