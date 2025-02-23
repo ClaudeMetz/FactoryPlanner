@@ -10,6 +10,7 @@ Date: 00. 00. 0000
     - Fixed putting offshore pumps into the cursor would crash (#438)
     - Fixed a crash when hovering a compact dialog ingredient while on a subfloor (#439)
     - Fixed that machine base quality effects were ten times too high (#442)
+    - Fixed a crash on startup when using the Cerys mod (#476)
 
 ---------------------------------------------------------------------------------------------------
 Version: 2.0.16
