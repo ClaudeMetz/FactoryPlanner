@@ -120,6 +120,7 @@ local function add_to_item_combinator(player, blueprint_entity, item_proto, amou
 
     do
         if not blueprint_entity then goto skip_cursor end
+        if not blueprint_entity.control_behavior then goto skip_cursor end
         if not blueprint_entity.name == "constant-combinator" then goto skip_cursor end
 
         local sections = blueprint_entity.control_behavior.sections
