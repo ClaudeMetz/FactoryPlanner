@@ -368,6 +368,9 @@ function matrix_engine.run_matrix_solver(factory_data, check_linear_dependence)
                 local col_num = columns.map[line_key]
                  -- want the j-th entry in the last column (output of row-reduction)
                 local machine_count = matrix[col_num][#columns.values+1]
+                if machine_count < 0 then
+                    machine_count = 0
+                end
                 line_aggregate = matrix_engine.get_line_aggregate(line, factory_data.player_index, floor.id,
                     machine_count, false, factory_metadata, free_variables)
             else
@@ -400,22 +403,32 @@ function matrix_engine.run_matrix_solver(factory_data, check_linear_dependence)
 
     local top_floor_aggregate = set_line_results("line", factory_data.top_floor)
 
-    local main_aggregate = structures.aggregate.init(factory_data.player_index, 1)
+    local total = structures.class.init()
+    for _, item in ipairs(structures.class.to_array(top_floor_aggregate.Product)) do
+        structures.class.add(total, item)
+    end
+    for _, item in ipairs(structures.class.to_array(top_floor_aggregate.Byproduct)) do
+        structures.class.add(total, item)
+    end
+    for _, item in ipairs(structures.class.to_array(top_floor_aggregate.Ingredient)) do
+        structures.class.subtract(total, item)
+    end
 
-    -- set main_aggregate free variables
-    for item_line_key, _ in pairs(free_variables) do
-        local col_num = columns.map[item_line_key]
-        local split_str = util.split_string(item_line_key, "_")
-        local item_key = split_str[2].."_"..split_str[3]
-        local item = matrix_engine.get_item(item_key)
-        local amount = matrix[col_num][#columns.values+1]
-        if amount < 0 then
-            -- counterintuitively, a negative amount means we have a negative number of "pseudo-buildings",
-            -- implying the item must be consumed to balance the matrix, hence it is a byproduct.
-            -- The opposite is true for ingredients.
-            structures.aggregate.add(main_aggregate, "Byproduct", item, -amount)
+    local required_amount = {}
+    for _, product in pairs(factory_data.top_level_products) do
+        local key = matrix_engine.get_item_key(product.proto.type, product.proto.name)
+        required_amount[key] = product.amount
+    end
+
+    local main_aggregate = structures.aggregate.init(factory_data.player_index, 1)
+    for _, item in ipairs(structures.class.to_array(total)) do
+        local key = matrix_engine.get_item_key(item.type, item.name)
+        local req = required_amount[key] or 0
+        local amount = item.amount - req
+        if amount > 0 then
+            structures.aggregate.add(main_aggregate, "Byproduct", item, amount)
         else
-            structures.aggregate.add(main_aggregate, "Ingredient", item, amount)
+            structures.aggregate.add(main_aggregate, "Ingredient", item, -amount)
         end
     end
 
