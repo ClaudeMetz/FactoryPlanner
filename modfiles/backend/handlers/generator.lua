@@ -554,6 +554,7 @@ function generator.recipes.generate()
                     launch_recipe.order = parts_recipe.order .. "-" .. proto.order .. "-a"
                     launch_recipe.category = parts_recipe.category
                     launch_recipe.energy = parts_recipe.energy * proto.rocket_parts_required
+                    launch_recipe.maximum_productivity = parts_recipe.maximum_productivity
                     launch_recipe.productivity_recipe = parts_recipe.name
 
                     local ingredients = ftable.deep_copy(parts_ingredients)
@@ -573,6 +574,7 @@ function generator.recipes.generate()
                 rocket_recipe.order = parts_recipe.order .. "-" .. proto.order .. "-b"
                 rocket_recipe.category = parts_recipe.category
                 rocket_recipe.energy = parts_recipe.energy * proto.rocket_parts_required
+                rocket_recipe.maximum_productivity = parts_recipe.maximum_productivity
                 rocket_recipe.productivity_recipe = parts_recipe.name
 
                 local rocket_products = {{type="entity", name="custom-silo-rocket", amount=1}}
