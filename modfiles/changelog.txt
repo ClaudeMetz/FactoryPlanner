@@ -2,9 +2,15 @@
 Version: 0.00.00
 Date: 00. 00. 0000
   Features:
-    -
+    - 
   Changes:
-    -
+    - 
+  Bugfixes:
+    - 
+
+---------------------------------------------------------------------------------------------------
+Version: 2.0.18
+Date: 14. 03. 2025
   Bugfixes:
     - Fixed a crash when toggling the ingredient satisfaction preference while an invalid factory exists (#453)
     - Fixed a crash when trying to put certain Pyanodon's machines into the cursor
