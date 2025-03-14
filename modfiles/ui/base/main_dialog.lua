@@ -141,7 +141,7 @@ end
 -- Sets the game.paused-state as is appropriate
 function main_dialog.set_pause_state(player, frame_main_dialog, force_false)
     -- Don't touch paused-state if this is a multiplayer session or the editor is active
-    if game.is_multiplayer() or player.controller_type == defines.controllers.editor then return end
+    if game.is_multiplayer() or player.physical_controller_type == defines.controllers.editor then return end
     if not frame_main_dialog or not frame_main_dialog.valid then return end
 
     game.tick_paused = (util.globals.preferences(player).pause_on_interface and not force_false)
