@@ -260,6 +260,7 @@ end
 
 -- Updates the given factory's ingredient satisfactions
 function solver.determine_ingredient_satisfaction(factory)
+    if not factory.valid then return end
     update_ingredient_satisfaction(factory.top_floor, nil)
 end
 
