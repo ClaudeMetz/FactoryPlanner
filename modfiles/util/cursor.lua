@@ -29,7 +29,7 @@ end
 function _cursor.set_entity(player, line, object)
     local entity_prototype = prototypes.entity[object.proto.name]
     if entity_prototype.has_flag("not-blueprintable") or not entity_prototype.has_flag("player-creation")
-            or entity_prototype.items_to_place_this == nil then
+            or not object.proto.built_by_item then
         _cursor.create_flying_text(player, {"fp.put_into_cursor_failed", entity_prototype.localised_name})
         return false
     end
@@ -62,13 +62,13 @@ function _cursor.set_entity(player, line, object)
     -- Put item directly into the cursor if it's simple
     if #items_list == 0 and object.proto.prototype_category ~= "assembling_machine" then
         player.cursor_ghost = {
-            name = object.proto.name,
+            name = object.proto.built_by_item.name,
             quality = object.quality_proto.name
         }
     else  -- if it's more complex, it needs a blueprint
         local blueprint_entity = {
             entity_number = 1,
-            name = object.proto.name,
+            name = object.proto.built_by_item.name,
             position = {0, 0},
             quality = object.quality_proto.name,
             items = items_list,
