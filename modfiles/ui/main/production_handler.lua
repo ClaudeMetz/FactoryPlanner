@@ -21,7 +21,9 @@ local function handle_line_move_click(player, tags, event)
     util.raise.refresh(player, "factory")
 end
 
-local function handle_recipe_click(player, tags, action)
+
+-- Handles any line recipe, with or without subfloor
+local function handle_line_recipe_click(player, tags, action)
     local factory = util.context.get(player, "Factory")  --[[@as Factory]]
     local line = OBJECT_INDEX[tags.line_id]
     local relevant_line = (line.class == "Floor") and line.first or line
@@ -76,6 +78,27 @@ local function handle_recipe_click(player, tags, action)
 
     elseif action == "factoriopedia" then
         --util.open_in_factoriopedia(player, "recipe", relevant_line.recipe_proto.name)
+    end
+end
+
+-- Handles the defining recipe of a floor (ie. first one of a subfloor)
+local function handle_floor_recipe_click(player, tags, action)
+    local factory = util.context.get(player, "Factory")  --[[@as Factory]]
+    local line = OBJECT_INDEX[tags.line_id]
+
+    if action == "copy" then
+        util.clipboard.copy(player, line)
+
+    elseif action == "paste" then
+        util.clipboard.paste(player, line)
+
+    elseif action == "toggle" then
+        line.active = not line.active
+        solver.update(player, factory)
+        util.raise.refresh(player, "factory")
+
+    elseif action == "factoriopedia" then
+        --util.open_in_factoriopedia(player, "recipe", line.recipe_proto.name)
     end
 end
 
@@ -286,7 +309,17 @@ listeners.gui = {
                 delete = {shortcut="control-right", limitations={archive_open=false}},
                 --factoriopedia = {shortcut="alt-left"}
             },
-            handler = handle_recipe_click
+            handler = handle_line_recipe_click
+        },
+        {
+            name = "act_on_floor_recipe",
+            actions_table = {
+                copy = {shortcut="shift-right"},
+                paste = {shortcut="shift-left", limitations={archive_open=false}},
+                toggle = {shortcut="control-left", limitations={archive_open=false}},
+                --factoriopedia = {shortcut="alt-left"}
+            },
+            handler = handle_floor_recipe_click
         },
         {
             name = "act_on_line_machine",
