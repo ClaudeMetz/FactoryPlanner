@@ -2,11 +2,11 @@
 Version: 0.00.00
 Date: 00. 00. 0000
   Features:
-    - 
+    -
   Changes:
-    - 
+    -
   Bugfixes:
-    - 
+    - Fixed that some rocket silo recipes didn't take maximum productivity into account
 
 ---------------------------------------------------------------------------------------------------
 Version: 2.0.17
