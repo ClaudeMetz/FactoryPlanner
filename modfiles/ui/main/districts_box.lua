@@ -70,7 +70,6 @@ local function build_items_flow(player, parent, district)
 
     local action_tooltip = MODIFIER_ACTIONS["act_on_district_item"].tooltip
     local tooltips = util.globals.ui_state(player).tooltips
-    tooltips.districts_box = {}
 
     local color_map = {
         production = {half="flib_slot_button_cyan", full="flib_slot_button_blue"},
@@ -216,6 +215,7 @@ local function refresh_districts_box(player)
         table.insert(location_items, {"", "[img=" .. proto.sprite .. "] ", proto.localised_name})
     end
 
+    util.globals.ui_state(player).tooltips.districts_box = {}
     for district in player_table.realm:iterator() do
         build_district_frame(player, district, location_items)
     end
