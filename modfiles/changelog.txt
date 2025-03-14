@@ -6,6 +6,7 @@ Date: 00. 00. 0000
   Changes:
     -
   Bugfixes:
+    - Fixed a crash when trying to put certain Pyanodon's machines into the cursor
     - Fixed that some rocket silo recipes didn't take maximum productivity into account
     - Fixed that Factory Planner would accidentally unpause the game when using remote view while in editor mode
 
