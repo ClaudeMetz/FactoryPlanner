@@ -160,7 +160,7 @@ local function add_item_picker(parent_flow, player)
 
             local button_item = table_subgroup.add{type="sprite-button", sprite=item_proto.sprite, style=button_style,
                 tags={mod="fp", on_gui_click="select_picker_item", item_id=item_proto.id,
-                category_id=item_proto.category_id}, enabled=(existing_product == nil),
+                category_id=item_proto.category_id, enabled=(existing_product == nil)},
                 tooltip=tooltip, elem_tooltip=elem_tooltip, mouse_button_filter={"left"}}
 
             -- Figure out the translated name here so search doesn't have to repeat the work for every character
@@ -337,8 +337,13 @@ end
 
 local function handle_item_pick(player, tags, _)
     local modal_data = util.globals.modal_data(player)
-
     local item_proto = prototyper.util.find("items", tags.item_id, tags.category_id)
+
+    if not tags.enabled then
+        util.cursor.create_flying_text(player, {"fp.picker_already_selected", item_proto.localised_name})
+        return
+   end
+
     set_item_proto(modal_data, item_proto)  -- no need for sync in this case
 
     set_appropriate_focus(modal_data)
