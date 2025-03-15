@@ -304,14 +304,11 @@ function generator.machines.second_pass(machines)
     end
 
     -- Filter out burner machines that don't have any valid fuel categories
+    local fuels = storage.prototypes.fuels
     for _, machine_category in pairs(machines) do
         for _, machine_proto in pairs(machine_category.members) do
-            if machine_proto.energy_type == "burner" then
-                local category_found = false
-                for fuel_category in pairs(machine_proto.burner.categories) do
-                    if storage.prototypes.fuels[fuel_category] then category_found = true; break end
-                end
-                if not category_found then remove_prototype(machines, machine_proto.name, machine_category.name) end
+            if machine_proto.energy_type == "burner" and not fuels[machine_proto.burner.combined_category] then
+                remove_prototype(machines, machine_proto.name, machine_category.name)
             end
         end
 

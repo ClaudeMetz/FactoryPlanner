@@ -2,11 +2,11 @@
 Version: 0.00.00
 Date: 00. 00. 0000
   Features:
-    - 
+    -
   Changes:
-    - 
+    -
   Bugfixes:
-    - 
+    - Fixed an issue where machines were not being shown when they should be (#456)
 
 ---------------------------------------------------------------------------------------------------
 Version: 2.0.18
