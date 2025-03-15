@@ -35,7 +35,7 @@ local function change_factory_archived(player, to_archive)
     factory.parent.needs_refresh = true
 
     -- Reset deletion if a deleted factory is un-archived
-    if to_archive == false and factory.tick_of_deletion then
+    if not to_archive and factory.tick_of_deletion then
         util.nth_tick.cancel(factory.tick_of_deletion)
         factory.tick_of_deletion = nil
     end
