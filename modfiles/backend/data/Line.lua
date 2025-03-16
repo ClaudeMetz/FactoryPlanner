@@ -320,11 +320,11 @@ function Line:validate()
     self.recipe_proto = prototyper.util.validate_prototype_object(self.recipe_proto, nil)
     self.valid = (not self.recipe_proto.simplified)
 
-    self.valid = self.machine:validate() and self.valid
+    if self.valid then self.valid = self.machine:validate() and self.valid end
 
-    if self.beacon then self.valid = self.beacon:validate() and self.valid end
+    if self.valid and self.beacon then self.valid = self.beacon:validate() and self.valid end
 
-    if self.priority_product then
+    if self.valid and self.priority_product then
         self.priority_product = prototyper.util.validate_prototype_object(self.priority_product, "type")
         self.valid = (not self.priority_product.simplified) and self.valid
     end
