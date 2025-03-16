@@ -7,6 +7,7 @@ Date: 00. 00. 0000
     -
   Bugfixes:
     - Fixed an issue where machines were not being shown when they should be (#456)
+    - Fixed an issue when trying to import a factory from Factorio 1.1 containing offshore pumps (#452)
 
 ---------------------------------------------------------------------------------------------------
 Version: 2.0.18
