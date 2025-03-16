@@ -156,6 +156,8 @@ function Machine:paste(object, player)
 
             self.module_set = object.module_set
             self.module_set.parent = self
+            -- Need to verify compatibility because it depends on the recipe too
+            self.module_set:normalize({compatibility=true, effects=true})
 
             return true, nil
         else
