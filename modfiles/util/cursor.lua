@@ -35,7 +35,7 @@ function _cursor.set_entity(player, line, object)
     end
 
     local items_list, slot_index = {}, 0
-    if object.proto.effect_receiver.uses_module_effects then
+    if object.class == "Beacon" or object.proto.effect_receiver.uses_module_effects then
         local inventory = defines.inventory[object.proto.prototype_category .. "_modules"]
         for module in object.module_set:iterator() do
             local inventory_list = {}
