@@ -2,9 +2,15 @@
 Version: 0.00.00
 Date: 00. 00. 0000
   Features:
-    -
+    - 
   Changes:
-    -
+    - 
+  Bugfixes:
+    - 
+
+---------------------------------------------------------------------------------------------------
+Version: 2.0.19
+Date: 17. 03. 2025
   Bugfixes:
     - Fixed a crash when trying to put a beacon into the cursor (#490)
     - Fixed a crash when trying to put a compact dialog top level ingredient into the cursor (#495)
