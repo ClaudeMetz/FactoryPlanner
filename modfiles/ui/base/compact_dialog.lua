@@ -455,8 +455,8 @@ end
 
 
 local function handle_ingredient_click(player, tags, action)
-    local top_floor = OBJECT_INDEX[tags.factory_id].top_floor
-    local item = top_floor.ingredients[tags.item_index]
+    local floor = OBJECT_INDEX[tags.floor_id]
+    local item = floor.ingredients[tags.item_index]
 
     if action == "put_into_cursor" then
         util.cursor.handle_item_click(player, item.proto, item.amount)
