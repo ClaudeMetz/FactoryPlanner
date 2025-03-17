@@ -7,6 +7,7 @@ Date: 00. 00. 0000
     -
   Bugfixes:
     - Fixed a crash when trying to put a beacon into the cursor (#490)
+    - Fixed a crash when trying to put a compact dialog top level ingredient into the cursor (#495)
     - Fixed an issue where machines were not being shown when they should be (#456)
     - Fixed an issue when trying to import a factory from Factorio 1.1 containing offshore pumps (#452)
     - Fixed that copy/pasting machines with modules didn't verify their compatibility (#469)
