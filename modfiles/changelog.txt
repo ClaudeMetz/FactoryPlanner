@@ -15,7 +15,7 @@ Version: 2.0.18
 Date: 14. 03. 2025
   Bugfixes:
     - Fixed a crash when toggling the ingredient satisfaction preference while an invalid factory exists (#453)
-    - Fixed a crash when trying to put certain Pyanodon's machines into the cursor
+    - Fixed a crash when trying to put certain Pyanodon's machines into the cursor (#488)
     - Fixed that some rocket silo recipes didn't take maximum productivity into account
     - Fixed that Factory Planner would accidentally unpause the game when using remote view while in editor mode
     - Fixed that only the last District would show tooltips on its items
@@ -29,7 +29,7 @@ Date: 23. 02. 2025
     - Fixed putting offshore pumps into the cursor would crash (#438)
     - Fixed a crash when hovering a compact dialog ingredient while on a subfloor (#439)
     - Fixed that machine base quality effects were ten times too high (#442)
-    - Fixed a crash on startup when using the Cerys mod (#476)
+    - Fixed a crash on startup when using the Cerys mod (#458)
 
 ---------------------------------------------------------------------------------------------------
 Version: 2.0.16
