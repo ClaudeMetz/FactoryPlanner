@@ -160,12 +160,10 @@ local function handle_item_button_click(player, tags, action)
         util.raise.refresh(player, "item_boxes")
 
     elseif action == "copy" then
-        if item.proto.type == "entity" then return end
         local copyable_item = {class="SimpleItem", proto=item.proto, amount=item.amount}
         util.clipboard.copy(player, copyable_item)
 
     elseif action == "paste" then
-        if item.proto.type == "entity" then return end
         util.clipboard.paste(player, item)
 
     elseif action == "delete" then
@@ -175,13 +173,11 @@ local function handle_item_button_click(player, tags, action)
         util.raise.refresh(player, "all")  -- make sure product icons are updated
 
     elseif action == "put_into_cursor" then
-        if item.proto.type == "entity" then return end
         local amount = (item.class == "Product") and item:get_required_amount() or item.amount
         util.cursor.handle_item_click(player, item.proto, amount)
 
     elseif action == "factoriopedia" then
-        if item.proto.type == "entity" then return end
-        --util.open_in_factoriopedia(player, item.proto.type, item.proto.name)
+        player.open_factoriopedia_gui(prototypes[item.proto.type][item.proto.name])
     end
 end
 
@@ -194,13 +190,13 @@ local function put_ingredients_into_cursor(player, _, _)
     local ingredient_filters = {}
     for _, ingredient in pairs(relevant_floor.ingredients) do
         local amount = ingredient.amount * preferences.timescale
-        if ingredient.proto.type ~= "entity" and amount > MAGIC_NUMBERS.margin_of_error then
+        if amount > MAGIC_NUMBERS.margin_of_error then
             table.insert(ingredient_filters, {
                 type = ingredient.proto.type,
                 name = ingredient.proto.name,
                 quality = "normal",
                 comparator = "=",
-                count = amount
+                count = math.ceil(amount)
             })
         end
     end
@@ -282,7 +278,7 @@ listeners.gui = {
                 copy = {shortcut="shift-right"},
                 paste = {shortcut="shift-left", limitations={archive_open=false}},
                 put_into_cursor = {shortcut="alt-right"},
-                --factoriopedia = {shortcut="alt-left"}
+                factoriopedia = {shortcut="alt-left"}
             },
             handler = handle_item_button_click
         },
@@ -292,7 +288,7 @@ listeners.gui = {
                 add_recipe = {shortcut="left", limitations={archive_open=false, matrix_active=true}, show=true},
                 copy = {shortcut="shift-right"},
                 put_into_cursor = {shortcut="alt-right"},
-                --factoriopedia = {shortcut="alt-left"}
+                factoriopedia = {shortcut="alt-left"}
             },
             handler = handle_item_button_click
         },
@@ -302,7 +298,7 @@ listeners.gui = {
                 add_recipe = {shortcut="left", limitations={archive_open=false}, show=true},
                 copy = {shortcut="shift-right"},
                 put_into_cursor = {shortcut="alt-right"},
-                --factoriopedia = {shortcut="alt-left"}
+                factoriopedia = {shortcut="alt-left"}
             },
             handler = handle_item_button_click
         },
@@ -311,7 +307,7 @@ listeners.gui = {
             actions_table = {
                 copy = {shortcut="shift-right"},
                 put_into_cursor = {shortcut="alt-right"},
-                --factoriopedia = {shortcut="alt-left"}
+                factoriopedia = {shortcut="alt-left"}
             },
             handler = handle_item_button_click
         },
