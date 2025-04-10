@@ -4,7 +4,7 @@ Date: 00. 00. 0000
   Features:
     - Added support for opening recipes, items, and entities in Factoriopedia
   Changes:
-    -
+    - Bumped the required Factorio version to 2.0.44
   Bugfixes:
     -
 
