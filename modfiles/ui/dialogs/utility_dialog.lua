@@ -98,7 +98,8 @@ function utility_structures.components(player, modal_data)
                         name = proto.name,
                         quality = quality_proto.name,
                         comparator = "=",
-                        count = missing_amount
+                        count = missing_amount,
+                        required_count = required_amount
                     })
                 end
 
@@ -320,7 +321,7 @@ local function handle_item_request(player, _, _)
                     quality = item.quality,
                     comparator = item.comparator
                 },
-                min = item.count
+                min = item.required_count
             })
         end
 
