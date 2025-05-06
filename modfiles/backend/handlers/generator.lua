@@ -759,7 +759,21 @@ function generator.items.generate()
         -- Mark rocket silo part items here so they can be marked as non-hidden
         elseif proto.type == "rocket-silo" and not proto.hidden then
             local parts_recipe = prototypes.recipe[proto.fixed_recipe]
-            if parts_recipe then rocket_parts[parts_recipe.main_product.name] = true end
+            if parts_recipe and parts_recipe.main_product and parts_recipe.main_product.name then
+                rocket_parts[parts_recipe.main_product.name] = true
+            elseif parts_recipe and parts_recipe.products and table_size(parts_recipe.products) == 1 then
+                local product = {}
+                for _, product_searched in pairs(parts_recipe.products) do
+                    if product_searched then
+                        product = table.deepcopy(product_searched)
+                    end
+                end
+                if product and product.name then
+                    rocket_parts[product.name] = true
+                end
+            else
+                log("Couldn't find rocket part item for prototype \"" .. proto.name .. "\". If this debug statement isn't nessecary for this factorio mod, you may remove it. Thank you for accepting my fix, btw.")
+            end
         end
     end
 
