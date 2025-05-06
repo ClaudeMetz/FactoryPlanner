@@ -77,7 +77,7 @@ local function handle_line_recipe_click(player, tags, action)
         util.raise.refresh(player, "factory")
 
     elseif action == "factoriopedia" then
-        --util.open_in_factoriopedia(player, "recipe", relevant_line.recipe_proto.name)
+        player.open_factoriopedia_gui(prototypes["recipe"][relevant_line.recipe_proto.name])
     end
 end
 
@@ -98,7 +98,7 @@ local function handle_floor_recipe_click(player, tags, action)
         util.raise.refresh(player, "factory")
 
     elseif action == "factoriopedia" then
-        --util.open_in_factoriopedia(player, "recipe", line.recipe_proto.name)
+        player.open_factoriopedia_gui(prototypes["recipe"][line.recipe_proto.name])
     end
 end
 
@@ -136,7 +136,7 @@ local function handle_machine_click(player, tags, action)
         util.clipboard.paste(player, machine)
 
     elseif action == "factoriopedia" then
-        --util.open_in_factoriopedia(player, "entity", machine.proto.name)
+        player.open_factoriopedia_gui(prototypes["entity"][machine.proto.name])
     end
 end
 
@@ -174,7 +174,7 @@ local function handle_beacon_click(player, tags, action)
         util.raise.refresh(player, "factory")
 
     elseif action == "factoriopedia" then
-        --util.open_in_factoriopedia(player, "entity", beacon.proto.name)
+        player.open_factoriopedia_gui(prototypes["entity"][beacon.proto.name])
     end
 end
 
@@ -220,7 +220,7 @@ local function handle_module_click(player, tags, action)
         util.raise.refresh(player, "factory")
 
     elseif action == "factoriopedia" then
-        --util.open_in_factoriopedia(player, "item", module.proto.name)
+        player.open_factoriopedia_gui(prototypes["item"][module.proto.name])
     end
 end
 
@@ -257,8 +257,11 @@ local function handle_item_click(player, tags, action)
         util.cursor.handle_item_click(player, item.proto, item.amount)
 
     elseif action == "factoriopedia" then
-        if item.proto.type == "entity" then return end
-        --util.open_in_factoriopedia(player, item.proto.type, item.proto.name)
+        if item.proto.type == "entity" then
+            player.open_factoriopedia_gui(prototypes.entity[item.proto.name:gsub("custom%-", "")])
+        else
+            player.open_factoriopedia_gui(prototypes[item.proto.type][item.proto.name])
+        end
     end
 end
 
@@ -285,7 +288,7 @@ local function handle_fuel_click(player, tags, action)
         util.cursor.handle_item_click(player, fuel.proto, fuel.amount)
 
     elseif action == "factoriopedia" then
-        --util.open_in_factoriopedia(player, fuel.proto.type, fuel.proto.name)
+        player.open_factoriopedia_gui(prototypes[fuel.proto.type][fuel.proto.name])
     end
 end
 
@@ -307,7 +310,7 @@ listeners.gui = {
                 paste = {shortcut="shift-left", limitations={archive_open=false}},
                 toggle = {shortcut="control-left", limitations={archive_open=false}},
                 delete = {shortcut="control-right", limitations={archive_open=false}},
-                --factoriopedia = {shortcut="alt-left"}
+                factoriopedia = {shortcut="alt-left"}
             },
             handler = handle_line_recipe_click
         },
@@ -317,7 +320,7 @@ listeners.gui = {
                 copy = {shortcut="shift-right"},
                 paste = {shortcut="shift-left", limitations={archive_open=false}},
                 toggle = {shortcut="control-left", limitations={archive_open=false}},
-                --factoriopedia = {shortcut="alt-left"}
+                factoriopedia = {shortcut="alt-left"}
             },
             handler = handle_floor_recipe_click
         },
@@ -328,7 +331,7 @@ listeners.gui = {
                 copy = {shortcut="shift-right"},
                 paste = {shortcut="shift-left", limitations={archive_open=false}},
                 put_into_cursor = {shortcut="alt-right"},
-                --factoriopedia = {shortcut="alt-left"}
+                factoriopedia = {shortcut="alt-left"}
             },
             handler = handle_machine_click
         },
@@ -344,7 +347,7 @@ listeners.gui = {
                 paste = {shortcut="shift-left", limitations={archive_open=false}},
                 delete = {shortcut="control-right", limitations={archive_open=false}},
                 put_into_cursor = {shortcut="alt-right"},
-                --factoriopedia = {shortcut="alt-left"}
+                factoriopedia = {shortcut="alt-left"}
             },
             handler = handle_beacon_click
         },
@@ -359,7 +362,7 @@ listeners.gui = {
                 copy = {shortcut="shift-right"},
                 paste = {shortcut="shift-left", limitations={archive_open=false}},
                 delete = {shortcut="control-right", limitations={archive_open=false}},
-                --factoriopedia = {shortcut="alt-left"}
+                factoriopedia = {shortcut="alt-left"}
             },
             handler = handle_module_click
         },
@@ -369,7 +372,7 @@ listeners.gui = {
                 prioritize = {shortcut="left", limitations={archive_open=false, matrix_active=false}, show=true},
                 copy = {shortcut="shift-right"},
                 put_into_cursor = {shortcut="alt-right"},
-                --factoriopedia = {shortcut="alt-left"}
+                factoriopedia = {shortcut="alt-left"}
             },
             handler = (function(player, tags, action)
                 tags.item_category = "product"
@@ -383,7 +386,7 @@ listeners.gui = {
                 add_recipe_below = {shortcut="control-left", limitations={archive_open=false, matrix_active=true}},
                 copy = {shortcut="shift-right"},
                 put_into_cursor = {shortcut="alt-right"},
-                --factoriopedia = {shortcut="alt-left"}
+                factoriopedia = {shortcut="alt-left"}
             },
             handler = (function(player, tags, action)
                 tags.item_category = "byproduct"
@@ -397,7 +400,7 @@ listeners.gui = {
                 add_recipe_below = {shortcut="control-left", limitations={archive_open=false}},
                 copy = {shortcut="shift-right"},
                 put_into_cursor = {shortcut="alt-right"},
-                --factoriopedia = {shortcut="alt-left"}
+                factoriopedia = {shortcut="alt-left"}
             },
             handler = (function(player, tags, action)
                 tags.item_category = "ingredient"
@@ -413,7 +416,7 @@ listeners.gui = {
                 copy = {shortcut="shift-right"},
                 paste = {shortcut="shift-left", limitations={archive_open=false}},
                 put_into_cursor = {shortcut="alt-right"},
-                --factoriopedia = {shortcut="alt-left"}
+                factoriopedia = {shortcut="alt-left"}
             },
             handler = handle_fuel_click
         }

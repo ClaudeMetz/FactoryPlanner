@@ -37,7 +37,7 @@ local function handle_item_button_click(player, tags, action)
         util.cursor.handle_item_click(player, item.proto, item.abs_diff)
 
     elseif action == "factoriopedia" then
-        --util.open_in_factoriopedia(player, item.proto.type, item.proto.name)
+        player.open_factoriopedia_gui(prototypes[item.proto.type][item.proto.name])
     end
 end
 
@@ -308,7 +308,7 @@ listeners.gui = {
             actions_table = {
                 copy = {shortcut="shift-right"},
                 put_into_cursor = {shortcut="alt-right"},
-                --factoriopedia = {shortcut="alt-left"}
+                factoriopedia = {shortcut="alt-left"}
             },
             handler = handle_item_button_click
         },
