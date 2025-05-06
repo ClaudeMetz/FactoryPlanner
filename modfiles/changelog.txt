@@ -2,9 +2,10 @@
 Version: 0.00.00
 Date: 00. 00. 0000
   Features:
-    -
+    - Added support for opening recipes, items, and entities in Factoriopedia
   Changes:
-    - Started filtering out internal recipes of the Transport Drones mod for 2.0
+    - Started filtering out internal recipes of the Transport Drones mod
+    - Bumped the required Factorio version to 2.0.44
   Bugfixes:
     -
 

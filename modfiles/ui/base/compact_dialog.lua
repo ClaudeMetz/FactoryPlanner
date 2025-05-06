@@ -229,7 +229,7 @@ local function add_item_flow(line, relevant_line, item_category, button_color, m
 
         local name_line = {"fp.tt_title_with_note", fuel.proto.localised_name, {"fp.pu_fuel", 1}}
         local number_line = (number_tooltip) and {"", "\n", number_tooltip} or ""
-        local tooltip = {"", name_line, number_line}
+        local tooltip = {"", name_line, number_line, "\n", metadata.action_tooltips["act_on_compact_item"]}
         local style = (relevant_line.done) and "flib_slot_button_grayscale_small" or "flib_slot_button_cyan_small"
 
         local button = item_table.add{type="sprite-button", sprite=fuel.proto.sprite, style=style, number=amount,
@@ -462,7 +462,7 @@ local function handle_ingredient_click(player, tags, action)
         util.cursor.handle_item_click(player, item.proto, item.amount)
 
     elseif action == "factoriopedia" then
-        --util.open_in_factoriopedia(player, item.proto.type, item.proto.name)
+        player.open_factoriopedia_gui(prototypes[item.proto.type][item.proto.name])
     end
 end
 
@@ -476,7 +476,7 @@ local function handle_recipe_click(player, tags, action)
             refresh_compact_factory(player)
         end
     elseif action == "factoriopedia" then
-        --util.open_in_factoriopedia(player, "recipe", relevant_line.recipe_proto.name)
+        player.open_factoriopedia_gui(prototypes["recipe"][relevant_line.recipe_proto.name])
     end
 end
 
@@ -484,7 +484,7 @@ local function handle_module_click(player, tags, action)
     local module = OBJECT_INDEX[tags.module_id]
 
     if action == "factoriopedia" then
-        --util.open_in_factoriopedia(player, "item", module.proto.name)
+        player.open_factoriopedia_gui(prototypes["item"][module.proto.name])
     end
 end
 
@@ -496,7 +496,7 @@ local function handle_machine_click(player, tags, action)
         util.cursor.set_entity(player, line, line.machine)
 
     elseif action == "factoriopedia" then
-        --util.open_in_factoriopedia(player, "entity", line.machine.proto.name)
+        player.open_factoriopedia_gui(prototypes["entity"][line.machine.proto.name])
     end
 end
 
@@ -508,20 +508,24 @@ local function handle_beacon_click(player, tags, action)
         util.cursor.set_entity(player, line, line.beacon)
 
     elseif action == "factoriopedia" then
-        --util.open_in_factoriopedia(player, "entity", line.beacon.proto.name)
+        player.open_factoriopedia_gui(prototypes["entity"][line.beacon.proto.name])
     end
 end
 
 local function handle_item_click(player, tags, action)
     local item = (tags.fuel_id) and OBJECT_INDEX[tags.fuel_id]
         or OBJECT_INDEX[tags.line_id][tags.item_category][tags.item_index]
-    if item.proto.type == "entity" then return end
 
     if action == "put_into_cursor" then
+        if item.proto.type == "entity" then return end
         util.cursor.handle_item_click(player, item.proto, item.amount)
 
     elseif action == "factoriopedia" then
-        --util.open_in_factoriopedia(player, item.proto.type, item.proto.name)
+        if item.proto.type == "entity" then
+            player.open_factoriopedia_gui(prototypes.entity[item.proto.name:gsub("custom%-", "")])
+        else
+            player.open_factoriopedia_gui(prototypes[item.proto.type][item.proto.name])
+        end
     end
 end
 
@@ -572,7 +576,7 @@ factory_listeners.gui = {
             name = "act_on_compact_ingredient",
             actions_table = {
                 put_into_cursor = {shortcut="left", show=true},
-                --factoriopedia = {shortcut="alt-right", show=true}
+                factoriopedia = {shortcut="alt-right", show=true}
             },
             handler = handle_ingredient_click
         },
@@ -580,14 +584,14 @@ factory_listeners.gui = {
             name = "act_on_compact_recipe",
             actions_table = {
                 open_subfloor = {shortcut="left", show=true},
-                --factoriopedia = {shortcut="alt-right", show=true}
+                factoriopedia = {shortcut="alt-right", show=true}
             },
             handler = handle_recipe_click
         },
         {
             name = "act_on_compact_module",
             actions_table = {
-                --factoriopedia = {shortcut="alt-right", show=true}
+                factoriopedia = {shortcut="alt-right", show=true}
             },
             handler = handle_module_click
         },
@@ -595,7 +599,7 @@ factory_listeners.gui = {
             name = "act_on_compact_machine",
             actions_table = {
                 put_into_cursor = {shortcut="left", show=true},
-                --factoriopedia = {shortcut="alt-right", show=true}
+                factoriopedia = {shortcut="alt-right", show=true}
             },
             handler = handle_machine_click
         },
@@ -603,7 +607,7 @@ factory_listeners.gui = {
             name = "act_on_compact_beacon",
             actions_table = {
                 put_into_cursor = {shortcut="left", show=true},
-                --factoriopedia = {shortcut="alt-right", show=true}
+                factoriopedia = {shortcut="alt-right", show=true}
             },
             handler = handle_beacon_click
         },
@@ -611,7 +615,7 @@ factory_listeners.gui = {
             name = "act_on_compact_item",
             actions_table = {
                 put_into_cursor = {shortcut="left", show=true},
-                --factoriopedia = {shortcut="alt-right", show=true}
+                factoriopedia = {shortcut="alt-right", show=true}
             },
             handler = handle_item_click
         }
