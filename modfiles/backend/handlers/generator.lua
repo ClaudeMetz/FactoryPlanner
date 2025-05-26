@@ -230,7 +230,7 @@ function generator.machines.generate()
             local machine = generate_category_entry(proto.type, proto, nil)
             if machine then
                 machine.speed = 1  -- could be based on available tiles, but not used for now
-                machine.energy_usage = 0  -- implemented later: energy_usage, crane_energy_usage
+                machine.energy_usage = 0  -- TODO implemented later: energy_usage, crane_energy_usage
                 insert_prototype(machines, machine, proto.type)
             end
 
@@ -516,7 +516,7 @@ function generator.recipes.generate()
             recipe.category = "agricultural-tower"
             recipe.energy = 0
 
-            -- Deal with proto.harvest_emissions + proto.emissions_per_second somehow, probably on machine?
+            -- TODO Deal with proto.harvest_emissions + proto.emissions_per_second somehow, probably on machine?
 
             local ingredients = {
                 {type="item", name=seed_name, amount=1},
