@@ -540,12 +540,12 @@ function generator.recipes.generate()
             end
 
             -- Add rocket launch product recipes
-            --if not proto.launch_to_space_platforms then  -- TODO API missing
+            if not proto.launch_to_space_platforms then
                 for item_name, products in pairs(launch_products) do
                     local main_proto = prototypes.item[item_name]
 
                     local launch_recipe = custom_recipe()
-                    launch_recipe.name = "impostor-" .. item_name .. "-launch"
+                    launch_recipe.name = "impostor-launch-" .. item_name .. "-from-" .. proto.name
                     launch_recipe.localised_name = {"", main_proto.localised_name, " ", {"fp.launch"}}
                     launch_recipe.sprite = "item/" .. item_name
                     launch_recipe.order = parts_recipe.order .. "-" .. proto.order .. "-a"
@@ -559,7 +559,7 @@ function generator.recipes.generate()
                     generator_util.format_recipe(launch_recipe, products, products[1], ingredients)
                     insert_prototype(recipes, launch_recipe, nil)
                 end
-            --end
+            end
 
             -- Add convenience recipe to build whole rocket instead of parts
             if SPACE_TRAVEL then
