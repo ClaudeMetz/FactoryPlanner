@@ -78,6 +78,7 @@ end
 ---@field module_limit integer
 ---@field surface_conditions SurfaceCondition[]
 ---@field resource_drain_rate number?
+---@field uses_force_mining_productivity_bonus boolean?
 
 ---@class FluidChannels
 ---@field input integer
@@ -187,7 +188,8 @@ function generator.machines.generate()
             allowed_effects = proto.allowed_effects or {},
             allowed_module_categories = proto.allowed_module_categories,
             module_limit = (proto.module_inventory_size or 0),
-            surface_conditions = proto.surface_conditions
+            surface_conditions = proto.surface_conditions,
+            uses_force_mining_productivity_bonus = proto.uses_force_mining_productivity_bonus
         }
         generator_util.check_machine_effects(machine)
         generator_util.sort_machine_burner_categories(machine)
