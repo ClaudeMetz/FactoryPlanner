@@ -118,7 +118,7 @@ function Floor:get_component_data(skip_done, component_table)
     local components = component_table or {machines={}, modules={}}
 
     local function add_component(table, proto, quality_proto, amount)
-        local combined_name = proto.name .. quality_proto.name
+        local combined_name = proto.name .. "-" .. quality_proto.name
         local component = table[combined_name]
         if component == nil then
             table[combined_name] = {proto = proto, quality_proto = quality_proto, amount = amount}
