@@ -175,6 +175,7 @@ function generator.machines.generate()
             elem_type = "entity",
             prototype_category = prototype_category,
             ingredient_limit = (proto.ingredient_count or 255),
+            product_limit = (proto.max_item_product_count or 255),
             fluid_channels = fluid_channels,
             speed = proto.get_crafting_speed(),
             energy_type = energy_type,

@@ -4,6 +4,7 @@ Date: 00. 00. 0000
   Features:
     - Added a quality indication to all machine, beacon, and module buttons
   Changes:
+    - Added support for the new max_item_product_count property on machines
     - Bumped the required Factorio version to 2.0.49
   Bugfixes:
     - Fixed an issue where certain rocket launch recipes would not be detected properly
