@@ -2,7 +2,7 @@
 Version: 0.00.00
 Date: 00. 00. 0000
   Features:
-    -
+    - Added a quality indication to all machine, beacon, and module buttons
   Changes:
     - Bumped the required Factorio version to 2.0.49
   Bugfixes:
