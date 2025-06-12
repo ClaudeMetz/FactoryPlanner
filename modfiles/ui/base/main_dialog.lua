@@ -225,6 +225,14 @@ listeners.misc = {
         main_dialog.rebuild(player, false)
     end),
 
+    on_singleplayer_init = (function(player, _)
+        main_dialog.rebuild(player, false)
+    end),
+
+    on_multiplayer_init = (function(player, _)
+        main_dialog.rebuild(player, false)
+    end),
+
     on_lua_shortcut = (function(player, event)
         if event.prototype_name == "fp_open_interface" and not util.globals.ui_state(player).compact_view then
             main_dialog.toggle(player)
