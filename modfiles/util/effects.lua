@@ -98,7 +98,8 @@ function _effects.format(module_effects, options)
         end
     end
 
-    return tooltip_lines
+    if #tooltip_lines > 1 then return tooltip_lines
+    else return {"fp.none"} end
 end
 
 return _effects
