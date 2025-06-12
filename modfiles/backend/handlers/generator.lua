@@ -225,7 +225,7 @@ function generator.machines.generate()
             local category = (fixed_fluid) and ("offshore-pump-" .. fixed_fluid) or "offshore-pump"
             local machine = generate_category_entry(category, proto, nil)
             if machine then
-                machine.speed = proto.pumping_speed
+                machine.speed = proto.get_pumping_speed()
                 insert_prototype(machines, machine, category)
             end
 
