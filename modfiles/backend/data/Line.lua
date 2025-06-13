@@ -224,7 +224,7 @@ end
 
 
 ---@param properties SurfaceProperties?
----@param conditions SurfaceCondition[]
+---@param conditions SurfaceCondition[]?
 ---@return boolean compatible
 local function check_compatibility(properties, conditions)
     if not properties or not conditions then return true end

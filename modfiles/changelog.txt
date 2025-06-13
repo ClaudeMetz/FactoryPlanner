@@ -2,6 +2,7 @@
 Version: 0.00.00
 Date: 00. 00. 0000
   Features:
+    - Added a universal District location, which accepts any recipe/machine regardless of surface restrictions (#501)
     - Added support for picking a quality on preference pumps and wagons
     - Added a quality indication to all machine, beacon, and module buttons (#375)
   Changes:
