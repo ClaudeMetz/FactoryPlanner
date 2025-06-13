@@ -1302,6 +1302,18 @@ function generator.locations.generate()
         if location then insert_prototype(locations, location, nil) end
     end
 
+    -- Add special location that has no restrictions
+    if table_size(locations) > 1 then
+        insert_prototype(locations, {
+            name = "universal",
+            localised_name = {"fp.universal_location"},
+            sprite = "fp_universal_planet",
+            tooltip = {"fp.universal_location_tt"},
+            surface_properties = nil,  -- accepts all machines and recipes
+            pollutant_type = nil  -- no pollution produced
+        })
+    end
+
     return locations
 end
 
