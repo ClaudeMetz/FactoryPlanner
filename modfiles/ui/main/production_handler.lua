@@ -122,7 +122,7 @@ local function handle_machine_click(player, tags, action)
     local machine = OBJECT_INDEX[tags.machine_id]
     local line = machine.parent
 
-    if action == "put_into_cursor" then
+    if action == "add_to_cursor" then
         local success = util.cursor.set_entity(player, line, machine)
         if success then main_dialog.toggle(player) end
 
@@ -155,7 +155,7 @@ local function handle_beacon_click(player, tags, action)
     local beacon = OBJECT_INDEX[tags.beacon_id]
     local line = beacon.parent
 
-    if action == "put_into_cursor" then
+    if action == "add_to_cursor" then
         local success = util.cursor.set_entity(player, line, beacon)
         if success then main_dialog.toggle(player) end
 
@@ -252,7 +252,7 @@ local function handle_item_click(player, tags, action)
         local copyable_item = {class="SimpleItem", proto=item.proto, amount=item.amount}
         util.clipboard.copy(player, copyable_item)
 
-    elseif action == "put_into_cursor" then
+    elseif action == "add_to_cursor" then
         if item.proto.type == "entity" then return end
         util.cursor.handle_item_click(player, item.proto, item.amount)
 
@@ -284,7 +284,7 @@ local function handle_fuel_click(player, tags, action)
     elseif action == "paste" then
         util.clipboard.paste(player, fuel)
 
-    elseif action == "put_into_cursor" then
+    elseif action == "add_to_cursor" then
         util.cursor.handle_item_click(player, fuel.proto, fuel.amount)
 
     elseif action == "factoriopedia" then
@@ -330,7 +330,7 @@ listeners.gui = {
                 edit = {shortcut="left", limitations={archive_open=false}, show=true},
                 copy = {shortcut="shift-right"},
                 paste = {shortcut="shift-left", limitations={archive_open=false}},
-                put_into_cursor = {shortcut="alt-right"},
+                add_to_cursor = {shortcut="alt-right"},
                 factoriopedia = {shortcut="alt-left"}
             },
             handler = handle_machine_click
@@ -346,7 +346,7 @@ listeners.gui = {
                 copy = {shortcut="shift-right"},
                 paste = {shortcut="shift-left", limitations={archive_open=false}},
                 delete = {shortcut="control-right", limitations={archive_open=false}},
-                put_into_cursor = {shortcut="alt-right"},
+                add_to_cursor = {shortcut="alt-right"},
                 factoriopedia = {shortcut="alt-left"}
             },
             handler = handle_beacon_click
@@ -371,7 +371,7 @@ listeners.gui = {
             actions_table = {
                 prioritize = {shortcut="left", limitations={archive_open=false, matrix_active=false}, show=true},
                 copy = {shortcut="shift-right"},
-                put_into_cursor = {shortcut="alt-right"},
+                add_to_cursor = {shortcut="alt-right"},
                 factoriopedia = {shortcut="alt-left"}
             },
             handler = (function(player, tags, action)
@@ -385,7 +385,7 @@ listeners.gui = {
                 add_recipe_to_end = {shortcut="left", limitations={archive_open=false, matrix_active=true}, show=true},
                 add_recipe_below = {shortcut="control-left", limitations={archive_open=false, matrix_active=true}},
                 copy = {shortcut="shift-right"},
-                put_into_cursor = {shortcut="alt-right"},
+                add_to_cursor = {shortcut="alt-right"},
                 factoriopedia = {shortcut="alt-left"}
             },
             handler = (function(player, tags, action)
@@ -399,7 +399,7 @@ listeners.gui = {
                 add_recipe_to_end = {shortcut="left", limitations={archive_open=false}, show=true},
                 add_recipe_below = {shortcut="control-left", limitations={archive_open=false}},
                 copy = {shortcut="shift-right"},
-                put_into_cursor = {shortcut="alt-right"},
+                add_to_cursor = {shortcut="alt-right"},
                 factoriopedia = {shortcut="alt-left"}
             },
             handler = (function(player, tags, action)
@@ -415,7 +415,7 @@ listeners.gui = {
                 edit = {limitations={archive_open=false}},
                 copy = {shortcut="shift-right"},
                 paste = {shortcut="shift-left", limitations={archive_open=false}},
-                put_into_cursor = {shortcut="alt-right"},
+                add_to_cursor = {shortcut="alt-right"},
                 factoriopedia = {shortcut="alt-left"}
             },
             handler = handle_fuel_click
