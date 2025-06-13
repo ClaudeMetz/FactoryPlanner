@@ -125,16 +125,31 @@ end
 ---@field caption LocalisedString
 ---@field tooltip LocalisedString
 
+
+local function proto_and_quality_string(default)
+    local proto = prototypes.entity[default.proto.name]
+    local quality = (default.quality and default.quality.always_show)
+        and {"", " (", default.quality.rich_text, ")"} or ""
+    return proto, quality
+end
+
 ---@param player LuaPlayer
 function item_views.rebuild_data(player)
     local preferences = util.globals.preferences(player)
     local timescale_string = TIMESCALE_MAP[preferences.timescale]
+
     local belt_proto = defaults.get(player, "belts").proto  --[[@as FPBeltPrototype]]
     local belts_or_lanes = preferences.belts_or_lanes
     local throughput_divisor = (belts_or_lanes == "belts") and belt_proto.throughput or (belt_proto.throughput / 2)
-    local pump_proto = defaults.get(player, "pumps").proto
-    local default_cargo_wagon = defaults.get(player, "wagons", "cargo-wagon").proto  --[[@as FPWagonPrototype]]
-    local default_fluid_wagon = defaults.get(player, "wagons", "fluid-wagon").proto  --[[@as FPWagonPrototype]]
+
+    local default_pump = defaults.get(player, "pumps")
+    local pump_proto, pump_quality = proto_and_quality_string(default_pump)
+
+    local default_cargo_wagon = defaults.get(player, "wagons", "cargo-wagon")
+    local cargo_wagon_proto, cargo_wagon_quality = proto_and_quality_string(default_cargo_wagon)
+
+    local default_fluid_wagon = defaults.get(player, "wagons", "fluid-wagon")
+    local fluid_wagon_proto, fluid_wagon_quality = proto_and_quality_string(default_fluid_wagon)
 
     util.globals.ui_state(player).views_data = {
         views = {
@@ -145,10 +160,10 @@ function item_views.rebuild_data(player)
             },
             throughput = {
                 index = 2,
-                caption = {"", belt_proto.rich_text, " ", pump_proto.rich_text},
-                tooltip = {"fp.view_tt", {"fp.throughput",
-                    {"fp.pl_" .. belts_or_lanes:sub(1, -2), 2}, belt_proto.rich_text, belt_proto.localised_name,
-                    pump_proto.rich_text, pump_proto.localised_name}}
+                caption = {"", belt_proto.rich_text, " ", default_pump.proto.rich_text},
+                tooltip = {"fp.view_tt", {"fp.throughput", {"fp.pl_" .. belts_or_lanes:sub(1, -2), 2},
+                    belt_proto.rich_text, belt_proto.localised_name, default_pump.proto.rich_text,
+                    default_pump.proto.localised_name, pump_quality}}
             },
             items_per_second_per_machine = {
                 index = 3,
@@ -162,11 +177,12 @@ function item_views.rebuild_data(player)
             },
             wagons_per_timescale = {
                 index = 5,
-                caption = {"", default_cargo_wagon.rich_text, default_fluid_wagon.rich_text,
+                caption = {"", default_cargo_wagon.proto.rich_text, default_fluid_wagon.proto.rich_text,
                     "/", {"fp.unit_" .. timescale_string}},
                 tooltip = {"fp.view_tt", {"fp.wagons_per_timescale", {"fp." .. timescale_string},
-                    default_cargo_wagon.rich_text, default_cargo_wagon.localised_name,
-                    default_fluid_wagon.rich_text, default_fluid_wagon.localised_name}}
+                    default_cargo_wagon.proto.rich_text, default_cargo_wagon.proto.localised_name,
+                    cargo_wagon_quality, default_fluid_wagon.proto.rich_text,
+                    default_fluid_wagon.proto.localised_name, fluid_wagon_quality}}
             },
             rockets_per_timescale = {
                 index = 6,
@@ -179,9 +195,12 @@ function item_views.rebuild_data(player)
         adjusted_margin_of_error = MAGIC_NUMBERS.margin_of_error / preferences.timescale,
         belt_or_lane = belts_or_lanes:sub(1, -2),
         throughput_multiplier = 1 / throughput_divisor,
-        pumping_speed = pump_proto.pumping_speed,
-        cargo_wagon_capactiy = default_cargo_wagon.storage,
-        fluid_wagon_capacity = default_fluid_wagon.storage,
+        pumping_speed = pump_proto.get_pumping_speed(default_pump.quality.name),
+        cargo_wagon_capactiy = cargo_wagon_proto.get_inventory_size(defines.inventory.cargo_wagon,
+            default_cargo_wagon.quality.name),
+        -- TODO This can't check whether FluidWagonPrototype::quality_affects_capacity is set to true
+        --   and there is no API to get capacity dependent on quality
+        fluid_wagon_capacity = fluid_wagon_proto.fluid_capacity * default_cargo_wagon.quality.multiplier,
         formatting_precision = 4
     }
 end

@@ -1028,7 +1028,7 @@ function generator.pumps.generate()
                 sprite = sprite,
                 elem_type = "entity",
                 rich_text = "[entity=" .. proto.name .. "]",
-                pumping_speed = proto.pumping_speed * 60
+                pumping_speed = proto.get_pumping_speed() * 60
             }
             insert_prototype(pumps, pump, nil)
         end
@@ -1326,7 +1326,7 @@ function generator.qualities.generate()
                     name = proto.name,
                     localised_name = proto.localised_name,
                     sprite = sprite,
-                    rich_text = {"", "[quality=" .. proto.name .. "]",
+                    rich_text = {"", "[quality=" .. proto.name .. "] ",
                         generator_util.colored_rich_text(proto.localised_name, proto.color)},
                     level = proto.level,
                     always_show = proto.draw_sprite_by_default,
