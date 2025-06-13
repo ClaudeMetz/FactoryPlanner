@@ -172,7 +172,7 @@ local function handle_item_button_click(player, tags, action)
         solver.update(player, factory)
         util.raise.refresh(player, "all")  -- make sure product icons are updated
 
-    elseif action == "put_into_cursor" then
+    elseif action == "add_to_cursor" then
         local amount = (item.class == "Product") and item:get_required_amount() or item.amount
         util.cursor.handle_item_click(player, item.proto, amount)
 
@@ -277,7 +277,7 @@ listeners.gui = {
                 move_right = {limitations={archive_open=false}},
                 copy = {shortcut="shift-right"},
                 paste = {shortcut="shift-left", limitations={archive_open=false}},
-                put_into_cursor = {shortcut="alt-right"},
+                add_to_cursor = {shortcut="alt-right"},
                 factoriopedia = {shortcut="alt-left"}
             },
             handler = handle_item_button_click
@@ -287,7 +287,7 @@ listeners.gui = {
             actions_table = {
                 add_recipe = {shortcut="left", limitations={archive_open=false, matrix_active=true}, show=true},
                 copy = {shortcut="shift-right"},
-                put_into_cursor = {shortcut="alt-right"},
+                add_to_cursor = {shortcut="alt-right"},
                 factoriopedia = {shortcut="alt-left"}
             },
             handler = handle_item_button_click
@@ -297,7 +297,7 @@ listeners.gui = {
             actions_table = {
                 add_recipe = {shortcut="left", limitations={archive_open=false}, show=true},
                 copy = {shortcut="shift-right"},
-                put_into_cursor = {shortcut="alt-right"},
+                add_to_cursor = {shortcut="alt-right"},
                 factoriopedia = {shortcut="alt-left"}
             },
             handler = handle_item_button_click
@@ -306,7 +306,7 @@ listeners.gui = {
             name = "act_on_floor_item",
             actions_table = {
                 copy = {shortcut="shift-right"},
-                put_into_cursor = {shortcut="alt-right"},
+                add_to_cursor = {shortcut="alt-right"},
                 factoriopedia = {shortcut="alt-left"}
             },
             handler = handle_item_button_click

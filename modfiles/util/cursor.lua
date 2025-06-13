@@ -30,7 +30,7 @@ function _cursor.set_entity(player, line, object)
     local entity_prototype = prototypes.entity[object.proto.name]
     if entity_prototype.has_flag("not-blueprintable") or not entity_prototype.has_flag("player-creation")
             or not object.proto.built_by_item then
-        _cursor.create_flying_text(player, {"fp.put_into_cursor_failed", entity_prototype.localised_name})
+        _cursor.create_flying_text(player, {"fp.add_to_cursor_failed", entity_prototype.localised_name})
         return false
     end
 
