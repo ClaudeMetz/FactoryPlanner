@@ -78,3 +78,50 @@ DEV_EXPORT_STRING = "eNrdVkuPnDAM/i85DyMew/PYQ0+tVKnHaoRCMLNRE8KGsO1oxH+vA8wUmJ3
 ---@alias AllowedEffects { [string]: boolean }
 ---@alias ItemType string
 ---@alias ItemName string
+
+local api = {}
+
+function api.ping()
+    return "pong"
+end
+
+function api.get_realm(player_index)
+    local player = game.get_player(player_index)
+    if not player then return nil end
+
+    local table = util.globals.player_table(player)
+
+    if not table then return nil end
+
+    return table.realm
+end
+
+---- Delete all factories and reset to default district
+function api.reset(player_index)
+    local player = game.get_player(player_index)
+    if not player then return nil end
+
+    local table = util.globals.player_table(player)
+
+    if not table then return nil end
+
+    for district in table.realm:iterator() do
+        for factory in district:iterator() do
+            district:remove(factory)
+        end
+    end
+
+    -- TODO: Use existing code and/or reset caches.
+    -- Tried naively exposing player_init but that isn't idempotent (caused UI
+    -- errors). Might still be best approach.
+end
+
+function api.add_factory(player_index, factory_name)
+    local player = game.get_player(player_index)
+    if not player then return nil end
+
+    factory_list.add_factory(player, factory_name)
+    -- TODO: Bust cache so it shows in UI without toggling to archive and back
+end
+
+remote.add_interface("factoryplanner", api)
