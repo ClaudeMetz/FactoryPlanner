@@ -2,11 +2,11 @@
 Version: 0.00.00
 Date: 00. 00. 0000
   Features:
-    - 
+    -
   Changes:
-    - 
+    -
   Bugfixes:
-    - 
+    - Fixed some compatibility issues with mods adding more surface properties (#534)
 
 ---------------------------------------------------------------------------------------------------
 Version: 2.0.21

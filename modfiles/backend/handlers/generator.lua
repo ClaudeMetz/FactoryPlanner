@@ -1239,7 +1239,8 @@ local function generate_surface_properties()
             localised_name = proto.localised_name,
             localised_unit_key = proto.localised_unit_key,
             default_value = proto.default_value,
-            is_time = proto.is_time
+            is_time = proto.is_time,
+            hidden = proto.hidden
         })
     end
 
@@ -1271,14 +1272,22 @@ function generator.locations.generate()
         local sprite = category .. "/" .. proto.name
         if not helpers.is_valid_sprite_path(sprite) then return nil end
 
-        local surface_properties, tooltip = {}, {"", {"fp.tt_title", proto.localised_name}, "\n"}
+        local surface_properties = {}
+        local tooltip = {"", {"fp.tt_title", proto.localised_name}, "\n"}
+        local current_table, next_index = tooltip, 4
+
         for _, property_proto in pairs(property_prototypes) do
+            if property_proto.hidden then goto skip_property end
             local value = proto.surface_properties[property_proto.name] or property_proto.default_value
             surface_properties[property_proto.name] = value
 
             local value_and_unit = {property_proto.localised_unit_key, value}  ---@type LocalisedString
             if property_proto.is_time then value_and_unit = util.format.time(value) end
-            table.insert(tooltip, {"fp.surface_property", property_proto.localised_name, value_and_unit})
+
+            current_table, next_index = util.build_localised_string(
+                {"fp.surface_property", property_proto.localised_name, value_and_unit}, current_table, next_index)
+
+            ::skip_property::
         end
 
         return {
