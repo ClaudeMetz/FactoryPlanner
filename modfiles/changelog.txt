@@ -2,9 +2,17 @@
 Version: 0.00.00
 Date: 00. 00. 0000
   Features:
-    - Added the ability to collapse a district's items visually to save space (#516)
+    - 
   Changes:
-    -
+    - 
+  Bugfixes:
+    - 
+
+---------------------------------------------------------------------------------------------------
+Version: 2.0.22
+Date: 17. 06. 2025
+  Features:
+    - Added the ability to collapse a district's items visually to save space (#516)
   Bugfixes:
     - Fixed some compatibility issues with mods adding more surface properties (#534)
     - Fixed that beacons could be added to burner mining drills
