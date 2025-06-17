@@ -38,6 +38,8 @@ add_sprite("amount", nil, 32, 1)
 add_sprite("dropup", nil, 32, 2)
 add_sprite("fold_out_subfloors", nil, 32, 1)
 add_sprite("universal_planet", nil, 64, 1)
+add_sprite("collapse", nil, 32, 1)
+add_sprite("expand", nil, 32, 1)
 
 
 -- Base game sprites
