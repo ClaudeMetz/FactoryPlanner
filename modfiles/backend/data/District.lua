@@ -13,6 +13,7 @@ local DistrictItemSet = require("backend.data.DistrictItemSet")
 ---@field power number
 ---@field emissions number
 ---@field needs_refresh boolean
+---@field collapsed boolean
 local District = Object.methods()
 District.__index = District
 script.register_metatable("District", District)
@@ -29,7 +30,8 @@ local function init(name)
         power = 0,
         emissions = 0,
 
-        needs_refresh = false
+        needs_refresh = false,
+        collapsed = false
     }, "District", District)  --[[@as District]]
     return object
 end
