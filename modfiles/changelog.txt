@@ -7,6 +7,7 @@ Date: 00. 00. 0000
     -
   Bugfixes:
     - Fixed some compatibility issues with mods adding more surface properties (#534)
+    - Fixed that beacons could be added to burner mining drills
 
 ---------------------------------------------------------------------------------------------------
 Version: 2.0.21
