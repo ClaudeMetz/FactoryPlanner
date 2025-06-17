@@ -1233,15 +1233,16 @@ local function generate_surface_properties()
     end
 
     for _, proto in pairs(prototypes.surface_property) do
-        table.insert(properties, {
-            name = proto.name,
-            order = proto.order,
-            localised_name = proto.localised_name,
-            localised_unit_key = proto.localised_unit_key,
-            default_value = proto.default_value,
-            is_time = proto.is_time,
-            hidden = proto.hidden
-        })
+        if not proto.hidden then
+            table.insert(properties, {
+                name = proto.name,
+                order = proto.order,
+                localised_name = proto.localised_name,
+                localised_unit_key = proto.localised_unit_key,
+                default_value = proto.default_value,
+                is_time = proto.is_time
+            })
+        end
     end
 
     table.sort(properties, property_sorting_function)
@@ -1277,7 +1278,6 @@ function generator.locations.generate()
         local current_table, next_index = tooltip, 4
 
         for _, property_proto in pairs(property_prototypes) do
-            if property_proto.hidden then goto skip_property end
             local value = proto.surface_properties[property_proto.name] or property_proto.default_value
             surface_properties[property_proto.name] = value
 
@@ -1286,8 +1286,6 @@ function generator.locations.generate()
 
             current_table, next_index = util.build_localised_string(
                 {"fp.surface_property", property_proto.localised_name, value_and_unit}, current_table, next_index)
-
-            ::skip_property::
         end
 
         return {
