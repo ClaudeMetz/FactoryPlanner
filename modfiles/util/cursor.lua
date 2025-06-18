@@ -68,7 +68,7 @@ function _cursor.set_entity(player, line, object)
     else  -- if it's more complex, it needs a blueprint
         local blueprint_entity = {
             entity_number = 1,
-            name = object.proto.built_by_item.name,
+            name = object.proto.name,
             position = {0, 0},
             quality = object.quality_proto.name,
             items = items_list,
