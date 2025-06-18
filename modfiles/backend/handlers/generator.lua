@@ -128,7 +128,7 @@ function generator.machines.generate()
         elseif fluid_burner_prototype then
             emissions_per_joule = fluid_burner_prototype.emissions_per_joule
 
-            if fluid_burner_prototype.burns_fluid and not fluid_burner_prototype.fluid_box.filter then
+            if fluid_burner_prototype.burns_fluid then
                 energy_type = "burner"
                 burner = {effectivity=fluid_burner_prototype.effectivity, categories={["fluid-fuel"] = true},
                     combined_category=""}  -- combined filled in by fuel generator
