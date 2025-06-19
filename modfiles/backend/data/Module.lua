@@ -68,14 +68,24 @@ function Module:paste(object)
     if object.class == "Module" then
         ---@cast object Module
         if self.parent:check_compatibility(object.proto) then
-            if self.parent:find({proto=object.proto, quality_proto=object.quality_proto}) then
-                return false, "already_exists"
-            else
-                object.amount = math.min(object.amount, self.amount + self.parent.empty_slots)
-                object:summarize_effects()
+            if self.proto == object.proto and self.quality_proto == object.quality_proto then
+                self:set_amount(math.min(object.amount, self.parent.module_limit))
 
-                self.parent:replace(self, object)
-                self.parent:normalize{effects=true}
+                self.parent:normalize({effects=true})
+                return true, nil
+            else
+                local existing_module = self.parent:find({proto=object.proto, quality_proto=object.quality_proto})
+                local parent = self.parent  -- retain here because it can be changed below
+
+                if existing_module then
+                    existing_module:set_amount(existing_module.amount + object.amount)
+                    parent:remove(self)
+                else
+                    object:set_amount(math.min(object.amount, self.amount))
+                    parent:replace(self.parent, object)
+                end
+
+                parent:normalize({sort=true, effects=true})
                 return true, nil
             end
         else
