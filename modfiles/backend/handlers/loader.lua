@@ -210,6 +210,7 @@ function loader.run(skip_check)
     PRODUCTIVITY_RECIPES = generate_productivity_recipes()
 
     MULTIPLE_PLANETS = #storage.prototypes.locations > 1
+    MULTIPLE_QUALITIES = #storage.prototypes.qualities > 1
 end
 
 return loader

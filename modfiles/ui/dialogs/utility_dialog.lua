@@ -118,7 +118,8 @@ function utility_structures.components(player, modal_data)
                     or prototyper.util.find("items", proto.name, "item").id
                 table_components.add{type="sprite-button", sprite=proto.sprite, number=required_amount, tooltip=tooltip,
                     tags={mod="fp", on_gui_click="utility_craft_items", category_id=category_id, item_id=proto_id,
-                    missing_amount=missing_amount}, style=button_style, mouse_button_filter={"left-and-right"}}
+                    missing_amount=missing_amount}, quality=quality_proto.name, style=button_style,
+                    mouse_button_filter={"left-and-right"}}
             end
         end
 

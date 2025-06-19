@@ -114,7 +114,7 @@ function defaults.equals_all_defaults(player, data_type, object)
 end
 
 
-local prototypes_with_quality = {machines=true, beacons=true, modules=true}
+local prototypes_with_quality = {machines=true, beacons=true, modules=true, pumps=true, wagons=true}
 
 -- Returns the fallback default for the given type of prototype
 ---@param data_type DataType

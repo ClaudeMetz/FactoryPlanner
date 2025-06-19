@@ -100,7 +100,8 @@ function Machine:update_recipe_effects(force, factory)
     local recipe_proto = self.parent.recipe_proto
 
     local recipe_name = nil
-    if self.proto.prototype_category == "mining_drill" then recipe_name = "custom-mining"
+    local drill = self.proto.prototype_category == "mining_drill"
+    if drill and self.proto.uses_force_mining_productivity_bonus then recipe_name = "custom-mining"
     elseif recipe_proto.productivity_recipe then recipe_name = recipe_proto.productivity_recipe
     elseif not recipe_proto.custom then recipe_name = recipe_proto.name
     else return end  -- no recipe effects for custom recipes

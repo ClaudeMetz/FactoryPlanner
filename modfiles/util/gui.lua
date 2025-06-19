@@ -185,4 +185,16 @@ function _gui.confirm_expression_field(textfield)
     return false
 end
 
+
+function _gui.add_quality_dropdown(parent_flow, selected_index, tags)
+    local items = {}
+    for _, quality in pairs(storage.prototypes.qualities) do
+        local label = {"", "[quality=" .. quality.name .. "] ", quality.localised_name}
+        table.insert(items, label)
+    end
+
+    parent_flow.add{type="drop-down", items=items, selected_index=selected_index,
+        style="fp_drop-down_slim", tags=tags}
+end
+
 return _gui

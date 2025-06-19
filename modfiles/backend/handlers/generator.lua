@@ -78,6 +78,7 @@ end
 ---@field module_limit integer
 ---@field surface_conditions SurfaceCondition[]
 ---@field resource_drain_rate number?
+---@field uses_force_mining_productivity_bonus boolean?
 
 ---@class FluidChannels
 ---@field input integer
@@ -127,7 +128,7 @@ function generator.machines.generate()
         elseif fluid_burner_prototype then
             emissions_per_joule = fluid_burner_prototype.emissions_per_joule
 
-            if fluid_burner_prototype.burns_fluid and not fluid_burner_prototype.fluid_box.filter then
+            if fluid_burner_prototype.burns_fluid then
                 energy_type = "burner"
                 burner = {effectivity=fluid_burner_prototype.effectivity, categories={["fluid-fuel"] = true},
                     combined_category=""}  -- combined filled in by fuel generator
@@ -174,6 +175,7 @@ function generator.machines.generate()
             elem_type = "entity",
             prototype_category = prototype_category,
             ingredient_limit = (proto.ingredient_count or 255),
+            product_limit = (proto.max_item_product_count or 255),
             fluid_channels = fluid_channels,
             speed = proto.get_crafting_speed(),
             energy_type = energy_type,
@@ -187,7 +189,8 @@ function generator.machines.generate()
             allowed_effects = proto.allowed_effects or {},
             allowed_module_categories = proto.allowed_module_categories,
             module_limit = (proto.module_inventory_size or 0),
-            surface_conditions = proto.surface_conditions
+            surface_conditions = proto.surface_conditions,
+            uses_force_mining_productivity_bonus = proto.uses_force_mining_productivity_bonus
         }
         generator_util.check_machine_effects(machine)
         generator_util.sort_machine_burner_categories(machine)
@@ -222,7 +225,7 @@ function generator.machines.generate()
             local category = (fixed_fluid) and ("offshore-pump-" .. fixed_fluid) or "offshore-pump"
             local machine = generate_category_entry(category, proto, nil)
             if machine then
-                machine.speed = proto.pumping_speed
+                machine.speed = proto.get_pumping_speed()
                 insert_prototype(machines, machine, category)
             end
 
@@ -230,7 +233,7 @@ function generator.machines.generate()
             local machine = generate_category_entry(proto.type, proto, nil)
             if machine then
                 machine.speed = 1  -- could be based on available tiles, but not used for now
-                machine.energy_usage = 0  -- implemented later: energy_usage, crane_energy_usage
+                machine.energy_usage = 0  -- TODO implemented later: energy_usage, crane_energy_usage
                 insert_prototype(machines, machine, proto.type)
             end
 
@@ -516,7 +519,7 @@ function generator.recipes.generate()
             recipe.category = "agricultural-tower"
             recipe.energy = 0
 
-            -- Deal with proto.harvest_emissions + proto.emissions_per_second somehow, probably on machine?
+            -- TODO Deal with proto.harvest_emissions + proto.emissions_per_second somehow, probably on machine?
 
             local ingredients = {
                 {type="item", name=seed_name, amount=1},
@@ -540,12 +543,12 @@ function generator.recipes.generate()
             end
 
             -- Add rocket launch product recipes
-            --if not proto.launch_to_space_platforms then  -- TODO API missing
+            if not proto.launch_to_space_platforms then
                 for item_name, products in pairs(launch_products) do
                     local main_proto = prototypes.item[item_name]
 
                     local launch_recipe = custom_recipe()
-                    launch_recipe.name = "impostor-" .. item_name .. "-launch"
+                    launch_recipe.name = "impostor-launch-" .. item_name .. "-from-" .. proto.name
                     launch_recipe.localised_name = {"", main_proto.localised_name, " ", {"fp.launch"}}
                     launch_recipe.sprite = "item/" .. item_name
                     launch_recipe.order = parts_recipe.order .. "-" .. proto.order .. "-a"
@@ -559,7 +562,7 @@ function generator.recipes.generate()
                     generator_util.format_recipe(launch_recipe, products, products[1], ingredients)
                     insert_prototype(recipes, launch_recipe, nil)
                 end
-            --end
+            end
 
             -- Add convenience recipe to build whole rocket instead of parts
             if SPACE_TRAVEL then
@@ -1025,7 +1028,7 @@ function generator.pumps.generate()
                 sprite = sprite,
                 elem_type = "entity",
                 rich_text = "[entity=" .. proto.name .. "]",
-                pumping_speed = proto.pumping_speed * 60
+                pumping_speed = proto.get_pumping_speed() * 60
             }
             insert_prototype(pumps, pump, nil)
         end
@@ -1230,14 +1233,16 @@ local function generate_surface_properties()
     end
 
     for _, proto in pairs(prototypes.surface_property) do
-        table.insert(properties, {
-            name = proto.name,
-            order = proto.order,
-            localised_name = proto.localised_name,
-            localised_unit_key = proto.localised_unit_key,
-            default_value = proto.default_value,
-            is_time = proto.is_time
-        })
+        if not proto.hidden then
+            table.insert(properties, {
+                name = proto.name,
+                order = proto.order,
+                localised_name = proto.localised_name,
+                localised_unit_key = proto.localised_unit_key,
+                default_value = proto.default_value,
+                is_time = proto.is_time
+            })
+        end
     end
 
     table.sort(properties, property_sorting_function)
@@ -1268,14 +1273,19 @@ function generator.locations.generate()
         local sprite = category .. "/" .. proto.name
         if not helpers.is_valid_sprite_path(sprite) then return nil end
 
-        local surface_properties, tooltip = {}, {"", {"fp.tt_title", proto.localised_name}, "\n"}
+        local surface_properties = {}
+        local tooltip = {"", {"fp.tt_title", proto.localised_name}, "\n"}
+        local current_table, next_index = tooltip, 4
+
         for _, property_proto in pairs(property_prototypes) do
             local value = proto.surface_properties[property_proto.name] or property_proto.default_value
             surface_properties[property_proto.name] = value
 
             local value_and_unit = {property_proto.localised_unit_key, value}  ---@type LocalisedString
             if property_proto.is_time then value_and_unit = util.format.time(value) end
-            table.insert(tooltip, {"fp.surface_property", property_proto.localised_name, value_and_unit})
+
+            current_table, next_index = util.build_localised_string(
+                {"fp.surface_property", property_proto.localised_name, value_and_unit}, current_table, next_index)
         end
 
         return {
@@ -1297,6 +1307,18 @@ function generator.locations.generate()
     for _, proto in pairs(prototypes.surface) do
         local location = build_location(proto, "surface")
         if location then insert_prototype(locations, location, nil) end
+    end
+
+    -- Add special location that has no restrictions
+    if table_size(locations) > 1 then
+        insert_prototype(locations, {
+            name = "universal",
+            localised_name = {"fp.universal_location"},
+            sprite = "fp_universal_planet",
+            tooltip = {"fp.universal_location_tt"},
+            surface_properties = nil,  -- accepts all machines and recipes
+            pollutant_type = nil  -- no pollution produced
+        })
     end
 
     return locations
@@ -1323,7 +1345,7 @@ function generator.qualities.generate()
                     name = proto.name,
                     localised_name = proto.localised_name,
                     sprite = sprite,
-                    rich_text = {"", "[quality=" .. proto.name .. "]",
+                    rich_text = {"", "[quality=" .. proto.name .. "] ",
                         generator_util.colored_rich_text(proto.localised_name, proto.color)},
                     level = proto.level,
                     always_show = proto.draw_sprite_by_default,

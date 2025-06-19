@@ -33,7 +33,7 @@ local function handle_item_button_click(player, tags, action)
         local copyable_item = {class="SimpleItem", proto=item.proto, amount=item.abs_diff}
         util.clipboard.copy(player, copyable_item)
 
-    elseif action == "put_into_cursor" then
+    elseif action == "add_to_cursor" then
         util.cursor.handle_item_click(player, item.proto, item.abs_diff)
 
     elseif action == "factoriopedia" then
@@ -183,8 +183,14 @@ local function build_district_frame(player, district, location_items)
     subheader.add{type="label", caption=util.format.SI_value(district.emissions, "E/m", 3), style="bold_label",
         tooltip=util.gui.format_emissions(district.emissions, district)}
 
-    -- Delete button
+    -- Item toggle
     subheader.add{type="empty-widget", style="flib_horizontal_pusher"}
+    local sprite = (district.collapsed) and "fp_expand" or "fp_collapse"
+    local items_toggle = subheader.add{type="sprite-button", sprite=sprite,
+        tags={mod="fp", on_gui_click="toggle_district_items", district_id=district.id},
+        style="tool_button", tooltip={"fp.toggle_district_items_tt"}, mouse_button_filter={"left"}}
+
+    -- Delete button
     local delete_toggle = subheader.add{type="sprite-button", sprite="utility/trash", style="tool_button_red",
         tags={mod="fp", on_gui_click="delete_district_toggle", district_id=district.id},
         enabled=(district.parent:count() > 1), mouse_button_filter={"left"}}
@@ -195,7 +201,9 @@ local function build_district_frame(player, district, location_items)
     delete_confirm.style.padding = 0
     elements[district.id]["delete_confirm"] = delete_confirm
 
-    build_items_flow(player, window_frame, district)
+    if not district.collapsed then
+        build_items_flow(player, window_frame, district)
+    end
 end
 
 local function refresh_districts_box(player)
@@ -275,6 +283,15 @@ listeners.gui = {
             handler = save_district_name
         },
         {
+            name = "toggle_district_items",
+            handler = (function(player, tags, _)
+                local district = OBJECT_INDEX[tags.district_id]  --[[@as District]]
+                district.collapsed = not district.collapsed
+
+                util.raise.refresh(player, "districts_box")
+            end)
+        },
+        {
             name = "delete_district_toggle",
             handler = (function(player, tags, _)
                 local district = OBJECT_INDEX[tags.district_id]  --[[@as District]]
@@ -307,7 +324,7 @@ listeners.gui = {
             name = "act_on_district_item",
             actions_table = {
                 copy = {shortcut="shift-right"},
-                put_into_cursor = {shortcut="alt-right"},
+                add_to_cursor = {shortcut="alt-right"},
                 factoriopedia = {shortcut="alt-left"}
             },
             handler = handle_item_button_click

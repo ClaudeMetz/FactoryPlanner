@@ -367,6 +367,9 @@ function generator_util.check_machine_effects(proto)
     if proto.module_limit == 0 or not any_positives then
         proto.effect_receiver.uses_module_effects = false
     end
+    if proto.module_limit == 0 then
+        proto.effect_receiver.uses_beacon_effects = false
+    end
 end
 
 ---@param effects ModuleEffects

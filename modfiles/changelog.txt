@@ -4,15 +4,38 @@ Date: 00. 00. 0000
   Features:
     -
   Changes:
-    - Request full count of machines and modules via request to satisfy factory requierements
-  Bugfixes:
     -
+  Bugfixes:
+    - Fixed a crash when trying to put certain beacons into the cursor (#530)
+    - Fixed that some machines weren't shown as consuming fluid fuel
+    - Fixed that requesting missing machines for a factory via bots didn't set the amount correctly (#522) (Thanks marfenij!)
+
+---------------------------------------------------------------------------------------------------
+Version: 2.0.22
+Date: 17. 06. 2025
+  Features:
+    - Added the ability to collapse a district's items visually to save space (#516)
+  Bugfixes:
+    - Fixed some compatibility issues with mods adding more surface properties (#534)
+    - Fixed that beacons could be added to burner mining drills
+
+---------------------------------------------------------------------------------------------------
+Version: 2.0.21
+Date: 13. 06. 2025
+  Features:
+    - Added a universal District location, which accepts any recipe/machine regardless of surface restrictions (#501)
+    - Added support for picking a quality on preference pumps and wagons
+    - Added a quality indication to all machine, beacon, and module buttons (#375)
+  Changes:
+    - Bumped the required Factorio version to 2.0.49
+  Bugfixes:
+    - Fixed an issue where certain rocket launch recipes would not be detected properly
 
 ---------------------------------------------------------------------------------------------------
 Version: 2.0.20
 Date: 06. 05. 2025
   Features:
-    - Added support for opening recipes, items, and entities in Factoriopedia
+    - Added support for opening recipes, items, and entities in Factoriopedia (#378)
   Changes:
     - Started filtering out internal recipes of the Transport Drones mod
     - Bumped the required Factorio version to 2.0.44

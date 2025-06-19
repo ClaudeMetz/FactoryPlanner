@@ -111,15 +111,17 @@ end
 
 local function add_modules_flow(parent_flow, parent_type, line, metadata)
     for module in line[parent_type].module_set:iterator() do
+        local quality_proto = module.quality_proto
+        local title_line = (not quality_proto.always_show) and {"fp.tt_title", module.proto.localised_name}
+            or {"fp.tt_title_with_note", module.proto.localised_name, quality_proto.rich_text}
         local number_line = {"", "\n", module.amount, " ", {"fp.pl_module", module.amount}}
-        local tooltip = {"", {"fp.tt_title", module.proto.localised_name}, number_line,
-            "\n", metadata.action_tooltips["act_on_compact_module"]}
+        local tooltip = {"", title_line, number_line, "\n", metadata.action_tooltips["act_on_compact_module"]}
         local style = (line.done) and "flib_slot_button_grayscale_small" or "flib_slot_button_default_small"
 
         local button = parent_flow.add{type="sprite-button", sprite=module.proto.sprite, style=style,
             tags={mod="fp", on_gui_click="act_on_compact_module", module_id=module.id,
-            on_gui_hover="set_tooltip", context="compact_dialog"}, number=module.amount,
-            mouse_button_filter={"left-and-right"}, raise_hover_events=true}
+            on_gui_hover="set_tooltip", context="compact_dialog"}, quality=quality_proto.name,
+            number=module.amount, mouse_button_filter={"left-and-right"}, raise_hover_events=true}
         metadata.tooltips[button.index] = tooltip
     end
 end
@@ -127,19 +129,19 @@ end
 local function add_machine_flow(parent_flow, line, metadata)
     if line.class == "Line" then
         local machine_flow = parent_flow.add{type="flow", direction="horizontal"}
-        local machine_proto = line.machine.proto
+        local machine, machine_proto = line.machine, line.machine.proto
+        local quality_proto = machine.quality_proto
 
-        local title_line = (not line.machine.quality_proto.always_show)
-            and {"fp.tt_title", machine_proto.localised_name}
-            or {"fp.tt_title_with_note", machine_proto.localised_name, line.machine.quality_proto.rich_text}
-        local amount, tooltip_line = util.format.machine_count(line.machine.amount, true)
+        local title_line = (not quality_proto.always_show) and {"fp.tt_title", machine_proto.localised_name}
+            or {"fp.tt_title_with_note", machine_proto.localised_name, quality_proto.rich_text}
+        local amount, tooltip_line = util.format.machine_count(machine.amount, true)
         local tooltip = {"", title_line, tooltip_line, "\n", metadata.action_tooltips["act_on_compact_machine"]}
         local style = (line.done) and "flib_slot_button_grayscale_small" or "flib_slot_button_default_small"
 
         local button = machine_flow.add{type="sprite-button", sprite=machine_proto.sprite, number=amount, style=style,
             tags={mod="fp", on_gui_click="act_on_compact_machine", type="machine", line_id=line.id,
-            on_gui_hover="set_tooltip", context="compact_dialog"}, mouse_button_filter={"left-and-right"},
-            raise_hover_events=true}
+            on_gui_hover="set_tooltip", context="compact_dialog"}, quality=quality_proto.name,
+            mouse_button_filter={"left-and-right"}, raise_hover_events=true}
         metadata.tooltips[button.index] = tooltip
 
         add_modules_flow(machine_flow, "machine", line, metadata)
@@ -149,18 +151,19 @@ end
 local function add_beacon_flow(parent_flow, line, metadata)
     if line.class == "Line" and line.beacon ~= nil then
         local beacon_flow = parent_flow.add{type="flow", direction="horizontal"}
-        local beacon_proto = line.beacon.proto
+        local beacon, beacon_proto = line.beacon, line.beacon.proto
+        local quality_proto = beacon.quality_proto
 
-        local title_line = (not line.beacon.quality_proto.always_show) and {"fp.tt_title", beacon_proto.localised_name}
-            or {"fp.tt_title_with_note", beacon_proto.localised_name, line.beacon.quality_proto.rich_text}
-        local plural_parameter = (line.beacon.amount == 1) and 1 or 2  -- needed because the amount can be decimal
-        local number_line = {"", "\n", line.beacon.amount, " ", {"fp.pl_beacon", plural_parameter}}
+        local title_line = (not quality_proto.always_show) and {"fp.tt_title", beacon_proto.localised_name}
+            or {"fp.tt_title_with_note", beacon_proto.localised_name, quality_proto.rich_text}
+        local plural_parameter = (beacon.amount == 1) and 1 or 2  -- needed because the amount can be decimal
+        local number_line = {"", "\n", beacon.amount, " ", {"fp.pl_beacon", plural_parameter}}
         local tooltip = {"", title_line, number_line, "\n", metadata.action_tooltips["act_on_compact_beacon"]}
         local style = (line.done) and "flib_slot_button_grayscale_small" or "flib_slot_button_default_small"
 
-        local button = beacon_flow.add{type="sprite-button", sprite=beacon_proto.sprite, number=line.beacon.amount,
+        local button = beacon_flow.add{type="sprite-button", sprite=beacon_proto.sprite, number=beacon.amount,
             tags={mod="fp", on_gui_click="act_on_compact_beacon", type="beacon", line_id=line.id,
-            on_gui_hover="set_tooltip", context="compact_dialog"}, style=style,
+            on_gui_hover="set_tooltip", context="compact_dialog"}, quality=quality_proto.name, style=style,
             mouse_button_filter={"left-and-right"}, raise_hover_events=true}
         metadata.tooltips[button.index] = tooltip
 
@@ -458,7 +461,7 @@ local function handle_ingredient_click(player, tags, action)
     local floor = OBJECT_INDEX[tags.floor_id]
     local item = floor.ingredients[tags.item_index]
 
-    if action == "put_into_cursor" then
+    if action == "add_to_cursor" then
         util.cursor.handle_item_click(player, item.proto, item.amount)
 
     elseif action == "factoriopedia" then
@@ -492,7 +495,7 @@ local function handle_machine_click(player, tags, action)
     local line = OBJECT_INDEX[tags.line_id]
     -- We don't need to care about relevant lines here because this only gets called on lines without subfloor
 
-    if action == "put_into_cursor" then
+    if action == "add_to_cursor" then
         util.cursor.set_entity(player, line, line.machine)
 
     elseif action == "factoriopedia" then
@@ -504,7 +507,7 @@ local function handle_beacon_click(player, tags, action)
     local line = OBJECT_INDEX[tags.line_id]
     -- We don't need to care about relevant lines here because this only gets called on lines without subfloor
 
-    if action == "put_into_cursor" then
+    if action == "add_to_cursor" then
         util.cursor.set_entity(player, line, line.beacon)
 
     elseif action == "factoriopedia" then
@@ -516,7 +519,7 @@ local function handle_item_click(player, tags, action)
     local item = (tags.fuel_id) and OBJECT_INDEX[tags.fuel_id]
         or OBJECT_INDEX[tags.line_id][tags.item_category][tags.item_index]
 
-    if action == "put_into_cursor" then
+    if action == "add_to_cursor" then
         if item.proto.type == "entity" then return end
         util.cursor.handle_item_click(player, item.proto, item.amount)
 
@@ -575,7 +578,7 @@ factory_listeners.gui = {
         {
             name = "act_on_compact_ingredient",
             actions_table = {
-                put_into_cursor = {shortcut="left", show=true},
+                add_to_cursor = {shortcut="left", show=true},
                 factoriopedia = {shortcut="alt-right", show=true}
             },
             handler = handle_ingredient_click
@@ -598,7 +601,7 @@ factory_listeners.gui = {
         {
             name = "act_on_compact_machine",
             actions_table = {
-                put_into_cursor = {shortcut="left", show=true},
+                add_to_cursor = {shortcut="left", show=true},
                 factoriopedia = {shortcut="alt-right", show=true}
             },
             handler = handle_machine_click
@@ -606,7 +609,7 @@ factory_listeners.gui = {
         {
             name = "act_on_compact_beacon",
             actions_table = {
-                put_into_cursor = {shortcut="left", show=true},
+                add_to_cursor = {shortcut="left", show=true},
                 factoriopedia = {shortcut="alt-right", show=true}
             },
             handler = handle_beacon_click
@@ -614,7 +617,7 @@ factory_listeners.gui = {
         {
             name = "act_on_compact_item",
             actions_table = {
-                put_into_cursor = {shortcut="left", show=true},
+                add_to_cursor = {shortcut="left", show=true},
                 factoriopedia = {shortcut="alt-right", show=true}
             },
             handler = handle_item_click
