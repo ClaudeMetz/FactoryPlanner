@@ -8,6 +8,7 @@ Date: 00. 00. 0000
   Bugfixes:
     - Fixed a crash when trying to put certain beacons into the cursor (#530)
     - Fixed that some machines weren't shown as consuming fluid fuel
+    - Fixed that requesting missing machines for a factory via bots didn't set the amount correctly (#522) (Thanks marfenij!)
 
 ---------------------------------------------------------------------------------------------------
 Version: 2.0.22
