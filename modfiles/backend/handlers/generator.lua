@@ -285,6 +285,7 @@ function generator.machines.generate()
         local machine = generate_category_entry("purposeful-spoiling", biggest_chest, nil)
         if machine then
             machine.speed, machine.energy_usage = 1, 0
+            machine.surface_conditions = nil  -- the chest isn't actually needed for spoiling to happen
             insert_prototype(machines, machine, "purposeful-spoiling")
         end
     end
