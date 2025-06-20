@@ -415,8 +415,8 @@ function matrix_engine.run_matrix_solver(factory_data, check_linear_dependence)
     end
 
     local required_amount = {}
-    for _, product in pairs(factory_data.top_level_products) do
-        local key = matrix_engine.get_item_key(product.proto.type, product.proto.name)
+    for _, product in ipairs(factory_data.top_floor.products) do
+        local key = matrix_engine.get_item_key(product.type, product.name)
         required_amount[key] = product.amount
     end
 
