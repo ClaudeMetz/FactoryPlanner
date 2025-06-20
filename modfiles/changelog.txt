@@ -4,7 +4,7 @@ Date: 00. 00. 0000
   Features:
     -
   Changes:
-    -
+    - Split up the rocket launch recipe into a launch and a rocket part recipe, fixing the issue of productivity being applied to the satellite cargo (#509)
   Bugfixes:
     - Fixed a crash when trying to put certain beacons into the cursor (#530)
     - Fixed that some machines weren't shown as consuming fluid fuel (#511)
