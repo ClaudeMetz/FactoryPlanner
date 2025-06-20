@@ -11,6 +11,7 @@ Date: 00. 00. 0000
     - Fixed that requesting missing machines for a factory via bots didn't set the amount correctly (#522) (Thanks marfenij!)
     - Fixed that spoiling recipes weren't allowed on space platforms (#524)
     - Fixed that pasting the same module with different quality would not work (#535)
+    - Fixed a migration issue when coming from a 1.1 save file
 
 ---------------------------------------------------------------------------------------------------
 Version: 2.0.22
