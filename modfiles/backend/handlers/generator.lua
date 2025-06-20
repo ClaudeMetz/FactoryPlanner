@@ -203,6 +203,24 @@ function generator.machines.generate()
     for _, proto in pairs(prototypes.entity) do
         if proto.crafting_categories and not proto.hidden and proto.energy_usage ~= nil
                 and not generator_util.is_irrelevant_machine(proto) then
+            -- Silo launch recipes use a separate machine
+            if proto.type == "rocket-silo" then
+                local machine = generate_category_entry("launch-rocket", proto, nil)
+                if machine then
+                    machine.energy_usage = 0
+                    machine.built_by_item = nil
+                    machine.effect_receiver = {
+                        uses_module_effects = false,
+                        uses_beacon_effects = false,
+                        uses_surface_effects = false
+                    }
+                    machine.allowed_effects = {}
+                    machine.module_limit = 0
+                    insert_prototype(machines, machine, machine.category)
+                end
+            end
+
+            -- Silos are also added as normal to produce rocket parts
             for category, _ in pairs(proto.crafting_categories) do
                 local prototype_category = proto.type:gsub("-", "_")
                 local machine = generate_category_entry(category, proto, prototype_category)
@@ -353,7 +371,6 @@ end
 ---@field allowed_effects AllowedEffects?
 ---@field maximum_productivity double
 ---@field allowed_module_categories { [string]: boolean }?
----@field productivity_recipe string?
 ---@field type_counts { ingredients: ItemTypeCounts, products: ItemTypeCounts }
 ---@field catalysts { ingredients: Ingredient[], products: FormattedProduct[] }
 ---@field surface_conditions SurfaceCondition[]?
@@ -535,31 +552,24 @@ function generator.recipes.generate()
         elseif proto.type == "rocket-silo" and not proto.hidden then
             local parts_recipe = prototypes.recipe[proto.fixed_recipe]
             if not parts_recipe then goto incompatible_proto end
-
-            -- Multiply amounts to signify one whole rocket launch
-            local parts_ingredients = {}
-            for _, item in pairs(parts_recipe.ingredients) do
-                item.amount = item.amount * proto.rocket_parts_required
-                table.insert(parts_ingredients, item)
-            end
+            local rocket_parts_ingredient = {type="item", name=parts_recipe.main_product.name,
+                amount=proto.rocket_parts_required}
 
             -- Add rocket launch product recipes
             if not proto.launch_to_space_platforms then
                 for item_name, products in pairs(launch_products) do
-                    local main_proto = prototypes.item[item_name]
+                    local main_product = prototypes.item[products[1].name]
 
                     local launch_recipe = custom_recipe()
                     launch_recipe.name = "impostor-launch-" .. item_name .. "-from-" .. proto.name
-                    launch_recipe.localised_name = {"", main_proto.localised_name, " ", {"fp.launch"}}
-                    launch_recipe.sprite = "item/" .. item_name
-                    launch_recipe.order = parts_recipe.order .. "-" .. proto.order .. "-a"
-                    launch_recipe.category = parts_recipe.category
-                    launch_recipe.energy = parts_recipe.energy * proto.rocket_parts_required
-                    launch_recipe.maximum_productivity = parts_recipe.maximum_productivity
-                    launch_recipe.productivity_recipe = parts_recipe.name
+                    launch_recipe.localised_name = {"", main_product.localised_name, " ", {"fp.launch"}}
+                    launch_recipe.sprite = "item/" .. main_product.name
+                    launch_recipe.order = main_product.order
+                    launch_recipe.category = "launch-rocket"
+                    launch_recipe.energy = 0
 
-                    local ingredients = ftable.deep_copy(parts_ingredients)
-                    table.insert(ingredients, {type="item", name=item_name, amount=1})
+                    local ingredients = {ftable.deep_copy(rocket_parts_ingredient),
+                        {type="item", name=item_name, amount=1}}
                     generator_util.format_recipe(launch_recipe, products, products[1], ingredients)
                     insert_prototype(recipes, launch_recipe, nil)
                 end
@@ -572,15 +582,13 @@ function generator.recipes.generate()
                 rocket_recipe.name = "impostor-" .. proto.name .. "-rocket"
                 rocket_recipe.localised_name = {"", proto.localised_name, " ", {"fp.launch"}}
                 rocket_recipe.sprite = "fp_silo_rocket"
-                rocket_recipe.order = parts_recipe.order .. "-" .. proto.order .. "-b"
-                rocket_recipe.category = parts_recipe.category
-                rocket_recipe.energy = parts_recipe.energy * proto.rocket_parts_required
-                rocket_recipe.maximum_productivity = parts_recipe.maximum_productivity
-                rocket_recipe.productivity_recipe = parts_recipe.name
+                rocket_recipe.order = parts_recipe.order .. "-" .. proto.order
+                rocket_recipe.category = "launch-rocket"
+                rocket_recipe.energy = 0
 
                 local rocket_products = {{type="entity", name="custom-silo-rocket", amount=1}}
-                generator_util.format_recipe(rocket_recipe, rocket_products,
-                    rocket_products[1], parts_ingredients)
+                local ingredients = {ftable.deep_copy(rocket_parts_ingredient)}
+                generator_util.format_recipe(rocket_recipe, rocket_products, rocket_products[1], ingredients)
                 insert_prototype(recipes, rocket_recipe, nil)
             end
 
