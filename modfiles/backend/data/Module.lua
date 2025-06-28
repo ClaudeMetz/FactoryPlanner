@@ -68,14 +68,24 @@ function Module:paste(object)
     if object.class == "Module" then
         ---@cast object Module
         if self.parent:check_compatibility(object.proto) then
-            if self.parent:find({proto=object.proto}) and object.proto.name ~= self.proto.name then
-                return false, "already_exists"
-            else
-                object.amount = math.min(object.amount, self.amount + self.parent.empty_slots)
-                object:summarize_effects()
+            if self.proto == object.proto and self.quality_proto == object.quality_proto then
+                self:set_amount(math.min(object.amount, self.parent.module_limit))
 
-                self.parent:replace(self, object)
-                self.parent:normalize{effects=true}
+                self.parent:normalize({effects=true})
+                return true, nil
+            else
+                local existing_module = self.parent:find({proto=object.proto, quality_proto=object.quality_proto})
+                local parent = self.parent  -- retain here because it can be changed below
+
+                if existing_module then
+                    existing_module:set_amount(existing_module.amount + object.amount)
+                    parent:remove(self)
+                else
+                    object:set_amount(math.min(object.amount, self.amount))
+                    parent:replace(self.parent, object)
+                end
+
+                parent:normalize({sort=true, effects=true})
                 return true, nil
             end
         else
@@ -105,9 +115,10 @@ end
 
 ---@param packed_self PackedModule
 ---@return Module module
-local function unpack(packed_self)
+local function unpack(packed_self, parent)
     local unpacked_self = init(packed_self.proto, packed_self.amount)
     unpacked_self.quality_proto = packed_self.quality_proto
+    unpacked_self.parent = parent
 
     return unpacked_self
 end
@@ -121,10 +132,11 @@ function Module:validate()
     self.quality_proto = prototyper.util.validate_prototype_object(self.quality_proto, nil)
     self.valid = (not self.quality_proto.simplified) and self.valid
 
+    -- Can't be valid with an invalid parent
+    self.valid = self.parent.valid and self.valid
+
     -- Check whether the module is still compatible with its machine or beacon
-    if self.valid and self.parent and self.parent.valid then
-        self.valid = self.parent:check_compatibility(self.proto)
-    end
+    if self.valid then self.valid = self.parent:check_compatibility(self.proto) end
 
     if self.valid then self:summarize_effects() end
 

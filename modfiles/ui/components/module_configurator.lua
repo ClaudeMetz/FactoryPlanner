@@ -29,7 +29,7 @@ local function add_module_frame(parent_flow, module, module_filters, empty_slots
     local slider_value, maximum_value, minimum_value = determine_slider_config(module, empty_slots)
     local numeric_enabled = (maximum_value ~= 1 and module ~= nil)
 
-    local slider = frame_module.add{type="slider", name="fp_slider_module_amount",
+    local slider = frame_module.add{type="slider", name="fp_slider_module_amount", style="notched_slider",
         tags={mod="fp", on_gui_value_changed="module_amount_value", module_id=module_id},
         minimum_value=minimum_value, maximum_value=maximum_value, value=slider_value, value_step=0.1}
     slider.style.minimal_width = 0
@@ -52,8 +52,9 @@ local function add_effects_section(parent_flow, object, modal_elements)
     frame_effects.style.width = (MAGIC_NUMBERS.module_dialog_element_width / 2) - 2
 
     local class_lower = object.class:lower()
-    local caption, tooltip = {"", {"fp.pu_" .. class_lower, 1}, " ", {"fp.effects"}}, {""}
-    if class_lower == "machine" then caption, tooltip = {"fp.info_label", caption}, {"fp.machine_effects_tt"} end
+    local title = (object.class == "Line") and "recipe" or class_lower
+    local caption, tooltip = {"", {"fp.pu_" .. title, 1}, " ", {"fp.effects"}}, {""}
+    if object.class == "Machine" then caption, tooltip = {"fp.info_label", caption}, {"fp.machine_effects_tt"} end
     frame_effects.add{type="label", caption=caption, tooltip=tooltip, style="semibold_label"}
 
     local label_effects = frame_effects.add{type="label", caption=object.effects_tooltip}
@@ -129,8 +130,8 @@ function module_configurator.add_modules_flow(parent, modal_data)
 end
 
 function module_configurator.refresh_effects_flow(modal_data)
-    local lower_class = modal_data.object.class:lower()
-    local object_label = modal_data.modal_elements[lower_class .. "_effects_label"]
+    local class_lower = modal_data.object.class:lower()
+    local object_label = modal_data.modal_elements[class_lower .. "_effects_label"]
     if not object_label or not object_label.valid then return end
 
     local line_effects = modal_data.line.effects_tooltip

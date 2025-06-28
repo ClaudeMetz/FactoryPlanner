@@ -135,16 +135,18 @@ function generator_util.format_recipe(recipe_proto, products, main_product, ingr
 
     local formatted_products = {}  ---@type FormattedProduct[]
     for _, base_product in pairs(products) do
-        local formatted_product = generate_formatted_product(base_product)
+        if base_product.type ~= "research-progress" then
+            local formatted_product = generate_formatted_product(base_product)
 
-        if formatted_product.amount > 0 then
-            table.insert(formatted_products, formatted_product)
+            if formatted_product.amount > 0 then
+                table.insert(formatted_products, formatted_product)
 
-            -- Update the main product as well, if present
-            if main_product ~= nil
-                    and formatted_product.type == main_product.type
-                    and formatted_product.name == main_product.name then
-                recipe_proto.main_product = formatted_product
+                -- Update the main product as well, if present
+                if main_product ~= nil
+                        and formatted_product.type == main_product.type
+                        and formatted_product.name == main_product.name then
+                    recipe_proto.main_product = formatted_product
+                end
             end
         end
     end
@@ -200,17 +202,6 @@ function generator_util.format_recipe(recipe_proto, products, main_product, ingr
 end
 
 
----@param item_list RecipeItem[]
----@param factor number
-function generator_util.multiply_recipe_items(item_list, factor)
-    for _, item in pairs(item_list) do
-        item.amount = item.amount * factor
-        if item.proddable_amount ~= nil then
-            item.proddable_amount = item.proddable_amount * factor
-        end
-    end
-end
-
 --[[ -- Adds the additional proto's ingredients, products and energy to the main proto
 ---@param main_proto FPRecipePrototype
 ---@param additional_proto FPRecipePrototype
@@ -264,7 +255,8 @@ end
 
 -- Determines whether the given recipe is a barreling or stacking one
 local compacting_recipe_mods = {
-    ["base"] = {"^fill%-.*", "^empty%-.*"},
+    ["base"] = {patterns = {"^fill%-.*", "^empty%-.*"}, item = "barrel"},
+    ["pycoalprocessing"] = {patterns = {"^fill%-.*%-canister$", "^empty%-.*%-canister$"}}
     --[[ ["deadlock-beltboxes-loaders"] = {"^deadlock%-stacks%-.*", "^deadlock%-packrecipe%-.*",
                                       "^deadlock%-unpackrecipe%-.*"},
     ["DeadlockCrating"] = {"^deadlock%-packrecipe%-.*", "^deadlock%-unpackrecipe%-.*"},
@@ -273,20 +265,26 @@ local compacting_recipe_mods = {
     ["Satisfactorio"] = {"^packaged%-.*", "^unpack%-.*"} ]]
 }
 
-local active_compacting_recipe_mods = {}  ---@type string[]
-for modname, patterns in pairs(compacting_recipe_mods) do
-    for _, pattern in pairs(patterns) do
-        if active_mods[modname] then
-            table.insert(active_compacting_recipe_mods, pattern)
-        end
-    end
-end
-
 ---@param proto LuaRecipePrototype
 ---@return boolean
 function generator_util.is_compacting_recipe(proto)
-    for _, pattern in pairs(active_compacting_recipe_mods) do
-        if string.match(proto.name, pattern) then return true end
+    for mod, filter_data in pairs(compacting_recipe_mods) do
+        if active_mods[mod] then
+            for _, pattern in pairs(filter_data.patterns) do
+                if string.match(proto.name, pattern) then
+                    if not filter_data.item then
+                        return true
+                    else
+                        for _, product in pairs(proto.products) do
+                            if product.name == filter_data.item then return true end
+                        end
+                        for _, ingredient in pairs(proto.ingredients) do
+                            if ingredient.name == filter_data.item then return true end
+                        end
+                    end
+                end
+            end
+        end
     end
     return false
 end
@@ -294,8 +292,8 @@ end
 
 -- Determines whether this recipe is irrelevant or not and should thus be excluded
 local irrelevant_recipe_categories = {
-    --[[ ["Transport_Drones"] = {"transport-drone-request", "transport-fluid-request"},
-    ["Mining_Drones"] = {"mining-depot"},
+    ["Transport_Drones_Meglinge_Fork"] = {"transport-drone-request", "transport-fluid-request"},
+    --[[ ["Mining_Drones"] = {"mining-depot"},
     ["Deep_Storage_Unit"] = {"deep-storage-item", "deep-storage-fluid",
                              "deep-storage-item-big", "deep-storage-fluid-big",
                              "deep-storage-item-mk2/3", "deep-storage-fluid-mk2/3"},
@@ -411,6 +409,37 @@ function generator_util.check_machine_effects(proto)
     if proto.module_limit == 0 or not any_positives then
         proto.effect_receiver.uses_module_effects = false
     end
+    if proto.module_limit == 0 then
+        proto.effect_receiver.uses_beacon_effects = false
+    end
+end
+
+---@param effects ModuleEffects
+---@return ModuleEffects
+function generator_util.formatted_effects(effects)
+    effects = effects or {}
+    if effects["quality"] then  -- fix base game weirdness
+        effects["quality"] = effects["quality"] / 10
+    end
+    return effects
+end
+
+--- Needs to be weird because ordering of non-integer keys depends on insertion order
+---@param proto FPMachinePrototype
+function generator_util.sort_machine_burner_categories(proto)
+    if not proto.burner then return end
+
+    local category_list = {}
+    for category, _ in pairs(proto.burner.categories) do
+        table.insert(category_list, category)
+    end
+    table.sort(category_list)
+
+    local category_index = {}
+    for _, category in ipairs(category_list) do
+        category_index[category] = true
+    end
+    proto.burner.categories = category_index
 end
 
 
@@ -462,18 +491,15 @@ end
 ---@param proto FPItemPrototype | FPRecipePrototype
 function generator_util.add_default_groups(proto)
     proto.group = generator_util.generate_group_table(prototypes.item_group["other"])
-    proto.subgroup = {name="custom_subgroup", localised_name="", order="a", valid=true}
+    proto.subgroup = generator_util.generate_group_table(prototypes.item_subgroup["other"])
 end
 
----@param proto FPItemPrototype | FPRecipePrototype
----@param group_name string
----@param subgroup_name string
-function generator_util.add_groups(proto, group_name, subgroup_name)
-    generator_util.add_default_groups(proto)
-    local group = prototypes.item_group[group_name]
-    if group then proto.group = generator_util.generate_group_table(group) end
-    local subgroup = prototypes.item_subgroup[subgroup_name]
-    if subgroup then proto.subgroup = generator_util.generate_group_table(subgroup) end
+
+---@param text LocalisedString
+---@param color Color
+---@return LocalisedString
+function generator_util.colored_rich_text(text, color)
+    return {"", "[color=", color.r, ",", color.g, ",", color.b, "]", text, "[/color]"}
 end
 
 return generator_util

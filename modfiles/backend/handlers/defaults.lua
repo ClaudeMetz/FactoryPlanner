@@ -75,12 +75,10 @@ function defaults.set_all(player, data_type, data)
     if prototyper.data_types[data_type] == false then return end
 
     for _, category_data in pairs(storage.prototypes[data_type]) do
-        if table_size(category_data.members) > 1 then  -- don't change single-member categories
-            local matched_prototype = prototyper.util.find(data_type, data.prototype, category_data.id)
-            if matched_prototype then
-                data.prototype = matched_prototype.name
-                defaults.set(player, data_type, data, category_data.id)
-            end
+        local matched_prototype = prototyper.util.find(data_type, data.prototype, category_data.id)
+        if matched_prototype then
+            data.prototype = matched_prototype.name
+            defaults.set(player, data_type, data, category_data.id)
         end
     end
 end
@@ -116,7 +114,7 @@ function defaults.equals_all_defaults(player, data_type, object)
 end
 
 
-local prototypes_with_quality = {machines=true, beacons=true, modules=true}
+local prototypes_with_quality = {machines=true, beacons=true, modules=true, pumps=true, wagons=true}
 
 -- Returns the fallback default for the given type of prototype
 ---@param data_type DataType
@@ -227,9 +225,11 @@ end
 function defaults.generate_tooltip(player, data_type, category)
     local default = defaults.get(player, data_type, category)
     local tooltip = {"", {"fp.current_default"}, "\n"}
+    local quality = default.quality
 
-    local proto_line = (not default.quality) and {"fp.tt_title", default.proto.localised_name}
-        or {"fp.tt_title_with_note", default.proto.localised_name, default.quality.localised_name}
+    local name_line = {"", "[img=" .. default.proto.sprite .. "] ", default.proto.localised_name}
+    local proto_line = (not quality or not quality.always_show) and {"fp.tt_title", name_line}
+        or {"fp.tt_title_with_note", name_line, quality.rich_text}
     table.insert(tooltip, proto_line)
     if default.beacon_amount then table.insert(tooltip, " x" .. default.beacon_amount) end
 

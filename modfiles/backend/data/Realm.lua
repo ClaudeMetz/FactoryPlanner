@@ -35,6 +35,8 @@ end
 
 ---@param district District
 function Realm:remove(district)
+    -- Delete factories separately so they can clean up any nth_tick events
+    for factory in district:iterator() do district:remove(factory) end
     district.parent = nil
     self:_remove(district)
 end
@@ -73,11 +75,9 @@ function Realm:count(filter, pivot, direction)
 end
 
 
---- The realm can't be invalid, this just cleanly validates districts
+--- The realm can't be invalid, this just cleanly validates Districts
 function Realm:validate()
-    -- Districts won't be invalid either, as they put themselves in a valid state
     self:_validate()
 end
-
 
 return {init = init}

@@ -7,7 +7,7 @@ local function select_item_group(modal_data, new_group_id)
 
     for group_id, group_elements in pairs(modal_data.modal_elements.groups) do
         local selected_group = (group_id == new_group_id)
-        group_elements.button.enabled = not selected_group
+        group_elements.button.toggled = selected_group
         group_elements.scroll_pane.visible = selected_group
     end
 end
@@ -160,7 +160,7 @@ local function add_item_picker(parent_flow, player)
 
             local button_item = table_subgroup.add{type="sprite-button", sprite=item_proto.sprite, style=button_style,
                 tags={mod="fp", on_gui_click="select_picker_item", item_id=item_proto.id,
-                category_id=item_proto.category_id}, enabled=(existing_product == nil),
+                category_id=item_proto.category_id, enabled=(existing_product == nil)},
                 tooltip=tooltip, elem_tooltip=elem_tooltip, mouse_button_filter={"left"}}
 
             -- Figure out the translated name here so search doesn't have to repeat the work for every character
@@ -337,8 +337,13 @@ end
 
 local function handle_item_pick(player, tags, _)
     local modal_data = util.globals.modal_data(player)
-
     local item_proto = prototyper.util.find("items", tags.item_id, tags.category_id)
+
+    if not tags.enabled then
+        util.cursor.create_flying_text(player, {"fp.picker_already_selected", item_proto.localised_name})
+        return
+   end
+
     set_item_proto(modal_data, item_proto)  -- no need for sync in this case
 
     set_appropriate_focus(modal_data)
@@ -388,7 +393,10 @@ local function close_picker_dialog(player, action)
         local defined_by = modal_data.amount_defined_by
         local relevant_textfield_name = ((defined_by == "amount") and "item" or "belt") .. "_amount_textfield"
         local relevant_amount = util.gui.parse_expression_field(modal_data.modal_elements[relevant_textfield_name]) or 0
-        if defined_by == "amount" then relevant_amount = relevant_amount / modal_data.timescale end
+        if defined_by == "amount" then
+            relevant_amount = relevant_amount / modal_data.timescale
+            relevant_amount = math.max(relevant_amount, MAGIC_NUMBERS.margin_of_error*10)
+        end
 
         local refresh_scope = "factory"
         if modal_data.item ~= nil then  -- ie. this is an edit
@@ -415,7 +423,7 @@ local function close_picker_dialog(player, action)
         end
 
         solver.update(player, factory)
-        if ui_state.districts_view then main_dialog.toggle_districts_view(player) end
+        main_dialog.toggle_districts_view(player, true)
         util.raise.refresh(player, refresh_scope)
 
     elseif action == "delete" then

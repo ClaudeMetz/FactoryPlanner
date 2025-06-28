@@ -77,28 +77,17 @@ local function create_base_dialog(player, dialog_settings, modal_data)
         subheader.style.padding = 12
         subheader.add{type="label", caption=dialog_settings.subheader_text,
             tooltip=dialog_settings.subheader_tooltip, style="semibold_label"}
-
-        if dialog_settings.foldout_title then
-            subheader.add{type="empty-widget", style="flib_horizontal_pusher"}
-            local caption = {"", dialog_settings.foldout_title, " >"}
-            local button_foldout = subheader.add{type="button", caption=caption, style="fp_button_transparent",
-                tags={mod="fp", on_gui_click="toggle_foldout_panel"}}
-            modal_elements.foldout_button = button_foldout
-        end
     end
 
-    local scroll_pane = content_frame.add{type="scroll-pane", direction="vertical", style="flib_naked_scroll_pane"}
+    local scroll_pane = content_frame.add{type="scroll-pane", style="flib_naked_scroll_pane"}
     if dialog_settings.disable_scroll_pane then scroll_pane.vertical_scroll_policy = "never" end
     modal_elements.content_frame = scroll_pane
 
     -- Secondary frame
-    if dialog_settings.secondary_frame or dialog_settings.foldout_title then
-        -- Only default-visible if it's a secondary frame, not a foldout frame
-        local frame_secondary = flow_content.add{type="frame", direction="vertical",
-            visible=(dialog_settings.secondary_frame ~= nil), style="inside_shallow_frame"}
+    if dialog_settings.secondary_frame then
+        local frame_secondary = flow_content.add{type="frame", direction="vertical", style="inside_shallow_frame"}
 
         local scroll_pane_secondary = frame_secondary.add{type="scroll-pane", style="flib_naked_scroll_pane"}
-        scroll_pane_secondary.style.vertically_stretchable = true
         scroll_pane_secondary.style.padding = 12
 
         modal_elements.secondary_frame = scroll_pane_secondary
@@ -163,7 +152,6 @@ function modal_dialog.enter(player, metadata, dialog_open, early_abort)
     ui_state.modal_data = metadata.modal_data or {}
     ui_state.modal_data.modal_elements = {}
     ui_state.modal_data.confirmed_dialog = false
-    ui_state.modal_data.foldout_title = metadata.foldout_title
 
     -- Create interface_dimmer first so the layering works out correctly
     if main_dialog.is_in_focus(player) then
@@ -179,8 +167,8 @@ function modal_dialog.enter(player, metadata, dialog_open, early_abort)
     local frame_modal_dialog = create_base_dialog(player, metadata, ui_state.modal_data)
     dialog_open(player, ui_state.modal_data)
 
-    player.opened = frame_modal_dialog
     frame_modal_dialog.force_auto_center()
+    player.opened = frame_modal_dialog
 end
 
 -- Handles the closing process of a modal dialog, reopening the main dialog thereafter
@@ -293,14 +281,6 @@ function modal_dialog.set_submit_button_state(modal_elements, enabled, message)
     button.tooltip = tooltip
 end
 
-function modal_dialog.toggle_foldout_panel(player)
-    local modal_data = util.globals.modal_data(player)  --[[@as table]]
-    local secondary_frame = modal_data.modal_elements.secondary_frame.parent
-    secondary_frame.visible = not secondary_frame.visible
-    local caption = {"", modal_data.foldout_title, (secondary_frame.visible) and " <" or " >"}
-    modal_data.modal_elements.foldout_button.caption = caption
-end
-
 
 function modal_dialog.enter_selection_mode(player, selector_name)
     local ui_state = util.globals.ui_state(player)
@@ -393,11 +373,7 @@ listeners.gui = {
                 modal_data.modal_elements.confirm_reset.visible = false
                 GLOBAL_HANDLERS[modal_data.reset_handler_name](player)
             end)
-        },
-        {
-            name = "toggle_foldout_panel",
-            handler = modal_dialog.toggle_foldout_panel
-        },
+        }
     },
     on_gui_text_changed = {
         {
@@ -434,7 +410,7 @@ listeners.gui = {
                 end
 
                 -- Reset .confirmed_dialog if this event didn't actually lead to the dialog closing
-                if event.element.valid then ui_state.modal_data.confirmed_dialog = false end
+                if event.element.valid and ui_state.modal_data then ui_state.modal_data.confirmed_dialog = false end
             end)
         },
         {

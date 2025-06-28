@@ -1,5 +1,5 @@
 local Object = require("backend.data.Object")
-local SimpleItems = require("backend.data.SimpleItems")
+local DistrictItemSet = require("backend.data.DistrictItemSet")
 
 ---@class District: Object, ObjectMethods
 ---@field class "District"
@@ -8,13 +8,12 @@ local SimpleItems = require("backend.data.SimpleItems")
 ---@field previous District?
 ---@field name string
 ---@field location_proto FPLocationPrototype
----@field products SimpleItems
----@field byproducts SimpleItems
----@field ingredients SimpleItems
+---@field item_set DistrictItemSet
 ---@field first Factory?
 ---@field power number
 ---@field emissions number
 ---@field needs_refresh boolean
+---@field collapsed boolean
 local District = Object.methods()
 District.__index = District
 script.register_metatable("District", District)
@@ -23,16 +22,16 @@ script.register_metatable("District", District)
 ---@return District
 local function init(name)
     local object = Object.init({
-        name = name or "New District",
+        name = name or "Nauvis",
         location_proto = defaults.get_fallback("locations").proto,
-        products = SimpleItems.init(),
-        byproducts = SimpleItems.init(),
-        ingredients = SimpleItems.init(),
+        item_set = DistrictItemSet.init(),
         first = nil,
 
         power = 0,
         emissions = 0,
-        needs_refresh = false
+
+        needs_refresh = false,
+        collapsed = false
     }, "District", District)  --[[@as District]]
     return object
 end
@@ -40,10 +39,8 @@ end
 
 function District:index()
     OBJECT_INDEX[self.id] = self
+    self.item_set:index()
     for factory in self:iterator() do factory:index() end
-    self.products:index()
-    self.byproducts:index()
-    self.ingredients:index()
 end
 
 
@@ -57,6 +54,8 @@ end
 
 ---@param factory Factory
 function District:remove(factory)
+    -- Make sure the nth_tick handlers are cleaned up
+    if factory.tick_of_deletion then util.nth_tick.cancel(factory.tick_of_deletion) end
     factory.parent = nil
     self:_remove(factory)
 end
@@ -103,23 +102,19 @@ function District:refresh()
 
     self.power = 0
     self.emissions = 0
-    self.products:clear()
-    self.byproducts:clear()
-    self.ingredients:clear()
+    self.item_set:clear()
 
     for factory in self:iterator({archived=false, valid=true}) do
         self.power = self.power + factory.top_floor.power
         self.emissions = self.emissions + factory.top_floor.emissions
 
-        local product_items = SimpleItems.init()
-        for product in factory:iterator() do
-            product_items:insert({class="SimpleItem", proto=product.proto, amount=product.amount})
-        end
-        self.products:add_multiple(product_items)
-
-        self.byproducts:add_multiple(factory.top_floor.byproducts)
-        self.ingredients:add_multiple(factory.top_floor.ingredients)
+        self.item_set:add_items(factory:as_list(), "production")
+        self.item_set:add_items(factory.top_floor.byproducts, "production")
+        self.item_set:add_items(factory.top_floor.ingredients, "consumption")
     end
+
+    self.item_set:diff()
+    self.item_set:sort()
 end
 
 
@@ -133,7 +128,9 @@ function District:validate()
         self.location_proto = defaults.get_fallback("locations").proto
     end
 
-    return true  -- always makes itself valid
+    -- The item set doesn't need validationa as it is automaticaly redone by :refresh()
+
+    return self.valid  -- always true
 end
 
 return {init = init}

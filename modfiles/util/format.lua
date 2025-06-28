@@ -66,7 +66,7 @@ end
 ---@return string? formatted_count
 ---@return LocalisedString tooltip_line
 function _format.machine_count(count, round_number)
-    if count == 0 then return nil, "" end
+    if count == 0 then return nil, {""} end
 
     -- The formatting is used to 'round down' when the decimal is very small
     local formatted_count = util.format.number(count, 3)

@@ -36,8 +36,8 @@ function _effects.limit(effects, max_prod)
     local indications = {}
     local bounds = {
         speed = {lower = -0.8, upper = upper_bound},
-        productivity = {lower = 0, upper = max_prod},
-        quality = {lower = 0, upper = upper_bound},
+        productivity = {lower = 0, upper = max_prod or upper_bound},
+        quality = {lower = 0, upper = upper_bound/10},
         consumption = {lower = -0.8, upper = upper_bound},
         pollution = {lower = -0.8, upper = upper_bound}
     }
@@ -98,7 +98,8 @@ function _effects.format(module_effects, options)
         end
     end
 
-    return tooltip_lines
+    if #tooltip_lines > 1 then return tooltip_lines
+    else return {"fp.none"} end
 end
 
 return _effects

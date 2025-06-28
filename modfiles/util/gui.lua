@@ -77,10 +77,9 @@ function _gui.toggle_mod_gui(player)
 
     if enable and not mod_gui_button then
         local tooltip = {"", {"shortcut-name.fp_open_interface"}, " (", {"fp.toggle_interface"}, ")"}
-        local button = frame_flow.add{type="sprite-button", name="fp_button_toggle_interface",
-            sprite="fp_mod_gui", tooltip=tooltip, tags={mod="fp", on_gui_click="mod_gui_toggle_interface"},
+        frame_flow.add{type="sprite-button", name="fp_button_toggle_interface", sprite="fp_mod_gui",
+            tooltip=tooltip, tags={mod="fp", on_gui_click="mod_gui_toggle_interface"},
             style=mod_gui.button_style, mouse_button_filter={"left"}}
-        button.style.padding = 6
     elseif mod_gui_button then  -- use the destroy function for possible cleanup reasons
         destroy_mod_gui(player)
     end
@@ -184,6 +183,18 @@ function _gui.confirm_expression_field(textfield)
         end
     end
     return false
+end
+
+
+function _gui.add_quality_dropdown(parent_flow, selected_index, tags)
+    local items = {}
+    for _, quality in pairs(storage.prototypes.qualities) do
+        local label = {"", "[quality=" .. quality.name .. "] ", quality.localised_name}
+        table.insert(items, label)
+    end
+
+    parent_flow.add{type="drop-down", items=items, selected_index=selected_index,
+        style="fp_drop-down_slim", tags=tags}
 end
 
 return _gui

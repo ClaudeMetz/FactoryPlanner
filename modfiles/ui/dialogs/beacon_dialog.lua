@@ -12,55 +12,56 @@ local function refresh_defaults_frame(player)
     local equals_amount = (beacon_default.beacon_amount == beacon.amount)
 
     modal_elements.beacon_title.tooltip = beacon_tooltip
-    modal_elements.beacon_default.enabled = not equals_beacon
-    modal_elements.beacon_default.state = equals_beacon
-    modal_elements.beacon_default_amount.enabled = not equals_amount
-    modal_elements.beacon_default_amount.state = equals_amount
+    modal_elements.beacon.enabled = not equals_beacon
+    modal_elements.amount.enabled = not equals_amount
 end
 
-local function add_defaults_panel(parent_frame, player)
+local function add_defaults_frame(parent_frame, player)
     local modal_elements = util.globals.modal_elements(player)
 
-    local flow_default = parent_frame.add{type="flow", direction="vertical"}
-    flow_default.style.vertical_spacing = 4
-    flow_default.style.right_padding = 12
+    local frame_defaults = parent_frame.add{type="frame", direction="horizontal", style="fp_frame_bordered_stretch"}
+    frame_defaults.style.top_padding = 7
+    local flow_defaults = frame_defaults.add{type="flow", direction="horizontal"}
+    flow_defaults.style.vertical_align = "center"
+    modal_elements["defaults_flow"] = flow_defaults
 
-    local caption = {"fp.info_label", {"", {"fp.pu_beacon", 1}, " & ", {"fp.pu_module", 2}}}
-    local label_beacon = flow_default.add{type="label", caption=caption, style="caption_label"}
-    modal_elements["beacon_title"] = label_beacon
+    flow_defaults.add{type="label", caption={"fp.defaults"}, style="semibold_label"}
 
-    local checkbox_beacon = flow_default.add{type="checkbox", state=false,
-        caption={"fp.save_as_default"}, tooltip={"fp.save_as_default_beacon_tt"}}
-    modal_elements["beacon_default"] = checkbox_beacon
+    local info_caption = {"fp.info_label", {"", {"fp.pu_beacon", 1}, " & ", {"fp.pu_module", 2}}}
+    local label_info = modal_elements.defaults_flow.add{type="label", caption=info_caption, style="semibold_label"}
+    label_info.style.margin = {0, 8, 0, 24}
+    modal_elements["beacon_title"] = label_info
 
-    local checkbox_amount = flow_default.add{type="checkbox", state=false,
-        caption={"fp.save_beacon_amount"}, tooltip={"fp.save_beacon_amount_tt"}}
-    modal_elements["beacon_default_amount"] = checkbox_amount
+    local button_beacon = modal_elements.defaults_flow.add{type="sprite-button", sprite="fp_default",
+        tags={mod="fp", on_gui_click="set_beacon_default", action="beacon"},
+        tooltip={"fp.save_as_default_beacon"}, style="tool_button"}
+    modal_elements["beacon"] = button_beacon
 
-    local flow_submit = parent_frame.add{type="flow", direction="horizontal"}
-    flow_submit.style.top_margin = 12
-    flow_submit.add{type="empty-widget", style="flib_horizontal_pusher"}
-    local button_submit = flow_submit.add{type="button", caption={"fp.set_defaults"}, style="fp_button_green",
-        tags={mod="fp", on_gui_click="save_beacon_defaults"}, mouse_button_filter={"left"}}
-    button_submit.style.minimal_width = 0
+    local button_amount = modal_elements.defaults_flow.add{type="sprite-button", sprite="fp_amount",
+        tags={mod="fp", on_gui_click="set_beacon_default", action="amount"},
+        tooltip={"fp.save_beacon_amount"}, style="tool_button"}
+    modal_elements["amount"] = button_amount
 
     refresh_defaults_frame(player)
 end
 
-local function save_defaults(player)
-    local modal_elements = util.globals.modal_elements(player)
-    local beacon = util.globals.modal_data(player).object  --[[@as Beacon]]
+local function set_defaults(player, tags, _)
+    local beacon = util.globals.modal_data(player).object
 
-    local data = {
-        prototype = modal_elements.beacon_default.state and beacon.proto.name or nil,
-        quality = modal_elements.beacon_default.state and beacon.quality_proto.name or nil,
-        modules = modal_elements.beacon_default.state and beacon.module_set:compile_default() or nil,
-        beacon_amount = modal_elements.beacon_default_amount.state and beacon.amount or nil
-    }
-    defaults.set(player, "beacons", data, nil)
+    if tags.action == "beacon" then
+        local data = {
+            prototype = beacon.proto.name,
+            quality = beacon.quality_proto.name,
+            modules = beacon.module_set:compile_default(),
+        }
+        defaults.set(player, "beacons", data, nil)
+
+    elseif tags.action == "amount" then
+        local data = { beacon_amount = beacon.amount }
+        defaults.set(player, "beacons", data, nil)
+    end
 
     refresh_defaults_frame(player)
-    modal_dialog.toggle_foldout_panel(player)
 end
 
 
@@ -85,7 +86,7 @@ local function add_beacon_frame(parent_flow, modal_data)
     local beacon_amount = (beacon.amount ~= 0) and tostring(beacon.amount) or ""
     local amount_width = 40
     local textfield_amount = flow_beacon.add{type="textfield", text=beacon_amount,
-        tags={mod="fp", on_gui_text_changed="beacon_amount", on_gui_confirmed="submit_beacon",
+        tags={mod="fp", on_gui_text_changed="beacon_amount", on_gui_confirmed="confirm_beacon",
         width=amount_width}, tooltip={"fp.expression_textfield"}}
     textfield_amount.style.width = amount_width
     util.gui.select_all(textfield_amount)
@@ -99,7 +100,7 @@ local function add_beacon_frame(parent_flow, modal_data)
         style="semibold_label"}
     local total_width = 40
     local textfield_total = flow_beacon.add{type="textfield", text=tostring(beacon.total_amount or ""),
-        tags={mod="fp", on_gui_text_changed="beacon_total_amount", on_gui_confirmed="submit_beacon",
+        tags={mod="fp", on_gui_text_changed="beacon_total_amount", on_gui_confirmed="confirm_beacon",
         width=total_width}, tooltip={"fp.expression_textfield"}}
     textfield_total.style.width = total_width
     modal_elements["beacon_total"] = textfield_total
@@ -119,7 +120,7 @@ local function update_profile_label(modal_data)
 end
 
 local function update_dialog_submit_button(modal_data)
-    local beacon_amount = util.gui.parse_expression_field(modal_data.modal_elements.beacon_amount)
+    local beacon_amount = modal_data.object.amount
 
     local message = nil
     if not beacon_amount or beacon_amount == 0 then
@@ -168,12 +169,19 @@ local function handle_beacon_change(player, _, _)
     refresh_defaults_frame(player)
 end
 
-local function handle_amount_change(player, _, event)
+local function handle_amount_change(player, _, _)
     local modal_data = util.globals.modal_data(player)  --[[@as table]]
-    modal_data.object.amount = util.gui.parse_expression_field(modal_data.modal_elements.beacon_amount) or 0
+    local textfield = modal_data.modal_elements.beacon_amount
+
+    local expression = util.gui.parse_expression_field(textfield)
+    local invalid = (textfield.text ~= "" and (expression == nil or expression < 0 or expression % 1 ~= 0))
+
+    textfield.style = (invalid) and "invalid_value_textfield" or "textbox"
+    textfield.style.width = textfield.tags.width  --[[@as number]]  -- this is stupid but styles work out that way
+
+    modal_data.object.amount = (invalid) and 0 or (expression or 0)
     modal_data.module_set:normalize({effects=true})
 
-    util.gui.update_expression_field(event.element)
     update_profile_label(modal_data)
     module_configurator.refresh_modules_flow(player, false)
     refresh_defaults_frame(player)
@@ -218,11 +226,9 @@ local function open_beacon_dialog(player, modal_data)
     module_configurator.add_modules_flow(content_frame, modal_data)
     module_configurator.refresh_modules_flow(player, false)
 
-
     -- Defaults
-    local secondary_frame = modal_data.modal_elements.secondary_frame
     modal_data.defaults_refresher = "beacon_defaults_refresher"
-    add_defaults_panel(secondary_frame, player)
+    add_defaults_frame(content_frame, player)
 end
 
 local function close_beacon_dialog(player, action)
@@ -276,7 +282,7 @@ listeners.gui = {
         {
             name = "confirm_beacon",
             handler = (function(player, _, event)
-                local confirmed = util.gui.confirm_expression_field(event.element)
+                local confirmed = util.gui.confirm_expression_field(event.element, true)
                 if confirmed then util.raise.close_dialog(player, "submit") end
             end)
         }
@@ -290,8 +296,8 @@ listeners.gui = {
             end)
         },
         {
-            name = "save_beacon_defaults",
-            handler = save_defaults
+            name = "set_beacon_default",
+            handler = set_defaults
         }
     }
 }
@@ -304,7 +310,6 @@ listeners.dialog = {
         return {
             caption = {"", {"fp." .. "edit"}, " ", {"fp.pl_beacon", 1}},
             subheader_text = {("fp.beacon_dialog_description"), machine_name},
-            foldout_title = {"fp.defaults"},
             show_submit_button = true,
             show_delete_button = (line.beacon ~= nil),
             reset_handler_name = "reset_beacon"

@@ -154,24 +154,22 @@ function ModuleSet:trim()
     for _, module in pairs(modules_to_remove) do self:remove(module) end
 end
 
+
+local function module_comparator(a, b)
+    local a_module, b_module = a.proto.id, b.proto.id  -- IDs are ordered sensibly
+    local a_quality, b_quality = a.quality_proto.level, b.quality_proto.level
+    if a_module < b_module then return true
+    elseif a_module > b_module then return false
+    elseif a_quality < b_quality then return true
+    elseif a_quality > b_quality then return false end
+    return false
+end
+
 -- Sorts modules in a deterministic fashion so they are in the same order for every line
 function ModuleSet:sort()
-    local modules_by_name = {}
-    for module in self:iterator() do
-        modules_by_name[module.proto.name] = module
-    end
-
-    self.first = nil
-    for _, category in ipairs(storage.prototypes.modules) do
-        for _, module_proto in ipairs(category.members) do
-            local module = modules_by_name[module_proto.name]
-            if module then
-                module.previous, module.next = nil, nil
-                self:_insert(module)
-            end
-        end
-    end
+    self:_sort(module_comparator)
 end
+
 
 ---@return ModuleEffects
 function ModuleSet:get_effects()
@@ -191,21 +189,33 @@ function ModuleSet:check_compatibility(module_proto)
     if not self.parent:uses_effects() then
         return false
     else
-        local all_allowed_effects = {self.parent.proto.allowed_effects}
-        local recipe_allowed_effects = self.parent.parent.recipe_proto.allowed_effects
-        -- No allowed_effects means all effects are allowed in this case
-        if recipe_allowed_effects then table.insert(all_allowed_effects, recipe_allowed_effects) end
+        local compatible = true
+        local entity, recipe = self.parent.proto, self.parent.parent.recipe_proto
+        -- Any non-existing allowed list means all modules are allowed
 
-        for _, allowed_effects in pairs(all_allowed_effects) do
+        local function check_effect_compatibility(allowed_effects)
+            if allowed_effects == nil then return end
             for name, value in pairs(module_proto.effects) do
                 -- Effects only need to be in the allowed list if they are considered positive
                 if not allowed_effects[name] and util.effects.is_positive(name, value) then
-                    return false
+                    compatible = false
                 end
             end
         end
+        check_effect_compatibility(entity.allowed_effects)
+        check_effect_compatibility(recipe.allowed_effects)
+
+        local function check_category_compatibility(allowed_categories)
+            if allowed_categories == nil then return end
+            if not allowed_categories[module_proto.category] then
+                compatible = false
+            end
+        end
+        check_category_compatibility(entity.allowed_module_categories)
+        check_category_compatibility(recipe.allowed_module_categories)
+
+        return compatible
     end
-    return true
 end
 
 ---@return ItemPrototypeFilter[]
@@ -282,7 +292,7 @@ function ModuleSet:paste(module)
     end
 
     local desired_amount = math.min(module.amount, self.empty_slots)
-    local existing_module = self:find({proto=module.proto})
+    local existing_module = self:find({proto=module.proto, quality_proto=module.quality_proto})
     if existing_module then
         existing_module:set_amount(existing_module.amount + desired_amount)
     else
@@ -314,6 +324,7 @@ local function unpack(packed_self, parent)
     local unpacked_self = init(parent)
 
     unpacked_self.first = Object.unpack(packed_self.modules, Module.unpack, unpacked_self)  --[[@as Module]]
+    unpacked_self:count_modules()
 
     return unpacked_self
 end
@@ -323,13 +334,10 @@ end
 function ModuleSet:validate()
     self.valid = self:_validate()
 
-    if self.valid and self.parent.valid then
-        if not self.module_count or not self.empty_slots then  -- when validating an unpacked ModuleSet
-            self.module_limit = self.parent.proto.module_limit
-            self:count_modules()
-        end
+    -- Can't be valid with an invalid parent
+    self.valid = self.parent.valid and self.valid
 
-        -- .normalize doesn't remove incompatible modules here, the above validation already marks them
+    if self.valid then
         self:normalize({trim=true, sort=true, effects=true})
     end
 

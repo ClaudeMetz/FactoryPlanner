@@ -9,53 +9,256 @@ Date: 00. 00. 0000
     - 
 
 ---------------------------------------------------------------------------------------------------
-Version: 1.2.11
-Date: 03. 10. 2024
+Version: 2.0.24
+Date: 20. 06. 2025
+  Bugfixes:
+    - Fixed a crash when loading certain saves that use the matrix solver
 
 ---------------------------------------------------------------------------------------------------
-Version: 1.2.10
-Date: 01. 10. 2024
+Version: 2.0.23
+Date: 20. 06. 2025
+  Changes:
+    - Split up the rocket launch recipe into a launch and a rocket part recipe, fixing the issue of productivity being applied to the satellite cargo (#509)
+  Bugfixes:
+    - Fixed the issue that the matrix solver would sometimes return negative results (#127) (Thanks numberZero!)
+    - Fixed a crash when trying to put certain beacons into the cursor (#530)
+    - Fixed that some machines weren't shown as consuming fluid fuel (#511)
+    - Fixed that requesting missing machines for a factory via bots didn't set the amount correctly (#522) (Thanks marfenij!)
+    - Fixed that spoiling recipes weren't allowed on space platforms (#524)
+    - Fixed that pasting the same module with different quality would not work (#535)
+    - Fixed a migration issue when coming from a 1.1 save file
 
 ---------------------------------------------------------------------------------------------------
-Version: 1.2.9
-Date: 25. 09. 2024
+Version: 2.0.22
+Date: 17. 06. 2025
+  Features:
+    - Added the ability to collapse a district's items visually to save space (#516)
+  Bugfixes:
+    - Fixed some compatibility issues with mods adding more surface properties (#534)
+    - Fixed that beacons could be added to burner mining drills
 
 ---------------------------------------------------------------------------------------------------
-Version: 1.2.8
-Date: 20. 09. 2024
+Version: 2.0.21
+Date: 13. 06. 2025
+  Features:
+    - Added a universal District location, which accepts any recipe/machine regardless of surface restrictions (#501)
+    - Added support for picking a quality on preference pumps and wagons
+    - Added a quality indication to all machine, beacon, and module buttons (#375)
+  Changes:
+    - Bumped the required Factorio version to 2.0.49
+  Bugfixes:
+    - Fixed an issue where certain rocket launch recipes would not be detected properly
 
 ---------------------------------------------------------------------------------------------------
-Version: 1.2.7
-Date: 18. 09. 2024
+Version: 2.0.20
+Date: 06. 05. 2025
+  Features:
+    - Added support for opening recipes, items, and entities in Factoriopedia (#378)
+  Changes:
+    - Started filtering out internal recipes of the Transport Drones mod
+    - Bumped the required Factorio version to 2.0.44
 
 ---------------------------------------------------------------------------------------------------
-Version: 1.2.6
-Date: 16. 09. 2024
+Version: 2.0.19
+Date: 17. 03. 2025
+  Bugfixes:
+    - Fixed a crash when trying to put a beacon into the cursor (#490)
+    - Fixed a crash when trying to put a compact dialog top level ingredient into the cursor (#495)
+    - Fixed an issue where machines were not being shown when they should be (#456)
+    - Fixed an issue when trying to import a factory from Factorio 1.1 containing offshore pumps (#452)
+    - Fixed that copy/pasting machines with modules didn't verify their compatibility (#469)
 
 ---------------------------------------------------------------------------------------------------
-Version: 1.2.5
-Date: 14. 08. 2024
+Version: 2.0.18
+Date: 14. 03. 2025
+  Bugfixes:
+    - Fixed a crash when toggling the ingredient satisfaction preference while an invalid factory exists (#453)
+    - Fixed a crash when trying to put certain Pyanodon's machines into the cursor (#488)
+    - Fixed that some rocket silo recipes didn't take maximum productivity into account
+    - Fixed that Factory Planner would accidentally unpause the game when using remote view while in editor mode
+    - Fixed that only the last District would show tooltips on its items
+    - Fixed several UI inconsistencies
 
 ---------------------------------------------------------------------------------------------------
-Version: 1.2.4
-Date: 05. 08. 2024
+Version: 2.0.17
+Date: 23. 02. 2025
+  Bugfixes:
+    - Fixed a migration crash (#433)
+    - Fixed putting offshore pumps into the cursor would crash (#438)
+    - Fixed a crash when hovering a compact dialog ingredient while on a subfloor (#439)
+    - Fixed that machine base quality effects were ten times too high (#442)
+    - Fixed a crash on startup when using the Cerys mod (#458)
 
 ---------------------------------------------------------------------------------------------------
-Version: 1.2.3
-Date: 03. 08. 2024
+Version: 2.0.16
+Date: 26. 11. 2024
+  Bugfixes:
+    - Fixed a startup crash (#428)
+    - Fixed a migration issue with the previous release (#431)
 
 ---------------------------------------------------------------------------------------------------
-Version: 1.2.2
-Date: 30. 07. 2024
+Version: 2.0.15
+Date: 26. 11. 2024
+  Features:
+    - Added a toggle to view factory ingredients in the compact view (#180)
+    - The belt throughput display option now shows pump throughput for fluids (#411)
+  Changes:
+    - Several actions now close the District view when it's open, for more intuitive use of the UI (#379)
+    - Moved the 'fold out subfloors' preference to a toggle button in the main UI (#299)
+    - Machines/fuels/beacons are now guaranteed to have sensible, low-level defaults
+  Bugfixes:
+    - Fixed that copy/pasting a machine didn't bring along its fuel and modules (#424)
+    - Fixed a crash when trying to put an item into the cursor (#426)
+    - Fixed that catalysts weren't being shown in the compact dialog
 
 ---------------------------------------------------------------------------------------------------
-Version: 1.2.1
-Date: 20. 07. 2024
+Version: 2.0.14
+Date: 23. 11. 2024
+  Features:
+    - Added a preference to change the width of the compact dialog
+    - Added context menu actions to shift factory products left and right
+    - Added a context menu action on fuels to edit them
+  Changes:
+    - Putting simple machines into the cursor now makes them a ghost instead of a blueprint (#387)
+    - All item lists (like on recipes) are now sorted by item type and amount
+  Bugfixes:
+    - Fixed an issue where machines would not be migrated correctly when their category changed (#423)
+    - Fixed an issue where repairing machines didn't configure their fuel correctly (#423)
+    - Fixed that putting certain entities into the cursor wouldn't include its modules
+    - Fixed a migration crash when trying to load a save that had all factories deleted
+
+---------------------------------------------------------------------------------------------------
+Version: 2.0.13
+Date: 22. 11. 2024
+  Bugfixes:
+    - Fixed a crash when pasting a module (#417)
+    - Fixed a crash when trying to paste a line that uses fuel in certain modded situations
+
+---------------------------------------------------------------------------------------------------
+Version: 2.0.12
+Date: 20. 11. 2024
+  Bugfixes:
+    - Fixed a crash when trying to edit a machine that uses fuel (#412)
+    - Fixed a crash when entering a negative beacon amount (#415)
+    - Fixed a crash when trying to filter a fluid on an inserter
+    - Fixed a fuel migration issue, marking it as invalid when it wasn't
+
+---------------------------------------------------------------------------------------------------
+Version: 2.0.11
+Date: 19. 11. 2024
+  Features:
+    - Activating a 'Put into cursor' action on any item button while holding an inserter now whitelists that item
+  Bugfixes:
+    - Fixed various migration and repair issues (spicy!)
+
+---------------------------------------------------------------------------------------------------
+Version: 2.0.10
+Date: 17. 11. 2024
+  Bugfixes:
+    - Fixed that the beacon dialog can't be confirmed (#409)
+    - Fixed that hidden planets were still shown (#410)
+
+---------------------------------------------------------------------------------------------------
+Version: 2.0.9
+Date: 17. 11. 2024
+  Changes:
+    - Added a warning message when trying to use a recipe in an incompatible location (#393)
+  Bugfixes:
+    - Fixed that adding the same module, but of different quality would just drop one of them (#392)
+    - Fixed that pasting a machine onto another one could leave it in a broken state (#383)
+    - Fixed that pasting modules would not handle their quality correctly
+    - Fixed a crash when trying to open the utility dialog without an associated player character
+    - Fixed some modded beacons being over-permissive with what modules they support
+    - Fixed some modded machines not allowing beacons even though they should
+    - Fixed that Pyanodon's empty planter box recipe was detected as a barreling recipe (#406)
+
+---------------------------------------------------------------------------------------------------
+Version: 2.0.8
+Date: 15. 11. 2024
+  Features:
+    - Added copy and put-into-cursor actions to district items
+  Bugfixes:
+    - Fixed a crash in the solver code (#405)
+    - Fixed a crash when opening the utility dialog while in map view (#401)
+    - Fixed a crash when trying to import recipe productivity recipes without a selected factory (#404)
+    - Fixed a crash when trying to paste a recipe line on a subfloor (#403)
+
+---------------------------------------------------------------------------------------------------
+Version: 2.0.7
+Date: 14. 11. 2024
+  Bugfixes:
+    - Fixed a couple of crashes when repairing very broken factories (#216)
+    - Fixed that invalid modules weren't being filtered out properly (#320)
+    - Fixed a crash when trying to open the calculator dialog
+    - Fixed a crash when trying to copy/paste items
+    - Fixed that 0-ed items were still being shown on Districts
+    - Fixed beacon profiles not being applied correctly in all cases
+    - Fixed that putting items into a combinator would always add them as per second instead of per current timescale
+
+---------------------------------------------------------------------------------------------------
+Version: 2.0.6
+Date: 13. 11. 2024
+  Features:
+    - Redid the District items view, splitting them into products and ingredients only, and indicating where a surplus or deficit is present
+  Bugfixes:
+    - Fixed a couple of migration issues when migrating from 1.1
+
+---------------------------------------------------------------------------------------------------
+Version: 2.0.5
+Date: 12. 11. 2024
+  Bugfixes:
+    - Tried fixing a common crash related to multiplayer latency (#219)
+    - Fixed that satellite science recipes didn't include a satellite ingredient (#397)
+    - Fixed a crash when trying to confirm a decimal beacon amount by way of a mathematical expression
+    - Fixed a crash when changing to a machine that uses fluid fuels
+    - Fixed that items in inventory weren't detected in the utility dialog
+    - Fixed that the utility dialog machine and module section didn't take quality into account
+    - Fixed that the custom rocket recipes didn't consider rocket part recipe productivity
+    - Fixed an issue where copying fuels didn't properly check for compatibility
+    - Fixed a migration issue that erroniously marked fuel as invalid
+    - Fixed an issue where cancelling the machine dialog would reset fuel amounts
+
+---------------------------------------------------------------------------------------------------
+Version: 2.0.4
+Date: 28. 10. 2024
+  Bugfixes:
+    - Fixed a startup crash when using certain very powerful fuels
+    - Fixed an issue where certain fuel categories would be duplicated internally
+    - Fixed a crash when using mods to hide content until you've discovered it (#377)
+    - Fixed a crash in multiplayer when closing a modal dialog (#360)
+
+---------------------------------------------------------------------------------------------------
+Version: 2.0.3
+Date: 27. 10. 2024
+  Bugfixes:
+    - Fixed that manually setting a recipe productivity of 0 would not work (#364) (Thanks Dutch0903!)
+    - Fixed a crash when opening the districts view on a migrated save (#369)
+    - Fixed a crash when trying to reset a machine while the matrix solver is active (#374)
+    - Fixed a crash when setting a machine limit on recipes that don't calculate a machine amount (#354)
+    - Fixed an issue where deleting the last recipe on a subfloor would show recipes from the floor above (#368)
+    - Fixed a crash when opening the machine dialog for a machine that uses fluid fuels
+    - Fixed that entering a decimal beacon amount would crash
+    - Fixed a couple of migration-related crashes
+    - Fixed that compatible module detection would not always work properly
+
+---------------------------------------------------------------------------------------------------
+Version: 2.0.2
+Date: 22. 10. 2024
+  Changes:
+    - Changed the button in the top left corner to show again by default
+  Bugfixes:
+    - Fixed a crash caused by migration (#352)
+    - Fixed a crash after deleting a District that had trashed factories inside it (#353)
+    - Fixed a crash when trying to open the product picker with Pyanodon's active
+
+---------------------------------------------------------------------------------------------------
+Version: 2.0.1
+Date: 21. 10. 2024
   Features:
     - Updated the mod for Factorio 2.0 and the Space Age expansion. This means adoption to changes in existing systems and support for new systems, the most significant of which will be listed here. The mod will still work just fine without Space Age, with automatic adjustements to the interface.
     - This release is considered [Experimental]. While it was beta-tested with a small group for a few months, the many changes will have introduced some bugs and crashes. Please let me know about anything you encounter on Github.
     - Lastly: This update was a huge amount of effort over many months, and puts the mod in a much better place for the future. It's a big step forward, I hope you enjoy it, and thanks for the support so far!
-    - TODO districts, +surface conditions, +pollution
+    - Implemented Districts, which are a collection of factories, summing up their products and ingredients. They also allow for specification of a planet, which determines compatible machines and the relevant type of emissions.
     - Added the ability to set a quality level on machines, beacons, and modules
     - Added support for the new machines and recipes, like the agriculture tower and intentional spoiling
     - Added support for new module mechanics such as beacon profiles, machine base productivity, new productivity researches, maximum recipe productivity, and more
@@ -72,13 +275,15 @@ Date: 20. 07. 2024
     - Enabled proper configuration of default fuels for machines with multiple fuel categories (#83)
     - Changed the timescale setting to be global instead of per factory, while dropping the per hour option
     - Changed the utility dialog function to request missing item delivery to create a new logistic section instead of having construction bots fulfill the order
+    - Changed it so disabling the matrix solver doesn't remove byproduct recipes anymore, and instead disables them (#142)
+    - Tried addressing various crashes related to multiplayer latency (#291)
     - Dropped Recipe Book support in favor of Factoriopedia, the new built-in recipe browser
     - Dropped support for boiler recipes and specifying amounts by ingredients, for now
     - Dropped the tutorial dialog including the example factory, as context menus are a better introduction to the feature set
     - Fixed and improved various parts of the interface
-    - Updated the Factorio Library mod to 2.0.0
+    - Updated the Factorio Library dependency to 0.15.0
   Bugfixes:
-    -
+    - Fixed various bugs and crashes, both incidentally and on purpose
 
 ---------------------------------------------------------------------------------------------------
 Version: 1.1.79
@@ -295,7 +500,6 @@ Version: 1.1.60
 Date: 31. 12. 2022
   Changes:
     - Updated to the new flib translation library for faster translations, requiring a bump of the minimum flib version to 0.9.2 and a minimum Factorio version of 1.1.74
-    - Added Spanish localisation (Thanks MarXam!)
     - Filtered out dummy entities from the 'Ghost on Water' mod
   Bugfixes:
     - Fixed a crash when deleting the last subfactory in the list
@@ -436,7 +640,6 @@ Date: 24. 05. 2022
 Version: 1.1.47
 Date: 23. 05. 2022
   Changes:
-    - Updated Russian localisation (Thanks Astorin!)
     - The preference to hide crating recipes now also works for the 'Deadlock's Crating Machine' mod
 
 ---------------------------------------------------------------------------------------------------
