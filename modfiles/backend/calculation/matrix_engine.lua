@@ -382,13 +382,16 @@ function matrix_engine.run_matrix_solver(factory_data, check_linear_dependence)
             floor_aggregate.machine_count = floor_aggregate.machine_count +
                 math.ceil(line_aggregate.machine_count - 0.001)
 
+            -- add line_aggregate to floor_aggregate first to track fuel as ingredient higher up
             structures.aggregate.add_aggregate(line_aggregate, floor_aggregate)
 
-            -- remove fuel from Ingredient for display purposes only
-            -- do this after adding line_aggregate to floor_aggregate so floor tracks fuel as ingredient
+            -- remove fuel from Ingredient for display only
             if line_aggregate.fuel then
                 structures.aggregate.subtract(line_aggregate, "Ingredient", line_aggregate.fuel, line_aggregate.fuel_amount)
             end
+
+            -- need to call consolidate before set_line_result to net any non-fuel catalysts for display
+            matrix_engine.consolidate(line_aggregate)
 
             solver.set_line_result{
                 player_index = factory_data.player_index,
@@ -532,6 +535,7 @@ function matrix_engine.get_lines_metadata(lines, player_index)
             line_outputs = matrix_engine.union_sets(line_outputs, floor_metadata.line_outputs)
         else
             local line_aggregate = matrix_engine.get_line_aggregate(line, player_index, 1, 1)
+            matrix_engine.consolidate(line_aggregate)
             for item_type_name, item_data in pairs(line_aggregate.Ingredient) do
                 for item_name, _ in pairs(item_data) do
                     local item_key = matrix_engine.get_item_key(item_type_name, item_name)
@@ -591,6 +595,7 @@ function matrix_engine.get_matrix(factory_data, rows, columns)
             -- use amounts for 1 building as matrix entries
             local line_aggregate = matrix_engine.get_line_aggregate(line, factory_data.player_index,
                 floor.id, 1)
+            matrix_engine.consolidate(line_aggregate)
 
             for item_type_name, items in pairs(line_aggregate.Product) do
                 for item_name, amount in pairs(items) do
@@ -685,8 +690,6 @@ function matrix_engine.get_line_aggregate(line_data, player_index, floor_id, mac
 
     line_aggregate.energy_consumption = energy_consumption
     line_aggregate.emissions = emissions
-
-    matrix_engine.consolidate(line_aggregate)
 
     -- needed for interface.set_line_result
     line_aggregate.fuel = fuel
