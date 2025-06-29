@@ -4,10 +4,19 @@ local structures = require("backend.calculation.structures")
 local sequential_engine = {}
 
 -- ** LOCAL UTIL **
-local function update_line(line_data, aggregate)
+local function update_line(line_data, aggregate, looped_fuel)
     local recipe_proto = line_data.recipe_proto
     local machine_proto = line_data.machine_proto
     local total_effects = line_data.total_effects
+
+    -- Prepare if this line produces its own fuel
+    local fuel_proto, original_aggregate = line_data.fuel_proto, nil
+    if looped_fuel == nil and fuel_proto ~= nil then  -- don't loop if this is already the loop
+        if structures.class.find(aggregate.Ingredient, fuel_proto) ~= nil then
+            original_aggregate = aggregate
+            aggregate = ftable.deep_copy(aggregate)
+        end
+    end
 
     -- Determine relevant products
     local relevant_products, byproducts = {}, {}
@@ -114,7 +123,6 @@ local function update_line(line_data, aggregate)
 
 
     -- Determine energy consumption (including potential fuel needs) and emissions
-    local fuel_proto = line_data.fuel_proto
     local energy_consumption, emissions = solver_util.determine_energy_consumption_and_emissions(
         machine_proto, recipe_proto, fuel_proto, machine_count, total_effects, line_data.pollutant_type)
 
@@ -123,8 +131,23 @@ local function update_line(line_data, aggregate)
         fuel_amount = solver_util.determine_fuel_amount(energy_consumption, machine_proto.burner,
             fuel_proto.fuel_value)
 
+        if original_aggregate ~= nil then  -- meaning this line produces its own fuel
+            local fuel_ingredient = structures.class.find(original_aggregate.Ingredient, fuel_proto)
+            local initial_demand = fuel_ingredient.amount
+            local ratio = fuel_amount / initial_demand
+            -- Need a lot of precision here, hence the exponent of 20
+            local bumped_demand = initial_demand * ((1 - ratio ^ 20) / (1 - ratio))
+            fuel_ingredient.amount = bumped_demand
+
+            -- Run line with fuel amount bumped to account for own consumption
+            update_line(line_data, original_aggregate, bumped_demand - initial_demand)
+            return
+        end
+
         local fuel_class = structures.class.init()
-        local fuel = {type=fuel_proto.type, name=fuel_proto.name, amount=fuel_amount}
+        -- Removed looped fuel from main aggregate as its used right away
+        local corrected_amount = fuel_amount - (looped_fuel or 0)
+        local fuel = {type=fuel_proto.type, name=fuel_proto.name, amount=corrected_amount}
         structures.class.add(fuel_class, fuel)
 
         -- Add fuel to the aggregate, consuming this line's byproducts first, if possible
@@ -213,7 +236,7 @@ local function update_floor(floor_data, aggregate)
             }
         else
             -- Update aggregate according to the current line, which also adjusts the respective line object
-            update_line(line_data, aggregate)  -- updates aggregate
+            update_line(line_data, aggregate, nil)  -- updates aggregate
         end
     end
 
