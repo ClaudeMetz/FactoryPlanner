@@ -372,7 +372,7 @@ function matrix_engine.run_matrix_solver(factory_data, check_linear_dependence)
                     machine_count = 0
                 end
                 line_aggregate = matrix_engine.get_line_aggregate(line, factory_data.player_index, floor.id,
-                    machine_count, false, factory_metadata, free_variables)
+                    machine_count, factory_metadata, free_variables)
             else
                 line_aggregate = set_line_results(prefix.."_"..i, line.subfloor)
                 matrix_engine.consolidate(line_aggregate)
@@ -383,6 +383,12 @@ function matrix_engine.run_matrix_solver(factory_data, check_linear_dependence)
                 math.ceil(line_aggregate.machine_count - 0.001)
 
             structures.aggregate.add_aggregate(line_aggregate, floor_aggregate)
+
+            -- remove fuel from Ingredient for display purposes only
+            -- do this after adding line_aggregate to floor_aggregate so floor tracks fuel as ingredient
+            if line_aggregate.fuel then
+                structures.aggregate.subtract(line_aggregate, "Ingredient", line_aggregate.fuel, line_aggregate.fuel_amount)
+            end
 
             solver.set_line_result{
                 player_index = factory_data.player_index,
@@ -525,7 +531,7 @@ function matrix_engine.get_lines_metadata(lines, player_index)
             line_inputs = matrix_engine.union_sets(line_inputs, floor_metadata.line_inputs)
             line_outputs = matrix_engine.union_sets(line_outputs, floor_metadata.line_outputs)
         else
-            local line_aggregate = matrix_engine.get_line_aggregate(line, player_index, 1, 1, true)
+            local line_aggregate = matrix_engine.get_line_aggregate(line, player_index, 1, 1)
             for item_type_name, item_data in pairs(line_aggregate.Ingredient) do
                 for item_name, _ in pairs(item_data) do
                     local item_key = matrix_engine.get_item_key(item_type_name, item_name)
@@ -584,7 +590,7 @@ function matrix_engine.get_matrix(factory_data, rows, columns)
 
             -- use amounts for 1 building as matrix entries
             local line_aggregate = matrix_engine.get_line_aggregate(line, factory_data.player_index,
-                floor.id, 1, true)
+                floor.id, 1)
 
             for item_type_name, items in pairs(line_aggregate.Product) do
                 for item_name, amount in pairs(items) do
@@ -619,7 +625,7 @@ function matrix_engine.get_matrix(factory_data, rows, columns)
     return matrix
 end
 
-function matrix_engine.get_line_aggregate(line_data, player_index, floor_id, machine_count, include_fuel_ingredient, factory_metadata, free_variables)
+function matrix_engine.get_line_aggregate(line_data, player_index, floor_id, machine_count, factory_metadata, free_variables)
     local line_aggregate = structures.aggregate.init(player_index, floor_id)
     line_aggregate.machine_count = machine_count
     -- the index in the factory_data.top_floor.lines table can be different from the line_id!
@@ -654,14 +660,18 @@ function matrix_engine.get_line_aggregate(line_data, player_index, floor_id, mac
         line_data.machine_proto, line_data.recipe_proto, line_data.fuel_proto, machine_count, line_data.total_effects,
         line_data.pollutant_type)
 
+    local fuel = nil
     local fuel_amount = nil
     if fuel_proto ~= nil then  -- Seeing a fuel_proto here means it needs to be re-calculated
         fuel_amount = solver_util.determine_fuel_amount(energy_consumption, line_data.machine_proto.burner,
             line_data.fuel_proto.fuel_value)
 
-        if include_fuel_ingredient then
-            local fuel = {type=fuel_proto.type, name=fuel_proto.name, amount=fuel_amount}
+        fuel = {type=fuel_proto.type, name=fuel_proto.name, amount=fuel_amount}
             structures.aggregate.add(line_aggregate, "Ingredient", fuel, fuel_amount)
+
+        if fuel_proto.burnt_result then
+            local burnt = {type="item", name=fuel_proto.burnt_result, amount=fuel_amount}
+            structures.aggregate.add(line_aggregate, "Byproduct", burnt, fuel_amount)
         end
 
         energy_consumption = 0  -- set electrical consumption to 0 when fuel is used
@@ -679,6 +689,7 @@ function matrix_engine.get_line_aggregate(line_data, player_index, floor_id, mac
     matrix_engine.consolidate(line_aggregate)
 
     -- needed for interface.set_line_result
+    line_aggregate.fuel = fuel
     line_aggregate.fuel_amount = fuel_amount
 
     return line_aggregate
