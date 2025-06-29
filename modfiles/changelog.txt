@@ -2,11 +2,12 @@
 Version: 0.00.00
 Date: 00. 00. 0000
   Features:
-    - 
+    -
   Changes:
-    - 
+    -
   Bugfixes:
-    - 
+    - Fixed that the matrix solver didn't support fuel's burnt results (#348) (Thanks scottmsul!)
+    - Fixed that machine fuel wouldn't show as a top level ingredient when using the matrix solver (Thanks scottmsul!)
 
 ---------------------------------------------------------------------------------------------------
 Version: 2.0.24
@@ -596,7 +597,7 @@ Date: 16. 07. 2022
     - Changed the key combo for putting machines/beacons into the cursor in the main interface to Alt+Left-click to avoid accidental activation. issues.
     - Marking recipes as done in the compact subfactory view now grays them out
     - Duplicating a subfactory now inserts it right below the cloned subfactory instead of at the end
-    - Improved performance of opening dialogs (thanks curiosity!)
+    - Improved performance of opening dialogs (Thanks curiosity!)
     - Improved the wording around the utility dialog component buttons
   Bugfixes:
     - Fixed an issue where pasting onto a module could make it exceed the total module capacity of the machine
@@ -776,9 +777,9 @@ Date: 22. 12. 2021
 Version: 1.1.30
 Date: 09. 12. 2021
   Features:
-    - Added the ability to specify an exact amount for top level ingredients, which adjusts the configured products accordingly. This is a band-aid way of enabling calculations by input rather than output. (thanks curiosity!)
+    - Added the ability to specify an exact amount for top level ingredients, which adjusts the configured products accordingly. This is a band-aid way of enabling calculations by input rather than output. (Thanks curiosity!)
   Changes:
-    - Improved matrix solver algorithm to provide more stable results (thanks scottmsul!)
+    - Improved matrix solver algorithm to provide more stable results (Thanks scottmsul!)
 
 ---------------------------------------------------------------------------------------------------
 Version: 1.1.29
@@ -811,7 +812,7 @@ Date: 24. 10. 2021
 Version: 1.1.26
 Date: 17. 10. 2021
   Changes:
-    - Improved performance of the matrix solver determining valid free items (thanks RSBat!)
+    - Improved performance of the matrix solver determining valid free items (Thanks RSBat!)
   Bugfixes:
     - Fixed a persistent crash on save load with the Nullius mod, sorry about that one
     - Fixed that certain machines, fuels, belts and train wagons that should be hidden were shown
@@ -823,7 +824,7 @@ Date: 17. 10. 2021
 Version: 1.1.25
 Date: 25. 08. 2021
   Changes:
-    - Added better support for the Satisfactorio mod (thanks PFQNiet!)
+    - Added better support for the Satisfactorio mod (Thanks PFQNiet!)
   Bugfixes:
     - Fixed a crash with temporarily archived subfactories being deleted
 
@@ -966,7 +967,7 @@ Date: 23. 12. 2020
   Features:
     - Subfactories you delete will now remain in the archive for 15 minutes in case you change your mind about deleting them
     - Added a tooltip to invalid subfactories listing the modset changes that could have lead to it becoming invalid
-    - You can now alt-click the recipe line toggle switch (which is an optional column in preferences) to toggle all the other recipe lines, meaning all the ones you did not click on (thanks METAKOT!)
+    - You can now alt-click the recipe line toggle switch (which is an optional column in preferences) to toggle all the other recipe lines, meaning all the ones you did not click on (Thanks METAKOT!)
   Bugfixes:
     - Fixed that when in the items/s/machine-view, the values shown were totally wrong
     - Fixed that you could enable/disable the matrix solver while a subfactory is in archive
@@ -1045,7 +1046,7 @@ Date: 11. 12. 2020
     - You can now also alt-click a machine when changing it to implicitly set it to the preferred one for its category
   Changes:
     - The calculation model now considers the base energy drain that most electrical machines have
-    - The calculation model now also takes the different launch sequence times for modded rocket silos into account (thanks curiosity!)
+    - The calculation model now also takes the different launch sequence times for modded rocket silos into account (Thanks curiosity!)
     - Setting recipe item amounts directly now behaves more intuitively
     - Hitting the 'E' keyboard shortcut now confirms the dialog that is open if possible, mirroring the vanilla behavior introduced with 1.1
     - The tutorial subfactory can now be imported in a wider range of modded situations (as long as it is compatible)
@@ -1111,7 +1112,7 @@ Date: 09. 10. 2020
 Version: 1.0.10
 Date: 05. 10. 2020
   Features:
-    - Added a secondary default module that will try to insert itself if the primary one is not compatible with the new machine/recipe (thanks scottmsul!)
+    - Added a secondary default module that will try to insert itself if the primary one is not compatible with the new machine/recipe (Thanks scottmsul!)
 
 ---------------------------------------------------------------------------------------------------
 Version: 1.0.9
@@ -1138,7 +1139,7 @@ Date: 07. 09. 2020
     - Fixed some rare crashes that could occur after saving/loading while a modal dialog is open
     - Fixed that having signal-type icons on your subfactories could lead to crashes
     - Fixed that you couldn't remove subfactory icons
-    - Fixed that heavily beaconed machine amounts were not calculated accurately (thanks talshorer!)
+    - Fixed that heavily beaconed machine amounts were not calculated accurately (Thanks talshorer!)
 
 ---------------------------------------------------------------------------------------------------
 Version: 1.0.5
