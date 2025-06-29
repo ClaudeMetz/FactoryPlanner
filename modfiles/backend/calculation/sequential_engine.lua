@@ -260,6 +260,13 @@ function sequential_engine.update_factory(factory_data)
 
     update_floor(factory_data.top_floor, aggregate)  -- updates aggregate
 
+    -- Remove any top level items that are still ingredients, meaning unproduced
+    for _, product in pairs(factory_data.top_level_products) do
+        if structures.class.find(aggregate.Ingredient, product) then
+            structures.class.subtract(aggregate.Ingredient, product)
+        end
+    end
+
     -- Fuels are combined with ingredients for top-level purposes
     solver.set_factory_result {
         player_index = factory_data.player_index,
