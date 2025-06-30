@@ -1,12 +1,13 @@
 local Line = require("backend.data.Line")
 
 -- ** LOCAL UTIL **
-local function check_temperature(recipe, modal_data)
+local function check_temperature(recipe, product_name, fluid_data)
     local compatible = true
     for _, product in pairs(recipe.products) do
-        if product.temperature then
-            if (modal_data.min_temp and product.temperature < modal_data.min_temp)
-                    or (modal_data.max_temp and product.temperature > modal_data.max_temp) then
+        local name = string.gsub(product.name, "%-+[0-9]+$", "")
+        if name == product_name and product.temperature then
+            if (fluid_data.min_temp and product.temperature < fluid_data.min_temp)
+                    or (fluid_data.max_temp and product.temperature > fluid_data.max_temp) then
                 compatible = false; break
             end
         end
@@ -24,12 +25,15 @@ local function run_preliminary_checks(player, modal_data)
     local user_disabled_recipe = false
     local counts = {disabled = 0, hidden = 0, disabled_hidden = 0}
 
-    local map = RECIPE_MAPS[modal_data.production_type][modal_data.category_id][modal_data.product_id]
+    local proto = prototyper.util.find("items", modal_data.product_id, modal_data.category_id)
+    local plain_proto = prototyper.util.find("items", string.gsub(proto.name, "%-+[0-9]+$", ""), proto.category_id)
+
+    local map = RECIPE_MAPS[modal_data.production_type][plain_proto.category_id][plain_proto.id]
     if map ~= nil then  -- this being nil means that the item has no recipes
         for recipe_id, _ in pairs(map) do
             local recipe = prototyper.util.find("recipes", recipe_id, nil)  --[[@as FPRecipePrototype]]
 
-            if check_temperature(recipe, modal_data) then
+            if check_temperature(recipe, plain_proto.name, modal_data.fluid_data) then
                 local force_recipe = force_recipes[recipe.name]
 
                 if recipe.custom then  -- Add custom recipes by default

@@ -247,7 +247,7 @@ local function handle_item_click(player, tags, action)
         local fluid_data = (item.proto.type == "fluid") and line.recipe_proto.fluid_ingredients[item.proto.name] or {}
         util.raise.open_dialog(player, {dialog="recipe", modal_data={add_after_line_id=add_after_line_id,
             production_type=production_type, category_id=item.proto.category_id, product_id=item.proto.id,
-            min_temp=fluid_data.minimum_temperature, max_temp=fluid_data.maximum_temperature}})
+            fluid_data=fluid_data}})
 
     elseif action == "copy" then
         if item.proto.type == "entity" then return end
@@ -276,7 +276,6 @@ local function handle_fuel_click(player, tags, action)
         local proto = prototyper.util.find("items", fuel.proto.name, fuel.proto.type)
         util.raise.open_dialog(player, {dialog="recipe", modal_data={add_after_line_id=add_after_line_id,
             production_type="produce", category_id=proto.category_id, product_id=proto.id}})
-            -- Fluid fuels don't care about temperature, at least not for now
 
     elseif action == "edit" then
         util.raise.open_dialog(player, {dialog="machine", modal_data={machine_id=line.machine.id}})

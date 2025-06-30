@@ -144,14 +144,11 @@ local function handle_item_button_click(player, tags, action)
             util.messages.raise(player, "error", message, 1)
         else
             local production_type = (tags.item_category == "byproduct") and "consume" or "produce"
-            local min_temp, max_temp, proto = nil, nil, item.proto
-            if proto.type == "fluid" and proto.temperature then
-                min_temp, max_temp = proto.temperature, proto.temperature
-                proto = prototyper.util.find("items", string.gsub(proto.name, "%-+[0-9]+$", ""), "fluid")
-            end
+            local fluid_data = (item.proto.type == "fluid" and item.proto.temperature) and
+                {min_temp=item.proto.temperature, max_temp=item.proto.temperature} or {}
 
             util.raise.open_dialog(player, {dialog="recipe", modal_data={production_type=production_type,
-                category_id=proto.category_id, product_id=proto.id, min_temp=min_temp, max_temp=max_temp}})
+                category_id=item.proto.category_id, product_id=item.proto.id, fluid_data=fluid_data}})
         end
 
     elseif action == "edit" then

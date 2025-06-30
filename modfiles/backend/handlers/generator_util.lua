@@ -122,8 +122,8 @@ function generator_util.format_recipe(recipe_proto, products, main_product, ingr
 
             -- For easy access without needing to iterate ingredients
             recipe_proto.fluid_ingredients[base_ingredient.name] = {
-                minimum_temperature = min_temp,
-                maximum_temperature = max_temp,
+                min_temp = min_temp,
+                max_temp = max_temp,
                 annotation = annotation
             }
         end
