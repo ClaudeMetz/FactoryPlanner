@@ -1,18 +1,6 @@
 local Product = require("backend.data.Product")
 
 -- ** LOCAL UTIL **
-local function add_recipe(player, item_category, item_proto)
-    local floor = util.context.get(player, "Floor")  --[[@as Floor]]
-    if floor.level > 1 then
-        local message = {"fp.error_recipe_wrong_floor", {"fp.pu_" .. item_category, 1}}
-        util.messages.raise(player, "error", message, 1)
-    else
-        local production_type = (item_category == "byproduct") and "consume" or "produce"
-        util.raise.open_dialog(player, {dialog="recipe", modal_data={production_type=production_type,
-            category_id=item_proto.category_id, product_id=item_proto.id}})
-    end
-end
-
 local function build_item_box(player, category, column_count)
     local item_boxes_elements = util.globals.main_elements(player).item_boxes
 
@@ -82,6 +70,8 @@ local function refresh_item_box(player, factory, show_floor_items, item_category
             if percentage_string == "0" then style = "flib_slot_button_red"
             elseif percentage_string == "100" then style = "flib_slot_button_green"
             else style = "flib_slot_button_yellow" end
+        elseif item.proto.type == "entity" then
+            style = "flib_slot_button_transparent"
         end
 
         local name_line = {"fp.tt_title", item.proto.localised_name}
@@ -148,7 +138,15 @@ local function handle_item_button_click(player, tags, action)
     end
 
     if action == "add_recipe" then
-        add_recipe(player, tags.item_category, item.proto)
+        local floor = util.context.get(player, "Floor")  --[[@as Floor]]
+        if floor.level > 1 then
+            local message = {"fp.error_recipe_wrong_floor", {"fp.pu_" .. tags.item_category, 1}}
+            util.messages.raise(player, "error", message, 1)
+        else
+            local production_type = (tags.item_category == "byproduct") and "consume" or "produce"
+            util.raise.open_dialog(player, {dialog="recipe", modal_data={production_type=production_type,
+                category_id=item.proto.category_id, product_id=item.proto.id}})
+        end
 
     elseif action == "edit" then
         util.raise.open_dialog(player, {dialog="picker",

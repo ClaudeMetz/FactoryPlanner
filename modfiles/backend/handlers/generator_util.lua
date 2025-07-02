@@ -50,7 +50,7 @@ local function combine_identical_products(item_list)
                 touched_item.proddable_amount = touched_item.proddable_amount + item.proddable_amount
             end
 
-            -- Using the table.remove function to preserve array-format
+            -- Using the table.remove function to preserve array formatting
             table.remove(item_list, index)
         else
             touched_items[item.type][item.name] = item
