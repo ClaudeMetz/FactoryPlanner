@@ -446,8 +446,8 @@ function generator.recipes.generate()
                 allowed_effects = proto.allowed_effects or {},
                 maximum_productivity = proto.maximum_productivity,
                 allowed_module_categories = proto.allowed_module_categories,
-                type_counts = {},  -- filled out by format_* below
-                catalysts = {products={}, ingredients={}},  -- filled out by format_* below
+                type_counts = {},  -- filled out by format_recipe below
+                catalysts = {products={}, ingredients={}},  -- filled out by format_recipe below
                 surface_conditions = proto.surface_conditions,
                 recycling = generator_util.is_recycling_recipe(proto),
                 barreling = generator_util.is_compacting_recipe(proto),
@@ -517,7 +517,8 @@ function generator.recipes.generate()
                 recipe.category = "offshore-pump-" .. fluid.name
                 recipe.energy = 1
 
-                local products = {{type="fluid", name=fluid.name, amount=60}}
+                local products = {{type="fluid", name=fluid.name, amount=60,
+                    temperature=fluid.default_temperature}}
                 generator_util.format_recipe(recipe, products, products[1], {})
                 insert_prototype(recipes, recipe, nil)
             end
@@ -633,17 +634,19 @@ function generator.recipes.generate()
     local pumped_fluids = {}
     for _, proto in pairs(prototypes.tile) do
         if proto.fluid and not pumped_fluids[proto.fluid.name] and not proto.hidden then
-            pumped_fluids[proto.fluid.name] = true
+            local fluid = proto.fluid  ---@cast fluid -nil
+            pumped_fluids[fluid.name] = true
 
             local recipe = custom_recipe()
-            recipe.name = "impostor-" .. proto.fluid.name .. "-" .. proto.name
-            recipe.localised_name = {"", proto.fluid.localised_name, " ", {"fp.pumping_recipe"}}
-            recipe.sprite = "fluid/" .. proto.fluid.name
+            recipe.name = "impostor-" .. fluid.name .. "-" .. proto.name
+            recipe.localised_name = {"", fluid.localised_name, " ", {"fp.pumping_recipe"}}
+            recipe.sprite = "fluid/" .. fluid.name
             recipe.order = proto.order
             recipe.category = "offshore-pump"
             recipe.energy = 1
 
-            local products = {{type="fluid", name=proto.fluid.name, amount=60}}
+            local products = {{type="fluid", name=fluid.name, amount=60,
+                temperature=fluid.default_temperature}}
             local ingredients = {{type="entity", name="custom-" .. proto.name, amount=60}}
             generator_util.format_recipe(recipe, products, products[1], ingredients)
 
