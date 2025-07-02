@@ -280,12 +280,8 @@ function solver.generate_factory_data(player, factory)
     }
 
     for product in factory:iterator() do
-        local product_data = {
-            name = product.proto.name,
-            type = product.proto.type,
-            amount = product:get_required_amount()
-        }
-        table.insert(factory_data.top_level_products, product_data)
+        local solver_product = structures.as_solver_item(product.proto, product:get_required_amount())
+        table.insert(factory_data.top_level_products, solver_product)
     end
 
     return factory_data
@@ -301,10 +297,53 @@ function solver.set_factory_result(result)
     factory.top_floor.emissions = result.emissions
     factory.matrix_free_items = result.matrix_free_items
 
-    for product in factory:iterator() do
-        local result_product = structures.class.find(result.Product, product.proto)
-        product.amount = (result_product) and result_product.amount or 0
+    -- NOTE this code is just the worst thing ever, I hate everything
+    for _, result_product in pairs(structures.class.list(result.Product)) do
+        for product in factory:iterator() do  -- this double loop is ass but I don't care anymore
+            if structures.class.find(result.Product, result_product) ~= nil then  -- stupid check for deleted stuff
+                product.amount = 0
+                local name = string.gsub(product.proto.name, "%-+[0-9]+$", "")
+                if result_product.name == name and result_product.type == product.proto.type then
+                    if not product.proto.temperature or product.proto.temperature == result_product.minimum_temperature then
+                        local required_amount = product:get_required_amount()
+                        local produced_amount = 0
+
+                        -- Overproduction is added as byproducts by the solver, so we can ignore that case
+                        local used_amount = math.min(required_amount, result_product.amount)
+                        produced_amount = produced_amount + used_amount
+                        structures.class.subtract(result.Product, result_product, used_amount)
+
+                        if required_amount - produced_amount < MAGIC_NUMBERS.margin_of_error then
+                            product.amount = produced_amount; break
+                        end
+                    end
+                end
+            end
+        end
     end
+
+    --[[ for product in factory:iterator() do
+        local solver_product = structures.as_solver_item(product.proto, product:get_required_amount())
+        local matches = structures.class.match(result.Product, solver_product)
+
+        if next(matches) == nil then
+            product.amount = 0
+        else
+            local required_amount = product:get_required_amount()
+            local produced_amount = 0
+
+            for _, match in pairs(matches) do
+                -- Overproduction is added as byproducts by the solver, so we can ignore that case
+                local used_amount = math.min(required_amount, match.amount)
+                produced_amount = produced_amount + used_amount
+                structures.class.subtract(result.Product, match, used_amount)
+
+                if required_amount - produced_amount < MAGIC_NUMBERS.margin_of_error then
+                    product.amount = produced_amount; break
+                end
+            end
+        end
+    end ]]
 
     update_object_items(factory.top_floor, "byproducts", result.Byproduct)
     update_object_items(factory.top_floor, "ingredients", result.Ingredient)

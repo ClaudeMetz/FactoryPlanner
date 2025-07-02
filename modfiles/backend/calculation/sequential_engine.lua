@@ -12,7 +12,7 @@ local function update_line(line_data, aggregate, looped_fuel)
     -- Prepare if this line produces its own fuel
     local fuel_proto, original_aggregate = line_data.fuel_proto, nil
     if looped_fuel == nil and fuel_proto ~= nil then  -- don't loop if this is already the loop
-        if structures.class.find(aggregate.Ingredient, fuel_proto) ~= nil then
+        if structures.class.find(aggregate.Ingredient, fuel_proto) ~= nil then  -- TODO temp needed?
             original_aggregate = aggregate
             aggregate = ftable.deep_copy(aggregate)
         end
@@ -21,9 +21,14 @@ local function update_line(line_data, aggregate, looped_fuel)
     -- Determine relevant products
     local relevant_products, byproducts = {}, {}
     for _, product in pairs(recipe_proto.products) do
-        local ingredient = structures.class.find(aggregate.Ingredient, product)
-        if ingredient then relevant_products[product] = ingredient.amount
-        else table.insert(byproducts, product) end
+        local items = structures.class.match(aggregate.Ingredient, product)
+        if #items == 0 then
+            table.insert(byproducts, product)
+        else
+            local total_amount = 0
+            for _, item in pairs(items) do total_amount = total_amount + item.amount end
+            relevant_products[product] = total_amount
+        end
     end
 
     local production_ratio = 0
@@ -70,8 +75,8 @@ local function update_line(line_data, aggregate, looped_fuel)
 
     -- Determines the amount of the given item, considering productivity
     local function determine_amount_with_productivity(item)
-        local prodded_amount = solver_util.determine_prodded_amount(item,
-            total_effects, recipe_proto.maximum_productivity)
+        local prodded_amount = solver_util.determine_prodded_amount(
+            item, total_effects, recipe_proto.maximum_productivity)
         return prodded_amount * production_ratio
     end
 
@@ -97,7 +102,12 @@ local function update_line(line_data, aggregate, looped_fuel)
         end
 
         structures.class.add(Product, product, product_amount)
-        structures.class.subtract(aggregate.Ingredient, product, product_amount)
+        structures.class.match_subtract(aggregate.Ingredient, product, product_amount)
+
+        local desired_match = structures.class.match(aggregate.desired_products, product)
+        if desired_match then
+            structures.class.add(aggregate.Product, structures.as_solver_item(product), product_amount)
+        end
     end
 
     -- Determine ingredients
@@ -132,6 +142,7 @@ local function update_line(line_data, aggregate, looped_fuel)
             fuel_proto.fuel_value)
 
         if original_aggregate ~= nil then  -- meaning this line produces its own fuel
+            -- Fuel doesn't care about temperature currently, so a simple class.find is fine
             local fuel_ingredient = structures.class.find(original_aggregate.Ingredient, fuel_proto)
             local initial_demand = fuel_ingredient.amount
             local ratio = fuel_amount / initial_demand
@@ -144,14 +155,11 @@ local function update_line(line_data, aggregate, looped_fuel)
             return
         end
 
-        local fuel_class = structures.class.init()
         -- Removed looped fuel from main aggregate as its used right away
         local corrected_amount = fuel_amount - (looped_fuel or 0)
-        local fuel = {type=fuel_proto.type, name=fuel_proto.name, amount=corrected_amount}
-        structures.class.add(fuel_class, fuel)
-
-        -- Add fuel to the aggregate, consuming this line's byproducts first, if possible
-        structures.class.balance_items(fuel_class, aggregate.Byproduct, aggregate.Ingredient)
+        local fuel_item = {type=fuel_proto.type, name=fuel_proto.name, amount=corrected_amount}
+        structures.class.add(aggregate.Ingredient, fuel_item)  -- add to floor
+        -- Fuel is set via a special amount variable on the line itself
 
         if fuel_proto.burnt_result then
             local burnt = {type="item", name=fuel_proto.burnt_result, amount=fuel_amount}
@@ -190,7 +198,9 @@ end
 
 
 local function update_floor(floor_data, aggregate)
-    local desired_products = structures.class.list(aggregate.Ingredient, true)
+    for _, product in pairs(structures.class.list(aggregate.desired_products)) do
+        structures.class.add(aggregate.Ingredient, product)
+    end
 
     for _, line_data in ipairs(floor_data.lines) do
         local subfloor = line_data.subfloor
@@ -198,14 +208,15 @@ local function update_floor(floor_data, aggregate)
             -- Determine the products that are relevant for this subfloor
             local subfloor_aggregate = structures.aggregate.init(aggregate.player_index, subfloor.id)
             for _, product in pairs(line_data.recipe_proto.products) do
-                local ingredient = structures.class.find(aggregate.Ingredient, product)
-                if ingredient then structures.class.add(subfloor_aggregate.Ingredient, ingredient) end
+                local ingredient = structures.class.find(aggregate.desired_products, product)
+                if ingredient then structures.class.add(subfloor_aggregate.desired_products, ingredient) end
             end
 
-            local floor_products = structures.class.list(subfloor_aggregate.Ingredient, true)
             update_floor(subfloor, subfloor_aggregate)  -- updates aggregate
 
-            for _, desired_product in pairs(floor_products) do
+            -- NOTE below might be garbage
+
+            for _, desired_product in pairs(structures.class.list(aggregate.desired_products)) do
                 local product_match = structures.class.find(aggregate.Product, desired_product)
                 local ingredient_amount = (product_match) and product_match.amount or 0
                 local produced_amount = desired_product.amount - ingredient_amount
@@ -240,13 +251,23 @@ local function update_floor(floor_data, aggregate)
         end
     end
 
-    -- Desired products that aren't ingredients anymore have been produced
-    for _, desired_product in pairs(desired_products) do
-        local ingredient_match = structures.class.find(aggregate.Ingredient, desired_product)
-        local ingredient_amount = (ingredient_match) and ingredient_match.amount or 0
-        local produced_amount = desired_product.amount - ingredient_amount
-        structures.class.add(aggregate.Product, desired_product, produced_amount)
+    for _, ingredient in pairs(structures.class.list(aggregate.Ingredient)) do
+        if structures.class.find(aggregate.desired_products, ingredient) then
+            structures.class.subtract(aggregate.Ingredient, ingredient)
+        end
     end
+
+    --[[ -- Desired products that aren't ingredients anymore have been produced
+    for _, desired_product in pairs(aggregate.desired_products) do
+        local match = structures.class.find(aggregate.Ingredient, desired_product)
+        if match then  -- match.amount won't be negative due to how the solver works
+            local produced_amount = desired_product.amount - match.amount
+            structures.class.add(aggregate.Product, match, produced_amount)
+            structures.class.subtract(aggregate.Ingredient, match)
+        else
+            structures.class.add(aggregate.Product, desired_product)
+        end
+    end ]]
 end
 
 
@@ -255,17 +276,10 @@ function sequential_engine.update_factory(factory_data)
     -- Initialize aggregate with the top level items
     local aggregate = structures.aggregate.init(factory_data.player_index, 1)
     for _, product in pairs(factory_data.top_level_products) do
-        structures.class.add(aggregate.Ingredient, product)
+        structures.class.add(aggregate.desired_products, product)
     end
 
     update_floor(factory_data.top_floor, aggregate)  -- updates aggregate
-
-    -- Remove any top level items that are still ingredients, meaning unproduced
-    for _, product in pairs(factory_data.top_level_products) do
-        if structures.class.find(aggregate.Ingredient, product) then
-            structures.class.subtract(aggregate.Ingredient, product)
-        end
-    end
 
     -- Fuels are combined with ingredients for top-level purposes
     solver.set_factory_result {
