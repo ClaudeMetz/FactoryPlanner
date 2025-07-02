@@ -38,7 +38,9 @@ local function set_blank_factory(player, factory)
     local product_class = structures.class.init()
 
     -- Need to treat products differently because they work differently under the hood
-    for product in factory:iterator() do structures.class.add(product_class, product, product:get_required_amount()) end
+    for product in factory:iterator() do
+        structures.class.add(product_class, product.proto, product:get_required_amount())
+    end
 
     solver.set_factory_result {
         player_index = player.index,
@@ -81,6 +83,7 @@ local function generate_floor_data(player, factory, floor)
         local line_data = { id = line.id }
 
         if line.class == "Floor" then
+            line_data.recipe_proto = line.first.recipe_proto
             line_data.subfloor = generate_floor_data(player, factory, line)
             table.insert(floor_data.lines, line_data)
         else
@@ -153,7 +156,7 @@ end
 local function update_object_items(object, item_category, item_results)
     local item_list = {}
 
-    for _, item_result in pairs(structures.class.to_array(item_results)) do
+    for _, item_result in pairs(structures.class.list(item_results)) do
         local item_proto = prototyper.util.find("items", item_result.name, item_result.type)  --[[@as FPItemPrototype]]
         if object.class ~= "Floor" or item_proto.type ~= "entity" then
             table.insert(item_list, {proto=item_proto, amount=item_result.amount})
@@ -199,7 +202,7 @@ local function update_ingredient_satisfaction(floor, product_class)
     -- Iterates the lines from the bottom up, setting satisfaction amounts along the way
     for line in floor:iterator(nil, floor:find_last(), "previous") do
         if line.class == "Floor" then
-            local subfloor_product_class = structures.class.copy(product_class)
+            local subfloor_product_class = ftable.deep_copy(product_class)
             update_ingredient_satisfaction(line, subfloor_product_class)
         elseif line.machine.fuel then
             determine_satisfaction(line.machine.fuel)
@@ -288,10 +291,9 @@ function solver.set_factory_result(result)
     factory.top_floor.emissions = result.emissions
     factory.matrix_free_items = result.matrix_free_items
 
-    -- If products are not present in the result, it means they have been produced
     for product in factory:iterator() do
         local product_result_amount = result.Product[product.proto.type][product.proto.name] or 0
-        product.amount = product:get_required_amount() - product_result_amount
+        product.amount = product_result_amount or 0
     end
 
     update_object_items(factory.top_floor, "byproducts", result.Byproduct)
@@ -320,7 +322,7 @@ function solver.set_line_result(result)
     line.power = result.energy_consumption
     line.emissions = result.emissions
 
-    if line.production_ratio == 0 and line.subfloor == nil then
+    if line.production_ratio == 0 then
         local recipe_proto = line.recipe_proto
         set_zeroed_items(line, "products", recipe_proto.products)
         line.byproducts = {}
@@ -334,11 +336,6 @@ end
 
 
 -- **** UTIL ****
--- Determines the number of crafts per tick for the given data
-function solver_util.determine_crafts_per_second(machine_speed, recipe_proto, total_effects)
-    return (machine_speed * (1 + total_effects.speed)) / recipe_proto.energy
-end
-
 -- Calculates the product amount after applying productivity bonuses
 function solver_util.determine_prodded_amount(item, total_effects, maximum_productivity)
     -- No negative productivity, and none above the recipe-determined cap
