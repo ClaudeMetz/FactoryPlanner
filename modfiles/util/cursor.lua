@@ -117,6 +117,7 @@ end
 local function add_to_item_combinator(player, blueprint_entity, item_proto, amount)
     local timescale = util.globals.preferences(player).timescale
     local item_signals, filter_matched = {}, false
+    local item_name = (item_proto.temperature) and item_proto.base_name or item_proto.name
 
     do
         if not blueprint_entity then goto skip_cursor end
@@ -129,7 +130,7 @@ local function add_to_item_combinator(player, blueprint_entity, item_proto, amou
         if section.group then goto skip_cursor end
 
         for _, filter in pairs(section.filters) do
-            if item_proto.type == (filter.type or "item") and item_proto.name == filter.name then
+            if item_proto.type == (filter.type or "item") and item_name == filter.name then
                 filter.count = filter.count + (amount * timescale)
                 filter_matched = true
             end
@@ -142,7 +143,7 @@ local function add_to_item_combinator(player, blueprint_entity, item_proto, amou
     if not filter_matched then
         table.insert(item_signals, {
             type = item_proto.type,
-            name = item_proto.name,
+            name = item_name,
             quality = "normal",
             comparator = "=",
             count = math.ceil(amount * timescale)
