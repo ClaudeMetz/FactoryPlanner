@@ -10,6 +10,8 @@ local generator_util = {}
 ---@field name string
 ---@field type string
 ---@field amount number
+---@field temperature float?
+---@field base_name string?
 ---@field proddable_amount number?
 
 ---@param product Product
@@ -27,12 +29,24 @@ local function generate_formatted_product(product)
     local probability = (product.probability or 1)
     local proddable_amount = base_amount - (product.ignored_by_productivity or 0)
 
-    return {
+    local formatted_product = {
         name = product.name,
         type = product.type,
         amount = base_amount * probability,
         proddable_amount = proddable_amount * probability
     }
+
+    if product.type == "fluid" then
+        local fluid = prototypes.fluid[product.name]
+        -- Only fluids with a temperature range need to be treated separately
+        if fluid.max_temperature ~= fluid.default_temperature then
+            formatted_product.temperature = product.temperature or fluid.default_temperature
+            formatted_product.name = product.name .. "-" .. formatted_product.temperature
+            formatted_product.base_name = product.name
+        end
+    end
+
+    return formatted_product
 end
 
 
@@ -87,6 +101,20 @@ end
 ---@param main_product Product?
 ---@param ingredients Ingredient[]
 function generator_util.format_recipe(recipe_proto, products, main_product, ingredients)
+    local temperature_limit = 3.4e+38
+
+    for _, base_ingredient in pairs(ingredients) do
+        if base_ingredient.type == "fluid" then
+            -- Adjust temperature ranges for easy handling - nil means unlimited
+            local min_temp, max_temp = base_ingredient.minimum_temperature, base_ingredient.maximum_temperature
+            min_temp = (min_temp and min_temp > -temperature_limit) and min_temp or nil
+            max_temp = (max_temp and max_temp < temperature_limit) and max_temp or nil
+
+            base_ingredient.minimum_temperature = min_temp
+            base_ingredient.maximum_temperature = max_temp
+        end
+    end
+
     local indexed_ingredients = create_type_indexed_list(ingredients)
     recipe_proto.type_counts.ingredients = determine_item_type_counts(indexed_ingredients)
 

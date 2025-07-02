@@ -257,11 +257,10 @@ local function handle_item_click(player, tags, action)
         util.cursor.handle_item_click(player, item.proto, item.amount)
 
     elseif action == "factoriopedia" then
-        if item.proto.type == "entity" then
-            player.open_factoriopedia_gui(prototypes.entity[item.proto.name:gsub("custom%-", "")])
-        else
-            player.open_factoriopedia_gui(prototypes[item.proto.type][item.proto.name])
-        end
+        local name = item.proto.name
+        if item.proto.type == "entity" then name = name:gsub("custom%-", "")
+        elseif item.proto.temperature then name = item.proto.base_name end
+        player.open_factoriopedia_gui(prototypes[item.proto.type][name])
     end
 end
 
