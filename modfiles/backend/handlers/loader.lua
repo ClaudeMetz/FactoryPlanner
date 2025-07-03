@@ -6,6 +6,8 @@ local loader = {}
 ---@alias ItemID integer
 ---@alias RecipeID integer
 
+---@alias TemperatureMap { [string]: FPItemPrototype[] }
+
 ---@alias ModuleMap { [string]: FPModulePrototype }
 
 -- ** LOCAL UTIL **
@@ -86,6 +88,35 @@ local function sorted_items()
 
     table.sort(items, sorting_function)
     return items
+end
+
+
+---@return TemperatureMap
+local function temperature_map()
+    local map = {}  ---@type TemperatureMap
+
+    for name, fluid_proto in pairs(PROTOTYPE_MAPS.items.fluid.members) do
+        if fluid_proto.temperature ~= nil then
+            local base_name = fluid_proto.base_name
+            if not map[base_name] then map[base_name] = {} end
+            table.insert(map[base_name], fluid_proto)
+        end
+    end
+
+    ---@param a FPItemPrototype
+    ---@param b FPItemPrototype
+    ---@return boolean
+    local function sorting_function(a, b)
+        if a.temperature < b.temperature then return true
+        elseif a.temperature > b.temperature then return false end
+        return false
+    end
+
+    for _, list in pairs(map) do
+        table.sort(list, sorting_function)
+    end
+
+    return map
 end
 
 
@@ -206,6 +237,7 @@ function loader.run(skip_check)
     }
 
     SORTED_ITEMS = sorted_items()
+    TEMPERATURE_MAP = temperature_map()
 
     PRODUCTIVITY_RECIPES = generate_productivity_recipes()
 

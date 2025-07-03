@@ -652,7 +652,7 @@ function matrix_engine.get_line_aggregate(line_data, player_index, floor_id, mac
         end
     end
 
-    for _, ingredient in pairs(recipe_proto.ingredients) do
+    for _, ingredient in pairs(line_data.ingredients) do
         structures.class.add(line_aggregate.Ingredient, ingredient,
             ingredient.amount * total_crafts * line_data.resource_drain_rate)
     end
