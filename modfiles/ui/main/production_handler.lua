@@ -244,8 +244,16 @@ local function handle_item_click(player, tags, action)
         if item.proto.type == "entity" then return end
         local production_type = (tags.item_category == "byproduct") and "consume" or "produce"
         local add_after_line_id = (action == "add_recipe_below") and line.id or nil
+
+        local proto = item.proto
+        if proto.type == "fluid" then
+            local temperature = line.temperatures[item.proto.name].temperature
+            if temperature then proto = prototyper.util.find("items", proto.name .. "-" .. temperature, "fluid") end
+            -- NOTE otherwise the recipe dialog should show all options
+        end
+
         util.raise.open_dialog(player, {dialog="recipe", modal_data={add_after_line_id=add_after_line_id,
-            production_type=production_type, category_id=item.proto.category_id, product_id=item.proto.id}})
+            production_type=production_type, category_id=proto.category_id, product_id=proto.id}})
 
     elseif action == "copy" then
         if item.proto.type == "entity" then return end

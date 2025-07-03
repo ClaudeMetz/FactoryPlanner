@@ -188,25 +188,6 @@ function generator_util.format_recipe(recipe_proto, products, main_product, ingr
 end
 
 
---[[ -- Adds the additional proto's ingredients, products and energy to the main proto
----@param main_proto FPRecipePrototype
----@param additional_proto FPRecipePrototype
-function generator_util.combine_recipes(main_proto, additional_proto)
-    ---@param item_category "products" | "ingredients"
-    local function add_items_to_main_proto(item_category)
-        local additional_items = additional_proto[item_category]  ---@type RecipeItem[]
-        for _, item in pairs(additional_items) do
-            table.insert(main_proto[item_category], item)
-        end
-        combine_identical_products(main_proto[item_category])
-    end
-
-    add_items_to_main_proto("products")
-    add_items_to_main_proto("ingredients")
-    main_proto.energy = main_proto.energy + additional_proto.energy
-end ]]
-
-
 -- Active mods table needed for the funtions below
 local active_mods = script.active_mods
 
@@ -348,7 +329,7 @@ function generator_util.determine_entity_sprite(proto)
     return nil
 end
 
--- NOTE this is wrong now that silos can have two rockets in progress at once
+-- This is wrong now that silos can have two rockets in progress at once
 --[[
 -- Determines how long a rocket takes to launch for the given rocket silo prototype
 -- These stages mirror the in-game progression and timing exactly. Most steps take an additional tick (+1)

@@ -351,9 +351,20 @@ function builders.ingredients(line, parent_flow, metadata)
             satisfaction_line = {"", "\n", (formatted_percentage .. "%"), " ", {"fp.satisfied"}}
         end
 
-        local name_line = {"fp.tt_title", proto.localised_name}
+        local name_line, temperature_line = {"fp.tt_title", {"", proto.localised_name}}, ""
+        if proto.type == "fluid" then
+            local temperature_data = line.temperatures[proto.name]  -- exists for any fluid ingredient
+            table.insert(name_line, temperature_data.annotation)
+
+            temperature_line = {"fp.configured_temperature", temperature_data.temperature}
+            if temperature_data.temperature == nil then
+                style = "flib_slot_button_purple_small"
+                temperature_line = {"fp.no_temperature_configured"}
+            end
+        end
+
         local number_line = (number_tooltip) and {"", "\n", number_tooltip} or ""
-        local tooltip = {"", name_line, number_line, satisfaction_line,
+        local tooltip = {"", name_line, temperature_line, number_line, satisfaction_line,
             "\n", metadata.action_tooltips["act_on_line_ingredient"]}
 
         local button = parent_flow.add{type="sprite-button", sprite=proto.sprite, style=style,

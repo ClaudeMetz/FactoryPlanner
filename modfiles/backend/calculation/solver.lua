@@ -70,12 +70,34 @@ local function factory_products(factory)
     return products
 end
 
+local function line_ingredients(line)
+    local ingredients = {}
+    for _, ingredient in pairs(line.recipe_proto.ingredients) do
+        local name = ingredient.name
+        if ingredient.type == "fluid" then
+            local temperature = line.temperatures[ingredient.name].temperature
+            -- If any relevant ingredient has no temperature set, this line is invalid
+            if temperature == nil then return nil end
+
+            name = name .. "-" .. temperature
+        end
+
+        table.insert(ingredients, {
+            name = name,
+            type = ingredient.type,
+            amount = ingredient.amount
+        })  -- don't need min/max temperatures here
+    end
+    return ingredients
+end
+
 
 -- Generates structured data of the given floor for calculation
 local function generate_floor_data(player, factory, floor)
     local floor_data = {
         id = floor.id,
-        products = (floor.level == 1) and factory_products(factory) or floor.first.recipe_proto.products,
+        products = (floor.level == 1) and factory_products(factory)
+            or floor.first.recipe_proto.products,
         lines = {}
     }
 
@@ -88,15 +110,17 @@ local function generate_floor_data(player, factory, floor)
             table.insert(floor_data.lines, line_data)
         else
             local relevant_line = (line.parent.level > 1) and line.parent.first or nil  --[[@as Line]]
+            local ingredients = line_ingredients(line)  -- builds in chosen temperatures
             -- If a line has a percentage of zero or is inactive, it is not useful to the result of the factory
             -- Alternatively, if this line is on a subfloor and the top line of the floor is useless, it is useless too
-            if (relevant_line and (relevant_line.percentage == 0 or not relevant_line.active))
+            if (relevant_line and (relevant_line.percentage == 0 or not relevant_line.active)) or ingredients == nil
                     or line.percentage == 0 or not line.active or not line:get_surface_compatibility().overall
                     or (not factory.matrix_free_items and line.production_type == "consume") then
                 set_blank_line(player, floor, line)  -- useless lines don't need to run through the solver
             else
                 local machine = line.machine
                 line_data.recipe_proto = line.recipe_proto
+                line_data.ingredients = ingredients
                 line_data.percentage = line.percentage  -- non-zero
                 line_data.production_type = line.production_type
                 line_data.priority_product_proto = line.priority_product
@@ -158,6 +182,11 @@ local function update_object_items(object, item_category, item_results)
 
     for _, item_result in pairs(structures.class.list(item_results)) do
         local item_proto = prototyper.util.find("items", item_result.name, item_result.type)  --[[@as FPItemPrototype]]
+
+        if item_category == "ingredients" and item_proto.base_name then
+            item_proto = prototyper.util.find("items", item_proto.base_name, "fluid")
+        end
+
         if object.class ~= "Floor" or item_proto.type ~= "entity" then
             table.insert(item_list, {proto=item_proto, amount=item_result.amount})
         end

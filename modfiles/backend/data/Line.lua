@@ -4,6 +4,12 @@ local Beacon = require("backend.data.Beacon")
 
 ---@alias ProductionType "produce" | "consume"
 
+---@alias IngredientTemperatures { [string]: TemperatureData }
+
+---@class TemperatureData
+---@field annotation LocalisedString?
+---@field temperature float?
+
 ---@class SurfaceCompatibility
 ---@field recipe boolean
 ---@field machine boolean
@@ -22,6 +28,7 @@ local Beacon = require("backend.data.Beacon")
 ---@field machine Machine
 ---@field beacon Beacon?
 ---@field priority_product (FPItemPrototype | FPPackedPrototype)?
+---@field temperatures IngredientTemperatures
 ---@field comment string
 ---@field surface_compatibility SurfaceCompatibility?
 ---@field total_effects ModuleEffects
@@ -49,6 +56,7 @@ local function init(recipe_proto, production_type)
         machine = nil,
         beacon = nil,
         priority_product = nil,
+        temperatures = {},
         comment = "",
 
         surface_compatibility = nil,  -- determined on demand
@@ -62,6 +70,30 @@ local function init(recipe_proto, production_type)
         emissions = 0,
         production_ratio = 0
     }, "Line", Line)  --[[@as Line]]
+
+    -- Prepare data related to fluid ingredients temperatures
+    for _, ingredient in pairs(recipe_proto.ingredients) do
+        if ingredient.type == "fluid" then
+            local min_temp = ingredient.minimum_temperature
+            local max_temp = ingredient.maximum_temperature
+
+            local annotation = nil
+            if min_temp and not max_temp then
+                annotation = {"fp.min_temperature", min_temp}
+            elseif not min_temp and max_temp then
+                annotation = {"fp.max_temperature", max_temp}
+            elseif min_temp and max_temp then
+                annotation = {"fp.min_max_temperature", min_temp, max_temp}
+            end
+
+            local map = TEMPERATURE_MAP[ingredient.name]
+            object.temperatures[ingredient.name] = {
+                annotation = {"", " ", annotation},
+                temperature = (#map == 1) and map[1].temperature or nil
+            }
+        end
+    end
+
     return object
 end
 

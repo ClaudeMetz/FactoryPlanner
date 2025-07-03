@@ -184,22 +184,32 @@ local function add_item_flow(line, relevant_line, item_category, button_color, m
         local amount, number_tooltip = item_views.process_item(metadata.player, item, nil, machine_count)
         if amount == -1 then goto skip_item end  -- an amount of -1 means it was below the margin of error
 
-        local number_line = (number_tooltip) and {"", "\n", number_tooltip} or ""
-        local tooltip = {"", {"fp.tt_title", proto.localised_name}, number_line,
-            "\n", metadata.action_tooltips["act_on_compact_item"]}
-        local style, enabled = "flib_slot_button_" .. button_color .. "_small", true
+        local style, enabled = "flib_slot_button_" .. button_color .. "_small"
         if relevant_line.done then style = "flib_slot_button_grayscale_small" end
+        local name_line, temperature_line = {"fp.tt_title", {"", proto.localised_name}}, ""
 
         if type == "entity" then
             style = (relevant_line.done) and "flib_slot_button_disabled_grayscale_small"
                 or "flib_slot_button_disabled_small"
+        elseif type == "fluid" and item_category == "ingredient" then
+            local temperature_data = line.temperatures[proto.name]  -- exists for any fluid ingredient
+            table.insert(name_line, temperature_data.annotation)
+
+            temperature_line = {"fp.configured_temperature", temperature_data.temperature}
+            if temperature_data.temperature == nil then
+                style = "flib_slot_button_purple_small"
+                temperature_line = {"fp.no_temperature_configured"}
+            end
         end
+
+        local number_line = (number_tooltip) and {"", "\n", number_tooltip} or ""
+        local tooltip = {"", name_line, temperature_line, number_line, "\n",
+            metadata.action_tooltips["act_on_compact_item"]}
 
         local button = item_table.add{type="sprite-button", sprite=proto.sprite, number=amount,
             tags={mod="fp", on_gui_click="act_on_compact_item", line_id=line.id, item_category=item_category .. "s",
             item_index=index, on_gui_hover="hover_compact_item", on_gui_leave="leave_compact_item",
-            context="compact_dialog"}, style=style, enabled=enabled, mouse_button_filter={"left-and-right"},
-            raise_hover_events=true}
+            context="compact_dialog"}, style=style, mouse_button_filter={"left-and-right"}, raise_hover_events=true}
         metadata.tooltips[button.index] = tooltip
 
         item_buttons[type] = item_buttons[type] or {}
