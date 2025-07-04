@@ -183,7 +183,8 @@ local function update_object_items(object, item_category, item_results)
     for _, item_result in pairs(structures.class.list(item_results)) do
         local item_proto = prototyper.util.find("items", item_result.name, item_result.type)  --[[@as FPItemPrototype]]
 
-        if item_category == "ingredients" and item_proto.base_name then
+        -- Floor items keep their temperature, since they can't be configured from there
+        if object.class ~= "Floor" and item_category == "ingredients" and item_proto.base_name then
             item_proto = prototyper.util.find("items", item_proto.base_name, "fluid")
         end
 

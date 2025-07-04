@@ -38,12 +38,9 @@ local function generate_formatted_product(product)
 
     if product.type == "fluid" then
         local fluid = prototypes.fluid[product.name]
-        -- Only fluids with a temperature range need to be treated separately
-        if fluid.max_temperature ~= fluid.default_temperature then
-            formatted_product.temperature = product.temperature or fluid.default_temperature
-            formatted_product.name = product.name .. "-" .. formatted_product.temperature
-            formatted_product.base_name = product.name
-        end
+        formatted_product.temperature = product.temperature or fluid.default_temperature
+        formatted_product.name = product.name .. "-" .. formatted_product.temperature
+        formatted_product.base_name = product.name
     end
 
     return formatted_product
