@@ -85,7 +85,7 @@ styles["fp_table_production"] = {
 
 styles["fp_drop-down_slim"] = {
     type = "dropdown_style",
-    minimal_width = 0,
+    minimal_width = 70,
     height = 24,
     top_padding = -2,
     right_padding = 2,
