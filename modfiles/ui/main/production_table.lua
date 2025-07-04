@@ -351,7 +351,7 @@ function builders.ingredients(line, parent_flow, metadata)
             satisfaction_line = {"", "\n", (formatted_percentage .. "%"), " ", {"fp.satisfied"}}
         end
 
-        local name_line, temperature_line = {"fp.tt_title", {"", proto.localised_name}}, ""
+        local name_line, temperature_line = {"", {"fp.tt_title", {"", proto.localised_name}}}, ""
         if proto.type == "fluid" then
             local temperature_data = line.temperatures[proto.name]  -- exists for any fluid ingredient
             table.insert(name_line, temperature_data.annotation)

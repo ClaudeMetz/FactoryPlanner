@@ -86,10 +86,18 @@ local function init(recipe_proto, production_type)
                 annotation = {"fp.min_max_temperature", min_temp, max_temp}
             end
 
-            local map = TEMPERATURE_MAP[ingredient.name]
+            local applicable_values = {}
+            for _, fluid_proto in pairs(TEMPERATURE_MAP[ingredient.name]) do
+                if (not min_temp or min_temp <= fluid_proto.temperature) and
+                        (not max_temp or max_temp >= fluid_proto.temperature) then
+                    table.insert(applicable_values, fluid_proto.temperature)
+                end
+            end
+
             object.temperatures[ingredient.name] = {
                 annotation = {"", " ", annotation},
-                temperature = (#map == 1) and map[1].temperature or nil
+                applicable_values = applicable_values,
+                temperature = (#applicable_values == 1) and applicable_values[1] or nil
             }
         end
     end

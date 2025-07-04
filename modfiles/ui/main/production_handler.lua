@@ -255,6 +255,14 @@ local function handle_item_click(player, tags, action)
         util.raise.open_dialog(player, {dialog="recipe", modal_data={add_after_line_id=add_after_line_id,
             production_type=production_type, category_id=proto.category_id, product_id=proto.id}})
 
+    elseif action == "edit" then
+        if item.proto.type ~= "fluid" then
+            util.cursor.create_flying_text(player, {"fp.can_only_edit_fluids"})
+            return
+        end
+        util.raise.open_dialog(player, {dialog="item", modal_data={line_id=line.id,
+            category_id=item.proto.category_id, name=item.proto.name}})
+
     elseif action == "copy" then
         if item.proto.type == "entity" then return end
         local copyable_item = {class="SimpleItem", proto=item.proto, amount=item.amount}
@@ -390,7 +398,7 @@ listeners.gui = {
             name = "act_on_line_byproduct",
             actions_table = {
                 add_recipe_to_end = {shortcut="left", limitations={archive_open=false, matrix_active=true}, show=true},
-                add_recipe_below = {shortcut="control-left", limitations={archive_open=false, matrix_active=true}},
+                add_recipe_below = {limitations={archive_open=false, matrix_active=true}},
                 copy = {shortcut="shift-right"},
                 add_to_cursor = {shortcut="alt-right"},
                 factoriopedia = {shortcut="alt-left"}
@@ -404,7 +412,8 @@ listeners.gui = {
             name = "act_on_line_ingredient",
             actions_table = {
                 add_recipe_to_end = {shortcut="left", limitations={archive_open=false}, show=true},
-                add_recipe_below = {shortcut="control-left", limitations={archive_open=false}},
+                add_recipe_below = {limitations={archive_open=false}},
+                edit = {shortcut="control-left", limitations={archive_open=false}, show=true},
                 copy = {shortcut="shift-right"},
                 add_to_cursor = {shortcut="alt-right"},
                 factoriopedia = {shortcut="alt-left"}

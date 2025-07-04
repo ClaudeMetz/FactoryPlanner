@@ -256,11 +256,8 @@ function item_views.rebuild_interface(player)
         for index, view_preference in pairs(view_preferences.views) do
             local view = views[view_preference.name]
             local button = table.add{type="button", caption=view.caption, tooltip=view.tooltip,
-                tags={mod="fp", on_gui_click="change_view", view_index=index},
+                tags={mod="fp", on_gui_click="change_view", view_index=index}, style="fp_button_push",
                 mouse_button_filter={"left"}}
-            button.style.height = 26
-            button.style.minimal_width = 0
-            button.style.padding = {0, 12}
         end
     end
 

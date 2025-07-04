@@ -5,7 +5,7 @@ local event_listener_names = {
     "ui.components.module_configurator", "ui.components.item_views",
     "ui.dialogs.beacon_dialog", "ui.dialogs.machine_dialog", "ui.dialogs.picker_dialog",
     "ui.dialogs.porter_dialog", "ui.dialogs.preferences_dialog", "ui.dialogs.recipe_dialog",
-    "ui.dialogs.factory_dialog", "ui.dialogs.utility_dialog",
+    "ui.dialogs.factory_dialog", "ui.dialogs.utility_dialog", "ui.dialogs.item_dialog",
     "ui.main.title_bar", "ui.main.district_info", "ui.main.factory_list", "ui.main.production_bar",
     "ui.main.districts_box", "ui.main.item_boxes", "ui.main.production_box", "ui.main.production_table",
     "ui.main.production_handler"
