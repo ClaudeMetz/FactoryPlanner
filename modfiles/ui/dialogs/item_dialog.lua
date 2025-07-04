@@ -10,7 +10,7 @@ end
 
 local function open_item_dialog(player, modal_data)
     local line = OBJECT_INDEX[modal_data.line_id]
-    local temperature_data = line.temperatures[modal_data.name]
+    local temperature_data = line.temperature_data[modal_data.name]
     -- This assumes it'll only be provided with fluids
 
     local content_frame = modal_data.modal_elements.content_frame
@@ -34,7 +34,7 @@ local function open_item_dialog(player, modal_data)
             tags={mod="fp", on_gui_click="change_item_temperature", temperature=temperature},
             style="fp_button_push", mouse_button_filter={"left"}}
     end
-    select_temperature(player, temperature_data.temperature)  -- sets toggled state
+    select_temperature(player, line.temperatures[modal_data.name])  -- sets toggled state
 end
 
 local function close_item_dialog(player, action)
@@ -45,7 +45,7 @@ local function close_item_dialog(player, action)
         for _, button in pairs(table_temperatures.children) do
             if button.toggled then
                 local line = OBJECT_INDEX[modal_data.line_id]
-                line.temperatures[modal_data.name].temperature = button.tags.temperature
+                line.temperatures[modal_data.name] = button.tags.temperature
                 break
             end
         end

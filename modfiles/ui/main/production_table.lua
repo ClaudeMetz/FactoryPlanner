@@ -353,13 +353,15 @@ function builders.ingredients(line, parent_flow, metadata)
 
         local name_line, temperature_line = {"", {"fp.tt_title", {"", proto.localised_name}}}, ""
         if proto.type == "fluid" and line.class ~= "Floor" then
-            local temperature_data = line.temperatures[proto.name]  -- exists for any fluid ingredient
+            local temperature_data = line.temperature_data[proto.name]   -- exists for any fluid ingredient
             table.insert(name_line, temperature_data.annotation)
 
-            temperature_line = {"fp.configured_temperature", temperature_data.temperature}
-            if temperature_data.temperature == nil then
+            local temperature = line.temperatures[proto.name]
+            if temperature == nil then
                 style = "flib_slot_button_purple_small"
                 temperature_line = {"fp.no_temperature_configured"}
+            else
+                temperature_line = {"fp.configured_temperature", temperature}
             end
         end
 

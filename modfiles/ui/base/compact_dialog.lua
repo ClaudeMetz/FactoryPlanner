@@ -192,13 +192,15 @@ local function add_item_flow(line, relevant_line, item_category, button_color, m
             style = (relevant_line.done) and "flib_slot_button_disabled_grayscale_small"
                 or "flib_slot_button_disabled_small"
         elseif type == "fluid" and item_category == "ingredient" then
-            local temperature_data = line.temperatures[proto.name]  -- exists for any fluid ingredient
+            local temperature_data = line.temperature_data[proto.name]   -- exists for any fluid ingredient
             table.insert(name_line, temperature_data.annotation)
 
-            temperature_line = {"fp.configured_temperature", temperature_data.temperature}
-            if temperature_data.temperature == nil then
+            local temperature = line.temperatures[proto.name]
+            if temperature == nil then
                 style = "flib_slot_button_purple_small"
                 temperature_line = {"fp.no_temperature_configured"}
+            else
+                temperature_line = {"fp.configured_temperature", temperature}
             end
         end
 
