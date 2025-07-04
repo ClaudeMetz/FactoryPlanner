@@ -249,11 +249,12 @@ local function handle_item_click(player, tags, action)
         if proto.type == "fluid" and line.class == "Line" then
             local temperature = line.temperatures[item.proto.name]
             if temperature then proto = prototyper.util.find("items", proto.name .. "-" .. temperature, "fluid") end
-            -- NOTE otherwise the recipe dialog should show all options
+            -- If a no-temperature fluid is passed, it'll show all compatible temperatures/recipes
         end
 
-        util.raise.open_dialog(player, {dialog="recipe", modal_data={add_after_line_id=add_after_line_id,
-            production_type=production_type, category_id=proto.category_id, product_id=proto.id}})
+        util.raise.open_dialog(player, {dialog="recipe", modal_data={line_id=line.id,
+            add_after_line_id=add_after_line_id, production_type=production_type,
+            category_id=proto.category_id, product_id=proto.id}})
 
     elseif action == "edit" then
         if item.proto.type ~= "fluid" then

@@ -3,7 +3,7 @@ local Line = require("backend.data.Line")
 -- ** LOCAL UTIL **
 -- Serves the dual-purpose of determining the appropriate settings for the recipe picker filter and, if there
 -- is only one that matches, to return a recipe name that can be added directly without the modal dialog
-local function run_preliminary_checks(player, modal_data)
+local function match_recipes(player, modal_data, proto)
     local force_recipes, force_technologies = player.force.recipes, player.force.technologies
     local preferences = util.globals.preferences(player)
 
@@ -11,7 +11,7 @@ local function run_preliminary_checks(player, modal_data)
     local user_disabled_recipe = false
     local counts = {disabled = 0, hidden = 0, disabled_hidden = 0}
 
-    local map = RECIPE_MAPS[modal_data.production_type][modal_data.category_id][modal_data.product_id]
+    local map = RECIPE_MAPS[modal_data.production_type][proto.category_id][proto.id]
     if map ~= nil then  -- this being nil means that the item has no recipes
         for recipe_id, _ in pairs(map) do
             local recipe = prototyper.util.find("recipes", recipe_id, nil)
@@ -111,6 +111,13 @@ local function attempt_adding_line(player, recipe_id, modal_data)
         line.machine:reset(player)
         line:setup_beacon(player)
 
+        -- Set temperature on ingredient that this recipe fulfills
+        if modal_data.temperature then
+            local origin_line = OBJECT_INDEX[modal_data.line_id]
+            local fluid_name = modal_data.base_fluid.name
+            origin_line.temperatures[fluid_name] = modal_data.temperature
+        end
+
         solver.update(player)
         util.raise.refresh(player, "factory")
     end
@@ -118,23 +125,45 @@ end
 
 
 local function create_filter_box(modal_data)
-    local bordered_frame = modal_data.modal_elements.content_frame.add{type="frame", style="fp_frame_bordered_stretch"}
+    local content_frame =  modal_data.modal_elements.content_frame
+    local bordered_frame = content_frame.add{type="frame", direction="vertical", style="fp_frame_bordered_stretch"}
+    bordered_frame.style.left_padding = 12
 
     local table_filters = bordered_frame.add{type="table", column_count=2}
     table_filters.style.horizontal_spacing = 16
 
     local label_filters = table_filters.add{type="label", caption={"fp.show"}}
     label_filters.style.top_margin = 2
-    label_filters.style.left_margin = 4
 
     local flow_filter_switches = table_filters.add{type="flow", direction="vertical"}
     util.gui.switch.add_on_off(flow_filter_switches, "toggle_recipe_filter", {filter_name="disabled"},
         modal_data.filters.disabled, {"fp.unresearched_recipes"}, nil, false)
     util.gui.switch.add_on_off(flow_filter_switches, "toggle_recipe_filter", {filter_name="hidden"},
         modal_data.filters.hidden, {"fp.hidden_recipes"}, nil, false)
+
+    if modal_data.temperature then
+        bordered_frame.add{type="line", direction="horizontal"}
+        local flow_temperature = bordered_frame.add{type="flow", direction="horizontal"}
+        flow_temperature.style.vertical_align = "center"
+        flow_temperature.add{type="label", caption={"fp.compatible_temperatures"}}
+
+        local annotation = flow_temperature.add{type="label", caption=modal_data.annotation}
+        annotation.style.left_margin = 16
+
+        local table_temperatures = bordered_frame.add{type="table", column_count=#modal_data.applicable_values}
+        table_temperatures.style.horizontal_spacing = 0
+        table_temperatures.style.top_margin = 8
+
+        for index, temperature in pairs(modal_data.applicable_values) do
+            local toggled = temperature == modal_data.temperature
+            table_temperatures.add{type="button", caption={"fp.temperature_value", temperature},
+                tags={mod="fp", on_gui_click="change_recipe_temperature", temperature=temperature},
+                style="fp_button_push", toggled=toggled, mouse_button_filter={"left"}}
+        end
+    end
 end
 
-local function create_recipe_group_box(modal_data, relevant_group, translations)
+local function create_recipe_group_box(modal_data, relevant_group)
     local modal_elements = modal_data.modal_elements
     local bordered_frame = modal_elements.content_frame.add{type="frame", style="fp_frame_bordered_stretch"}
     bordered_frame.style.padding = 8
@@ -173,16 +202,18 @@ local function create_recipe_group_box(modal_data, relevant_group, translations)
         else button_recipe.elem_tooltip = {type="recipe", name=recipe_name} end
 
         -- Figure out the translated name here so search doesn't have to repeat the work for every character
+        local translations = modal_data.translations
         local translated_name = (translations) and translations["recipe"][recipe_name] or nil
         translated_name = (translated_name) and translated_name:lower() or recipe_name
         recipe_buttons[{name=recipe_name, translated_name=translated_name, hidden=recipe_proto.hidden}] = button_recipe
     end
 end
 
-local function create_dialog_structure(modal_data, translations)
+local function build_dialog_structure(modal_data)
     local modal_elements = modal_data.modal_elements
     local content_frame = modal_elements.content_frame
     content_frame.style.width = 380
+    content_frame.clear()
 
     create_filter_box(modal_data)
 
@@ -191,12 +222,20 @@ local function create_dialog_structure(modal_data, translations)
     label_warning.style.margin = {8, 0, 0, 8}
     modal_elements.warning_label = label_warning
 
+    local recipe_groups = {}
+    for _, recipe in pairs(modal_data.result) do
+        local group_name = recipe.proto.group.name
+        recipe_groups[group_name] = recipe_groups[group_name] or {proto=recipe.proto.group, recipes={}}
+        recipe_groups[group_name].recipes[recipe.proto.name] = recipe
+    end
+    modal_data.recipe_groups = recipe_groups  -- used by filter
+
     modal_elements.groups = {}
     for _, group in ipairs(ORDERED_RECIPE_GROUPS) do
         local relevant_group = modal_data.recipe_groups[group.name]
 
         -- Only actually create this group if it contains any relevant recipes
-        if relevant_group ~= nil then create_recipe_group_box(modal_data, relevant_group, translations) end
+        if relevant_group ~= nil then create_recipe_group_box(modal_data, relevant_group) end
     end
 end
 
@@ -205,6 +244,8 @@ local function apply_recipe_filter(player, search_term)
     local disabled, hidden = modal_data.filters.disabled, modal_data.filters.hidden
 
     local any_recipe_visible, desired_scroll_pane_height = false, 64+24
+    if modal_data.temperature then desired_scroll_pane_height = desired_scroll_pane_height + 70 end
+
     for _, group in ipairs(modal_data.modal_elements.groups) do
         local group_data = modal_data.recipe_groups[group.name]
         local any_group_recipe_visible = false
@@ -244,11 +285,27 @@ local function handle_filter_change(player, tags, event)
     apply_recipe_filter(player, "")
 end
 
+local function apply_temperature(player, temperature)
+    local modal_data = util.globals.modal_data(player)  --[[@as table]]
+    modal_data.temperature = temperature
+
+    local name = modal_data.base_fluid.name .. "-" .. temperature
+    local proto = prototyper.util.find("items", name, "fluid")
+    local result, _, filters = match_recipes(player, modal_data, proto)  -- can't error
+    modal_data.result = result
+    modal_data.filters = filters
+end
+
 
 -- Checks whether the dialog needs to be created at all
 local function recipe_early_abort_check(player, modal_data)
+    local proto = prototyper.util.find("items", modal_data.product_id, modal_data.category_id)
+
+    local base_fluid = (proto.type == "fluid" and proto.temperature == nil)
+    if base_fluid then return false end  -- proceed to opening the dialog right away
+
     -- Result is either the single possible recipe_id, or a table of relevant recipes
-    local result, error, filters = run_preliminary_checks(player, modal_data)
+    local result, error, filters = match_recipes(player, modal_data, proto)
 
     if error ~= nil then
         util.messages.raise(player, "error", error, 1)
@@ -258,7 +315,7 @@ local function recipe_early_abort_check(player, modal_data)
         -- If one relevant recipe is found, try it straight away
         if type(result) == "number" then  -- the given number being the recipe_id
             attempt_adding_line(player, result, modal_data)
-            return true  -- idem. above
+            return true  -- idem above
 
         else  -- Otherwise, save the relevant data for the dialog opener
             modal_data.result = result
@@ -270,17 +327,20 @@ end
 
 -- Handles populating the recipe dialog
 local function open_recipe_dialog(player, modal_data)
-    -- At this point, we're sure the dialog should be opened
-    local recipe_groups = {}
-    for _, recipe in pairs(modal_data.result) do
-        local group_name = recipe.proto.group.name
-        recipe_groups[group_name] = recipe_groups[group_name] or {proto=recipe.proto.group, recipes={}}
-        recipe_groups[group_name].recipes[recipe.proto.name] = recipe
-    end
-    modal_data.recipe_groups = recipe_groups
+    -- At this point, we're sure there's more than one recipe choice
 
-    local translations = util.globals.player_table(player).translation_tables
-    create_dialog_structure(modal_data, translations)
+    if modal_data.result == nil then  -- this is a base_fluid dialog
+        modal_data.base_fluid = prototyper.util.find("items", modal_data.product_id, modal_data.category_id)
+
+        local line = OBJECT_INDEX[modal_data.line_id]
+        local temperature_data = line.temperature_data[modal_data.base_fluid.name]
+        modal_data.annotation = temperature_data.annotation
+        modal_data.applicable_values = temperature_data.applicable_values
+        apply_temperature(player, modal_data.applicable_values[1])
+    end
+
+    modal_data.translations = util.globals.player_table(player).translation_tables
+    build_dialog_structure(modal_data)
     apply_recipe_filter(player, "")
     modal_data.modal_elements.search_textfield.focus()
 end
@@ -298,6 +358,16 @@ listeners.gui = {
                 local modal_data = util.globals.modal_data(player)
                 attempt_adding_line(player, tags.recipe_proto_id, modal_data)
                 util.raise.close_dialog(player, "cancel")
+            end)
+        },
+        {
+            name = "change_recipe_temperature",
+            handler = (function(player, tags, _)
+                apply_temperature(player, tags.temperature)
+
+                local modal_data = util.globals.modal_data(player)
+                build_dialog_structure(modal_data)
+                apply_recipe_filter(player, "")
             end)
         }
     },
