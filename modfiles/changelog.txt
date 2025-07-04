@@ -2,11 +2,11 @@
 Version: 0.00.00
 Date: 00. 00. 0000
   Features:
-    - 
+    -
   Changes:
-    - 
+    -
   Bugfixes:
-    - 
+    - Fixed an issue where self-fueling recipes that weren't sustainable were not detected properly
 
 ---------------------------------------------------------------------------------------------------
 Version: 2.0.25
