@@ -2,11 +2,11 @@
 Version: 0.00.00
 Date: 00. 00. 0000
   Features:
-    - 
+    - *Finally* added proper support for fluids with temperatures. The mod, including both solvers, now distinguishes between fluids at different temperatures. If a recipe ingredient could be fulfilled by more than one temperature, you'll be able to pick the correct one. Note that this is a partially breaking change, as the update has to remove any factory products that are available in more than one temperature to resolve the ambiguity. (#95)
   Changes:
-    - 
+    -
   Bugfixes:
-    - 
+    -
 
 ---------------------------------------------------------------------------------------------------
 Version: 2.0.25

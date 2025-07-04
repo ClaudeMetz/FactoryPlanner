@@ -247,7 +247,7 @@ local function handle_item_click(player, tags, action)
 
         local proto = item.proto
         if proto.type == "fluid" and line.class == "Line" then
-            local temperature = line.temperatures[item.proto.name].temperature
+            local temperature = line.temperatures[item.proto.name]
             if temperature then proto = prototyper.util.find("items", proto.name .. "-" .. temperature, "fluid") end
             -- NOTE otherwise the recipe dialog should show all options
         end

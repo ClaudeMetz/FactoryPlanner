@@ -75,7 +75,7 @@ local function line_ingredients(line)
     for _, ingredient in pairs(line.recipe_proto.ingredients) do
         local name = ingredient.name
         if ingredient.type == "fluid" then
-            local temperature = line.temperatures[ingredient.name].temperature
+            local temperature = line.temperatures[ingredient.name]
             -- If any relevant ingredient has no temperature set, this line is invalid
             if temperature == nil then return nil end
 
