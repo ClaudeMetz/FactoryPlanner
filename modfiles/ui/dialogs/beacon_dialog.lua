@@ -309,7 +309,7 @@ listeners.dialog = {
         local machine_name = line.machine.proto.localised_name
         return {
             caption = {"", {"fp." .. "edit"}, " ", {"fp.pl_beacon", 1}},
-            subheader_text = {("fp.beacon_dialog_description"), machine_name},
+            subheader_text = {"fp.beacon_dialog_description", machine_name},
             show_submit_button = true,
             show_delete_button = (line.beacon ~= nil),
             reset_handler_name = "reset_beacon"

@@ -186,7 +186,7 @@ local function add_item_flow(line, relevant_line, item_category, button_color, m
 
         local style, enabled = "flib_slot_button_" .. button_color .. "_small"
         if relevant_line.done then style = "flib_slot_button_grayscale_small" end
-        local name_line, temperature_line = {"fp.tt_title", {"", proto.localised_name}}, ""
+        local name_line, temperature_line = {"", {"fp.tt_title", {"", proto.localised_name}}}, ""
 
         if type == "entity" then
             style = (relevant_line.done) and "flib_slot_button_disabled_grayscale_small"
