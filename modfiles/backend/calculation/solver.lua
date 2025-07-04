@@ -70,17 +70,21 @@ local function factory_products(factory)
     return products
 end
 
+local function get_temperature_name(line, ingredient)
+    if ingredient.type == "fluid" then
+        local temperature = line.temperatures[ingredient.name]
+        return (temperature ~= nil) and (ingredient.name .. "-" .. temperature) or nil
+    else
+        return ingredient.name
+    end
+end
+
 local function line_ingredients(line)
     local ingredients = {}
     for _, ingredient in pairs(line.recipe_proto.ingredients) do
-        local name = ingredient.name
-        if ingredient.type == "fluid" then
-            local temperature = line.temperatures[ingredient.name]
-            -- If any relevant ingredient has no temperature set, this line is invalid
-            if temperature == nil then return nil end
-
-            name = name .. "-" .. temperature
-        end
+        local name = get_temperature_name(line, ingredient)
+        -- If any relevant ingredient has no temperature set, this line is invalid
+        if name == nil then return nil end
 
         table.insert(ingredients, {
             name = name,
@@ -213,8 +217,8 @@ end
 local function update_ingredient_satisfaction(floor, product_class)
     product_class = product_class or structures.class.init()
 
-    local function determine_satisfaction(ingredient)
-        local product_amount = product_class[ingredient.proto.type][ingredient.proto.name]
+    local function determine_satisfaction(ingredient, name)
+        local product_amount = product_class[ingredient.proto.type][name]
 
         if product_amount ~= nil then
             if product_amount >= ingredient.amount then
@@ -240,7 +244,8 @@ local function update_ingredient_satisfaction(floor, product_class)
 
         for _, ingredient in pairs(line.ingredients) do
             if ingredient.proto.type ~= "entity" then
-                determine_satisfaction(ingredient)
+                local name = get_temperature_name(line, ingredient.proto)
+                determine_satisfaction(ingredient, name)
             end
         end
 
