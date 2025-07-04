@@ -141,13 +141,16 @@ local function update_line(line_data, aggregate, looped_fuel)
             local ingredient_class = original_aggregate.Ingredient[fuel_proto.type]
             local initial_demand = ingredient_class[fuel_proto.name]
             local ratio = fuel_amount / initial_demand
-            -- Need a lot of precision here, hence the exponent of 20
-            local bumped_demand = initial_demand * ((1 - ratio ^ 20) / (1 - ratio))
-            ingredient_class[fuel_proto.name] = bumped_demand
 
-            -- Run line with fuel amount bumped to account for own consumption
-            update_line(line_data, original_aggregate, bumped_demand - initial_demand)
-            return
+            if ratio + 0.001 < 1 then  -- a ratio >= 1 means this can't outproduce itself
+                -- Need a lot of precision here, hence the exponent of 20
+                local bumped_demand = initial_demand * ((1 - ratio ^ 20) / (1 - ratio))
+                ingredient_class[fuel_proto.name] = bumped_demand
+
+                -- Run line with fuel amount bumped to account for own consumption
+                update_line(line_data, original_aggregate, bumped_demand - initial_demand)
+                return
+            end
         end
 
         -- Removed looped fuel from main aggregate as its used right away
