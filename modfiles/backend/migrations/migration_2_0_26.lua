@@ -8,11 +8,7 @@ function migration.player_table(player_table)
             for _, product in pairs(factory:as_list()) do
                 if product.proto.type == "fluid" then
                     local map = TEMPERATURE_MAP[product.proto.name]
-                    if #map == 1 then
-                        product.proto = prototyper.util.find("items", map[1].name, "fluid")
-                    else
-                        factory:remove(product)
-                    end
+                    product.proto = prototyper.util.find("items", map[1].name, "fluid")
                 end
             end
         end
@@ -25,7 +21,7 @@ function migration.packed_factory(packed_factory)
         local map = TEMPERATURE_MAP[product.proto.name]
         if not map then   -- means it's not a fluid
             table.insert(products, product)
-        elseif #map == 1 then
+        else
             product.proto = prototyper.util.find("items", map[1].name, "fluid")
             table.insert(products, product)
         end
