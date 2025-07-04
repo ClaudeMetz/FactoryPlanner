@@ -246,7 +246,7 @@ local function handle_item_click(player, tags, action)
         local add_after_line_id = (action == "add_recipe_below") and line.id or nil
 
         local proto = item.proto
-        if proto.type == "fluid" then
+        if proto.type == "fluid" and line.class == "Line" then
             local temperature = line.temperatures[item.proto.name].temperature
             if temperature then proto = prototyper.util.find("items", proto.name .. "-" .. temperature, "fluid") end
             -- NOTE otherwise the recipe dialog should show all options
@@ -258,6 +258,9 @@ local function handle_item_click(player, tags, action)
     elseif action == "edit" then
         if item.proto.type ~= "fluid" then
             util.cursor.create_flying_text(player, {"fp.can_only_edit_fluids"})
+            return
+        elseif line.class ~= "Line" then
+            util.cursor.create_flying_text(player, {"fp.can_only_edit_lines"})
             return
         end
         util.raise.open_dialog(player, {dialog="item", modal_data={line_id=line.id,
