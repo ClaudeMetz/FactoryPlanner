@@ -4,7 +4,8 @@ local function select_temperature(player, temperature)
     local table_temperatures = modal_data.modal_elements.temperatures_table
 
     for _, button in pairs(table_temperatures.children) do
-        button.toggled = (button.tags.temperature == temperature)
+        local matched = (button.tags.temperature == temperature)
+        button.toggled = not button.toggled and matched
     end
 end
 
@@ -42,9 +43,11 @@ local function close_item_dialog(player, action)
         local modal_data = util.globals.modal_data(player)
         local table_temperatures = modal_data.modal_elements.temperatures_table
 
+        local line = OBJECT_INDEX[modal_data.line_id]
+        line.temperatures[modal_data.name] = nil  -- reset if none is selected
+
         for _, button in pairs(table_temperatures.children) do
             if button.toggled then
-                local line = OBJECT_INDEX[modal_data.line_id]
                 line.temperatures[modal_data.name] = button.tags.temperature
                 break
             end
