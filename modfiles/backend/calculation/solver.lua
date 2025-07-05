@@ -35,19 +35,13 @@ end
 
 local function set_blank_factory(player, factory)
     local blank_class = structures.class.init()
-    local product_class = structures.class.init()
-
-    -- Need to treat products differently because they work differently under the hood
-    for product in factory:iterator() do
-        structures.class.add(product_class, product.proto, product:get_required_amount())
-    end
 
     solver.set_factory_result {
         player_index = player.index,
         factory_id = factory.id,
         energy_consumption = 0,
         emissions = 0,
-        Product = product_class,
+        Product = blank_class,
         Byproduct = blank_class,
         Ingredient = blank_class,
         matrix_free_items = factory.matrix_free_items

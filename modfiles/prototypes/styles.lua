@@ -138,9 +138,9 @@ styles["fp_button_push"] = {
     height = 26,
     minimal_width = 0,
     top_padding = 0,
-    right_padding = 12,
+    right_padding = 8,
     bottom_padding = 0,
-    left_padding = 12
+    left_padding = 8
 }
 
 styles["fp_sprite-button_rounded_sprite"] = {

@@ -1,8 +1,8 @@
 local Line = require("backend.data.Line")
 
 -- ** LOCAL UTIL **
--- Serves the dual-purpose of determining the appropriate settings for the recipe picker filter and, if there
--- is only one that matches, to return a recipe name that can be added directly without the modal dialog
+-- Serves the dual-purpose of determining the appropriate settings for the recipe picker filter
+-- and finding any recipes that produce the given prototype
 local function match_recipes(player, modal_data, proto)
     local force_recipes, force_technologies = player.force.recipes, player.force.technologies
     local preferences = util.globals.preferences(player)
@@ -75,12 +75,7 @@ local function match_recipes(player, modal_data, proto)
     if relevant_recipes_count == 0 then
         local error = (user_disabled_recipe) and {"fp.error_no_enabled_recipe"} or {"fp.error_no_relevant_recipe"}
         return nil, error, nil
-
-    elseif relevant_recipes_count == 1 then
-        local chosen_recipe = relevant_recipes[1]
-        return chosen_recipe.proto.id, nil, nil
-
-    else  -- 2+ relevant recipes
+    else
         return relevant_recipes, nil, filters
     end
 end
@@ -312,9 +307,8 @@ local function recipe_early_abort_check(player, modal_data)
         return true  -- signal that the dialog does not need to actually be opened
 
     else
-        -- If one relevant recipe is found, try it straight away
-        if type(result) == "number" then  -- the given number being the recipe_id
-            attempt_adding_line(player, result, modal_data)
+        if #result == 1 then  -- if one relevant recipe is found, try it straight away
+            attempt_adding_line(player, result[1].proto.id, modal_data)
             return true  -- idem above
 
         else  -- Otherwise, save the relevant data for the dialog opener
