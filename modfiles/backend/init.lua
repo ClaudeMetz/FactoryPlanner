@@ -236,13 +236,12 @@ local function handle_configuration_change()
         return
     end
 
-    migrator.migrate_global(migrations)
-    migrator.migrate_player_tables(migrations)
-
-    -- Re-build prototypes
     storage.prototypes = {}
     prototyper.build()
     loader.run(true)
+
+    migrator.migrate_global(migrations)
+    migrator.migrate_player_tables(migrations)
 
     for index, player in pairs(game.players) do
         refresh_player_table(player)  -- part of migration cleanup

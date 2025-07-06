@@ -134,6 +134,7 @@ function generator.machines.generate()
                     combined_category=""}  -- combined filled in by fuel generator
 
             else  -- Avoid adding this type of complex fluid energy as electrical energy
+                -- When I add support for this, I need to take care of limiting min/max temps on the fuel
                 energy_type = "void"
             end
 
@@ -714,6 +715,8 @@ end
 ---@field hidden boolean
 ---@field stack_size uint?
 ---@field weight double?
+---@field temperature float?
+---@field base_name string?
 ---@field ingredient_only boolean
 ---@field order string
 ---@field group ItemGroup
@@ -721,40 +724,16 @@ end
 ---@field tooltip LocalisedString?
 ---@field fixed_unit LocalisedString?
 
----@class RelevantItem
----@field proto RecipeItem
----@field is_product boolean
+---@alias RelevantItems { [ItemType]: { [ItemName]: ItemDetails } }
 
----@alias RelevantItems { [ItemType]: { [ItemName]: RelevantItem } }
+---@class ItemDetails
+---@field ingredient_only boolean
+---@field temperature float?
 
 -- Returns all relevant items and fluids
 ---@return NamedPrototypesWithCategory<FPItemPrototype>
 function generator.items.generate()
     local items = {}   ---@type NamedPrototypesWithCategory<FPItemPrototype>
-
-    ---@param table RelevantItems
-    ---@param item RelevantItem
-    local function add_item(table, item)
-        local type = item.proto.type
-        local name = item.proto.name
-        table[type] = table[type] or {}
-        table[type][name] = table[type][name] or {}
-        local item_details = table[type][name]
-        -- Determine whether this item is used as a product at least once
-        item_details.is_product = item_details.is_product or item.is_product
-    end
-
-    -- Create a table containing every item that is either a product or an ingredient to at least one recipe
-    local relevant_items = {}  ---@type RelevantItems
-    for _, recipe_proto in pairs(storage.prototypes.recipes) do
-        for _, product in pairs(recipe_proto.products) do
-            add_item(relevant_items, {proto=product, is_product=true})
-        end
-        for _, ingredient in pairs(recipe_proto.ingredients) do
-            add_item(relevant_items, {proto=ingredient, is_product=false})
-        end
-    end
-
 
     -- Build custom items, representing in-world entities mostly
     local custom_items, rocket_parts = {}, {}
@@ -826,20 +805,46 @@ function generator.items.generate()
     end
 
 
+    local relevant_items = {item={}, fluid={}, entity={}}
+    -- Extract items from recipes and note whether they are ever used as a product
+    for _, recipe_proto in pairs(storage.prototypes.recipes) do
+        for _, item_category in pairs({"products", "ingredients"}) do
+            for _, item_data in pairs(recipe_proto[item_category]) do
+                local type_data = relevant_items[item_data.type]
+                if type_data[item_data.name] == nil then
+                    type_data[item_data.name] = {
+                        ingredient_only = true,
+                        temperature = item_data.temperature,
+                        base_name = item_data.base_name
+                    }
+                end
+                if item_category == "products" then
+                    type_data[item_data.name].ingredient_only = false
+                end
+            end
+        end
+    end
+
     for type, item_table in pairs(relevant_items) do
         for item_name, item_details in pairs(item_table) do
-            local proto = (type == "entity") and custom_items[item_name] or
-                prototypes[type][item_name]  ---@type LuaItemPrototype | LuaFluidPrototype
+            local proto_name = item_details.base_name or item_name
+            local proto = (type == "entity") and custom_items[proto_name] or
+                prototypes[type][proto_name]  ---@type LuaItemPrototype | LuaFluidPrototype
 
             local item = {
                 name = item_name,
                 localised_name = proto.localised_name,
+                sprite = (type .. "/" .. proto.name),
                 type = type,
                 hidden = (not rocket_parts[item_name]) and proto.hidden,
                 stack_size = (type == "item") and proto.stack_size or nil,
                 weight = (type == "item") and proto.weight or nil,
-                ingredient_only = not item_details.is_product,
-                order = proto.order
+                temperature = item_details.temperature,
+                base_name = item_details.base_name,
+                ingredient_only = item_details.ingredient_only,
+                order = proto.order,
+                group = generator_util.generate_group_table(proto.group),
+                subgroup = generator_util.generate_group_table(proto.subgroup)
             }
 
             if type == "entity" then
@@ -848,10 +853,9 @@ function generator.items.generate()
                 item.subgroup = proto.subgroup
                 item.tooltip = proto.localised_name
                 item.fixed_unit = proto.fixed_unit or nil
-            else
-                item.sprite = (type .. "/" .. proto.name)
-                item.group = generator_util.generate_group_table(proto.group)
-                item.subgroup = generator_util.generate_group_table(proto.subgroup)
+            elseif type == "fluid" and item.temperature then
+                item.localised_name = {"fp.fluid_with_temperature", proto.localised_name, item.temperature}
+                item.tooltip = item.localised_name
             end
 
             insert_prototype(items, item, item.type)
@@ -898,6 +902,8 @@ function generator.fuels.generate()
                 category = proto.fuel_category,
                 combined_category = nil,  -- set below
                 fuel_value = proto.fuel_value,
+                minimum_temperature = nil,  -- fluid-only
+                maximum_temperature = nil,  -- fluid-only
                 stack_size = proto.stack_size,
                 weight = proto.weight,
                 emissions_multiplier = proto.fuel_emissions_multiplier,
@@ -922,10 +928,12 @@ function generator.fuels.generate()
                 category = "fluid-fuel",
                 combined_category = nil,  -- set below
                 fuel_value = proto.fuel_value,
-                stack_size = nil,
-                weight = nil,
+                minimum_temperature = nil,  -- unbounded for now
+                maximum_temperature = nil,  -- unbounded for now
+                stack_size = nil,  -- item-only
+                weight = nil,  -- item-only
                 emissions_multiplier = proto.emissions_multiplier,
-                burnt_result = nil
+                burnt_result = nil  -- item-only
             }
             fuel_categories[fuel.category] = fuel_categories[fuel.category] or {}
             table.insert(fuel_categories[fuel.category], fuel)

@@ -244,8 +244,28 @@ local function handle_item_click(player, tags, action)
         if item.proto.type == "entity" then return end
         local production_type = (tags.item_category == "byproduct") and "consume" or "produce"
         local add_after_line_id = (action == "add_recipe_below") and line.id or nil
-        util.raise.open_dialog(player, {dialog="recipe", modal_data={add_after_line_id=add_after_line_id,
-            production_type=production_type, category_id=item.proto.category_id, product_id=item.proto.id}})
+
+        local proto = item.proto
+        if proto.type == "fluid" and line.class == "Line" then
+            local temperature = line.temperatures[item.proto.name]
+            if temperature then proto = prototyper.util.find("items", proto.name .. "-" .. temperature, "fluid") end
+            -- If a no-temperature fluid is passed, it'll show all compatible temperatures/recipes
+        end
+
+        util.raise.open_dialog(player, {dialog="recipe", modal_data={line_id=line.id,
+            add_after_line_id=add_after_line_id, production_type=production_type,
+            category_id=proto.category_id, product_id=proto.id}})
+
+    elseif action == "edit" then
+        if item.proto.type ~= "fluid" then
+            util.cursor.create_flying_text(player, {"fp.can_only_edit_fluids"})
+            return
+        elseif line.class ~= "Line" then
+            util.cursor.create_flying_text(player, {"fp.can_only_edit_lines"})
+            return
+        end
+        util.raise.open_dialog(player, {dialog="item", modal_data={line_id=line.id,
+            category_id=item.proto.category_id, name=item.proto.name}})
 
     elseif action == "copy" then
         if item.proto.type == "entity" then return end
@@ -257,11 +277,10 @@ local function handle_item_click(player, tags, action)
         util.cursor.handle_item_click(player, item.proto, item.amount)
 
     elseif action == "factoriopedia" then
-        if item.proto.type == "entity" then
-            player.open_factoriopedia_gui(prototypes.entity[item.proto.name:gsub("custom%-", "")])
-        else
-            player.open_factoriopedia_gui(prototypes[item.proto.type][item.proto.name])
-        end
+        local name = item.proto.name
+        if item.proto.type == "entity" then name = name:gsub("custom%-", "")
+        elseif item.proto.temperature then name = item.proto.base_name end
+        player.open_factoriopedia_gui(prototypes[item.proto.type][name])
     end
 end
 
@@ -271,12 +290,25 @@ local function handle_fuel_click(player, tags, action)
 
     if action == "add_recipe_to_end" or action == "add_recipe_below" then
         local add_after_line_id = (action == "add_recipe_below") and line.id or nil
+
         local proto = prototyper.util.find("items", fuel.proto.name, fuel.proto.type)
-        util.raise.open_dialog(player, {dialog="recipe", modal_data={add_after_line_id=add_after_line_id,
-            production_type="produce", category_id=proto.category_id, product_id=proto.id}})
+        if fuel.proto.type == "fluid" then
+            local temperature = fuel.temperature
+            if temperature then proto = prototyper.util.find("items", proto.name .. "-" .. temperature, "fluid") end
+            -- If a no-temperature fluid is passed, it'll show all compatible temperatures/recipes
+        end
+
+        util.raise.open_dialog(player, {dialog="recipe", modal_data={fuel_id=fuel.id,
+            add_after_line_id=add_after_line_id, production_type="produce",
+            category_id=proto.category_id, product_id=proto.id}})
 
     elseif action == "edit" then
-        util.raise.open_dialog(player, {dialog="machine", modal_data={machine_id=line.machine.id}})
+        if fuel.proto.type ~= "fluid" then
+            util.cursor.create_flying_text(player, {"fp.can_only_edit_fluids"})
+            return
+        end
+        util.raise.open_dialog(player, {dialog="item", modal_data={fuel_id=fuel.id,
+            category_id=fuel.proto.category_id, name=fuel.proto.name}})
 
     elseif action == "copy" then
         util.clipboard.copy(player, fuel)
@@ -383,7 +415,7 @@ listeners.gui = {
             name = "act_on_line_byproduct",
             actions_table = {
                 add_recipe_to_end = {shortcut="left", limitations={archive_open=false, matrix_active=true}, show=true},
-                add_recipe_below = {shortcut="control-left", limitations={archive_open=false, matrix_active=true}},
+                add_recipe_below = {limitations={archive_open=false, matrix_active=true}},
                 copy = {shortcut="shift-right"},
                 add_to_cursor = {shortcut="alt-right"},
                 factoriopedia = {shortcut="alt-left"}
@@ -397,7 +429,8 @@ listeners.gui = {
             name = "act_on_line_ingredient",
             actions_table = {
                 add_recipe_to_end = {shortcut="left", limitations={archive_open=false}, show=true},
-                add_recipe_below = {shortcut="control-left", limitations={archive_open=false}},
+                add_recipe_below = {limitations={archive_open=false}},
+                edit = {shortcut="control-left", limitations={archive_open=false}, show=true},
                 copy = {shortcut="shift-right"},
                 add_to_cursor = {shortcut="alt-right"},
                 factoriopedia = {shortcut="alt-left"}
@@ -411,8 +444,8 @@ listeners.gui = {
             name = "act_on_line_fuel",
             actions_table = {
                 add_recipe_to_end = {shortcut="left", limitations={archive_open=false}, show=true},
-                add_recipe_below = {shortcut="control-left", limitations={archive_open=false}},
-                edit = {limitations={archive_open=false}},
+                add_recipe_below = {limitations={archive_open=false}},
+                edit = {shortcut="control-left", limitations={archive_open=false}, show=true},
                 copy = {shortcut="shift-right"},
                 paste = {shortcut="shift-left", limitations={archive_open=false}},
                 add_to_cursor = {shortcut="alt-right"},

@@ -10,6 +10,8 @@ local generator_util = {}
 ---@field name string
 ---@field type string
 ---@field amount number
+---@field temperature float?
+---@field base_name string?
 ---@field proddable_amount number?
 
 ---@param product Product
@@ -27,12 +29,21 @@ local function generate_formatted_product(product)
     local probability = (product.probability or 1)
     local proddable_amount = base_amount - (product.ignored_by_productivity or 0)
 
-    return {
+    local formatted_product = {
         name = product.name,
         type = product.type,
         amount = base_amount * probability,
         proddable_amount = proddable_amount * probability
     }
+
+    if product.type == "fluid" then
+        local fluid = prototypes.fluid[product.name]
+        formatted_product.temperature = product.temperature or fluid.default_temperature
+        formatted_product.name = product.name .. "-" .. formatted_product.temperature
+        formatted_product.base_name = product.name
+    end
+
+    return formatted_product
 end
 
 
@@ -87,6 +98,20 @@ end
 ---@param main_product Product?
 ---@param ingredients Ingredient[]
 function generator_util.format_recipe(recipe_proto, products, main_product, ingredients)
+    local temperature_limit = 3.4e+38
+
+    for _, base_ingredient in pairs(ingredients) do
+        if base_ingredient.type == "fluid" then
+            -- Adjust temperature ranges for easy handling - nil means unlimited
+            local min_temp, max_temp = base_ingredient.minimum_temperature, base_ingredient.maximum_temperature
+            min_temp = (min_temp and min_temp > -temperature_limit) and min_temp or nil
+            max_temp = (max_temp and max_temp < temperature_limit) and max_temp or nil
+
+            base_ingredient.minimum_temperature = min_temp
+            base_ingredient.maximum_temperature = max_temp
+        end
+    end
+
     local indexed_ingredients = create_type_indexed_list(ingredients)
     recipe_proto.type_counts.ingredients = determine_item_type_counts(indexed_ingredients)
 
@@ -158,25 +183,6 @@ function generator_util.format_recipe(recipe_proto, products, main_product, ingr
     recipe_proto.ingredients = ingredients
     recipe_proto.products = formatted_products
 end
-
-
---[[ -- Adds the additional proto's ingredients, products and energy to the main proto
----@param main_proto FPRecipePrototype
----@param additional_proto FPRecipePrototype
-function generator_util.combine_recipes(main_proto, additional_proto)
-    ---@param item_category "products" | "ingredients"
-    local function add_items_to_main_proto(item_category)
-        local additional_items = additional_proto[item_category]  ---@type RecipeItem[]
-        for _, item in pairs(additional_items) do
-            table.insert(main_proto[item_category], item)
-        end
-        combine_identical_products(main_proto[item_category])
-    end
-
-    add_items_to_main_proto("products")
-    add_items_to_main_proto("ingredients")
-    main_proto.energy = main_proto.energy + additional_proto.energy
-end ]]
 
 
 -- Active mods table needed for the funtions below
@@ -320,7 +326,7 @@ function generator_util.determine_entity_sprite(proto)
     return nil
 end
 
--- NOTE this is wrong now that silos can have two rockets in progress at once
+-- This is wrong now that silos can have two rockets in progress at once
 --[[
 -- Determines how long a rocket takes to launch for the given rocket silo prototype
 -- These stages mirror the in-game progression and timing exactly. Most steps take an additional tick (+1)

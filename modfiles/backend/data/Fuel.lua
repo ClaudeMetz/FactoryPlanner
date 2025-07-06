@@ -4,6 +4,8 @@ local Object = require("backend.data.Object")
 ---@field class "Fuel"
 ---@field parent Machine
 ---@field proto FPFuelPrototype | FPPackedPrototype
+---@field temperature float?
+---@field temperature_data TemperatureData
 ---@field amount number
 ---@field satisfied_amount number
 local Fuel = Object.methods()
@@ -16,18 +18,41 @@ script.register_metatable("Fuel", Fuel)
 local function init(proto, parent)
     local object = Object.init({
         proto = proto,
+        temperature = nil,
+
+        temperature_data = nil,
 
         amount = 0,
         satisfied_amount = 0,
 
         parent = parent
     }, "Fuel", Fuel)  --[[@as Fuel]]
+
+    -- Initialize data related to fuel temperature if applicable
+    if proto.simplified ~= true then object:build_temperatures_data() end
+
     return object
 end
 
 
 function Fuel:index()
     OBJECT_INDEX[self.id] = self
+end
+
+
+-- Builds temperature data cache, and optionally migrates previous temperature
+function Fuel:build_temperatures_data()
+    local previous = self.temperature
+
+    self.temperature = nil
+    self.temperature_data = nil
+
+    if self.proto.type == "fluid" then
+        local temperature, data = util.temperature.generate_data(self.proto, previous)
+
+        self.temperature = temperature
+        self.temperature_data = data
+    end
 end
 
 
@@ -41,6 +66,7 @@ function Fuel:paste(object)
         for category_name, _ in pairs(burner.categories) do
             if object.proto.category == category_name then
                 self.proto = object.proto
+                self:build_temperatures_data()
                 return true, nil
             end
         end
@@ -59,7 +85,8 @@ end
 function Fuel:pack()
     return {
         class = self.class,
-        proto = prototyper.util.simplify_prototype(self.proto, "combined_category")
+        proto = prototyper.util.simplify_prototype(self.proto, "combined_category"),
+        temperature = self.temperature
     }
 end
 
@@ -68,6 +95,7 @@ end
 ---@return Fuel machine
 local function unpack(packed_self, parent)
     local unpacked_self = init(packed_self.proto, parent)
+    unpacked_self.temperature = packed_self.temperature  -- will be migrated through validation
 
     return unpacked_self
 end
@@ -87,6 +115,9 @@ function Fuel:validate()
             self.valid = false
         end
     end
+
+    -- Updates temperature data cache and migrates previous temperature choice
+    if self.valid then self:build_temperatures_data(self.temperature) end
 
     return self.valid
 end

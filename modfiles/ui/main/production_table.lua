@@ -351,9 +351,22 @@ function builders.ingredients(line, parent_flow, metadata)
             satisfaction_line = {"", "\n", (formatted_percentage .. "%"), " ", {"fp.satisfied"}}
         end
 
-        local name_line = {"fp.tt_title", proto.localised_name}
+        local name_line, temperature_line = {"", {"fp.tt_title", {"", proto.localised_name}}}, ""
+        if proto.type == "fluid" and line.class ~= "Floor" then
+            local temperature_data = line.temperature_data[proto.name]   -- exists for any fluid ingredient
+            table.insert(name_line, temperature_data.annotation)
+
+            local temperature = line.temperatures[proto.name]
+            if temperature == nil then
+                style = "flib_slot_button_purple_small"
+                temperature_line = {"fp.no_temperature_configured"}
+            else
+                temperature_line = {"fp.configured_temperature", temperature}
+            end
+        end
+
         local number_line = (number_tooltip) and {"", "\n", number_tooltip} or ""
-        local tooltip = {"", name_line, number_line, satisfaction_line,
+        local tooltip = {"", name_line, temperature_line, number_line, satisfaction_line,
             "\n", metadata.action_tooltips["act_on_line_ingredient"]}
 
         local button = parent_flow.add{type="sprite-button", sprite=proto.sprite, style=style,
@@ -384,12 +397,26 @@ function builders.fuel(line, parent_flow, metadata)
         satisfaction_line = {"", "\n", (formatted_percentage .. "%"), " ", {"fp.satisfied"}}
     end
 
-    local name_line = {"fp.tt_title_with_note", fuel.proto.localised_name, {"fp.pu_fuel", 1}}
+    local name_line, temperature_line = {"fp.tt_title_with_note", fuel.proto.localised_name, {"fp.pu_fuel", 1}}, ""
+    local style = "flib_slot_button_cyan_small"
+
+    if fuel.proto.type == "fluid" then
+        local temperature_data = fuel.temperature_data   -- exists for any fluid fuel
+        table.insert(name_line, temperature_data.annotation)
+
+        if fuel.temperature == nil then
+            style = "flib_slot_button_purple_small"
+            temperature_line = {"fp.no_temperature_configured"}
+        else
+            temperature_line = {"fp.configured_temperature", fuel.temperature}
+        end
+    end
+
     local number_line = (number_tooltip) and {"", "\n", number_tooltip} or ""
-    local tooltip = {"", name_line, number_line, satisfaction_line,
+    local tooltip = {"", name_line, temperature_line, number_line, satisfaction_line,
         "\n", metadata.action_tooltips["act_on_line_fuel"]}
 
-    local button = parent_flow.add{type="sprite-button", sprite=fuel.proto.sprite, style="flib_slot_button_cyan_small",
+    local button = parent_flow.add{type="sprite-button", sprite=fuel.proto.sprite, style=style,
         tags={mod="fp", on_gui_click="act_on_line_fuel", fuel_id=fuel.id, on_gui_hover="set_tooltip",
         context="production_table"},  number=amount, mouse_button_filter={"left-and-right"}, raise_hover_events=true}
     metadata.tooltips[button.index] = tooltip

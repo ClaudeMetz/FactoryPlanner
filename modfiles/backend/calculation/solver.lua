@@ -35,19 +35,13 @@ end
 
 local function set_blank_factory(player, factory)
     local blank_class = structures.class.init()
-    local product_class = structures.class.init()
-
-    -- Need to treat products differently because they work differently under the hood
-    for product in factory:iterator() do
-        structures.class.add(product_class, product.proto, product:get_required_amount())
-    end
 
     solver.set_factory_result {
         player_index = player.index,
         factory_id = factory.id,
         energy_consumption = 0,
         emissions = 0,
-        Product = product_class,
+        Product = blank_class,
         Byproduct = blank_class,
         Ingredient = blank_class,
         matrix_free_items = factory.matrix_free_items
@@ -70,12 +64,38 @@ local function factory_products(factory)
     return products
 end
 
+local function get_temperature_name(line, ingredient)
+    if ingredient.type == "fluid" then
+        local temperature = line.temperatures[ingredient.name]
+        return (temperature ~= nil) and (ingredient.name .. "-" .. temperature) or nil
+    else
+        return ingredient.name
+    end
+end
+
+local function line_ingredients(line)
+    local ingredients = {}
+    for _, ingredient in pairs(line.recipe_proto.ingredients) do
+        local name = get_temperature_name(line, ingredient)
+        -- If any relevant ingredient has no temperature set, this line is invalid
+        if name == nil then return nil end
+
+        table.insert(ingredients, {
+            name = name,
+            type = ingredient.type,
+            amount = ingredient.amount
+        })  -- don't need min/max temperatures here
+    end
+    return ingredients
+end
+
 
 -- Generates structured data of the given floor for calculation
 local function generate_floor_data(player, factory, floor)
     local floor_data = {
         id = floor.id,
-        products = (floor.level == 1) and factory_products(factory) or floor.first.recipe_proto.products,
+        products = (floor.level == 1) and factory_products(factory)
+            or floor.first.recipe_proto.products,
         lines = {}
     }
 
@@ -88,15 +108,22 @@ local function generate_floor_data(player, factory, floor)
             table.insert(floor_data.lines, line_data)
         else
             local relevant_line = (line.parent.level > 1) and line.parent.first or nil  --[[@as Line]]
+            local ingredients = line_ingredients(line)  -- builds in chosen temperatures
+
+            local fuel = line.machine.fuel
+            local missing_fuel_temp = (fuel and fuel.proto.type == "fluid" and not fuel.temperature)
+
             -- If a line has a percentage of zero or is inactive, it is not useful to the result of the factory
             -- Alternatively, if this line is on a subfloor and the top line of the floor is useless, it is useless too
             if (relevant_line and (relevant_line.percentage == 0 or not relevant_line.active))
                     or line.percentage == 0 or not line.active or not line:get_surface_compatibility().overall
-                    or (not factory.matrix_free_items and line.production_type == "consume") then
+                    or (not factory.matrix_free_items and line.production_type == "consume")
+                    or ingredients == nil or missing_fuel_temp == true then
                 set_blank_line(player, floor, line)  -- useless lines don't need to run through the solver
             else
                 local machine = line.machine
                 line_data.recipe_proto = line.recipe_proto
+                line_data.ingredients = ingredients
                 line_data.percentage = line.percentage  -- non-zero
                 line_data.production_type = line.production_type
                 line_data.priority_product_proto = line.priority_product
@@ -130,6 +157,15 @@ local function generate_floor_data(player, factory, floor)
                         * beacon.quality_proto.beacon_power_usage_multiplier
                 end
 
+                local fuel = machine.fuel
+                if fuel then  -- will have a temperature configured if applicable
+                    if fuel.proto.type == "fluid" then
+                        line_data.fuel_item = {name=fuel.proto.name .. "-" .. fuel.temperature, type="fluid"}
+                    else
+                        line_data.fuel_item = {name=fuel.proto.name, type=fuel.proto.type}
+                    end
+                end
+
                 table.insert(floor_data.lines, line_data)
             end
         end
@@ -158,6 +194,12 @@ local function update_object_items(object, item_category, item_results)
 
     for _, item_result in pairs(structures.class.list(item_results)) do
         local item_proto = prototyper.util.find("items", item_result.name, item_result.type)  --[[@as FPItemPrototype]]
+
+        -- Floor items keep their temperature, since they can't be configured from there
+        if object.class ~= "Floor" and item_category == "ingredients" and item_proto.base_name then
+            item_proto = prototyper.util.find("items", item_proto.base_name, "fluid")
+        end
+
         if object.class ~= "Floor" or item_proto.type ~= "entity" then
             table.insert(item_list, {proto=item_proto, amount=item_result.amount})
         end
@@ -183,8 +225,8 @@ end
 local function update_ingredient_satisfaction(floor, product_class)
     product_class = product_class or structures.class.init()
 
-    local function determine_satisfaction(ingredient)
-        local product_amount = product_class[ingredient.proto.type][ingredient.proto.name]
+    local function determine_satisfaction(ingredient, name)
+        local product_amount = product_class[ingredient.proto.type][name]
 
         if product_amount ~= nil then
             if product_amount >= ingredient.amount then
@@ -205,12 +247,15 @@ local function update_ingredient_satisfaction(floor, product_class)
             local subfloor_product_class = ftable.deep_copy(product_class)
             update_ingredient_satisfaction(line, subfloor_product_class)
         elseif line.machine.fuel then
-            determine_satisfaction(line.machine.fuel)
+            local fuel = line.machine.fuel
+            local name = (fuel.temperature) and (fuel.proto.name .. "-" .. fuel.temperature) or fuel.proto.name
+            determine_satisfaction(fuel, name)
         end
 
         for _, ingredient in pairs(line.ingredients) do
             if ingredient.proto.type ~= "entity" then
-                determine_satisfaction(ingredient)
+                local name = get_temperature_name(line, ingredient.proto)
+                determine_satisfaction(ingredient, name)
             end
         end
 

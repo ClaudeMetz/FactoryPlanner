@@ -175,7 +175,8 @@ local function handle_item_button_click(player, tags, action)
         util.cursor.handle_item_click(player, item.proto, amount)
 
     elseif action == "factoriopedia" then
-        player.open_factoriopedia_gui(prototypes[item.proto.type][item.proto.name])
+        local name = (item.proto.temperature) and item.proto.base_name or item.proto.name
+        player.open_factoriopedia_gui(prototypes[item.proto.type][name])
     end
 end
 
