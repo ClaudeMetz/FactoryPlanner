@@ -109,11 +109,16 @@ local function generate_floor_data(player, factory, floor)
         else
             local relevant_line = (line.parent.level > 1) and line.parent.first or nil  --[[@as Line]]
             local ingredients = line_ingredients(line)  -- builds in chosen temperatures
+
+            local fuel = line.machine.fuel
+            local missing_fuel_temp = (fuel and fuel.proto.type == "fluid" and not fuel.temperature)
+
             -- If a line has a percentage of zero or is inactive, it is not useful to the result of the factory
             -- Alternatively, if this line is on a subfloor and the top line of the floor is useless, it is useless too
-            if (relevant_line and (relevant_line.percentage == 0 or not relevant_line.active)) or ingredients == nil
+            if (relevant_line and (relevant_line.percentage == 0 or not relevant_line.active))
                     or line.percentage == 0 or not line.active or not line:get_surface_compatibility().overall
-                    or (not factory.matrix_free_items and line.production_type == "consume") then
+                    or (not factory.matrix_free_items and line.production_type == "consume")
+                    or ingredients == nil or missing_fuel_temp == true then
                 set_blank_line(player, floor, line)  -- useless lines don't need to run through the solver
             else
                 local machine = line.machine
@@ -150,6 +155,15 @@ local function generate_floor_data(player, factory, floor)
                 if beacon ~= nil and beacon.total_amount ~= nil then
                     line_data.beacon_consumption = beacon.proto.energy_usage * beacon.total_amount * 60
                         * beacon.quality_proto.beacon_power_usage_multiplier
+                end
+
+                local fuel = machine.fuel
+                if fuel then  -- will have a temperature configured if applicable
+                    if fuel.proto.type == "fluid" then
+                        line_data.fuel_item = {name=fuel.proto.name .. "-" .. fuel.temperature, type="fluid"}
+                    else
+                        line_data.fuel_item = {name=fuel.proto.name, type=fuel.proto.type}
+                    end
                 end
 
                 table.insert(floor_data.lines, line_data)
@@ -233,7 +247,9 @@ local function update_ingredient_satisfaction(floor, product_class)
             local subfloor_product_class = ftable.deep_copy(product_class)
             update_ingredient_satisfaction(line, subfloor_product_class)
         elseif line.machine.fuel then
-            determine_satisfaction(line.machine.fuel)
+            local fuel = line.machine.fuel
+            local name = (fuel.temperature) and (fuel.proto.name .. "-" .. fuel.temperature) or fuel.proto.name
+            determine_satisfaction(fuel, name)
         end
 
         for _, ingredient in pairs(line.ingredients) do

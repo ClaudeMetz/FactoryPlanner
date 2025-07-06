@@ -290,12 +290,25 @@ local function handle_fuel_click(player, tags, action)
 
     if action == "add_recipe_to_end" or action == "add_recipe_below" then
         local add_after_line_id = (action == "add_recipe_below") and line.id or nil
+
         local proto = prototyper.util.find("items", fuel.proto.name, fuel.proto.type)
-        util.raise.open_dialog(player, {dialog="recipe", modal_data={add_after_line_id=add_after_line_id,
-            production_type="produce", category_id=proto.category_id, product_id=proto.id}})
+        if fuel.proto.type == "fluid" then
+            local temperature = fuel.temperature
+            if temperature then proto = prototyper.util.find("items", proto.name .. "-" .. temperature, "fluid") end
+            -- If a no-temperature fluid is passed, it'll show all compatible temperatures/recipes
+        end
+
+        util.raise.open_dialog(player, {dialog="recipe", modal_data={fuel_id=fuel.id,
+            add_after_line_id=add_after_line_id, production_type="produce",
+            category_id=proto.category_id, product_id=proto.id}})
 
     elseif action == "edit" then
-        util.raise.open_dialog(player, {dialog="machine", modal_data={machine_id=line.machine.id}})
+        if fuel.proto.type ~= "fluid" then
+            util.cursor.create_flying_text(player, {"fp.can_only_edit_fluids"})
+            return
+        end
+        util.raise.open_dialog(player, {dialog="item", modal_data={fuel_id=fuel.id,
+            category_id=fuel.proto.category_id, name=fuel.proto.name}})
 
     elseif action == "copy" then
         util.clipboard.copy(player, fuel)
@@ -431,8 +444,8 @@ listeners.gui = {
             name = "act_on_line_fuel",
             actions_table = {
                 add_recipe_to_end = {shortcut="left", limitations={archive_open=false}, show=true},
-                add_recipe_below = {shortcut="control-left", limitations={archive_open=false}},
-                edit = {limitations={archive_open=false}},
+                add_recipe_below = {limitations={archive_open=false}},
+                edit = {shortcut="control-left", limitations={archive_open=false}, show=true},
                 copy = {shortcut="shift-right"},
                 paste = {shortcut="shift-left", limitations={archive_open=false}},
                 add_to_cursor = {shortcut="alt-right"},

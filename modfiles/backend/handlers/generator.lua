@@ -134,6 +134,7 @@ function generator.machines.generate()
                     combined_category=""}  -- combined filled in by fuel generator
 
             else  -- Avoid adding this type of complex fluid energy as electrical energy
+                -- When I add support for this, I need to take care of limiting min/max temps on the fuel
                 energy_type = "void"
             end
 
@@ -901,6 +902,8 @@ function generator.fuels.generate()
                 category = proto.fuel_category,
                 combined_category = nil,  -- set below
                 fuel_value = proto.fuel_value,
+                minimum_temperature = nil,  -- fluid-only
+                maximum_temperature = nil,  -- fluid-only
                 stack_size = proto.stack_size,
                 weight = proto.weight,
                 emissions_multiplier = proto.fuel_emissions_multiplier,
@@ -925,10 +928,12 @@ function generator.fuels.generate()
                 category = "fluid-fuel",
                 combined_category = nil,  -- set below
                 fuel_value = proto.fuel_value,
-                stack_size = nil,
-                weight = nil,
+                minimum_temperature = nil,  -- unbounded for now
+                maximum_temperature = nil,  -- unbounded for now
+                stack_size = nil,  -- item-only
+                weight = nil,  -- item-only
                 emissions_multiplier = proto.emissions_multiplier,
-                burnt_result = nil
+                burnt_result = nil  -- item-only
             }
             fuel_categories[fuel.category] = fuel_categories[fuel.category] or {}
             table.insert(fuel_categories[fuel.category], fuel)
