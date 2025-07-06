@@ -9,10 +9,6 @@ local Beacon = require("backend.data.Beacon")
 ---@field machine boolean
 ---@field overall boolean
 
----@class TemperatureData
----@field annotation LocalisedString?
----@field applicable_values float[]
-
 ---@class Line: Object, ObjectMethods
 ---@field class "Line"
 ---@field parent Floor
@@ -273,40 +269,11 @@ function Line:build_temperatures_data(previous_temperatures)
 
     for _, ingredient in pairs(self.recipe_proto.ingredients) do
         if ingredient.type == "fluid" then
-            local min_temp = ingredient.minimum_temperature
-            local max_temp = ingredient.maximum_temperature
+            local previous = previous_temperatures[ingredient.name]
+            local temperature, data = util.temperature.generate_data(ingredient, previous)
 
-            local annotation = nil
-            if min_temp and not max_temp then
-                annotation = {"fp.min_temperature", min_temp}
-            elseif not min_temp and max_temp then
-                annotation = {"fp.max_temperature", max_temp}
-            elseif min_temp and max_temp then
-                annotation = {"fp.min_max_temperature", min_temp, max_temp}
-            end
-
-            local previous_temperature = previous_temperatures[ingredient.name]
-            local previous_still_valid = false
-
-            local applicable_values = {}
-            for _, fluid_proto in pairs(TEMPERATURE_MAP[ingredient.name]) do
-                if (not min_temp or min_temp <= fluid_proto.temperature) and
-                        (not max_temp or max_temp >= fluid_proto.temperature) then
-                    table.insert(applicable_values, fluid_proto.temperature)
-
-                    if previous_temperature == fluid_proto.temperature then
-                        previous_still_valid = true
-                    end
-                end
-            end
-
-            self.temperature_data[ingredient.name] = {
-                annotation = {"", " ", annotation},
-                applicable_values = applicable_values
-            }
-
-            local default_temperature = (#applicable_values == 1) and applicable_values[1] or nil
-            self.temperatures[ingredient.name] = (previous_still_valid) and previous_temperature or default_temperature
+            self.temperatures[ingredient.name] = temperature
+            self.temperature_data[ingredient.name] = data
         end
     end
 end
@@ -371,7 +338,7 @@ local function unpack(packed_self)
     unpacked_self.beacon = packed_self.beacon and Beacon.unpack(packed_self.beacon, unpacked_self)  --[[@as Beacon]]
     -- The prototype will be automatically unpacked by the validation process
     unpacked_self.priority_product = packed_self.priority_product
-    unpacked_self.temperatures = packed_self.temperatures  -- will need to be migrated through validation
+    unpacked_self.temperatures = packed_self.temperatures  -- will be migrated through validation
     unpacked_self.comment = packed_self.comment
 
     return unpacked_self

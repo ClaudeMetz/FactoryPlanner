@@ -73,6 +73,8 @@ function Machine:normalize_fuel(player)
             self.fuel.proto = prototyper.util.find("fuels", self.fuel.proto.name, burner.combined_category)
         end
     end
+
+    self.fuel:build_temperatures_data()  -- validate temperature
 end
 
 
@@ -251,7 +253,7 @@ function Machine:validate()
     if self.valid then  -- only makes sense if the machine is valid
         if self.proto.burner and not self.fuel then
             -- If this machine changed to require fuel, add this dummy
-        local dummy = {name = "", category = self.proto.burner.combined_category,
+            local dummy = {name = "", category = self.proto.burner.combined_category,
                 data_type = "fuels", simplified = true}
             self.fuel = Fuel.init(dummy, self)
         end

@@ -10,9 +10,9 @@ local function select_temperature(player, temperature)
 end
 
 local function open_item_dialog(player, modal_data)
-    local line = OBJECT_INDEX[modal_data.line_id]
-    local temperature_data = line.temperature_data[modal_data.name]
-    -- This assumes it'll only be provided with fluids
+    local object = OBJECT_INDEX[modal_data.line_id or modal_data.fuel_id]
+    local temperature_data = (modal_data.line_id) and object.temperature_data[modal_data.name]
+        or object.temperature_data
 
     local content_frame = modal_data.modal_elements.content_frame
     local flow_temperature = content_frame.add{type="flow", direction="horizontal"}
@@ -35,7 +35,11 @@ local function open_item_dialog(player, modal_data)
             tags={mod="fp", on_gui_click="change_item_temperature", temperature=temperature},
             style="fp_button_push", mouse_button_filter={"left"}}
     end
-    select_temperature(player, line.temperatures[modal_data.name])  -- sets toggled state
+
+    local temperature = nil  -- needs to be an if because the value can be nil
+    if object.class == "Line" then temperature = object.temperatures[modal_data.name]
+    else temperature = object.temperature end
+    select_temperature(player, temperature)  -- sets toggled state
 end
 
 local function close_item_dialog(player, action)
@@ -43,14 +47,20 @@ local function close_item_dialog(player, action)
         local modal_data = util.globals.modal_data(player)
         local table_temperatures = modal_data.modal_elements.temperatures_table
 
-        local line = OBJECT_INDEX[modal_data.line_id]
-        line.temperatures[modal_data.name] = nil  -- reset if none is selected
+        local object = OBJECT_INDEX[modal_data.line_id or modal_data.fuel_id]
+        local temperature = nil  -- reset if none is selected
 
         for _, button in pairs(table_temperatures.children) do
             if button.toggled then
-                line.temperatures[modal_data.name] = button.tags.temperature
+                temperature = button.tags.temperature
                 break
             end
+        end
+
+        if object.class == "Fuel" then
+            object.temperature = temperature
+        else
+            object.temperatures[modal_data.name] = temperature
         end
 
         solver.update(player)
@@ -76,7 +86,8 @@ listeners.gui = {
 listeners.dialog = {
     dialog = "item",
     metadata = (function(modal_data)
-        local proto = prototyper.util.find("items", modal_data.name, modal_data.category_id)
+        local data_type = (modal_data.fuel_id) and "fuels" or "items"
+        local proto = prototyper.util.find(data_type, modal_data.name, modal_data.category_id)
         return {
             caption = {"", {"fp.edit"}, " ", {"fp.pl_item", 1}},
             subheader_text = {"fp.item_dialog_description", proto.localised_name},

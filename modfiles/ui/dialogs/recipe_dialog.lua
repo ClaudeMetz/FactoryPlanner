@@ -108,9 +108,13 @@ local function attempt_adding_line(player, recipe_id, modal_data)
 
         -- Set temperature on ingredient that this recipe fulfills
         if modal_data.temperature then
-            local origin_line = OBJECT_INDEX[modal_data.line_id]
-            local fluid_name = modal_data.base_fluid.name
-            origin_line.temperatures[fluid_name] = modal_data.temperature
+            if modal_data.line_id then
+                local origin_line = OBJECT_INDEX[modal_data.line_id]
+                local fluid_name = modal_data.base_fluid.name
+                origin_line.temperatures[fluid_name] = modal_data.temperature
+            else  -- fuel_id
+                OBJECT_INDEX[modal_data.fuel_id].temperature = modal_data.temperature
+            end
         end
 
         solver.update(player)
@@ -173,6 +177,7 @@ local function create_recipe_group_box(modal_data, relevant_group)
     local group_sprite = flow_group.add{type="sprite-button", sprite=("item-group/" .. relevant_group.proto.name),
         tooltip=relevant_group.proto.localised_name, style="transparent_slot"}
     group_sprite.style.size = 64
+    group_sprite.style.right_margin = 16
 
     flow_group.add{type="empty-widget", style="flib_horizontal_pusher"}
     local frame_recipes = flow_group.add{type="frame", direction="horizontal", style="fp_frame_light_slots"}
@@ -207,7 +212,6 @@ end
 local function build_dialog_structure(modal_data)
     local modal_elements = modal_data.modal_elements
     local content_frame = modal_elements.content_frame
-    content_frame.style.width = 380
     content_frame.clear()
 
     create_filter_box(modal_data)
@@ -322,12 +326,13 @@ end
 -- Handles populating the recipe dialog
 local function open_recipe_dialog(player, modal_data)
     -- At this point, we're sure there's more than one recipe choice
-
     if modal_data.result == nil then  -- this is a base_fluid dialog
         modal_data.base_fluid = prototyper.util.find("items", modal_data.product_id, modal_data.category_id)
 
-        local line = OBJECT_INDEX[modal_data.line_id]
-        local temperature_data = line.temperature_data[modal_data.base_fluid.name]
+        local object = OBJECT_INDEX[modal_data.line_id or modal_data.fuel_id]
+        local temperature_data = (modal_data.line_id) and object.temperature_data[modal_data.base_fluid.name]
+            or object.temperature_data
+
         modal_data.annotation = temperature_data.annotation
         modal_data.applicable_values = temperature_data.applicable_values
         apply_temperature(player, modal_data.applicable_values[1])

@@ -10,7 +10,8 @@ local _util = {
     nth_tick = require("util.nth_tick"),
     porter = require("util.porter"),
     actions = require("util.actions"),
-    effects = require("util.effects")
+    effects = require("util.effects"),
+    temperature = require("util.temperature")
 }
 
 
