@@ -184,22 +184,34 @@ local function add_item_flow(line, relevant_line, item_category, button_color, m
         local amount, number_tooltip = item_views.process_item(metadata.player, item, nil, machine_count)
         if amount == -1 then goto skip_item end  -- an amount of -1 means it was below the margin of error
 
-        local number_line = (number_tooltip) and {"", "\n", number_tooltip} or ""
-        local tooltip = {"", {"fp.tt_title", proto.localised_name}, number_line,
-            "\n", metadata.action_tooltips["act_on_compact_item"]}
-        local style, enabled = "flib_slot_button_" .. button_color .. "_small", true
+        local style, enabled = "flib_slot_button_" .. button_color .. "_small"
         if relevant_line.done then style = "flib_slot_button_grayscale_small" end
+        local name_line, temperature_line = {"", {"fp.tt_title", {"", proto.localised_name}}}, ""
 
         if type == "entity" then
             style = (relevant_line.done) and "flib_slot_button_disabled_grayscale_small"
                 or "flib_slot_button_disabled_small"
+        elseif type == "fluid" and item_category == "ingredient" then
+            local temperature_data = line.temperature_data[proto.name]   -- exists for any fluid ingredient
+            table.insert(name_line, temperature_data.annotation)
+
+            local temperature = line.temperatures[proto.name]
+            if temperature == nil then
+                style = "flib_slot_button_purple_small"
+                temperature_line = {"fp.no_temperature_configured"}
+            else
+                temperature_line = {"fp.configured_temperature", temperature}
+            end
         end
+
+        local number_line = (number_tooltip) and {"", "\n", number_tooltip} or ""
+        local tooltip = {"", name_line, temperature_line, number_line, "\n",
+            metadata.action_tooltips["act_on_compact_item"]}
 
         local button = item_table.add{type="sprite-button", sprite=proto.sprite, number=amount,
             tags={mod="fp", on_gui_click="act_on_compact_item", line_id=line.id, item_category=item_category .. "s",
             item_index=index, on_gui_hover="hover_compact_item", on_gui_leave="leave_compact_item",
-            context="compact_dialog"}, style=style, enabled=enabled, mouse_button_filter={"left-and-right"},
-            raise_hover_events=true}
+            context="compact_dialog"}, style=style, mouse_button_filter={"left-and-right"}, raise_hover_events=true}
         metadata.tooltips[button.index] = tooltip
 
         item_buttons[type] = item_buttons[type] or {}
@@ -230,10 +242,25 @@ local function add_item_flow(line, relevant_line, item_category, button_color, m
         local amount, number_tooltip = item_views.process_item(metadata.player, fuel, nil, machine_count)
         if amount == -1 then goto skip_fuel end  -- an amount of -1 means it was below the margin of error
 
-        local name_line = {"fp.tt_title_with_note", fuel.proto.localised_name, {"fp.pu_fuel", 1}}
+        local style = "flib_slot_button_cyan_small"
+        local name_line, temperature_line = {"fp.tt_title_with_note", fuel.proto.localised_name, {"fp.pu_fuel", 1}}, ""
+
+        if fuel.proto.type == "fluid" then
+            local temperature_data = fuel.temperature_data   -- exists for any fluid fuel
+            table.insert(name_line, temperature_data.annotation)
+
+            if fuel.temperature == nil then
+                style = "flib_slot_button_purple_small"
+                temperature_line = {"fp.no_temperature_configured"}
+            else
+                temperature_line = {"fp.configured_temperature", fuel.temperature}
+            end
+        end
+
+        style = (relevant_line.done) and "flib_slot_button_grayscale_small" or style
         local number_line = (number_tooltip) and {"", "\n", number_tooltip} or ""
-        local tooltip = {"", name_line, number_line, "\n", metadata.action_tooltips["act_on_compact_item"]}
-        local style = (relevant_line.done) and "flib_slot_button_grayscale_small" or "flib_slot_button_cyan_small"
+        local tooltip = {"", name_line, temperature_line, number_line, "\n",
+            metadata.action_tooltips["act_on_compact_item"]}
 
         local button = item_table.add{type="sprite-button", sprite=fuel.proto.sprite, style=style, number=amount,
             tags={mod="fp", on_gui_click="act_on_compact_item", fuel_id=fuel.id, on_gui_hover="hover_compact_item",
@@ -465,7 +492,8 @@ local function handle_ingredient_click(player, tags, action)
         util.cursor.handle_item_click(player, item.proto, item.amount)
 
     elseif action == "factoriopedia" then
-        player.open_factoriopedia_gui(prototypes[item.proto.type][item.proto.name])
+        local name = (item.proto.temperature) and item.proto.base_name or item.proto.name
+        player.open_factoriopedia_gui(prototypes[item.proto.type][name])
     end
 end
 
@@ -524,11 +552,10 @@ local function handle_item_click(player, tags, action)
         util.cursor.handle_item_click(player, item.proto, item.amount)
 
     elseif action == "factoriopedia" then
-        if item.proto.type == "entity" then
-            player.open_factoriopedia_gui(prototypes.entity[item.proto.name:gsub("custom%-", "")])
-        else
-            player.open_factoriopedia_gui(prototypes[item.proto.type][item.proto.name])
-        end
+        local name = item.proto.name
+        if item.proto.type == "entity" then name = name:gsub("custom%-", "")
+        elseif item.proto.temperature then name = item.proto.base_name end
+        player.open_factoriopedia_gui(prototypes[item.proto.type][name])
     end
 end
 

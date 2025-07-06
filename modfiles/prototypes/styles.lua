@@ -133,6 +133,16 @@ styles["fp_button_frame_tool"] = {
     left_padding = 8
 }
 
+styles["fp_button_push"] = {
+    type = "button_style",
+    height = 26,
+    minimal_width = 0,
+    top_padding = 0,
+    right_padding = 8,
+    bottom_padding = 0,
+    left_padding = 8
+}
+
 styles["fp_sprite-button_rounded_sprite"] = {
     type = "button_style",
     parent = "rounded_button",

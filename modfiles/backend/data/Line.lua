@@ -22,10 +22,12 @@ local Beacon = require("backend.data.Beacon")
 ---@field machine Machine
 ---@field beacon Beacon?
 ---@field priority_product (FPItemPrototype | FPPackedPrototype)?
+---@field temperatures { [string]: float }
 ---@field comment string
 ---@field surface_compatibility SurfaceCompatibility?
 ---@field total_effects ModuleEffects
 ---@field effects_tooltip LocalisedString
+---@field temperature_data { [string]: TemperatureData }
 ---@field products SimpleItem[]
 ---@field byproducts SimpleItem[]
 ---@field ingredients SimpleItem[]
@@ -49,11 +51,13 @@ local function init(recipe_proto, production_type)
         machine = nil,
         beacon = nil,
         priority_product = nil,
+        temperatures = nil,
         comment = "",
 
         surface_compatibility = nil,  -- determined on demand
         total_effects = nil,
         effects_tooltip = "",
+        temperature_data = nil,
 
         products = {},
         byproducts = {},
@@ -62,6 +66,10 @@ local function init(recipe_proto, production_type)
         emissions = 0,
         production_ratio = 0
     }, "Line", Line)  --[[@as Line]]
+
+    -- Initialize data related to fluid ingredients temperatures
+    if recipe_proto.simplified ~= true then object:build_temperatures_data({}) end
+
     return object
 end
 
@@ -253,6 +261,25 @@ function Line:get_surface_compatibility()
 end
 
 
+-- Builds temperature data caches, and optionally migrates previous temperatures
+---@param previous_temperatures { [string]: float }
+function Line:build_temperatures_data(previous_temperatures)
+    self.temperatures = {}
+    self.temperature_data = {}
+
+    for _, ingredient in pairs(self.recipe_proto.ingredients) do
+        if ingredient.type == "fluid" then
+            local previous = previous_temperatures[ingredient.name]
+            local temperature, data = util.temperature.generate_data(ingredient, previous)
+
+            self.temperatures[ingredient.name] = temperature
+            self.temperature_data[ingredient.name] = data
+        end
+    end
+end
+
+
+
 ---@param object CopyableObject
 ---@return boolean success
 ---@return string? error
@@ -295,6 +322,7 @@ function Line:pack()
         machine = self.machine:pack(),
         beacon = self.beacon and self.beacon:pack(),
         priority_product = prototyper.util.simplify_prototype(self.priority_product, "type"),
+        temperatures = self.temperatures,
         comment = self.comment
     }
 end
@@ -310,6 +338,7 @@ local function unpack(packed_self)
     unpacked_self.beacon = packed_self.beacon and Beacon.unpack(packed_self.beacon, unpacked_self)  --[[@as Beacon]]
     -- The prototype will be automatically unpacked by the validation process
     unpacked_self.priority_product = packed_self.priority_product
+    unpacked_self.temperatures = packed_self.temperatures  -- will be migrated through validation
     unpacked_self.comment = packed_self.comment
 
     return unpacked_self
@@ -330,7 +359,10 @@ function Line:validate()
         self.valid = (not self.priority_product.simplified) and self.valid
     end
 
-    self.surface_compatibility = nil
+    -- Updates temperature data caches and migrates previous temperature choices
+    if self.valid then self:build_temperatures_data(self.temperatures or {}) end
+
+    self.surface_compatibility = nil  -- reset cached value
 
     return self.valid
 end

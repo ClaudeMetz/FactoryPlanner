@@ -3,9 +3,7 @@ local function open_factory_dialog(player, modal_data)
     local id = modal_data.factory_id
     modal_data.factory = (id ~= nil) and OBJECT_INDEX[id] or nil
 
-    local modal_elements = modal_data.modal_elements
-    local content_frame = modal_elements.content_frame
-
+    local content_frame = modal_data.modal_elements.content_frame
     local flow_name = content_frame.add{type="flow", direction="horizontal"}
     flow_name.style.vertical_align = "center"
     flow_name.add{type="label", caption={"fp.info_label", {"fp.name"}}, tooltip={"fp.factory_dialog_name_tt"}}
@@ -15,7 +13,7 @@ local function open_factory_dialog(player, modal_data)
         tags={mod="fp", on_gui_confirmed="factory_name"}}
     textfield_name.style.left_margin = 16
     textfield_name.focus()
-    modal_elements["factory_name"] = textfield_name
+    modal_data.modal_elements["factory_name"] = textfield_name
 end
 
 local function close_factory_dialog(player, action)

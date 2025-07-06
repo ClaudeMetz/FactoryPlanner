@@ -107,7 +107,7 @@ local function update_line(line_data, aggregate, looped_fuel)
 
     -- Determine ingredients
     local Ingredient = structures.class.init()
-    for _, ingredient in pairs(recipe_proto.ingredients) do
+    for _, ingredient in pairs(line_data.ingredients) do
         local ingredient_amount = (ingredient.amount * production_ratio * line_data.resource_drain_rate)
 
         structures.class.add(Ingredient, ingredient, ingredient_amount)
@@ -134,18 +134,19 @@ local function update_line(line_data, aggregate, looped_fuel)
 
     local fuel_amount = nil
     if fuel_proto ~= nil then
+        local fuel_item = line_data.fuel_item
         fuel_amount = solver_util.determine_fuel_amount(energy_consumption, machine_proto.burner,
             fuel_proto.fuel_value)
 
         if original_aggregate ~= nil then  -- meaning this line produces its own fuel
-            local ingredient_class = original_aggregate.Ingredient[fuel_proto.type]
-            local initial_demand = ingredient_class[fuel_proto.name]
+            local ingredient_class = original_aggregate.Ingredient[fuel_item.type]
+            local initial_demand = ingredient_class[fuel_item.name]
             local ratio = fuel_amount / initial_demand
 
             if ratio + 0.001 < 1 then  -- a ratio >= 1 means this can't outproduce itself
                 -- Need a lot of precision here, hence the exponent of 20
                 local bumped_demand = initial_demand * ((1 - ratio ^ 20) / (1 - ratio))
-                ingredient_class[fuel_proto.name] = bumped_demand
+                ingredient_class[fuel_item.name] = bumped_demand
 
                 -- Run line with fuel amount bumped to account for own consumption
                 update_line(line_data, original_aggregate, bumped_demand - initial_demand)
@@ -155,7 +156,7 @@ local function update_line(line_data, aggregate, looped_fuel)
 
         -- Removed looped fuel from main aggregate as its used right away
         local corrected_amount = fuel_amount - (looped_fuel or 0)
-        local fuel_item = {type=fuel_proto.type, name=fuel_proto.name, amount=corrected_amount}
+        local fuel_item = {type=fuel_item.type, name=fuel_item.name, amount=corrected_amount}
         structures.class.add(aggregate.Ingredient, fuel_item)  -- add to floor
         -- Fuel is set via a special amount variable on the line itself
 
