@@ -191,7 +191,7 @@ local function add_item_flow(line, relevant_line, item_category, button_color, m
         if type == "entity" then
             style = (relevant_line.done) and "flib_slot_button_disabled_grayscale_small"
                 or "flib_slot_button_disabled_small"
-        elseif type == "fluid" and item_category == "ingredient" then
+        elseif type == "fluid" and item_category == "ingredient" and line.class ~= "Floor" then
             local temperature_data = line.temperature_data[proto.name]   -- exists for any fluid ingredient
             table.insert(name_line, temperature_data.annotation)
 
