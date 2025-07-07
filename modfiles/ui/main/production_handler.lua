@@ -246,7 +246,7 @@ local function handle_item_click(player, tags, action)
         local add_after_line_id = (action == "add_recipe_below") and line.id or nil
 
         local proto = item.proto
-        if proto.type == "fluid" and line.class == "Line" then
+        if production_type == "produce" and proto.type == "fluid" and line.class == "Line" then
             local temperature = line.temperatures[item.proto.name]
             if temperature then proto = prototyper.util.find("items", proto.name .. "-" .. temperature, "fluid") end
             -- If a no-temperature fluid is passed, it'll show all compatible temperatures/recipes
