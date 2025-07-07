@@ -102,8 +102,11 @@ function generator_util.format_recipe(recipe_proto, products, main_product, ingr
 
     for _, base_ingredient in pairs(ingredients) do
         if base_ingredient.type == "fluid" then
+            local min_temp = base_ingredient.minimum_temperature or base_ingredient.temperature
+            local max_temp = base_ingredient.maximum_temperature or base_ingredient.temperature
+            base_ingredient.temperature = nil  -- remove as to not confuse it with a product
+
             -- Adjust temperature ranges for easy handling - nil means unlimited
-            local min_temp, max_temp = base_ingredient.minimum_temperature, base_ingredient.maximum_temperature
             min_temp = (min_temp and min_temp > -temperature_limit) and min_temp or nil
             max_temp = (max_temp and max_temp < temperature_limit) and max_temp or nil
 
