@@ -2,9 +2,15 @@
 Version: 0.00.00
 Date: 00. 00. 0000
   Features:
-    -
+    - 
   Changes:
-    -
+    - 
+  Bugfixes:
+    - 
+
+---------------------------------------------------------------------------------------------------
+Version: 2.0.27
+Date: 07. 07. 2025
   Bugfixes:
     - Fixed that you couldn't add fluid byproduct-consuming recipes to the matrix solver anymore
     - Fixed a crash when loading a game with specific mods
