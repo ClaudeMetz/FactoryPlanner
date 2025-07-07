@@ -48,12 +48,27 @@ end
 local function recipe_map_from(item_type)
     local map = {}  ---@type RecipeMap
 
+    local function add(item_proto, recipe_id)
+        map[item_proto.category_id] = map[item_proto.category_id] or {}
+        map[item_proto.category_id][item_proto.id] = map[item_proto.category_id][item_proto.id] or {}
+        map[item_proto.category_id][item_proto.id][recipe_id] = true
+    end
+
     for _, recipe in pairs(storage.prototypes.recipes) do
         for _, item in ipairs(recipe[item_type]) do
-            local item_proto = prototyper.util.find("items", item.name, item.type)  ---@cast item_proto -nil
-            map[item_proto.category_id] = map[item_proto.category_id] or {}
-            map[item_proto.category_id][item_proto.id] = map[item_proto.category_id][item_proto.id] or {}
-            map[item_proto.category_id][item_proto.id][recipe.id] = true
+            if item_type == "ingredients" and item.type == "fluid" then
+                local min_temp = item.minimum_temperature
+                local max_temp = item.maximum_temperature
+                for _, fluid_proto in pairs(TEMPERATURE_MAP[item.name] or {}) do
+                    if (not min_temp or min_temp <= fluid_proto.temperature) and
+                            (not max_temp or max_temp >= fluid_proto.temperature) then
+                        add(fluid_proto, recipe.id)
+                    end
+                end
+            else
+                local item_proto = prototyper.util.find("items", item.name, item.type)  ---@cast item_proto -nil
+                add(item_proto, recipe.id)
+            end
         end
     end
 
@@ -230,14 +245,14 @@ function loader.run(skip_check)
     PROTOTYPE_MAPS = prototype_maps(prototyper.data_types)
     MODULE_NAME_MAP = module_name_map()
 
+    SORTED_ITEMS = sorted_items()
+    TEMPERATURE_MAP = temperature_map()
+
     ORDERED_RECIPE_GROUPS = ordered_recipe_groups()
     RECIPE_MAPS = {
         produce = recipe_map_from("products"),
         consume = recipe_map_from("ingredients")
     }
-
-    SORTED_ITEMS = sorted_items()
-    TEMPERATURE_MAP = temperature_map()
 
     PRODUCTIVITY_RECIPES = generate_productivity_recipes()
 

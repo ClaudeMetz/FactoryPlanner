@@ -112,7 +112,7 @@ local function attempt_adding_line(player, recipe_id, modal_data)
                 local origin_line = OBJECT_INDEX[modal_data.line_id]
                 local fluid_name = modal_data.base_fluid.name
                 origin_line.temperatures[fluid_name] = modal_data.temperature
-            else  -- fuel_id
+            elseif modal_data.fuel_id then
                 OBJECT_INDEX[modal_data.fuel_id].temperature = modal_data.temperature
             end
         end
