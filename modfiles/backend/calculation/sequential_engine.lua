@@ -9,22 +9,23 @@ local function update_line(line_data, aggregate, looped_fuel)
     local machine_proto = line_data.machine_proto
     local total_effects = line_data.total_effects
 
-    -- Prepare if this line produces its own fuel
-    local fuel_proto, original_aggregate = line_data.fuel_proto, nil
-    if looped_fuel == nil and fuel_proto ~= nil then  -- don't loop if this is already the loop
-        if aggregate.Ingredient[fuel_proto.type][fuel_proto.name] ~= nil then
-            original_aggregate = aggregate
-            aggregate = ftable.deep_copy(aggregate)
-        end
-    end
-
-    -- Determine relevant products
     local relevant_products, byproducts = {}, {}
+    local fuel_proto, original_aggregate = line_data.fuel_proto, nil
+
     for _, product in pairs(recipe_proto.products) do
+        -- Determine relevant products
         if aggregate.Ingredient[product.type][product.name] ~= nil then
             table.insert(relevant_products, product)
         else
             table.insert(byproducts, product)
+        end
+
+        -- Prepare if this line produces its own fuel
+        if looped_fuel == nil and fuel_proto ~= nil then  -- don't loop if this is already the loop
+            if product.type == fuel_proto.type and product.name == fuel_proto.name then
+                original_aggregate = aggregate
+                aggregate = ftable.deep_copy(aggregate)
+            end
         end
     end
 
