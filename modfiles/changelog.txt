@@ -2,9 +2,15 @@
 Version: 0.00.00
 Date: 00. 00. 0000
   Features:
-    -
+    - 
   Changes:
-    -
+    - 
+  Bugfixes:
+    - 
+
+---------------------------------------------------------------------------------------------------
+Version: 2.0.30
+Date: 08. 07. 2025
   Bugfixes:
     - Fixed an issue where recipes with fuel would not satisfy demand in some cases
 
