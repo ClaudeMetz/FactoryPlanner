@@ -10,7 +10,6 @@ local Module = require("backend.data.Module")
 ---@field module_count integer
 ---@field module_limit integer
 ---@field empty_slots integer
----@field total_effects ModuleEffects
 local ModuleSet = Object.methods()
 ModuleSet.__index = ModuleSet
 script.register_metatable("ModuleSet", ModuleSet)
@@ -25,7 +24,6 @@ local function init(parent)
         -- 0 as placeholder for simplified parents
         module_limit = parent.proto.module_limit or 0,
         empty_slots = parent.proto.module_limit or 0,
-        total_effects = nil,
 
         parent = parent
     }, "ModuleSet", ModuleSet)  --[[@as ModuleSet]]
@@ -107,7 +105,7 @@ function ModuleSet:normalize(features)
     if features.compatibility then self:verify_compatibility() end
     if features.trim then self:trim() end
     if features.sort then self:sort() end
-    if features.effects then self:summarize_effects() end
+    if features.effects then self.parent:summarize_effects() end
 
     self:count_modules()
 end
@@ -156,44 +154,71 @@ function ModuleSet:trim()
     for _, module in pairs(modules_to_remove) do self:remove(module) end
 end
 
--- Sorts modules in a deterministic fashion so they are in the same order for every line
-function ModuleSet:sort()
-    local modules_by_name = {}
-    for module in self:iterator() do
-        modules_by_name[module.proto.name] = module
-    end
 
-    self.first = nil
-    for _, category in ipairs(global.prototypes.modules) do
-        for _, module_proto in ipairs(category.members) do
-            local module = modules_by_name[module_proto.name]
-            if module then
-                module.previous, module.next = nil, nil
-                self:_insert(module)
-            end
-        end
-    end
+local function module_comparator(a, b)
+    local a_module, b_module = a.proto.id, b.proto.id  -- IDs are ordered sensibly
+    local a_quality, b_quality = a.quality_proto.level, b.quality_proto.level
+    if a_module < b_module then return true
+    elseif a_module > b_module then return false
+    elseif a_quality < b_quality then return true
+    elseif a_quality > b_quality then return false end
+    return false
 end
 
-function ModuleSet:summarize_effects()
-    local effects = {consumption = 0, speed = 0, productivity = 0, pollution = 0}
+-- Sorts modules in a deterministic fashion so they are in the same order for every line
+function ModuleSet:sort()
+    self:_sort(module_comparator)
+end
+
+
+---@return ModuleEffects
+function ModuleSet:get_effects()
+    local effects = ftable.shallow_copy(BLANK_EFFECTS)
     for module in self:iterator() do
         for name, effect in pairs(module.total_effects) do
             effects[name] = effects[name] + effect
         end
     end
-    self.total_effects = effects
-
-    self.parent:summarize_effects()
+    return effects
 end
 
 
 ---@param module_proto FPModulePrototype
 ---@return boolean compatible
 function ModuleSet:check_compatibility(module_proto)
-    return self.parent:check_module_compatibility(module_proto)
+    if not self.parent:uses_effects() then
+        return false
+    else
+        local compatible = true
+        local entity, recipe = self.parent.proto, self.parent.parent.recipe_proto
+        -- Any non-existing allowed list means all modules are allowed
+
+        local function check_effect_compatibility(allowed_effects)
+            if allowed_effects == nil then return end
+            for name, value in pairs(module_proto.effects) do
+                -- Effects only need to be in the allowed list if they are considered positive
+                if not allowed_effects[name] and util.effects.is_positive(name, value) then
+                    compatible = false
+                end
+            end
+        end
+        check_effect_compatibility(entity.allowed_effects)
+        check_effect_compatibility(recipe.allowed_effects)
+
+        local function check_category_compatibility(allowed_categories)
+            if allowed_categories == nil then return end
+            if not allowed_categories[module_proto.category] then
+                compatible = false
+            end
+        end
+        check_category_compatibility(entity.allowed_module_categories)
+        check_category_compatibility(recipe.allowed_module_categories)
+
+        return compatible
+    end
 end
 
+---@return ItemPrototypeFilter[]
 function ModuleSet:compile_filter()
     local compatible_modules = {}
     for module_name, module_proto in pairs(MODULE_NAME_MAP) do
@@ -202,13 +227,57 @@ function ModuleSet:compile_filter()
         end
     end
 
-    local existing_modules = {}
-    for module in self:iterator() do
-        table.insert(existing_modules, module.proto.name)
-    end
+    return {{filter="name", name=compatible_modules}}
+end
 
-    return {{filter="name", name=compatible_modules},
-        {filter="name", mode="and", invert=true, name=existing_modules}}
+
+function ModuleSet:clear()
+    self.first = nil
+    self:normalize({effects=true})
+end
+
+
+---@return DefaultModuleData[]
+function ModuleSet:compile_default()
+    local modules_default = {}
+    for module in self:iterator() do
+        table.insert(modules_default, {
+            prototype = module.proto.name,
+            quality = module.quality_proto.name,
+            amount = module.amount
+        })
+    end
+    return modules_default
+end
+
+---@param default_data DefaultModule[]
+---@return boolean equals
+function ModuleSet:equals_default(default_data)
+    if not default_data then return (self.module_count == 0) end
+    if #default_data ~= self:count() then return false end
+
+    local indexed_default = {}
+    for _, default in pairs(default_data) do
+        indexed_default[default.proto.name] = default
+    end
+    for module in self:iterator() do
+        local default = indexed_default[module.proto.name]
+        if not default or default.quality.name ~= module.quality_proto.name
+                or default.amount ~= module.amount then
+            return false
+        end
+    end
+    return true
+end
+
+---@param module_default DefaultModule[]
+function ModuleSet:ingest_default(module_default)
+    if not module_default then return end  -- no default to ingest
+    for _, default_module in pairs(module_default) do
+        self:insert(Module.init(default_module.proto, default_module.amount, default_module.quality))
+    end
+    -- Compatibility check necessary because the module might not be compatible with the recipe
+    self:normalize({compatibility=true, trim=true, sort=true, effects=true})  -- normalize for outdated defaults
 end
 
 
@@ -223,7 +292,7 @@ function ModuleSet:paste(module)
     end
 
     local desired_amount = math.min(module.amount, self.empty_slots)
-    local existing_module = self:find({proto=module.proto})
+    local existing_module = self:find({proto=module.proto, quality_proto=module.quality_proto})
     if existing_module then
         existing_module:set_amount(existing_module.amount + desired_amount)
     else
@@ -255,6 +324,7 @@ local function unpack(packed_self, parent)
     local unpacked_self = init(parent)
 
     unpacked_self.first = Object.unpack(packed_self.modules, Module.unpack, unpacked_self)  --[[@as Module]]
+    unpacked_self:count_modules()
 
     return unpacked_self
 end
@@ -264,13 +334,10 @@ end
 function ModuleSet:validate()
     self.valid = self:_validate()
 
-    if self.valid and self.parent.valid then
-        if not self.module_count or not self.empty_slots then  -- when validating an unpacked ModuleSet
-            self.module_limit = self.parent.proto.module_limit
-            self:count_modules()
-        end
+    -- Can't be valid with an invalid parent
+    self.valid = self.parent.valid and self.valid
 
-        -- .normalize doesn't remove incompatible modules here, the above validation already marks them
+    if self.valid then
         self:normalize({trim=true, sort=true, effects=true})
     end
 

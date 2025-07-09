@@ -5,7 +5,8 @@ local ModuleSet = require("backend.data.ModuleSet")
 ---@field class "Beacon"
 ---@field parent Line
 ---@field proto FPBeaconPrototype | FPPackedPrototype
----@field amount number
+---@field quality_proto FPQualityPrototype
+---@field amount integer
 ---@field total_amount number?
 ---@field module_set ModuleSet
 ---@field total_effects ModuleEffects
@@ -20,6 +21,7 @@ script.register_metatable("Beacon", Beacon)
 local function init(proto, parent)
     local object = Object.init({
         proto = proto,
+        quality_proto = defaults.get_fallback("qualities").proto,
         amount = 0,
         total_amount = nil,
         module_set = nil,
@@ -40,40 +42,57 @@ function Beacon:index()
 end
 
 
+---@return {name: string, quality: string}
+function Beacon:elem_value()
+    return {name=self.proto.name, quality=self.quality_proto.name}
+end
+
+
+---@return double profile_multiplier
+function Beacon:profile_multiplier()
+    if self.amount == 0 then
+        return 0
+    else
+        local profile_count = #self.proto.profile
+        local index = (self.amount > profile_count) and profile_count or self.amount
+        return self.proto.profile[index]
+    end
+end
+
+
 function Beacon:summarize_effects()
-    local effect_multiplier = self.proto.effectivity * self.amount
-    local effects = self.module_set.total_effects
+    local profile_mulitplier = self:profile_multiplier()
+    local effectivity = self.proto.effectivity + (self.quality_proto.level * self.proto.quality_bonus)
+    local effect_multiplier = self.amount * profile_mulitplier * effectivity
+
+    local effects = self.module_set:get_effects()
     for name, effect in pairs(effects) do
         effects[name] = effect * effect_multiplier
     end
+
     self.total_effects = effects
-    self.effects_tooltip = util.gui.format_module_effects(effects, false)
+    self.effects_tooltip = util.effects.format(effects)
 
     self.parent:summarize_effects()
 end
 
----@param module_proto FPModulePrototype
----@return boolean compatible
-function Beacon:check_module_compatibility(module_proto)
-    local recipe_proto, machine_proto = self.parent.recipe_proto, self.parent.machine.proto
+---@return boolean uses_effects
+function Beacon:uses_effects()
+    -- This method is here for ModuleSet to use generically
+    return self.parent:uses_beacon_effects()
+end
 
-    if next(module_proto.limitations) and recipe_proto.use_limitations
-            and not module_proto.limitations[recipe_proto.name] then
-        return false
-    end
 
-    local machine_effects, beacon_effects = machine_proto.allowed_effects, self.proto.allowed_effects
-    if machine_effects == nil or beacon_effects == nil then
-        return false
-    else
-        for effect_name, _ in pairs(module_proto.effects) do
-            if machine_effects[effect_name] == false or beacon_effects[effect_name] == false then
-                return false
-            end
-        end
-    end
+---@param player LuaPlayer
+function Beacon:reset(player)
+    local beacon_default = defaults.get(player, "beacons", nil)
 
-    return true
+    self.proto = beacon_default.proto  --[[@as FPBeaconPrototype]]
+    self.quality_proto = beacon_default.quality
+    if beacon_default.beacon_amount then self.amount = beacon_default.beacon_amount end
+
+    self.module_set:clear()
+    if beacon_default.modules then self.module_set:ingest_default(beacon_default.modules) end
 end
 
 
@@ -82,9 +101,9 @@ end
 ---@return string? error
 function Beacon:paste(object)
     if object.class == "Beacon" then
-        self.parent:set_beacon(object)  -- weeds out incompatibilities
-        if object.module_set.first == nil then
-            object.parent:set_beacon(nil)
+        self.parent:set_beacon(object)
+        if not object.module_set.first then
+            self.parent:set_beacon(nil)
             return false, "incompatible"
         else
             return true, nil
@@ -101,6 +120,7 @@ end
 ---@class PackedBeacon: PackedObject
 ---@field class "Beacon"
 ---@field proto FPBeaconPrototype
+---@field quality_proto FPQualityPrototype
 ---@field amount number
 ---@field total_amount number?
 ---@field module_set PackedModuleSet
@@ -110,6 +130,7 @@ function Beacon:pack()
     return {
         class = self.class,
         proto = prototyper.util.simplify_prototype(self.proto, nil),
+        quality_proto = prototyper.util.simplify_prototype(self.quality_proto, nil),
         amount = self.amount,
         total_amount = self.total_amount,
         module_set = self.module_set:pack()
@@ -117,9 +138,11 @@ function Beacon:pack()
 end
 
 ---@param packed_self PackedBeacon
+---@param parent Line
 ---@return Beacon machine
 local function unpack(packed_self, parent)
     local unpacked_self = init(packed_self.proto, parent)
+    unpacked_self.quality_proto = packed_self.quality_proto
     unpacked_self.amount = packed_self.amount
     unpacked_self.total_amount = packed_self.total_amount
     unpacked_self.module_set = ModuleSet.unpack(packed_self.module_set, unpacked_self)
@@ -140,11 +163,10 @@ function Beacon:validate()
     self.proto = prototyper.util.validate_prototype_object(self.proto, nil)
     self.valid = (not self.proto.simplified)
 
-    local machine = self.parent.machine  -- make sure the machine can still be influenced by beacons
-    if machine.valid then self.valid = (machine.proto.allowed_effects ~= nil) and self.valid end
+    self.quality_proto = prototyper.util.validate_prototype_object(self.quality_proto, nil)
+    self.valid = (not self.quality_proto.simplified) and self.valid
 
-    if BEACON_OVERLOAD_ACTIVE then self.amount = 1 end
-
+    self.valid = self.parent:uses_beacon_effects() and self.valid
     self.valid = self.module_set:validate() and self.valid
 
     return self.valid
@@ -153,17 +175,23 @@ end
 ---@param player LuaPlayer
 ---@return boolean success
 function Beacon:repair(player)
-    if self.proto.simplified then -- if still simplified, the beacon can't be repaired and needs to be removed
-        return false
-    else  -- otherwise, the modules need to be checked and removed if necessary
-        -- Remove invalid modules and normalize the remaining ones
-        self.valid = self.module_set:repair()
+    self.valid = true
 
-        if self.module_set.module_count == 0 then return false end   -- if the beacon is empty, remove it
+    if self.proto.simplified or not self.parent:uses_beacon_effects() then
+        self.valid = false  -- this situation can't be repaired
+        -- This could try another beacon, but it's not really worth it
     end
 
-    self.valid = true  -- if it gets to here, the beacon was successfully repaired
-    return true
+    if self.valid and self.quality_proto.simplified then
+        self.quality_proto = defaults.get_fallback("qualities").proto
+    end
+
+    if self.valid then
+        self.module_set:repair(player)  -- always becomes valid
+        if self.module_set.module_count == 0 then self.valid = false end
+    end
+
+    return self.valid
 end
 
 return {init = init, unpack = unpack}

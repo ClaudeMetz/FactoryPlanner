@@ -1,14 +1,13 @@
 local generator = require("backend.handlers.generator")
 
 prototyper = {
-    util = {},
-    defaults = {}
+    util = {}
 }
 
--- The purpose of the prototyper is to recreate the global tables containing all relevant data types.
+-- The purpose of the prototyper is to recreate the storage tables containing all relevant data types.
 -- It also handles some other things related to prototypes, such as updating preferred ones, etc.
 -- Its purpose is to not lose any data, so if a dataset of a factory doesn't exist anymore
--- in the newly loaded global tables, it saves the name in string-form instead and makes the
+-- in the newly loaded storage tables, it saves the name in string-form instead and makes the
 -- concerned factory-dataset invalid. This accomplishes that invalid data is only permanently
 -- removed when the user tells the factory to repair itself, giving him a chance to re-add the
 -- missing mods. It is also a better separation of responsibilities and avoids some redundant code.
@@ -17,9 +16,10 @@ prototyper = {
 -- The boolean indicates whether this prototype has categories or not
 ---@type { [DataType]: boolean }
 prototyper.data_types = {machines = true, recipes = false, items = true, fuels = true,
-                         belts = false, wagons = true, modules = true, beacons = false}
+                         belts = false, pumps = false, wagons = true, modules = true,
+                         beacons = false, locations = false, qualities = false}
 
----@alias DataType "machines" | "recipes" | "items" | "fuels" | "belts" | "wagons" | "modules" | "beacons"
+---@alias DataType "machines" | "recipes" | "items" | "fuels" | "belts" | "pump" | "wagons" | "modules" | "beacons" | "locations" | "qualities"
 
 ---@alias NamedPrototypes<T> { [string]: T }
 ---@alias NamedPrototypesWithCategory<T> { [string]: { name: string, members: { [string]: T } } } }
@@ -37,22 +37,25 @@ prototyper.data_types = {machines = true, recipes = false, items = true, fuels =
 ---@field items IndexedPrototypesWithCategory<FPItemPrototype>
 ---@field fuels IndexedPrototypesWithCategory<FPFuelPrototype>
 ---@field belts IndexedPrototypes<FPBeltPrototype>
+---@field pumps IndexedPrototypes<FPPumpPrototype>
 ---@field wagons IndexedPrototypesWithCategory<FPWagonPrototype>
 ---@field modules IndexedPrototypesWithCategory<FPModulePrototype>
 ---@field beacons IndexedPrototypes<FPBeaconPrototype>
+---@field locations IndexedPrototypes<FPLocationPrototype>
+---@field qualities IndexedPrototypes<FPQualityPrototype>
 
 ---@alias SortingFunction fun(a: table, b: table): boolean
 
 
 -- Converts given prototype list to use ids as keys, and sorts it if desired
 ---@param data_type DataType
----@param prototype_sorting_function SortingFunction
+---@param prototype_sorting_function SortingFunction?
 ---@return AnyIndexedPrototypes
 local function convert_and_sort(data_type, prototype_sorting_function)
     local final_list = {}
 
     ---@param list AnyNamedPrototypes[]
-    ---@param sorting_function SortingFunction
+    ---@param sorting_function SortingFunction?
     ---@param category_id integer?
     ---@return AnyIndexedPrototypes
     local function apply(list, sorting_function, category_id)
@@ -80,10 +83,10 @@ local function convert_and_sort(data_type, prototype_sorting_function)
     end
 
     if prototyper.data_types[data_type] == false then
-        final_list = apply(global.prototypes[data_type], prototype_sorting_function, nil)
+        final_list = apply(storage.prototypes[data_type], prototype_sorting_function, nil)
         ---@cast final_list IndexedPrototypes<FPPrototype>
     else
-        final_list = apply(global.prototypes[data_type], category_sorting_function, nil)
+        final_list = apply(storage.prototypes[data_type], category_sorting_function, nil)
         ---@cast final_list IndexedPrototypesWithCategory<FPPrototypeWithCategory>
         for id, category in pairs(final_list) do
             category.members = apply(category.members, prototype_sorting_function, id)
@@ -95,56 +98,52 @@ end
 
 
 function prototyper.build()
-    global.prototypes = {}  ---@type PrototypeLists
-    local prototypes = global.prototypes
-
     for data_type, _ in pairs(prototyper.data_types) do
         ---@type AnyNamedPrototypes
-        prototypes[data_type] = generator[data_type].generate()
+        storage.prototypes[data_type] = generator[data_type].generate()
     end
 
     -- Second pass to do some things that can't be done in the first pass due to the strict sequencing
     for data_type, _ in pairs(prototyper.data_types) do
         local second_pass = generator[data_type].second_pass  ---@type fun(prototypes: NamedPrototypes)
-        if second_pass ~= nil then second_pass(prototypes[data_type]) end
+        if second_pass ~= nil then second_pass(storage.prototypes[data_type]) end
     end
 
     -- Finish up generation by converting lists to use ids as keys, and sort if desired
     for data_type, _ in pairs(prototyper.data_types) do
-        local sorting_function = generator[data_type].sorting_function  ---@type SortingFunction
-        prototypes[data_type] = convert_and_sort(data_type, sorting_function)  ---@type AnyIndexedPrototypes
+        local sorting_function = generator[data_type].sorting_function  ---@type SortingFunction?
+        storage.prototypes[data_type] = convert_and_sort(data_type, sorting_function)  ---@type AnyIndexedPrototypes
     end
 end
 
 
 -- ** UTIL **
--- Returns the attribute string for the given prototype
----@param prototype AnyFPPrototype
----@return LocalisedString
-function prototyper.util.get_attributes(prototype)
-    if prototype.category_id == nil then
-        ---@cast prototype FPPrototype
-        return PROTOTYPE_ATTRIBUTES[prototype.data_type][prototype.id]
-    else
-        ---@cast prototype FPPrototypeWithCategory
-        return PROTOTYPE_ATTRIBUTES[prototype.data_type][prototype.category_id][prototype.id]
-    end
-end
-
--- Finds the given prototype by name. Can use the loader cache since it'll exist at this point.
 ---@param data_type DataType
----@param prototype_name string
----@param category_name string?
----@return AnyFPPrototype?
-function prototyper.util.find_prototype(data_type, prototype_name, category_name)
-    local prototype_map = PROTOTYPE_MAPS[data_type]
+---@param prototype (integer | string)?
+---@param category (integer | string)?
+---@return (AnyFPPrototype | NamedCategory)?
+function prototyper.util.find(data_type, prototype, category)
+    local prototypes, prototype_map = storage.prototypes[data_type], PROTOTYPE_MAPS[data_type]
 
-    if category_name == nil then
-        return prototype_map[prototype_name]  -- can be nil
-    else
-        local category = prototype_map[category_name]  ---@type MappedCategory
-        if category == nil then return nil end
-        return category.members[prototype_name]  -- can be nil
+    if util.xor((category ~= nil), (prototype ~= nil)) then  -- either category or prototype provided
+        local identifier = category or prototype
+        local relevant_map = (type(identifier) == "string") and prototype_map or prototypes
+        return relevant_map[identifier]  -- can be nil
+
+    else  -- category and prototype provided
+        local category_map = (type(category) == "string") and prototype_map or prototypes
+        local category_table = category_map[category]  ---@type MappedCategory
+        if category_table == nil then return nil end
+
+        if type(prototype) == type(category) then
+            return category_table.members[prototype]  -- can be nil
+        else  -- If types don't match, we need to use the opposite map for the category
+            if type(prototype) == "string" then
+                return prototype_map[category_table.name].members[prototype]  -- can be nil
+            else
+                return prototypes[category_table.id].members[prototype]  -- can be nil
+            end
+        end
     end
 end
 
@@ -155,16 +154,17 @@ end
 ---@field data_type DataType
 ---@field simplified boolean
 
----@alias CategoryDesignation ("category" | "type")
+---@alias CategoryDesignation ("category" | "type" | "combined_category")
 
 -- Returns a new table that only contains the given prototypes' identifiers
----@param prototype AnyFPPrototype
+---@param prototype AnyFPPrototype?
 ---@param category_designation CategoryDesignation?
 ---@return FPPackedPrototype?
 function prototyper.util.simplify_prototype(prototype, category_designation)
     if not prototype then return nil end
-    return { name = prototype.name, category = prototype[category_designation],
-        data_type = prototype.data_type, simplified = true }
+    if prototype.simplified then return prototype end  -- failsafe
+    return {name = prototype.name, category = prototype[category_designation],
+        data_type = prototype.data_type, simplified = true}
 end
 
 ---@param prototypes FPPrototype[]
@@ -193,13 +193,15 @@ function prototyper.util.validate_prototype_object(prototype, category_designati
 
     if prototype.simplified then  -- try to unsimplify, otherwise it stays that way
         ---@cast prototype FPPackedPrototype
-        local new_proto = prototyper.util.find_prototype(prototype.data_type, prototype.name, prototype.category)
-        if new_proto then updated_proto = new_proto end
+        if not category_designation or prototype.category then  -- avoid broken simplified prototypes (now fixed)
+            local new_proto = prototyper.util.find(prototype.data_type, prototype.name, prototype.category)
+            if new_proto then updated_proto = new_proto end
+        end
     else
         ---@cast prototype AnyFPPrototype
         local category = prototype[category_designation]  ---@type string
-        local new_proto = prototyper.util.find_prototype(prototype.data_type, prototype.name, category)
-        updated_proto = new_proto or prototyper.util.simplify_prototype(prototype, category)
+        local new_proto = prototyper.util.find(prototype.data_type, prototype.name, category)
+        updated_proto = new_proto or prototyper.util.simplify_prototype(prototype, category_designation)
     end
 
     return updated_proto
@@ -223,7 +225,7 @@ end
 
 -- Build the necessary RawDictionaries for translation
 function prototyper.util.build_translation_dictionaries()
-    for _, item_category in ipairs(global.prototypes.items) do
+    for _, item_category in ipairs(storage.prototypes.items) do
         translator.new(item_category.name)
         for _, proto in pairs(item_category.members) do
             translator.add(item_category.name, proto.name, proto.localised_name)
@@ -231,134 +233,7 @@ function prototyper.util.build_translation_dictionaries()
     end
 
     translator.new("recipe")
-    for _, proto in pairs(global.prototypes.recipes) do
+    for _, proto in pairs(storage.prototypes.recipes) do
         translator.add("recipe", proto.name, proto.localised_name)
-    end
-end
-
--- Migrates the prototypes for default beacons and modules
----@param player_table PlayerTable
-function prototyper.util.migrate_mb_defaults(player_table)
-    local mb_defaults = player_table.preferences.mb_defaults
-    local find = prototyper.util.find_prototype
-
-    local machine = mb_defaults.machine
-    if machine then
-        mb_defaults.machine = find("modules", machine.name, machine.category)  --[[@as FPModulePrototype ]]
-    end
-
-    local second = mb_defaults.machine_secondary
-    if second then
-        mb_defaults.machine_secondary = find("modules", second.name, second.category)  --[[@as FPModulePrototype ]]
-    end
-
-    local beacon = mb_defaults.beacon
-    if beacon then
-        mb_defaults.beacon = find("modules", beacon.name, beacon.category)  --[[@as FPModulePrototype ]]
-    end
-end
-
-
--- ** DEFAULTS **
----@alias PrototypeDefault FPPrototype
----@alias PrototypeWithCategoryDefault { [integer]: FPPrototypeWithCategory }
----@alias AnyPrototypeDefault PrototypeDefault | PrototypeWithCategoryDefault
-
--- Returns the default prototype for the given type, incorporating the category, if given
----@param player LuaPlayer
----@param data_type DataType
----@param category_id integer?
----@return AnyPrototypeDefault
-function prototyper.defaults.get(player, data_type, category_id)
-    ---@type AnyPrototypeDefault
-    local default = util.globals.preferences(player)["default_" .. data_type]
-    return (category_id == nil) and default or default[category_id]
-end
-
--- Sets the default prototype for the given type, incorporating the category, if given
----@param player LuaPlayer
----@param data_type DataType
----@param prototype_id integer
----@param category_id integer?
-function prototyper.defaults.set(player, data_type, prototype_id, category_id)
-    local preferences = util.globals.preferences(player)
-    local prototypes = global.prototypes[data_type]  ---@type AnyIndexedPrototypes
-
-    if category_id == nil then
-        ---@type PrototypeDefault
-        preferences["default_" .. data_type] = prototypes[prototype_id]
-    else
-        ---@type PrototypeWithCategoryDefault
-        preferences["default_" .. data_type][category_id] = prototypes[category_id].members[prototype_id]
-    end
-end
-
--- Returns the fallback default for the given type of prototype
----@param data_type DataType
----@return AnyPrototypeDefault
-function prototyper.defaults.get_fallback(data_type)
-    local prototypes = global.prototypes[data_type]  ---@type AnyIndexedPrototypes
-
-    local fallback = {}
-    if prototyper.data_types[data_type] == false then
-        ---@cast prototypes IndexedPrototypes<FPPrototype>
-        fallback = prototypes[1]
-    else
-        ---@cast prototypes IndexedPrototypesWithCategory<FPPrototypeWithCategory>
-        fallback = {}  ---@type PrototypeWithCategoryDefault
-        for _, category in pairs(prototypes) do
-            fallback[category.id] = category.members[1]
-        end
-    end
-
-    return fallback
-end
-
--- Kinda unclean that I have to do this, but it's better than storing it elsewhere
-local category_designations = {machines="category", items="type",
-    fuels="category", wagons="category", modules="category"}
-
--- Migrates the default prototypes preferences, trying to preserve the users choices
--- When this is called, the loader cache will already exist
----@param player_table PlayerTable
-function prototyper.defaults.migrate(player_table)
-    local preferences = player_table.preferences
-
-    for data_type, has_categories in pairs(prototyper.data_types) do
-        local default = preferences["default_" .. data_type]
-        if default == nil then goto skip end
-
-        if not has_categories then
-            -- Use the same prototype if an equivalent can be found, use fallback otherwise
-            local equivalent_proto = prototyper.util.find_prototype(data_type, default.name, nil)
-            ---@cast equivalent_proto PrototypeDefault
-            preferences["default_" .. data_type] = equivalent_proto  ---@type PrototypeDefault
-                or prototyper.defaults.get_fallback(data_type)
-        else
-            local new_defaults = {}  ---@type PrototypeWithCategoryDefault
-            local fallback = prototyper.defaults.get_fallback(data_type)
-
-            local default_map = {}  ---@type { [string]: FPPrototype }
-            for _, default_proto in pairs(default) do
-                local category_name = default_proto[category_designations[data_type]]  ---@type string
-                default_map[category_name] = default_proto
-            end
-
-            ---@type IndexedPrototypesWithCategory<FPPrototypeWithCategory>
-            local categories = global.prototypes[data_type]
-
-            for _, category in pairs(categories) do
-                local previous_category = default_map[category.name]
-                if previous_category then  -- category existed previously
-                    local proto_name = previous_category.name
-                    ---@type PrototypeWithCategoryDefault
-                    new_defaults[category.id] = prototyper.util.find_prototype(data_type, proto_name, category.name)
-                end
-                new_defaults[category.id] = new_defaults[category.id] or fallback[category.id]
-            end
-
-            preferences["default_" .. data_type] = new_defaults  ---@type PrototypeWithCategoryDefault
-        end
-        ::skip::
     end
 end

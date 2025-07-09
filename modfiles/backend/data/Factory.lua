@@ -9,42 +9,37 @@ local Product = require("backend.data.Product")
 ---@field previous Factory?
 ---@field archived boolean
 ---@field name string
----@field timescale Timescale
----@field mining_productivity number?
 ---@field matrix_free_items FPItemPrototype[]?
 ---@field blueprints string[]
 ---@field notes string
+---@field productivity_boni { string: ModuleEffectValue }
 ---@field first Product?
 ---@field top_floor Floor
 ---@field linearly_dependant boolean?
 ---@field tick_of_deletion uint?
----@field item_request_proxy LuaEntity?
 ---@field last_valid_modset ModToVersion?
 local Factory = Object.methods()
 Factory.__index = Factory
 script.register_metatable("Factory", Factory)
 
 ---@param name string
----@param timescale Timescale
 ---@return Factory
-local function init(name, timescale)
+local function init(name)
     local object = Object.init({
         archived = false,
         --owner = nil,
         --shared = false,
 
         name = name,
-        timescale = timescale,
-        mining_productivity = nil,
         matrix_free_items = nil,
         blueprints = {},
         notes = "",
+        productivity_boni = {},
         first = nil,
         top_floor = Floor.init(1),
 
         linearly_dependant = false,
         tick_of_deletion = nil,
-        item_request_proxy = nil,
         last_valid_modset = nil
     }, "Factory", Factory)  --[[@as Factory]]
     object.top_floor.parent = object
@@ -80,6 +75,13 @@ function Factory:replace(product, new_product)
     self:_replace(product, new_product)
 end
 
+---@param product Product
+---@param direction NeighbourDirection
+---@param spots integer?
+function Factory:shift(product, direction, spots)
+    self:_shift(product, direction, spots)
+end
+
 
 ---@param filter ObjectFilter
 ---@param pivot Product?
@@ -101,6 +103,14 @@ end
 ---@return fun(): Product?
 function Factory:iterator(filter, pivot, direction)
     return self:_iterator(filter, pivot, direction)
+end
+
+---@param filter ObjectFilter?
+---@param pivot Product?
+---@param direction NeighbourDirection?
+---@return Product[]
+function Factory:as_list(filter, pivot, direction)
+    return self:_as_list(filter, pivot, direction)
 end
 
 ---@param filter ObjectFilter?
@@ -149,36 +159,32 @@ function Factory:tostring(attach_products, export_format)
 end
 
 
+---@param force LuaForce
+---@param recipe_name string
+---@return ModuleEffectValue productivity_bonus
+function Factory:get_productivity_bonus(force, recipe_name)
+    local custom_bonus = self.productivity_boni[recipe_name]
+    if custom_bonus then return custom_bonus
+    else return util.get_recipe_productivity(force, recipe_name) end
+end
+
+
 -- Only used when switching between belts and lanes
 ---@param new_defined_by ProductDefinedBy
 function Factory:update_product_definitions(new_defined_by)
     for product in self:iterator() do
-        product:update_definition(new_defined_by)
+        product:change_definition(new_defined_by)
     end
-end
-
-
-function Factory:validate_item_request_proxy()
-    local item_request_proxy = self.item_request_proxy
-    if item_request_proxy and (not item_request_proxy.valid or not next(item_request_proxy.item_requests)) then
-        self:destroy_item_request_proxy()
-    end
-end
-
-function Factory:destroy_item_request_proxy()
-    self.item_request_proxy.destroy{raise_destroy=false}
-    self.item_request_proxy = nil
 end
 
 
 ---@class PackedFactory: PackedObject
 ---@field class "Factory"
 ---@field name string
----@field timescale Timescale
----@field mining_productivity number?
 ---@field matrix_free_items FPPackedPrototype[]?
 ---@field blueprints string[]
 ---@field notes string
+---@field productivity_boni { string: ModuleEffectValue }
 ---@field products PackedProduct[]?
 ---@field top_floor PackedFloor
 
@@ -187,11 +193,10 @@ function Factory:pack()
     return {
         class = self.class,
         name = self.name,
-        timescale = self.timescale,
-        mining_productivity = self.mining_productivity,
         matrix_free_items = prototyper.util.simplify_prototypes(self.matrix_free_items, "type"),
         blueprints = self.blueprints,
         notes = self.notes,
+        productivity_boni = self.productivity_boni,
         products = self:_pack(),
         top_floor = self.top_floor:pack()
     }
@@ -200,13 +205,13 @@ end
 ---@param packed_self PackedFactory
 ---@return Factory factory
 local function unpack(packed_self)
-    local unpacked_self = init(packed_self.name, packed_self.timescale)
+    local unpacked_self = init(packed_self.name)
 
-    unpacked_self.mining_productivity = packed_self.mining_productivity
     -- Product prototypes will be automatically unpacked by the validation process
     unpacked_self.matrix_free_items = packed_self.matrix_free_items
     unpacked_self.blueprints = packed_self.blueprints
     unpacked_self.notes = packed_self.notes
+    unpacked_self.productivity_boni = packed_self.productivity_boni
 
     unpacked_self.first = Object.unpack(packed_self.products, Product.unpack, unpacked_self)  --[[@as Product]]
 
@@ -236,12 +241,17 @@ function Factory:validate()
     self.matrix_free_items = matrix_free_items
     self.valid = valid and self.valid
 
-    self:validate_item_request_proxy()  -- makes sure proxy is valid, or deletes it
+    -- Remove any invalid boni, no need to mark the factory as invalid
+    for recipe_name, _ in pairs(self.productivity_boni) do
+        if not PRODUCTIVITY_RECIPES[recipe_name] then
+            self.productivity_boni[recipe_name] = nil
+        end
+    end
 
     if self.valid then self.last_valid_modset = nil
     -- If this factory became invalid with the current configuration, retain the modset before the current one
-    -- The one in global is still the previous one as it's only updated after migrations
-    elseif previous_validity and not self.valid then self.last_valid_modset = global.installed_mods end
+    -- The one in storage is still the previous one as it's only updated after migrations
+    elseif previous_validity and not self.valid then self.last_valid_modset = storage.installed_mods end
 
     return self.valid
 end

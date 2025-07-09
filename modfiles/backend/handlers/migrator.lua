@@ -1,4 +1,4 @@
--- This code handles the general migration process of the mod's global table
+-- This code handles the general migration process of the mod's storage table
 -- It decides whether and which migrations should be applied, in appropriate order
 
 local migrator = {}
@@ -20,6 +20,18 @@ local migration_masterlist = {  ---@type MigrationMasterList
     [9] = {version="1.1.66", migration=require("backend.migrations.migration_1_1_66")},
     [10] = {version="1.1.67", migration=require("backend.migrations.migration_1_1_67")},
     [11] = {version="1.1.73", migration=require("backend.migrations.migration_1_1_73")},
+    [12] = {version="1.2.1", migration=require("backend.migrations.migration_1_2_1")},
+    [13] = {version="1.2.2", migration=require("backend.migrations.migration_1_2_2")},
+    [14] = {version="1.2.4", migration=require("backend.migrations.migration_1_2_4")},
+    [15] = {version="1.2.6", migration=require("backend.migrations.migration_1_2_6")},
+    [16] = {version="1.2.8", migration=require("backend.migrations.migration_1_2_8")},
+    [17] = {version="1.2.15", migration=require("backend.migrations.migration_1_2_15")},
+    [18] = {version="2.0.2", migration=require("backend.migrations.migration_2_0_2")},
+    [19] = {version="2.0.6", migration=require("backend.migrations.migration_2_0_6")},
+    [20] = {version="2.0.8", migration=require("backend.migrations.migration_2_0_8")},
+    [21] = {version="2.0.16", migration=require("backend.migrations.migration_2_0_16")},
+    [22] = {version="2.0.21", migration=require("backend.migrations.migration_2_0_21")},
+    [23] = {version="2.0.26", migration=require("backend.migrations.migration_2_0_26")},
 }
 
 
@@ -65,7 +77,7 @@ end
 ---@param comparison_version VersionString?
 ---@return Migration[]?
 function migrator.determine_migrations(comparison_version)
-    local previous_version = global.installed_mods["factoryplanner"]
+    local previous_version = storage.installed_mods["factoryplanner"]
 
     -- 1.1.60 is the first version that can be properly migrated (doesn't apply to export strings)
     if not comparison_version and not compare_versions("1.1.59", previous_version) then return nil end
@@ -88,11 +100,12 @@ function migrator.migrate_global(migrations)
     apply_migrations(migrations, "global", nil, nil)
 end
 
----@param player LuaPlayer
 ---@param migrations Migration[]
-function migrator.migrate_player_table(player, migrations)
-    local player_table = util.globals.player_table(player)
-    apply_migrations(migrations, "player_table", player_table, player)
+function migrator.migrate_player_tables(migrations)
+    for _, player in pairs(game.players) do
+        local player_table = util.globals.player_table(player)
+        apply_migrations(migrations, "player_table", player_table, player)
+    end
 end
 
 

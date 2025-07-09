@@ -1,32 +1,19 @@
 local Product = require("backend.data.Product")
 
 -- ** LOCAL UTIL **
-local function add_recipe(player, item_category, item_proto)
-    local floor = util.context.get(player, "Floor")  --[[@as Floor]]
-    if floor.level > 1 then
-        local message = {"fp.error_recipe_wrong_floor", {"fp.pu_" .. item_category, 1}}
-        util.messages.raise(player, "error", message, 1)
-    else
-        local production_type = (item_category == "byproduct") and "consume" or "produce"
-        util.raise.open_dialog(player, {dialog="recipe", modal_data={production_type=production_type,
-            category_id=item_proto.category_id, product_id=item_proto.id}})
-    end
-end
-
 local function build_item_box(player, category, column_count)
     local item_boxes_elements = util.globals.main_elements(player).item_boxes
 
     local window_frame = item_boxes_elements.horizontal_flow.add{type="frame", direction="vertical",
         style="inside_shallow_frame"}
     window_frame.style.top_padding = 6
-    window_frame.style.bottom_padding = MAGIC_NUMBERS.frame_spacing
+    window_frame.style.padding = {4, 12, 12, 12}
 
     local title_flow = window_frame.add{type="flow", direction="horizontal"}
     title_flow.style.vertical_align = "center"
 
     local label = title_flow.add{type="label", caption={"fp.pu_" .. category, 2}, style="caption_label"}
-    label.style.left_padding = MAGIC_NUMBERS.frame_spacing
-    label.style.bottom_margin = 4
+    label.style.bottom_margin = 8
 
     if category == "ingredient" then
         local button_combinator = title_flow.add{type="sprite-button", sprite="item/constant-combinator",
@@ -38,10 +25,8 @@ local function build_item_box(player, category, column_count)
         item_boxes_elements["ingredient_combinator_button"] = button_combinator
     end
 
-    local scroll_pane = window_frame.add{type="scroll-pane", style="fp_scroll-pane_slot_table"}
+    local scroll_pane = window_frame.add{type="scroll-pane", style="shallow_scroll_pane"}
     scroll_pane.style.maximal_height = MAGIC_NUMBERS.item_box_max_rows * MAGIC_NUMBERS.item_button_size
-    scroll_pane.style.horizontally_stretchable = false
-    scroll_pane.style.vertically_stretchable = false
 
     local item_frame = scroll_pane.add{type="frame", style="slot_button_deep_frame"}
     item_frame.style.width = column_count * MAGIC_NUMBERS.item_button_size
@@ -63,18 +48,16 @@ local function refresh_item_box(player, factory, show_floor_items, item_category
     local floor = (show_floor_items) and util.context.get(player, "Floor") or factory.top_floor
 
     local table_item_count = 0
-    local metadata = view_state.generate_metadata(player, factory)
     local default_style = (item_category == "byproduct") and "flib_slot_button_red" or "flib_slot_button_default"
 
     local shows_floor_items = (floor.parent.class ~= "Factory")
     local action = (shows_floor_items) and ("act_on_floor_item") or ("act_on_top_level_" .. item_category)
-    local tutorial_tt = (util.globals.preferences(player).tutorial_mode)
-        and util.actions.tutorial_tooltip(action, nil, player) or nil
+    local action_tooltip = MODIFIER_ACTIONS[action].tooltip
     local real_products = (not shows_floor_items and item_category == "product")
 
     local function build_item(item, index)
         local required_amount = (item.class == "Product") and item:get_required_amount() or nil
-        local amount, number_tooltip = view_state.process_item(metadata, item, required_amount, nil)
+        local amount, number_tooltip = item_views.process_item(player, item, required_amount, nil)
         if amount == -1 then return end  -- an amount of -1 means it was below the margin of error
 
         local style = default_style
@@ -84,25 +67,20 @@ local function refresh_item_box(player, factory, show_floor_items, item_category
             local percentage_string = util.format.number(satisfied_percentage, 3)
             satisfaction_line = {"", "\n", {"fp.bold_label", (percentage_string .. "%")}, " ", {"fp.satisfied"}}
 
-            if satisfied_percentage <= 0 then style = "flib_slot_button_red"
-            elseif satisfied_percentage < 100 then style = "flib_slot_button_yellow"
-            else style = "flib_slot_button_green" end
+            if percentage_string == "0" then style = "flib_slot_button_red"
+            elseif percentage_string == "100" then style = "flib_slot_button_green"
+            else style = "flib_slot_button_yellow" end
+        elseif item.proto.type == "entity" then
+            style = "flib_slot_button_transparent"
         end
 
         local name_line = {"fp.tt_title", item.proto.localised_name}
         local number_line = (number_tooltip) and {"", "\n", number_tooltip} or ""
-        local tooltip, enabled = nil, true
-        if item.proto.type == "entity" then  -- only relevant to ingredients
-            tooltip = {"", name_line, number_line, satisfaction_line}
-            style = "flib_slot_button_transparent"
-            enabled = false
-        else
-            tooltip = {"", name_line, number_line, satisfaction_line, tutorial_tt}
-        end
+        local tooltip = {"", name_line, number_line, satisfaction_line, "\n", action_tooltip}
 
         local button = table_items.add{type="sprite-button", number=amount, style=style, sprite=item.proto.sprite,
             tags={mod="fp", on_gui_click=action, item_category=item_category, item_id=item.id, item_index=index,
-            on_gui_hover="set_tooltip", context="item_boxes"}, enabled=enabled, mouse_button_filter={"left-and-right"},
+            on_gui_hover="set_tooltip", context="item_boxes"}, mouse_button_filter={"left-and-right"},
             raise_hover_events=true}
         tooltips.item_boxes[button.index] = tooltip
         table_item_count = table_item_count + 1
@@ -113,16 +91,18 @@ local function refresh_item_box(player, factory, show_floor_items, item_category
             build_item(product, nil)
         end
     else
-        for index, item in floor[item_category .. "s"]:iterator() do
+        for index, item in pairs(floor[item_category .. "s"]) do
             build_item(item, index)
         end
     end
 
     if real_products then  -- meaning allow the user to add items of this type
-        table_items.add{type="sprite-button", sprite="utility/add", enabled=(not factory.archived),
+        local button = table_items.add{type="sprite-button", sprite="utility/add", enabled=(not factory.archived),
             tags={mod="fp", on_gui_click="add_top_level_item", item_category=item_category},
             tooltip={"", {"fp.add"}, " ", {"fp.pl_" .. item_category, 1}, "\n", {"fp.shift_to_paste"}},
-            style="fp_sprite-button_inset_add_slot", mouse_button_filter={"left"}}
+            style="fp_sprite-button_inset", mouse_button_filter={"left"}}
+        button.style.padding = 4
+        button.style.margin = 4
         table_item_count = table_item_count + 1
     end
 
@@ -153,19 +133,33 @@ local function handle_item_button_click(player, tags, action)
         -- Need to get items from the right floor depending on display settings
         local show_floor_items = util.globals.preferences(player).show_floor_items
         local floor = (show_floor_items) and util.context.get(player, "Floor")
-          or util.context.get(player, "Factory").top_floor
-        item = floor[tags.item_category .. "s"].items[tags.item_index]
+            or util.context.get(player, "Factory").top_floor
+        item = floor[tags.item_category .. "s"][tags.item_index]
     end
 
     if action == "add_recipe" then
-        add_recipe(player, tags.item_category, item.proto)
+        local floor = util.context.get(player, "Floor")  --[[@as Floor]]
+        if floor.level > 1 then
+            local message = {"fp.error_recipe_wrong_floor", {"fp.pu_" .. tags.item_category, 1}}
+            util.messages.raise(player, "error", message, 1)
+        else
+            local production_type = (tags.item_category == "byproduct") and "consume" or "produce"
+            util.raise.open_dialog(player, {dialog="recipe", modal_data={production_type=production_type,
+                category_id=item.proto.category_id, product_id=item.proto.id}})
+        end
 
     elseif action == "edit" then
         util.raise.open_dialog(player, {dialog="picker",
             modal_data={item_id=item.id, item_category=tags.item_category}})
 
+    elseif action == "move_left" or action == "move_right" then
+        local direction = (action == "move_left") and "previous" or "next"
+        item.parent:shift(item, direction, 1)
+        util.raise.refresh(player, "item_boxes")
+
     elseif action == "copy" then
-        util.clipboard.copy(player, item)
+        local copyable_item = {class="SimpleItem", proto=item.proto, amount=item.amount}
+        util.clipboard.copy(player, copyable_item)
 
     elseif action == "paste" then
         util.clipboard.paste(player, item)
@@ -174,75 +168,40 @@ local function handle_item_button_click(player, tags, action)
         local factory = util.context.get(player, "Factory")  --[[@as Factory]]
         factory:remove(item)
         solver.update(player, factory)
-        util.raise.refresh(player, "all", nil)  -- make sure product icons are updated
+        util.raise.refresh(player, "all")  -- make sure product icons are updated
 
-    elseif action == "specify_amount" then
-        -- Set the view state so that the amount shown in the dialog makes sense
-        view_state.select(player, "items_per_timescale")
-        util.raise.refresh(player, "factory", nil)
-
-        local modal_data = {
-            title = {"fp.options_item_title", {"fp.pl_ingredient", 1}},
-            text = {"fp.options_item_text", item.proto.localised_name},
-            submission_handler_name = "scale_factory_by_ingredient_amount",
-            current_amount = item.amount,
-            fields = {
-                {
-                    type = "numeric_textfield",
-                    name = "target_amount",
-                    caption = {"fp.options_target_amount"},
-                    tooltip = {"fp.options_factory_ingredient_amount_tt"},
-                    text = item.amount,
-                    width = 140,
-                    focus = true
-                }
-            }
-        }
-        util.raise.open_dialog(player, {dialog="options", modal_data=modal_data})
-
-    elseif action == "put_into_cursor" then
+    elseif action == "add_to_cursor" then
         local amount = (item.class == "Product") and item:get_required_amount() or item.amount
-        util.cursor.add_to_item_combinator(player, item.proto, amount)
+        util.cursor.handle_item_click(player, item.proto, amount)
 
-    elseif action == "recipebook" then
-        util.open_in_recipebook(player, item.proto.type, item.proto.name)
+    elseif action == "factoriopedia" then
+        local name = (item.proto.temperature) and item.proto.base_name or item.proto.name
+        player.open_factoriopedia_gui(prototypes[item.proto.type][name])
     end
 end
 
 
 local function put_ingredients_into_cursor(player, _, _)
-    local show_floor_items = util.globals.preferences(player).show_floor_items
-    local relevant_floor = (show_floor_items) and util.context.get(player, "Floor")
+    local preferences = util.globals.preferences(player)
+    local relevant_floor = (preferences.show_floor_items) and util.context.get(player, "Floor")
         or util.context.get(player, "Factory").top_floor  --[[@as Floor]]
 
-    local ingredients = {}
-    for _, ingredient in relevant_floor["ingredients"]:iterator() do
-        if ingredient.proto.type ~= "entity" then
-            local signal = {type=ingredient.proto.type, name=ingredient.proto.name}
-            ingredients[signal] = ingredient.amount
+    local ingredient_filters = {}
+    for _, ingredient in pairs(relevant_floor.ingredients) do
+        local amount = ingredient.amount * preferences.timescale
+        if amount > MAGIC_NUMBERS.margin_of_error then
+            table.insert(ingredient_filters, {
+                type = ingredient.proto.type,
+                name = ingredient.proto.name,
+                quality = "normal",
+                comparator = "=",
+                count = math.ceil(amount)
+            })
         end
     end
+    util.cursor.set_item_combinator(player, ingredient_filters)
 
-    local success = util.cursor.set_item_combinator(player, ingredients)
-    if success then main_dialog.toggle(player) end
-end
-
-
-local function scale_factory_by_ingredient_amount(player, options, action)
-    if action == "submit" then
-        local factory = util.context.get(player, "Factory")  --[[@as Factory]]
-
-        if options.target_amount then
-            -- The division is not pre-calculated to avoid precision errors in some cases
-            local current_amount = util.globals.modal_data(player).current_amount
-            for product in factory:iterator() do
-                product.required_amount = product.required_amount * options.target_amount / current_amount
-            end
-        end
-
-        solver.update(player, factory)
-        util.raise.refresh(player, "factory", nil)
-    end
+    main_dialog.toggle(player)
 end
 
 
@@ -251,6 +210,10 @@ local function refresh_item_boxes(player)
 
     local main_elements = player_table.ui_state.main_elements
     if main_elements.main_frame == nil then return end
+
+    local visible = not player_table.ui_state.districts_view
+    main_elements.item_boxes.horizontal_flow.visible = visible
+    if not visible then return end
 
     local factory = util.context.get(player, "Factory")  --[[@as Factory?]]
     local show_floor_items = player_table.preferences.show_floor_items
@@ -288,7 +251,7 @@ local function build_item_boxes(player)
     local products_per_row = util.globals.preferences(player).products_per_row
     build_item_box(player, "product", products_per_row)
     build_item_box(player, "byproduct", products_per_row)
-    build_item_box(player, "ingredient", products_per_row*2)
+    build_item_box(player, "ingredient", products_per_row * 2)
 
     refresh_item_boxes(player)
 end
@@ -305,44 +268,45 @@ listeners.gui = {
         },
         {
             name = "act_on_top_level_product",
-            modifier_actions = {
-                add_recipe = {"left", {archive_open=false}},
-                edit = {"right", {archive_open=false}},
-                copy = {"shift-right"},
-                paste = {"shift-left", {archive_open=false}},
-                delete = {"control-right", {archive_open=false}},
-                put_into_cursor = {"alt-left"},
-                recipebook = {"alt-right", {recipebook=true}}
+            actions_table = {
+                add_recipe = {shortcut="left", limitations={archive_open=false}, show=true},
+                edit = {shortcut="control-left", limitations={archive_open=false}, show=true},
+                delete = {shortcut="control-right", limitations={archive_open=false}},
+                move_left = {limitations={archive_open=false}},
+                move_right = {limitations={archive_open=false}},
+                copy = {shortcut="shift-right"},
+                paste = {shortcut="shift-left", limitations={archive_open=false}},
+                add_to_cursor = {shortcut="alt-right"},
+                factoriopedia = {shortcut="alt-left"}
             },
             handler = handle_item_button_click
         },
         {
             name = "act_on_top_level_byproduct",
-            modifier_actions = {
-                add_recipe = {"left", {archive_open=false, matrix_active=true}},
-                copy = {"shift-right"},
-                put_into_cursor = {"alt-left"},
-                recipebook = {"alt-right", {recipebook=true}}
+            actions_table = {
+                add_recipe = {shortcut="left", limitations={archive_open=false, matrix_active=true}, show=true},
+                copy = {shortcut="shift-right"},
+                add_to_cursor = {shortcut="alt-right"},
+                factoriopedia = {shortcut="alt-left"}
             },
             handler = handle_item_button_click
         },
         {
             name = "act_on_top_level_ingredient",
-            modifier_actions = {
-                add_recipe = {"left", {archive_open=false}},
-                specify_amount = {"right", {archive_open=false}},
-                copy = {"shift-right"},
-                put_into_cursor = {"alt-left"},
-                recipebook = {"alt-right", {recipebook=true}}
+            actions_table = {
+                add_recipe = {shortcut="left", limitations={archive_open=false}, show=true},
+                copy = {shortcut="shift-right"},
+                add_to_cursor = {shortcut="alt-right"},
+                factoriopedia = {shortcut="alt-left"}
             },
             handler = handle_item_button_click
         },
         {
             name = "act_on_floor_item",
-            modifier_actions = {
-                copy = {"shift-right"},
-                put_into_cursor = {"alt-left"},
-                recipebook = {"alt-right", {recipebook=true}}
+            actions_table = {
+                copy = {shortcut="shift-right"},
+                add_to_cursor = {shortcut="alt-right"},
+                factoriopedia = {shortcut="alt-left"}
             },
             handler = handle_item_button_click
         },
@@ -364,10 +328,6 @@ listeners.misc = {
         local triggers = {item_boxes=true, production=true, factory=true, all=true}
         if triggers[event.trigger] then refresh_item_boxes(player) end
     end)
-}
-
-listeners.global = {
-    scale_factory_by_ingredient_amount = scale_factory_by_ingredient_amount
 }
 
 return { listeners }

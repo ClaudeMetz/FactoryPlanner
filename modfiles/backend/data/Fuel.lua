@@ -4,6 +4,10 @@ local Object = require("backend.data.Object")
 ---@field class "Fuel"
 ---@field parent Machine
 ---@field proto FPFuelPrototype | FPPackedPrototype
+---@field temperature float?
+---@field temperature_data TemperatureData
+---@field amount number
+---@field satisfied_amount number
 local Fuel = Object.methods()
 Fuel.__index = Fuel
 script.register_metatable("Fuel", Fuel)
@@ -14,12 +18,19 @@ script.register_metatable("Fuel", Fuel)
 local function init(proto, parent)
     local object = Object.init({
         proto = proto,
+        temperature = nil,
+
+        temperature_data = nil,
 
         amount = 0,
         satisfied_amount = 0,
 
         parent = parent
     }, "Fuel", Fuel)  --[[@as Fuel]]
+
+    -- Initialize data related to fuel temperature if applicable
+    if proto.simplified ~= true then object:build_temperatures_data() end
+
     return object
 end
 
@@ -29,15 +40,33 @@ function Fuel:index()
 end
 
 
+-- Builds temperature data cache, and optionally migrates previous temperature
+function Fuel:build_temperatures_data()
+    local previous = self.temperature
+
+    self.temperature = nil
+    self.temperature_data = nil
+
+    if self.proto.type == "fluid" then
+        local temperature, data = util.temperature.generate_data(self.proto, previous)
+
+        self.temperature = temperature
+        self.temperature_data = data
+    end
+end
+
+
 ---@param object CopyableObject
 ---@return boolean success
 ---@return string? error
 function Fuel:paste(object)
     if object.class == "Fuel" then
         local burner = self.parent.proto.burner  -- will exist if there is fuel to paste on
+        -- Check invididual categories so you can paste between combined_categories
         for category_name, _ in pairs(burner.categories) do
-            if self.proto.category == category_name then
+            if object.proto.category == category_name then
                 self.proto = object.proto
+                self:build_temperatures_data()
                 return true, nil
             end
         end
@@ -56,15 +85,17 @@ end
 function Fuel:pack()
     return {
         class = self.class,
-        proto = prototyper.util.simplify_prototype(self.proto, "category"),
-
+        proto = prototyper.util.simplify_prototype(self.proto, "combined_category"),
+        temperature = self.temperature
     }
 end
 
 ---@param packed_self PackedFuel
+---@param parent Machine
 ---@return Fuel machine
 local function unpack(packed_self, parent)
     local unpacked_self = init(packed_self.proto, parent)
+    unpacked_self.temperature = packed_self.temperature  -- will be migrated through validation
 
     return unpacked_self
 end
@@ -72,14 +103,21 @@ end
 
 ---@return boolean valid
 function Fuel:validate()
-    self.proto = prototyper.util.validate_prototype_object(self.proto, "category")
+    self.proto = prototyper.util.validate_prototype_object(self.proto, "combined_category")
     self.valid = (not self.proto.simplified)
 
-    -- Make sure the fuel categories are still compatible
-    if self.valid and self.parent.valid then
-        local burner = self.parent.proto.burner
-        self.valid = burner and burner.categories[self.proto.category] ~= nil
+    if self.valid then
+        local burner = (not self.parent.proto.simplified) and self.parent.proto.burner or nil
+
+        -- Machine is simplified, doesn't have a burner anymore, or has a different category, is all bad
+        if not burner or burner.combined_category ~= self.proto.combined_category then
+            self.proto = prototyper.util.simplify_prototype(self.proto, "combined_category")
+            self.valid = false
+        end
     end
+
+    -- Updates temperature data cache and migrates previous temperature choice
+    if self.valid then self:build_temperatures_data(self.temperature) end
 
     return self.valid
 end
@@ -87,7 +125,6 @@ end
 ---@param player LuaPlayer
 ---@return boolean success
 function Fuel:repair(player)
-    -- If the fuel-proto is still simplified, validate couldn't repair it, so it has to be removed
     return false  -- the parent machine will try to replace it with another fuel of the same category
 end
 

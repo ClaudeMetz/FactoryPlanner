@@ -1,12 +1,15 @@
 -- Assembles event handlers from all the relevant files and calls them when needed
 
-local event_listener_names = {"ui.base.main_dialog", "ui.base.compact_dialog", "ui.base.modal_dialog",
-    "ui.base.view_state", "ui.main.title_bar", "ui.main.factory_list", "ui.main.factory_info",
-    "ui.main.item_boxes", "ui.main.production_box", "ui.main.production_table", "ui.main.production_handler",
-    "ui.elements.module_configurator", "ui.dialogs.beacon_dialog", "ui.dialogs.generic_dialogs",
-    "ui.dialogs.machine_dialog", "ui.dialogs.picker_dialog", "ui.dialogs.picker_dialog", "ui.dialogs.porter_dialog",
-    "ui.dialogs.preferences_dialog", "ui.dialogs.recipe_dialog", "ui.dialogs.factory_dialog",
-    "ui.dialogs.tutorial_dialog", "ui.dialogs.utility_dialog"}
+local event_listener_names = {
+    "ui.base.main_dialog", "ui.base.compact_dialog", "ui.base.modal_dialog", "ui.base.calculator_dialog",
+    "ui.components.module_configurator", "ui.components.item_views",
+    "ui.dialogs.beacon_dialog", "ui.dialogs.machine_dialog", "ui.dialogs.picker_dialog",
+    "ui.dialogs.porter_dialog", "ui.dialogs.preferences_dialog", "ui.dialogs.recipe_dialog",
+    "ui.dialogs.factory_dialog", "ui.dialogs.utility_dialog", "ui.dialogs.item_dialog",
+    "ui.main.title_bar", "ui.main.district_info", "ui.main.factory_list", "ui.main.production_bar",
+    "ui.main.districts_box", "ui.main.item_boxes", "ui.main.production_box", "ui.main.production_table",
+    "ui.main.production_handler"
+}
 
 local event_listeners = {}
 for _, listener_path in ipairs(event_listener_names) do
@@ -33,12 +36,6 @@ local gui_identifier_map = {
     [defines.events.on_gui_leave] = "on_gui_leave"
 }
 
-local gui_timeouts = {
-    on_gui_click = 2,
-    on_gui_confirmed = 20
-}
-
-
 -- ** SPECIAL HANDLERS **
 local special_gui_handlers = {}
 
@@ -56,47 +53,57 @@ special_gui_handlers.on_gui_confirmed = (function(_, player, action_name)
     return false
 end)
 
+local gui_timeouts = {
+    on_gui_click = 2,
+    on_gui_confirmed = 20
+}
 
-local gui_event_cache = {}
--- Create tables for all events that are being registered
-for _, event_name in pairs(gui_identifier_map) do
-    gui_event_cache[event_name] = {
-        actions = {},
-        special_handler = special_gui_handlers[event_name]
-    }
-end
 
--- Compile the list of GUI actions
+---@class ActionTable
+---@field handler function
+---@field timeout Tick
+---@field actions ActionDetails
+---@field shortcuts { string: ActionDetails }
+---@field tooltip LocalisedString
+
+---@class ActionDetails
+---@field name string
+---@field limitations ActionLimitations
+---@field shortcut_string LocalisedString
+---@field show boolean
+
+-- Compile and format the list of GUI actions
 for _, listener in pairs(event_listeners) do
-    if listener.gui then
-        for event_name, actions in pairs(listener.gui) do
-            local event_table = gui_event_cache[event_name]
+    for event_name, actions in pairs(listener.gui or {}) do
+        for _, action in pairs(actions) do
+            local timeout = action.timeout or gui_timeouts[event_name]  -- can be nil
+            local action_table = {handler = action.handler, timeout = timeout}
 
-            for _, action in pairs(actions) do
-                local timeout = action.timeout or gui_timeouts[event_name]  -- can be nil
-                local action_table = {handler = action.handler, timeout = timeout}
+            if event_name == "on_gui_click" and action.actions_table then
+                action_table.actions, action_table.shortcuts = {}, {}
+                -- Transform actions table into a more useable form
+                for action_name, modifier_action in pairs(action.actions_table) do
+                    local action_details = {
+                        name = action_name,
+                        limitations = modifier_action.limitations or {},
+                        shortcut_string = util.actions.shortcut_string(modifier_action.shortcut),
+                        show = modifier_action.show
+                    }
+                    table.insert(action_table.actions, action_details)
 
-                if event_name == "on_gui_click" and action.modifier_actions then
-                    action_table.modifier_actions = {}
-                    -- Transform modifier actions into a more useable form
-                    for modifier_action_name, modifier_action in pairs(action.modifier_actions) do
-                        local modifier_click = modifier_action[1]
-                        action_table.modifier_actions[modifier_click] = {
-                            name = modifier_action_name,
-                            limitations = modifier_action[2] or {}
-                        }
+                    if modifier_action.shortcut then
+                        action_table.shortcuts[modifier_action.shortcut] = action_details
                     end
-
-                    -- Generate all the tooltip lines for these modifier actions
-                    local tooltip = util.actions.all_tutorial_tooltips(action_table.modifier_actions)
-                    TUTORIAL_TOOLTIPS[action.name] = tooltip
                 end
-
-                event_table.actions[action.name] = action_table
+                action_table.tooltip = util.actions.generate_tooltip(action_table.actions)
             end
+
+            if MODIFIER_ACTIONS[action.name] then error("Duplicate action: " .. action.name) end
+            MODIFIER_ACTIONS[action.name] = action_table
         end
     end
 end
+
 
 local mouse_click_map = {
     [defines.mouse_button_type.left] = "left",
@@ -114,47 +121,57 @@ end
 local function handle_gui_event(event)
     if not event.element then return end
 
-    local tags = event.element.tags
-    if tags.mod ~= "fp" then return end
-
-    -- Guard against an event being called before the player is initialized
-    if not global.players[event.player_index] then return end
-
     -- GUI events always have an associated player
     local player = game.get_player(event.player_index)  ---@cast player -nil
 
+    -- Guard against an event being called before the player is initialized
+    if not storage.players[event.player_index] then return end
+
+    local tags = event.element.tags
+
+    -- Close an open context menu on any GUI click
+    if event.name == defines.events.on_gui_click and
+            not tags.on_gui_click ~= "choose_context_action" then
+        modal_dialog.close_context_menu(player)
+    end
+
+    if tags.mod ~= "fp" then return end
+
     -- The event table actually contains its identifier, not its name
     local event_name = gui_identifier_map[event.name]
-    local event_table = gui_event_cache[event_name]
     local action_name = tags[event_name]  -- could be nil
 
     -- If a special handler is set, it needs to return true before proceeding with the registered handlers
-    local special_handler = event_table.special_handler
+    local special_handler = special_gui_handlers[event_name]
     if special_handler and special_handler(event, player, action_name) == false then return end
 
     -- Special handlers need to run even without an action handler, so we
     -- wait until this point to check whether there is an associated action
     if not action_name then return end  -- meaning this event type has no action on this element
-    local action_table = event_table.actions[action_name]
+    local action_table = MODIFIER_ACTIONS[action_name] or {}
 
     -- Check if rate limiting allows this action to proceed
     if util.actions.rate_limited(player, event.tick, action_name, action_table.timeout) then return end
 
-    local third_parameter = event  -- all GUI events except on_gui_click have the event as the third parameter
-
     -- Special modifier handling for on_gui_click if configured
-    if event_name == "on_gui_click" and action_table.modifier_actions then
-        local modifier_action = action_table.modifier_actions[convert_click_to_string(event)]
-        if not modifier_action then return end  -- meaning the used modifiers do not have an associated action
+    if event_name == "on_gui_click" and action_table.actions then
+        local click = convert_click_to_string(event)
 
-        local active_limitations = util.actions.current_limitations(player)
-        -- Check whether the selected action is allowed according to its limitations
-        if not util.actions.allowed(modifier_action.limitations, active_limitations) then return end
+        if click == "right" then
+            modal_dialog.open_context_menu(player, tags, action_name,
+                action_table.actions, event.cursor_display_location)
+        else
+            local modifier_action = action_table.shortcuts[click]
+            if not modifier_action then return end  -- meaning the used modifiers do not have an associated action
 
-        third_parameter = modifier_action.name
+            local active_limitations = util.actions.current_limitations(player)
+            if util.actions.allowed(modifier_action.limitations, active_limitations) then
+                action_table.handler(player, tags, modifier_action.name)
+            end
+        end
+    else
+        action_table.handler(player, tags, event)  -- gets event as third parameter
     end
-
-    action_table.handler(player, tags, third_parameter)  -- send the actual event
 
     -- Only refresh messages if the event wasn't a hover event
     if event_name ~= "on_gui_hover" and event_name ~= "on_gui_leave" then util.messages.refresh(player) end
@@ -188,7 +205,7 @@ end
 
 local function handle_dialog_event(event)
     -- Guard against an event being called before the player is initialized
-    if not global.players[event.player_index] then return end
+    if not storage.players[event.player_index] then return end
 
     -- These custom events always have an associated player
     local player = game.get_player(event.player_index)  ---@cast player -nil
@@ -231,6 +248,8 @@ local misc_identifier_map = {
     [defines.events.on_gui_opened] = "on_gui_opened",
     [defines.events.on_player_display_resolution_changed] = "on_player_display_resolution_changed",
     [defines.events.on_player_display_scale_changed] = "on_player_display_scale_changed",
+    [defines.events.on_singleplayer_init] = "on_singleplayer_init",
+    [defines.events.on_multiplayer_init] = "on_multiplayer_init",
     [defines.events.on_player_selected_area] = "on_player_selected_area",
     [defines.events.on_player_cursor_stack_changed] = "on_player_cursor_stack_changed",
     [defines.events.on_player_main_inventory_changed] = "on_player_main_inventory_changed",
@@ -243,11 +262,13 @@ local misc_identifier_map = {
     ["fp_refresh_production"] = "fp_refresh_production",
     ["fp_up_floor"] = "fp_up_floor",
     ["fp_top_floor"] = "fp_top_floor",
+    ["fp_toggle_fold_out_subfloors"] = "fp_toggle_fold_out_subfloors",
     ["fp_cycle_production_views"] = "fp_cycle_production_views",
     ["fp_reverse_cycle_production_views"] = "fp_reverse_cycle_production_views",
     ["fp_confirm_dialog"] = "fp_confirm_dialog",
     ["fp_confirm_gui"] = "fp_confirm_gui",
     ["fp_focus_searchfield"] = "fp_focus_searchfield",
+    ["fp_toggle_calculator"] = "fp_toggle_calculator",
 
     [CUSTOM_EVENTS.build_gui_element] = "build_gui_element",
     [CUSTOM_EVENTS.refresh_gui_element] = "refresh_gui_element"
@@ -292,10 +313,13 @@ local function handle_misc_event(event)
     if not event_handlers then return end  -- make sure the given event is even handled
 
     -- Guard against an event being called before the player is initialized
-    if not global.players[event.player_index] then return end
+    if not storage.players[event.player_index] then return end
 
     -- We'll assume every one of the events has a player attached
     local player = game.get_player(event.player_index)   ---@cast player -nil
+
+    -- Close context menu on any keyboard shortcut
+    if event.input_name then modal_dialog.close_context_menu(player) end
 
     -- Check if the action is allowed to be carried out by rate limiting
     if util.actions.rate_limited(player, event.tick, event_name, event_handlers.timeout) then return end
@@ -318,7 +342,7 @@ for event_id, _ in pairs(misc_identifier_map) do script.on_event(event_id, handl
 
 -- ** GLOBAL HANDLERS **
 -- In some situations, you need to be able to refer to a function indirectly by string name.
--- As functions can't be stored in global, these need to be collected and stored in a central placem
+-- As functions can't be stored in storage, these need to be collected and stored in a central placem
 -- so code that wants to call them knows where to find them. This collects and stores these functions.
 for _, listener in pairs(event_listeners) do
     if listener.global then

@@ -1,6 +1,3 @@
-require("ui.main.factory_list")
-require("ui.base.view_state")
-
 main_dialog = {}
 
 -- Accepts custom width and height parameters so dimensions can be tried out without changing actual preferences
@@ -18,26 +15,25 @@ local function determine_main_dimensions(player, products_per_row, factory_list_
 
     local factory_list_height = (factory_list_rows * MAGIC_NUMBERS.list_element_height)
         + MAGIC_NUMBERS.subheader_height
-    local height = MAGIC_NUMBERS.title_bar_height + factory_list_height + MAGIC_NUMBERS.info_height
-        + ((2+1) * frame_spacing)
+    local height = MAGIC_NUMBERS.title_bar_height + MAGIC_NUMBERS.district_info_height +
+        factory_list_height + (3 * frame_spacing)
 
     return {width=width, height=height}
 end
 
 -- Downscale width and height preferences until the main interface fits onto the player's screen
 function main_dialog.shrinkwrap_interface(player)
-    local resolution, scale = player.display_resolution, player.display_scale
-    local actual_resolution = {width=math.ceil(resolution.width / scale), height=math.ceil(resolution.height / scale)}
+    local scaled_resolution = util.gui.calculate_scaled_resolution(player)
     local preferences = util.globals.preferences(player)
 
     local width_minimum = PRODUCTS_PER_ROW_OPTIONS[1]
-    while (actual_resolution.width * 0.95) < determine_main_dimensions(player).width
+    while (scaled_resolution.width * 0.95) < determine_main_dimensions(player).width
             and preferences.products_per_row > width_minimum do
         preferences.products_per_row = preferences.products_per_row - 1
     end
 
     local height_minimum = FACTORY_LIST_ROWS_OPTIONS[1]
-    while (actual_resolution.height * 0.95) < determine_main_dimensions(player).height
+    while (scaled_resolution.height * 0.95) < determine_main_dimensions(player).height
             and preferences.factory_list_rows > height_minimum do
         preferences.factory_list_rows = preferences.factory_list_rows - 2
     end
@@ -96,14 +92,17 @@ function main_dialog.rebuild(player, default_visibility)
 
     local left_vertical = main_horizontal.add{type="flow", direction="vertical"}
     left_vertical.style.vertical_spacing = frame_spacing
+    left_vertical.style.width = MAGIC_NUMBERS.list_width
     main_elements.flows["left_vertical"] = left_vertical
 
     local right_vertical = main_horizontal.add{type="flow", direction="vertical"}
     right_vertical.style.vertical_spacing = frame_spacing
+    right_vertical.style.width = dimensions.width - MAGIC_NUMBERS.list_width - (3 * MAGIC_NUMBERS.frame_spacing)
     main_elements.flows["right_vertical"] = right_vertical
 
-    view_state.rebuild_state(player)  -- initializes the view_state
+    item_views.rebuild_data(player)
     util.raise.build(player, "main_dialog", nil)  -- tells all elements to build themselves
+    item_views.rebuild_interface(player)
 
     if interface_visible then player.opened = frame_main_dialog end
     main_dialog.set_pause_state(player, frame_main_dialog)
@@ -116,7 +115,8 @@ function main_dialog.toggle(player, skip_opened)
     if frame_main_dialog == nil or not frame_main_dialog.valid then
         main_dialog.rebuild(player, true)  -- sets opened and paused-state itself
 
-    elseif ui_state.modal_dialog_type == nil then  -- don't toggle if modal dialog is open
+    -- Don't toggle if a modal dialog or context menu is opened
+    elseif ui_state.modal_dialog_type == nil and ui_state.context_menu == nil then
         local new_dialog_visibility = not frame_main_dialog.visible
         frame_main_dialog.visible = new_dialog_visibility
         if not skip_opened then  -- flag used only for hacky internal reasons
@@ -141,7 +141,8 @@ end
 -- Sets the game.paused-state as is appropriate
 function main_dialog.set_pause_state(player, frame_main_dialog, force_false)
     -- Don't touch paused-state if this is a multiplayer session or the editor is active
-    if game.is_multiplayer() or player.controller_type == defines.controllers.editor then return end
+    if game.is_multiplayer() or player.physical_controller_type == defines.controllers.editor then return end
+    if not frame_main_dialog or not frame_main_dialog.valid then return end
 
     game.tick_paused = (util.globals.preferences(player).pause_on_interface and not force_false)
         and frame_main_dialog.visible or false
@@ -155,6 +156,14 @@ function main_dialog.set_tooltip(player, element)
         element.tooltip = tooltips[element.index]
         tooltips[element.index] = nil
     end
+end
+
+-- Centralized here to avoid another global variable
+function main_dialog.toggle_districts_view(player, force_false)
+    local ui_state = util.globals.ui_state(player)
+    ui_state.districts_view = not ui_state.districts_view and not force_false
+
+    util.raise.refresh(player, "district_info")
 end
 
 
@@ -216,6 +225,14 @@ listeners.misc = {
         main_dialog.rebuild(player, false)
     end),
 
+    on_singleplayer_init = (function(player, _)
+        main_dialog.rebuild(player, false)
+    end),
+
+    on_multiplayer_init = (function(player, _)
+        main_dialog.rebuild(player, false)
+    end),
+
     on_lua_shortcut = (function(player, event)
         if event.prototype_name == "fp_open_interface" and not util.globals.ui_state(player).compact_view then
             main_dialog.toggle(player)
@@ -243,10 +260,10 @@ listeners.misc = {
         elseif ui_state.compact_view and compact_focus then
             compact_dialog.toggle(player)
             main_dialog.toggle(player)
-            util.raise.refresh(player, "production", nil)
+            util.raise.refresh(player, "production")
             ui_state.compact_view = false
 
-        elseif main_focus and factory ~= nil and factory.valid then
+        elseif factory ~= nil and factory.valid then
             main_dialog.toggle(player)
             compact_dialog.toggle(player)  -- toggle also refreshes
             ui_state.compact_view = true
