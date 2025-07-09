@@ -2,11 +2,11 @@
 Version: 0.00.00
 Date: 00. 00. 0000
   Features:
-    - 
+    -
   Changes:
-    - 
+    -
   Bugfixes:
-    - 
+    - Fixed an issue where productivity wasn't being applied correctly for recipes involving randomized product amounts (#323) (Thanks kalenedrael!)
 
 ---------------------------------------------------------------------------------------------------
 Version: 2.0.30
