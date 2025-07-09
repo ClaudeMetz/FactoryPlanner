@@ -195,7 +195,7 @@ function item_views.rebuild_data(player)
         adjusted_margin_of_error = MAGIC_NUMBERS.margin_of_error / preferences.timescale,
         belt_or_lane = belts_or_lanes:sub(1, -2),
         throughput_multiplier = 1 / throughput_divisor,
-        pumping_speed = pump_proto.get_pumping_speed(default_pump.quality.name),
+        pumping_speed = pump_proto.get_pumping_speed(default_pump.quality.name) * 60,
         cargo_wagon_capactiy = cargo_wagon_proto.get_inventory_size(defines.inventory.cargo_wagon,
             default_cargo_wagon.quality.name),
         -- TODO This can't check whether FluidWagonPrototype::quality_affects_capacity is set to true
