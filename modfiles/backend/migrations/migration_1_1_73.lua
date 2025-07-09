@@ -17,11 +17,11 @@ local Module = require("backend.data.Module")
 local migration = {}
 
 function migration.global()
-    global.next_object_ID = 1
-    global.mod_version = nil
-    global.tutorial_subfactory = nil
+    storage.next_object_ID = 1
+    storage.mod_version = nil
+    storage.tutorial_subfactory = nil
 
-    for _, event_data in pairs(global.nth_tick_events) do
+    for _, event_data in pairs(storage.nth_tick_events) do
         if event_data.handler_name == "scale_subfactory_by_ingredient_amount" then
             event_data.handler_name = "scale_factory_by_product_amount"
         end

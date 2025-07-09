@@ -3,15 +3,27 @@ local Beacon = require("backend.data.Beacon")
 
 -- ** LOCAL UTIL **
 local function handle_line_move_click(player, tags, event)
-    local line = OBJECT_INDEX[tags.line_id]
+    local line = OBJECT_INDEX[tags.line_id]  ---@type Line
+    local floor = line.parent
+
     local spots_to_shift = (event.control) and 5 or ((not event.shift) and 1 or nil)
+    if spots_to_shift == nil and floor.level > 1 and tags.direction == "previous" then
+        spots_to_shift = 0
+        for previous_line in floor:iterator(nil, line.previous, "previous") do
+            if previous_line.id ~= floor.first.id then
+                spots_to_shift = spots_to_shift + 1
+            end
+        end
+    end
     line.parent:shift(line, tags.direction, spots_to_shift)
 
     solver.update(player)
-    util.raise.refresh(player, "factory", nil)
+    util.raise.refresh(player, "factory")
 end
 
-local function handle_recipe_click(player, tags, action)
+
+-- Handles any line recipe, with or without subfloor
+local function handle_line_recipe_click(player, tags, action)
     local factory = util.context.get(player, "Factory")  --[[@as Factory]]
     local line = OBJECT_INDEX[tags.line_id]
     local relevant_line = (line.class == "Floor") and line.first or line
@@ -39,7 +51,7 @@ local function handle_recipe_click(player, tags, action)
         end
 
         util.context.set(player, new_context)
-        util.raise.refresh(player, "production", nil)
+        util.raise.refresh(player, "production")
 
     elseif action == "copy" then
         util.clipboard.copy(player, line)  -- use actual line
@@ -50,16 +62,43 @@ local function handle_recipe_click(player, tags, action)
     elseif action == "toggle" then
         relevant_line.active = not relevant_line.active
         solver.update(player, factory)
-        util.raise.refresh(player, "factory", nil)
+        util.raise.refresh(player, "factory")
 
     elseif action == "delete" then
-        line.parent:remove(line, true)
+        local floor = line.parent
+        floor:remove(line, true)
+
+        local selected_floor = util.context.get(player, "Floor")
+        if floor.level > selected_floor.level and floor:count() == 1 then
+            floor.parent:replace(floor, floor.first)
+        end
 
         solver.update(player, factory)
-        util.raise.refresh(player, "factory", nil)
+        util.raise.refresh(player, "factory")
 
-    elseif action == "recipebook" then
-        util.open_in_recipebook(player, "recipe", relevant_line.recipe_proto.name)
+    elseif action == "factoriopedia" then
+        player.open_factoriopedia_gui(prototypes["recipe"][relevant_line.recipe_proto.name])
+    end
+end
+
+-- Handles the defining recipe of a floor (ie. first one of a subfloor)
+local function handle_floor_recipe_click(player, tags, action)
+    local factory = util.context.get(player, "Factory")  --[[@as Factory]]
+    local line = OBJECT_INDEX[tags.line_id]
+
+    if action == "copy" then
+        util.clipboard.copy(player, line)
+
+    elseif action == "paste" then
+        util.clipboard.paste(player, line)
+
+    elseif action == "toggle" then
+        line.active = not line.active
+        solver.update(player, factory)
+        util.raise.refresh(player, "factory")
+
+    elseif action == "factoriopedia" then
+        player.open_factoriopedia_gui(prototypes["recipe"][line.recipe_proto.name])
     end
 end
 
@@ -75,7 +114,7 @@ end
 local function handle_percentage_confirmation(player, _, _)
     util.globals.ui_state(player).recalculate_on_factory_change = false  -- reset this flag as we refresh below
     solver.update(player)
-    util.raise.refresh(player, "factory", nil)
+    util.raise.refresh(player, "factory")
 end
 
 
@@ -83,7 +122,7 @@ local function handle_machine_click(player, tags, action)
     local machine = OBJECT_INDEX[tags.machine_id]
     local line = machine.parent
 
-    if action == "put_into_cursor" then
+    if action == "add_to_cursor" then
         local success = util.cursor.set_entity(player, line, machine)
         if success then main_dialog.toggle(player) end
 
@@ -96,18 +135,8 @@ local function handle_machine_click(player, tags, action)
     elseif action == "paste" then
         util.clipboard.paste(player, machine)
 
-    elseif action == "reset_to_default" then
-        line:change_machine_to_default(player)  -- guaranteed to find something
-        machine.limit = nil
-        machine.force_limit = true
-        local message = line:apply_mb_defaults(player)
-
-        solver.update(player)
-        util.raise.refresh(player, "factory", nil)
-        if message ~= nil then util.messages.raise(player, message.category, message.text, 1) end
-
-    elseif action == "recipebook" then
-        util.open_in_recipebook(player, "entity", machine.proto.name)
+    elseif action == "factoriopedia" then
+        player.open_factoriopedia_gui(prototypes["entity"][machine.proto.name])
     end
 end
 
@@ -126,7 +155,7 @@ local function handle_beacon_click(player, tags, action)
     local beacon = OBJECT_INDEX[tags.beacon_id]
     local line = beacon.parent
 
-    if action == "put_into_cursor" then
+    if action == "add_to_cursor" then
         local success = util.cursor.set_entity(player, line, beacon)
         if success then main_dialog.toggle(player) end
 
@@ -142,10 +171,10 @@ local function handle_beacon_click(player, tags, action)
     elseif action == "delete" then
         line:set_beacon(nil)
         solver.update(player)
-        util.raise.refresh(player, "factory", nil)
+        util.raise.refresh(player, "factory")
 
-    elseif action == "recipebook" then
-        util.open_in_recipebook(player, "entity", beacon.proto.name)
+    elseif action == "factoriopedia" then
+        player.open_factoriopedia_gui(prototypes["entity"][beacon.proto.name])
     end
 end
 
@@ -188,101 +217,70 @@ local function handle_module_click(player, tags, action)
 
         module_set:normalize({effects=true})
         solver.update(player)
-        util.raise.refresh(player, "factory", nil)
+        util.raise.refresh(player, "factory")
 
-    elseif action == "recipebook" then
-        util.open_in_recipebook(player, "item", module.proto.name)
+    elseif action == "factoriopedia" then
+        player.open_factoriopedia_gui(prototypes["item"][module.proto.name])
     end
 end
 
-
-local function apply_item_options(player, options, action)
-    if action == "submit" then
-        local modal_data = util.globals.modal_data(player)  --[[@as table]]
-        local line = OBJECT_INDEX[modal_data.line_id]
-        local item_category = modal_data.item_category
-
-        local current_amount = modal_data.current_amount
-        local target_amount = options.target_amount or modal_data.current_amount
-        if item_category ~= "ingredient" then
-            local other_category = (item_category == "product") and "byproduct" or "product"
-            local corresponding_item = line[other_category .. "s"]:find({proto=modal_data.item_proto})
-
-            if corresponding_item then  -- Further adjustments if item is both product and byproduct
-                -- In either case, we need to consider the sum of both types as the current amount
-                current_amount = current_amount + corresponding_item.amount
-
-                -- If it's a byproduct, we want to set its amount to the exact number entered, which this does
-                if item_category == "byproduct" then target_amount = target_amount + corresponding_item.amount end
-            end
-        end
-
-        line.percentage = (current_amount == 0) and 100 or (line.percentage * target_amount) / current_amount
-
-        solver.update(player)
-        util.raise.refresh(player, "factory", nil)
-    end
-end
 
 local function handle_item_click(player, tags, action)
     local line = OBJECT_INDEX[tags.line_id]
-    local item = line[tags.item_category .. "s"].items[tags.item_index]
+    local item = line[tags.item_category .. "s"][tags.item_index]
 
     if action == "prioritize" then
-        if line.products:count() < 2 then
+        if #line.products < 2 then
             util.messages.raise(player, "warning", {"fp.warning_no_prioritizing_single_product"}, 1)
         else
             -- Remove the priority_product if the already selected one is clicked
             line.priority_product = (line.priority_product ~= item.proto) and item.proto or nil
 
             solver.update(player)
-            util.raise.refresh(player, "factory", nil)
+            util.raise.refresh(player, "factory")
         end
 
     elseif action == "add_recipe_to_end" or action == "add_recipe_below" then
+        if item.proto.type == "entity" then return end
         local production_type = (tags.item_category == "byproduct") and "consume" or "produce"
         local add_after_line_id = (action == "add_recipe_below") and line.id or nil
-        util.raise.open_dialog(player, {dialog="recipe", modal_data={add_after_line_id=add_after_line_id,
-            production_type=production_type, category_id=item.proto.category_id, product_id=item.proto.id}})
 
-    elseif action == "specify_amount" then
-        -- Set the view state so that the amount shown in the dialog makes sense
-        view_state.select(player, "items_per_timescale")
-        util.raise.refresh(player, "factory", nil)
+        local proto = item.proto
+        if production_type == "produce" and proto.type == "fluid" and line.class == "Line" then
+            local temperature = line.temperatures[item.proto.name]
+            if temperature then proto = prototyper.util.find("items", proto.name .. "-" .. temperature, "fluid") end
+            -- If a no-temperature fluid is passed, it'll show all compatible temperatures/recipes
+        end
 
-        local type_localised_string = {"fp.pl_" .. tags.item_category, 1}
-        local produce_consume = (tags.item_category == "ingredient") and {"fp.consume"} or {"fp.produce"}
+        util.raise.open_dialog(player, {dialog="recipe", modal_data={line_id=line.id,
+            add_after_line_id=add_after_line_id, production_type=production_type,
+            category_id=proto.category_id, product_id=proto.id}})
 
-        local modal_data = {
-            title = {"fp.options_item_title", type_localised_string},
-            text = {"fp.options_item_text", item.proto.localised_name},
-            submission_handler_name = "apply_item_options",
-            line_id = line.id,
-            item_category = tags.item_category,
-            current_amount = item.amount,
-            item_proto = item.proto,
-            fields = {
-                {
-                    type = "numeric_textfield",
-                    name = "target_amount",
-                    caption = {"fp.options_target_amount"},
-                    tooltip = {"fp.options_target_amount_tt", type_localised_string, produce_consume},
-                    text = item.amount,
-                    width = 140,
-                    focus = true
-                }
-            }
-        }
-        util.raise.open_dialog(player, {dialog="options", modal_data=modal_data})
+    elseif action == "edit" then
+        if item.proto.type ~= "fluid" then
+            util.cursor.create_flying_text(player, {"fp.can_only_edit_fluids"})
+            return
+        elseif line.class ~= "Line" then
+            util.cursor.create_flying_text(player, {"fp.can_only_edit_lines"})
+            return
+        end
+        util.raise.open_dialog(player, {dialog="item", modal_data={line_id=line.id,
+            category_id=item.proto.category_id, name=item.proto.name}})
 
     elseif action == "copy" then
-        util.clipboard.copy(player, item)
+        if item.proto.type == "entity" then return end
+        local copyable_item = {class="SimpleItem", proto=item.proto, amount=item.amount}
+        util.clipboard.copy(player, copyable_item)
 
-    elseif action == "put_into_cursor" then
-        util.cursor.add_to_item_combinator(player, item.proto, item.amount)
+    elseif action == "add_to_cursor" then
+        if item.proto.type == "entity" then return end
+        util.cursor.handle_item_click(player, item.proto, item.amount)
 
-    elseif action == "recipebook" then
-        util.open_in_recipebook(player, item.proto.type, item.proto.name)
+    elseif action == "factoriopedia" then
+        local name = item.proto.name
+        if item.proto.type == "entity" then name = name:gsub("custom%-", "")
+        elseif item.proto.temperature then name = item.proto.base_name end
+        player.open_factoriopedia_gui(prototypes[item.proto.type][name])
     end
 end
 
@@ -292,13 +290,25 @@ local function handle_fuel_click(player, tags, action)
 
     if action == "add_recipe_to_end" or action == "add_recipe_below" then
         local add_after_line_id = (action == "add_recipe_below") and line.id or nil
-        local category = PROTOTYPE_MAPS.items[fuel.proto.type]
-        local proto_id = category.members[fuel.proto.name].id
-        util.raise.open_dialog(player, {dialog="recipe", modal_data={add_after_line_id=add_after_line_id,
-            production_type="produce", category_id=category.id, product_id=proto_id}})
 
-    elseif action == "edit" then  -- fuel is changed through the machine dialog
-        util.raise.open_dialog(player, {dialog="machine", modal_data={machine_id=fuel.parent.id}})
+        local proto = prototyper.util.find("items", fuel.proto.name, fuel.proto.type)
+        if fuel.proto.type == "fluid" then
+            local temperature = fuel.temperature
+            if temperature then proto = prototyper.util.find("items", proto.name .. "-" .. temperature, "fluid") end
+            -- If a no-temperature fluid is passed, it'll show all compatible temperatures/recipes
+        end
+
+        util.raise.open_dialog(player, {dialog="recipe", modal_data={fuel_id=fuel.id,
+            add_after_line_id=add_after_line_id, production_type="produce",
+            category_id=proto.category_id, product_id=proto.id}})
+
+    elseif action == "edit" then
+        if fuel.proto.type ~= "fluid" then
+            util.cursor.create_flying_text(player, {"fp.can_only_edit_fluids"})
+            return
+        end
+        util.raise.open_dialog(player, {dialog="item", modal_data={fuel_id=fuel.id,
+            category_id=fuel.proto.category_id, name=fuel.proto.name}})
 
     elseif action == "copy" then
         util.clipboard.copy(player, fuel)
@@ -306,11 +316,11 @@ local function handle_fuel_click(player, tags, action)
     elseif action == "paste" then
         util.clipboard.paste(player, fuel)
 
-    elseif action == "put_into_cursor" then
-        util.cursor.add_to_item_combinator(player, fuel.proto, fuel.amount)
+    elseif action == "add_to_cursor" then
+        util.cursor.handle_item_click(player, fuel.proto, fuel.amount)
 
-    elseif action == "recipebook" then
-        util.open_in_recipebook(player, fuel.proto.type, fuel.proto.name)
+    elseif action == "factoriopedia" then
+        player.open_factoriopedia_gui(prototypes[fuel.proto.type][fuel.proto.name])
     end
 end
 
@@ -326,25 +336,34 @@ listeners.gui = {
         },
         {
             name = "act_on_line_recipe",
-            modifier_actions = {
-                open_subfloor = {"left"},  -- does its own archive check
-                copy = {"shift-right"},
-                paste = {"shift-left", {archive_open=false}},
-                toggle = {"control-left", {archive_open=false}},
-                delete = {"control-right", {archive_open=false}},
-                recipebook = {"alt-right", {recipebook=true}}
+            actions_table = {
+                open_subfloor = {shortcut="left", show=true},  -- does its own archive check
+                copy = {shortcut="shift-right"},
+                paste = {shortcut="shift-left", limitations={archive_open=false}},
+                toggle = {shortcut="control-left", limitations={archive_open=false}},
+                delete = {shortcut="control-right", limitations={archive_open=false}},
+                factoriopedia = {shortcut="alt-left"}
             },
-            handler = handle_recipe_click
+            handler = handle_line_recipe_click
+        },
+        {
+            name = "act_on_floor_recipe",
+            actions_table = {
+                copy = {shortcut="shift-right"},
+                paste = {shortcut="shift-left", limitations={archive_open=false}},
+                toggle = {shortcut="control-left", limitations={archive_open=false}},
+                factoriopedia = {shortcut="alt-left"}
+            },
+            handler = handle_floor_recipe_click
         },
         {
             name = "act_on_line_machine",
-            modifier_actions = {
-                edit = {"right", {archive_open=false}},
-                copy = {"shift-right"},
-                paste = {"shift-left", {archive_open=false}},
-                reset_to_default = {"control-right", {archive_open=false}},
-                put_into_cursor = {"alt-left"},
-                recipebook = {"alt-right", {recipebook=true}}
+            actions_table = {
+                edit = {shortcut="left", limitations={archive_open=false}, show=true},
+                copy = {shortcut="shift-right"},
+                paste = {shortcut="shift-left", limitations={archive_open=false}},
+                add_to_cursor = {shortcut="alt-right"},
+                factoriopedia = {shortcut="alt-left"}
             },
             handler = handle_machine_click
         },
@@ -354,13 +373,13 @@ listeners.gui = {
         },
         {
             name = "act_on_line_beacon",
-            modifier_actions = {
-                edit = {"right", {archive_open=false}},
-                copy = {"shift-right"},
-                paste = {"shift-left", {archive_open=false}},
-                delete = {"control-right", {archive_open=false}},
-                put_into_cursor = {"alt-left"},
-                recipebook = {"alt-right", {recipebook=true}}
+            actions_table = {
+                edit = {shortcut="left", limitations={archive_open=false}, show=true},
+                copy = {shortcut="shift-right"},
+                paste = {shortcut="shift-left", limitations={archive_open=false}},
+                delete = {shortcut="control-right", limitations={archive_open=false}},
+                add_to_cursor = {shortcut="alt-right"},
+                factoriopedia = {shortcut="alt-left"}
             },
             handler = handle_beacon_click
         },
@@ -370,23 +389,22 @@ listeners.gui = {
         },
         {
             name = "act_on_line_module",
-            modifier_actions = {
-                edit = {"right", {archive_open=false}},
-                copy = {"shift-right"},
-                paste = {"shift-left", {archive_open=false}},
-                delete = {"control-right", {archive_open=false}},
-                recipebook = {"alt-right", {recipebook=true}}
+            actions_table = {
+                edit = {shortcut="left", limitations={archive_open=false}, show=true},
+                copy = {shortcut="shift-right"},
+                paste = {shortcut="shift-left", limitations={archive_open=false}},
+                delete = {shortcut="control-right", limitations={archive_open=false}},
+                factoriopedia = {shortcut="alt-left"}
             },
             handler = handle_module_click
         },
         {
             name = "act_on_line_product",
-            modifier_actions = {
-                prioritize = {"left", {archive_open=false, matrix_active=false}},
-                specify_amount = {"right", {archive_open=false, matrix_active=false}},
-                copy = {"shift-right"},
-                put_into_cursor = {"alt-left"},
-                recipebook = {"alt-right", {recipebook=true}}
+            actions_table = {
+                prioritize = {shortcut="left", limitations={archive_open=false, matrix_active=false}, show=true},
+                copy = {shortcut="shift-right"},
+                add_to_cursor = {shortcut="alt-right"},
+                factoriopedia = {shortcut="alt-left"}
             },
             handler = (function(player, tags, action)
                 tags.item_category = "product"
@@ -395,13 +413,12 @@ listeners.gui = {
         },
         {
             name = "act_on_line_byproduct",
-            modifier_actions = {
-                add_recipe_to_end = {"left", {archive_open=false, matrix_active=true}},
-                add_recipe_below = {"control-left", {archive_open=false, matrix_active=true}},
-                specify_amount = {"right", {archive_open=false, matrix_active=false}},
-                copy = {"shift-right"},
-                put_into_cursor = {"alt-left"},
-                recipebook = {"alt-right", {recipebook=true}}
+            actions_table = {
+                add_recipe_to_end = {shortcut="left", limitations={archive_open=false, matrix_active=true}, show=true},
+                add_recipe_below = {limitations={archive_open=false, matrix_active=true}},
+                copy = {shortcut="shift-right"},
+                add_to_cursor = {shortcut="alt-right"},
+                factoriopedia = {shortcut="alt-left"}
             },
             handler = (function(player, tags, action)
                 tags.item_category = "byproduct"
@@ -410,13 +427,13 @@ listeners.gui = {
         },
         {
             name = "act_on_line_ingredient",
-            modifier_actions = {
-                add_recipe_to_end = {"left", {archive_open=false}},
-                add_recipe_below = {"control-left", {archive_open=false}},
-                specify_amount = {"right", {archive_open=false, matrix_active=false}},
-                copy = {"shift-right"},
-                put_into_cursor = {"alt-left"},
-                recipebook = {"alt-right", {recipebook=true}}
+            actions_table = {
+                add_recipe_to_end = {shortcut="left", limitations={archive_open=false}, show=true},
+                add_recipe_below = {limitations={archive_open=false}},
+                edit = {shortcut="control-left", limitations={archive_open=false}, show=true},
+                copy = {shortcut="shift-right"},
+                add_to_cursor = {shortcut="alt-right"},
+                factoriopedia = {shortcut="alt-left"}
             },
             handler = (function(player, tags, action)
                 tags.item_category = "ingredient"
@@ -425,14 +442,14 @@ listeners.gui = {
         },
         {
             name = "act_on_line_fuel",
-            modifier_actions = {
-                add_recipe_to_end = {"left", {archive_open=false}},
-                add_recipe_below = {"control-left", {archive_open=false}},
-                edit = {"right", {archive_open=false}},
-                copy = {"shift-right"},
-                paste = {"shift-left", {archive_open=false}},
-                put_into_cursor = {"alt-left"},
-                recipebook = {"alt-right", {recipebook=true}}
+            actions_table = {
+                add_recipe_to_end = {shortcut="left", limitations={archive_open=false}, show=true},
+                add_recipe_below = {limitations={archive_open=false}},
+                edit = {shortcut="control-left", limitations={archive_open=false}, show=true},
+                copy = {shortcut="shift-right"},
+                paste = {shortcut="shift-left", limitations={archive_open=false}},
+                add_to_cursor = {shortcut="alt-right"},
+                factoriopedia = {shortcut="alt-left"}
             },
             handler = handle_fuel_click
         }
@@ -449,7 +466,7 @@ listeners.gui = {
     },
     on_gui_text_changed = {
         {
-            name = "line_percentage",
+            name = "change_line_percentage",
             handler = handle_percentage_change
         },
         {
@@ -463,14 +480,10 @@ listeners.gui = {
     },
     on_gui_confirmed = {
         {
-            name = "line_percentage",
+            name = "set_line_percentage",
             handler = handle_percentage_confirmation
         }
     }
-}
-
-listeners.global = {
-    apply_item_options = apply_item_options
 }
 
 return { listeners }

@@ -18,7 +18,7 @@ local _porter = {}
 ---@return ExportString
 function _porter.generate_export_string(factories)
     local export_table = {
-        export_modset = global.installed_mods,
+        export_modset = storage.installed_mods,
         factories = {}
     }
 
@@ -26,7 +26,7 @@ function _porter.generate_export_string(factories)
         table.insert(export_table.factories, factory:pack())
     end
 
-    return game.encode_string(game.table_to_json(export_table))  --[[@as ExportString]]
+    return helpers.encode_string(helpers.table_to_json(export_table))  --[[@as ExportString]]
 end
 
 -- Converts the given factory exchange string into a temporary Factory
@@ -37,7 +37,7 @@ function _porter.process_export_string(export_string)
     local export_table = nil  ---@type AnyBasic?
 
     if not pcall(function()
-        export_table = game.json_to_table(game.decode_string(export_string) --[[@as string]])
+        export_table = helpers.json_to_table(helpers.decode_string(export_string) --[[@as string]])
         assert(type(export_table) == "table")
     end) then return nil, "decoding_failure" end
     ---@cast export_table ExportTable
@@ -97,29 +97,29 @@ function _porter.format_modset_diff(old_modset)
     local current_table, next_index = tooltip, 3
 
     if next(changes.added) then
-        current_table, next_index = util.build_localised_string({
-            {"fp.factory_mod_added"}}, current_table, next_index)
+        current_table, next_index = util.build_localised_string(
+            {"fp.factory_mod_added"}, current_table, next_index)
         for name, version in pairs(changes.added) do
-            current_table, next_index = util.build_localised_string({
-                {"fp.factory_mod_and_version", name, version}}, current_table, next_index)
+            current_table, next_index = util.build_localised_string(
+                {"fp.factory_mod_and_version", name, version}, current_table, next_index)
         end
     end
 
     if next(changes.removed) then
-        current_table, next_index = util.build_localised_string({
-            {"fp.factory_mod_removed"}}, current_table, next_index)
+        current_table, next_index = util.build_localised_string(
+            {"fp.factory_mod_removed"}, current_table, next_index)
         for name, version in pairs(changes.removed) do
-            current_table, next_index = util.build_localised_string({
-                {"fp.factory_mod_and_version", name, version}}, current_table, next_index)
+            current_table, next_index = util.build_localised_string(
+                {"fp.factory_mod_and_version", name, version}, current_table, next_index)
         end
     end
 
     if next(changes.updated) then
-        current_table, next_index = util.build_localised_string({
-            {"fp.factory_mod_updated"}}, current_table, next_index)
+        current_table, next_index = util.build_localised_string(
+            {"fp.factory_mod_updated"}, current_table, next_index)
         for name, versions in pairs(changes.updated) do
-            current_table, next_index = util.build_localised_string({
-                {"fp.factory_mod_and_versions", name, versions.old, versions.current}}, current_table, next_index)
+            current_table, next_index = util.build_localised_string(
+                {"fp.factory_mod_and_versions", name, versions.old, versions.current}, current_table, next_index)
         end
     end
 
@@ -131,7 +131,7 @@ end
 ---@param player LuaPlayer
 ---@param export_string ExportString
 function _porter.add_factories(player, export_string)
-    local import_table = util.porter.process_export_string(export_string)  ---@cast import_table -nil
+    local import_table, _ = util.porter.process_export_string(export_string)  ---@cast import_table -nil
     -- No error handling here, as the export_string for this will always be known to work
 
     local district = util.context.get(player, "District")  --[[@as District]]

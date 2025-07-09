@@ -1,50 +1,44 @@
-local District = require("backend.data.District")
+local Realm = require("backend.data.Realm")
 
 local loader = require("backend.handlers.loader")
 local migrator = require("backend.handlers.migrator")
 require("backend.handlers.prototyper")
+require("backend.handlers.defaults")
 require("backend.handlers.screenshotter")
 
 require("backend.calculation.solver")
 
 
 ---@class PreferencesTable
+---@field timescale Timescale
 ---@field pause_on_interface boolean
----@field tutorial_mode boolean
 ---@field utility_scopes { components: "Factory" | "Floor" }
 ---@field recipe_filters { disabled: boolean, hidden: boolean }
+---@field compact_ingredients boolean
+---@field fold_out_subfloors boolean
 ---@field products_per_row integer
 ---@field factory_list_rows integer
----@field default_timescale Timescale
+---@field compact_width_percentage integer
 ---@field show_gui_button boolean
 ---@field attach_factory_products boolean
 ---@field skip_factory_naming boolean
 ---@field prefer_matrix_solver boolean
 ---@field show_floor_items boolean
----@field fold_out_subfloors boolean
 ---@field ingredient_satisfaction boolean
----@field round_button_numbers boolean
 ---@field ignore_barreling_recipes boolean
 ---@field ignore_recycling_recipes boolean
 ---@field done_column boolean
 ---@field percentage_column boolean
----@field pollution_column boolean
 ---@field line_comment_column boolean
----@field mb_defaults MBDefaults
+---@field item_views ItemViewPreferences
 ---@field belts_or_lanes "belts" | "lanes"
----@field default_machines PrototypeWithCategoryDefault
----@field default_fuels PrototypeWithCategoryDefault
----@field default_belts PrototypeDefault
----@field default_wagons PrototypeWithCategoryDefault
----@field default_beacons PrototypeDefault
+---@field default_machines PrototypeDefaultWithCategory
+---@field default_fuels PrototypeDefaultWithCategory
+---@field default_beacons DefaultPrototype
+---@field default_belts DefaultPrototype
+---@field default_wagons PrototypeDefaultWithCategory
 
----@alias Timescale 1 | 60 | 3600
-
----@class MBDefaults
----@field machine FPModulePrototype?
----@field machine_secondary FPModulePrototype?
----@field beacon FPModulePrototype?
----@field beacon_count number?
+---@alias Timescale 1 | 60
 
 ---@param player_table PlayerTable
 function reload_preferences(player_table)
@@ -61,40 +55,40 @@ function reload_preferences(player_table)
         end
     end
 
+    reload("timescale", 60)
     reload("pause_on_interface", false)
-    reload("tutorial_mode", true)
     reload("utility_scopes", {components = "Factory"})
     reload("recipe_filters", {disabled = false, hidden = false})
+    reload("compact_ingredients", false)
+    reload("fold_out_subfloors", false)
 
-    reload("products_per_row", 7)
-    reload("factory_list_rows", 24)
-    reload("default_timescale", 60)
+    reload("products_per_row", 6)
+    reload("factory_list_rows", 30)
+    reload("compact_width_percentage", 26)
 
     reload("show_gui_button", true)
+    reload("skip_factory_naming", true)
     reload("attach_factory_products", false)
-    reload("skip_factory_naming", false)
     reload("prefer_matrix_solver", false)
-    reload("show_floor_items", false)
-    reload("fold_out_subfloors", false)
+    reload("show_floor_items", true)
     reload("ingredient_satisfaction", false)
-    reload("round_button_numbers", false)
     reload("ignore_barreling_recipes", false)
     reload("ignore_recycling_recipes", false)
 
     reload("done_column", true)
     reload("percentage_column", false)
-    reload("pollution_column", false)
     reload("line_comment_column", false)
 
-    reload("mb_defaults", {machine = nil, machine_secondary = nil, beacon = nil, beacon_count = nil})
+    reload("item_views", item_views.default_preferences())
 
     reload("belts_or_lanes", "belts")
 
-    reload("default_machines", prototyper.defaults.get_fallback("machines"))
-    reload("default_fuels", prototyper.defaults.get_fallback("fuels"))
-    reload("default_belts", prototyper.defaults.get_fallback("belts"))
-    reload("default_wagons", prototyper.defaults.get_fallback("wagons"))
-    reload("default_beacons", prototyper.defaults.get_fallback("beacons"))
+    reload("default_machines", defaults.get_fallback("machines"))
+    reload("default_fuels", defaults.get_fallback("fuels"))
+    reload("default_beacons", defaults.get_fallback("beacons"))
+    reload("default_belts", defaults.get_fallback("belts"))
+    reload("default_pumps", defaults.get_fallback("pumps"))
+    reload("default_wagons", defaults.get_fallback("wagons"))
 
     player_table.preferences = updated_prefs
 end
@@ -102,18 +96,25 @@ end
 
 ---@class UIStateTable
 ---@field main_dialog_dimensions DisplayResolution?
----@field last_action string?
----@field view_states ViewStates?
+---@field last_action LastAction?
+---@field views_data ItemViewsData?
 ---@field messages PlayerMessage[]
 ---@field main_elements table
 ---@field compact_elements table
+---@field calculator_elements table
 ---@field last_selected_picker_group integer?
 ---@field tooltips table
 ---@field modal_dialog_type ModalDialogType?
 ---@field modal_data table?
+---@field context_menu LuaGuiElement?
 ---@field selection_mode boolean
 ---@field compact_view boolean
+---@field districts_view boolean
 ---@field recalculate_on_factory_change boolean
+
+---@class LastAction
+---@field action_name string
+---@field tick Tick
 
 ---@param player_table PlayerTable
 local function reset_ui_state(player_table)
@@ -121,18 +122,21 @@ local function reset_ui_state(player_table)
     player_table.ui_state = {
         main_dialog_dimensions = nil,
         last_action = nil,
-        view_states = nil,
+        views_data = nil,
         messages = {},
         main_elements = {},
         compact_elements = {},
+        calculator_elements = {},
         last_selected_picker_group = nil,
         tooltips = {},
 
         modal_dialog_type = nil,
         modal_data = nil,
+        context_menu = nil,
 
         selection_mode = false,
         compact_view = false,
+        districts_view = false,
         recalculate_on_factory_change = false
     }
 end
@@ -141,31 +145,42 @@ end
 ---@class PlayerTable
 ---@field preferences PreferencesTable
 ---@field ui_state UIStateTable
----@field district District
+---@field realm Realm
 ---@field context ContextTable
 ---@field translation_tables { [string]: TranslatedDictionary }?
 ---@field clipboard ClipboardEntry?
 
 ---@param player LuaPlayer
 local function player_init(player)
-    global.players[player.index] = {}  --[[@as table]]
-    local player_table = global.players[player.index]
+    storage.players[player.index] = {}  --[[@as table]]
+    local player_table = storage.players[player.index]
 
-    player_table.district = District.init()
-    util.context.init(player)
+    player_table.realm = Realm.init()
+    util.context.init(player_table)
+    util.context.set(player, player_table.realm.first)
 
     reload_preferences(player_table)
     reset_ui_state(player_table)
 
-    util.gui.toggle_mod_gui(player)
-    util.messages.raise(player, "hint", {"fp.hint_tutorial"}, 6)
+    -- Set default fuel to coal because anything else is awkward
+    defaults.set_all(player, "fuels", {prototype="coal"})
 
-    if DEV_ACTIVE then util.porter.add_factories(player, DEV_EXPORT_STRING) end
+    util.gui.toggle_mod_gui(player)
+
+    if DEV_ACTIVE then
+        util.porter.add_factories(player, DEV_EXPORT_STRING)
+
+        player.force.research_all_technologies()
+        player.clear_recipe_notifications()
+        player.cheat_mode = true
+    end
 end
 
 ---@param player LuaPlayer
 local function refresh_player_table(player)
-    local player_table = global.players[player.index]
+    local player_table = storage.players[player.index]
+
+    defaults.migrate(player_table)
 
     reload_preferences(player_table)
     reset_ui_state(player_table)
@@ -175,25 +190,16 @@ local function refresh_player_table(player)
     player_table.translation_tables = nil
     player_table.clipboard = nil
 
-    -- Migrate the prototypes used in the player's preferences
-    prototyper.defaults.migrate(player_table)
-    prototyper.util.migrate_mb_defaults(player_table)
-
-    player_table.district:validate()
+    player_table.realm:validate()
 end
 
-
----@return Factory?
-local function import_tutorial_factory()
-    local import_table, error = util.porter.process_export_string(TUTORIAL_EXPORT_STRING)
-    if error then return nil end
-
-    ---@cast import_table -nil
-    local factory = import_table.factories[1]
-    if not factory.valid then return nil end
-
-    return factory  -- can still not be admissible if any lines don't produce anything
-end
+---@class GlobalTable
+---@field players { [PlayerIndex]: PlayerTable }
+---@field prototypes PrototypeLists
+---@field next_object_ID integer
+---@field nth_tick_events { [Tick]: NthTickEvent }
+---@field installed_mods ModToVersion
+storage = {}  -- just for the type checker, doesn't do anything
 
 local function global_init()
     -- Set up a new save for development if necessary
@@ -203,22 +209,17 @@ local function global_init()
         if freeplay["set_disable_crashsite"] then remote.call("freeplay", "set_disable_crashsite", true) end
     end
 
-    global.players = {}  ---@type { [PlayerIndex]: PlayerTable }
-    global.next_object_ID = 1  -- Counter used for assigning incrementing IDs to all objects
+    storage.players = {}  -- Table containing all player-specific data
+    storage.next_object_ID = 1  -- Counter used for assigning incrementing IDs to all objects
+    storage.nth_tick_events = {}  -- Save metadata about currently registered on_nth_tick events
 
-    -- Save metadata about currently registered on_nth_tick events
-    global.nth_tick_events = {}  ---@type { [Tick]: NthTickEvent }
-
-    prototyper.build()  -- Generate all relevant prototypes and save them in global
+    storage.prototypes = {}  -- Table containing all relevant prototypes indexed by ID
+    prototyper.build()  -- Generate all relevant prototypes and save them in storage
     loader.run(true)  -- Run loader which creates useful indexes of prototype data
 
-    -- Retain current modset to detect mod changes for factories that became invalid
-    global.installed_mods = script.active_mods  ---@type ModToVersion
-    -- Import the tutorial factory to validate and cache it
-    global.tutorial_factory = import_tutorial_factory()
+    storage.installed_mods = script.active_mods  -- Retain current modset to detect mod changes for invalid factories
 
-    -- Initialize flib's translation module
-    translator.on_init()
+    translator.on_init()  -- Initialize flib's translation module
     prototyper.util.build_translation_dictionaries()
 
     for _, player in pairs(game.players) do player_init(player) end
@@ -230,34 +231,34 @@ local function handle_configuration_change()
 
     if not migrations then  -- implies this save can't be migrated anymore
         for _, player in pairs(game.players) do util.gui.reset_player(player) end
-        global = {}; global_init()
+        storage = {}; global_init()
         game.print{"fp.mod_reset"};
         return
     end
 
+    storage.prototypes = {}
     prototyper.build()
     loader.run(true)
 
     migrator.migrate_global(migrations)
-    for _, player in pairs(game.players) do
-        migrator.migrate_player_table(player, migrations)
-        refresh_player_table(player)
-    end
-
-    global.installed_mods = script.active_mods
-    global.tutorial_factory = import_tutorial_factory()
-
-    translator.on_configuration_changed()
-    prototyper.util.build_translation_dictionaries()
+    migrator.migrate_player_tables(migrations)
 
     for index, player in pairs(game.players) do
+        refresh_player_table(player)  -- part of migration cleanup
+
         util.gui.reset_player(player)  -- Destroys all existing GUI's
         util.gui.toggle_mod_gui(player)  -- Recreates the mod-GUI if necessary
 
         -- Update calculations in case prototypes changed in a relevant way
-        local district = global.players[index].district  ---@type District
-        for factory in district:iterator() do solver.update(player, factory) end
+        for district in storage.players[index].realm:iterator() do
+            for factory in district:iterator() do solver.update(player, factory) end
+        end
     end
+
+    storage.installed_mods = script.active_mods
+
+    translator.on_configuration_changed()
+    prototyper.util.build_translation_dictionaries()
 end
 
 
@@ -276,7 +277,7 @@ script.on_event(defines.events.on_player_created, function(event)
 end)
 
 script.on_event(defines.events.on_player_removed, function(event)
-    global.players[event.player_index] = nil
+    storage.players[event.player_index] = nil
 end)
 
 
@@ -300,11 +301,14 @@ script.on_event(translator.on_player_dictionaries_ready, dictionaries_ready)
 
 
 -- ** COMMANDS **
-commands.add_command("fp-reset-prototypes", {"command-help.fp_reset_prototypes"}, handle_configuration_change)
-commands.add_command("fp-restart-translation", {"command-help.fp_restart_translation"}, function()
-    translator.on_init()
-    prototyper.util.build_translation_dictionaries()
-end)
-commands.add_command("fp-shrinkwrap-interface", {"command-help.fp_shrinkwrap_interface"}, function(command)
-    if command.player_index then main_dialog.shrinkwrap_interface(game.get_player(command.player_index)) end
-end)
+if not commands.commands['fp-restart-translation'] then
+    commands.add_command("fp-restart-translation", {"command-help.fp_restart_translation"}, function()
+        translator.on_init()
+        prototyper.util.build_translation_dictionaries()
+    end)
+end
+if not commands.commands['fp-reload-prototypes'] then
+    commands.add_command("fp-shrinkwrap-interface", {"command-help.fp_shrinkwrap_interface"}, function(command)
+        if command.player_index then main_dialog.shrinkwrap_interface(game.get_player(command.player_index)) end
+    end)
+end

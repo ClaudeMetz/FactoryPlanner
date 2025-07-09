@@ -1,5 +1,3 @@
-require("ui.base.view_state")
-
 -- The main GUI parts for the compact dialog
 local function determine_available_columns(floor, frame_width)
     local frame_border_size = 12
@@ -37,7 +35,15 @@ local function determine_table_height(floor, column_counts)
     for line in floor:iterator() do
         local items_height = 0
         for column, count in pairs(column_counts) do
-            local column_height = math.ceil(line[column .. "s"].amount / count)
+            local item_count = #line[column .. "s"]
+
+            if line.class == "Line" then
+                if column == "ingredient" and line.machine.fuel then item_count = item_count + 1 end
+                local catalysts = line.recipe_proto.catalysts[column .. "s"]
+                if catalysts then item_count = item_count + table_size(catalysts) end
+            end
+
+            local column_height = math.ceil(item_count / count)
             items_height = math.max(items_height, column_height)
         end
 
@@ -93,8 +99,9 @@ local function add_recipe_button(parent_flow, line, relevant_line, metadata)
     local recipe_proto = relevant_line.recipe_proto
     local style = (line.class == "Floor") and "flib_slot_button_blue_small" or "flib_slot_button_default_small"
     style = (relevant_line.done) and "flib_slot_button_grayscale_small" or style
-    local tooltip = (line.class == "Line") and {"fp.tt_title", recipe_proto.localised_name}
-        or {"", {"fp.tt_title", recipe_proto.localised_name}, metadata.recipe_tutorial_tt}
+    local tooltip = (line.class == "Line") and {"", {"fp.tt_title", recipe_proto.localised_name}}
+        or {"", {"fp.tt_title", recipe_proto.localised_name}}
+    table.insert(tooltip, {"", "\n", metadata.action_tooltips["act_on_compact_recipe"]})
 
     local button = parent_flow.add{type="sprite-button", sprite=recipe_proto.sprite, style=style,
         tags={mod="fp", on_gui_click="act_on_compact_recipe", line_id=line.id, on_gui_hover="set_tooltip",
@@ -104,14 +111,17 @@ end
 
 local function add_modules_flow(parent_flow, parent_type, line, metadata)
     for module in line[parent_type].module_set:iterator() do
+        local quality_proto = module.quality_proto
+        local title_line = (not quality_proto.always_show) and {"fp.tt_title", module.proto.localised_name}
+            or {"fp.tt_title_with_note", module.proto.localised_name, quality_proto.rich_text}
         local number_line = {"", "\n", module.amount, " ", {"fp.pl_module", module.amount}}
-        local tooltip = {"", {"fp.tt_title", module.proto.localised_name}, number_line, metadata.module_tutorial_tt}
+        local tooltip = {"", title_line, number_line, "\n", metadata.action_tooltips["act_on_compact_module"]}
         local style = (line.done) and "flib_slot_button_grayscale_small" or "flib_slot_button_default_small"
 
         local button = parent_flow.add{type="sprite-button", sprite=module.proto.sprite, style=style,
-            tags={mod="fp", on_gui_click="act_on_compact_module", module_id=module.id, on_gui_hover="set_tooltip",
-            context="compact_dialog"}, number=module.amount, mouse_button_filter={"left-and-right"},
-            raise_hover_events=true}
+            tags={mod="fp", on_gui_click="act_on_compact_module", module_id=module.id,
+            on_gui_hover="set_tooltip", context="compact_dialog"}, quality=quality_proto.name,
+            number=module.amount, mouse_button_filter={"left-and-right"}, raise_hover_events=true}
         metadata.tooltips[button.index] = tooltip
     end
 end
@@ -119,17 +129,19 @@ end
 local function add_machine_flow(parent_flow, line, metadata)
     if line.class == "Line" then
         local machine_flow = parent_flow.add{type="flow", direction="horizontal"}
-        local machine_proto = line.machine.proto
+        local machine, machine_proto = line.machine, line.machine.proto
+        local quality_proto = machine.quality_proto
 
-        local amount, tooltip_line = util.format.machine_count(line.machine.amount, (line.production_ratio > 0), true)
-        local tooltip = {"", {"fp.tt_title", machine_proto.localised_name}, "\n",
-            tooltip_line, metadata.machine_tutorial_tt}
+        local title_line = (not quality_proto.always_show) and {"fp.tt_title", machine_proto.localised_name}
+            or {"fp.tt_title_with_note", machine_proto.localised_name, quality_proto.rich_text}
+        local amount, tooltip_line = util.format.machine_count(machine.amount, true)
+        local tooltip = {"", title_line, tooltip_line, "\n", metadata.action_tooltips["act_on_compact_machine"]}
         local style = (line.done) and "flib_slot_button_grayscale_small" or "flib_slot_button_default_small"
 
         local button = machine_flow.add{type="sprite-button", sprite=machine_proto.sprite, number=amount, style=style,
             tags={mod="fp", on_gui_click="act_on_compact_machine", type="machine", line_id=line.id,
-            on_gui_hover="set_tooltip", context="compact_dialog"}, mouse_button_filter={"left-and-right"},
-            raise_hover_events=true}
+            on_gui_hover="set_tooltip", context="compact_dialog"}, quality=quality_proto.name,
+            mouse_button_filter={"left-and-right"}, raise_hover_events=true}
         metadata.tooltips[button.index] = tooltip
 
         add_modules_flow(machine_flow, "machine", line, metadata)
@@ -139,16 +151,19 @@ end
 local function add_beacon_flow(parent_flow, line, metadata)
     if line.class == "Line" and line.beacon ~= nil then
         local beacon_flow = parent_flow.add{type="flow", direction="horizontal"}
-        local beacon_proto = line.beacon.proto
+        local beacon, beacon_proto = line.beacon, line.beacon.proto
+        local quality_proto = beacon.quality_proto
 
-        local plural_parameter = (line.beacon.amount == 1) and 1 or 2  -- needed because the amount can be decimal
-        local number_line = {"", "\n", line.beacon.amount, " ", {"fp.pl_beacon", plural_parameter}}
-        local tooltip = {"", {"fp.tt_title", beacon_proto.localised_name}, number_line, metadata.beacon_tutorial_tt}
+        local title_line = (not quality_proto.always_show) and {"fp.tt_title", beacon_proto.localised_name}
+            or {"fp.tt_title_with_note", beacon_proto.localised_name, quality_proto.rich_text}
+        local plural_parameter = (beacon.amount == 1) and 1 or 2  -- needed because the amount can be decimal
+        local number_line = {"", "\n", beacon.amount, " ", {"fp.pl_beacon", plural_parameter}}
+        local tooltip = {"", title_line, number_line, "\n", metadata.action_tooltips["act_on_compact_beacon"]}
         local style = (line.done) and "flib_slot_button_grayscale_small" or "flib_slot_button_default_small"
 
-        local button = beacon_flow.add{type="sprite-button", sprite=beacon_proto.sprite, number=line.beacon.amount,
+        local button = beacon_flow.add{type="sprite-button", sprite=beacon_proto.sprite, number=beacon.amount,
             tags={mod="fp", on_gui_click="act_on_compact_beacon", type="beacon", line_id=line.id,
-            on_gui_hover="set_tooltip", context="compact_dialog"}, style=style,
+            on_gui_hover="set_tooltip", context="compact_dialog"}, quality=quality_proto.name, style=style,
             mouse_button_filter={"left-and-right"}, raise_hover_events=true}
         metadata.tooltips[button.index] = tooltip
 
@@ -162,77 +177,171 @@ local function add_item_flow(line, relevant_line, item_category, button_color, m
     if column_count == 0 then metadata.parent.add{type="empty-widget"}; return end
     local item_table = metadata.parent.add{type="table", column_count=column_count}
 
-    local simple_items = line[item_category .. "s"]
-    for index, item in simple_items:iterator() do
+    for index, item in pairs(line[item_category .. "s"]) do
         local proto, type = item.proto, item.proto.type
         -- items/s/machine does not make sense for lines with subfloors, show items/s instead
         local machine_count = (line.class == "Line") and line.machine.amount or nil
-        local amount, number_tooltip = view_state.process_item(metadata.view_state_metadata, item, nil, machine_count)
+        local amount, number_tooltip = item_views.process_item(metadata.player, item, nil, machine_count)
         if amount == -1 then goto skip_item end  -- an amount of -1 means it was below the margin of error
 
-        local number_line = (number_tooltip) and {"", "\n", number_tooltip} or ""
-        local tooltip = {"", {"fp.tt_title", proto.localised_name}, number_line, metadata.item_tutorial_tt}
-        local style, enabled = "flib_slot_button_" .. button_color .. "_small", true
+        local style, enabled = "flib_slot_button_" .. button_color .. "_small"
         if relevant_line.done then style = "flib_slot_button_grayscale_small" end
+        local name_line, temperature_line = {"", {"fp.tt_title", {"", proto.localised_name}}}, ""
 
         if type == "entity" then
-            style = (relevant_line.done) and "flib_slot_button_transparent_grayscale_small"
-                or "flib_slot_button_transparent_small"
-            enabled = false
-            tooltip = {"", {"fp.tt_title", proto.localised_name}, number_line}
+            style = (relevant_line.done) and "flib_slot_button_disabled_grayscale_small"
+                or "flib_slot_button_disabled_small"
+        elseif type == "fluid" and item_category == "ingredient" and line.class ~= "Floor" then
+            local temperature_data = line.temperature_data[proto.name]   -- exists for any fluid ingredient
+            table.insert(name_line, temperature_data.annotation)
+
+            local temperature = line.temperatures[proto.name]
+            if temperature == nil then
+                style = "flib_slot_button_purple_small"
+                temperature_line = {"fp.no_temperature_configured"}
+            else
+                temperature_line = {"fp.configured_temperature", temperature}
+            end
         end
 
+        local number_line = (number_tooltip) and {"", "\n", number_tooltip} or ""
+        local tooltip = {"", name_line, temperature_line, number_line, "\n",
+            metadata.action_tooltips["act_on_compact_item"]}
+
         local button = item_table.add{type="sprite-button", sprite=proto.sprite, number=amount,
-            tags={mod="fp", on_gui_click="act_on_compact_item", on_gui_hover="hover_compact_item",
-            on_gui_leave="leave_compact_item", simple_items_id=simple_items.id, item_index=index,
-            context="compact_dialog"}, style=style, enabled=enabled, mouse_button_filter={"left-and-right"},
-            raise_hover_events=true}
+            tags={mod="fp", on_gui_click="act_on_compact_item", line_id=line.id, item_category=item_category .. "s",
+            item_index=index, on_gui_hover="hover_compact_item", on_gui_leave="leave_compact_item",
+            context="compact_dialog"}, style=style, mouse_button_filter={"left-and-right"}, raise_hover_events=true}
         metadata.tooltips[button.index] = tooltip
 
         item_buttons[type] = item_buttons[type] or {}
         item_buttons[type][proto.name] = item_buttons[type][proto.name] or {}
-        table.insert(item_buttons[type][proto.name], {button=button, proper_style=style})
+        table.insert(item_buttons[type][proto.name], {button=button, proper_style=style, size="_small"})
 
         ::skip_item::
     end
 
-    if item_category == "ingredient" and line.class == "Line" and line.machine.fuel then
+    if line.class == "Floor" then return end
+
+    if item_category == "product" or item_category == "ingredient" then
+        for _, item in pairs(line.recipe_proto.catalysts[item_category .. "s"]) do
+            local item_proto = prototyper.util.find("items", item.name, item.type)  --[[@as FPItemPrototype]]
+
+            local amount, number_tooltip = item_views.process_item(metadata.player, {proto=item_proto},
+                (item.amount * line.production_ratio), line.machine.amount)
+            local title_line = {"fp.tt_title_with_note", item_proto.localised_name, {"fp.catalyst"}}
+            local number_line = (number_tooltip) and {"", "\n", number_tooltip} or ""
+
+            item_table.add{type="sprite-button", sprite=item_proto.sprite, number=amount,
+                tooltip={"", title_line, number_line}, style="flib_slot_button_blue_small"}
+        end
+    end
+
+    if item_category == "ingredient" and line.machine.fuel then
         local fuel, machine_count = line.machine.fuel, line.machine.amount
-        local amount, number_tooltip = view_state.process_item(metadata.view_state_metadata, fuel, nil, machine_count)
+        local amount, number_tooltip = item_views.process_item(metadata.player, fuel, nil, machine_count)
         if amount == -1 then goto skip_fuel end  -- an amount of -1 means it was below the margin of error
 
-        local name_line = {"fp.tt_title_with_note", fuel.proto.localised_name, {"fp.pl_fuel", 1}}
+        local style = "flib_slot_button_cyan_small"
+        local name_line, temperature_line = {"fp.tt_title_with_note", fuel.proto.localised_name, {"fp.pu_fuel", 1}}, ""
+
+        if fuel.proto.type == "fluid" then
+            local temperature_data = fuel.temperature_data   -- exists for any fluid fuel
+            table.insert(name_line, temperature_data.annotation)
+
+            if fuel.temperature == nil then
+                style = "flib_slot_button_purple_small"
+                temperature_line = {"fp.no_temperature_configured"}
+            else
+                temperature_line = {"fp.configured_temperature", fuel.temperature}
+            end
+        end
+
+        style = (relevant_line.done) and "flib_slot_button_grayscale_small" or style
         local number_line = (number_tooltip) and {"", "\n", number_tooltip} or ""
-        local tooltip = {"", name_line, number_line, metadata.item_tutorial_tt}
-        local style = (relevant_line.done) and "flib_slot_button_grayscale_small" or "flib_slot_button_cyan_small"
+        local tooltip = {"", name_line, temperature_line, number_line, "\n",
+            metadata.action_tooltips["act_on_compact_item"]}
 
         local button = item_table.add{type="sprite-button", sprite=fuel.proto.sprite, style=style, number=amount,
-            tags={mod="fp", on_gui_click="act_on_compact_item", fuel_id=fuel.id, on_gui_hover="set_tooltip",
-            context="compact_dialog"}, mouse_button_filter={"left-and-right"}, raise_hover_events=true}
+            tags={mod="fp", on_gui_click="act_on_compact_item", fuel_id=fuel.id, on_gui_hover="hover_compact_item",
+            on_gui_leave="leave_compact_item", context="compact_dialog"}, mouse_button_filter={"left-and-right"},
+            raise_hover_events=true}
         metadata.tooltips[button.index] = tooltip
+
+        local type, name = fuel.proto.type, fuel.proto.name
+        item_buttons[type] = item_buttons[type] or {}
+        item_buttons[type][name] = item_buttons[type][name] or {}
+        table.insert(item_buttons[type][name], {button=button, proper_style=style, size="_small"})
 
         ::skip_fuel::
     end
 end
 
 
-local function refresh_compact_factory(player)
+local function refresh_compact_header(player, factory)
     local player_table = util.globals.player_table(player)
     local compact_elements = player_table.ui_state.compact_elements
-    local factory = util.context.get(player, "Factory")  --[[@as Factory?]]
-    if not factory or not factory.valid then return end
-
-    util.raise.refresh(player, "view_state", compact_elements.view_state_table)
 
     local attach_factory_products = player_table.preferences.attach_factory_products
     compact_elements.name_label.caption = factory:tostring(attach_factory_products, true)
 
-    local floor = util.context.get(player, "Floor")  --[[@as Floor]]
-    local current_level = floor.level
+    local current_floor = util.context.get(player, "Floor")
+    compact_elements.level_label.caption = {"fp.bold_label", {"", "-   ", {"fp.level"}, " ", current_floor.level}}
+    compact_elements.floor_up_button.enabled = (current_floor.level > 1)
+    compact_elements.floor_top_button.enabled = (current_floor.level > 1)
 
-    compact_elements.level_label.caption = {"fp.bold_label", {"", "-   ", {"fp.level"}, " ", current_level}}
-    compact_elements.floor_up_button.enabled = (current_level > 1)
-    compact_elements.floor_top_button.enabled = (current_level > 1)
+    local compact_ingredients = player_table.preferences.compact_ingredients
+    compact_elements.ingredient_toggle.toggled = compact_ingredients
+    compact_elements.ingredient_toggle.sprite = (compact_ingredients) and "fp_dropup" or "utility/dropdown"
+
+    local ingredients_frame = compact_elements.ingredients_frame
+    ingredients_frame.visible = compact_ingredients
+
+    ingredients_frame.clear()
+
+    local frame_width = compact_elements.compact_frame.style.maximal_width
+    local available_space = frame_width - (2*12)  -- 12px padding on both sides
+    local column_count = math.floor(available_space / 40)
+    local padding = (available_space - (column_count * 40)) / 2
+    ingredients_frame.style.padding = {0, padding}
+
+    local item_frame = ingredients_frame.add{type="frame", style="slot_button_deep_frame"}
+    local table_items = item_frame.add{type="table", column_count=column_count, style="filter_slot_table"}
+
+    local item_buttons = compact_elements.item_buttons
+
+    local show_floor_items = player_table.preferences.show_floor_items
+    local relevant_floor = (show_floor_items) and current_floor or factory.top_floor
+    for index, ingredient in pairs(relevant_floor.ingredients) do
+        local amount, number_tooltip = item_views.process_item(player, ingredient, nil, nil)
+        if amount == -1 then goto skip_ingredient end  -- an amount of -1 means it was below the margin of error
+
+        local name_line = {"fp.tt_title", ingredient.proto.localised_name}
+        local number_line = (number_tooltip) and {"", "\n", number_tooltip} or ""
+        local tooltip = {"", name_line, number_line, "\n", MODIFIER_ACTIONS["act_on_compact_item"].tooltip}
+        local style = "flib_slot_button_default"
+
+        local button = table_items.add{type="sprite-button", number=amount, tooltip=tooltip,
+            tags={mod="fp", on_gui_click="act_on_compact_ingredient", floor_id=relevant_floor.id, item_index=index,
+            on_gui_hover="hover_compact_item", on_gui_leave="leave_compact_item", context="compact_dialog"},
+            sprite=ingredient.proto.sprite, style=style, mouse_button_filter={"left-and-right"},
+            raise_hover_events=true}
+        player_table.ui_state.tooltips[button.index] = tooltip
+
+        local type, name = ingredient.proto.type, ingredient.proto.name
+        item_buttons[type] = item_buttons[type] or {}
+        item_buttons[type][name] = item_buttons[type][name] or {}
+        table.insert(item_buttons[type][name], {button=button, proper_style=style, size=""})
+
+        ::skip_ingredient::
+    end
+end
+
+local function refresh_compact_production(player, factory)
+    local ui_state = util.globals.ui_state(player)
+    local compact_elements = ui_state.compact_elements
+
+    local floor = util.context.get(player, "Floor")  --[[@as Floor]]
 
     local production_table = compact_elements.production_table
     production_table.clear()
@@ -243,32 +352,26 @@ local function refresh_compact_factory(player)
     if available_columns < 2 then available_columns = 2 end  -- fix for too many modules or too high of a GUI scale
     local column_counts = determine_column_counts(floor, available_columns)
 
-    local tooltips = player_table.ui_state.tooltips
-    tooltips.compact_dialog = {}
-
     local metadata = {
+        player = player,
         parent = production_table,
         column_counts = column_counts,
-        view_state_metadata = view_state.generate_metadata(player, factory),
-        tooltips = tooltips.compact_dialog
+        tooltips = ui_state.tooltips.compact_dialog,
+        action_tooltips = {
+            act_on_compact_recipe = MODIFIER_ACTIONS["act_on_compact_recipe"].tooltip,
+            act_on_compact_module = MODIFIER_ACTIONS["act_on_compact_module"].tooltip,
+            act_on_compact_machine = MODIFIER_ACTIONS["act_on_compact_machine"].tooltip,
+            act_on_compact_beacon = MODIFIER_ACTIONS["act_on_compact_beacon"].tooltip,
+            act_on_compact_item = MODIFIER_ACTIONS["act_on_compact_item"].tooltip
+        }
     }
 
-    compact_elements.item_buttons = {}  -- (re)set the item_buttons table
-    local item_buttons = compact_elements.item_buttons
-
-    if util.globals.preferences(player).tutorial_mode then
-        util.actions.tutorial_tooltip_list(metadata, player, {
-            recipe_tutorial_tt = "act_on_compact_recipe",
-            module_tutorial_tt = "act_on_compact_module",
-            machine_tutorial_tt = "act_on_compact_machine",
-            beacon_tutorial_tt = "act_on_compact_beacon",
-            item_tutorial_tt = "act_on_compact_item",
-        })
-    end
-
     for line in floor:iterator() do -- build the individual lines
-        local relevant_line = (line.class == "Floor") and line.first or line
-        if not relevant_line.active then goto skip_line end
+        local relevant_line = (line.class == "Floor") and line.first or line  --[[@as Line]]
+        if not relevant_line.active or not relevant_line:get_surface_compatibility().overall
+                or (not factory.matrix_free_items and relevant_line.production_type == "consume") then
+            goto skip_line
+        end
 
         -- Recipe and Checkmark
         local recipe_flow = production_table.add{type="flow", direction="horizontal"}
@@ -282,9 +385,9 @@ local function refresh_compact_factory(player)
         add_beacon_flow(machines_flow, line, metadata)
 
         -- Products, Byproducts and Ingredients
-        add_item_flow(line, relevant_line, "product", "default", metadata, item_buttons)
-        add_item_flow(line, relevant_line, "byproduct", "red", metadata, item_buttons)
-        add_item_flow(line, relevant_line, "ingredient", "green", metadata, item_buttons)
+        add_item_flow(line, relevant_line, "product", "default", metadata, compact_elements.item_buttons)
+        add_item_flow(line, relevant_line, "byproduct", "red", metadata, compact_elements.item_buttons)
+        add_item_flow(line, relevant_line, "ingredient", "green", metadata, compact_elements.item_buttons)
 
         production_table.add{type="empty-widget", style="flib_horizontal_pusher"}
 
@@ -292,37 +395,46 @@ local function refresh_compact_factory(player)
     end
 end
 
+local function refresh_compact_factory(player)
+    local factory = util.context.get(player, "Factory")  --[[@as Factory?]]
+    if not factory or not factory.valid then return end
+
+    local ui_state = util.globals.ui_state(player)
+    ui_state.tooltips.compact_dialog = {}
+    ui_state.compact_elements.item_buttons = {}
+
+    refresh_compact_header(player, factory)
+    refresh_compact_production(player, factory)
+end
+
 local function build_compact_factory(player)
     local ui_state = util.globals.ui_state(player)
     local compact_elements = ui_state.compact_elements
+    local content_flow = compact_elements.content_flow
 
-    -- Content frame
-    local content_frame = compact_elements.compact_frame.add{type="frame", direction="vertical",
-        style="inside_deep_frame"}
-    content_frame.style.vertically_stretchable = true
+    -- Header frame
+    local subheader = content_flow.add{type="frame", direction="vertical", style="inside_deep_frame"}
+    subheader.style.padding = 4
 
-    local subheader = content_frame.add{type="frame", direction="vertical", style="subheader_frame"}
-    subheader.style.maximal_height = 100  -- large value to nullify maximal_height
+    -- View state
+    local container_views = subheader.add{type="flow", direction="horizontal"}
+    container_views.style.padding = {4, 4, 0, 0}
+    container_views.add{type="empty-widget", style="flib_horizontal_pusher"}
 
-    -- Flow view state
-    local flow_view_state = subheader.add{type="flow", direction="horizontal"}
-    flow_view_state.style.padding = {4, 4, 0, 0}
-    flow_view_state.add{type="empty-widget", style="flib_horizontal_pusher"}
+    local flow_views = container_views.add{type="flow", direction="horizontal"}
+    compact_elements["views_flow"] = flow_views
 
-    view_state.rebuild_state(player)  -- initializes the view_state
-    util.raise.build(player, "view_state", flow_view_state)
-    compact_elements["view_state_table"] = flow_view_state["table_view_state"]
-
-    subheader.add{type="line", direction="horizontal"}
+    local line = subheader.add{type="line", direction="horizontal"}
+    line.style.padding = {2, 0, 6, 0}
 
     -- Flow navigation
     local flow_navigation = subheader.add{type="flow", direction="horizontal"}
     flow_navigation.style.vertical_align = "center"
-    flow_navigation.style.margin = {4, 8}
+    flow_navigation.style.margin = {4, 4, 4, 8}
 
     local label_name = flow_navigation.add{type="label"}
     label_name.style.font = "heading-2"
-    label_name.style.maximal_width = 260
+    label_name.style.horizontally_squashable = true
     compact_elements["name_label"] = label_name
 
     local label_level = flow_navigation.add{type="label"}
@@ -331,17 +443,34 @@ local function build_compact_factory(player)
 
     local button_floor_up = flow_navigation.add{type="sprite-button", sprite="fp_arrow_line_up",
         tooltip={"fp.floor_up_tt"}, tags={mod="fp", on_gui_click="change_compact_floor", destination="up"},
-        style="fp_sprite-button_rounded_mini", mouse_button_filter={"left"}}
+        style="fp_sprite-button_rounded_icon", mouse_button_filter={"left"}}
     compact_elements["floor_up_button"] = button_floor_up
 
     local button_floor_top = flow_navigation.add{type="sprite-button", sprite="fp_arrow_line_bar_up",
         tooltip={"fp.floor_top_tt"}, tags={mod="fp", on_gui_click="change_compact_floor", destination="top"},
-        style="fp_sprite-button_rounded_mini", mouse_button_filter={"left"}}
+        style="fp_sprite-button_rounded_icon", mouse_button_filter={"left"}}
+    button_floor_top.style.padding = {3, 2, 1, 2}
     compact_elements["floor_top_button"] = button_floor_top
 
+    flow_navigation.add{type="empty-widget", style="flib_horizontal_pusher"}
+
+    local button_ingredients = flow_navigation.add{type="sprite-button", auto_toggle=true,
+        tooltip={"fp.compact_toggle_ingredients"}, tags={mod="fp", on_gui_click="toggle_compact_ingredients"},
+        style="fp_sprite-button_rounded_icon", mouse_button_filter={"left"}}
+    button_ingredients.style.padding = 0
+    compact_elements["ingredient_toggle"] = button_ingredients
+
+    -- Ingredients frame
+    local ingredients_frame = content_flow.add{type="frame", direction="vertical",
+        style="inside_deep_frame"}
+    compact_elements["ingredients_frame"] = ingredients_frame
+
     -- Production table
-    local scroll_pane_production = content_frame.add{type="scroll-pane", direction="vertical",
+    local production_frame = content_flow.add{type="frame", direction="vertical",
+        style="inside_deep_frame"}
+    local scroll_pane_production = production_frame.add{type="scroll-pane",
         style="flib_naked_scroll_pane_no_padding"}
+    scroll_pane_production.horizontal_scroll_policy = "never"
     scroll_pane_production.style.horizontally_stretchable = true
 
     local table_production = scroll_pane_production.add{type="table", column_count=6, style="fp_table_production"}
@@ -355,6 +484,19 @@ local function build_compact_factory(player)
 end
 
 
+local function handle_ingredient_click(player, tags, action)
+    local floor = OBJECT_INDEX[tags.floor_id]
+    local item = floor.ingredients[tags.item_index]
+
+    if action == "add_to_cursor" then
+        util.cursor.handle_item_click(player, item.proto, item.amount)
+
+    elseif action == "factoriopedia" then
+        local name = (item.proto.temperature) and item.proto.base_name or item.proto.name
+        player.open_factoriopedia_gui(prototypes[item.proto.type][name])
+    end
+end
+
 local function handle_recipe_click(player, tags, action)
     local line = OBJECT_INDEX[tags.line_id]
     local relevant_line = (line.class == "Floor") and line.first or line
@@ -364,16 +506,16 @@ local function handle_recipe_click(player, tags, action)
             util.context.set(player, line)
             refresh_compact_factory(player)
         end
-    elseif action == "recipebook" then
-        util.open_in_recipebook(player, "recipe", relevant_line.recipe_proto.name)
+    elseif action == "factoriopedia" then
+        player.open_factoriopedia_gui(prototypes["recipe"][relevant_line.recipe_proto.name])
     end
 end
 
 local function handle_module_click(player, tags, action)
     local module = OBJECT_INDEX[tags.module_id]
 
-    if action == "recipebook" then
-        util.open_in_recipebook(player, "item", module.proto.name)
+    if action == "factoriopedia" then
+        player.open_factoriopedia_gui(prototypes["item"][module.proto.name])
     end
 end
 
@@ -381,11 +523,11 @@ local function handle_machine_click(player, tags, action)
     local line = OBJECT_INDEX[tags.line_id]
     -- We don't need to care about relevant lines here because this only gets called on lines without subfloor
 
-    if action == "put_into_cursor" then
+    if action == "add_to_cursor" then
         util.cursor.set_entity(player, line, line.machine)
 
-    elseif action == "recipebook" then
-        util.open_in_recipebook(player, "entity", line.machine.proto.name)
+    elseif action == "factoriopedia" then
+        player.open_factoriopedia_gui(prototypes["entity"][line.machine.proto.name])
     end
 end
 
@@ -393,35 +535,45 @@ local function handle_beacon_click(player, tags, action)
     local line = OBJECT_INDEX[tags.line_id]
     -- We don't need to care about relevant lines here because this only gets called on lines without subfloor
 
-    if action == "put_into_cursor" then
+    if action == "add_to_cursor" then
         util.cursor.set_entity(player, line, line.beacon)
 
-    elseif action == "recipebook" then
-        util.open_in_recipebook(player, "entity", line.beacon.proto.name)
+    elseif action == "factoriopedia" then
+        player.open_factoriopedia_gui(prototypes["entity"][line.beacon.proto.name])
     end
 end
 
 local function handle_item_click(player, tags, action)
     local item = (tags.fuel_id) and OBJECT_INDEX[tags.fuel_id]
-        or OBJECT_INDEX[tags.simple_items_id].items[tags.item_index]
+        or OBJECT_INDEX[tags.line_id][tags.item_category][tags.item_index]
 
-    if action == "put_into_cursor" then
-        util.cursor.add_to_item_combinator(player, item.proto, item.amount)
+    if action == "add_to_cursor" then
+        if item.proto.type == "entity" then return end
+        util.cursor.handle_item_click(player, item.proto, item.amount)
 
-    elseif action == "recipebook" then
-        util.open_in_recipebook(player, item.proto.type, item.proto.name)
+    elseif action == "factoriopedia" then
+        local name = item.proto.name
+        if item.proto.type == "entity" then name = name:gsub("custom%-", "")
+        elseif item.proto.temperature then name = item.proto.base_name end
+        player.open_factoriopedia_gui(prototypes[item.proto.type][name])
     end
 end
 
 local function handle_hover_change(player, tags, event)
-    local proto = (tags.fuel_id) and OBJECT_INDEX[tags.fuel_id].proto
-        or OBJECT_INDEX[tags.simple_items_id].items[tags.item_index].proto
-    local compact_elements = util.globals.ui_state(player).compact_elements
+    local proto = nil
+    if tags.floor_id then
+        proto = OBJECT_INDEX[tags.floor_id].ingredients[tags.item_index].proto
+    elseif tags.fuel_id then
+        proto = OBJECT_INDEX[tags.fuel_id].proto
+    else
+        proto = OBJECT_INDEX[tags.line_id][tags.item_category][tags.item_index].proto
+    end
 
+    local compact_elements = util.globals.ui_state(player).compact_elements
     local relevant_buttons = compact_elements.item_buttons[proto.type][proto.name]
     for _, button_data in pairs(relevant_buttons) do
         button_data.button.style = (event.name == defines.events.on_gui_hover)
-            and "flib_slot_button_pink_small" or button_data.proper_style
+            and "flib_slot_button_pink" .. button_data.size or button_data.proper_style
     end
 end
 
@@ -434,46 +586,66 @@ factory_listeners.gui = {
         {
             name = "change_compact_floor",
             handler = (function(player, tags, _)
-                local floor_changed = util.context.descend_floors(player, tags.destination)
+                local floor_changed = util.context.ascend_floors(player, tags.destination)
                 if floor_changed then refresh_compact_factory(player) end
             end)
         },
         {
+            name = "toggle_compact_ingredients",
+            handler = (function(player, _, event)
+                local preferences = util.globals.preferences(player)
+                preferences.compact_ingredients = not preferences.compact_ingredients
+
+                local compact_elements = util.globals.ui_state(player).compact_elements
+                local sprite = (preferences.compact_ingredients) and "fp_dropup" or "utility/dropdown"
+                compact_elements.ingredient_toggle.sprite = sprite
+                compact_elements.ingredients_frame.visible = preferences.compact_ingredients
+            end)
+        },
+        {
+            name = "act_on_compact_ingredient",
+            actions_table = {
+                add_to_cursor = {shortcut="left", show=true},
+                factoriopedia = {shortcut="alt-right", show=true}
+            },
+            handler = handle_ingredient_click
+        },
+        {
             name = "act_on_compact_recipe",
-            modifier_actions = {
-                open_subfloor = {"left"},
-                recipebook = {"alt-right", {recipebook=true}}
+            actions_table = {
+                open_subfloor = {shortcut="left", show=true},
+                factoriopedia = {shortcut="alt-right", show=true}
             },
             handler = handle_recipe_click
         },
         {
             name = "act_on_compact_module",
-            modifier_actions = {
-                recipebook = {"alt-right", {recipebook=true}}
+            actions_table = {
+                factoriopedia = {shortcut="alt-right", show=true}
             },
             handler = handle_module_click
         },
         {
             name = "act_on_compact_machine",
-            modifier_actions = {
-                put_into_cursor = {"left"},
-                recipebook = {"alt-right", {recipebook=true}}
+            actions_table = {
+                add_to_cursor = {shortcut="left", show=true},
+                factoriopedia = {shortcut="alt-right", show=true}
             },
             handler = handle_machine_click
         },
         {
             name = "act_on_compact_beacon",
-            modifier_actions = {
-                put_into_cursor = {"left"},
-                recipebook = {"alt-right", {recipebook=true}}
+            actions_table = {
+                add_to_cursor = {shortcut="left", show=true},
+                factoriopedia = {shortcut="alt-right", show=true}
             },
             handler = handle_beacon_click
         },
         {
             name = "act_on_compact_item",
-            modifier_actions = {
-                put_into_cursor = {"left"},
-                recipebook = {"alt-right", {recipebook=true}}
+            actions_table = {
+                add_to_cursor = {shortcut="left", show=true},
+                factoriopedia = {shortcut="alt-right", show=true}
             },
             handler = handle_item_click
         }
@@ -520,25 +692,25 @@ factory_listeners.misc = {
 }
 
 
-
--- The frame surrounding the main part of the compact factory
-local frame_dimensions = {width = 0.25, height = 0.8}  -- as a percentage of the screen
-local frame_location = {x = 10, y = 63}  -- absolute, relative to 1080p with scale 1
-
+-- ** UTIL **
 -- Set frame dimensions in a relative way, taking player resolution and scaling into account
 local function set_compact_frame_dimensions(player, frame)
-    local resolution, scale = player.display_resolution, player.display_scale
-    local actual_resolution = {width=math.ceil(resolution.width / scale), height=math.ceil(resolution.height / scale)}
-    frame.style.width = actual_resolution.width * frame_dimensions.width
-    frame.style.maximal_height = actual_resolution.height * frame_dimensions.height
+    local scaled_resolution = util.gui.calculate_scaled_resolution(player)
+    local compact_width_percentage = util.globals.preferences(player).compact_width_percentage
+    frame.style.width = scaled_resolution.width * (compact_width_percentage / 100)
+    frame.style.maximal_height = scaled_resolution.height * 0.8
 end
 
 local function set_compact_frame_location(player, frame)
     local scale = player.display_scale
-    frame.location = {frame_location.x * scale, frame_location.y * scale}
+    frame.location = {10 * scale, 63 * scale}
 end
 
-local function rebuild_compact_dialog(player, default_visibility)
+
+-- ** TOP LEVEL **
+compact_dialog = {}
+
+function compact_dialog.rebuild(player, default_visibility)
     local ui_state = util.globals.ui_state(player)
 
     local interface_visible = default_visibility
@@ -560,41 +732,47 @@ local function rebuild_compact_dialog(player, default_visibility)
     ui_state.compact_elements["compact_frame"] = frame_compact_dialog
 
     -- Title bar
-    local flow_title_bar = frame_compact_dialog.add{type="flow", direction="horizontal",
+    local flow_title_bar = frame_compact_dialog.add{type="flow", direction="horizontal", style="frame_header_flow",
         tags={mod="fp", on_gui_click="place_compact_dialog"}}
-    flow_title_bar.style.horizontal_spacing = 8
     flow_title_bar.drag_target = frame_compact_dialog
 
     flow_title_bar.add{type="sprite-button", style="fp_button_frame", toggled=true,
         tags={mod="fp", on_gui_click="switch_to_main_view"}, tooltip={"fp.switch_to_main_view"},
-        sprite="fp_pin_dark", hovered_sprite="fp_pin_dark", clicked_sprite="fp_pin_light",
-        mouse_button_filter={"left"}}
+        sprite="fp_pin", mouse_button_filter={"left"}}
 
-    flow_title_bar.add{type="label", caption={"mod-name.factoryplanner"}, style="frame_title",
+    local button_calculator = flow_title_bar.add{type="sprite-button", sprite="fp_calculator",
+        tooltip={"fp.open_calculator"}, style="fp_button_frame", mouse_button_filter={"left"},
+        tags={mod="fp", on_gui_click="open_calculator_dialog"}}
+    button_calculator.style.padding = -3
+
+    flow_title_bar.add{type="empty-widget", style="flib_titlebar_drag_handle",
+        ignored_by_interaction=true}
+    flow_title_bar.add{type="label", caption={"mod-name.factoryplanner"}, style="fp_label_frame_title",
         ignored_by_interaction=true}
     flow_title_bar.add{type="empty-widget", style="flib_titlebar_drag_handle",
         ignored_by_interaction=true}
 
     local button_close = flow_title_bar.add{type="sprite-button", tags={mod="fp", on_gui_click="close_compact_dialog"},
-        sprite="utility/close_white", hovered_sprite="utility/close_black", clicked_sprite="utility/close_black",
-        tooltip={"fp.close_interface"}, style="frame_action_button", mouse_button_filter={"left"}}
+        sprite="utility/close", tooltip={"fp.close_interface"}, style="fp_button_frame", mouse_button_filter={"left"}}
     button_close.style.padding = 1
 
+    local flow_content = frame_compact_dialog.add{type="flow", direction="vertical"}
+    flow_content.style.vertical_spacing = 8
+    ui_state.compact_elements["content_flow"] = flow_content
+
+    item_views.rebuild_data(player)
     util.raise.build(player, "compact_factory", nil)
+    item_views.rebuild_interface(player)
 
     return frame_compact_dialog
 end
-
-
--- ** TOP LEVEL **
-compact_dialog = {}
 
 function compact_dialog.toggle(player)
     local frame_compact_dialog = util.globals.ui_state(player).compact_elements.compact_frame
     -- Doesn't set player.opened so other GUIs like the inventory can be opened when building
 
     if frame_compact_dialog == nil or not frame_compact_dialog.valid then
-        rebuild_compact_dialog(player, true)  -- refreshes on its own
+        compact_dialog.rebuild(player, true)  -- refreshes on its own
     else
         local new_dialog_visibility = not frame_compact_dialog.visible
         frame_compact_dialog.visible = new_dialog_visibility
@@ -621,7 +799,7 @@ dialog_listeners.gui = {
                 compact_dialog.toggle(player)
 
                 main_dialog.toggle(player)
-                util.raise.refresh(player, "production", nil)
+                util.raise.refresh(player, "production")
             end)
         },
         {
@@ -644,11 +822,11 @@ dialog_listeners.gui = {
 
 dialog_listeners.misc = {
     on_player_display_resolution_changed = (function(player, _)
-        rebuild_compact_dialog(player, false)
+        compact_dialog.rebuild(player, false)
     end),
 
     on_player_display_scale_changed = (function(player, _)
-        rebuild_compact_dialog(player, false)
+        compact_dialog.rebuild(player, false)
     end),
 
     on_lua_shortcut = (function(player, event)

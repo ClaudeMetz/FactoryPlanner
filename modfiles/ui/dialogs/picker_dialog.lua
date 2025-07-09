@@ -7,7 +7,7 @@ local function select_item_group(modal_data, new_group_id)
 
     for group_id, group_elements in pairs(modal_data.modal_elements.groups) do
         local selected_group = (group_id == new_group_id)
-        group_elements.button.enabled = not selected_group
+        group_elements.button.toggled = selected_group
         group_elements.scroll_pane.visible = selected_group
     end
 end
@@ -61,12 +61,12 @@ local function add_item_picker(parent_flow, player)
 
     -- Item picker (optimized for performance, so not everything is done in the obvious way)
     local groups_per_row = MAGIC_NUMBERS.groups_per_row
-    local table_item_groups = parent_flow.add{type="table", style="filter_group_table", column_count=groups_per_row}
+    local table_item_groups = parent_flow.add{type="table", column_count=groups_per_row}
     table_item_groups.style.width = 71 * groups_per_row
     table_item_groups.style.horizontal_spacing = 0
     table_item_groups.style.vertical_spacing = 0
 
-    local frame_filters = parent_flow.add{type="frame", style="fp_frame_slot_table"}
+    local frame_filters = parent_flow.add{type="frame", style="filter_frame"}
     modal_elements["filter_frame"] = frame_filters
 
     local group_id_cache, group_flow_cache, subgroup_table_cache = {}, {}, {}
@@ -100,8 +100,7 @@ local function add_item_picker(parent_flow, player)
                     mouse_button_filter={"left"}}
 
                 -- This only exists when button_group also exists
-                local scroll_pane_subgroups = frame_filters.add{type="scroll-pane",
-                    style="fp_scroll-pane_slot_table"}
+                local scroll_pane_subgroups = frame_filters.add{type="scroll-pane", style="shallow_scroll_pane"}
                 scroll_pane_subgroups.style.vertically_stretchable = true
 
                 local frame_subgroups = scroll_pane_subgroups.add{type="frame", style="slot_button_deep_frame"}
@@ -155,11 +154,14 @@ local function add_item_picker(parent_flow, player)
             local item_name = item_proto.name
             local existing_product = existing_products[item_name]
             local button_style = (existing_product) and "flib_slot_button_red" or "flib_slot_button_default"
+            local tooltip, elem_tooltip = nil, nil
+            if item_proto.tooltip then tooltip = item_proto.tooltip
+            else elem_tooltip = {type=item_proto.type, name=item_proto.name} end
 
             local button_item = table_subgroup.add{type="sprite-button", sprite=item_proto.sprite, style=button_style,
                 tags={mod="fp", on_gui_click="select_picker_item", item_id=item_proto.id,
-                category_id=item_proto.category_id}, enabled=(existing_product == nil),
-                tooltip=item_proto.localised_name, mouse_button_filter={"left"}}
+                category_id=item_proto.category_id, enabled=(existing_product == nil)},
+                tooltip=tooltip, elem_tooltip=elem_tooltip, mouse_button_filter={"left"}}
 
             -- Figure out the translated name here so search doesn't have to repeat the work for every character
             local translated_name = (translations) and translations[item_proto.type][item_name] or nil
@@ -195,7 +197,7 @@ end
 local function sync_amounts(modal_data)
     local modal_elements = modal_data.modal_elements
 
-    local belt_amount = tonumber(modal_elements.belt_amount_textfield.text)
+    local belt_amount = util.gui.parse_expression_field(modal_elements.belt_amount_textfield)
     if belt_amount == nil then
         modal_elements.item_amount_textfield.text = ""
     else
@@ -222,7 +224,7 @@ local function set_belt_proto(modal_data, belt_proto)
         modal_elements.belt_choice_button.elem_value = belt_proto.name
         modal_data.amount_defined_by = modal_data.lob
 
-        local item_amount = tonumber(modal_elements.item_amount_textfield.text)
+        local item_amount = util.gui.parse_expression_field(modal_elements.item_amount_textfield)
         if item_amount ~= nil then
             local throughput = belt_proto.throughput * ((modal_data.lob == "belts") and 1 or 0.5)
             local belt_amount = item_amount / throughput / modal_data.timescale
@@ -238,7 +240,11 @@ local function set_item_proto(modal_data, item_proto)
 
     local item_choice_button = modal_elements.item_choice_button
     item_choice_button.sprite = (item_proto) and item_proto.sprite or nil
-    item_choice_button.tooltip = (item_proto) and item_proto.tooltip or ""
+    if item_proto then
+        item_choice_button.tooltip = (item_proto.tooltip) and item_proto.tooltip or nil
+        item_choice_button.elem_tooltip = (not item_proto.tooltip) and
+            {type=item_proto.type, name=item_proto.name} or nil
+    end
 
     -- Disable definition by belt for fluids
     local is_fluid = item_proto and item_proto.type == "fluid"
@@ -250,13 +256,13 @@ end
 
 local function update_dialog_submit_button(modal_elements)
     local item_choice_button = modal_elements.item_choice_button
-    local item_amount_textfield = modal_elements.item_amount_textfield
+    local item_amount = util.gui.parse_expression_field(modal_elements.item_amount_textfield)
 
     local message = nil
     if item_choice_button.sprite == "" then
         message = {"fp.picker_issue_select_item"}
-    -- The item amount will be filled even if the item is defined_by ~= "amount"
-    elseif tonumber(item_amount_textfield.text) == nil then
+    elseif item_amount == nil then
+        -- The item amount will be filled even if the item is defined_by ~= "amount"
         message = {"fp.picker_issue_enter_amount"}
     end
 
@@ -277,42 +283,43 @@ local function add_item_pane(parent_flow, modal_data, item_category, item)
     local defined_by = (item) and item.defined_by or "amount"
     modal_data.amount_defined_by = defined_by
 
-
     local flow_amount = create_flow()
     flow_amount.add{type="label", caption={"fp.pu_" .. item_category, 1}}
 
-    local item_choice_button = flow_amount.add{type="sprite-button", style="fp_sprite-button_inset_tiny"}
+    local item_choice_button = flow_amount.add{type="sprite-button", style="fp_sprite-button_inset"}
     item_choice_button.style.right_margin = 12
     modal_elements["item_choice_button"] = item_choice_button
 
     flow_amount.add{type="label", caption={"fp.amount"}}
 
-    local item_amount = (item and defined_by == "amount") and tostring(item.required_amount) or ""
+    local item_amount = (item and defined_by == "amount") and
+        tostring(item.required_amount * modal_data.timescale) or ""
+    local amount_width = 90
     local textfield_amount = flow_amount.add{type="textfield", text=item_amount,
-        tags={mod="fp", on_gui_text_changed="picker_item_amount"}}
-    util.gui.setup_numeric_textfield(textfield_amount, true, false)
-    textfield_amount.style.width = 90
+        tags={mod="fp", on_gui_text_changed="picker_item_amount", on_gui_confirmed="picker_amount",
+        width=amount_width}, tooltip={"fp.expression_textfield"}}
+    textfield_amount.style.width = amount_width
     modal_elements["item_amount_textfield"] = textfield_amount
 
 
     local flow_belts = create_flow()
-    flow_belts.add{type="label", caption={"fp.amount_by", {"fp.pl_" .. modal_data.lob:sub(1, -2), 2}}}
+    local label = flow_belts.add{type="label", caption={"fp.amount_by", {"fp.pl_" .. modal_data.lob:sub(1, -2), 2}}}
+    label.style.right_margin = 6
 
     local belt_amount = (item and defined_by ~= "amount") and tostring(item.required_amount) or ""
+    local belt_width = 86
     local textfield_belts = flow_belts.add{type="textfield", text=belt_amount,
-        tags={mod="fp", on_gui_text_changed="picker_belt_amount"}}
-    util.gui.setup_numeric_textfield(textfield_belts, true, false)
-    textfield_belts.style.width = 85
-    textfield_belts.style.left_margin = 4
+        tags={mod="fp", on_gui_text_changed="picker_belt_amount", on_gui_confirmed="picker_amount",
+        width=belt_width}, tooltip={"fp.expression_textfield"}}
+    textfield_belts.style.width = belt_width
     modal_elements["belt_amount_textfield"] = textfield_belts
 
     flow_belts.add{type="label", caption="x"}
 
-    local belt_filter = {{filter="type", type="transport-belt"}, {filter="flag", flag="hidden",
-        invert=true, mode="and"}}
+    local belt_filter = {{filter="type", type="transport-belt"}, {filter="hidden", invert=true, mode="and"}}
     local choose_belt_button = flow_belts.add{type="choose-elem-button", elem_type="entity",
         tags={mod="fp", on_gui_elem_changed="picker_choose_belt"}, elem_filters=belt_filter,
-        style="fp_sprite-button_inset_tiny"}
+        style="fp_sprite-button_inset"}
     modal_elements["belt_choice_button"] = choose_belt_button
 
 
@@ -330,8 +337,13 @@ end
 
 local function handle_item_pick(player, tags, _)
     local modal_data = util.globals.modal_data(player)
+    local item_proto = prototyper.util.find("items", tags.item_id, tags.category_id)
 
-    local item_proto = global.prototypes.items[tags.category_id].members[tags.item_id]
+    if not tags.enabled then
+        util.cursor.create_flying_text(player, {"fp.picker_already_selected", item_proto.localised_name})
+        return
+   end
+
     set_item_proto(modal_data, item_proto)  -- no need for sync in this case
 
     set_appropriate_focus(modal_data)
@@ -340,7 +352,7 @@ end
 
 local function handle_belt_pick(player, _, event)
     local belt_name = event.element.elem_value
-    local belt_proto = prototyper.util.find_prototype("belts", belt_name, nil)
+    local belt_proto = prototyper.util.find("belts", belt_name, nil)
 
     local modal_data = util.globals.modal_data(player)
     set_belt_proto(modal_data, belt_proto)  -- syncs amounts itself
@@ -351,24 +363,22 @@ end
 
 
 local function open_picker_dialog(player, modal_data)
-    -- Create a blank factory if requested
     local preferences = util.globals.preferences(player)
-    modal_data.timescale = preferences.default_timescale
-    modal_data.lob = preferences.belts_or_lanes
 
     if modal_data.item_id then modal_data.item = OBJECT_INDEX[modal_data.item_id] end
+    modal_data.timescale = preferences.timescale
+    modal_data.lob = preferences.belts_or_lanes
 
-    local dialog_flow = modal_data.modal_elements.dialog_flow
-    dialog_flow.style.vertical_spacing = 12
-
-    local item_content_frame = dialog_flow.add{type="frame", direction="vertical", style="inside_shallow_frame"}
-    item_content_frame.style.minimal_width = 325
-    item_content_frame.style.padding = {12, 12, 6, 12}
-    add_item_pane(item_content_frame, modal_data, modal_data.item_category, modal_data.item)
+    local content_frame = modal_data.modal_elements.content_frame
+    content_frame.style.minimal_width = 325
+    content_frame.style.bottom_padding = 6
+    add_item_pane(content_frame, modal_data, modal_data.item_category, modal_data.item)
 
     -- The item picker only needs to show when adding a new item
-    if modal_data.item == nil then
-        local picker_content_frame = dialog_flow.add{type="frame", direction="vertical", style="inside_deep_frame"}
+    if modal_data.item_id == nil then
+        local auxiliary_flow = modal_data.modal_elements.auxiliary_flow
+        local picker_content_frame = auxiliary_flow.add{type="frame", direction="vertical", style="inside_deep_frame"}
+        picker_content_frame.style.top_margin = 8
         add_item_picker(picker_content_frame, player)
     end
 end
@@ -382,7 +392,11 @@ local function close_picker_dialog(player, action)
     if action == "submit" then
         local defined_by = modal_data.amount_defined_by
         local relevant_textfield_name = ((defined_by == "amount") and "item" or "belt") .. "_amount_textfield"
-        local relevant_amount = tonumber(modal_data.modal_elements[relevant_textfield_name].text) or 0
+        local relevant_amount = util.gui.parse_expression_field(modal_data.modal_elements[relevant_textfield_name]) or 0
+        if defined_by == "amount" then
+            relevant_amount = relevant_amount / modal_data.timescale
+            relevant_amount = math.max(relevant_amount, MAGIC_NUMBERS.margin_of_error*10)
+        end
 
         local refresh_scope = "factory"
         if modal_data.item ~= nil then  -- ie. this is an edit
@@ -409,12 +423,13 @@ local function close_picker_dialog(player, action)
         end
 
         solver.update(player, factory)
-        util.raise.refresh(player, refresh_scope, nil)
+        main_dialog.toggle_districts_view(player, true)
+        util.raise.refresh(player, refresh_scope)
 
     elseif action == "delete" then
         factory:remove(modal_data.item)
         solver.update(player, factory)
-        util.raise.refresh(player, "factory", nil)
+        util.raise.refresh(player, "factory")
     end
 
     -- Remember selected group so it can be re-applied when the dialog is re-opened
@@ -448,17 +463,27 @@ listeners.gui = {
     on_gui_text_changed = {
         {
             name = "picker_item_amount",
-            handler = (function(player, _, _)
-                local modal_data = util.globals.modal_data(player)
-                update_dialog_submit_button(modal_data.modal_elements)
+            handler = (function(player, _, event)
+                util.gui.update_expression_field(event.element)
+                update_dialog_submit_button(util.globals.modal_elements(player))
             end)
         },
         {
             name = "picker_belt_amount",
-            handler = (function(player, _, _)
+            handler = (function(player, _, event)
                 local modal_data = util.globals.modal_data(player)
+                util.gui.update_expression_field(event.element)
                 sync_amounts(modal_data)  -- defined_by ~= "amount"
                 update_dialog_submit_button(modal_data.modal_elements)
+            end)
+        }
+    },
+    on_gui_confirmed = {
+        {
+            name = "picker_amount",
+            handler = (function(player, _, event)
+                local confirmed = util.gui.confirm_expression_field(event.element)
+                if confirmed then util.raise.close_dialog(player, "submit") end
             end)
         }
     }
@@ -471,6 +496,7 @@ listeners.dialog = {
         return {
             caption = {"", action, " ", {"fp.pl_" .. modal_data.item_category, 1}},
             search_handler_name = (not modal_data.item_id) and "search_picker_items" or nil,
+            disable_scroll_pane = true,
             show_submit_button = true,
             show_delete_button = (modal_data.item_id ~= nil)
         }

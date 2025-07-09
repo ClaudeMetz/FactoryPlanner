@@ -11,7 +11,7 @@ local parts = {}
 -- Also, these parts are missing lots of things (like the line missing its beacon, for example)
 
 function parts.export_string(setup)
-    return game.table_to_json({
+    return helpers.table_to_json({
         export_modset = {
             base = "1.1.80",
             flib = "0.12.6",

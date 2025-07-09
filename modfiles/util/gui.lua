@@ -3,12 +3,10 @@ local mod_gui = require("mod-gui")
 local _gui = { switch = {}, mod = {} }
 
 
----@alias SwitchState "left" | "right"
-
 -- Adds an on/off-switch including a label with tooltip to the given flow
 -- Automatically converts boolean state to the appropriate switch_state
 ---@param parent_flow LuaGuiElement
----@param action string
+---@param action string?
 ---@param additional_tags Tags
 ---@param state SwitchState | boolean
 ---@param caption LocalisedString?
@@ -31,7 +29,6 @@ function _gui.switch.add_on_off(parent_flow, action, additional_tags, state, cap
     local function add_label()
         caption = (tooltip ~= nil) and {"", caption, " [img=info]"} or caption
         label = flow.add{type="label", caption=caption, tooltip=tooltip}
-        label.style.font = "default-semibold"
     end
 
     if label_first then add_label(); add_switch(); label.style.right_margin = 8
@@ -80,10 +77,9 @@ function _gui.toggle_mod_gui(player)
 
     if enable and not mod_gui_button then
         local tooltip = {"", {"shortcut-name.fp_open_interface"}, " (", {"fp.toggle_interface"}, ")"}
-        local button = frame_flow.add{type="sprite-button", name="fp_button_toggle_interface",
-            sprite="fp_mod_gui", tooltip=tooltip, tags={mod="fp", on_gui_click="mod_gui_toggle_interface"},
+        frame_flow.add{type="sprite-button", name="fp_button_toggle_interface", sprite="fp_mod_gui",
+            tooltip=tooltip, tags={mod="fp", on_gui_click="mod_gui_toggle_interface"},
             style=mod_gui.button_style, mouse_button_filter={"left"}}
-        button.style.padding = 6
     elseif mod_gui_button then  -- use the destroy function for possible cleanup reasons
         destroy_mod_gui(player)
     end
@@ -105,10 +101,11 @@ function _gui.properly_center_frame(player, frame, dimensions)
     frame.location = {x_offset, y_offset}
 end
 
----@param textfield LuaGuiElement
-function _gui.setup_textfield(textfield)
-    textfield.lose_focus_on_confirm = true
-    textfield.clear_and_focus_on_right_click = true
+---@param player LuaPlayer
+---@return DisplayResolution
+function _gui.calculate_scaled_resolution(player)
+    local resolution, scale = player.display_resolution, player.display_scale
+    return {width=math.ceil(resolution.width / scale), height=math.ceil(resolution.height / scale)}
 end
 
 ---@param textfield LuaGuiElement
@@ -116,7 +113,6 @@ end
 ---@param negative boolean
 function _gui.setup_numeric_textfield(textfield, decimal, negative)
     textfield.lose_focus_on_confirm = true
-    textfield.clear_and_focus_on_right_click = true
     textfield.numeric = true
     textfield.allow_decimal = (decimal or false)
     textfield.allow_negative = (negative or false)
@@ -141,36 +137,64 @@ function _gui.reset_player(player)
     end
 end
 
--- Formats the given effects for use in a tooltip
----@param effects ModuleEffects
----@param limit_effects boolean
----@return LocalisedString
-function _gui.format_module_effects(effects, limit_effects)
-    local tooltip_lines, effect_applies = {"", "\n"}, false
-    local lower_bound, upper_bound = MAGIC_NUMBERS.effects_lower_bound, MAGIC_NUMBERS.effects_upper_bound
 
-    for effect_name, effect_value in pairs(effects) do
-        if effect_value ~= 0 then
-            effect_applies = true
-            local capped_indication = ""  ---@type LocalisedString
+---@param emissions number
+---@param district District
+---@return LocalisedString tooltip
+function _gui.format_emissions(emissions, district)
+    if emissions == 0 then
+        return {"fp.emissions_none"}
+    else
+        local pollutant = {"airborne-pollutant-name." .. district.location_proto.pollutant_type}
+        local emission = util.format.SI_value(emissions, "E/m", 3)
+        return {"fp.emissions_line", pollutant, emission}
+    end
+end
 
-            if limit_effects then
-                if effect_name == "productivity" and effect_value < 0 then
-                    effect_value, capped_indication = 0, {"fp.effect_maxed"}
-                elseif effect_value < lower_bound then
-                    effect_value, capped_indication = lower_bound, {"fp.effect_maxed"}
-                elseif effect_value > upper_bound then
-                    effect_value, capped_indication = upper_bound, {"fp.effect_maxed"}
-                end
-            end
 
-            -- Force display of either a '+' or '-', also round the result
-            local display_value = ("%+d"):format(math.floor((effect_value * 100) + 0.5))
-            table.insert(tooltip_lines, {"fp.effect_line", {"fp." .. effect_name}, display_value, capped_indication})
+local expression_variables = {k=1000, K=1000, m=1000000, M=1000000, g=1000000000, G=1000000000}
+
+---@param textfield LuaGuiElement
+---@return number? expression
+function _gui.parse_expression_field(textfield)
+    local expression = nil
+    pcall(function() expression = helpers.evaluate_expression(textfield.text, expression_variables) end)
+    return expression
+end
+
+---@param textfield LuaGuiElement
+function _gui.update_expression_field(textfield)
+    local expression = _gui.parse_expression_field(textfield)
+
+    textfield.style = (textfield.text ~= "" and expression == nil) and "invalid_value_textfield" or "textbox"
+    textfield.style.width = textfield.tags.width  --[[@as number]]  -- this is stupid but styles work out that way
+end
+
+---@param textfield LuaGuiElement
+---@return boolean confirmed
+function _gui.confirm_expression_field(textfield)
+    local expression = _gui.parse_expression_field(textfield)
+    if expression then
+        local exp = tostring(expression)
+        if exp == textfield.text then
+            return true
+        else
+            textfield.text = exp
         end
     end
+    return false
+end
 
-    return (effect_applies) and tooltip_lines or ""
+
+function _gui.add_quality_dropdown(parent_flow, selected_index, tags)
+    local items = {}
+    for _, quality in pairs(storage.prototypes.qualities) do
+        local label = {"", "[quality=" .. quality.name .. "] ", quality.localised_name}
+        table.insert(items, label)
+    end
+
+    parent_flow.add{type="drop-down", items=items, selected_index=selected_index,
+        style="fp_drop-down_slim", tags=tags}
 end
 
 return _gui

@@ -6,6 +6,8 @@ local loader = {}
 ---@alias ItemID integer
 ---@alias RecipeID integer
 
+---@alias TemperatureMap { [string]: FPItemPrototype[] }
+
 ---@alias ModuleMap { [string]: FPModulePrototype }
 
 -- ** LOCAL UTIL **
@@ -14,7 +16,7 @@ local loader = {}
 local function ordered_recipe_groups()
     -- Make a dict with all recipe groups
     local group_dict = {}  ---@type { [string]: ItemGroup }
-    for _, recipe in pairs(global.prototypes.recipes) do
+    for _, recipe in pairs(storage.prototypes.recipes) do
         if group_dict[recipe.group.name] == nil then
             group_dict[recipe.group.name] = recipe.group
         end
@@ -46,12 +48,27 @@ end
 local function recipe_map_from(item_type)
     local map = {}  ---@type RecipeMap
 
-    for _, recipe in pairs(global.prototypes.recipes) do
-        for _, item in ipairs(recipe[item_type] --[[@as FormattedRecipeItem[] ]]) do
-            local item_proto = prototyper.util.find_prototype("items", item.name, item.type)  ---@cast item_proto -nil
-            map[item_proto.category_id] = map[item_proto.category_id] or {}
-            map[item_proto.category_id][item_proto.id] = map[item_proto.category_id][item_proto.id] or {}
-            map[item_proto.category_id][item_proto.id][recipe.id] = true
+    local function add(item_proto, recipe_id)
+        map[item_proto.category_id] = map[item_proto.category_id] or {}
+        map[item_proto.category_id][item_proto.id] = map[item_proto.category_id][item_proto.id] or {}
+        map[item_proto.category_id][item_proto.id][recipe_id] = true
+    end
+
+    for _, recipe in pairs(storage.prototypes.recipes) do
+        for _, item in ipairs(recipe[item_type]) do
+            if item_type == "ingredients" and item.type == "fluid" then
+                local min_temp = item.minimum_temperature
+                local max_temp = item.maximum_temperature
+                for _, fluid_proto in pairs(TEMPERATURE_MAP[item.name] or {}) do
+                    if (not min_temp or min_temp <= fluid_proto.temperature) and
+                            (not max_temp or max_temp >= fluid_proto.temperature) then
+                        add(fluid_proto, recipe.id)
+                    end
+                end
+            else
+                local item_proto = prototyper.util.find("items", item.name, item.type)  ---@cast item_proto -nil
+                add(item_proto, recipe.id)
+            end
         end
     end
 
@@ -64,10 +81,9 @@ end
 local function sorted_items()
     local items = {}
 
-    for _, type in pairs{"item", "fluid"} do
-        for _, item in pairs(PROTOTYPE_MAPS.items[type].members) do
-            -- Silly checks needed here for migration purposes
-            if item.group.valid and item.subgroup.valid then table.insert(items, item) end
+    for _, type in pairs{"item", "fluid", "entity"} do
+        for _, item in pairs(prototyper.util.find("items", nil, type).members) do
+            table.insert(items, item)
         end
     end
 
@@ -90,100 +106,32 @@ local function sorted_items()
 end
 
 
--- Generates a table mapping modules to their prototype by name
----@return ModuleMap
-local function module_name_map()
-    local map = {}  ---@type ModuleMap
+---@return TemperatureMap
+local function temperature_map()
+    local map = {}  ---@type TemperatureMap
 
-    for _, category in pairs(global.prototypes.modules) do
-        for _, module in pairs(category.members) do
-            map[module.name] = module
+    for name, fluid_proto in pairs(PROTOTYPE_MAPS.items.fluid.members) do
+        if fluid_proto.temperature ~= nil then
+            local base_name = fluid_proto.base_name
+            if not map[base_name] then map[base_name] = {} end
+            table.insert(map[base_name], fluid_proto)
         end
+    end
+
+    ---@param a FPItemPrototype
+    ---@param b FPItemPrototype
+    ---@return boolean
+    local function sorting_function(a, b)
+        if a.temperature < b.temperature then return true
+        elseif a.temperature > b.temperature then return false end
+        return false
+    end
+
+    for _, list in pairs(map) do
+        table.sort(list, sorting_function)
     end
 
     return map
-end
-
-
-local attribute_generators = {}  ---@type { [string]: fun(proto: AnyFPPrototype): LocalisedString }
-
----@param belt FPBeltPrototype
----@return LocalisedString
-function attribute_generators.belts(belt)
-    local throughput_string = {"", belt.throughput .. " ", {"fp.pl_item", 2}, "/", {"fp.unit_second"}}
-    return {"fp.attribute_line", {"fp.throughput"}, throughput_string}
-end
-
----@param beacon FPBeaconPrototype
----@return LocalisedString
-function attribute_generators.beacons(beacon)
-    return {"", {"fp.attribute_line", {"fp.module_slots"}, beacon.module_limit},
-           {"fp.attribute_line", {"fp.effectivity"}, (beacon.effectivity * 100) .. "%"},
-           {"fp.attribute_line", {"fp.u_power"}, util.format.SI_value(beacon.energy_usage * 60, "W", 3)}}
-end
-
----@param wagon FPWagonPrototype
----@return LocalisedString
-function attribute_generators.wagons(wagon)
-    local storage_unit = (wagon.category == "cargo-wagon") and {"fp.pl_stack", wagon.storage} or {"fp.l_fluid"}
-    return {"fp.attribute_line", {"fp.storage"}, {"", util.format.number(wagon.storage, 3) .. " ", storage_unit}}
-end
-
----@param fuel FPFuelPrototype
----@return LocalisedString
-function attribute_generators.fuels(fuel)
-    return {"", {"fp.attribute_line", {"fp.fuel_value"}, util.format.SI_value(fuel.fuel_value, "J", 3)},
-           {"fp.attribute_line", {"fp.emissions_multiplier"}, fuel.emissions_multiplier}}
-end
-
----@param machine FPMachinePrototype
----@return LocalisedString
-function attribute_generators.machines(machine)
-    local pollution = machine.energy_usage * (machine.emissions * 60) * 60
-    return {"", {"fp.attribute_line", {"fp.crafting_speed"}, util.format.number(machine.speed, 3)},
-           {"fp.attribute_line", {"fp.u_power"}, util.format.SI_value(machine.energy_usage * 60, "W", 3)},
-           {"fp.attribute_line", {"fp.pollution"}, {"", util.format.SI_value(pollution, "P/m", 3)}},
-           {"fp.attribute_line", {"fp.module_slots"}, machine.module_limit}}
-end
-
-
----@alias PrototypeAttributes { [DataType]: { [integer]: LocalisedString } }
----@alias PrototypeAttributesWithCategory { [DataType]: { [integer]: { [integer]: LocalisedString } } }
-
--- Generates the attribute strings for some types of prototypes
----@return PrototypeAttributes | PrototypeAttributesWithCategory
-local function prototype_attributes()
-    local relevant_prototypes = {"belts", "beacons", "wagons", "fuels", "machines"}
-    local attributes = {}  ---@type PrototypeAttributes | PrototypeAttributesWithCategory
-
-    for _, data_type in pairs(relevant_prototypes) do
-        local prototypes = global.prototypes[data_type]  ---@type AnyIndexedPrototypes
-        local generator_function = attribute_generators[data_type]
-
-        attributes[data_type] = {}
-        if prototyper.data_types[data_type] == false then
-            ---@cast prototypes IndexedPrototypes<FPPrototype>
-            ---@cast attributes PrototypeAttributes
-
-            for proto_id, prototype in pairs(prototypes) do
-                attributes[data_type][proto_id] = generator_function(prototype)
-            end
-        else
-            ---@cast prototypes IndexedPrototypesWithCategory<FPPrototypeWithCategory>
-            ---@cast attributes PrototypeAttributesWithCategory
-
-            for category_id, category in pairs(prototypes) do
-                attributes[data_type][category_id] = {}
-                local attribute_category = attributes[data_type][category_id]
-
-                for proto_id, prototype in pairs(category.members) do
-                    attribute_category[proto_id] = generator_function(prototype)
-                end
-            end
-        end
-    end
-
-    return attributes
 end
 
 
@@ -197,9 +145,12 @@ end
 ---@field items MappedPrototypesWithCategory<FPItemPrototype>
 ---@field fuels MappedPrototypesWithCategory<FPFuelPrototype>
 ---@field belts MappedPrototypes<FPBeltPrototype>
+---@field pumps MappedPrototypes<FPPumpPrototype>
 ---@field wagons MappedPrototypesWithCategory<FPWagonPrototype>
 ---@field modules MappedPrototypesWithCategory<FPModulePrototype>
 ---@field beacons MappedPrototypes<FPBeaconPrototype>
+---@field locations MappedPrototypes<FPLocationPrototype>
+---@field qualities MappedPrototypes<FPQualityPrototype>
 
 ---@param data_types { [DataType]: boolean }
 ---@return PrototypeMaps
@@ -213,7 +164,7 @@ local function prototype_maps(data_types)
             ---@cast map MappedPrototypes<FPPrototype>
 
             ---@type IndexedPrototypes<FPPrototype>
-            local prototypes = global.prototypes[data_type]
+            local prototypes = storage.prototypes[data_type]
 
             for _, prototype in pairs(prototypes) do
                 map[prototype.name] = prototype
@@ -222,7 +173,7 @@ local function prototype_maps(data_types)
             ---@cast map MappedPrototypesWithCategory<FPPrototypeWithCategory>
 
             ---@type IndexedPrototypesWithCategory<FPPrototypeWithCategory>
-            local prototypes = global.prototypes[data_type]
+            local prototypes = storage.prototypes[data_type]
 
             for _, category in pairs(prototypes) do
                 map[category.name] = { name=category.name, id=category.id, members={} }
@@ -239,16 +190,44 @@ local function prototype_maps(data_types)
 end
 
 
-local function generate_object_index()
-    OBJECT_INDEX = {}
-    for _, player_table in pairs(global.players) do
-        local district = player_table.district
-        if not player_table.district then return {} end  -- migration issue mitigation
-        district:index()  -- recursively indexes all objects
+-- Generates a table mapping modules to their prototype by name
+---@return ModuleMap
+local function module_name_map()
+    local map = {}  ---@type ModuleMap
+
+    for _, category in pairs(storage.prototypes.modules) do
+        for _, module in pairs(category.members) do
+            map[module.name] = module
+        end
     end
 
-    if global.tutorial_factory then
-        global.tutorial_factory:index()
+    return map
+end
+
+
+---@return { [string]: boolean }
+local function generate_productivity_recipes()
+    local productivity_recipes = {}
+    for _, technology in pairs(prototypes.technology) do
+        for _, effect in pairs(technology.effects or {}) do
+            if effect.type == "mining-drill-productivity-bonus" then
+                productivity_recipes["custom-mining"] = true
+            elseif effect.type == "change-recipe-productivity" then
+                if PROTOTYPE_MAPS.recipes[effect.recipe] then
+                    productivity_recipes[effect.recipe] = true
+                end
+            end
+        end
+    end
+    return productivity_recipes
+end
+
+
+local function generate_object_index()
+    OBJECT_INDEX = {}  ---@type { [integer]: Object}
+    for _, player_table in pairs(storage.players) do
+        if not player_table.realm then return end  -- migration issue mitigation
+        player_table.realm:index()  -- recursively indexes all objects
     end
 end
 
@@ -256,7 +235,7 @@ end
 -- ** TOP LEVEL **
 ---@param skip_check boolean Whether the mod version check is skipped
 function loader.run(skip_check)
-    if not skip_check and script.active_mods["factoryplanner"] ~= global.installed_mods["factoryplanner"] then
+    if not skip_check and script.active_mods["factoryplanner"] ~= storage.installed_mods["factoryplanner"] then
         return  -- if the mod version changed, the loader will be re-run after migration anyways
     end
 
@@ -264,7 +243,10 @@ function loader.run(skip_check)
     generate_object_index()
 
     PROTOTYPE_MAPS = prototype_maps(prototyper.data_types)
-    PROTOTYPE_ATTRIBUTES = prototype_attributes()
+    MODULE_NAME_MAP = module_name_map()
+
+    SORTED_ITEMS = sorted_items()
+    TEMPERATURE_MAP = temperature_map()
 
     ORDERED_RECIPE_GROUPS = ordered_recipe_groups()
     RECIPE_MAPS = {
@@ -272,8 +254,10 @@ function loader.run(skip_check)
         consume = recipe_map_from("ingredients")
     }
 
-    SORTED_ITEMS = sorted_items()
-    MODULE_NAME_MAP = module_name_map()
+    PRODUCTIVITY_RECIPES = generate_productivity_recipes()
+
+    MULTIPLE_PLANETS = #storage.prototypes.locations > 1
+    MULTIPLE_QUALITIES = #storage.prototypes.qualities > 1
 end
 
 return loader

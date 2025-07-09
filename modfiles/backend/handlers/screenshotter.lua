@@ -41,8 +41,8 @@ local function get_handler(path, index, event, name)
 end
 
 local function set_machine_default(player, proto_name, category_name)
-    local proto = prototyper.util.find_prototype("machines", proto_name, category_name)
-    prototyper.defaults.set(player, "machines", proto.id, proto.category_id)
+    local proto = prototyper.util.find("machines", proto_name, category_name)
+    defaults.set(player, "machines", {prototype=proto.name, quality="normal"}, proto.category_id)
 end
 
 
@@ -54,28 +54,22 @@ local actions = {
         local export_string = "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"
         util.porter.add_factories(player, export_string)
 
-        local hotness = player_table.district.first.next.next
+        local hotness = player_table.realm.first.first.next.next
         local trash = hotness.next.next
         trash.archived = true
         util.context.set(player, hotness)
         solver.update(player, hotness)
-        util.raise.refresh(player, "all", nil)
+        util.raise.refresh(player, "all")
 
         -- Preferences
         player_table.preferences.display_gui_button = false
         player_table.preferences.products_per_row = 5
-        player_table.preferences.factory_list_rows = 18
+        player_table.preferences.factory_list_rows = 20
         player_table.preferences.recipe_filters = {disabled = true, hidden = false}
         player_table.preferences.ignore_barreling_recipes = true
         player_table.preferences.ignore_recycling_recipes = true
-        player_table.preferences.mb_defaults = {  -- naughty use of the prototyper function
-            machine = prototyper.util.find_prototype("modules", "productivity-module-3", "productivity"),
-            machine_secondary = nil,
-            beacon = prototyper.util.find_prototype("modules", "speed-module-3", "speed"),
-            beacon_count = 8
-        }
 
-        prototyper.defaults.set(player, "belts", PROTOTYPE_MAPS.belts["fast-transport-belt"].id)
+        defaults.set(player, "belts", {prototype="fast-transport-belt"}, nil)
         set_machine_default(player, "electric-mining-drill", "basic-solid")
         set_machine_default(player, "steel-furnace", "smelting")
         set_machine_default(player, "assembling-machine-2", "crafting")
@@ -101,13 +95,15 @@ local actions = {
         main_dialog.toggle(player)
     end,
     teardown_01_main_interface = function(player)
+        util.globals.preferences(player).factory_list_rows = 30
+        main_dialog.rebuild(player, true)  -- avoid modal dialogs being squished
+
         local main_frame = util.globals.main_elements(player).main_frame
         return_dimensions("01_main_interface", main_frame)
     end,
 
     setup_02_compact_interface = function(player)
         util.globals.main_elements(player).main_frame.location = player.display_resolution  -- hack city
-        view_state.select(player, 2)
         local toggle_handler = get_handler("ui.main.title_bar", 1, "on_gui_click", "switch_to_compact_view")
         toggle_handler(player, nil, nil)
     end,
@@ -141,7 +137,7 @@ local actions = {
     teardown_03_item_picker = (function(player) modal_teardown(player, "03_item_picker") end),
 
     setup_04_recipe_picker = function(player)
-        local product_proto = prototyper.util.find_prototype("items", "petroleum-gas", "fluid")
+        local product_proto = prototyper.util.find("items", "petroleum-gas", "fluid")
         open_modal(player, "recipe", {category_id=product_proto.category_id,
             product_id=product_proto.id, production_type="produce"})
     end,
@@ -195,7 +191,9 @@ local function execute_action(player_index, action_name)
     actions[action_name](player)
 end
 
-remote.add_interface("screenshotter_input", {
-    initial_setup = initial_setup,
-    execute_action = execute_action
-})
+if not remote.interfaces["screenshotter_input"] then
+    remote.add_interface("screenshotter_input", {
+        initial_setup = initial_setup,
+        execute_action = execute_action
+    })
+end
