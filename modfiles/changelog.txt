@@ -4,7 +4,7 @@ Date: 00. 00. 0000
   Features:
     -
   Changes:
-    -
+    - Added smaller values for the comapct dialog width setting, supporting ultrawide monitors better (#540) (Thanks NIronwolf!)
   Bugfixes:
     - Fixed an issue where productivity wasn't being applied correctly for recipes involving randomized product amounts (#323) (Thanks kalenedrael!)
 
