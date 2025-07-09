@@ -8,6 +8,7 @@ Date: 00. 00. 0000
   Bugfixes:
     - Fixed an issue where productivity wasn't being applied correctly for recipes involving randomized product amounts (#323) (Thanks kalenedrael!)
     - Fixed pump throughput view showing a pump requirement 60 times too high (#544)
+    - Fixed that recipe buttons wouldn't show their total module effects in their tooltips
 
 ---------------------------------------------------------------------------------------------------
 Version: 2.0.30

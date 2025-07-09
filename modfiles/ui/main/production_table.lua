@@ -115,7 +115,7 @@ function builders.recipe(line, parent_flow, metadata, indent)
     local first_line = (note == "") and {"fp.tt_title", recipe_proto.localised_name}
         or {"fp.tt_title_with_note", recipe_proto.localised_name, note}
     local action = (first_subfloor_line) and "act_on_floor_recipe" or "act_on_line_recipe"
-    local effects_section = (first_subfloor_line) and format_effects_tooltip(relevant_line.effects_tooltip) or ""
+    local effects_section = (line.class == "Line") and format_effects_tooltip(relevant_line.effects_tooltip) or ""
     local tooltip = {"", first_line, indication, surface_info, effects_section, "\n", metadata.action_tooltips[action]}
 
     local button = parent_flow.add{type="sprite-button", sprite=recipe_proto.sprite, style=style,
