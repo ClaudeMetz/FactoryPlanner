@@ -45,15 +45,15 @@ local function refresh_item_box(player, factory, show_floor_items, item_category
         item_boxes_elements["ingredient_combinator_button"].visible = false
         return 0
     end
+
     local floor = (show_floor_items) and util.context.get(player, "Floor") or factory.top_floor
+    local action = (item_category == "product" and show_floor_items and floor.level > 1)
+        and "act_on_floor_product" or ("act_on_top_level_" .. item_category)
+    local real_products = (item_category == "product" and (not show_floor_items or floor.level == 1))
+    local action_tooltip = MODIFIER_ACTIONS[action].tooltip
 
     local table_item_count = 0
     local default_style = (item_category == "byproduct") and "flib_slot_button_red" or "flib_slot_button_default"
-
-    local shows_floor_items = (floor.parent.class ~= "Factory")
-    local action = (shows_floor_items) and ("act_on_floor_item") or ("act_on_top_level_" .. item_category)
-    local action_tooltip = MODIFIER_ACTIONS[action].tooltip
-    local real_products = (not shows_floor_items and item_category == "product")
 
     local function build_item(item, index)
         local required_amount = (item.class == "Product") and item:get_required_amount() or nil
@@ -126,12 +126,13 @@ local function handle_item_add(player, tags, event)
 end
 
 local function handle_item_button_click(player, tags, action)
+    local show_floor_items = util.globals.preferences(player).show_floor_items
+
     local item = nil
     if tags.item_id then
         item = OBJECT_INDEX[tags.item_id]
     else
         -- Need to get items from the right floor depending on display settings
-        local show_floor_items = util.globals.preferences(player).show_floor_items
         local floor = (show_floor_items) and util.context.get(player, "Floor")
             or util.context.get(player, "Factory").top_floor
         item = floor[tags.item_category .. "s"][tags.item_index]
@@ -139,8 +140,8 @@ local function handle_item_button_click(player, tags, action)
 
     if action == "add_recipe" then
         local floor = util.context.get(player, "Floor")  --[[@as Floor]]
-        if floor.level > 1 then
-            local message = {"fp.error_recipe_wrong_floor", {"fp.pu_" .. tags.item_category, 1}}
+        if floor.level > 1 and not show_floor_items then
+            local message = {"fp.error_no_main_recipe_on_subfloor"}
             util.messages.raise(player, "error", message, 1)
         else
             local production_type = (tags.item_category == "byproduct") and "consume" or "produce"
@@ -302,7 +303,7 @@ listeners.gui = {
             handler = handle_item_button_click
         },
         {
-            name = "act_on_floor_item",
+            name = "act_on_floor_product",
             actions_table = {
                 copy = {shortcut="shift-right"},
                 add_to_cursor = {shortcut="alt-right"},

@@ -4,6 +4,7 @@ Date: 00. 00. 0000
   Features:
     -
   Changes:
+    - Allowed adding recipes via the top item buttons on subfloors if the 'Show floor items' preference is enabled (#570)
     - Added smaller values for the comapct dialog width setting, supporting ultrawide monitors better (#540) (Thanks NIronwolf!)
   Bugfixes:
     - Fixed an issue where productivity wasn't being applied correctly for recipes involving randomized product amounts (#323) (Thanks kalenedrael!)
