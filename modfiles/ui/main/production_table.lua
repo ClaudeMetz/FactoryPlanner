@@ -8,6 +8,7 @@ local function generate_metadata(player, factory)
         archive_open = factory.archived,
         matrix_solver_active = (factory.matrix_free_items ~= nil),
         ingredient_satisfaction = preferences.ingredient_satisfaction,
+        fold_out_subfloors = preferences.fold_out_subfloors,
         player = player,
         tooltips = tooltips.production_table,
         district = factory.parent,
@@ -67,9 +68,11 @@ function builders.move(line, parent_flow, metadata)
     create_move_button(move_flow, "next", first_subfloor_line)
 end
 
-function builders.done(line, parent_flow, _)
-    local relevant_line = (line.class == "Floor") and line.first or line
+function builders.done(line, parent_flow, metadata)
+    local first_subfloor_line = (line.parent.level > 1 and line.previous == nil)
+    if metadata.fold_out_subfloors and first_subfloor_line then return end
 
+    local relevant_line = (line.class == "Floor") and line.first or line
     parent_flow.add{type="checkbox", state=relevant_line.done, mouse_button_filter={"left"},
         tags={mod="fp", on_gui_checked_state_changed="checkmark_line", line_id=line.id}}
 end
