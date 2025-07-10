@@ -38,7 +38,7 @@ local Line = Object.methods()
 Line.__index = Line
 script.register_metatable("Line", Line)
 
----@param recipe_proto FPRecipePrototype
+---@param recipe_proto FPRecipePrototype?
 ---@param production_type ProductionType
 ---@return Line
 local function init(recipe_proto, production_type)
@@ -68,7 +68,9 @@ local function init(recipe_proto, production_type)
     }, "Line", Line)  --[[@as Line]]
 
     -- Initialize data related to fluid ingredients temperatures
-    if recipe_proto.simplified ~= true then object:build_temperatures_data({}) end
+    if recipe_proto and recipe_proto.simplified ~= true then
+        object:build_temperatures_data({})
+    end
 
     return object
 end
