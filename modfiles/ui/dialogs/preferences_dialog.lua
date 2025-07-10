@@ -31,6 +31,8 @@ local function refresh_defaults_table(player, modal_elements, type, category_id)
             tags={mod="fp", on_gui_click="select_preference_default", type=type, prototype_name=prototype.name,
             category_id=category_id}, quality=quality, mouse_button_filter={"left"}}
     end
+
+    return #prototypes
 end
 
 local function refresh_views_table(player)
@@ -144,7 +146,7 @@ local function add_default_proto_box(player, content_frame, type, category_id, a
     local frame = preference_box.add{type="frame", direction="horizontal", style="fp_frame_light_slots_small"}
     local gui_id = (category_id) and (type .. "-" .. category_id) or type
     modal_elements[gui_id] = frame.add{type="table", column_count=8, style="fp_table_slots_small"}
-    refresh_defaults_table(player, modal_elements, type, category_id)
+    local prototype_count = refresh_defaults_table(player, modal_elements, type, category_id)
 
     if addition == "lanes_or_belts" then
         preference_box.title_flow.add{type="empty-widget", style="flib_horizontal_pusher"}
@@ -162,6 +164,9 @@ local function add_default_proto_box(player, content_frame, type, category_id, a
             type=type, category_id=category_id}
         util.gui.add_quality_dropdown(preference_box.title_flow, default_quality.id, tags)
     end
+
+    -- This is inefficient, but it's fine
+    if not MULTIPLE_QUALITIES and prototype_count == 1 then preference_box.destroy() end
 end
 
 
@@ -315,6 +320,7 @@ local function open_preferences_dialog(player, modal_data)
     -- Right side
     local right_content_frame = modal_elements.secondary_frame
     add_views_box(player, right_content_frame, modal_elements)
+    right_content_frame.add{type="empty-widget", style="flib_vertical_pusher"}
     add_default_proto_box(player, right_content_frame, "belts", nil, "lanes_or_belts")
     add_default_proto_box(player, right_content_frame, "pumps", nil, "quality_picker")
     add_default_proto_box(player, right_content_frame, "wagons", 1, "quality_picker")  -- cargo-wagon
