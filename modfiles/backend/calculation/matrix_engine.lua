@@ -400,11 +400,14 @@ function matrix_engine.run_matrix_solver(factory_data, check_linear_dependence)
             -- need to call consolidate before set_line_result to net any non-fuel catalysts for display
             matrix_engine.consolidate(line_aggregate)
 
-            solver.set_line_result{
+            -- Set machine count back to nothing if the recipe doesn't require energy
+            local machine_count = (line.recipe_proto.energy == 0) and 0 or line_aggregate.machine_count
+
+            solver.set_line_result {
                 player_index = factory_data.player_index,
                 floor_id = floor.id,
                 line_id = line.id,
-                machine_count = line_aggregate.machine_count,
+                machine_count = machine_count,
                 energy_consumption = line_aggregate.energy_consumption,
                 emissions = line_aggregate.emissions,
                 production_ratio = line_aggregate.production_ratio,
