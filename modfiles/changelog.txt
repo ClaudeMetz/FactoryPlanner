@@ -2,7 +2,15 @@
 Version: 0.00.00
 Date: 00. 00. 0000
   Features:
-    -
+    - 
+  Changes:
+    - 
+  Bugfixes:
+    - 
+
+---------------------------------------------------------------------------------------------------
+Version: 2.0.31
+Date: 18. 07. 2025
   Changes:
     - Allowed adding recipes via the top item buttons on subfloors if the 'Show floor items' preference is enabled (#570)
     - Added smaller values for the comapct dialog width setting, supporting ultrawide monitors better (#540) (Thanks NIronwolf!)
