@@ -10,6 +10,7 @@ local Product = require("backend.data.Product")
 ---@field archived boolean
 ---@field name string
 ---@field matrix_free_items FPItemPrototype[]?
+---@field suggested_matrix_items FPItemPrototype[]?
 ---@field blueprints string[]
 ---@field notes string
 ---@field productivity_boni { string: ModuleEffectValue }
@@ -32,6 +33,7 @@ local function init(name)
 
         name = name,
         matrix_free_items = nil,
+        suggested_matrix_items = nil,
         blueprints = {},
         notes = "",
         productivity_boni = {},
@@ -182,6 +184,7 @@ end
 ---@field class "Factory"
 ---@field name string
 ---@field matrix_free_items FPPackedPrototype[]?
+---@field suggested_matrix_items FPPackedPrototype[]?
 ---@field blueprints string[]
 ---@field notes string
 ---@field productivity_boni { string: ModuleEffectValue }
@@ -194,6 +197,7 @@ function Factory:pack()
         class = self.class,
         name = self.name,
         matrix_free_items = prototyper.util.simplify_prototypes(self.matrix_free_items, "type"),
+        suggested_matrix_items = prototyper.util.simplify_prototypes(self.suggested_matrix_items, "type"),
         blueprints = self.blueprints,
         notes = self.notes,
         productivity_boni = self.productivity_boni,
@@ -209,6 +213,7 @@ local function unpack(packed_self)
 
     -- Product prototypes will be automatically unpacked by the validation process
     unpacked_self.matrix_free_items = packed_self.matrix_free_items
+    unpacked_self.suggested_matrix_items = packed_self.suggested_matrix_items
     unpacked_self.blueprints = packed_self.blueprints
     unpacked_self.notes = packed_self.notes
     unpacked_self.productivity_boni = packed_self.productivity_boni
