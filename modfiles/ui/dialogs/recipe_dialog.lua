@@ -90,7 +90,7 @@ local function attempt_adding_line(player, recipe_id, modal_data)
         util.messages.raise(player, "error", {"fp.error_no_compatible_machine"}, 1)
     else
         local floor = util.context.get(player, "Floor")  --[[@as Floor]]
-        local factory = floor.parent --[[@as Factory]]
+        local factory = util.context.get(player, "Factory")  --[[@as Factory]]
         local relative_object = OBJECT_INDEX[modal_data.add_after_line_id]  --[[@as LineObject]]
         floor:insert(line, relative_object, "next")  -- if not relative, insert uses last line
 
