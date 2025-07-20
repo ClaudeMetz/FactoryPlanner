@@ -70,38 +70,35 @@ local function refresh_solver_frame(player)
 
         if needs_choice then
             log("[FP] SolverUI: Needs choice. Processing items.")
-            local priority_items = {}
+            local last_recipe_items_to_display = {}
             local other_items = {}
             local allowed_free_items = linear_dependence_data.allowed_free_items
 
-            local suggested_items = factory.suggested_matrix_items or {}
-            if #suggested_items > 0 then
-                log("[FP] SolverUI: Found " .. #suggested_items .. " suggested items.")
-                local suggestion_map = {}
-                for _, item in ipairs(suggested_items) do suggestion_map[item] = true end
-
-                for _, item in ipairs(allowed_free_items) do
-                    if suggestion_map[item] then
-                        table.insert(priority_items, item)
-                    else
-                        table.insert(other_items, item)
-                    end
-                end
-                log("[FP] SolverUI: Separated into " .. #priority_items .. " priority and " .. #other_items .. " other items.")
-            else
-                log("[FP] SolverUI: No suggested items found.")
-                other_items = allowed_free_items
+            local last_recipe_map = {}
+            for _, item in ipairs(factory.suggested_matrix_items or {}) do
+                local key = item.type .. ":" .. item.name
+                last_recipe_map[key] = true
             end
 
-            if #priority_items > 0 then
+            for _, item in ipairs(allowed_free_items) do
+                local key = item.type .. ":" .. item.name
+                if last_recipe_map[key] then
+                    table.insert(last_recipe_items_to_display, item)
+                else
+                    table.insert(other_items, item)
+                end
+            end
+            log("[FP] SolverUI: Separated into " .. #last_recipe_items_to_display .. " from last recipe and " .. #other_items .. " other items.")
+
+            if #last_recipe_items_to_display > 0 then
                 solver_flow.add{type="label", caption={"fp.suggested_items"}, style="bold_label"}
                 local flow_priority = solver_flow.add{type="flow", direction="horizontal"}
-                build_item_flow(flow_priority, "constrained", priority_items)
-                item_count = item_count + #priority_items
+                build_item_flow(flow_priority, "constrained", last_recipe_items_to_display)
+                item_count = item_count + #last_recipe_items_to_display
             end
 
             if #other_items > 0 then
-                if #priority_items > 0 then
+                if #last_recipe_items_to_display > 0 then
                     solver_flow.add{type="label", caption={"fp.other_items"}, style="bold_label"}
                 end
                 local flow_constrained = solver_flow.add{type="flow", direction="horizontal"}
@@ -163,7 +160,7 @@ end
 local function paste_line(player, _, _)
     local floor = util.context.get(player, "Floor")  --[[@as Floor]]
 
-    local dummy_line = Line.init(nil, "produce")
+    local dummy_line = Line.init({}, "produce")
     util.clipboard.dummy_paste(player, dummy_line, floor)
 end
 
