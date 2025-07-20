@@ -90,8 +90,30 @@ local function attempt_adding_line(player, recipe_id, modal_data)
         util.messages.raise(player, "error", {"fp.error_no_compatible_machine"}, 1)
     else
         local floor = util.context.get(player, "Floor")  --[[@as Floor]]
+        local factory = floor.parent --[[@as Factory]]
         local relative_object = OBJECT_INDEX[modal_data.add_after_line_id]  --[[@as LineObject]]
         floor:insert(line, relative_object, "next")  -- if not relative, insert uses last line
+
+        log("[FP] RecipeDialog: Creating suggestions for recipe: " .. recipe_proto.name)
+        local suggestions = {}
+        for _, p in ipairs(recipe_proto.products) do
+            local item_proto = prototyper.util.find("items", p.name, p.type)
+            if item_proto then
+                table.insert(suggestions, item_proto)
+            end
+        end
+        for _, i in ipairs(recipe_proto.ingredients) do
+            local item_proto = prototyper.util.find("items", i.name, i.type)
+            if item_proto then
+                table.insert(suggestions, item_proto)
+            end
+        end
+        factory.suggested_matrix_items = suggestions
+
+        log("[FP] RecipeDialog: Set " .. #suggestions .. " suggested items for factory '" .. factory.name .. "'.")
+        local item_names = ""
+        for _, item in ipairs(suggestions) do item_names = item_names .. item.name .. ", " end
+        log("[FP] RecipeDialog: Items are: " .. item_names)
 
         local recipe_name = recipe_proto.localised_name
         if not (recipe_proto.custom or player.force.recipes[recipe_proto.name].enabled) then
