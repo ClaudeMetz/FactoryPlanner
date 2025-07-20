@@ -88,7 +88,6 @@ local function refresh_solver_frame(player)
                     end
                 end
                 log("[FP] SolverUI: Separated into " .. #priority_items .. " priority and " .. #other_items .. " other items.")
-                factory.suggested_matrix_items = nil
             else
                 log("[FP] SolverUI: No suggested items found.")
                 other_items = allowed_free_items
@@ -117,7 +116,6 @@ local function refresh_solver_frame(player)
         local box_width = interface_width - MAGIC_NUMBERS.list_width
         solver_flow.style.bottom_padding = (total_width > box_width) and 16 or 4
     else
-        -- Solver is balanced, but don't clear suggestions here in case of a multi-step operation.
         log("[FP] SolverUI: Solver is balanced.")
     end
 end
