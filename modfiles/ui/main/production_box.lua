@@ -75,7 +75,7 @@ local function refresh_solver_frame(player)
             local allowed_free_items = linear_dependence_data.allowed_free_items
 
             local last_recipe_map = {}
-            for _, item in ipairs(factory.suggested_matrix_items or {}) do
+            for _, item in ipairs(factory.last_recipe_items or {}) do
                 local key = item.type .. ":" .. item.name
                 last_recipe_map[key] = true
             end
