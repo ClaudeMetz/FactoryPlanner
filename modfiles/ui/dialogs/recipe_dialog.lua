@@ -110,7 +110,7 @@ local function attempt_adding_line(player, recipe_id, modal_data)
         end
         factory.last_recipe_items = last_recipe_items
 
-        log("[FP] RecipeDialog: Set " .. #last_recipe_items .. " suggested items for factory '" .. factory.name .. "'.")
+        log("[FP] RecipeDialog: Set " .. #last_recipe_items .. " items from last recipe for factory '" .. factory.name .. "'.")
         local item_names = ""
         for _, item in ipairs(last_recipe_items) do item_names = item_names .. item.name .. ", " end
         log("[FP] RecipeDialog: Items are: " .. item_names)

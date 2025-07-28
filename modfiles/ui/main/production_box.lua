@@ -76,13 +76,11 @@ local function refresh_solver_frame(player)
 
             local last_recipe_map = {}
             for _, item in ipairs(factory.last_recipe_items or {}) do
-                local key = item.type .. ":" .. item.name
-                last_recipe_map[key] = true
+                last_recipe_map[item.name] = true
             end
 
             for _, item in ipairs(allowed_free_items) do
-                local key = item.type .. ":" .. item.name
-                if last_recipe_map[key] then
+                if last_recipe_map[item.name] then
                     table.insert(last_recipe_items_to_display, item)
                 else
                     table.insert(other_items, item)
@@ -91,7 +89,7 @@ local function refresh_solver_frame(player)
             log("[FP] SolverUI: Separated into " .. #last_recipe_items_to_display .. " from last recipe and " .. #other_items .. " other items.")
 
             if #last_recipe_items_to_display > 0 then
-                solver_flow.add{type="label", caption={"fp.suggested_items"}, style="bold_label"}
+                solver_flow.add{type="label", caption={"fp.last_recipe_items"}, style="bold_label"}
                 local flow_priority = solver_flow.add{type="flow", direction="horizontal"}
                 build_item_flow(flow_priority, "constrained", last_recipe_items_to_display)
                 item_count = item_count + #last_recipe_items_to_display
