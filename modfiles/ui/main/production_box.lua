@@ -74,13 +74,19 @@ local function refresh_solver_frame(player)
             local other_items = {}
             local allowed_free_items = linear_dependence_data.allowed_free_items
 
+            local function base_name(item)
+                if (item.base_name ~= nil) then return item.base_name
+                else return item.name
+                end
+            end
+
             local last_recipe_map = {}
             for _, item in ipairs(factory.last_recipe_items or {}) do
-                last_recipe_map[item.name] = true
+                last_recipe_map[base_name(item)] = true
             end
 
             for _, item in ipairs(allowed_free_items) do
-                if last_recipe_map[item.name] then
+                if last_recipe_map[base_name(item)] then
                     table.insert(last_recipe_items_to_display, item)
                 else
                     table.insert(other_items, item)
