@@ -223,25 +223,9 @@ local function generate_productivity_recipes()
 end
 
 
-local function generate_object_index()
-    OBJECT_INDEX = {}  ---@type { [integer]: Object}
-    for _, player_table in pairs(storage.players) do
-        if not player_table.realm then return end  -- migration issue mitigation
-        player_table.realm:index()  -- recursively indexes all objects
-    end
-end
-
-
 -- ** TOP LEVEL **
 ---@param skip_check boolean Whether the mod version check is skipped
 function loader.run(skip_check)
-    if not skip_check and script.active_mods["factoryplanner"] ~= storage.installed_mods["factoryplanner"] then
-        return  -- if the mod version changed, the loader will be re-run after migration anyways
-    end
-
-    util.nth_tick.register_all()
-    generate_object_index()
-
     PROTOTYPE_MAPS = prototype_maps(prototyper.data_types)
     MODULE_NAME_MAP = module_name_map()
 

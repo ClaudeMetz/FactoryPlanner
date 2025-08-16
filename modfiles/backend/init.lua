@@ -193,6 +193,30 @@ local function refresh_player_table(player)
     player_table.realm:validate()
 end
 
+
+local function generate_object_index()
+    OBJECT_INDEX = {}  ---@type { [integer]: Object}
+    for _, player_table in pairs(storage.players) do
+        if not player_table.realm then return end  -- migration issue mitigation
+        player_table.realm:index()  -- recursively indexes all objects
+    end
+end
+
+local function run_on_load(fake_load)
+    if not fake_load then
+        if script.active_mods["factoryplanner"] ~= storage.installed_mods["factoryplanner"] then
+            return  -- if the mod version changed, this needs to just run during migration
+        end
+
+        generate_object_index()
+    end
+
+    util.nth_tick.register_all()
+
+    loader.run()
+end
+
+
 ---@class GlobalTable
 ---@field players { [PlayerIndex]: PlayerTable }
 ---@field prototypes PrototypeLists
@@ -215,7 +239,7 @@ local function global_init()
 
     storage.prototypes = {}  -- Table containing all relevant prototypes indexed by ID
     prototyper.build()  -- Generate all relevant prototypes and save them in storage
-    loader.run(true)  -- Run loader which creates useful indexes of prototype data
+    run_on_load(true)  -- Run loader which creates useful indexes of prototype data
 
     storage.installed_mods = script.active_mods  -- Retain current modset to detect mod changes for invalid factories
 
@@ -224,6 +248,7 @@ local function global_init()
 
     for _, player in pairs(game.players) do player_init(player) end
 end
+
 
 -- Prompts migrations, a GUI and prototype reload, and a validity check on all factories
 local function handle_configuration_change()
@@ -238,10 +263,11 @@ local function handle_configuration_change()
 
     storage.prototypes = {}
     prototyper.build()
-    loader.run(true)
+    run_on_load(true)
 
     migrator.migrate_global(migrations)
     migrator.migrate_player_tables(migrations)
+    generate_object_index()  -- rebuild this after objects have been migrated
 
     for index, player in pairs(game.players) do
         refresh_player_table(player)  -- part of migration cleanup
@@ -263,11 +289,11 @@ end
 
 
 -- ** TOP LEVEL **
+script.on_load(run_on_load)
+
 script.on_init(global_init)
 
 script.on_configuration_changed(handle_configuration_change)
-
-script.on_load(loader.run)
 
 
 -- ** PLAYER DATA **
