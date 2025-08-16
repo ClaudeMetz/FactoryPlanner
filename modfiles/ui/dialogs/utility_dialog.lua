@@ -258,7 +258,6 @@ function utility_structures.productivity_boni(player, modal_data)
             style="flib_tool_button_light_green", tooltip={"fp.import_from_tt"}, enabled=enabled,
             sprite="utility/check_mark", mouse_button_filter={"left"}}
 
-
         local table = boni_box.add{type="table", column_count=3}
         table.style.column_alignments[2] = "center"
         table.style.column_alignments[3] = "center"
@@ -274,23 +273,26 @@ function utility_structures.productivity_boni(player, modal_data)
     table.add{type="label", caption={"fp.current"}, style="bold_label"}
     table.add{type="label", caption={"fp.custom"}, style="bold_label"}
 
+    local force_recipes = player.force.recipes
     for recipe_name in pairs(PRODUCTIVITY_RECIPES) do
-        local recipe_proto = prototyper.util.find("recipes", recipe_name, nil)  --[[@as FPRecipePrototype]]
-        local caption = (recipe_name == "custom-mining")
-            and {"", "[img=utility/mining_drill_productivity_bonus_modifier_icon]  ", {"fp.mining_recipes"}}
-            or {"", "[recipe=" .. recipe_name .. "]  ", recipe_proto.localised_name}
-        table.add{type="label", caption=caption}.style.width = 250
+        if not force_recipes[recipe_name] or force_recipes[recipe_name].enabled then
+            local recipe_proto = prototyper.util.find("recipes", recipe_name, nil)  --[[@as FPRecipePrototype]]
+            local caption = (recipe_name == "custom-mining")
+                and {"", "[img=utility/mining_drill_productivity_bonus_modifier_icon]  ", {"fp.mining_recipes"}}
+                or {"", "[recipe=" .. recipe_name .. "]  ", recipe_proto.localised_name}
+            table.add{type="label", caption=caption}.style.width = 250
 
-        local productivity = util.get_recipe_productivity(player.force, recipe_name)
-        local percentage = ("%+d"):format(math.floor((productivity * 100) + 0.5)) .. "%"
-        table.add{type="label", caption=percentage}
+            local productivity = util.get_recipe_productivity(player.force, recipe_name)
+            local percentage = ("%+d"):format(math.floor((productivity * 100) + 0.5)) .. "%"
+            table.add{type="label", caption=percentage}
 
-        local current_bonus = current_factory.productivity_boni[recipe_name]
-        local current_percentage = (current_bonus) and current_bonus * 100 or nil
-        local textfield_bonus = table.add{type="textfield", text=current_percentage,
-            tags={mod="fp", on_gui_text_changed="productivity_bonus", recipe_name=recipe_name}}
-        util.gui.setup_numeric_textfield(textfield_bonus, false, false)
-        textfield_bonus.style.width = 52
+            local current_bonus = current_factory.productivity_boni[recipe_name]
+            local current_percentage = (current_bonus) and current_bonus * 100 or nil
+            local textfield_bonus = table.add{type="textfield", text=current_percentage,
+                tags={mod="fp", on_gui_text_changed="productivity_bonus", recipe_name=recipe_name}}
+            util.gui.setup_numeric_textfield(textfield_bonus, false, false)
+            textfield_bonus.style.width = 52
+        end
     end
 end
 
