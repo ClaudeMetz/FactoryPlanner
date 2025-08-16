@@ -139,7 +139,8 @@ local function update_line(line_data, aggregate, looped_fuel)
         fuel_amount = solver_util.determine_fuel_amount(energy_consumption, machine_proto.burner,
             fuel_proto.fuel_value)
 
-        if original_aggregate ~= nil then  -- meaning this line produces its own fuel
+        -- original_aggregate existing means this line produces its own fuel
+        if original_aggregate ~= nil and production_ratio > 0 then  -- production_ratio of 0 would divide by 0
             local ingredient_class = original_aggregate.Ingredient[fuel_item.type]
             local initial_demand = ingredient_class[fuel_item.name]
             local ratio = fuel_amount / initial_demand
