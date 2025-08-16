@@ -258,7 +258,7 @@ function generator.machines.generate()
 
         elseif proto.type == "container" and not proto.hidden then
             -- Just find the biggest container as a spoilage machine
-            local size = proto.get_inventory_size(defines.inventory.chest)
+            local size = proto.get_inventory_size(defines.inventory.chest) or 0
             local current_size = biggest_chest and biggest_chest.get_inventory_size(defines.inventory.chest) or 0
             if current_size < size then biggest_chest = proto end
         end

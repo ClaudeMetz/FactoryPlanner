@@ -6,6 +6,7 @@ Date: 00. 00. 0000
   Changes:
     -
   Bugfixes:
+    - Fixed a crash caused by containers with no inventory slots (#562)
     - Fixed that the utility dialog would allow you to configure productivity for unavailable recipes
 
 ---------------------------------------------------------------------------------------------------
