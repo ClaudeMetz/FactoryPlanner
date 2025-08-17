@@ -240,6 +240,7 @@ local function global_init()
     storage.prototypes = {}  -- Table containing all relevant prototypes indexed by ID
     prototyper.build()  -- Generate all relevant prototypes and save them in storage
     run_on_load(true)  -- Run loader which creates useful indexes of prototype data
+    generate_object_index()  -- This just initializes the OBJECT_INDEX variable
 
     storage.installed_mods = script.active_mods  -- Retain current modset to detect mod changes for invalid factories
 
