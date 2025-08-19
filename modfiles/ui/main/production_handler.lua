@@ -256,7 +256,7 @@ local function handle_item_click(player, tags, action)
             add_after_line_id=add_after_line_id, production_type=production_type,
             category_id=proto.category_id, product_id=proto.id}})
 
-    elseif action == "edit" then
+    elseif action == "edit_temperature" then
         if item.proto.type ~= "fluid" then
             util.cursor.create_flying_text(player, {"fp.can_only_edit_fluids"})
             return
@@ -302,13 +302,16 @@ local function handle_fuel_click(player, tags, action)
             add_after_line_id=add_after_line_id, production_type="produce",
             category_id=proto.category_id, product_id=proto.id}})
 
-    elseif action == "edit" then
+    elseif action == "edit_temperature" then
         if fuel.proto.type ~= "fluid" then
             util.cursor.create_flying_text(player, {"fp.can_only_edit_fluids"})
             return
         end
         util.raise.open_dialog(player, {dialog="item", modal_data={fuel_id=fuel.id,
             category_id=fuel.proto.category_id, name=fuel.proto.name}})
+
+    elseif action == "edit_fuel" then
+        util.raise.open_dialog(player, {dialog="machine", modal_data={machine_id=line.machine.id}})
 
     elseif action == "copy" then
         util.clipboard.copy(player, fuel)
@@ -430,7 +433,7 @@ listeners.gui = {
             actions_table = {
                 add_recipe_to_end = {shortcut="left", limitations={archive_open=false}, show=true},
                 add_recipe_below = {limitations={archive_open=false}},
-                edit = {shortcut="control-left", limitations={archive_open=false}, show=true},
+                edit_temperature = {shortcut="control-left", limitations={archive_open=false}, show=true},
                 copy = {shortcut="shift-right"},
                 add_to_cursor = {shortcut="alt-right"},
                 factoriopedia = {shortcut="alt-left"}
@@ -445,7 +448,8 @@ listeners.gui = {
             actions_table = {
                 add_recipe_to_end = {shortcut="left", limitations={archive_open=false}, show=true},
                 add_recipe_below = {limitations={archive_open=false}},
-                edit = {shortcut="control-left", limitations={archive_open=false}, show=true},
+                edit_temperature = {shortcut="control-left", limitations={archive_open=false}, show=true},
+                edit_fuel = {limitations={archive_open=false}},
                 copy = {shortcut="shift-right"},
                 paste = {shortcut="shift-left", limitations={archive_open=false}},
                 add_to_cursor = {shortcut="alt-right"},
