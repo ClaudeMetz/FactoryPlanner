@@ -108,11 +108,16 @@ function Fuel:validate()
 
     if self.valid then
         local burner = (not self.parent.proto.simplified) and self.parent.proto.burner or nil
+        -- Machine being simplified or not having a burner anymore invalidates the fuel
+        self.valid = (not burner.simplified) and self.valid
 
-        -- Machine is simplified, doesn't have a burner anymore, or has a different category, is all bad
-        if not burner or burner.combined_category ~= self.proto.combined_category then
-            self.proto = prototyper.util.simplify_prototype(self.proto, "combined_category")
-            self.valid = false
+        if self.valid and burner.combined_category ~= self.proto.combined_category then
+            if burner.categories[self.proto.category] then
+                -- Fix the fuel if the combined category changed but it still has a compatible category
+                self.proto = prototyper.util.find("fuels", self.proto.name, burner.combined_category)
+            else
+                self.valid = false
+            end
         end
     end
 

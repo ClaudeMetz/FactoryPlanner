@@ -361,7 +361,6 @@ function Line:validate()
         self.valid = (not self.priority_product.simplified) and self.valid
     end
 
-    -- Updates temperature data caches and migrates previous temperature choices
     if self.valid then self:build_temperatures_data(self.temperatures or {}) end
 
     self.surface_compatibility = nil  -- reset cached value
@@ -390,6 +389,8 @@ function Line:repair(player)
     if self.valid and self.priority_product and self.priority_product.simplified then
         self.priority_product = nil
     end
+
+    if self.valid then self:build_temperatures_data(self.temperatures or {}) end
 
     return self.valid
 end
