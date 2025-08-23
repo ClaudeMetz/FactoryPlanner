@@ -4,11 +4,12 @@ Date: 00. 00. 0000
   Features:
     - Added a dropdown to the factory edit dialog to move it to a different district
   Changes:
-    -
+    - Added support for pasting fluids over other fluids to adjust their temperature
   Bugfixes:
     - Fixed a couple of migration issues related to fuels (#568)
     - Fixed a crash when trying to create a combinator containing fluids with temperature (#575)
     - Fixed that putting items into a combinator would sometimes increase their amount by 1
+    - Fixed various issues related to pasting items with temperature
 
 ---------------------------------------------------------------------------------------------------
 Version: 2.0.33

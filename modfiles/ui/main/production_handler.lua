@@ -269,8 +269,45 @@ local function handle_item_click(player, tags, action)
 
     elseif action == "copy" then
         if item.proto.type == "entity" then return end
-        local copyable_item = {class="SimpleItem", proto=item.proto, amount=item.amount}
+
+        local proto = item.proto
+        if item.proto.type == "fluid" then
+            if not line.temperatures[item.proto.name] then return end
+            local temperature = line.temperatures[item.proto.name]
+            proto = prototyper.util.find("items", proto.name .. "-" .. temperature, "fluid")
+        end
+
+        local copyable_item = {class="SimpleItem", proto=proto, amount=item.amount}
         util.clipboard.copy(player, copyable_item)
+
+    elseif action == "paste" then
+        if item.proto.type == "entity" then return end
+
+        -- Custom wrapper to paste onto since SimpleItem is not a real object
+        local target = {
+            paste = function(self, object)
+                if object.class == "SimpleItem" or object.class == "Fuel" then
+                    if object.proto.type ~= "fluid" or item.proto.type ~= "fluid" then
+                        return false, "incompatible"
+                    end
+
+                    -- SimpleItems will always be a fluid with temperature
+                    if object.class == "SimpleItem" then
+                        if object.proto.base_name ~= item.proto.name then return false, "incompatible" end
+                        line.temperatures[item.proto.name] = object.proto.temperature
+                    else  -- "Fuel"
+                        if object.proto.name ~= item.proto.name then return false, "incompatible" end
+                        line.temperatures[item.proto.name] = object.temperature
+                    end
+
+                    return true, nil
+                else
+                    return false, "incompatible_class"
+                end
+            end,
+            class = "Item"
+        }
+        util.clipboard.paste(player, target)
 
     elseif action == "add_to_cursor" then
         if item.proto.type == "entity" then return end
@@ -435,6 +472,7 @@ listeners.gui = {
                 add_recipe_below = {limitations={archive_open=false}},
                 edit_temperature = {shortcut="control-left", limitations={archive_open=false}, show=true},
                 copy = {shortcut="shift-right"},
+                paste = {shortcut="shift-left", limitations={archive_open=false}},
                 add_to_cursor = {shortcut="alt-right"},
                 factoriopedia = {shortcut="alt-left"}
             },

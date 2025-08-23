@@ -86,7 +86,8 @@ function Fuel:pack()
     return {
         class = self.class,
         proto = prototyper.util.simplify_prototype(self.proto, "combined_category"),
-        temperature = self.temperature
+        temperature = self.temperature,
+        amount = self.amount  -- only used for paste
     }
 end
 
@@ -96,6 +97,7 @@ end
 local function unpack(packed_self, parent)
     local unpacked_self = init(packed_self.proto, parent)
     unpacked_self.temperature = packed_self.temperature  -- will be migrated through validation
+    unpacked_self.amount = packed_self.amount  -- only used for paste
 
     return unpacked_self
 end

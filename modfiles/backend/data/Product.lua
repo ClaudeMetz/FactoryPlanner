@@ -62,20 +62,22 @@ end
 ---@return boolean success
 ---@return string? error
 function Product:paste(object)
-    if object.class == "Product" or object.class == "SimpleItem" or object.class == "Fuel" then
+    -- Product objects are converted to SimpleItems when copied, so they can't appear here
+    if object.class == "SimpleItem" or object.class == "Fuel" then
+        local proto = object.proto
+        if object.class == "Fuel" and proto.type == "fluid" then
+            proto = prototyper.util.find("items", proto.name .. "-" .. object.temperature, "fluid")
+        end
+
         -- Avoid duplicate items, but allow pasting over the same item proto
-        local existing_item = self.parent:find({proto=object.proto})
-        if existing_item and not (self.proto.name == object.proto.name) then
+        local existing_item = self.parent:find({proto=proto})
+        if existing_item and not (self.proto.name == proto.name) then
             return false, "already_exists"
         end
 
-        if object.class == "Product" then
-            self.parent:replace(self, object)
-        elseif object.class == "SimpleItem" or object.class == "Fuel" then
-            local product = init(object.proto)  -- defined_by = "amount"
-            product.required_amount = object.amount
-            self.parent:replace(self, product)
-        end
+        local product = init(proto)  -- defined_by = "amount"
+        product.required_amount = object.amount
+        self.parent:replace(self, product)
 
         return true, nil
     else
