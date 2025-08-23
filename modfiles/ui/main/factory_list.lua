@@ -31,8 +31,8 @@ local function change_factory_archived(player, to_archive)
     end  -- if it's pulling the last factory from the archive, keep the context on it
 
     factory.archived = to_archive
-    factory.parent:shift(factory, "next", nil)  -- shift to end
     factory.parent.needs_refresh = true
+    factory.parent:shift(factory, "next", nil)  -- shift to end
 
     -- Reset deletion if a deleted factory is un-archived
     if not to_archive and factory.tick_of_deletion then

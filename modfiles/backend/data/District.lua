@@ -50,6 +50,7 @@ end
 function District:insert(factory, relative_object, direction)
     factory.parent = self
     self:_insert(factory, relative_object, direction)
+    self.needs_refresh = true
 end
 
 ---@param factory Factory
@@ -58,6 +59,7 @@ function District:remove(factory)
     if factory.tick_of_deletion then util.nth_tick.cancel(factory.tick_of_deletion) end
     factory.parent = nil
     self:_remove(factory)
+    self.needs_refresh = true
 end
 
 ---@param factory Factory
@@ -92,6 +94,11 @@ end
 ---@return number count
 function District:count(filter, pivot, direction)
     return self:_count(filter, pivot, direction)
+end
+
+---@return LocalisedString caption
+function District:tostring()
+    return "[img=" .. self.location_proto.sprite .. "] " .. self.name
 end
 
 
