@@ -7,6 +7,8 @@ Date: 00. 00. 0000
     -
   Bugfixes:
     - Fixed a couple of migration issues related to fuels (#568)
+    - Fixed a crash when trying to create a combinator containing fluids with temperature (#575)
+    - Fixed that putting items into a combinator would sometimes increase their amount by 1
 
 ---------------------------------------------------------------------------------------------------
 Version: 2.0.33

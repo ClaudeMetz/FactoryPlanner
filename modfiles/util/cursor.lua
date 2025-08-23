@@ -117,7 +117,7 @@ end
 local function add_to_item_combinator(player, blueprint_entity, item_proto, amount)
     local timescale = util.globals.preferences(player).timescale
     local item_signals, filter_matched = {}, false
-    local item_name = (item_proto.temperature) and item_proto.base_name or item_proto.name
+    local item_name = item_proto.base_name or item_proto.name
 
     do
         if not blueprint_entity then goto skip_cursor end
@@ -146,7 +146,7 @@ local function add_to_item_combinator(player, blueprint_entity, item_proto, amou
             name = item_name,
             quality = "normal",
             comparator = "=",
-            count = math.ceil(amount * timescale)
+            count = math.ceil(amount * timescale - 0.001)
         })
     end
 

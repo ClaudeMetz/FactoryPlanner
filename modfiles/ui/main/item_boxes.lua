@@ -193,10 +193,10 @@ local function put_ingredients_into_cursor(player, _, _)
         if amount > MAGIC_NUMBERS.margin_of_error then
             table.insert(ingredient_filters, {
                 type = ingredient.proto.type,
-                name = ingredient.proto.name,
+                name = ingredient.proto.base_name or ingredient.proto.name,
                 quality = "normal",
                 comparator = "=",
-                count = math.ceil(amount)
+                count = math.ceil(amount - 0.001)
             })
         end
     end
