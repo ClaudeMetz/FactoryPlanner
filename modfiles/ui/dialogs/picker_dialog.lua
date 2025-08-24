@@ -316,9 +316,8 @@ local function add_item_pane(parent_flow, modal_data, item_category, item)
 
     flow_belts.add{type="label", caption="x"}
 
-    local belt_filter = {{filter="type", type="transport-belt"}, {filter="hidden", invert=true, mode="and"}}
     local choose_belt_button = flow_belts.add{type="choose-elem-button", elem_type="entity",
-        tags={mod="fp", on_gui_elem_changed="picker_choose_belt"}, elem_filters=belt_filter,
+        tags={mod="fp", on_gui_elem_changed="picker_choose_belt"}, elem_filters=util.gui.compile_elem_filter("belts"),
         style="fp_sprite-button_inset"}
     modal_elements["belt_choice_button"] = choose_belt_button
 

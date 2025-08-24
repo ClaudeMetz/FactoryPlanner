@@ -2,11 +2,11 @@
 Version: 0.00.00
 Date: 00. 00. 0000
   Features:
-    - 
+    -
   Changes:
-    - 
+    - Bumped the required Factorio version to 2.0.58
   Bugfixes:
-    - 
+    - Fixed the beacon picker not always showing the correct options
 
 ---------------------------------------------------------------------------------------------------
 Version: 2.0.34

@@ -12,7 +12,7 @@ prototyper = {
 -- removed when the user tells the factory to repair itself, giving him a chance to re-add the
 -- missing mods. It is also a better separation of responsibilities and avoids some redundant code.
 
--- Load order is important here: machines->recipes->items->fuels
+-- Load order is important here: machines->recipes->items->fuels->modules->beacons->...
 -- The boolean indicates whether this prototype has categories or not
 ---@type { [DataType]: boolean }
 prototyper.data_types = {machines = true, recipes = false, items = true, fuels = true,

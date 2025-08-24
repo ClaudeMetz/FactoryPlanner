@@ -73,9 +73,8 @@ local function add_beacon_frame(parent_flow, modal_data)
     flow_beacon.style.width = MAGIC_NUMBERS.module_dialog_element_width
 
     flow_beacon.add{type="label", caption={"fp.pu_beacon", 1}, style="semibold_label"}
-    local beacon_filter = {{filter="type", type="beacon"}, {filter="hidden", invert=true, mode="and"}}
     local button_beacon = flow_beacon.add{type="choose-elem-button", elem_type="entity-with-quality",
-        tags={mod="fp", on_gui_elem_changed="select_beacon"}, elem_filters=beacon_filter,
+        tags={mod="fp", on_gui_elem_changed="select_beacon"}, elem_filters=util.gui.compile_elem_filter("beacons"),
         style="fp_sprite-button_inset"}
     button_beacon.elem_value = beacon:elem_value()
     button_beacon.style.right_margin = 12

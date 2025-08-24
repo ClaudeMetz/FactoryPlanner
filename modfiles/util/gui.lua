@@ -186,6 +186,9 @@ function _gui.confirm_expression_field(textfield)
 end
 
 
+---@param parent_flow LuaGuiElement
+---@param selected_index integer
+---@param tags Tags
 function _gui.add_quality_dropdown(parent_flow, selected_index, tags)
     local items = {}
     for _, quality in pairs(storage.prototypes.qualities) do
@@ -195,6 +198,17 @@ function _gui.add_quality_dropdown(parent_flow, selected_index, tags)
 
     parent_flow.add{type="drop-down", items=items, selected_index=selected_index,
         style="fp_drop-down_slim", tags=tags}
+end
+
+
+---@param data_type DataType
+---@return ElemFilter[] elem_filter
+function _gui.compile_elem_filter(data_type)
+    local names = {}
+    for _, proto in pairs(storage.prototypes[data_type]) do
+        table.insert(names, proto.name)
+    end
+    return {{filter="name", name=names}}
 end
 
 return _gui
