@@ -18,6 +18,7 @@ local function refresh_solver_frame(player)
     solver_flow.clear()
 
     local factory_data = solver.generate_factory_data(player, factory)
+
     local matrix_metadata = matrix_engine.get_matrix_solver_metadata(factory_data)
     if matrix_metadata.num_rows == 0 then return end  -- skip if there are no active lines
     local linear_dependence_data = matrix_engine.get_linear_dependence_data(factory_data, matrix_metadata)
@@ -68,9 +69,46 @@ local function refresh_solver_frame(player)
         item_count = item_count + #matrix_metadata.free_items
 
         if needs_choice then
-            local flow_constrained = solver_flow.add{type="flow", direction="horizontal"}
-            build_item_flow(flow_constrained, "constrained", linear_dependence_data.allowed_free_items)
-            item_count = item_count + #linear_dependence_data.allowed_free_items
+            log("[FP] SolverUI: Needs choice. Processing items.")
+            local last_recipe_items_to_display = {}
+            local other_items = {}
+            local allowed_free_items = linear_dependence_data.allowed_free_items
+
+            local function base_name(item)
+                if (item.base_name ~= nil) then return item.base_name
+                else return item.name
+                end
+            end
+
+            local last_recipe_map = {}
+            for _, item in ipairs(factory.last_recipe_items or {}) do
+                last_recipe_map[base_name(item)] = true
+            end
+
+            for _, item in ipairs(allowed_free_items) do
+                if last_recipe_map[base_name(item)] then
+                    table.insert(last_recipe_items_to_display, item)
+                else
+                    table.insert(other_items, item)
+                end
+            end
+            log("[FP] SolverUI: Separated into " .. #last_recipe_items_to_display .. " from last recipe and " .. #other_items .. " other items.")
+
+            if #last_recipe_items_to_display > 0 then
+                solver_flow.add{type="label", caption={"fp.last_recipe_items"}, style="bold_label"}
+                local flow_priority = solver_flow.add{type="flow", direction="horizontal"}
+                build_item_flow(flow_priority, "constrained", last_recipe_items_to_display)
+                item_count = item_count + #last_recipe_items_to_display
+            end
+
+            if #other_items > 0 then
+                if #last_recipe_items_to_display > 0 then
+                    solver_flow.add{type="label", caption={"fp.other_items"}, style="bold_label"}
+                end
+                local flow_constrained = solver_flow.add{type="flow", direction="horizontal"}
+                build_item_flow(flow_constrained, "constrained", other_items)
+                item_count = item_count + #other_items
+            end
         end
 
         -- This is some total bullshit because extra_bottom_padding_when_activated doesn't work
@@ -78,6 +116,8 @@ local function refresh_solver_frame(player)
         local interface_width = util.globals.ui_state(player).main_dialog_dimensions.width
         local box_width = interface_width - MAGIC_NUMBERS.list_width
         solver_flow.style.bottom_padding = (total_width > box_width) and 16 or 4
+    else
+        log("[FP] SolverUI: Solver is balanced.")
     end
 end
 
