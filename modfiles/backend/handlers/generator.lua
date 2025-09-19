@@ -806,11 +806,13 @@ function generator.items.generate()
 
 
     local relevant_items = {item={}, fluid={}, entity={}}
+    local fluid_has_temperature = {}
     -- Extract items from recipes and note whether they are ever used as a product
     for _, recipe_proto in pairs(storage.prototypes.recipes) do
         for _, item_category in pairs({"products", "ingredients"}) do
             for _, item_data in pairs(recipe_proto[item_category]) do
                 local type_data = relevant_items[item_data.type]
+
                 if type_data[item_data.name] == nil then
                     type_data[item_data.name] = {
                         ingredient_only = true,
@@ -818,10 +820,31 @@ function generator.items.generate()
                         base_name = item_data.base_name
                     }
                 end
+
                 if item_category == "products" then
                     type_data[item_data.name].ingredient_only = false
                 end
+
+                if item_data.type == "fluid" then
+                    if item_data.temperature then
+                        fluid_has_temperature[item_data.base_name] = true
+                    else
+                        fluid_has_temperature[item_data.name] = fluid_has_temperature[item_data.name] or false
+                    end
+                end
             end
+        end
+    end
+
+    -- Add a default_temperature version for fluids that don't have any
+    for name, exists in pairs(fluid_has_temperature) do
+        if not exists then
+            local temperature = prototypes.fluid[name].default_temperature
+            relevant_items["fluid"][name .. "-" .. temperature] = {
+                ingredient_only = true,
+                temperature = temperature,
+                base_name = name
+            }
         end
     end
 
