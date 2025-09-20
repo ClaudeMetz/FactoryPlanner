@@ -59,6 +59,10 @@ function Beacon:profile_multiplier()
     end
 end
 
+---@return boolean
+function Beacon:is_mono_beacon()
+    return (#self.proto.profile == 2 and self.proto.profile[2] == 0)
+end
 
 function Beacon:summarize_effects()
     local profile_mulitplier = self:profile_multiplier()
@@ -168,6 +172,9 @@ function Beacon:validate()
 
     self.valid = self.parent:uses_beacon_effects() and self.valid
     self.valid = self.module_set:validate() and self.valid
+
+    -- Reset amount since the user can't change it in the dialog
+    if self:is_mono_beacon() then self.amount = 1 end
 
     return self.valid
 end

@@ -182,6 +182,9 @@ function Line:set_beacon(beacon)
     if beacon ~= nil then
         self.beacon.parent = self
 
+        -- Reset amount since the user can't change it in the dialog
+        if self.beacon:is_mono_beacon() then self.beacon.amount = 1 end
+
         beacon.module_set:normalize({compatibility=true, effects=true})
         -- Normalization already summarizes beacon's effects
     else

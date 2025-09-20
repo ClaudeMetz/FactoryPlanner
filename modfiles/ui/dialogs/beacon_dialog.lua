@@ -80,15 +80,16 @@ local function add_beacon_frame(parent_flow, modal_data)
     button_beacon.style.right_margin = 12
     modal_elements["beacon_button"] = button_beacon
 
+    local is_mono_beacon = beacon:is_mono_beacon()
     flow_beacon.add{type="label", caption={"fp.info_label", {"fp.amount"}}, tooltip={"fp.beacon_amount_tt"},
         style="semibold_label"}
     local beacon_amount = (beacon.amount ~= 0) and tostring(beacon.amount) or ""
-    local amount_width = 40
+    if is_mono_beacon then beacon_amount = 1 end
     local textfield_amount = flow_beacon.add{type="textfield", text=beacon_amount,
         tags={mod="fp", on_gui_text_changed="beacon_amount", on_gui_confirmed="confirm_beacon",
-        width=amount_width}, tooltip={"fp.expression_textfield"}}
-    textfield_amount.style.width = amount_width
-    util.gui.select_all(textfield_amount)
+        width=40}, tooltip={"fp.expression_textfield"}, enabled=(not is_mono_beacon)}
+    textfield_amount.style.width = 40
+   if not is_mono_beacon then util.gui.select_all(textfield_amount) end
     modal_elements["beacon_amount"] = textfield_amount
 
     local label_profile = flow_beacon.add{type="label", tooltip={"fp.beacon_profile_tt"}}
@@ -113,9 +114,9 @@ end
 
 
 local function update_profile_label(modal_data)
-    local profile_multiplier = modal_data.object:profile_multiplier()
-    local label_profile = modal_data.modal_elements.profile_label
-    label_profile.caption = (profile_multiplier > 0) and "x " .. profile_multiplier or "x ---"
+    local caption = (modal_data.object.amount == 0) and "x -"
+        or "x " .. modal_data.object:profile_multiplier()
+    modal_data.modal_elements.profile_label.caption = caption
 end
 
 local function update_dialog_submit_button(modal_data)
@@ -208,6 +209,7 @@ local function open_beacon_dialog(player, modal_data)
         modal_data.object = Beacon.init(default_beacon.proto --[[@as FPBeaconPrototype]], line)
         modal_data.object.quality_proto = default_beacon.quality
         modal_data.object.amount = default_beacon.beacon_amount or 0
+        if modal_data.object:is_mono_beacon() then modal_data.object.amount = 1 end
         modal_data.object.module_set:ingest_default(default_beacon.modules)
         line:set_beacon(modal_data.object)
     end
