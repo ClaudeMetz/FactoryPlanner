@@ -7,6 +7,7 @@ Date: 00. 00. 0000
     - Bumped the required Factorio version to 2.0.58
   Bugfixes:
     - Fixed a crash when selecting certain recipes with fluid ingredients (#607)
+    - Fixed that shifting a recipe by 5 on a subfloor could shift it into the first position (#594)
     - Fixed the beacon picker not always showing the correct options
 
 ---------------------------------------------------------------------------------------------------
