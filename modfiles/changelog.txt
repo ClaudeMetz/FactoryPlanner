@@ -2,7 +2,15 @@
 Version: 0.00.00
 Date: 00. 00. 0000
   Features:
-    -
+    - 
+  Changes:
+    - 
+  Bugfixes:
+    - 
+
+---------------------------------------------------------------------------------------------------
+Version: 2.0.35
+Date: 21. 09. 2025
   Changes:
     - Bumped the required Factorio version to 2.0.58
     - Improved support for beacon profiles with better UI and explicit handling of one-only beacons
