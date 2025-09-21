@@ -320,7 +320,6 @@ local function open_preferences_dialog(player, modal_data)
     -- Right side
     local right_content_frame = modal_elements.secondary_frame
     add_views_box(player, right_content_frame, modal_elements)
-    right_content_frame.add{type="empty-widget", style="flib_vertical_pusher"}
     add_default_proto_box(player, right_content_frame, "belts", nil, "lanes_or_belts")
     add_default_proto_box(player, right_content_frame, "pumps", nil, "quality_picker")
     add_default_proto_box(player, right_content_frame, "wagons", 1, "quality_picker")  -- cargo-wagon
