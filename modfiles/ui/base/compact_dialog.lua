@@ -484,6 +484,13 @@ local function build_compact_factory(player)
 end
 
 
+local function change_floor(player, destination)
+    if util.context.ascend_floors(player, destination) then
+        refresh_compact_factory(player)
+    end
+end
+
+
 local function handle_ingredient_click(player, tags, action)
     local floor = OBJECT_INDEX[tags.floor_id]
     local item = floor.ingredients[tags.item_index]
@@ -586,8 +593,7 @@ factory_listeners.gui = {
         {
             name = "change_compact_floor",
             handler = (function(player, tags, _)
-                local floor_changed = util.context.ascend_floors(player, tags.destination)
-                if floor_changed then refresh_compact_factory(player) end
+                change_floor(player, tags.destination)
             end)
         },
         {
@@ -679,6 +685,13 @@ factory_listeners.gui = {
 }
 
 factory_listeners.misc = {
+    fp_up_floor = (function(player, _, _)
+        if compact_dialog.is_in_focus(player) then change_floor(player, "up") end
+    end),
+    fp_top_floor = (function(player, _, _)
+        if compact_dialog.is_in_focus(player) then change_floor(player, "top") end
+    end),
+
     build_gui_element = (function(player, event)
         if event.trigger == "compact_factory" then
             build_compact_factory(player)

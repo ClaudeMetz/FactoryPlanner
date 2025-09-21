@@ -84,7 +84,6 @@ end
 
 local function change_floor(player, destination)
     if util.context.ascend_floors(player, destination) then
-        -- Only refresh if the floor was indeed changed
         util.raise.refresh(player, "production")
     end
 end
