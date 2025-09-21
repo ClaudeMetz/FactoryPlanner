@@ -9,6 +9,7 @@ Date: 00. 00. 0000
   Bugfixes:
     - Fixed a crash when selecting certain recipes with fluid ingredients (#607)
     - Fixed a crash caused by some specific modded fluids with temperature (#597)
+    - Fixed a crash caused by module copy/paste allowing amounts that exceed the available slots (#602)
     - Fixed that shifting a recipe by 5 on a subfloor could shift it into the first position (#594)
     - Fixed that the hotkeys to go up floors didn't work in the compact dialog (#600)
     - Fixed the beacon picker not always showing the correct options

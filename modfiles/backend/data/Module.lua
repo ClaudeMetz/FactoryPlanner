@@ -69,7 +69,8 @@ function Module:paste(object)
         ---@cast object Module
         if self.parent:check_compatibility(object.proto) then
             if self.proto == object.proto and self.quality_proto == object.quality_proto then
-                self:set_amount(math.min(object.amount, self.parent.module_limit))
+                local available_slots = self.parent.module_limit - self.parent.module_count + self.amount
+                self:set_amount(math.min(object.amount, available_slots))
 
                 self.parent:normalize({effects=true})
                 return true, nil
@@ -78,7 +79,8 @@ function Module:paste(object)
                 local parent = self.parent  -- retain here because it can be changed below
 
                 if existing_module then
-                    existing_module:set_amount(existing_module.amount + object.amount)
+                    local added_amount = math.min(object.amount, self.amount)
+                    existing_module:set_amount(existing_module.amount + added_amount)
                     parent:remove(self)
                 else
                     object:set_amount(math.min(object.amount, self.amount))
