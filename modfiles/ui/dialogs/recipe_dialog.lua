@@ -74,7 +74,7 @@ local function match_recipes(player, modal_data, proto)
     -- Return result, format: return recipe, error-message, filters
     if relevant_recipes_count == 0 then
         local error = (user_disabled_recipe) and {"fp.error_no_enabled_recipe"} or {"fp.error_no_relevant_recipe"}
-        return nil, error, nil
+        return nil, error, filters
     else
         return relevant_recipes, nil, filters
     end
@@ -242,9 +242,7 @@ local function apply_recipe_filter(player, search_term)
     local modal_data = util.globals.modal_data(player)  --[[@as table]]
     local disabled, hidden = modal_data.filters.disabled, modal_data.filters.hidden
 
-    local any_recipe_visible, desired_scroll_pane_height = false, 64+24
-    if modal_data.temperature then desired_scroll_pane_height = desired_scroll_pane_height + 70 end
-
+    local any_recipe_visible, added_scroll_pane_height = false, 0
     for _, group in ipairs(modal_data.modal_elements.groups) do
         local group_data = modal_data.recipe_groups[group.name]
         local any_group_recipe_visible = false
@@ -266,13 +264,16 @@ local function apply_recipe_filter(player, search_term)
 
         local button_table_height = math.ceil(table_size(group.recipe_buttons) / MAGIC_NUMBERS.recipes_per_row) * 40
         local additional_height = math.max(88, button_table_height + 24) + 4
-        desired_scroll_pane_height = desired_scroll_pane_height + additional_height
+        added_scroll_pane_height = added_scroll_pane_height + additional_height
     end
 
     modal_data.modal_elements.warning_label.visible = not any_recipe_visible
 
-    local scroll_pane_height = math.min(desired_scroll_pane_height, modal_data.dialog_maximal_height - 80)
-    modal_data.modal_elements.content_frame.style.height = scroll_pane_height
+    added_scroll_pane_height = math.max(added_scroll_pane_height, 42)  -- set minimum when no recipe matches
+    local base_scroll_pane_height = (modal_data.temperature) and (64+24)+70 or 64+24
+    local desired_scroll_pane_height = base_scroll_pane_height + added_scroll_pane_height
+    local bounded_scroll_pane_height = math.min(desired_scroll_pane_height, modal_data.dialog_maximal_height - 80)
+    modal_data.modal_elements.content_frame.style.height = bounded_scroll_pane_height
 end
 
 
@@ -290,8 +291,8 @@ local function apply_temperature(player, temperature)
 
     local name = modal_data.base_fluid.name .. "-" .. temperature
     local proto = prototyper.util.find("items", name, "fluid")
-    local result, _, filters = match_recipes(player, modal_data, proto)  -- can't error
-    modal_data.result = result
+    local result, _, filters = match_recipes(player, modal_data, proto)
+    modal_data.result = result or {}  -- no match for a given temperature is fine
     modal_data.filters = filters
 end
 
