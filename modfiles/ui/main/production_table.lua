@@ -196,15 +196,16 @@ function builders.machine(line, parent_flow, metadata)
         metadata.tooltips[button.index] = tooltip
 
         if machine:uses_effects() then
-            add_module_flow(parent_flow, machine.module_set, metadata)
             local module_set = machine.module_set
-            if module_set.module_limit > module_set.module_count then
+            if module_set.module_count == 0 then
                 local module_tooltip = {"", {"fp.add_machine_module"}, "\n", {"fp.shift_to_paste"}}
                 local module_button = parent_flow.add{type="sprite-button", sprite="utility/add",
                     tooltip=module_tooltip, tags={mod="fp", on_gui_click="add_machine_module", machine_id=machine.id},
                     style="fp_sprite-button_inset", mouse_button_filter={"left"}, enabled=(not metadata.archive_open)}
                 module_button.style.margin = 2
                 module_button.style.padding = 4
+            else
+                add_module_flow(parent_flow, module_set, metadata)
             end
         end
     end
