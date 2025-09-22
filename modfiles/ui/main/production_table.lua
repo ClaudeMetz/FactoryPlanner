@@ -141,6 +141,9 @@ end
 
 
 local function add_module_flow(parent_flow, module_set, metadata)
+    local module_flow = parent_flow.add{type="flow", direction="horizontal"}
+    module_flow.style.horizontal_spacing = 1
+
     for module in module_set:iterator() do
         local quality_proto = module.quality_proto
         local title_line = (not quality_proto.always_show) and {"fp.tt_title", module.proto.localised_name}
@@ -149,11 +152,20 @@ local function add_module_flow(parent_flow, module_set, metadata)
         local tooltip = {"", title_line, number_line, format_effects_tooltip(module.effects_tooltip),
             "\n", metadata.action_tooltips["act_on_line_module"]}
 
-        local button = parent_flow.add{type="sprite-button", sprite=module.proto.sprite, number=module.amount,
+        local button = module_flow.add{type="sprite-button", sprite=module.proto.sprite, number=module.amount,
             tags={mod="fp", on_gui_click="act_on_line_module", module_id=module.id, on_gui_hover="set_tooltip",
             context="production_table"}, quality=quality_proto.name, style="flib_slot_button_default_small",
             mouse_button_filter={"left-and-right"}, raise_hover_events=true}
         metadata.tooltips[button.index] = tooltip
+    end
+
+    if module_set.module_count < module_set.module_limit then
+        local module_tooltip = {"", {"fp.add_module"}, "\n", {"fp.shift_to_paste"}}
+        local module_button = parent_flow.add{type="sprite-button", sprite="utility/add",
+            tooltip=module_tooltip, tags={mod="fp", on_gui_click="add_module", object_id=module_set.parent.id},
+            style="fp_sprite-button_inset", mouse_button_filter={"left"}, enabled=(not metadata.archive_open)}
+        module_button.style.top_margin = 2
+        module_button.style.padding = 4
     end
 end
 
@@ -196,23 +208,14 @@ function builders.machine(line, parent_flow, metadata)
         metadata.tooltips[button.index] = tooltip
 
         if machine:uses_effects() then
-            local module_set = machine.module_set
-            if module_set.module_count == 0 then
-                local module_tooltip = {"", {"fp.add_machine_module"}, "\n", {"fp.shift_to_paste"}}
-                local module_button = parent_flow.add{type="sprite-button", sprite="utility/add",
-                    tooltip=module_tooltip, tags={mod="fp", on_gui_click="add_machine_module", machine_id=machine.id},
-                    style="fp_sprite-button_inset", mouse_button_filter={"left"}, enabled=(not metadata.archive_open)}
-                module_button.style.margin = 2
-                module_button.style.padding = 4
-            else
-                add_module_flow(parent_flow, module_set, metadata)
-            end
+            add_module_flow(parent_flow, machine.module_set, metadata)
         end
     end
 end
 
 function builders.beacon(line, parent_flow, metadata)
     if line.class == "Floor" or not line:uses_beacon_effects() then return end
+    parent_flow.style.horizontal_spacing = 2
 
     local beacon = line.beacon
     if beacon == nil then

@@ -141,13 +141,17 @@ local function handle_machine_click(player, tags, action)
     end
 end
 
-local function handle_machine_module_add(player, tags, event)
-    local machine = OBJECT_INDEX[tags.machine_id]
+local function handle_module_add(player, tags, event)
+    local object = OBJECT_INDEX[tags.object_id]
 
     if event.shift then  -- paste
-        util.clipboard.paste(player, machine)
+        util.clipboard.paste(player, object)
     else
-        util.raise.open_dialog(player, {dialog="machine", modal_data={machine_id=machine.id}})
+        if object.class == "Machine" then
+            util.raise.open_dialog(player, {dialog="machine", modal_data={machine_id=object.id}})
+        else  -- "Beacon"
+            util.raise.open_dialog(player, {dialog="beacon", modal_data={line_id=object.parent.id}})
+        end
     end
 end
 
@@ -409,8 +413,8 @@ listeners.gui = {
             handler = handle_machine_click
         },
         {
-            name = "add_machine_module",
-            handler = handle_machine_module_add
+            name = "add_module",
+            handler = handle_module_add
         },
         {
             name = "act_on_line_beacon",
