@@ -109,7 +109,10 @@ local function update_line(line_data, aggregate, looped_fuel)
     -- Determine ingredients
     local Ingredient = structures.class.init()
     for _, ingredient in pairs(line_data.ingredients) do
-        local ingredient_amount = (ingredient.amount * production_ratio * line_data.resource_drain_rate)
+        local ingredient_amount = (ingredient.amount * production_ratio)
+        if ingredient.type ~= "fluid" then  -- only applies to mining fluids
+            ingredient_amount = ingredient_amount * line_data.resource_drain_rate
+        end
 
         structures.class.add(Ingredient, ingredient, ingredient_amount)
 

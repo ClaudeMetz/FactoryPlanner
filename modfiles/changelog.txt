@@ -2,11 +2,11 @@
 Version: 0.00.00
 Date: 00. 00. 0000
   Features:
-    - 
+    -
   Changes:
-    - 
+    -
   Bugfixes:
-    - 
+    - Fixed that the resource_drain_rate bonus was being applied to the mining fluid (#619)
 
 ---------------------------------------------------------------------------------------------------
 Version: 2.0.36

@@ -656,8 +656,11 @@ function matrix_engine.get_line_aggregate(line_data, player_index, floor_id, mac
     end
 
     for _, ingredient in pairs(line_data.ingredients) do
-        structures.class.add(line_aggregate.Ingredient, ingredient,
-            ingredient.amount * total_crafts * line_data.resource_drain_rate)
+        local ingredient_amount = (ingredient.amount * total_crafts)
+        if ingredient.type ~= "fluid" then  -- only applies to mining fluids
+            ingredient_amount = ingredient_amount * line_data.resource_drain_rate
+        end
+        structures.class.add(line_aggregate.Ingredient, ingredient, ingredient_amount)
     end
 
     -- Determine energy consumption (including potential fuel needs) and emissions
