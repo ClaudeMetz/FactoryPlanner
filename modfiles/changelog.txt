@@ -6,6 +6,7 @@ Date: 00. 00. 0000
   Changes:
     -
   Bugfixes:
+    - Fixed quality effects being applied incorrectly if the normal quality has a level other than 0 (#605)
     - Fixed that the resource_drain_rate bonus was being applied to the mining fluid (#619)
 
 ---------------------------------------------------------------------------------------------------

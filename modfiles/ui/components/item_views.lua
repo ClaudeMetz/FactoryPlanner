@@ -198,9 +198,7 @@ function item_views.rebuild_data(player)
         pumping_speed = pump_proto.get_pumping_speed(default_pump.quality.name) * 60,
         cargo_wagon_capactiy = cargo_wagon_proto.get_inventory_size(defines.inventory.cargo_wagon,
             default_cargo_wagon.quality.name),
-        -- TODO This can't check whether FluidWagonPrototype::quality_affects_capacity is set to true
-        --   and there is no API to get capacity dependent on quality
-        fluid_wagon_capacity = fluid_wagon_proto.fluid_capacity * default_cargo_wagon.quality.multiplier,
+        fluid_wagon_capacity = fluid_wagon_proto.get_fluid_capacity(default_fluid_wagon.quality.name),
         formatting_precision = 4
     }
 end

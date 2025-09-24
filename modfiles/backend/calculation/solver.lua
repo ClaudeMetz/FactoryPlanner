@@ -141,7 +141,7 @@ local function generate_floor_data(player, factory, floor)
                     resource_drain_rate = resource_drain_rate
                         * machine.quality_proto.mining_drill_resource_drain_multiplier
                 elseif prototype_category ~= nil then  -- anything non-custom
-                    machine_speed = machine_speed * machine.quality_proto.multiplier
+                    machine_speed = machine_speed * (1 + (machine.quality_proto.level * 0.3))
                 end
                 line_data.machine_speed = machine_speed
                 line_data.resource_drain_rate = resource_drain_rate

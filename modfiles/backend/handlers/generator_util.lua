@@ -317,6 +317,12 @@ function generator_util.is_irrelevant_machine(proto)
     return false
 end
 
+---@param normal_quality_value number
+---@return number base_value
+function generator_util.get_base_value(normal_quality_value)
+    if normal_quality_value == nil then return nil end
+    return normal_quality_value / (1 + (prototypes.quality["normal"].level * 0.3))
+end
 
 -- Finds a sprite for the given entity prototype
 ---@param proto LuaEntityPrototype

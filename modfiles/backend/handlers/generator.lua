@@ -109,7 +109,10 @@ function generator.machines.generate()
         -- Determine data related to the energy source
         local energy_type, emissions_per_joule = "", {}  -- no emissions if no energy source is present
         local burner = nil  ---@type MachineBurner
-        local energy_usage, energy_drain = (proto.energy_usage or proto.get_max_energy_usage() or 0), 0
+
+        local max_usage = generator_util.get_base_value(proto.get_max_energy_usage())
+        local energy_usage = proto.energy_usage or max_usage or 0
+        local energy_drain = 0
 
         -- Determine the name of the item that actually builds this machine for the item requester
         -- There can technically be more than one, but bots use the first one, so I do too
@@ -178,7 +181,7 @@ function generator.machines.generate()
             ingredient_limit = (proto.ingredient_count or 255),
             product_limit = (proto.max_item_product_count or 255),
             fluid_channels = fluid_channels,
-            speed = proto.get_crafting_speed(),
+            speed = generator_util.get_base_value(proto.get_crafting_speed()),
             energy_type = energy_type,
             energy_usage = energy_usage,
             energy_drain = energy_drain,
@@ -244,7 +247,7 @@ function generator.machines.generate()
             local category = (fixed_fluid) and ("offshore-pump-" .. fixed_fluid) or "offshore-pump"
             local machine = generate_category_entry(category, proto, nil)
             if machine then
-                machine.speed = proto.get_pumping_speed()
+                machine.speed = generator_util.get_base_value(proto.get_pumping_speed())
                 insert_prototype(machines, machine, category)
             end
 
@@ -1071,7 +1074,7 @@ function generator.pumps.generate()
                 sprite = sprite,
                 elem_type = "entity",
                 rich_text = "[entity=" .. proto.name .. "]",
-                pumping_speed = proto.get_pumping_speed() * 60
+                pumping_speed = generator_util.get_base_value(proto.get_pumping_speed()) * 60
             }
             insert_prototype(pumps, pump, nil)
         end
@@ -1226,6 +1229,9 @@ function generator.beacons.generate()
             local items_to_place_this = proto.items_to_place_this
             local built_by_item = (items_to_place_this) and item_prototypes[items_to_place_this[1].name] or nil
 
+            local max_usage = generator_util.get_base_value(proto.get_max_energy_usage())
+            local energy_usage = proto.energy_usage or max_usage or 0
+
             local beacon = {
                 name = proto.name,
                 localised_name = proto.localised_name,
@@ -1240,7 +1246,7 @@ function generator.beacons.generate()
                 effectivity = proto.distribution_effectivity,
                 quality_bonus = proto.distribution_effectivity_bonus_per_quality_level,
                 profile = (#proto.profile == 0) and {1} or proto.profile,
-                energy_usage = proto.energy_usage or proto.get_max_energy_usage() or 0
+                energy_usage = energy_usage
             }
             insert_prototype(beacons, beacon, nil)
         end
@@ -1381,7 +1387,7 @@ function generator.qualities.generate()
     local qualities = {}  ---@type NamedPrototypes<FPQualityPrototype>
 
     for _, proto in pairs(prototypes.quality) do
-        if proto.name ~= "quality-unknown" then  -- Shouldn't this be hidden by the game?
+        if proto.hidden ~= true then
             local sprite = "quality/" .. proto.name
             if helpers.is_valid_sprite_path(sprite) then
                 local quality = {
@@ -1392,7 +1398,6 @@ function generator.qualities.generate()
                         generator_util.colored_rich_text(proto.localised_name, proto.color)},
                     level = proto.level,
                     always_show = proto.draw_sprite_by_default,
-                    multiplier = 1 + (proto.level * 0.3),
                     beacon_power_usage_multiplier = proto.beacon_power_usage_multiplier,
                     mining_drill_resource_drain_multiplier = proto.mining_drill_resource_drain_multiplier
                 }
