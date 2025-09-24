@@ -555,49 +555,50 @@ function generator.recipes.generate()
             ::incompatible_proto::
 
         elseif proto.type == "rocket-silo" and not proto.hidden then
-            local parts_recipe = prototypes.recipe[proto.fixed_recipe]
-            if not parts_recipe then goto incompatible_proto end
-            local rocket_parts_ingredient = {type="item", name=parts_recipe.main_product.name,
-                amount=proto.rocket_parts_required}
+            local categories = proto.crafting_categories
+            for _, recipe in pairs(recipes) do
+                if categories[recipe.category] and recipe.main_product then
+                    local rocket_parts_ingredient = {type="item", name=recipe.main_product.name,
+                        amount=proto.rocket_parts_required}
 
-            -- Add rocket launch product recipes
-            if not proto.launch_to_space_platforms then
-                for item_name, products in pairs(launch_products) do
-                    local main_product = prototypes.item[products[1].name]
+                    -- Add rocket launch product recipes
+                    if not proto.launch_to_space_platforms then
+                        for item_name, products in pairs(launch_products) do
+                            local main_product = prototypes.item[products[1].name]
 
-                    local launch_recipe = custom_recipe()
-                    launch_recipe.name = "impostor-launch-" .. item_name .. "-from-" .. proto.name
-                    launch_recipe.localised_name = {"", main_product.localised_name, " ", {"fp.launch"}}
-                    launch_recipe.sprite = "item/" .. main_product.name
-                    launch_recipe.order = main_product.order
-                    launch_recipe.category = "launch-rocket"
-                    launch_recipe.energy = 0
+                            local launch_recipe = custom_recipe()
+                            launch_recipe.name = "impostor-launch-" .. item_name .. "-from-" .. proto.name
+                            launch_recipe.localised_name = {"", main_product.localised_name, " ", {"fp.launch"}}
+                            launch_recipe.sprite = "item/" .. main_product.name
+                            launch_recipe.order = main_product.order
+                            launch_recipe.category = "launch-rocket"
+                            launch_recipe.energy = 0
 
-                    local ingredients = {ftable.deep_copy(rocket_parts_ingredient),
-                        {type="item", name=item_name, amount=1}}
-                    generator_util.format_recipe(launch_recipe, products, products[1], ingredients)
-                    insert_prototype(recipes, launch_recipe, nil)
+                            local ingredients = {ftable.deep_copy(rocket_parts_ingredient),
+                                {type="item", name=item_name, amount=1}}
+                            generator_util.format_recipe(launch_recipe, products, products[1], ingredients)
+                            insert_prototype(recipes, launch_recipe, nil)
+                        end
+                    end
+
+                    -- Add convenience recipe to build whole rocket instead of parts
+                    if SPACE_TRAVEL then
+                        local rocket_recipe = custom_recipe()
+
+                        rocket_recipe.name = "impostor-" .. proto.name .. "-rocket"
+                        rocket_recipe.localised_name = {"", proto.localised_name, " ", {"fp.launch"}}
+                        rocket_recipe.sprite = "fp_silo_rocket"
+                        rocket_recipe.order = recipe.order .. "-" .. proto.order
+                        rocket_recipe.category = "launch-rocket"
+                        rocket_recipe.energy = 0
+
+                        local rocket_products = {{type="entity", name="custom-silo-rocket", amount=1}}
+                        local ingredients = {ftable.deep_copy(rocket_parts_ingredient)}
+                        generator_util.format_recipe(rocket_recipe, rocket_products, rocket_products[1], ingredients)
+                        insert_prototype(recipes, rocket_recipe, nil)
+                    end
                 end
             end
-
-            -- Add convenience recipe to build whole rocket instead of parts
-            if SPACE_TRAVEL then
-                local rocket_recipe = custom_recipe()
-
-                rocket_recipe.name = "impostor-" .. proto.name .. "-rocket"
-                rocket_recipe.localised_name = {"", proto.localised_name, " ", {"fp.launch"}}
-                rocket_recipe.sprite = "fp_silo_rocket"
-                rocket_recipe.order = parts_recipe.order .. "-" .. proto.order
-                rocket_recipe.category = "launch-rocket"
-                rocket_recipe.energy = 0
-
-                local rocket_products = {{type="entity", name="custom-silo-rocket", amount=1}}
-                local ingredients = {ftable.deep_copy(rocket_parts_ingredient)}
-                generator_util.format_recipe(rocket_recipe, rocket_products, rocket_products[1], ingredients)
-                insert_prototype(recipes, rocket_recipe, nil)
-            end
-
-            ::incompatible_proto::
         end
 
         -- Add a recipe for producing steam from a boiler
@@ -755,8 +756,12 @@ function generator.items.generate()
 
         -- Mark rocket silo part items here so they can be marked as non-hidden
         elseif proto.type == "rocket-silo" and not proto.hidden then
-            local parts_recipe = prototypes.recipe[proto.fixed_recipe]
-            if parts_recipe then rocket_parts[parts_recipe.main_product.name] = true end
+            local categories = proto.crafting_categories
+            for _, recipe in pairs(storage.prototypes.recipes) do
+                if categories[recipe.category] and recipe.main_product then
+                    rocket_parts[recipe.main_product.name] = true
+                end
+            end
         end
     end
 
