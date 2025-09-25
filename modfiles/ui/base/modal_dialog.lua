@@ -270,6 +270,15 @@ function modal_dialog.set_searchfield_state(player)
     searchfield.tooltip = (status) and {"fp.searchfield_tt"} or {"fp.warning_with_icon", {"fp.searchfield_not_ready_tt"}}
 end
 
+function modal_dialog.run_search(player)
+    local modal_data = util.globals.modal_data(player)
+    if not modal_data or not modal_data.modal_elements then return end
+
+    local searchfield = modal_data.modal_elements.search_textfield
+    local search_term = searchfield.text:gsub("^%s*(.-)%s*$", "%1"):lower()
+    GLOBAL_HANDLERS[modal_data.search_handler_name](player, search_term)
+end
+
 function modal_dialog.set_submit_button_state(modal_elements, enabled, message)
     local caption = (enabled) and {"fp.submit"} or {"fp.warning_with_icon", {"fp.submit"}}
     local tooltip = (enabled) and {"fp.confirm_dialog_tt"} or {"fp.warning_with_icon", message}
@@ -379,13 +388,12 @@ listeners.gui = {
         {
             name = "modal_searchfield",
             timeout = MAGIC_NUMBERS.modal_search_rate_limit,
-            handler = (function(player, _, metadata)
+            handler = (function(player, _, event)
                 local modal_data = util.globals.modal_data(player)  --[[@as table]]
                 local search_tick = modal_data.search_tick
                 if search_tick ~= nil then util.nth_tick.cancel(search_tick) end
 
-                local search_term = metadata.text:gsub("^%s*(.-)%s*$", "%1"):lower()
-                GLOBAL_HANDLERS[modal_data.search_handler_name](player, search_term)
+                modal_dialog.run_search(player)
 
                 -- Set up delayed search update to circumvent issues caused by rate limiting
                 local desired_tick = game.tick + MAGIC_NUMBERS.modal_search_rate_limit
@@ -446,12 +454,7 @@ listeners.misc = {
 listeners.global = {
     run_delayed_modal_search = (function(metadata)
         local player = game.get_player(metadata.player_index)  --[[@as LuaPlayer]]
-        local modal_data = util.globals.modal_data(player)
-        if not modal_data or not modal_data.modal_elements then return end
-
-        local searchfield = modal_data.modal_elements.search_textfield
-        local search_term = searchfield.text:gsub("^%s*(.-)%s*$", "%1"):lower()
-        GLOBAL_HANDLERS[modal_data.search_handler_name](player, search_term)
+        modal_dialog.run_search(player)
     end)
 }
 

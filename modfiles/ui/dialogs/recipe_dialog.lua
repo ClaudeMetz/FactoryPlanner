@@ -282,7 +282,7 @@ local function handle_filter_change(player, tags, event)
     util.globals.modal_data(player).filters[tags.filter_name] = boolean_state
     util.globals.preferences(player).recipe_filters[tags.filter_name] = boolean_state
 
-    apply_recipe_filter(player, "")
+    modal_dialog.run_search(player)
 end
 
 local function apply_temperature(player, temperature)
@@ -341,7 +341,7 @@ local function open_recipe_dialog(player, modal_data)
 
     modal_data.translations = util.globals.player_table(player).translation_tables
     build_dialog_structure(modal_data)
-    apply_recipe_filter(player, "")
+    modal_dialog.run_search(player)
     modal_data.modal_elements.search_textfield.focus()
 end
 
@@ -367,7 +367,7 @@ listeners.gui = {
 
                 local modal_data = util.globals.modal_data(player)
                 build_dialog_structure(modal_data)
-                apply_recipe_filter(player, "")
+                modal_dialog.run_search(player)
             end)
         }
     },
