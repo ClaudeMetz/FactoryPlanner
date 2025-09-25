@@ -117,7 +117,7 @@ local function generate_floor_data(player, factory, floor)
             -- Alternatively, if this line is on a subfloor and the top line of the floor is useless, it is useless too
             if (relevant_line and (relevant_line.percentage == 0 or not relevant_line.active))
                     or line.percentage == 0 or not line.active or not line:get_surface_compatibility().overall
-                    or (not factory.matrix_free_items and line.production_type == "consume")
+                    or (not factory.matrix_solver_active and line.production_type == "consume")
                     or ingredients == nil or missing_fuel_temp == true then
                 set_blank_line(player, floor, line)  -- useless lines don't need to run through the solver
             else
@@ -279,7 +279,7 @@ function solver.update(player, factory, blank)
 
         if blank then  -- sets factory to a blank state
             set_blank_factory(player, factory)
-        elseif factory.matrix_free_items ~= nil then  -- meaning the matrix solver is active
+        elseif factory.matrix_solver_active then
             local matrix_metadata = matrix_engine.get_matrix_solver_metadata(factory_data)
 
             if matrix_metadata.num_cols > matrix_metadata.num_rows and #factory.matrix_free_items > 0 then
@@ -335,7 +335,7 @@ function solver.set_factory_result(result)
 
     factory.top_floor.power = result.energy_consumption
     factory.top_floor.emissions = result.emissions
-    factory.matrix_free_items = result.matrix_free_items
+    factory.matrix_free_items = result.matrix_free_items or {}
 
     for product in factory:iterator() do
         local product_result_amount = result.Product[product.proto.type][product.proto.name] or 0

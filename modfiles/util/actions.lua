@@ -10,7 +10,7 @@ function _actions.current_limitations(player)
     local factory = util.context.get(player, "Factory")  --[[@as Factory?]]
     return {
         archive_open = (factory ~= nil) and factory.archived or false,
-        matrix_active = (factory ~= nil) and (factory.matrix_free_items ~= nil) or false
+        matrix_active = (factory ~= nil) and factory.matrix_solver_active or false
     }
 end
 
