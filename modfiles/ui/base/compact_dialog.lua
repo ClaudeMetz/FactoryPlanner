@@ -472,6 +472,7 @@ local function build_compact_factory(player)
         style="flib_naked_scroll_pane_no_padding"}
     scroll_pane_production.horizontal_scroll_policy = "never"
     scroll_pane_production.style.horizontally_stretchable = true
+    scroll_pane_production.style.extra_right_padding_when_activated = -8
 
     local table_production = scroll_pane_production.add{type="table", column_count=6, style="fp_table_production"}
     table_production.vertical_centering = false
