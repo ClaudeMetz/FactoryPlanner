@@ -9,6 +9,7 @@ Date: 00. 00. 0000
     - Fixed quality effects being applied incorrectly if the normal quality has a level other than 0 (#605)
     - Fixed that the resource_drain_rate bonus was being applied to the mining fluid (#619)
     - Fixed that rocket silo recipes weren't being detected properly in certain modded situations (#604)
+    - Fixed module quality effects not being rounded off correctly (#492)
     - Fixed that recipe search didn't respect the search term when changing filters (#601)
     - Fixed the compact dialog having no right margin when a scrollbar is visible (#545)
 

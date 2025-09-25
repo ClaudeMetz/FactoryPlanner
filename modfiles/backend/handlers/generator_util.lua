@@ -400,8 +400,13 @@ end
 ---@return ModuleEffects
 function generator_util.formatted_effects(effects)
     effects = effects or {}
-    if effects["quality"] then  -- fix base game weirdness
-        effects["quality"] = effects["quality"] / 10
+    if effects["quality"] then
+        -- This is actually an incorrect implementation, as quality has its effect multiplied by the
+        --   next_probability of the quality of the current item/recipe. This means the quality effect
+        --   changes based on the quality of the item, and is not static as you might think. However,
+        --   the base game uses a next_probability of 0.1 for all qualities, so this works out as the
+        --   mod doesn't do actual quality calculations, it only shows this effect for completeness.
+        effects["quality"] = effects["quality"] * prototypes.quality["normal"].next_probability
     end
     return effects
 end
