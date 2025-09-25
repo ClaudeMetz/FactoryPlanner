@@ -226,10 +226,18 @@ function matrix_engine.get_linear_dependence_data(factory_data, matrix_metadata)
     local num_cols = matrix_metadata.num_cols
 
     local linearly_dependent_recipes = {}
-    local linearly_dependent_items = {}
+    local linearly_dependent_free_items = {}
     local allowed_free_items = {}
 
     local linearly_dependent_cols = matrix_engine.run_matrix_solver(factory_data, true)
+    if next(linearly_dependent_cols) ~= nil then
+        local free_items = matrix_metadata.free_items
+        local free_keys = {}
+        for _, free_item in ipairs(free_items) do
+            local key = matrix_engine.get_item_key(free_item.type, free_item.name)
+            free_keys[key] = free_item
+        end
+
     for col_name, _ in pairs(linearly_dependent_cols) do
         local col_split_str = util.split_string(col_name, "_")
         if col_split_str[1] == "recipe" then
@@ -237,11 +245,14 @@ function matrix_engine.get_linear_dependence_data(factory_data, matrix_metadata)
             linearly_dependent_recipes[recipe_key] = true
         else -- "item"
             local item_key = col_split_str[2].."_"..col_split_str[3]
-            linearly_dependent_items[item_key] = true
+                if free_keys[item_key] then
+                    linearly_dependent_free_items[item_key] = true
+                end
+            end
         end
     end
     -- check which eliminated items could be made free while still retaining linear independence
-    if #linearly_dependent_cols == 0 and num_cols < num_rows then
+    if next(linearly_dependent_cols) == nil and num_cols < num_rows then
         local matrix_data = matrix_engine.get_matrix_data(factory_data)
         local items = matrix_data.rows
         local col_to_item = {}
@@ -271,8 +282,8 @@ function matrix_engine.get_linear_dependence_data(factory_data, matrix_metadata)
     local result = {
         linearly_dependent_recipes = matrix_engine.get_recipe_protos(
             matrix_engine.set_to_ordered_list(linearly_dependent_recipes)),
-        linearly_dependent_items = matrix_engine.get_item_protos(
-            matrix_engine.set_to_ordered_list(linearly_dependent_items)),
+        linearly_dependent_free_items = matrix_engine.get_item_protos(
+            matrix_engine.set_to_ordered_list(linearly_dependent_free_items)),
         allowed_free_items = matrix_engine.get_item_protos(
             matrix_engine.set_to_ordered_list(allowed_free_items))
     }
