@@ -22,7 +22,8 @@ local function determine_main_dimensions(player, products_per_row, factory_list_
 end
 
 -- Downscale width and height preferences until the main interface fits onto the player's screen
-function main_dialog.shrinkwrap_interface(player)
+local function shrinkwrap_interface(metadata)
+    local player = game.get_player(metadata.player_index)
     local scaled_resolution = util.gui.calculate_scaled_resolution(player)
     local preferences = util.globals.preferences(player)
 
@@ -215,16 +216,6 @@ listeners.misc = {
         if main_dialog.is_in_focus(player) then main_dialog.toggle(player, true) end
     end),
 
-    on_player_display_resolution_changed = (function(player, _)
-        main_dialog.shrinkwrap_interface(player)
-        main_dialog.rebuild(player, false)
-    end),
-
-    on_player_display_scale_changed = (function(player, _)
-        main_dialog.shrinkwrap_interface(player)
-        main_dialog.rebuild(player, false)
-    end),
-
     on_singleplayer_init = (function(player, _)
         main_dialog.rebuild(player, false)
     end),
@@ -272,6 +263,7 @@ listeners.misc = {
 }
 
 listeners.global = {
+    shrinkwrap_interface = shrinkwrap_interface,
     interface_toggle = interface_toggle
 }
 

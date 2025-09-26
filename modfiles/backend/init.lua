@@ -62,8 +62,9 @@ function reload_preferences(player_table)
     reload("compact_ingredients", false)
     reload("fold_out_subfloors", false)
 
-    reload("products_per_row", 6)
-    reload("factory_list_rows", 30)
+    -- Main dimensions are maxed, to be shrinkwrapped down
+    reload("products_per_row", 10)
+    reload("factory_list_rows", 32)
     reload("compact_width_percentage", 26)
 
     reload("show_gui_button", true)
@@ -166,6 +167,7 @@ local function player_init(player)
     defaults.set_all(player, "fuels", {prototype="coal"})
 
     util.gui.toggle_mod_gui(player)
+    util.nth_tick.register((game.tick + 1), "shrinkwrap_interface", {player_index=player.index})
 
     if DEV_ACTIVE then
         util.porter.add_factories(player, DEV_EXPORT_STRING)
@@ -328,14 +330,17 @@ script.on_event(translator.on_player_dictionaries_ready, dictionaries_ready)
 
 
 -- ** COMMANDS **
+-- These are existence-checked for resiliance to double-loading from test harness
 if not commands.commands['fp-restart-translation'] then
     commands.add_command("fp-restart-translation", {"command-help.fp_restart_translation"}, function()
         translator.on_init()
         prototyper.util.build_translation_dictionaries()
     end)
 end
-if not commands.commands['fp-reload-prototypes'] then
+if not commands.commands['fp-shrinkwrap-interface'] then
     commands.add_command("fp-shrinkwrap-interface", {"command-help.fp_shrinkwrap_interface"}, function(command)
-        if command.player_index then main_dialog.shrinkwrap_interface(game.get_player(command.player_index)) end
+        if command.player_index then
+            util.nth_tick.register((game.tick + 1), "shrinkwrap_interface", {player_index=command.player_index})
+        end
     end)
 end
