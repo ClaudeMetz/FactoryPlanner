@@ -13,6 +13,7 @@ Date: 00. 00. 0000
     - Fixed that the main interface would change its size when it shouldn't (#371)
     - Fixed that recipe search didn't respect the search term when changing filters (#601)
     - Fixed the compact dialog having no right margin when a scrollbar is visible (#545)
+    - Fixed a few issues with the beacon count selector (#226)
 
 ---------------------------------------------------------------------------------------------------
 Version: 2.0.36

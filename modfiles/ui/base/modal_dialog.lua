@@ -293,8 +293,10 @@ end
 
 function modal_dialog.enter_selection_mode(player, selector_name)
     local ui_state = util.globals.ui_state(player)
-    ui_state.selection_mode = true
+
+    player.clear_cursor()
     player.cursor_stack.set_stack(selector_name)
+    ui_state.active_selector = selector_name
 
     local frame_main_dialog = ui_state.main_elements.main_frame
     frame_main_dialog.visible = false
@@ -309,8 +311,12 @@ end
 
 function modal_dialog.leave_selection_mode(player)
     local ui_state = util.globals.ui_state(player)
-    ui_state.selection_mode = false
-    player.cursor_stack.set_stack(nil)
+
+    if player.cursor_stack.valid_for_read and
+            player.cursor_stack.name == ui_state.active_selector then
+        player.cursor_stack.clear()
+    end
+    ui_state.active_selector = nil
 
     local modal_elements = ui_state.modal_data.modal_elements
     modal_elements.interface_dimmer.visible = true
@@ -408,7 +414,7 @@ listeners.gui = {
             handler = (function(player, _, event)
                 local ui_state = util.globals.ui_state(player)
 
-                if ui_state.selection_mode then
+                if ui_state.active_selector ~= nil then
                     modal_dialog.leave_selection_mode(player)
                 elseif ui_state.context_menu == nil then  -- don't close if opening context menu
                     -- Here, we need to distinguish between submitting a dialog with E or ESC
@@ -430,7 +436,7 @@ listeners.gui = {
 
 listeners.misc = {
     fp_confirm_dialog = (function(player, _)
-        if not util.globals.ui_state(player).selection_mode then
+        if util.globals.ui_state(player).active_selector == nil then
             util.raise.close_dialog(player, "submit")
         end
     end),

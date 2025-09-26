@@ -108,7 +108,7 @@ end
 ---@field modal_dialog_type ModalDialogType?
 ---@field modal_data table?
 ---@field context_menu LuaGuiElement?
----@field selection_mode boolean
+---@field active_selector string?
 ---@field compact_view boolean
 ---@field districts_view boolean
 ---@field recalculate_on_factory_change boolean
@@ -134,8 +134,8 @@ local function reset_ui_state(player_table)
         modal_dialog_type = nil,
         modal_data = nil,
         context_menu = nil,
+        active_selector = nil,
 
-        selection_mode = false,
         compact_view = false,
         districts_view = false,
         recalculate_on_factory_change = false
