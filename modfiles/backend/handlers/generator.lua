@@ -211,7 +211,10 @@ function generator.machines.generate()
             if proto.type == "rocket-silo" then
                 local machine = generate_category_entry("launch-rocket", proto, nil)
                 if machine then
-                    machine.energy_usage = 0
+                    local launch_time, energy_usage = generator_util.determine_launch_data(proto)
+                    machine.speed = 1 / launch_time
+                    machine.energy_usage = energy_usage
+
                     machine.built_by_item = nil
                     machine.effect_receiver = {
                         uses_module_effects = false,
@@ -572,7 +575,7 @@ function generator.recipes.generate()
                             launch_recipe.sprite = "item/" .. main_product.name
                             launch_recipe.order = main_product.order
                             launch_recipe.category = "launch-rocket"
-                            launch_recipe.energy = 0
+                            launch_recipe.energy = 1
 
                             local ingredients = {ftable.deep_copy(rocket_parts_ingredient),
                                 {type="item", name=item_name, amount=1}}
@@ -590,7 +593,7 @@ function generator.recipes.generate()
                         rocket_recipe.sprite = "fp_silo_rocket"
                         rocket_recipe.order = recipe.order .. "-" .. proto.order
                         rocket_recipe.category = "launch-rocket"
-                        rocket_recipe.energy = 0
+                        rocket_recipe.energy = 1
 
                         local rocket_products = {{type="entity", name="custom-silo-rocket", amount=1}}
                         local ingredients = {ftable.deep_copy(rocket_parts_ingredient)}
