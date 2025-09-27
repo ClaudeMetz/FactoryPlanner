@@ -2,9 +2,15 @@
 Version: 0.00.00
 Date: 00. 00. 0000
   Features:
-    -
+    - 
   Changes:
-    -
+    - 
+  Bugfixes:
+    - 
+
+---------------------------------------------------------------------------------------------------
+Version: 2.0.38
+Date: 27. 09. 2025
   Bugfixes:
     - Fixed a startup crash for saves with quality disabled (#626)
 
