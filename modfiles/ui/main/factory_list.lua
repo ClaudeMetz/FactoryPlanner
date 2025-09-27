@@ -275,8 +275,7 @@ factory_list = {}  -- try to move elsewhere or smth to get rid of global variabl
 -- Utility function to centralize factory creation behavior
 function factory_list.add_factory(player, name)
     local preferences = util.globals.preferences(player)
-    local factory = Factory.init(name)
-    if preferences.prefer_matrix_solver then factory.matrix_free_items = {} end
+    local factory = Factory.init(name, preferences.prefer_matrix_solver)
 
     local district = util.context.get(player, "District")  --[[@as District]]
     district:insert(factory)

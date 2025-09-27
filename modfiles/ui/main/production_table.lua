@@ -6,7 +6,7 @@ local function generate_metadata(player, factory)
 
     local metadata = {
         archive_open = factory.archived,
-        matrix_solver_active = (factory.matrix_free_items ~= nil),
+        matrix_solver_active = factory.matrix_solver_active,
         ingredient_satisfaction = preferences.ingredient_satisfaction,
         fold_out_subfloors = preferences.fold_out_subfloors,
         player = player,

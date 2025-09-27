@@ -369,7 +369,7 @@ local function refresh_compact_production(player, factory)
     for line in floor:iterator() do -- build the individual lines
         local relevant_line = (line.class == "Floor") and line.first or line  --[[@as Line]]
         if not relevant_line.active or not relevant_line:get_surface_compatibility().overall
-                or (not factory.matrix_free_items and relevant_line.production_type == "consume") then
+                or (not factory.matrix_solver_active and relevant_line.production_type == "consume") then
             goto skip_line
         end
 

@@ -9,6 +9,7 @@ local Product = require("backend.data.Product")
 ---@field previous Factory?
 ---@field archived boolean
 ---@field name string
+---@field matrix_solver_active boolean
 ---@field matrix_free_items FPItemPrototype[]?
 ---@field blueprints string[]
 ---@field notes string
@@ -23,15 +24,17 @@ Factory.__index = Factory
 script.register_metatable("Factory", Factory)
 
 ---@param name string
+---@param matrix_solver_active boolean
 ---@return Factory
-local function init(name)
+local function init(name, matrix_solver_active)
     local object = Object.init({
         archived = false,
         --owner = nil,
         --shared = false,
 
         name = name,
-        matrix_free_items = nil,
+        matrix_solver_active = matrix_solver_active,
+        matrix_free_items = {},
         blueprints = {},
         notes = "",
         productivity_boni = {},
@@ -181,6 +184,7 @@ end
 ---@class PackedFactory: PackedObject
 ---@field class "Factory"
 ---@field name string
+---@field matrix_solver_active boolean
 ---@field matrix_free_items FPPackedPrototype[]?
 ---@field blueprints string[]
 ---@field notes string
@@ -193,6 +197,7 @@ function Factory:pack()
     return {
         class = self.class,
         name = self.name,
+        matrix_solver_active = self.matrix_solver_active,
         matrix_free_items = prototyper.util.simplify_prototypes(self.matrix_free_items, "type"),
         blueprints = self.blueprints,
         notes = self.notes,
@@ -208,7 +213,8 @@ local function unpack(packed_self)
     local unpacked_self = init(packed_self.name)
 
     -- Product prototypes will be automatically unpacked by the validation process
-    unpacked_self.matrix_free_items = packed_self.matrix_free_items
+    unpacked_self.matrix_solver_active = packed_self.matrix_solver_active
+    unpacked_self.matrix_free_items = packed_self.matrix_free_items or {}
     unpacked_self.blueprints = packed_self.blueprints
     unpacked_self.notes = packed_self.notes
     unpacked_self.productivity_boni = packed_self.productivity_boni
