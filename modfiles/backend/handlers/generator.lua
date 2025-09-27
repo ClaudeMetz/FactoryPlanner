@@ -1395,7 +1395,7 @@ function generator.qualities.generate()
     local qualities = {}  ---@type NamedPrototypes<FPQualityPrototype>
 
     for _, proto in pairs(prototypes.quality) do
-        if proto.hidden ~= true then
+        if proto.hidden == false or proto.name == "normal" then
             local sprite = "quality/" .. proto.name
             if helpers.is_valid_sprite_path(sprite) then
                 local quality = {
