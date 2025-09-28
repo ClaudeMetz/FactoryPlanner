@@ -12,13 +12,15 @@ local function check_quality(default)
 end
 
 function migration.player_table(player_table)
-    for _, machine in pairs(player_table.preferences.default_machines) do
-        check_quality(machine)
+    if player_table.preferences.mb_defaults == nil then
+        for _, machine in pairs(player_table.preferences.default_machines) do
+            check_quality(machine)
+        end
+        check_quality(player_table.preferences.default_beacons)
+        check_quality(player_table.preferences.default_pumps)
+        check_quality(player_table.preferences.default_wagons[1])
+        check_quality(player_table.preferences.default_wagons[2])
     end
-    check_quality(player_table.preferences.default_beacons)
-    check_quality(player_table.preferences.default_pumps)
-    check_quality(player_table.preferences.default_wagons[1])
-    check_quality(player_table.preferences.default_wagons[2])
 end
 
 return migration
