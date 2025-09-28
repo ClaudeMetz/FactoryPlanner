@@ -2,9 +2,15 @@
 Version: 0.00.00
 Date: 00. 00. 0000
   Features:
-    -
+    - 
   Changes:
-    -
+    - 
+  Bugfixes:
+    - 
+
+---------------------------------------------------------------------------------------------------
+Version: 2.0.39
+Date: 28. 09. 2025
   Bugfixes:
     - Fixed a migration crash when loading a save that was created on FP 2.0.37 (#628)
     - Fixed a couple other migration issues when coming from older versions (#627)
