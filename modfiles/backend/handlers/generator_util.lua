@@ -450,6 +450,37 @@ function generator_util.sort_machine_burner_categories(proto)
 end
 
 
+---@param proto LuaEntityPrototype
+---@return string? category
+---@return LuaFluidBoxPrototype? input
+---@return LuaFluidBoxPrototype? output
+function generator_util.get_boiler_data(proto)
+    local input, output = nil, nil  -- need to find these manually
+    for _, fluid_box in pairs(proto.fluidbox_prototypes) do
+        if fluid_box.production_type == "input-output" or fluid_box.production_type == "input" then
+            input = fluid_box
+        elseif fluid_box.production_type == "output" then
+            output = fluid_box
+        end
+    end
+
+    if input == nil then return nil, nil, nil end
+
+    local category = "boiler"
+    if proto.boiler_mode == "output-to-separate-pipe" then
+        category = category .. "-target-" .. proto.target_temperature
+    end
+    if output.filter ~= nil then
+        category = category .. "-output-" .. output.filter.name
+    end
+    if input.filter ~= nil then
+        category = category .. "-filter-" .. input.filter.name
+    end
+
+    return category, input, output
+end
+
+
 -- Adds the tooltip for the given recipe
 ---@param recipe FPRecipePrototype
 ---@return LocalisedString

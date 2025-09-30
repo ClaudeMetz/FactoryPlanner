@@ -65,25 +65,27 @@ local function factory_products(factory)
 end
 
 local function get_temperature_name(line, ingredient)
+    local name, temperature = ingredient.name, nil
     if ingredient.type == "fluid" then
-        local temperature = line.temperatures[ingredient.name]
-        return (temperature ~= nil) and (ingredient.name .. "-" .. temperature) or nil
-    else
-        return ingredient.name
+        temperature = line.temperatures[ingredient.name]
+        name = (temperature ~= nil) and (ingredient.name .. "-" .. temperature) or nil
     end
+
+    return name, temperature
 end
 
 local function line_ingredients(line)
     local ingredients = {}
     for _, ingredient in pairs(line.recipe_proto.ingredients) do
-        local name = get_temperature_name(line, ingredient)
+        local name, temperature = get_temperature_name(line, ingredient)
         -- If any relevant ingredient has no temperature set, this line is invalid
         if name == nil then return nil end
 
         table.insert(ingredients, {
             name = name,
             type = ingredient.type,
-            amount = ingredient.amount
+            amount = ingredient.amount,
+            temperature = temperature
         })  -- don't need min/max temperatures here
     end
     return ingredients
@@ -123,6 +125,7 @@ local function generate_floor_data(player, factory, floor)
             else
                 local machine = line.machine
                 line_data.recipe_proto = line.recipe_proto
+                line_data.recipe_energy = line.recipe_proto.energy
                 line_data.ingredients = ingredients
                 line_data.percentage = line.percentage  -- non-zero
                 line_data.production_type = line.production_type
@@ -132,11 +135,20 @@ local function generate_floor_data(player, factory, floor)
                 line_data.fuel_proto = machine.fuel and machine.fuel.proto or nil
                 line_data.pollutant_type = factory.parent.location_proto.pollutant_type
 
+                -- Boiler recipe energy
+                local prototype_category = machine.proto.prototype_category
+                if prototype_category == "boiler" then
+                    local goal_temperature = line.recipe_proto.products[1].temperature
+                    local fluid_name = line.recipe_proto.ingredients[1].name
+                    local heat_capacity = prototypes.fluid[fluid_name].heat_capacity
+                    local input_temperature = ingredients[1].temperature
+                    line_data.recipe_energy = (goal_temperature - input_temperature) * heat_capacity
+                end
+
                 -- Quality effects
                 local machine_speed = machine.proto.speed
                 local resource_drain_rate = machine.proto.resource_drain_rate or 1
 
-                local prototype_category = machine.proto.prototype_category
                 if prototype_category == "mining_drill" then
                     resource_drain_rate = resource_drain_rate
                         * machine.quality_proto.mining_drill_resource_drain_multiplier
@@ -254,8 +266,8 @@ local function update_ingredient_satisfaction(floor, product_class)
 
         for _, ingredient in pairs(line.ingredients) do
             if ingredient.proto.type ~= "entity" then
-                local name = (line.class == "Floor") and ingredient.proto.name
-                    or get_temperature_name(line, ingredient.proto)
+                local name = ingredient.proto.name
+                if line.class ~= "Floor" then name, _ = get_temperature_name(line, ingredient.proto) end
                 determine_satisfaction(ingredient, name)
             end
         end
