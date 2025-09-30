@@ -4,7 +4,8 @@ Date: 00. 00. 0000
   Features:
     - Added support for all variations of boiler machines and recipes
   Changes:
-    - The item picker now sorts fluid by their temperature
+    - Added a button to copy calculator history results into the calculator (#618)
+    - Made the item picker sort fluids by their temperature
   Bugfixes:
     -
 

@@ -5,7 +5,6 @@ local function style_textfield(textfield, style)
     textfield.style.margin = {0, 8, 12, 8}
     textfield.style.horizontal_align = "right"
     textfield.style.font = "default-large-semibold"
-    textfield:focus()
 end
 
 local function run_calculation(player)
@@ -18,8 +17,17 @@ local function run_calculation(player)
     else
         if expression ~= textfield.text then  -- avoid x = x label
             local history_frame = calculator_elements.history_frame
+            local entry_flow = history_frame.add{type="flow", direction="horizontal", index=1}
+            entry_flow.style.vertical_align = "center"
+            local copy_button = entry_flow.add{type="sprite-button", sprite="utility/copy", style="tool_button",
+                tags={mod="fp", on_gui_click="copy_calculator_result", result=expression},
+                tooltip={"fp.calculator_copy_tt"}, mouse_button_filter={"left"}}
+            copy_button.style.size = 16
+            copy_button.style.padding = -1
+            copy_button.style.right_margin = 4
+
             local caption = textfield.text .. " = [font=default-semibold]" .. expression .. "[/font]"
-            history_frame.add{type="label", caption=caption, index=1}
+            entry_flow.add{type="label", caption=caption}
 
             local children = history_frame.children
             if #children > 15 then children[#children].destroy() end
@@ -138,9 +146,14 @@ local function toggle_calculator_dialog(player)
         ui_state.calculator_elements.frame = dialog
     end  ---@cast dialog -nil
 
-    dialog.bring_to_front()
     dialog.visible = not dialog.visible
     -- No player.opened so it can be concurrent
+
+    if dialog.visible then
+        dialog.bring_to_front()
+        ui_state.calculator_elements.textfield.select_all()
+        ui_state.calculator_elements.textfield.focus()
+    end
 end
 
 
@@ -175,6 +188,14 @@ listeners.gui = {
         {
             name = "calculator_button",
             handler = handle_button_click
+        },
+        {
+            name = "copy_calculator_result",
+            handler = (function(player, tags, _)
+                local calculator_elements = util.globals.ui_state(player).calculator_elements
+                calculator_elements.textfield.text = calculator_elements.textfield.text .. tags.result
+                calculator_elements.textfield.focus()
+            end)
         }
     },
     on_gui_confirmed = {
