@@ -7,7 +7,7 @@ Date: 00. 00. 0000
     - Added a button to copy calculator history results into the calculator (#618)
     - Made the item picker sort fluids by their temperature
   Bugfixes:
-    -
+    - Fixed a migration issue related to beacon profiles
 
 ---------------------------------------------------------------------------------------------------
 Version: 2.0.39
