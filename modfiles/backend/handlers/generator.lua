@@ -93,8 +93,10 @@ end
 ---@alias PrototypeCategory ("assembling_machine" | "furnace" | "rocket_silo" | "mining_drill" | "boiler")
 
 -- Generates a table containing all machines for all categories
+---@param integrated_prototypes [LuaEntityPrototype]
+---@param prototype_modifiers AnyBasic TODO
 ---@return NamedPrototypesWithCategory<FPMachinePrototype>
-function generator.machines.generate()
+function generator.machines.generate(integrated_prototypes, prototype_modifiers)
     local machines = {}  ---@type NamedPrototypesWithCategory<FPMachinePrototype>
 
     ---@param category string

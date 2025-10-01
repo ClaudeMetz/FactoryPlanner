@@ -2,6 +2,7 @@ local Realm = require("backend.data.Realm")
 
 local loader = require("backend.handlers.loader")
 local migrator = require("backend.handlers.migrator")
+local integrator = require("backend.handlers.integrator")
 require("backend.handlers.prototyper")
 require("backend.handlers.defaults")
 require("backend.handlers.screenshotter")
@@ -249,6 +250,8 @@ local function global_init()
     translator.on_init()  -- Initialize flib's translation module
     prototyper.util.build_translation_dictionaries()
 
+    integrator.register_events()
+
     for _, player in pairs(game.players) do player_init(player) end
 end
 
@@ -288,6 +291,8 @@ local function handle_configuration_change()
 
     translator.on_configuration_changed()
     prototyper.util.build_translation_dictionaries()
+
+    integrator.register_events()
 end
 
 

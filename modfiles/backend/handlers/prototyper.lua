@@ -1,4 +1,8 @@
+require("backend.handlers.integration")  -- TODO temporary
+
+
 local generator = require("backend.handlers.generator")
+local integrator = require("backend.handlers.integrator")
 
 prototyper = {
     util = {}
@@ -98,9 +102,12 @@ end
 
 
 function prototyper.build()
+    local prototypes = integrator.collect_prototypes()  -- gets fake prototypes from other mods
+    local modifiers = integrator.collect_modifiers()  -- get modifications to real prototypes from other mods
+
     for data_type, _ in pairs(prototyper.data_types) do
         ---@type AnyNamedPrototypes
-        storage.prototypes[data_type] = generator[data_type].generate()
+        storage.prototypes[data_type] = generator[data_type].generate(prototypes[data_type], modifiers[data_type])
     end
 
     -- Second pass to do some things that can't be done in the first pass due to the strict sequencing
