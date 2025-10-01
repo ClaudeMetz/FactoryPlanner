@@ -36,27 +36,6 @@ local migration_masterlist = {  ---@type MigrationMasterList
 }
 
 
--- Compares two mod versions, returns true if v1 is an earlier version than v2 (v1 < v2)
--- Version numbers have to be of the same structure: same amount of numbers, separated by a '.'
----@param v1 VersionString
----@param v2 VersionString
----@return boolean
-local function compare_versions(v1, v2)
-    local split_v1 = util.split_string(v1, ".")
-    local split_v2 = util.split_string(v2, ".")
-
-    for i = 1, #split_v1 do
-        if split_v1[i] == split_v2[i] then
-            -- continue
-        elseif split_v1[i] < split_v2[i] then
-            return true
-        else
-            return false
-        end
-    end
-    return false  -- return false if both versions are the same
-end
-
 -- Applies given migrations to the object
 ---@param migrations Migration[]
 ---@param function_name string
@@ -81,14 +60,14 @@ function migrator.determine_migrations(comparison_version)
     local previous_version = storage.installed_mods["factoryplanner"]
 
     -- 1.1.60 is the first version that can be properly migrated (doesn't apply to export strings)
-    if not comparison_version and not compare_versions("1.1.59", previous_version) then return nil end
+    if not comparison_version and helpers.compare_versions(previous_version, "1.1.59") < 0 then return nil end
     comparison_version = comparison_version or previous_version
 
     local migrations = {}
     local found = false
 
     for _, migration in ipairs(migration_masterlist) do
-        if compare_versions(comparison_version, migration.version) then found = true end
+        if helpers.compare_versions(migration.version, comparison_version) > 0 then found = true end
         if found then table.insert(migrations, migration.migration) end
     end
 
