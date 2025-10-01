@@ -66,7 +66,7 @@ function processors.wagons_per_timescale(metadata, raw_amount, item_proto, _)
     return number, tooltip
 end
 
-local lift_capactity = 1000000  -- There is no API to read this utility constant
+local lift_capactity = prototypes.utility_constants.rocket_lift_weight
 function processors.rockets_per_timescale(metadata, raw_amount, item_proto, _)
     if item_proto.type == "fluid" then return nil, {"fp.fluid_item"} end
     if item_proto.weight > lift_capactity then return nil, {"fp.item_too_heavy"} end
