@@ -2,6 +2,16 @@
 Version: 0.00.00
 Date: 00. 00. 0000
   Features:
+    - 
+  Changes:
+    - 
+  Bugfixes:
+    - 
+
+---------------------------------------------------------------------------------------------------
+Version: 2.0.40
+Date: 03. 10. 2025
+  Features:
     - Added support for all variations of boiler machines and recipes
   Changes:
     - Added a button to copy calculator history results into the calculator (#618)
