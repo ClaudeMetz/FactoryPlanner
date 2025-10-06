@@ -396,9 +396,10 @@ listeners.global = {
         local player_table = util.globals.player_table(player)
         player_table.preferences = nil
         reload_preferences(player_table)
-        -- Pretty heavy way to reset, but it's very simple
-        player_table.ui_state.modal_data.rebuild = true
-        util.raise.close_dialog(player, "cancel")
+
+        -- This rebuilds the main interface implicitly
+        GLOBAL_HANDLERS["shrinkwrap_interface"]{player_index=player.index}
+
         util.raise.open_dialog(player, {dialog="preferences"})
     end)
 }
