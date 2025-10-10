@@ -79,47 +79,56 @@ end
 
 function builders.recipe(line, parent_flow, metadata, indent)
     local relevant_line = (line.class == "Floor") and line.first or line
-    local recipe_proto = relevant_line.recipe_proto
 
     parent_flow.style.vertical_align = "center"
     parent_flow.style.horizontal_spacing = 3
-
     parent_flow.style.left_margin = indent * 12
-    local first_subfloor_line = (line.parent.level > 1 and line.previous == nil)
 
-    local surface_compatibility = relevant_line:get_surface_compatibility()
-    local solver_compatibility = (metadata.matrix_solver_active or line.production_type ~= "consume")
-    local line_active = (relevant_line.active and surface_compatibility.overall and solver_compatibility)
+    local line_active = (relevant_line.production_ratio > 0)
     local style = (line_active) and "flib_slot_button_default_small" or "flib_slot_button_red_small"
-    local note = (relevant_line.active) and "" or {"fp.recipe_inactive"}  ---@type LocalisedString
-    local surface_info = {""}
+    local note = (line_active) and "" or {"fp.recipe_inactive"}  ---@type LocalisedString
+    local status_info = {""}
 
-    if not surface_compatibility.recipe then
-        table.insert(surface_info, {"fp.blocking_condition", {"fp.pl_recipe", 1}})
-    end
-    if not surface_compatibility.machine then
-        table.insert(surface_info, {"fp.blocking_condition", {"fp.pl_machine", 1}})
-    end
-    if not solver_compatibility then
-        table.insert(surface_info, {"fp.incompatible_solver"})
+    if not line_active then
+        if not relevant_line.active then
+            table.insert(status_info, {"fp.line_disabled"})
+        end
+
+        local surface_compatibility = relevant_line:get_surface_compatibility()
+        if not surface_compatibility.recipe then
+            table.insert(status_info, {"fp.blocking_condition", {"fp.pl_recipe", 1}})
+        end
+        if not surface_compatibility.machine then
+            table.insert(status_info, {"fp.blocking_condition", {"fp.pl_machine", 1}})
+        end
+
+        if not (metadata.matrix_solver_active or line.production_type ~= "consume") then
+            table.insert(status_info, {"fp.incompatible_solver"})
+        end
+
+        if not util.temperature.is_fully_configured(relevant_line) then
+            table.insert(status_info, {"fp.temperature_not_configured"})
+        end
     end
 
+    local first_subfloor_line = (line.parent.level > 1 and line.previous == nil)
     local indication = first_subfloor_line and {"fp.floor_recipe"} or ""
     if line.class == "Floor" then
         style = (line_active) and "flib_slot_button_blue_small" or "flib_slot_button_purple_small"
         indication = {"fp.recipe_subfloor_attached"}
 
-    -- Byproduct-consuming lines can't have subfloors, so this if branching works
+    -- Byproduct-consuming lines can't have subfloors, so this if-branching works
     elseif line.production_type == "consume" then
         style = (line_active) and "flib_slot_button_yellow_small" or "flib_slot_button_orange_small"
         note = {"fp.recipe_consumes_byproduct"}
     end
 
+    local recipe_proto = relevant_line.recipe_proto
     local first_line = (note == "") and {"fp.tt_title", recipe_proto.localised_name}
         or {"fp.tt_title_with_note", recipe_proto.localised_name, note}
     local action = (first_subfloor_line) and "act_on_floor_recipe" or "act_on_line_recipe"
     local effects_section = (line.class == "Line") and format_effects_tooltip(relevant_line.effects_tooltip) or ""
-    local tooltip = {"", first_line, indication, surface_info, effects_section, "\n", metadata.action_tooltips[action]}
+    local tooltip = {"", first_line, indication, status_info, effects_section, "\n", metadata.action_tooltips[action]}
 
     local button = parent_flow.add{type="sprite-button", sprite=recipe_proto.sprite, style=style,
         tags={mod="fp", on_gui_click=action, line_id=line.id, on_gui_hover="set_tooltip", context="production_table"},
@@ -365,7 +374,7 @@ function builders.ingredients(line, parent_flow, metadata)
 
             local temperature = line.temperatures[proto.name]
             if temperature == nil then
-                style = "flib_slot_button_purple_small"
+                style = "flib_slot_button_orange_small"
                 temperature_line = {"fp.no_temperature_configured"}
             else
                 temperature_line = {"fp.configured_temperature", temperature}

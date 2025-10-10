@@ -41,6 +41,7 @@ script.register_metatable("Line", Line)
 ---@param recipe_proto FPRecipePrototype?
 ---@param production_type ProductionType
 ---@return Line
+---@return boolean temperature_configured
 local function init(recipe_proto, production_type)
     local object = Object.init({
         recipe_proto = recipe_proto,
@@ -67,12 +68,13 @@ local function init(recipe_proto, production_type)
         production_ratio = 0
     }, "Line", Line)  --[[@as Line]]
 
+    local temperature_configured = true
     -- Initialize data related to fluid ingredients temperatures
     if recipe_proto and recipe_proto.simplified ~= true then
-        object:build_temperatures_data({})
+        temperature_configured = object:build_temperatures_data({})
     end
 
-    return object
+    return object, temperature_configured
 end
 
 
@@ -268,10 +270,12 @@ end
 
 -- Builds temperature data caches, and optionally migrates previous temperatures
 ---@param previous_temperatures { [string]: float }
+---@return boolean fully_configured
 function Line:build_temperatures_data(previous_temperatures)
     self.temperatures = {}
     self.temperature_data = {}
 
+    local fully_configured = true
     for _, ingredient in pairs(self.recipe_proto.ingredients) do
         if ingredient.type == "fluid" then
             local previous = previous_temperatures[ingredient.name]
@@ -279,10 +283,13 @@ function Line:build_temperatures_data(previous_temperatures)
 
             self.temperatures[ingredient.name] = temperature
             self.temperature_data[ingredient.name] = data
+
+            if temperature == nil then fully_configured = false end
         end
     end
-end
 
+    return fully_configured
+end
 
 
 ---@param object CopyableObject

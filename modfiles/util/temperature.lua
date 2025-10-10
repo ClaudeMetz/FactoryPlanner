@@ -46,4 +46,19 @@ function _temperature.generate_data(ingredient, previous_temperature)
     return temperature, data
 end
 
+---@param line Line
+---@return boolean
+function _temperature.is_fully_configured(line)
+    for _, ingredient in pairs(line.recipe_proto.ingredients) do
+        if ingredient.type == "fluid" and line.temperatures[ingredient.name] == nil then
+            return false
+        end
+    end
+
+    local fuel = line.machine.fuel
+    if fuel and fuel.proto.type == "fluid" and not fuel.temperature then return false end
+
+    return true
+end
+
 return _temperature

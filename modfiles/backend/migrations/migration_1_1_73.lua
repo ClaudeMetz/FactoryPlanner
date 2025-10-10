@@ -90,7 +90,7 @@ function migration.player_table(player_table)
                         local subfloor = convert_floor(line.subfloor, new_floor)
                         new_floor:insert(subfloor)
                     else
-                        local new_line = Line.init(line.recipe.proto, line.recipe.production_type)
+                        local new_line, _ = Line.init(line.recipe.proto, line.recipe.production_type)
                         new_line.done = line.done
                         new_line.active = line.active
                         new_line.percentage = line.percentage

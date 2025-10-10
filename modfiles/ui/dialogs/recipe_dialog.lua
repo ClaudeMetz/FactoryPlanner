@@ -83,7 +83,7 @@ end
 -- Tries to add the given recipe to the current floor, then exiting the modal dialog
 local function attempt_adding_line(player, recipe_id, modal_data)
     local recipe_proto = prototyper.util.find("recipes", recipe_id, nil)
-    local line = Line.init(recipe_proto, modal_data.production_type)
+    local line, temperature_configured = Line.init(recipe_proto, modal_data.production_type)
 
     -- If finding a machine fails, this line is invalid
     if line:change_machine_to_default(player) == false then
@@ -95,11 +95,15 @@ local function attempt_adding_line(player, recipe_id, modal_data)
 
         local recipe_name = recipe_proto.localised_name
         if not (recipe_proto.custom or player.force.recipes[recipe_proto.name].enabled) then
-            util.messages.raise(player, "warning", {"fp.warning_recipe_disabled", recipe_name}, 2)
+            util.messages.raise(player, "warning", {"fp.warning_recipe_disabled", recipe_name}, 1)
         end
 
         if not line:get_surface_compatibility().overall then
-            util.messages.raise(player, "warning", {"fp.warning_surface_not_compatible", recipe_name}, 2)
+            util.messages.raise(player, "warning", {"fp.warning_surface_not_compatible", recipe_name}, 1)
+        end
+
+        if not temperature_configured then
+            util.messages.raise(player, "warning", {"fp.warning_temperature_not_configured", recipe_name}, 1)
         end
 
         -- Set machine and beacon up as their default
