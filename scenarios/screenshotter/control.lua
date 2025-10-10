@@ -13,8 +13,6 @@ script.on_event(defines.events.on_game_created_from_scenario, function()
 
     storage.setup = function() remote.call("screenshotter_input", "execute_action", 1, "player_setup") end
     storage.dimensions = {}
-
-    remote.call("screenshotter_input", "initial_setup")
 end)
 
 

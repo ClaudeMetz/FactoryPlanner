@@ -182,10 +182,6 @@ local actions = {
     teardown_08_preferences = (function(player) modal_teardown(player, "08_preferences") end)
 }
 
-local function initial_setup()
-    DEV_ACTIVE = false  -- desync city, but it's fiiine. Avoids any accidental artifacts.
-end
-
 local function execute_action(player_index, action_name)
     local player = game.get_player(player_index)
     actions[action_name](player)
@@ -193,7 +189,6 @@ end
 
 if not remote.interfaces["screenshotter_input"] then
     remote.add_interface("screenshotter_input", {
-        initial_setup = initial_setup,
         execute_action = execute_action
     })
 end

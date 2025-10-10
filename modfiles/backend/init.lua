@@ -169,7 +169,7 @@ local function player_init(player)
     util.gui.toggle_mod_gui(player)
     util.nth_tick.register((game.tick + 1), "shrinkwrap_interface", {player_index=player.index})
 
-    if DEV_ACTIVE then
+    if DEBUGGER_ACTIVE then
         util.porter.add_factories(player, DEV_EXPORT_STRING)
 
         player.force.research_all_technologies()
@@ -230,7 +230,7 @@ storage = {}  -- just for the type checker, doesn't do anything
 local function global_init()
     -- Set up a new save for development if necessary
     local freeplay = remote.interfaces["freeplay"]
-    if DEV_ACTIVE and freeplay then  -- Disable freeplay popup-message
+    if DEBUGGER_ACTIVE and freeplay then  -- Disable freeplay popup-message
         if freeplay["set_skip_intro"] then remote.call("freeplay", "set_skip_intro", true) end
         if freeplay["set_disable_crashsite"] then remote.call("freeplay", "set_disable_crashsite", true) end
     end
