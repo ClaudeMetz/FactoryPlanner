@@ -64,7 +64,7 @@ local function close_item_dialog(player, action)
         end
 
         solver.update(player)
-        util.raise.refresh(player, "factory")
+        util.gui.run_refresh(player, "factory")
     end
 end
 

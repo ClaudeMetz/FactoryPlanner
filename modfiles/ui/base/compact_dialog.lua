@@ -775,7 +775,7 @@ function compact_dialog.rebuild(player, default_visibility)
     ui_state.compact_elements["content_flow"] = flow_content
 
     item_views.rebuild_data(player)
-    util.raise.build(player, "compact_factory", nil)
+    util.gui.run_build(player, "compact_factory", nil)  -- tells all elements to build themselves
     item_views.rebuild_interface(player)
 
     return frame_compact_dialog
@@ -813,7 +813,7 @@ dialog_listeners.gui = {
                 compact_dialog.toggle(player)
 
                 main_dialog.toggle(player)
-                util.raise.refresh(player, "production")
+                util.gui.run_refresh(player, "production")
             end)
         },
         {

@@ -291,14 +291,14 @@ local function close_machine_dialog(player, action)
         end
 
         solver.update(player)
-        util.raise.refresh(player, "factory")
+        util.gui.run_refresh(player, "factory")
 
     else  -- action == "cancel"
         line.machine = modal_data.machine_backup
         line.machine.module_set:normalize({effects=true})
         line:set_beacon(modal_data.beacon_backup)
         -- Need to refresh so the buttons have the 'new' backup machine for further actions
-        util.raise.refresh(player, "production_detail")
+        util.gui.run_refresh(player, "production_detail")
     end
 end
 

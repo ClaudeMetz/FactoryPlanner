@@ -19,7 +19,7 @@ local function handle_line_move_click(player, tags, event)
     line.parent:shift(line, tags.direction, spots_to_shift)
 
     solver.update(player)
-    util.raise.refresh(player, "factory")
+    util.gui.run_refresh(player, "factory")
 end
 
 
@@ -52,7 +52,7 @@ local function handle_line_recipe_click(player, tags, action)
         end
 
         util.context.set(player, new_context)
-        util.raise.refresh(player, "production")
+        util.gui.run_refresh(player, "production")
 
     elseif action == "copy" then
         util.clipboard.copy(player, line)  -- use actual line
@@ -63,7 +63,7 @@ local function handle_line_recipe_click(player, tags, action)
     elseif action == "toggle" then
         relevant_line.active = not relevant_line.active
         solver.update(player, factory)
-        util.raise.refresh(player, "factory")
+        util.gui.run_refresh(player, "factory")
 
     elseif action == "delete" then
         local floor = line.parent
@@ -75,7 +75,7 @@ local function handle_line_recipe_click(player, tags, action)
         end
 
         solver.update(player, factory)
-        util.raise.refresh(player, "factory")
+        util.gui.run_refresh(player, "factory")
 
     elseif action == "factoriopedia" then
         player.open_factoriopedia_gui(prototypes["recipe"][relevant_line.recipe_proto.name])
@@ -96,7 +96,7 @@ local function handle_floor_recipe_click(player, tags, action)
     elseif action == "toggle" then
         line.active = not line.active
         solver.update(player, factory)
-        util.raise.refresh(player, "factory")
+        util.gui.run_refresh(player, "factory")
 
     elseif action == "factoriopedia" then
         player.open_factoriopedia_gui(prototypes["recipe"][line.recipe_proto.name])
@@ -115,7 +115,7 @@ end
 local function handle_percentage_confirmation(player, _, _)
     util.globals.ui_state(player).recalculate_on_factory_change = false  -- reset this flag as we refresh below
     solver.update(player)
-    util.raise.refresh(player, "factory")
+    util.gui.run_refresh(player, "factory")
 end
 
 
@@ -176,7 +176,7 @@ local function handle_beacon_click(player, tags, action)
     elseif action == "delete" then
         line:set_beacon(nil)
         solver.update(player)
-        util.raise.refresh(player, "factory")
+        util.gui.run_refresh(player, "factory")
 
     elseif action == "factoriopedia" then
         player.open_factoriopedia_gui(prototypes["entity"][beacon.proto.name])
@@ -222,7 +222,7 @@ local function handle_module_click(player, tags, action)
 
         module_set:normalize({effects=true})
         solver.update(player)
-        util.raise.refresh(player, "factory")
+        util.gui.run_refresh(player, "factory")
 
     elseif action == "factoriopedia" then
         player.open_factoriopedia_gui(prototypes["item"][module.proto.name])
@@ -242,7 +242,7 @@ local function handle_item_click(player, tags, action)
             line.priority_product = (line.priority_product ~= item.proto) and item.proto or nil
 
             solver.update(player)
-            util.raise.refresh(player, "factory")
+            util.gui.run_refresh(player, "factory")
         end
 
     elseif action == "add_recipe_to_end" or action == "add_recipe_below" then

@@ -254,10 +254,7 @@ local misc_identifier_map = {
     ["fp_confirm_dialog"] = "fp_confirm_dialog",
     ["fp_confirm_gui"] = "fp_confirm_gui",
     ["fp_focus_searchfield"] = "fp_focus_searchfield",
-    ["fp_toggle_calculator"] = "fp_toggle_calculator",
-
-    [CUSTOM_EVENTS.build_gui_element] = "build_gui_element",
-    [CUSTOM_EVENTS.refresh_gui_element] = "refresh_gui_element"
+    ["fp_toggle_calculator"] = "fp_toggle_calculator"
 }
 
 local misc_timeouts = {
@@ -294,7 +291,7 @@ end
 
 local function handle_misc_event(event)
     local event_name = event.input_name or event.name -- also handles keyboard shortcuts
-    local string_name = misc_identifier_map[event_name]
+    local string_name = misc_identifier_map[event_name] or event_name
     local event_handlers = misc_event_cache[string_name]
     if not event_handlers then return end  -- make sure the given event is even handled
 
@@ -324,6 +321,10 @@ end
 
 -- Register all the misc events from the identifier map
 for event_id, _ in pairs(misc_identifier_map) do script.on_event(event_id, handle_misc_event) end
+
+-- Save special GUI events as pseudo-events
+GLOBAL_HANDLERS["run_gui_build"] = handle_misc_event
+GLOBAL_HANDLERS["run_gui_refresh"] = handle_misc_event
 
 
 -- ** GLOBAL HANDLERS **

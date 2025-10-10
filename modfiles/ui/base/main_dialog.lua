@@ -102,7 +102,7 @@ function main_dialog.rebuild(player, default_visibility)
     main_elements.flows["right_vertical"] = right_vertical
 
     item_views.rebuild_data(player)
-    util.raise.build(player, "main_dialog", nil)  -- tells all elements to build themselves
+    util.gui.run_build(player, "main_dialog", nil)  -- tells all elements to build themselves
     item_views.rebuild_interface(player)
 
     if interface_visible then player.opened = frame_main_dialog end
@@ -164,7 +164,7 @@ function main_dialog.toggle_districts_view(player, force_false)
     local ui_state = util.globals.ui_state(player)
     ui_state.districts_view = not ui_state.districts_view and not force_false
 
-    util.raise.refresh(player, "district_info")
+    util.gui.run_refresh(player, "district_info")
 end
 
 
@@ -251,7 +251,7 @@ listeners.misc = {
         elseif ui_state.compact_view and compact_focus then
             compact_dialog.toggle(player)
             main_dialog.toggle(player)
-            util.raise.refresh(player, "production")
+            util.gui.run_refresh(player, "production")
             ui_state.compact_view = false
 
         elseif factory ~= nil and factory.valid then

@@ -244,7 +244,7 @@ local function close_import_dialog(player, action)
 
         main_dialog.toggle_districts_view(player, true)
         util.context.set(player, first_factory)
-        util.raise.refresh(player, "all")
+        util.gui.run_refresh(player, "all")
     end
 end
 

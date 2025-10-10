@@ -62,7 +62,7 @@ local function close_factory_dialog(player, action)
             end
         end
 
-        util.raise.refresh(player, "all")
+        util.gui.run_refresh(player, "all")
 
     elseif action == "delete" then
         factory_list.delete_factory(player)  -- handles archiving if necessary

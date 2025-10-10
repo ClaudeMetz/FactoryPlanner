@@ -118,7 +118,7 @@ local function attempt_adding_line(player, recipe_id, modal_data)
         end
 
         solver.update(player)
-        util.raise.refresh(player, "factory")
+        util.gui.run_refresh(player, "factory")
     end
 end
 

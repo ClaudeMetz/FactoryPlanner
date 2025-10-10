@@ -60,7 +60,7 @@ listeners.gui = {
             name = "toggle_districts_view",
             handler = (function(player, _, _)
                 main_dialog.toggle_districts_view(player)
-                util.raise.refresh(player, "production")
+                util.gui.run_refresh(player, "production")
             end)
         }
     }

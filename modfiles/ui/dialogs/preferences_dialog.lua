@@ -175,7 +175,7 @@ local function handle_checkbox_preference_change(player, tags, event)
     util.globals.preferences(player)[preference_name] = event.element.state
 
     if tags.type == "production" or preference_name == "show_floor_items" then
-        util.raise.refresh(player, "production")
+        util.gui.run_refresh(player, "production")
 
     elseif preference_name == "ingredient_satisfaction" then
         if event.element.state == true then  -- only recalculate if enabled
@@ -186,10 +186,10 @@ local function handle_checkbox_preference_change(player, tags, event)
                 end
             end
         end
-        util.raise.refresh(player, "production")
+        util.gui.run_refresh(player, "production")
 
     elseif preference_name == "attach_factory_products" or preference_name == "skip_factory_naming" then
-        util.raise.refresh(player, "factory_list")
+        util.gui.run_refresh(player, "factory_list")
 
     elseif preference_name == "show_gui_button" then
         util.gui.toggle_mod_gui(player)
@@ -228,7 +228,7 @@ local function handle_view_toggle(player, tags, _)
     item_views.refresh_interface(player)
     refresh_views_table(player)
 
-    util.raise.refresh(player, "factory")
+    util.gui.run_refresh(player, "factory")
 end
 
 local function handle_view_move(player, tags, _)
@@ -240,7 +240,7 @@ local function handle_view_move(player, tags, _)
     item_views.rebuild_interface(player)  -- rebuild because of the move
     refresh_views_table(player)
 
-    util.raise.refresh(player, "factory")
+    util.gui.run_refresh(player, "factory")
 end
 
 local function handle_bol_change(player, _, event)
@@ -254,7 +254,7 @@ local function handle_bol_change(player, _, event)
     refresh_views_table(player)
 
     solver.update(player, nil)
-    util.raise.refresh(player, "all")
+    util.gui.run_refresh(player, "all")
 end
 
 local function handle_default_prototype_change(player, tags, _)
@@ -272,7 +272,7 @@ local function handle_default_prototype_change(player, tags, _)
     item_views.rebuild_interface(player)
     refresh_views_table(player)
 
-    util.raise.refresh(player, "all")
+    util.gui.run_refresh(player, "all")
 end
 
 local function handle_prototype_quality_change(player, tags, event)
@@ -290,7 +290,7 @@ local function handle_prototype_quality_change(player, tags, event)
     item_views.rebuild_data(player)
     item_views.rebuild_interface(player)
 
-    util.raise.refresh(player, "all")
+    util.gui.run_refresh(player, "all")
 end
 
 

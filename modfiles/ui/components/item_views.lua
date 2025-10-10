@@ -289,7 +289,7 @@ local function select_view(player, new_index)
     item_views.refresh_interface(player)
     local compact_view = util.globals.ui_state(player).compact_view
     local refresh = (compact_view) and "compact_factory" or "factory"
-    util.raise.refresh(player, refresh)
+    util.gui.run_refresh(player, refresh)
 end
 
 ---@param player LuaPlayer

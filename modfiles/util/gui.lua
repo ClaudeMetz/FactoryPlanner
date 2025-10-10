@@ -103,6 +103,32 @@ function _gui.close_dialog(player, action, skip_opened)
     GLOBAL_HANDLERS["close_modal_dialog"](player, action, skip_opened)
 end
 
+---@param player LuaPlayer
+---@param trigger "main_dialog" | "compact_factory"
+---@param parent LuaGuiElement?
+function _gui.run_build(player, trigger, parent)
+    local event_data = {
+        name = "build_gui_element",
+        tick = game.tick,
+        player_index = player.index,
+        trigger = trigger,
+        parent = parent
+    }
+    GLOBAL_HANDLERS["run_gui_build"](event_data)
+end
+
+---@param player LuaPlayer
+---@param trigger "all" | "factory" | "production" | "production_detail" | "title_bar" | "district_info" | "factory_list" | "production_bar" | "districts_box" | "item_boxes" | "production_box" | "production_table" | "compact_factory" | "paste_button"
+function _gui.run_refresh(player, trigger)
+    local event_data = {
+        name = "refresh_gui_element",
+        tick = game.tick,
+        player_index = player.index,
+        trigger = trigger
+    }
+    GLOBAL_HANDLERS["run_gui_refresh"](event_data)
+end
+
 
 -- Properly centers the given frame (need width/height parameters cause no API-read exists)
 ---@param player LuaPlayer

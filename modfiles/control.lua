@@ -29,11 +29,6 @@ MAGIC_NUMBERS = {
     context_menu_width = 270  -- total width of the context menu
 }
 
-CUSTOM_EVENTS = {
-    build_gui_element = script.generate_event_name(),
-    refresh_gui_element = script.generate_event_name()
-}
-
 -- Handlers saved in a central location for access via name
 MODIFIER_ACTIONS = {}  ---@type ActionTable
 GLOBAL_HANDLERS = {}  ---@type { [string]: function }

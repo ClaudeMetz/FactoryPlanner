@@ -450,7 +450,7 @@ local function close_utility_dialog(player, _)
     if modal_data.recalculate then
         local factory = util.context.get(player, "Factory")  --[[@as Factory]]
         solver.update(player, factory)
-        util.raise.refresh(player, "factory")
+        util.gui.run_refresh(player, "factory")
     end
     modal_data.utility_inventory.destroy()
 end
