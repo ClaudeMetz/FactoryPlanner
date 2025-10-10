@@ -7,6 +7,7 @@ Date: 00. 00. 0000
     -
   Bugfixes:
     - Changed some internal event handling to avoid potential multiplayer crashes (#648)
+    - Fixed that the mod would show boiler recipes with a target temperature of 0 degrees (#637)
 
 ---------------------------------------------------------------------------------------------------
 Version: 2.0.40

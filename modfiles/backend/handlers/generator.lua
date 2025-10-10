@@ -581,7 +581,7 @@ function generator.recipes.generate()
             end
         elseif proto.type == "boiler" then
             local category, input, output = generator_util.get_boiler_data(proto)
-            if category == nil then goto skip_boiler end
+            if category == nil or proto.target_temperature == 0 then goto skip_boiler end
 
             local function add_boiler_recipe(fluid_proto, target_temperature)
                 local goal_temperature = target_temperature or fluid_proto.max_temperature

@@ -268,7 +268,6 @@ end
 
 -- Determines whether this recipe is irrelevant or not and should thus be excluded
 local irrelevant_recipe_categories = {
-    ["Transport_Drones_Meglinge_Fork"] = {"transport-drone-request", "transport-fluid-request"},
     --[[ ["Mining_Drones"] = {"mining-depot"},
     ["Deep_Storage_Unit"] = {"deep-storage-item", "deep-storage-fluid",
                              "deep-storage-item-big", "deep-storage-fluid-big",
