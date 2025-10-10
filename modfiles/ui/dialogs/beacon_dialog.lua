@@ -284,7 +284,7 @@ listeners.gui = {
             name = "confirm_beacon",
             handler = (function(player, _, event)
                 local confirmed = util.gui.confirm_expression_field(event.element, true)
-                if confirmed then util.raise.close_dialog(player, "submit") end
+                if confirmed then util.gui.close_dialog(player, "submit") end
             end)
         }
     },

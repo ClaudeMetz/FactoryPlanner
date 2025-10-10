@@ -210,7 +210,7 @@ listeners.misc = {
         local ui_state = util.globals.ui_state(player)
 
         -- With that in mind, if there's a modal dialog open, we were in selection mode, and need to close the dialog
-        if ui_state.modal_dialog_type ~= nil then util.raise.close_dialog(player, "cancel", true) end
+        if ui_state.modal_dialog_type ~= nil then util.gui.close_dialog(player, "cancel", true) end
 
         -- Then, at this point we're at most at the stage where the main dialog is open, so close it
         if main_dialog.is_in_focus(player) then main_dialog.toggle(player, true) end

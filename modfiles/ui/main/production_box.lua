@@ -365,7 +365,7 @@ listeners.gui = {
         {
             name = "open_utility_dialog",
             handler = (function(player, _, _)
-                util.raise.open_dialog(player, {dialog="utility"})
+                util.gui.open_dialog(player, {dialog="utility"})
             end)
         },
         {

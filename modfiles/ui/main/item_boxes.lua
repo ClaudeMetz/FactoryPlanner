@@ -121,7 +121,7 @@ local function handle_item_add(player, tags, event)
         local dummy_product = Product.init({})
         util.clipboard.dummy_paste(player, dummy_product, factory)
     else
-        util.raise.open_dialog(player, {dialog="picker", modal_data={item_id=nil, item_category=tags.item_category}})
+        util.gui.open_dialog(player, {dialog="picker", modal_data={item_id=nil, item_category=tags.item_category}})
     end
 end
 
@@ -145,12 +145,12 @@ local function handle_item_button_click(player, tags, action)
             util.messages.raise(player, "error", message, 1)
         else
             local production_type = (tags.item_category == "byproduct") and "consume" or "produce"
-            util.raise.open_dialog(player, {dialog="recipe", modal_data={production_type=production_type,
+            util.gui.open_dialog(player, {dialog="recipe", modal_data={production_type=production_type,
                 category_id=item.proto.category_id, product_id=item.proto.id}})
         end
 
     elseif action == "edit" then
-        util.raise.open_dialog(player, {dialog="picker",
+        util.gui.open_dialog(player, {dialog="picker",
             modal_data={item_id=item.id, item_category=tags.item_category}})
 
     elseif action == "move_left" or action == "move_right" then

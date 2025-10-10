@@ -356,7 +356,7 @@ listeners.gui = {
         {
             name = "exit_modal_dialog",
             handler = (function(player, tags, _)
-                util.raise.close_dialog(player, tags.action)
+                util.gui.close_dialog(player, tags.action)
             end)
         },
         {
@@ -418,7 +418,7 @@ listeners.gui = {
                     modal_dialog.leave_selection_mode(player)
                 elseif ui_state.context_menu == nil then  -- don't close if opening context menu
                     -- Here, we need to distinguish between submitting a dialog with E or ESC
-                    util.raise.close_dialog(player, (ui_state.modal_data.confirmed_dialog) and "submit" or "cancel")
+                    util.gui.close_dialog(player, (ui_state.modal_data.confirmed_dialog) and "submit" or "cancel")
                     -- If the dialog was not closed, it means submission was disabled, and we need to re-set .opened
                     if event.element.valid then player.opened = event.element end
                 end
@@ -437,7 +437,7 @@ listeners.gui = {
 listeners.misc = {
     fp_confirm_dialog = (function(player, _)
         if util.globals.ui_state(player).active_selector == nil then
-            util.raise.close_dialog(player, "submit")
+            util.gui.close_dialog(player, "submit")
         end
     end),
 

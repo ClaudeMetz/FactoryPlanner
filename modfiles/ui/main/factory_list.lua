@@ -47,10 +47,10 @@ local function add_factory(player, _, event)
     local skip_factory_naming = util.globals.preferences(player).skip_factory_naming
 
     if util.xor(event.shift, skip_factory_naming) then  -- go right to the item picker with automatic factory naming
-        util.raise.open_dialog(player, {dialog="picker", modal_data={item_id=nil, item_category="product",
+        util.gui.open_dialog(player, {dialog="picker", modal_data={item_id=nil, item_category="product",
             create_factory=true}})
     else  -- otherwise, have the user pick a factory name first
-        util.raise.open_dialog(player, {dialog="factory", modal_data={factory_id=nil}})
+        util.gui.open_dialog(player, {dialog="factory", modal_data={factory_id=nil}})
     end
 end
 
@@ -96,7 +96,7 @@ local function handle_factory_click(player, tags, action)
         util.context.set(player, selected_factory)
         util.raise.refresh(player, "all")  -- refresh to update the selected factory
 
-        util.raise.open_dialog(player, {dialog="factory", modal_data={factory_id=selected_factory.id}})
+        util.gui.open_dialog(player, {dialog="factory", modal_data={factory_id=selected_factory.id}})
 
     elseif action == "delete" then
         util.context.set(player, selected_factory)
@@ -337,7 +337,7 @@ listeners.gui = {
         {  -- import/export buttons
             name = "factory_list_open_dialog",
             handler = (function(player, tags, _)
-                util.raise.open_dialog(player, {dialog=tags.type})
+                util.gui.open_dialog(player, {dialog=tags.type})
             end)
         },
         {
@@ -348,7 +348,7 @@ listeners.gui = {
             name = "edit_factory",
             handler = (function(player, _, _)
                 local factory = util.context.get(player, "Factory")  --[[@as Factory]]
-                util.raise.open_dialog(player, {dialog="factory", modal_data={factory_id=factory.id}})
+                util.gui.open_dialog(player, {dialog="factory", modal_data={factory_id=factory.id}})
             end)
         },
         {

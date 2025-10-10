@@ -357,7 +357,7 @@ listeners.gui = {
             handler = (function(player, tags, _)
                 local modal_data = util.globals.modal_data(player)
                 attempt_adding_line(player, tags.recipe_proto_id, modal_data)
-                util.raise.close_dialog(player, "cancel")
+                util.gui.close_dialog(player, "cancel")
             end)
         },
         {

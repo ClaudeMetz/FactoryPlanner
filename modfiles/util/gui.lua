@@ -90,6 +90,20 @@ function _gui.toggle_mod_gui(player)
 end
 
 
+---@param player LuaPlayer
+---@param metadata table
+function _gui.open_dialog(player, metadata)
+    GLOBAL_HANDLERS["open_modal_dialog"](player, metadata)
+end
+
+---@param player LuaPlayer
+---@param action "submit" | "cancel" | "delete"
+---@param skip_opened boolean?
+function _gui.close_dialog(player, action, skip_opened)
+    GLOBAL_HANDLERS["close_modal_dialog"](player, action, skip_opened)
+end
+
+
 -- Properly centers the given frame (need width/height parameters cause no API-read exists)
 ---@param player LuaPlayer
 ---@param frame LuaGuiElement

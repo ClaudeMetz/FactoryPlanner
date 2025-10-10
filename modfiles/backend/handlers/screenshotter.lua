@@ -24,12 +24,12 @@ end
 local function open_modal(player, dialog, modal_data)
     main_dialog.toggle(player)
     util.globals.main_elements(player).main_frame.location = player.display_resolution  -- hack city
-    util.raise.open_dialog(player, {dialog=dialog, modal_data=modal_data, skip_dimmer=true})
+    util.gui.open_dialog(player, {dialog=dialog, modal_data=modal_data, skip_dimmer=true})
 end
 
 local function modal_teardown(player, scene)
     return_dimensions(scene, util.globals.modal_elements(player).modal_frame)
-    util.raise.close_dialog(player, "cancel")
+    util.gui.close_dialog(player, "cancel")
 end
 
 

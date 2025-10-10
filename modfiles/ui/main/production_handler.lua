@@ -128,7 +128,7 @@ local function handle_machine_click(player, tags, action)
         if success then main_dialog.toggle(player) end
 
     elseif action == "edit" then
-        util.raise.open_dialog(player, {dialog="machine", modal_data={machine_id=machine.id}})
+        util.gui.open_dialog(player, {dialog="machine", modal_data={machine_id=machine.id}})
 
     elseif action == "copy" then
         util.clipboard.copy(player, machine)
@@ -148,9 +148,9 @@ local function handle_module_add(player, tags, event)
         util.clipboard.paste(player, object)
     else
         if object.class == "Machine" then
-            util.raise.open_dialog(player, {dialog="machine", modal_data={machine_id=object.id}})
+            util.gui.open_dialog(player, {dialog="machine", modal_data={machine_id=object.id}})
         else  -- "Beacon"
-            util.raise.open_dialog(player, {dialog="beacon", modal_data={line_id=object.parent.id}})
+            util.gui.open_dialog(player, {dialog="beacon", modal_data={line_id=object.parent.id}})
         end
     end
 end
@@ -165,7 +165,7 @@ local function handle_beacon_click(player, tags, action)
         if success then main_dialog.toggle(player) end
 
     elseif action == "edit" then
-        util.raise.open_dialog(player, {dialog="beacon", modal_data={line_id=line.id}})
+        util.gui.open_dialog(player, {dialog="beacon", modal_data={line_id=line.id}})
 
     elseif action == "copy" then
         util.clipboard.copy(player, beacon)
@@ -190,7 +190,7 @@ local function handle_beacon_add(player, tags, event)
         local dummy_beacon = Beacon.init({}, line)
         util.clipboard.paste(player, dummy_beacon)
     else
-        util.raise.open_dialog(player, {dialog="beacon", modal_data={line_id=line.id}})
+        util.gui.open_dialog(player, {dialog="beacon", modal_data={line_id=line.id}})
     end
 end
 
@@ -201,9 +201,9 @@ local function handle_module_click(player, tags, action)
     if action == "edit" then
         local line = module.parent.parent.parent
         if module.parent.parent.class == "Machine" then
-            util.raise.open_dialog(player, {dialog="machine", modal_data={machine_id=line.machine.id}})
+            util.gui.open_dialog(player, {dialog="machine", modal_data={machine_id=line.machine.id}})
         else
-            util.raise.open_dialog(player, {dialog="beacon", modal_data={line_id=line.id}})
+            util.gui.open_dialog(player, {dialog="beacon", modal_data={line_id=line.id}})
         end
 
     elseif action == "copy" then
@@ -257,7 +257,7 @@ local function handle_item_click(player, tags, action)
             -- If a no-temperature fluid is passed, it'll show all compatible temperatures/recipes
         end
 
-        util.raise.open_dialog(player, {dialog="recipe", modal_data={line_id=line.id,
+        util.gui.open_dialog(player, {dialog="recipe", modal_data={line_id=line.id,
             add_after_line_id=add_after_line_id, production_type=production_type,
             category_id=proto.category_id, product_id=proto.id}})
 
@@ -269,7 +269,7 @@ local function handle_item_click(player, tags, action)
             util.cursor.create_flying_text(player, {"fp.can_only_edit_lines"})
             return
         end
-        util.raise.open_dialog(player, {dialog="item", modal_data={line_id=line.id,
+        util.gui.open_dialog(player, {dialog="item", modal_data={line_id=line.id,
             category_id=item.proto.category_id, name=item.proto.name}})
 
     elseif action == "copy" then
@@ -340,7 +340,7 @@ local function handle_fuel_click(player, tags, action)
             -- If a no-temperature fluid is passed, it'll show all compatible temperatures/recipes
         end
 
-        util.raise.open_dialog(player, {dialog="recipe", modal_data={fuel_id=fuel.id,
+        util.gui.open_dialog(player, {dialog="recipe", modal_data={fuel_id=fuel.id,
             add_after_line_id=add_after_line_id, production_type="produce",
             category_id=proto.category_id, product_id=proto.id}})
 
@@ -349,11 +349,11 @@ local function handle_fuel_click(player, tags, action)
             util.cursor.create_flying_text(player, {"fp.can_only_edit_fluids"})
             return
         end
-        util.raise.open_dialog(player, {dialog="item", modal_data={fuel_id=fuel.id,
+        util.gui.open_dialog(player, {dialog="item", modal_data={fuel_id=fuel.id,
             category_id=fuel.proto.category_id, name=fuel.proto.name}})
 
     elseif action == "edit_fuel" then
-        util.raise.open_dialog(player, {dialog="machine", modal_data={machine_id=line.machine.id}})
+        util.gui.open_dialog(player, {dialog="machine", modal_data={machine_id=line.machine.id}})
 
     elseif action == "copy" then
         util.clipboard.copy(player, fuel)

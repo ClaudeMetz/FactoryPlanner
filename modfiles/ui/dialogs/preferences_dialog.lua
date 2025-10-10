@@ -400,7 +400,7 @@ listeners.global = {
         -- This rebuilds the main interface implicitly
         GLOBAL_HANDLERS["shrinkwrap_interface"]{player_index=player.index}
 
-        util.raise.open_dialog(player, {dialog="preferences"})
+        util.gui.open_dialog(player, {dialog="preferences"})
     end)
 }
 

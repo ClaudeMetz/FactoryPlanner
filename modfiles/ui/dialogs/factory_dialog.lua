@@ -78,7 +78,7 @@ listeners.gui = {
         {
             name = "factory_name",
             handler = (function(player, _, _)
-                util.raise.close_dialog(player, "submit")
+                util.util.close_dialog(player, "submit")
             end)
         }
     }

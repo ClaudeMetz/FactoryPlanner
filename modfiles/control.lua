@@ -30,8 +30,6 @@ MAGIC_NUMBERS = {
 }
 
 CUSTOM_EVENTS = {
-    open_modal_dialog = script.generate_event_name(),
-    close_modal_dialog = script.generate_event_name(),
     build_gui_element = script.generate_event_name(),
     refresh_gui_element = script.generate_event_name()
 }

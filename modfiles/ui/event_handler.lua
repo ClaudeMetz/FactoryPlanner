@@ -1,4 +1,4 @@
--- Assembles event handlers from all the relevant files and calls them when needed
+-- Assembles event handlers from all the relevant files to register them
 
 local event_listener_names = {
     "ui.base.main_dialog", "ui.base.compact_dialog", "ui.base.modal_dialog", "ui.base.calculator_dialog",
@@ -48,7 +48,7 @@ special_gui_handlers.on_gui_confirmed = (function(_, player, action_name)
 
     -- Otherwise, close the currently open modal dialog if possible
     if util.globals.ui_state(player).modal_dialog_type ~= nil then
-        util.raise.close_dialog(player, "submit")
+        util.gui.close_dialog(player, "submit")
     end
     return false
 end)
@@ -181,7 +181,6 @@ end
 for event_id, _ in pairs(gui_identifier_map) do script.on_event(event_id, handle_gui_event) end
 
 
-
 -- ** DIALOG EVENTS **
 -- These custom events handle opening and closing modal dialogs
 local dialog_event_cache = {}
@@ -203,41 +202,28 @@ local function apply_metadata_overrides(base, overrides)
     end
 end
 
-local function handle_dialog_event(event)
-    -- Guard against an event being called before the player is initialized
-    if not storage.players[event.player_index] then return end
+-- Make modal dialog actions available as global functions
+GLOBAL_HANDLERS["open_modal_dialog"] = (function(player, metadata)
+    local modal_dialog_type = util.globals.ui_state(player).modal_dialog_type
+    if modal_dialog_type ~= nil then return end
 
-    -- These custom events always have an associated player
-    local player = game.get_player(event.player_index)  ---@cast player -nil
-    local ui_state = util.globals.ui_state(player)
+    local listener = dialog_event_cache[metadata.dialog]
 
-    -- Check if the action is allowed to be carried out by rate limiting
-    if util.actions.rate_limited(player, event.tick, event.name, 20) then return end
-
-    if event.name == CUSTOM_EVENTS.open_modal_dialog then
-        local listener = dialog_event_cache[event.metadata.dialog]
-
-        local metadata = event.metadata
-        if listener.metadata ~= nil then  -- collect additional metadata
-            local additional_metadata = listener.metadata(metadata.modal_data)
-            apply_metadata_overrides(metadata, additional_metadata)
-        end
-
-        modal_dialog.enter(player, metadata, listener.open, listener.early_abort_check)
-
-    elseif event.name == CUSTOM_EVENTS.close_modal_dialog then
-        local modal_dialog_type = ui_state.modal_dialog_type
-        if modal_dialog_type == nil then return end
-
-        local listener = dialog_event_cache[modal_dialog_type]
-        modal_dialog.exit(player, event.action, event.skip_opened, listener.close)
+    if listener.metadata ~= nil then  -- collect additional metadata
+        local additional_metadata = listener.metadata(metadata.modal_data)
+        apply_metadata_overrides(metadata, additional_metadata)
     end
-end
 
--- Register all the misc events from the identifier map
-local dialog_events = {CUSTOM_EVENTS.open_modal_dialog, CUSTOM_EVENTS.close_modal_dialog}
-for _, event_id in pairs(dialog_events) do script.on_event(event_id, handle_dialog_event) end
+    modal_dialog.enter(player, metadata, listener.open, listener.early_abort_check)
+end)
 
+GLOBAL_HANDLERS["close_modal_dialog"] = (function(player, action, skip_opened)
+    local modal_dialog_type = util.globals.ui_state(player).modal_dialog_type
+    if modal_dialog_type == nil then return end
+
+    local listener = dialog_event_cache[modal_dialog_type]
+    modal_dialog.exit(player, action, skip_opened, listener.close)
+end)
 
 
 -- ** MISC EVENTS **
