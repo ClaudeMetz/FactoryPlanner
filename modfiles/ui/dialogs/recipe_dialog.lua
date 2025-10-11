@@ -83,7 +83,7 @@ end
 -- Tries to add the given recipe to the current floor, then exiting the modal dialog
 local function attempt_adding_line(player, recipe_id, modal_data)
     local recipe_proto = prototyper.util.find("recipes", recipe_id, nil)
-    local line, temperature_configured = Line.init(recipe_proto, modal_data.production_type)
+    local line = Line.init(recipe_proto, modal_data.production_type)
 
     -- If finding a machine fails, this line is invalid
     if line:change_machine_to_default(player) == false then
@@ -102,7 +102,7 @@ local function attempt_adding_line(player, recipe_id, modal_data)
             util.messages.raise(player, "warning", {"fp.warning_surface_not_compatible", recipe_name}, 1)
         end
 
-        if not temperature_configured then
+        if not line:temperature_fully_configured() then
             util.messages.raise(player, "warning", {"fp.warning_temperature_not_configured", recipe_name}, 1)
         end
 

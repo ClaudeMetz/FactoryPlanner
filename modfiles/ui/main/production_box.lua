@@ -123,7 +123,7 @@ end
 local function paste_line(player, _, _)
     local floor = util.context.get(player, "Floor")  --[[@as Floor]]
 
-    local dummy_line, _ = Line.init(nil, "produce")
+    local dummy_line = Line.init(nil, "produce")
     util.clipboard.dummy_paste(player, dummy_line, floor)
 end
 

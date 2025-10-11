@@ -106,7 +106,7 @@ function builders.recipe(line, parent_flow, metadata, indent)
             table.insert(status_info, {"fp.incompatible_solver"})
         end
 
-        if not util.temperature.is_fully_configured(relevant_line) then
+        if not relevant_line:temperature_fully_configured() then
             table.insert(status_info, {"fp.temperature_not_configured"})
         end
     end
@@ -421,7 +421,7 @@ function builders.fuel(line, parent_flow, metadata)
         table.insert(name_line, temperature_data.annotation)
 
         if fuel.temperature == nil then
-            style = "flib_slot_button_purple_small"
+            style = "flib_slot_button_orange_small"
             temperature_line = {"fp.no_temperature_configured"}
         else
             temperature_line = {"fp.configured_temperature", fuel.temperature}
