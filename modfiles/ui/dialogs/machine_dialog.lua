@@ -265,7 +265,7 @@ local function open_machine_dialog(player, modal_data)
     -- Limit
     local factory = util.context.get(player, "Factory")
     -- Unavailable with matrix solver or special recipes
-    local limit_enabled = (factory.matrix_free_items == nil and modal_data.line.recipe_proto.energy > 0)
+    local limit_enabled = (factory.matrix_free_items == nil and modal_data.line.recipe.proto.energy > 0)
     add_limit_frame(content_frame, player, limit_enabled)
 
     -- Modules
@@ -352,7 +352,7 @@ listeners.dialog = {
     dialog = "machine",
     metadata = (function(modal_data)
         local machine = OBJECT_INDEX[modal_data.machine_id]  --[[@as Machine]]
-        local recipe_name = machine.parent.recipe_proto.localised_name
+        local recipe_name = machine.parent.recipe.proto.localised_name
         return {
             caption = {"", {"fp.edit"}, " ", {"fp.pl_machine", 1}},
             subheader_text = {"fp.machine_dialog_description", recipe_name},

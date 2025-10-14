@@ -67,7 +67,7 @@ end
 local function get_temperature_name(line, ingredient)
     local name, temperature = ingredient.name, nil
     if ingredient.type == "fluid" then
-        temperature = line.temperatures[ingredient.name]
+        temperature = line.recipe.temperatures[ingredient.name]
         name = (temperature ~= nil) and (ingredient.name .. "-" .. temperature) or nil
     end
 
@@ -76,7 +76,7 @@ end
 
 local function line_ingredients(line)
     local ingredients = {}
-    for _, ingredient in pairs(line.recipe_proto.ingredients) do
+    for _, ingredient in pairs(line.recipe.proto.ingredients) do
         local name, temperature = get_temperature_name(line, ingredient)
         -- If any relevant ingredient has no temperature set, this line is invalid
         if name == nil then return nil end
@@ -97,7 +97,7 @@ local function generate_floor_data(player, factory, floor)
     local floor_data = {
         id = floor.id,
         products = (floor.level == 1) and factory_products(factory)
-            or floor.first.recipe_proto.products,
+            or floor.first.recipe.proto.products,
         lines = {}
     }
 
@@ -105,7 +105,7 @@ local function generate_floor_data(player, factory, floor)
         local line_data = { id = line.id }
 
         if line.class == "Floor" then
-            line_data.recipe_proto = line.first.recipe_proto
+            line_data.recipe_proto = line.first.recipe.proto
             line_data.subfloor = generate_floor_data(player, factory, line)
             table.insert(floor_data.lines, line_data)
         else
@@ -119,17 +119,17 @@ local function generate_floor_data(player, factory, floor)
             -- Alternatively, if this line is on a subfloor and the top line of the floor is useless, it is useless too
             if (relevant_line and (relevant_line.percentage == 0 or not relevant_line.active))
                     or line.percentage == 0 or not line.active or not line:get_surface_compatibility().overall
-                    or (not factory.matrix_free_items and line.production_type == "consume")
+                    or (not factory.matrix_free_items and line.recipe.production_type == "consume")
                     or ingredients == nil or missing_fuel_temp == true then
                 set_blank_line(player, floor, line)  -- useless lines don't need to run through the solver
             else
                 local machine = line.machine
-                line_data.recipe_proto = line.recipe_proto
-                line_data.recipe_energy = line.recipe_proto.energy
+                line_data.recipe_proto = line.recipe.proto
+                line_data.recipe_energy = line.recipe.proto.energy
                 line_data.ingredients = ingredients
                 line_data.percentage = line.percentage  -- non-zero
-                line_data.production_type = line.production_type
-                line_data.priority_product_proto = line.priority_product
+                line_data.production_type = line.recipe.production_type
+                line_data.priority_product_proto = line.recipe.priority_product
                 line_data.machine_proto = machine.proto
                 line_data.machine_limit = {limit=machine.limit, force_limit=machine.force_limit}
                 line_data.fuel_proto = machine.fuel and machine.fuel.proto or nil
@@ -138,8 +138,8 @@ local function generate_floor_data(player, factory, floor)
                 -- Boiler recipe energy
                 local prototype_category = machine.proto.prototype_category
                 if prototype_category == "boiler" then
-                    local goal_temperature = line.recipe_proto.products[1].temperature
-                    local fluid_name = line.recipe_proto.ingredients[1].name
+                    local goal_temperature = line.recipe.proto.products[1].temperature
+                    local fluid_name = line.recipe.proto.ingredients[1].name
                     local heat_capacity = prototypes.fluid[fluid_name].heat_capacity
                     local input_temperature = ingredients[1].temperature
                     line_data.recipe_energy = (goal_temperature - input_temperature) * heat_capacity
@@ -381,7 +381,7 @@ function solver.set_line_result(result)
     line.emissions = result.emissions
 
     if line.production_ratio == 0 then
-        local recipe_proto = line.recipe_proto
+        local recipe_proto = line.recipe.proto
         set_zeroed_items(line, "products", recipe_proto.products)
         line.byproducts = {}
         set_zeroed_items(line, "ingredients", recipe_proto.ingredients)

@@ -72,7 +72,7 @@ function _cursor.set_entity(player, line, object)
             position = {0, 0},
             quality = object.quality_proto.name,
             items = items_list,
-            recipe = (object.class == "Machine") and line.recipe_proto.name or nil
+            recipe = (object.class == "Machine") and line.recipe.proto.name or nil
         }
         set_cursor_blueprint(player, {blueprint_entity})
     end

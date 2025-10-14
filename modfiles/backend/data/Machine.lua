@@ -99,7 +99,7 @@ end
 ---@param force LuaForce
 ---@param factory Factory
 function Machine:update_recipe_effects(force, factory)
-    local recipe_proto = self.parent.recipe_proto
+    local recipe_proto = self.parent.recipe.proto
 
     local recipe_name = nil
     local drill = (self.proto.prototype_category == "mining_drill")
@@ -228,7 +228,7 @@ end
 
 ---@return boolean valid
 function Machine:validate()
-    local recipe_category = self.parent.recipe_proto.category
+    local recipe_category = self.parent.recipe.proto.category
     if recipe_category ~= self.proto.category then
         local corresponding_proto = prototyper.util.find("machines", self.proto.name, recipe_category)
         if corresponding_proto then  -- check if the machine just moved categories
@@ -246,7 +246,7 @@ function Machine:validate()
     self.valid = (not self.quality_proto.simplified) and self.valid
 
     -- Only need to check compatibility when the below is valid, else it'll be replaced anyways
-    if not self.proto.simplified and not self.parent.recipe_proto.simplified then
+    if not self.proto.simplified and not self.parent.recipe.proto.simplified then
         self.valid = self.parent:is_machine_compatible(self.proto) and self.valid
     end
 

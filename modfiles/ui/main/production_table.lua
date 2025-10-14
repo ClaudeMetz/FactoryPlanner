@@ -102,11 +102,11 @@ function builders.recipe(line, parent_flow, metadata, indent)
             table.insert(status_info, {"fp.blocking_condition", {"fp.pl_machine", 1}})
         end
 
-        if not (metadata.matrix_solver_active or line.production_type ~= "consume") then
+        if not (metadata.matrix_solver_active or line.recipe.production_type ~= "consume") then
             table.insert(status_info, {"fp.incompatible_solver"})
         end
 
-        if not relevant_line:temperature_fully_configured() then
+        if not relevant_line.recipe:temperature_fully_configured() then
             table.insert(status_info, {"fp.temperature_not_configured"})
         end
     end
@@ -118,12 +118,12 @@ function builders.recipe(line, parent_flow, metadata, indent)
         indication = {"fp.recipe_subfloor_attached"}
 
     -- Byproduct-consuming lines can't have subfloors, so this if-branching works
-    elseif line.production_type == "consume" then
+    elseif line.recipe.production_type == "consume" then
         style = (line_active) and "flib_slot_button_yellow_small" or "flib_slot_button_orange_small"
         note = {"fp.recipe_consumes_byproduct"}
     end
 
-    local recipe_proto = relevant_line.recipe_proto
+    local recipe_proto = relevant_line.recipe.proto
     local first_line = (note == "") and {"fp.tt_title", recipe_proto.localised_name}
         or {"fp.tt_title_with_note", recipe_proto.localised_name, note}
     local action = (first_subfloor_line) and "act_on_floor_recipe" or "act_on_line_recipe"
@@ -268,7 +268,7 @@ end
 
 local function add_catalysts(flow, line, category, metadata)
     if line.class == "Floor" then return end
-    for _, item in pairs(line.recipe_proto.catalysts[category]) do
+    for _, item in pairs(line.recipe.proto.catalysts[category]) do
         local item_proto = prototyper.util.find("items", item.name, item.type)  --[[@as FPItemPrototype]]
 
         local amount, number_tooltip = item_views.process_item(metadata.player, {proto=item_proto},
@@ -292,7 +292,7 @@ function builders.products(line, parent_flow, metadata)
 
         local style, note = "flib_slot_button_default_small", nil
         if line.class ~= "Floor" and not metadata.matrix_solver_active then
-            if line.priority_product == proto then
+            if line.recipe.priority_product == proto then
                 style = "flib_slot_button_pink_small"
                 note = {"fp.priority_product"}
             end
@@ -369,10 +369,10 @@ function builders.ingredients(line, parent_flow, metadata)
 
         local name_line, temperature_line = {"", {"fp.tt_title", {"", proto.localised_name}}}, ""
         if proto.type == "fluid" and line.class ~= "Floor" then
-            local temperature_data = line.temperature_data[proto.name]   -- exists for any fluid ingredient
+            local temperature_data = line.recipe.temperature_data[proto.name]   -- exists for any fluid ingredient
             table.insert(name_line, temperature_data.annotation)
 
-            local temperature = line.temperatures[proto.name]
+            local temperature = line.recipe.temperatures[proto.name]
             if temperature == nil then
                 style = "flib_slot_button_orange_small"
                 temperature_line = {"fp.no_temperature_configured"}

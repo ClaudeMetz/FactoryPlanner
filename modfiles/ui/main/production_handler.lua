@@ -30,7 +30,7 @@ local function handle_line_recipe_click(player, tags, action)
     local relevant_line = (line.class == "Floor") and line.first or line
 
     if action == "open_subfloor" then
-        if relevant_line.production_type == "consume" then
+        if relevant_line.recipe.production_type == "consume" then
             util.messages.raise(player, "error", {"fp.error_no_subfloor_on_byproduct_recipes"}, 1)
             return
         end
@@ -78,7 +78,7 @@ local function handle_line_recipe_click(player, tags, action)
         util.gui.run_refresh(player, "factory")
 
     elseif action == "factoriopedia" then
-        player.open_factoriopedia_gui(prototypes["recipe"][relevant_line.recipe_proto.name])
+        player.open_factoriopedia_gui(prototypes["recipe"][relevant_line.recipe.proto.name])
     end
 end
 
@@ -99,7 +99,7 @@ local function handle_floor_recipe_click(player, tags, action)
         util.gui.run_refresh(player, "factory")
 
     elseif action == "factoriopedia" then
-        player.open_factoriopedia_gui(prototypes["recipe"][line.recipe_proto.name])
+        player.open_factoriopedia_gui(prototypes["recipe"][line.recipe.proto.name])
     end
 end
 
@@ -239,7 +239,7 @@ local function handle_item_click(player, tags, action)
             util.messages.raise(player, "warning", {"fp.warning_no_prioritizing_single_product"}, 1)
         else
             -- Remove the priority_product if the already selected one is clicked
-            line.priority_product = (line.priority_product ~= item.proto) and item.proto or nil
+            line.recipe.priority_product = (line.recipe.priority_product ~= item.proto) and item.proto or nil
 
             solver.update(player)
             util.gui.run_refresh(player, "factory")
@@ -252,12 +252,12 @@ local function handle_item_click(player, tags, action)
 
         local proto = item.proto
         if production_type == "produce" and proto.type == "fluid" and line.class == "Line" then
-            local temperature = line.temperatures[item.proto.name]
+            local temperature = line.recipe.temperatures[item.proto.name]
             if temperature then proto = prototyper.util.find("items", proto.name .. "-" .. temperature, "fluid") end
             -- If a no-temperature fluid is passed, it'll show all compatible temperatures/recipes
         end
 
-        util.gui.open_dialog(player, {dialog="recipe", modal_data={line_id=line.id,
+        util.gui.open_dialog(player, {dialog="recipe", modal_data={recipe_id=line.recipe.id,
             add_after_line_id=add_after_line_id, production_type=production_type,
             category_id=proto.category_id, product_id=proto.id}})
 
@@ -269,7 +269,7 @@ local function handle_item_click(player, tags, action)
             util.cursor.create_flying_text(player, {"fp.can_only_edit_lines"})
             return
         end
-        util.gui.open_dialog(player, {dialog="item", modal_data={line_id=line.id,
+        util.gui.open_dialog(player, {dialog="item", modal_data={recipe_id=line.recipe.id,
             category_id=item.proto.category_id, name=item.proto.name}})
 
     elseif action == "copy" then
@@ -277,8 +277,8 @@ local function handle_item_click(player, tags, action)
 
         local proto = item.proto
         if item.proto.type == "fluid" then
-            if not line.temperatures[item.proto.name] then return end
-            local temperature = line.temperatures[item.proto.name]
+            local temperature = line.recipe.temperatures[item.proto.name]
+            if not temperature then return end
             proto = prototyper.util.find("items", proto.name .. "-" .. temperature, "fluid")
         end
 
@@ -299,10 +299,10 @@ local function handle_item_click(player, tags, action)
                     -- SimpleItems will always be a fluid with temperature
                     if object.class == "SimpleItem" then
                         if object.proto.base_name ~= item.proto.name then return false, "incompatible" end
-                        line.temperatures[item.proto.name] = object.proto.temperature
+                        line.recipe.temperatures[item.proto.name] = object.proto.temperature
                     else  -- "Fuel"
                         if object.proto.name ~= item.proto.name then return false, "incompatible" end
-                        line.temperatures[item.proto.name] = object.temperature
+                        line.recipe.temperatures[item.proto.name] = object.temperature
                     end
 
                     return true, nil

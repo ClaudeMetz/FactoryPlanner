@@ -39,7 +39,7 @@ local function determine_table_height(floor, column_counts)
 
             if line.class == "Line" then
                 if column == "ingredient" and line.machine.fuel then item_count = item_count + 1 end
-                local catalysts = line.recipe_proto.catalysts[column .. "s"]
+                local catalysts = line.recipe.proto.catalysts[column .. "s"]
                 if catalysts then item_count = item_count + table_size(catalysts) end
             end
 
@@ -96,7 +96,7 @@ local function add_checkmark_button(parent_flow, line, relevant_line)
 end
 
 local function add_recipe_button(parent_flow, line, relevant_line, metadata)
-    local recipe_proto = relevant_line.recipe_proto
+    local recipe_proto = relevant_line.recipe.proto
     local style = (line.class == "Floor") and "flib_slot_button_blue_small" or "flib_slot_button_default_small"
     style = (relevant_line.done) and "flib_slot_button_grayscale_small" or style
     local tooltip = (line.class == "Line") and {"", {"fp.tt_title", recipe_proto.localised_name}}
@@ -192,10 +192,10 @@ local function add_item_flow(line, relevant_line, item_category, button_color, m
             style = (relevant_line.done) and "flib_slot_button_disabled_grayscale_small"
                 or "flib_slot_button_disabled_small"
         elseif type == "fluid" and item_category == "ingredient" and line.class ~= "Floor" then
-            local temperature_data = line.temperature_data[proto.name]   -- exists for any fluid ingredient
+            local temperature_data = line.recipe.temperature_data[proto.name]  -- exists for any fluid ingredient
             table.insert(name_line, temperature_data.annotation)
 
-            local temperature = line.temperatures[proto.name]
+            local temperature = line.recipe.temperatures[proto.name]
             if temperature == nil then
                 style = "flib_slot_button_purple_small"
                 temperature_line = {"fp.no_temperature_configured"}
@@ -224,7 +224,7 @@ local function add_item_flow(line, relevant_line, item_category, button_color, m
     if line.class == "Floor" then return end
 
     if item_category == "product" or item_category == "ingredient" then
-        for _, item in pairs(line.recipe_proto.catalysts[item_category .. "s"]) do
+        for _, item in pairs(line.recipe.proto.catalysts[item_category .. "s"]) do
             local item_proto = prototyper.util.find("items", item.name, item.type)  --[[@as FPItemPrototype]]
 
             local amount, number_tooltip = item_views.process_item(metadata.player, {proto=item_proto},
@@ -369,7 +369,7 @@ local function refresh_compact_production(player, factory)
     for line in floor:iterator() do -- build the individual lines
         local relevant_line = (line.class == "Floor") and line.first or line  --[[@as Line]]
         if not relevant_line.active or not relevant_line:get_surface_compatibility().overall
-                or (not factory.matrix_free_items and relevant_line.production_type == "consume") then
+                or (not factory.matrix_free_items and relevant_line.recipe.production_type == "consume") then
             goto skip_line
         end
 
@@ -515,7 +515,7 @@ local function handle_recipe_click(player, tags, action)
             refresh_compact_factory(player)
         end
     elseif action == "factoriopedia" then
-        player.open_factoriopedia_gui(prototypes["recipe"][relevant_line.recipe_proto.name])
+        player.open_factoriopedia_gui(prototypes["recipe"][relevant_line.recipe.proto.name])
     end
 end
 

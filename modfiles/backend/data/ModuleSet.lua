@@ -190,7 +190,7 @@ function ModuleSet:check_compatibility(module_proto)
         return false
     else
         local compatible = true
-        local entity, recipe = self.parent.proto, self.parent.parent.recipe_proto
+        local entity, recipe = self.parent.proto, self.parent.parent.recipe.proto
         -- Any non-existing allowed list means all modules are allowed
 
         local function check_effect_compatibility(allowed_effects)

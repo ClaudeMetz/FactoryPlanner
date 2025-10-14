@@ -102,7 +102,7 @@ local function attempt_adding_line(player, recipe_id, modal_data)
             util.messages.raise(player, "warning", {"fp.warning_surface_not_compatible", recipe_name}, 1)
         end
 
-        if not line:temperature_fully_configured() then
+        if not line.recipe:temperature_fully_configured() then
             util.messages.raise(player, "warning", {"fp.warning_temperature_not_configured", recipe_name}, 1)
         end
 
@@ -112,10 +112,9 @@ local function attempt_adding_line(player, recipe_id, modal_data)
 
         -- Set temperature on ingredient that this recipe fulfills
         if modal_data.temperature then
-            if modal_data.line_id then
-                local origin_line = OBJECT_INDEX[modal_data.line_id]
+            if modal_data.recipe_id then
                 local fluid_name = modal_data.base_fluid.name
-                origin_line.temperatures[fluid_name] = modal_data.temperature
+                OBJECT_INDEX[modal_data.recipe_id].temperatures[fluid_name] = modal_data.temperature
             elseif modal_data.fuel_id then
                 OBJECT_INDEX[modal_data.fuel_id].temperature = modal_data.temperature
             end
@@ -334,9 +333,9 @@ local function open_recipe_dialog(player, modal_data)
     if modal_data.result == nil then  -- this is a base_fluid dialog
         modal_data.base_fluid = prototyper.util.find("items", modal_data.product_id, modal_data.category_id)
 
-        local object = OBJECT_INDEX[modal_data.line_id or modal_data.fuel_id]
-        local temperature_data = (modal_data.line_id) and object.temperature_data[modal_data.base_fluid.name]
-            or object.temperature_data
+        local object = OBJECT_INDEX[modal_data.recipe_id or modal_data.fuel_id]
+        local temperature_data = (modal_data.fuel_id) and object.temperature_data
+            or object.temperature_data[modal_data.base_fluid.name]
 
         modal_data.annotation = temperature_data.annotation
         modal_data.applicable_values = temperature_data.applicable_values
