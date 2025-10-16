@@ -102,7 +102,7 @@ function builders.recipe(line, parent_flow, metadata, indent)
             table.insert(status_info, {"fp.blocking_condition", {"fp.pl_machine", 1}})
         end
 
-        if not (metadata.matrix_solver_active or line.recipe.production_type ~= "consume") then
+        if not (metadata.matrix_solver_active or relevant_line.recipe.production_type ~= "consume") then
             table.insert(status_info, {"fp.incompatible_solver"})
         end
 
@@ -118,7 +118,7 @@ function builders.recipe(line, parent_flow, metadata, indent)
         indication = {"fp.recipe_subfloor_attached"}
 
     -- Byproduct-consuming lines can't have subfloors, so this if-branching works
-    elseif line.recipe.production_type == "consume" then
+    elseif relevant_line.recipe.production_type == "consume" then
         style = (line_active) and "flib_slot_button_yellow_small" or "flib_slot_button_orange_small"
         note = {"fp.recipe_consumes_byproduct"}
     end

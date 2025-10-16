@@ -235,29 +235,34 @@ local function handle_item_click(player, tags, action)
     local item = line[tags.item_category .. "s"][tags.item_index]
 
     if action == "prioritize" then
-        if #line.products < 2 then
+        if line.class ~= "Line" then
+            util.cursor.create_flying_text(player, {"fp.can_only_edit_line_items"})
+            return
+        elseif #line.products < 2 then
             util.messages.raise(player, "warning", {"fp.warning_no_prioritizing_single_product"}, 1)
-        else
-            -- Remove the priority_product if the already selected one is clicked
-            line.recipe.priority_product = (line.recipe.priority_product ~= item.proto) and item.proto or nil
-
-            solver.update(player)
-            util.gui.run_refresh(player, "factory")
+            return
         end
+
+        -- Remove the priority_product if the already selected one is clicked
+        line.recipe.priority_product = (line.recipe.priority_product ~= item.proto) and item.proto or nil
+
+        solver.update(player)
+        util.gui.run_refresh(player, "factory")
 
     elseif action == "add_recipe_to_end" or action == "add_recipe_below" then
         if item.proto.type == "entity" then return end
         local production_type = (tags.item_category == "byproduct") and "consume" or "produce"
         local add_after_line_id = (action == "add_recipe_below") and line.id or nil
 
-        local proto = item.proto
+        local proto, recipe_id = item.proto, nil
         if production_type == "produce" and proto.type == "fluid" and line.class == "Line" then
             local temperature = line.recipe.temperatures[item.proto.name]
             if temperature then proto = prototyper.util.find("items", proto.name .. "-" .. temperature, "fluid") end
             -- If a no-temperature fluid is passed, it'll show all compatible temperatures/recipes
+            recipe_id = line.recipe.id
         end
 
-        util.gui.open_dialog(player, {dialog="recipe", modal_data={recipe_id=line.recipe.id,
+        util.gui.open_dialog(player, {dialog="recipe", modal_data={recipe_id=recipe_id,
             add_after_line_id=add_after_line_id, production_type=production_type,
             category_id=proto.category_id, product_id=proto.id}})
 
@@ -266,12 +271,13 @@ local function handle_item_click(player, tags, action)
             util.cursor.create_flying_text(player, {"fp.can_only_edit_fluids"})
             return
         elseif line.class ~= "Line" then
-            util.cursor.create_flying_text(player, {"fp.can_only_edit_lines"})
+            util.cursor.create_flying_text(player, {"fp.can_only_edit_line_items"})
             return
         elseif #line.recipe.temperature_data[item.proto.name].applicable_values == 1 then
             util.cursor.create_flying_text(player, {"fp.can_only_edit_multiple_choices"})
             return
         end
+
         util.gui.open_dialog(player, {dialog="item", modal_data={recipe_id=line.recipe.id,
             category_id=item.proto.category_id, name=item.proto.name}})
 
@@ -279,7 +285,7 @@ local function handle_item_click(player, tags, action)
         if item.proto.type == "entity" then return end
 
         local proto = item.proto
-        if item.proto.type == "fluid" then
+        if item.proto.type == "fluid" and line.class == "Line" then
             local temperature = line.recipe.temperatures[item.proto.name]
             if not temperature then return end
             proto = prototyper.util.find("items", proto.name .. "-" .. temperature, "fluid")
@@ -290,6 +296,7 @@ local function handle_item_click(player, tags, action)
 
     elseif action == "paste" then
         if item.proto.type == "entity" then return end
+        if line.class ~= "Line" then return end
 
         -- Custom wrapper to paste onto since SimpleItem is not a real object
         local target = {
