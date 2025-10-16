@@ -214,6 +214,7 @@ function defaults.migrate(player_table)
             end
             preferences["default_" .. data_type] = new_defaults
         end
+
         ::skip::
     end
 end

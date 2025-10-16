@@ -41,11 +41,9 @@ local function refresh_views_table(player)
     local views = util.globals.ui_state(player).views_data.views
 
     local function add_move_button(parent, index, direction, enabled)
-        local move_up_button = parent.add{type="sprite-button", sprite="fp_arrow_" .. direction,
+        local move_button = parent.add{type="sprite-button", sprite="fp_arrow_" .. direction,
             tags={mod="fp", on_gui_click="move_view", index=index, direction=direction},
-            enabled=enabled, style="fp_sprite-button_move", mouse_button_filter={"left"}}
-        move_up_button.style.size = {20, 18}
-        move_up_button.style.padding = 0
+            enabled=enabled, style="fp_sprite-button_move_small", mouse_button_filter={"left"}}
     end
 
     local active_view_count = 0

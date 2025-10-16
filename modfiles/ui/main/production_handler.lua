@@ -268,6 +268,9 @@ local function handle_item_click(player, tags, action)
         elseif line.class ~= "Line" then
             util.cursor.create_flying_text(player, {"fp.can_only_edit_lines"})
             return
+        elseif #line.recipe.temperature_data[item.proto.name].applicable_values == 1 then
+            util.cursor.create_flying_text(player, {"fp.can_only_edit_multiple_choices"})
+            return
         end
         util.gui.open_dialog(player, {dialog="item", modal_data={recipe_id=line.recipe.id,
             category_id=item.proto.category_id, name=item.proto.name}})

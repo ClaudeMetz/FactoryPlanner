@@ -12,9 +12,13 @@ function migration.player_table(player_table)
                     if line.class == "Floor" then
                         iterate_floor(line)
                     else
-                        line.recipe = Recipe.init(line.recipe_proto, line.production_type)
+                        -- Use simplified proto to avoid fluid temperature data build
+                        local recipe_proto = {name = line.recipe_proto.name, category = nil,
+                            data_type = "recipes", simplified = true}
+                        line.recipe = Recipe.init(recipe_proto, line.production_type)
+                        line.recipe.parent = line
                         line.recipe.priority_product = line.priority_product
-                        line.recipe.temperatures = line.temperatures
+                        line.recipe.temperatures = line.temperatures or {}
 
                         line.recipe_proto = nil
                         line.production_type = nil
@@ -41,7 +45,7 @@ function migration.packed_factory(packed_factory)
                     proto = packed_line.recipe_proto,
                     production_type = packed_line.production_type,
                     priority_product = packed_line.priority_product,
-                    temperatures = packed_line.temperatures
+                    temperatures = packed_line.temperatures or {}
                 }
             end
         end

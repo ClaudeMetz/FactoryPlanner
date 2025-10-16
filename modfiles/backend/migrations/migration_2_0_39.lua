@@ -17,9 +17,15 @@ function migration.player_table(player_table)
             check_quality(machine)
         end
         check_quality(player_table.preferences.default_beacons)
-        check_quality(player_table.preferences.default_pumps)
-        check_quality(player_table.preferences.default_wagons[1])
-        check_quality(player_table.preferences.default_wagons[2])
+
+        if player_table.preferences.default_pumps then
+            check_quality(player_table.preferences.default_pumps)
+        end
+
+        if player_table.preferences.default_wagons then
+            check_quality(player_table.preferences.default_wagons[1])
+            check_quality(player_table.preferences.default_wagons[2])
+        end
     end
 end
 

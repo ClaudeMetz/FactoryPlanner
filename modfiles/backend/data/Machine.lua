@@ -67,14 +67,14 @@ function Machine:normalize_fuel(player)
 
     if self.fuel == nil then  -- add a fuel for this machine if it doesn't have one here
         local default_fuel_proto = defaults.get(player, "fuels", burner.combined_category).proto
-        self.fuel = Fuel.init(default_fuel_proto, self)
+        self.fuel = Fuel.init(default_fuel_proto, self)  -- builds temperature_data implicitly
+        self.fuel:apply_temperature_default(player)
     else  -- make sure the fuel is of the right combined category
         if burner.combined_category ~= self.fuel.proto.category then
-            self.fuel.proto = prototyper.util.find("fuels", self.fuel.proto.name, burner.combined_category)
+            local proto = prototyper.util.find("fuels", self.fuel.proto.name, burner.combined_category)
+            self.fuel:set_proto(proto, player)
         end
     end
-
-    self.fuel:build_temperatures_data()  -- validate temperature
 end
 
 

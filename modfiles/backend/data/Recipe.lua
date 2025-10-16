@@ -27,14 +27,13 @@ local function init(proto, production_type)
         proto = proto,
         production_type = production_type,
         priority_product = nil,
-        temperatures = nil,
+        temperatures = {},
 
         temperature_data = nil
     }, "Recipe", Recipe)  --[[@as Recipe]]
 
-    -- Initialize data related to fluid ingredients temperatures
-    if object.proto and object.proto.simplified ~= true then
-        object:build_temperatures_data({})
+    if proto and proto.simplified ~= true then
+        object:build_temperatures_data()
     end
 
     return object
@@ -46,19 +45,24 @@ function Recipe:index()
 end
 
 
--- Builds temperature data caches, and optionally migrates previous temperatures
----@param previous_temperatures { [string]: float }
-function Recipe:build_temperatures_data(previous_temperatures)
-    self.temperatures = {}
+function Recipe:build_temperatures_data()
     self.temperature_data = {}
 
     for _, ingredient in pairs(self.proto.ingredients) do
         if ingredient.type == "fluid" then
-            local previous = previous_temperatures[ingredient.name]
-            local temperature, data = util.temperature.generate_data(ingredient, previous)
+            self.temperature_data[ingredient.name] = util.temperature.generate_data(ingredient)
+        end
+    end
+end
 
-            self.temperatures[ingredient.name] = temperature
-            self.temperature_data[ingredient.name] = data
+--- There might be no valid default to apply
+---@param player LuaPlayer
+function Recipe:apply_temperature_defaults(player)
+    for _, ingredient in pairs(self.proto.ingredients) do
+        if ingredient.type == "fluid" then
+            local applicable_values = self.temperature_data[ingredient.name].applicable_values
+            self.temperatures[ingredient.name] = util.temperature.determine_applicable_default(
+                player, ingredient, applicable_values)
         end
     end
 end
@@ -119,7 +123,28 @@ function Recipe:validate()
         self.valid = (not self.priority_product.simplified) and self.valid
     end
 
-    if self.valid then self:build_temperatures_data(self.temperatures or {}) end
+    -- An invalid temperature shouldn't invalidate the recipe
+    if self.valid then
+        local previous_temperatures = self.temperatures
+        self.temperatures = {}
+
+        self:build_temperatures_data()
+
+        for _, ingredient in pairs(self.proto.ingredients) do
+            local previous_temperature = previous_temperatures[ingredient.name]
+
+            if ingredient.type == "fluid" and previous_temperature ~= nil then
+                local applicable_values = self.temperature_data[ingredient.name].applicable_values
+
+                for _, temperature in pairs(applicable_values) do
+                    if temperature == previous_temperature then
+                        self.temperatures[ingredient.name] = previous_temperature
+                        break
+                    end
+                end
+            end
+        end
+    end
 
     return self.valid
 end
@@ -134,8 +159,6 @@ function Recipe:repair(player)
     if self.valid and self.priority_product and self.priority_product.simplified then
         self.priority_product = nil
     end
-
-    if self.valid then self:build_temperatures_data(self.temperatures or {}) end
 
     return self.valid
 end

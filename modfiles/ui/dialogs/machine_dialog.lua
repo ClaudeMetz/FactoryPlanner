@@ -240,8 +240,8 @@ local function handle_fuel_choice(player, _, event)
     end
 
     local combined_category = machine.proto.burner.combined_category
-    machine.fuel.proto = prototyper.util.find("fuels", elem_value, combined_category)
-    machine.fuel:build_temperatures_data()  -- validate temperature
+    local proto = prototyper.util.find("fuels", elem_value, combined_category)
+    machine.fuel:set_proto(proto, player)
 
     refresh_defaults_frame(player)
 end

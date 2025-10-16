@@ -37,6 +37,7 @@ require("backend.calculation.solver")
 ---@field default_beacons DefaultPrototype
 ---@field default_belts DefaultPrototype
 ---@field default_wagons PrototypeDefaultWithCategory
+---@field default_temperatures TemperatureDefaultMap
 
 ---@alias Timescale 1 | 60
 
@@ -90,6 +91,8 @@ function reload_preferences(player_table)
     reload("default_belts", defaults.get_fallback("belts"))
     reload("default_pumps", defaults.get_fallback("pumps"))
     reload("default_wagons", defaults.get_fallback("wagons"))
+
+    reload("default_temperatures", util.temperature.get_fallback())
 
     player_table.preferences = updated_prefs
 end
@@ -182,10 +185,11 @@ end
 local function refresh_player_table(player)
     local player_table = storage.players[player.index]
 
-    defaults.migrate(player_table)
-
     reload_preferences(player_table)
     reset_ui_state(player_table)
+
+    defaults.migrate(player_table)
+    util.temperature.migrate(player_table)
 
     util.context.validate(player)
 

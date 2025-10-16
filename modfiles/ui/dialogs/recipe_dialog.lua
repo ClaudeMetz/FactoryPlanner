@@ -106,7 +106,8 @@ local function attempt_adding_line(player, recipe_id, modal_data)
             util.messages.raise(player, "warning", {"fp.warning_temperature_not_configured", recipe_name}, 1)
         end
 
-        -- Set machine and beacon up as their default
+        -- Apply defaults as appropriate
+        line.recipe:apply_temperature_defaults(player)
         line.machine:reset(player)
         line:setup_beacon(player)
 
@@ -156,7 +157,7 @@ local function create_filter_box(modal_data)
         table_temperatures.style.horizontal_spacing = 0
         table_temperatures.style.top_margin = 8
 
-        for index, temperature in pairs(modal_data.applicable_values) do
+        for _, temperature in pairs(modal_data.applicable_values) do
             local toggled = temperature == modal_data.temperature
             table_temperatures.add{type="button", caption={"fp.temperature_value", temperature},
                 tags={mod="fp", on_gui_click="change_recipe_temperature", temperature=temperature},
