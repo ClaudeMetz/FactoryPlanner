@@ -19,7 +19,7 @@ local function handle_line_move_click(player, tags, event)
     line.parent:shift(line, tags.direction, spots_to_shift)
 
     solver.update(player)
-    util.raise.refresh(player, "factory")
+    util.gui.run_refresh(player, "factory")
 end
 
 
@@ -30,7 +30,7 @@ local function handle_line_recipe_click(player, tags, action)
     local relevant_line = (line.class == "Floor") and line.first or line
 
     if action == "open_subfloor" then
-        if relevant_line.production_type == "consume" then
+        if relevant_line.recipe.production_type == "consume" then
             util.messages.raise(player, "error", {"fp.error_no_subfloor_on_byproduct_recipes"}, 1)
             return
         end
@@ -52,7 +52,7 @@ local function handle_line_recipe_click(player, tags, action)
         end
 
         util.context.set(player, new_context)
-        util.raise.refresh(player, "production")
+        util.gui.run_refresh(player, "production")
 
     elseif action == "copy" then
         util.clipboard.copy(player, line)  -- use actual line
@@ -63,7 +63,7 @@ local function handle_line_recipe_click(player, tags, action)
     elseif action == "toggle" then
         relevant_line.active = not relevant_line.active
         solver.update(player, factory)
-        util.raise.refresh(player, "factory")
+        util.gui.run_refresh(player, "factory")
 
     elseif action == "delete" then
         local floor = line.parent
@@ -75,10 +75,10 @@ local function handle_line_recipe_click(player, tags, action)
         end
 
         solver.update(player, factory)
-        util.raise.refresh(player, "factory")
+        util.gui.run_refresh(player, "factory")
 
     elseif action == "factoriopedia" then
-        player.open_factoriopedia_gui(prototypes["recipe"][relevant_line.recipe_proto.name])
+        player.open_factoriopedia_gui(prototypes["recipe"][relevant_line.recipe.proto.name])
     end
 end
 
@@ -96,10 +96,10 @@ local function handle_floor_recipe_click(player, tags, action)
     elseif action == "toggle" then
         line.active = not line.active
         solver.update(player, factory)
-        util.raise.refresh(player, "factory")
+        util.gui.run_refresh(player, "factory")
 
     elseif action == "factoriopedia" then
-        player.open_factoriopedia_gui(prototypes["recipe"][line.recipe_proto.name])
+        player.open_factoriopedia_gui(prototypes["recipe"][line.recipe.proto.name])
     end
 end
 
@@ -115,7 +115,7 @@ end
 local function handle_percentage_confirmation(player, _, _)
     util.globals.ui_state(player).recalculate_on_factory_change = false  -- reset this flag as we refresh below
     solver.update(player)
-    util.raise.refresh(player, "factory")
+    util.gui.run_refresh(player, "factory")
 end
 
 
@@ -128,7 +128,7 @@ local function handle_machine_click(player, tags, action)
         if success then main_dialog.toggle(player) end
 
     elseif action == "edit" then
-        util.raise.open_dialog(player, {dialog="machine", modal_data={machine_id=machine.id}})
+        util.gui.open_dialog(player, {dialog="machine", modal_data={machine_id=machine.id}})
 
     elseif action == "copy" then
         util.clipboard.copy(player, machine)
@@ -148,9 +148,9 @@ local function handle_module_add(player, tags, event)
         util.clipboard.paste(player, object)
     else
         if object.class == "Machine" then
-            util.raise.open_dialog(player, {dialog="machine", modal_data={machine_id=object.id}})
+            util.gui.open_dialog(player, {dialog="machine", modal_data={machine_id=object.id}})
         else  -- "Beacon"
-            util.raise.open_dialog(player, {dialog="beacon", modal_data={line_id=object.parent.id}})
+            util.gui.open_dialog(player, {dialog="beacon", modal_data={line_id=object.parent.id}})
         end
     end
 end
@@ -165,7 +165,7 @@ local function handle_beacon_click(player, tags, action)
         if success then main_dialog.toggle(player) end
 
     elseif action == "edit" then
-        util.raise.open_dialog(player, {dialog="beacon", modal_data={line_id=line.id}})
+        util.gui.open_dialog(player, {dialog="beacon", modal_data={line_id=line.id}})
 
     elseif action == "copy" then
         util.clipboard.copy(player, beacon)
@@ -176,7 +176,7 @@ local function handle_beacon_click(player, tags, action)
     elseif action == "delete" then
         line:set_beacon(nil)
         solver.update(player)
-        util.raise.refresh(player, "factory")
+        util.gui.run_refresh(player, "factory")
 
     elseif action == "factoriopedia" then
         player.open_factoriopedia_gui(prototypes["entity"][beacon.proto.name])
@@ -190,7 +190,7 @@ local function handle_beacon_add(player, tags, event)
         local dummy_beacon = Beacon.init({}, line)
         util.clipboard.paste(player, dummy_beacon)
     else
-        util.raise.open_dialog(player, {dialog="beacon", modal_data={line_id=line.id}})
+        util.gui.open_dialog(player, {dialog="beacon", modal_data={line_id=line.id}})
     end
 end
 
@@ -201,9 +201,9 @@ local function handle_module_click(player, tags, action)
     if action == "edit" then
         local line = module.parent.parent.parent
         if module.parent.parent.class == "Machine" then
-            util.raise.open_dialog(player, {dialog="machine", modal_data={machine_id=line.machine.id}})
+            util.gui.open_dialog(player, {dialog="machine", modal_data={machine_id=line.machine.id}})
         else
-            util.raise.open_dialog(player, {dialog="beacon", modal_data={line_id=line.id}})
+            util.gui.open_dialog(player, {dialog="beacon", modal_data={line_id=line.id}})
         end
 
     elseif action == "copy" then
@@ -222,7 +222,7 @@ local function handle_module_click(player, tags, action)
 
         module_set:normalize({effects=true})
         solver.update(player)
-        util.raise.refresh(player, "factory")
+        util.gui.run_refresh(player, "factory")
 
     elseif action == "factoriopedia" then
         player.open_factoriopedia_gui(prototypes["item"][module.proto.name])
@@ -239,10 +239,10 @@ local function handle_item_click(player, tags, action)
             util.messages.raise(player, "warning", {"fp.warning_no_prioritizing_single_product"}, 1)
         else
             -- Remove the priority_product if the already selected one is clicked
-            line.priority_product = (line.priority_product ~= item.proto) and item.proto or nil
+            line.recipe.priority_product = (line.recipe.priority_product ~= item.proto) and item.proto or nil
 
             solver.update(player)
-            util.raise.refresh(player, "factory")
+            util.gui.run_refresh(player, "factory")
         end
 
     elseif action == "add_recipe_to_end" or action == "add_recipe_below" then
@@ -252,12 +252,12 @@ local function handle_item_click(player, tags, action)
 
         local proto = item.proto
         if production_type == "produce" and proto.type == "fluid" and line.class == "Line" then
-            local temperature = line.temperatures[item.proto.name]
+            local temperature = line.recipe.temperatures[item.proto.name]
             if temperature then proto = prototyper.util.find("items", proto.name .. "-" .. temperature, "fluid") end
             -- If a no-temperature fluid is passed, it'll show all compatible temperatures/recipes
         end
 
-        util.raise.open_dialog(player, {dialog="recipe", modal_data={line_id=line.id,
+        util.gui.open_dialog(player, {dialog="recipe", modal_data={recipe_id=line.recipe.id,
             add_after_line_id=add_after_line_id, production_type=production_type,
             category_id=proto.category_id, product_id=proto.id}})
 
@@ -268,8 +268,11 @@ local function handle_item_click(player, tags, action)
         elseif line.class ~= "Line" then
             util.cursor.create_flying_text(player, {"fp.can_only_edit_lines"})
             return
+        elseif #line.recipe.temperature_data[item.proto.name].applicable_values == 1 then
+            util.cursor.create_flying_text(player, {"fp.can_only_edit_multiple_choices"})
+            return
         end
-        util.raise.open_dialog(player, {dialog="item", modal_data={line_id=line.id,
+        util.gui.open_dialog(player, {dialog="item", modal_data={recipe_id=line.recipe.id,
             category_id=item.proto.category_id, name=item.proto.name}})
 
     elseif action == "copy" then
@@ -277,8 +280,8 @@ local function handle_item_click(player, tags, action)
 
         local proto = item.proto
         if item.proto.type == "fluid" then
-            if not line.temperatures[item.proto.name] then return end
-            local temperature = line.temperatures[item.proto.name]
+            local temperature = line.recipe.temperatures[item.proto.name]
+            if not temperature then return end
             proto = prototyper.util.find("items", proto.name .. "-" .. temperature, "fluid")
         end
 
@@ -299,10 +302,10 @@ local function handle_item_click(player, tags, action)
                     -- SimpleItems will always be a fluid with temperature
                     if object.class == "SimpleItem" then
                         if object.proto.base_name ~= item.proto.name then return false, "incompatible" end
-                        line.temperatures[item.proto.name] = object.proto.temperature
+                        line.recipe.temperatures[item.proto.name] = object.proto.temperature
                     else  -- "Fuel"
                         if object.proto.name ~= item.proto.name then return false, "incompatible" end
-                        line.temperatures[item.proto.name] = object.temperature
+                        line.recipe.temperatures[item.proto.name] = object.temperature
                     end
 
                     return true, nil
@@ -340,7 +343,7 @@ local function handle_fuel_click(player, tags, action)
             -- If a no-temperature fluid is passed, it'll show all compatible temperatures/recipes
         end
 
-        util.raise.open_dialog(player, {dialog="recipe", modal_data={fuel_id=fuel.id,
+        util.gui.open_dialog(player, {dialog="recipe", modal_data={fuel_id=fuel.id,
             add_after_line_id=add_after_line_id, production_type="produce",
             category_id=proto.category_id, product_id=proto.id}})
 
@@ -349,11 +352,11 @@ local function handle_fuel_click(player, tags, action)
             util.cursor.create_flying_text(player, {"fp.can_only_edit_fluids"})
             return
         end
-        util.raise.open_dialog(player, {dialog="item", modal_data={fuel_id=fuel.id,
+        util.gui.open_dialog(player, {dialog="item", modal_data={fuel_id=fuel.id,
             category_id=fuel.proto.category_id, name=fuel.proto.name}})
 
     elseif action == "edit_fuel" then
-        util.raise.open_dialog(player, {dialog="machine", modal_data={machine_id=line.machine.id}})
+        util.gui.open_dialog(player, {dialog="machine", modal_data={machine_id=line.machine.id}})
 
     elseif action == "copy" then
         util.clipboard.copy(player, fuel)

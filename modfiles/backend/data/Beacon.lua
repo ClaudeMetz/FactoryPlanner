@@ -173,8 +173,7 @@ function Beacon:validate()
     self.valid = self.parent:uses_beacon_effects() and self.valid
     self.valid = self.module_set:validate() and self.valid
 
-    -- Reset amount since the user can't change it in the dialog
-    if self:is_mono_beacon() then self.amount = 1 end
+    if self.valid and self:is_mono_beacon() then self.amount = 1 end
 
     return self.valid
 end
@@ -197,6 +196,8 @@ function Beacon:repair(player)
         self.module_set:repair(player)  -- always becomes valid
         if self.module_set.module_count == 0 then self.valid = false end
     end
+
+    if self.valid and self:is_mono_beacon() then self.amount = 1 end
 
     return self.valid
 end

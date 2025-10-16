@@ -67,14 +67,14 @@ function Machine:normalize_fuel(player)
 
     if self.fuel == nil then  -- add a fuel for this machine if it doesn't have one here
         local default_fuel_proto = defaults.get(player, "fuels", burner.combined_category).proto
-        self.fuel = Fuel.init(default_fuel_proto, self)
+        self.fuel = Fuel.init(default_fuel_proto, self)  -- builds temperature_data implicitly
+        self.fuel:apply_temperature_default(player)
     else  -- make sure the fuel is of the right combined category
         if burner.combined_category ~= self.fuel.proto.category then
-            self.fuel.proto = prototyper.util.find("fuels", self.fuel.proto.name, burner.combined_category)
+            local proto = prototyper.util.find("fuels", self.fuel.proto.name, burner.combined_category)
+            self.fuel:set_proto(proto, player)
         end
     end
-
-    self.fuel:build_temperatures_data()  -- validate temperature
 end
 
 
@@ -99,10 +99,10 @@ end
 ---@param force LuaForce
 ---@param factory Factory
 function Machine:update_recipe_effects(force, factory)
-    local recipe_proto = self.parent.recipe_proto
+    local recipe_proto = self.parent.recipe.proto
 
     local recipe_name = nil
-    local drill = self.proto.prototype_category == "mining_drill"
+    local drill = (self.proto.prototype_category == "mining_drill")
     if drill and self.proto.uses_force_mining_productivity_bonus then recipe_name = "custom-mining"
     elseif not recipe_proto.custom then recipe_name = recipe_proto.name
     else return end  -- no recipe effects for custom recipes
@@ -228,7 +228,7 @@ end
 
 ---@return boolean valid
 function Machine:validate()
-    local recipe_category = self.parent.recipe_proto.category
+    local recipe_category = self.parent.recipe.proto.category
     if recipe_category ~= self.proto.category then
         local corresponding_proto = prototyper.util.find("machines", self.proto.name, recipe_category)
         if corresponding_proto then  -- check if the machine just moved categories
@@ -246,7 +246,7 @@ function Machine:validate()
     self.valid = (not self.quality_proto.simplified) and self.valid
 
     -- Only need to check compatibility when the below is valid, else it'll be replaced anyways
-    if not self.proto.simplified and not self.parent.recipe_proto.simplified then
+    if not self.proto.simplified and not self.parent.recipe.proto.simplified then
         self.valid = self.parent:is_machine_compatible(self.proto) and self.valid
     end
 

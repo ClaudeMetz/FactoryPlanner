@@ -62,11 +62,11 @@ local function update_line(line_data, aggregate, looped_fuel)
         end
     end
 
-    local crafts_per_second = (line_data.machine_speed * (1 + total_effects.speed)) / recipe_proto.energy
+    local crafts_per_second = (line_data.machine_speed * (1 + total_effects.speed)) / line_data.recipe_energy
 
     -- Limit the machine_count by reducing the production_ratio, if necessary
     local machine_limit = line_data.machine_limit
-    if machine_limit.limit ~= nil and recipe_proto.energy > 0 then
+    if machine_limit.limit ~= nil and line_data.recipe_energy > 0 then
         local capped_production_ratio = crafts_per_second * machine_limit.limit
         production_ratio = machine_limit.force_limit and capped_production_ratio
             or math.min(production_ratio, capped_production_ratio)

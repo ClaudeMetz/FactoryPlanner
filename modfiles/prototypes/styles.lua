@@ -74,6 +74,13 @@ styles["fp_frame_semitransparent"] = {
     }
 }
 
+styles["fp_flow_temperature_defaults"] = {
+    type = "horizontal_flow_style",
+    vertical_align = "center",
+    horizontal_spacing = 4,
+    width = 125
+}
+
 styles["fp_table_production"] = {
     type = "table_style",
     odd_row_graphical_set = {
@@ -160,6 +167,13 @@ styles["fp_sprite-button_move"] = {
     type = "button_style",
     parent = "list_box_item",
     invert_colors_of_picture_when_hovered_or_toggled = true
+}
+
+styles["fp_sprite-button_move_small"] = {
+    type = "button_style",
+    parent = "fp_sprite-button_move",
+    size = {20, 18},
+    padding = 0
 }
 
 -- Need to copy this style to get rid of the stupid built-in tooltip

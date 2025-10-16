@@ -95,30 +95,34 @@ local function attempt_adding_line(player, recipe_id, modal_data)
 
         local recipe_name = recipe_proto.localised_name
         if not (recipe_proto.custom or player.force.recipes[recipe_proto.name].enabled) then
-            util.messages.raise(player, "warning", {"fp.warning_recipe_disabled", recipe_name}, 2)
+            util.messages.raise(player, "warning", {"fp.warning_recipe_disabled", recipe_name}, 1)
         end
 
         if not line:get_surface_compatibility().overall then
-            util.messages.raise(player, "warning", {"fp.warning_surface_not_compatible", recipe_name}, 2)
+            util.messages.raise(player, "warning", {"fp.warning_surface_not_compatible", recipe_name}, 1)
         end
 
-        -- Set machine and beacon up as their default
+        if not line.recipe:temperature_fully_configured() then
+            util.messages.raise(player, "warning", {"fp.warning_temperature_not_configured", recipe_name}, 1)
+        end
+
+        -- Apply defaults as appropriate
+        line.recipe:apply_temperature_defaults(player)
         line.machine:reset(player)
         line:setup_beacon(player)
 
         -- Set temperature on ingredient that this recipe fulfills
         if modal_data.temperature then
-            if modal_data.line_id then
-                local origin_line = OBJECT_INDEX[modal_data.line_id]
+            if modal_data.recipe_id then
                 local fluid_name = modal_data.base_fluid.name
-                origin_line.temperatures[fluid_name] = modal_data.temperature
+                OBJECT_INDEX[modal_data.recipe_id].temperatures[fluid_name] = modal_data.temperature
             elseif modal_data.fuel_id then
                 OBJECT_INDEX[modal_data.fuel_id].temperature = modal_data.temperature
             end
         end
 
         solver.update(player)
-        util.raise.refresh(player, "factory")
+        util.gui.run_refresh(player, "factory")
     end
 end
 
@@ -153,7 +157,7 @@ local function create_filter_box(modal_data)
         table_temperatures.style.horizontal_spacing = 0
         table_temperatures.style.top_margin = 8
 
-        for index, temperature in pairs(modal_data.applicable_values) do
+        for _, temperature in pairs(modal_data.applicable_values) do
             local toggled = temperature == modal_data.temperature
             table_temperatures.add{type="button", caption={"fp.temperature_value", temperature},
                 tags={mod="fp", on_gui_click="change_recipe_temperature", temperature=temperature},
@@ -282,7 +286,7 @@ local function handle_filter_change(player, tags, event)
     util.globals.modal_data(player).filters[tags.filter_name] = boolean_state
     util.globals.preferences(player).recipe_filters[tags.filter_name] = boolean_state
 
-    apply_recipe_filter(player, "")
+    modal_dialog.run_search(player)
 end
 
 local function apply_temperature(player, temperature)
@@ -330,9 +334,9 @@ local function open_recipe_dialog(player, modal_data)
     if modal_data.result == nil then  -- this is a base_fluid dialog
         modal_data.base_fluid = prototyper.util.find("items", modal_data.product_id, modal_data.category_id)
 
-        local object = OBJECT_INDEX[modal_data.line_id or modal_data.fuel_id]
-        local temperature_data = (modal_data.line_id) and object.temperature_data[modal_data.base_fluid.name]
-            or object.temperature_data
+        local object = OBJECT_INDEX[modal_data.recipe_id or modal_data.fuel_id]
+        local temperature_data = (modal_data.fuel_id) and object.temperature_data
+            or object.temperature_data[modal_data.base_fluid.name]
 
         modal_data.annotation = temperature_data.annotation
         modal_data.applicable_values = temperature_data.applicable_values
@@ -341,7 +345,7 @@ local function open_recipe_dialog(player, modal_data)
 
     modal_data.translations = util.globals.player_table(player).translation_tables
     build_dialog_structure(modal_data)
-    apply_recipe_filter(player, "")
+    modal_dialog.run_search(player)
     modal_data.modal_elements.search_textfield.focus()
 end
 
@@ -357,7 +361,7 @@ listeners.gui = {
             handler = (function(player, tags, _)
                 local modal_data = util.globals.modal_data(player)
                 attempt_adding_line(player, tags.recipe_proto_id, modal_data)
-                util.raise.close_dialog(player, "cancel")
+                util.gui.close_dialog(player, "cancel")
             end)
         },
         {
@@ -367,7 +371,7 @@ listeners.gui = {
 
                 local modal_data = util.globals.modal_data(player)
                 build_dialog_structure(modal_data)
-                apply_recipe_filter(player, "")
+                modal_dialog.run_search(player)
             end)
         }
     },

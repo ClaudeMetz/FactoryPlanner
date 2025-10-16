@@ -240,8 +240,8 @@ local function handle_fuel_choice(player, _, event)
     end
 
     local combined_category = machine.proto.burner.combined_category
-    machine.fuel.proto = prototyper.util.find("fuels", elem_value, combined_category)
-    machine.fuel:build_temperatures_data()  -- validate temperature
+    local proto = prototyper.util.find("fuels", elem_value, combined_category)
+    machine.fuel:set_proto(proto, player)
 
     refresh_defaults_frame(player)
 end
@@ -265,7 +265,7 @@ local function open_machine_dialog(player, modal_data)
     -- Limit
     local factory = util.context.get(player, "Factory")
     -- Unavailable with matrix solver or special recipes
-    local limit_enabled = (not factory.matrix_solver_active and modal_data.line.recipe_proto.energy > 0)
+    local limit_enabled = (not factory.matrix_solver_active and modal_data.line.recipe.proto.energy > 0)
     add_limit_frame(content_frame, player, limit_enabled)
 
     -- Modules
@@ -291,14 +291,14 @@ local function close_machine_dialog(player, action)
         end
 
         solver.update(player)
-        util.raise.refresh(player, "factory")
+        util.gui.run_refresh(player, "factory")
 
     else  -- action == "cancel"
         line.machine = modal_data.machine_backup
         line.machine.module_set:normalize({effects=true})
         line:set_beacon(modal_data.beacon_backup)
         -- Need to refresh so the buttons have the 'new' backup machine for further actions
-        util.raise.refresh(player, "production_detail")
+        util.gui.run_refresh(player, "production_detail")
     end
 end
 
@@ -330,7 +330,7 @@ listeners.gui = {
             name = "confirm_machine",
             handler = (function(player, _, event)
                 local confirmed = util.gui.confirm_expression_field(event.element)
-                if confirmed then util.raise.close_dialog(player, "submit") end
+                if confirmed then util.gui.close_dialog(player, "submit") end
             end)
         }
     },
@@ -352,7 +352,7 @@ listeners.dialog = {
     dialog = "machine",
     metadata = (function(modal_data)
         local machine = OBJECT_INDEX[modal_data.machine_id]  --[[@as Machine]]
-        local recipe_name = machine.parent.recipe_proto.localised_name
+        local recipe_name = machine.parent.recipe.proto.localised_name
         return {
             caption = {"", {"fp.edit"}, " ", {"fp.pl_machine", 1}},
             subheader_text = {"fp.machine_dialog_description", recipe_name},

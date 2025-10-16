@@ -84,14 +84,14 @@ end
 
 local function change_floor(player, destination)
     if util.context.ascend_floors(player, destination) then
-        util.raise.refresh(player, "production")
+        util.gui.run_refresh(player, "production")
     end
 end
 
 local function toggle_fold_out_subfloors(player)
     local preferences = util.globals.preferences(player)
     preferences.fold_out_subfloors = not preferences.fold_out_subfloors
-    util.raise.refresh(player, "production_detail")
+    util.gui.run_refresh(player, "production_detail")
 end
 
 local function handle_solver_change(player, _, event)
@@ -108,7 +108,7 @@ local function handle_solver_change(player, _, event)
 
     main_dialog.toggle_districts_view(player, true)
     solver.update(player, factory)
-    util.raise.refresh(player, "factory")
+    util.gui.run_refresh(player, "factory")
 end
 
 local function repair_factory(player, _, _)
@@ -118,7 +118,7 @@ local function repair_factory(player, _, _)
 
     main_dialog.toggle_districts_view(player, true)
     solver.update(player, factory)
-    util.raise.refresh(player, "all")  -- needs the full refresh to reset factory list buttons
+    util.gui.run_refresh(player, "all")  -- needs the full refresh to reset factory list buttons
 end
 
 local function paste_line(player, _, _)
@@ -144,7 +144,7 @@ local function switch_matrix_item(player, tags, _)
     end
 
     solver.update(player, factory)
-    util.raise.refresh(player, "factory")
+    util.gui.run_refresh(player, "factory")
 end
 
 
@@ -365,7 +365,7 @@ listeners.gui = {
         {
             name = "open_utility_dialog",
             handler = (function(player, _, _)
-                util.raise.open_dialog(player, {dialog="utility"})
+                util.gui.open_dialog(player, {dialog="utility"})
             end)
         },
         {

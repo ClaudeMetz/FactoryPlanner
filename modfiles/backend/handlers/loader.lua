@@ -97,7 +97,9 @@ local function sorted_items()
         elseif a.subgroup.order < b.subgroup.order then return true
         elseif a.subgroup.order > b.subgroup.order then return false
         elseif a.order < b.order then return true
-        elseif a.order > b.order then return false end
+        elseif a.order > b.order then return false
+        elseif (a.temperature or 0) < (b.temperature or 0) then return true
+        elseif (a.temperature or 0) > (b.temperature or 0) then return false end
         return false
     end
 

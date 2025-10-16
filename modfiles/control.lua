@@ -2,7 +2,6 @@ local active_mods = script.active_mods
 
 SPACE_TRAVEL = script.feature_flags["space_travel"]
 DEBUGGER_ACTIVE = (active_mods["debugadapter"] ~= nil)
-DEV_ACTIVE = true  -- enables certain conveniences for development
 llog = require("util.llog")
 
 MAGIC_NUMBERS = {
@@ -28,13 +27,6 @@ MAGIC_NUMBERS = {
     module_dialog_element_width = 440,  -- Width of machine and beacon dialog elements
     titlebar_label_width = 124,  -- Width of the 'Factory Planner' titlebar label
     context_menu_width = 270  -- total width of the context menu
-}
-
-CUSTOM_EVENTS = {
-    open_modal_dialog = script.generate_event_name(),
-    close_modal_dialog = script.generate_event_name(),
-    build_gui_element = script.generate_event_name(),
-    refresh_gui_element = script.generate_event_name()
 }
 
 -- Handlers saved in a central location for access via name

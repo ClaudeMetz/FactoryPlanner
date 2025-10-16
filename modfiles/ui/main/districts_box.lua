@@ -10,7 +10,7 @@ local function save_district_name(player, tags, _)
     district_elements.edit_flow.visible = false
     district_elements.name_flow.visible = true
 
-    util.raise.refresh(player, "district_info")
+    util.gui.run_refresh(player, "district_info")
 end
 
 local function change_district_location(player, tags, event)
@@ -22,7 +22,7 @@ local function change_district_location(player, tags, event)
         factory.top_floor:reset_surface_compatibility()
         solver.update(player, factory)
     end
-    util.raise.refresh(player, "all")
+    util.gui.run_refresh(player, "all")
 end
 
 
@@ -258,7 +258,7 @@ listeners.gui = {
                 local spots_to_shift = (event.control) and 5 or ((not event.shift) and 1 or nil)
                 district.parent:shift(district, tags.direction, spots_to_shift)
 
-                util.raise.refresh(player, "districts_box")
+                util.gui.run_refresh(player, "districts_box")
             end)
         },
         {
@@ -267,7 +267,7 @@ listeners.gui = {
                 local selected_district = OBJECT_INDEX[tags.district_id]  --[[@as District]]
                 util.context.set(player, selected_district)
                 main_dialog.toggle_districts_view(player)
-                util.raise.refresh(player, "all")
+                util.gui.run_refresh(player, "all")
             end)
         },
         {
@@ -289,7 +289,7 @@ listeners.gui = {
                 local district = OBJECT_INDEX[tags.district_id]  --[[@as District]]
                 district.collapsed = not district.collapsed
 
-                util.raise.refresh(player, "districts_box")
+                util.gui.run_refresh(player, "districts_box")
             end)
         },
         {
@@ -318,7 +318,7 @@ listeners.gui = {
                 district.parent:remove(district)
 
                 util.context.set(player, adjacent_district)
-                util.raise.refresh(player, "all")
+                util.gui.run_refresh(player, "all")
             end)
         },
         {

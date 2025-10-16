@@ -270,6 +270,15 @@ function modal_dialog.set_searchfield_state(player)
     searchfield.tooltip = (status) and {"fp.searchfield_tt"} or {"fp.warning_with_icon", {"fp.searchfield_not_ready_tt"}}
 end
 
+function modal_dialog.run_search(player)
+    local modal_data = util.globals.modal_data(player)
+    if not modal_data or not modal_data.modal_elements then return end
+
+    local searchfield = modal_data.modal_elements.search_textfield
+    local search_term = searchfield.text:gsub("^%s*(.-)%s*$", "%1"):lower()
+    GLOBAL_HANDLERS[modal_data.search_handler_name](player, search_term)
+end
+
 function modal_dialog.set_submit_button_state(modal_elements, enabled, message)
     local caption = (enabled) and {"fp.submit"} or {"fp.warning_with_icon", {"fp.submit"}}
     local tooltip = (enabled) and {"fp.confirm_dialog_tt"} or {"fp.warning_with_icon", message}
@@ -284,8 +293,10 @@ end
 
 function modal_dialog.enter_selection_mode(player, selector_name)
     local ui_state = util.globals.ui_state(player)
-    ui_state.selection_mode = true
+
+    player.clear_cursor()
     player.cursor_stack.set_stack(selector_name)
+    ui_state.active_selector = selector_name
 
     local frame_main_dialog = ui_state.main_elements.main_frame
     frame_main_dialog.visible = false
@@ -300,8 +311,12 @@ end
 
 function modal_dialog.leave_selection_mode(player)
     local ui_state = util.globals.ui_state(player)
-    ui_state.selection_mode = false
-    player.cursor_stack.set_stack(nil)
+
+    if player.cursor_stack.valid_for_read and
+            player.cursor_stack.name == ui_state.active_selector then
+        player.cursor_stack.clear()
+    end
+    ui_state.active_selector = nil
 
     local modal_elements = ui_state.modal_data.modal_elements
     modal_elements.interface_dimmer.visible = true
@@ -341,7 +356,7 @@ listeners.gui = {
         {
             name = "exit_modal_dialog",
             handler = (function(player, tags, _)
-                util.raise.close_dialog(player, tags.action)
+                util.gui.close_dialog(player, tags.action)
             end)
         },
         {
@@ -379,13 +394,12 @@ listeners.gui = {
         {
             name = "modal_searchfield",
             timeout = MAGIC_NUMBERS.modal_search_rate_limit,
-            handler = (function(player, _, metadata)
+            handler = (function(player, _, event)
                 local modal_data = util.globals.modal_data(player)  --[[@as table]]
                 local search_tick = modal_data.search_tick
                 if search_tick ~= nil then util.nth_tick.cancel(search_tick) end
 
-                local search_term = metadata.text:gsub("^%s*(.-)%s*$", "%1"):lower()
-                GLOBAL_HANDLERS[modal_data.search_handler_name](player, search_term)
+                modal_dialog.run_search(player)
 
                 -- Set up delayed search update to circumvent issues caused by rate limiting
                 local desired_tick = game.tick + MAGIC_NUMBERS.modal_search_rate_limit
@@ -400,11 +414,11 @@ listeners.gui = {
             handler = (function(player, _, event)
                 local ui_state = util.globals.ui_state(player)
 
-                if ui_state.selection_mode then
+                if ui_state.active_selector ~= nil then
                     modal_dialog.leave_selection_mode(player)
                 elseif ui_state.context_menu == nil then  -- don't close if opening context menu
                     -- Here, we need to distinguish between submitting a dialog with E or ESC
-                    util.raise.close_dialog(player, (ui_state.modal_data.confirmed_dialog) and "submit" or "cancel")
+                    util.gui.close_dialog(player, (ui_state.modal_data.confirmed_dialog) and "submit" or "cancel")
                     -- If the dialog was not closed, it means submission was disabled, and we need to re-set .opened
                     if event.element.valid then player.opened = event.element end
                 end
@@ -422,8 +436,8 @@ listeners.gui = {
 
 listeners.misc = {
     fp_confirm_dialog = (function(player, _)
-        if not util.globals.ui_state(player).selection_mode then
-            util.raise.close_dialog(player, "submit")
+        if util.globals.ui_state(player).active_selector == nil then
+            util.gui.close_dialog(player, "submit")
         end
     end),
 
@@ -446,12 +460,7 @@ listeners.misc = {
 listeners.global = {
     run_delayed_modal_search = (function(metadata)
         local player = game.get_player(metadata.player_index)  --[[@as LuaPlayer]]
-        local modal_data = util.globals.modal_data(player)
-        if not modal_data or not modal_data.modal_elements then return end
-
-        local searchfield = modal_data.modal_elements.search_textfield
-        local search_term = searchfield.text:gsub("^%s*(.-)%s*$", "%1"):lower()
-        GLOBAL_HANDLERS[modal_data.search_handler_name](player, search_term)
+        modal_dialog.run_search(player)
     end)
 }
 

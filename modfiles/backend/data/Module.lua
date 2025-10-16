@@ -51,9 +51,11 @@ end
 function Module:summarize_effects()
     local effects = ftable.shallow_copy(BLANK_EFFECTS)
     for name, effect in pairs(self.proto.effects) do
-        local is_positive = util.effects.is_positive(name, effect)
-        local multiplier = (is_positive) and (1 + (self.quality_proto.level * 0.3)) or 1
-        effects[name] = effect * self.amount * multiplier
+        if util.effects.is_positive(name, effect) then
+            local multiplier = 1 + (self.quality_proto.level * 0.3)
+            effect = math.floor(effect * multiplier * 100 + 0.001) / 100
+        end
+        effects[name] = effect * self.amount
     end
 
     self.total_effects = effects

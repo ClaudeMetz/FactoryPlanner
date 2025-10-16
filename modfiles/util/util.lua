@@ -3,7 +3,6 @@ local _util = {
     context = require("util.context"),
     clipboard = require("util.clipboard"),
     messages = require("util.messages"),
-    raise = require("util.raise"),
     cursor = require("util.cursor"),
     gui = require("util.gui"),
     format = require("util.format"),

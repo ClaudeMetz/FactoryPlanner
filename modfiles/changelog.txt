@@ -2,13 +2,50 @@
 Version: 0.00.00
 Date: 00. 00. 0000
   Features:
-    -
+    - Added the ability to set a default temperature ranking for fluid ingredients (#572)
   Changes:
-    -
+    - Improved UI clarity when an ingredient temperature is not configured (#638)
+  Bugfixes:
+    - Changed some internal event handling to avoid potential multiplayer crashes (#648)
+    - Fixed that the mod would show boiler recipes with a target temperature of 0 degrees (#637)
+
+---------------------------------------------------------------------------------------------------
+Version: 2.0.40
+Date: 03. 10. 2025
+  Features:
+    - Added support for all variations of boiler machines and recipes
+  Changes:
+    - Added a button to copy calculator history results into the calculator (#618)
+    - Made the item picker sort fluids by their temperature
+  Bugfixes:
+    - Fixed a migration issue related to beacon profiles
+
+---------------------------------------------------------------------------------------------------
+Version: 2.0.39
+Date: 28. 09. 2025
+  Bugfixes:
+    - Fixed a migration crash when loading a save that was created on FP 2.0.37 (#628)
+    - Fixed a couple other migration issues when coming from older versions (#627)
+
+---------------------------------------------------------------------------------------------------
+Version: 2.0.38
+Date: 27. 09. 2025
+  Bugfixes:
+    - Fixed a startup crash for saves with quality disabled (#626)
+
+---------------------------------------------------------------------------------------------------
+Version: 2.0.37
+Date: 27. 09. 2025
   Bugfixes:
     - Fixed quality effects being applied incorrectly if the normal quality has a level other than 0 (#605)
     - Fixed that the resource_drain_rate bonus was being applied to the mining fluid (#619)
     - Fixed that rocket silo recipes weren't being detected properly in certain modded situations (#604)
+    - Fixed module quality effects not being rounded off correctly (#492)
+    - Fixed that rocket silo launches wouldn't show high enough energy consumption (#345)
+    - Fixed that the main interface would change its size when it shouldn't (#371)
+    - Fixed that recipe search didn't respect the search term when changing filters (#601)
+    - Fixed the compact dialog having no right margin when a scrollbar is visible (#545)
+    - Fixed a few issues with the beacon count selector (#226)
 
 ---------------------------------------------------------------------------------------------------
 Version: 2.0.36

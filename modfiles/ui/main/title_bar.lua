@@ -125,7 +125,7 @@ listeners.gui = {
         {
             name = "title_bar_open_preferences",
             handler = (function(player, _, _)
-                util.raise.open_dialog(player, {dialog="preferences"})
+                util.gui.open_dialog(player, {dialog="preferences"})
             end)
         }
     }

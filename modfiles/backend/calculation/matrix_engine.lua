@@ -399,7 +399,8 @@ function matrix_engine.run_matrix_solver(factory_data, check_linear_dependence)
             matrix_engine.consolidate(line_aggregate)
 
             -- Set machine count back to nothing if the recipe doesn't require energy
-            local machine_count = (line.recipe_proto.energy == 0) and 0 or line_aggregate.machine_count
+            local machine_count = (line_aggregate.machine_count < MAGIC_NUMBERS.margin_of_error)
+                and 0 or line_aggregate.machine_count
 
             solver.set_line_result {
                 player_index = factory_data.player_index,
@@ -635,7 +636,7 @@ function matrix_engine.get_line_aggregate(line_data, player_index, floor_id, mac
     local total_effects = line_data.total_effects
     local machine_speed = line_data.machine_speed
     local speed_multiplier = 1 + total_effects.speed
-    local energy = recipe_proto.energy
+    local energy = line_data.recipe_energy
     -- hacky workaround for recipes with zero energy - this really messes up the matrix
     if energy==0 then energy=0.000001 end
     local time_per_craft = energy / (machine_speed * speed_multiplier)

@@ -41,11 +41,9 @@ local function refresh_views_table(player)
     local views = util.globals.ui_state(player).views_data.views
 
     local function add_move_button(parent, index, direction, enabled)
-        local move_up_button = parent.add{type="sprite-button", sprite="fp_arrow_" .. direction,
+        local move_button = parent.add{type="sprite-button", sprite="fp_arrow_" .. direction,
             tags={mod="fp", on_gui_click="move_view", index=index, direction=direction},
-            enabled=enabled, style="fp_sprite-button_move", mouse_button_filter={"left"}}
-        move_up_button.style.size = {20, 18}
-        move_up_button.style.padding = 0
+            enabled=enabled, style="fp_sprite-button_move_small", mouse_button_filter={"left"}}
     end
 
     local active_view_count = 0
@@ -175,7 +173,7 @@ local function handle_checkbox_preference_change(player, tags, event)
     util.globals.preferences(player)[preference_name] = event.element.state
 
     if tags.type == "production" or preference_name == "show_floor_items" then
-        util.raise.refresh(player, "production")
+        util.gui.run_refresh(player, "production")
 
     elseif preference_name == "ingredient_satisfaction" then
         if event.element.state == true then  -- only recalculate if enabled
@@ -186,10 +184,10 @@ local function handle_checkbox_preference_change(player, tags, event)
                 end
             end
         end
-        util.raise.refresh(player, "production")
+        util.gui.run_refresh(player, "production")
 
     elseif preference_name == "attach_factory_products" or preference_name == "skip_factory_naming" then
-        util.raise.refresh(player, "factory_list")
+        util.gui.run_refresh(player, "factory_list")
 
     elseif preference_name == "show_gui_button" then
         util.gui.toggle_mod_gui(player)
@@ -228,7 +226,7 @@ local function handle_view_toggle(player, tags, _)
     item_views.refresh_interface(player)
     refresh_views_table(player)
 
-    util.raise.refresh(player, "factory")
+    util.gui.run_refresh(player, "factory")
 end
 
 local function handle_view_move(player, tags, _)
@@ -240,7 +238,7 @@ local function handle_view_move(player, tags, _)
     item_views.rebuild_interface(player)  -- rebuild because of the move
     refresh_views_table(player)
 
-    util.raise.refresh(player, "factory")
+    util.gui.run_refresh(player, "factory")
 end
 
 local function handle_bol_change(player, _, event)
@@ -254,7 +252,7 @@ local function handle_bol_change(player, _, event)
     refresh_views_table(player)
 
     solver.update(player, nil)
-    util.raise.refresh(player, "all")
+    util.gui.run_refresh(player, "all")
 end
 
 local function handle_default_prototype_change(player, tags, _)
@@ -272,7 +270,7 @@ local function handle_default_prototype_change(player, tags, _)
     item_views.rebuild_interface(player)
     refresh_views_table(player)
 
-    util.raise.refresh(player, "all")
+    util.gui.run_refresh(player, "all")
 end
 
 local function handle_prototype_quality_change(player, tags, event)
@@ -290,7 +288,7 @@ local function handle_prototype_quality_change(player, tags, event)
     item_views.rebuild_data(player)
     item_views.rebuild_interface(player)
 
-    util.raise.refresh(player, "all")
+    util.gui.run_refresh(player, "all")
 end
 
 
@@ -324,6 +322,7 @@ local function open_preferences_dialog(player, modal_data)
     add_default_proto_box(player, right_content_frame, "pumps", nil, "quality_picker")
     add_default_proto_box(player, right_content_frame, "wagons", 1, "quality_picker")  -- cargo-wagon
     add_default_proto_box(player, right_content_frame, "wagons", 2, "quality_picker")  -- fluid-wagon
+    right_content_frame.add{type="empty-widget", style="flib_vertical_pusher"}
 end
 
 local function close_preferences_dialog(player, _)
@@ -395,10 +394,11 @@ listeners.global = {
         local player_table = util.globals.player_table(player)
         player_table.preferences = nil
         reload_preferences(player_table)
-        -- Pretty heavy way to reset, but it's very simple
-        player_table.ui_state.modal_data.rebuild = true
-        util.raise.close_dialog(player, "cancel")
-        util.raise.open_dialog(player, {dialog="preferences"})
+
+        -- This rebuilds the main interface implicitly
+        GLOBAL_HANDLERS["shrinkwrap_interface"]{player_index=player.index}
+
+        util.gui.open_dialog(player, {dialog="preferences"})
     end)
 }
 

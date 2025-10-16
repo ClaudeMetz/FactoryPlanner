@@ -8,7 +8,7 @@ function migration.player_table(player_table)
             for _, product in pairs(factory:as_list()) do
                 if product.proto.type == "fluid" then
                     local map = TEMPERATURE_MAP[product.proto.name]
-                    product.proto = prototyper.util.find("items", map[1].name, "fluid")
+                    if map then product.proto = prototyper.util.find("items", map[1].name, "fluid") end
                 end
             end
         end

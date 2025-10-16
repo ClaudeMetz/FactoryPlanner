@@ -37,6 +37,7 @@ require("backend.calculation.solver")
 ---@field default_beacons DefaultPrototype
 ---@field default_belts DefaultPrototype
 ---@field default_wagons PrototypeDefaultWithCategory
+---@field default_temperatures TemperatureDefaultMap
 
 ---@alias Timescale 1 | 60
 
@@ -62,8 +63,9 @@ function reload_preferences(player_table)
     reload("compact_ingredients", false)
     reload("fold_out_subfloors", false)
 
-    reload("products_per_row", 6)
-    reload("factory_list_rows", 30)
+    -- Main dimensions are maxed, to be shrinkwrapped down
+    reload("products_per_row", 10)
+    reload("factory_list_rows", 32)
     reload("compact_width_percentage", 26)
 
     reload("show_gui_button", true)
@@ -90,6 +92,8 @@ function reload_preferences(player_table)
     reload("default_pumps", defaults.get_fallback("pumps"))
     reload("default_wagons", defaults.get_fallback("wagons"))
 
+    reload("default_temperatures", util.temperature.get_fallback())
+
     player_table.preferences = updated_prefs
 end
 
@@ -107,7 +111,7 @@ end
 ---@field modal_dialog_type ModalDialogType?
 ---@field modal_data table?
 ---@field context_menu LuaGuiElement?
----@field selection_mode boolean
+---@field active_selector string?
 ---@field compact_view boolean
 ---@field districts_view boolean
 ---@field recalculate_on_factory_change boolean
@@ -133,8 +137,8 @@ local function reset_ui_state(player_table)
         modal_dialog_type = nil,
         modal_data = nil,
         context_menu = nil,
+        active_selector = nil,
 
-        selection_mode = false,
         compact_view = false,
         districts_view = false,
         recalculate_on_factory_change = false
@@ -166,8 +170,9 @@ local function player_init(player)
     defaults.set_all(player, "fuels", {prototype="coal"})
 
     util.gui.toggle_mod_gui(player)
+    util.nth_tick.register((game.tick + 1), "shrinkwrap_interface", {player_index=player.index})
 
-    if DEV_ACTIVE then
+    if DEBUGGER_ACTIVE then
         util.porter.add_factories(player, DEV_EXPORT_STRING)
 
         player.force.research_all_technologies()
@@ -180,10 +185,11 @@ end
 local function refresh_player_table(player)
     local player_table = storage.players[player.index]
 
-    defaults.migrate(player_table)
-
     reload_preferences(player_table)
     reset_ui_state(player_table)
+
+    defaults.migrate(player_table)
+    util.temperature.migrate(player_table)
 
     util.context.validate(player)
 
@@ -228,7 +234,7 @@ storage = {}  -- just for the type checker, doesn't do anything
 local function global_init()
     -- Set up a new save for development if necessary
     local freeplay = remote.interfaces["freeplay"]
-    if DEV_ACTIVE and freeplay then  -- Disable freeplay popup-message
+    if DEBUGGER_ACTIVE and freeplay then  -- Disable freeplay popup-message
         if freeplay["set_skip_intro"] then remote.call("freeplay", "set_skip_intro", true) end
         if freeplay["set_disable_crashsite"] then remote.call("freeplay", "set_disable_crashsite", true) end
     end
@@ -328,14 +334,17 @@ script.on_event(translator.on_player_dictionaries_ready, dictionaries_ready)
 
 
 -- ** COMMANDS **
+-- These are existence-checked for resiliance to double-loading from test harness
 if not commands.commands['fp-restart-translation'] then
     commands.add_command("fp-restart-translation", {"command-help.fp_restart_translation"}, function()
         translator.on_init()
         prototyper.util.build_translation_dictionaries()
     end)
 end
-if not commands.commands['fp-reload-prototypes'] then
+if not commands.commands['fp-shrinkwrap-interface'] then
     commands.add_command("fp-shrinkwrap-interface", {"command-help.fp_shrinkwrap_interface"}, function(command)
-        if command.player_index then main_dialog.shrinkwrap_interface(game.get_player(command.player_index)) end
+        if command.player_index then
+            util.nth_tick.register((game.tick + 1), "shrinkwrap_interface", {player_index=command.player_index})
+        end
     end)
 end

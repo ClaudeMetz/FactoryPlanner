@@ -22,7 +22,8 @@ local function determine_main_dimensions(player, products_per_row, factory_list_
 end
 
 -- Downscale width and height preferences until the main interface fits onto the player's screen
-function main_dialog.shrinkwrap_interface(player)
+local function shrinkwrap_interface(metadata)
+    local player = game.get_player(metadata.player_index)
     local scaled_resolution = util.gui.calculate_scaled_resolution(player)
     local preferences = util.globals.preferences(player)
 
@@ -101,7 +102,7 @@ function main_dialog.rebuild(player, default_visibility)
     main_elements.flows["right_vertical"] = right_vertical
 
     item_views.rebuild_data(player)
-    util.raise.build(player, "main_dialog", nil)  -- tells all elements to build themselves
+    util.gui.run_build(player, "main_dialog", nil)  -- tells all elements to build themselves
     item_views.rebuild_interface(player)
 
     if interface_visible then player.opened = frame_main_dialog end
@@ -163,7 +164,7 @@ function main_dialog.toggle_districts_view(player, force_false)
     local ui_state = util.globals.ui_state(player)
     ui_state.districts_view = not ui_state.districts_view and not force_false
 
-    util.raise.refresh(player, "district_info")
+    util.gui.run_refresh(player, "district_info")
 end
 
 
@@ -209,20 +210,10 @@ listeners.misc = {
         local ui_state = util.globals.ui_state(player)
 
         -- With that in mind, if there's a modal dialog open, we were in selection mode, and need to close the dialog
-        if ui_state.modal_dialog_type ~= nil then util.raise.close_dialog(player, "cancel", true) end
+        if ui_state.modal_dialog_type ~= nil then util.gui.close_dialog(player, "cancel", true) end
 
         -- Then, at this point we're at most at the stage where the main dialog is open, so close it
         if main_dialog.is_in_focus(player) then main_dialog.toggle(player, true) end
-    end),
-
-    on_player_display_resolution_changed = (function(player, _)
-        main_dialog.shrinkwrap_interface(player)
-        main_dialog.rebuild(player, false)
-    end),
-
-    on_player_display_scale_changed = (function(player, _)
-        main_dialog.shrinkwrap_interface(player)
-        main_dialog.rebuild(player, false)
     end),
 
     on_singleplayer_init = (function(player, _)
@@ -260,7 +251,7 @@ listeners.misc = {
         elseif ui_state.compact_view and compact_focus then
             compact_dialog.toggle(player)
             main_dialog.toggle(player)
-            util.raise.refresh(player, "production")
+            util.gui.run_refresh(player, "production")
             ui_state.compact_view = false
 
         elseif factory ~= nil and factory.valid then
@@ -272,6 +263,7 @@ listeners.misc = {
 }
 
 listeners.global = {
+    shrinkwrap_interface = shrinkwrap_interface,
     interface_toggle = interface_toggle
 }
 

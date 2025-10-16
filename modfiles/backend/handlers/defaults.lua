@@ -121,7 +121,8 @@ local prototypes_with_quality = {machines=true, beacons=true, modules=true, pump
 ---@return AnyPrototypeDefault
 function defaults.get_fallback(data_type)
     local prototypes = storage.prototypes[data_type]  ---@type AnyIndexedPrototypes
-    local default_quality = prototypes_with_quality[data_type] and storage.prototypes.qualities[1] or nil
+    -- Normal quality will always exist, the game engine enforces it
+    local default_quality = prototypes_with_quality[data_type] and PROTOTYPE_MAPS.qualities["normal"] or nil
 
     local fallback = nil
     if prototyper.data_types[data_type] == false then
@@ -213,6 +214,7 @@ function defaults.migrate(player_table)
             end
             preferences["default_" .. data_type] = new_defaults
         end
+
         ::skip::
     end
 end

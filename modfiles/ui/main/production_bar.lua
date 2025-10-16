@@ -6,12 +6,12 @@ local function refresh_production(player, _, _)
     if ui_state.districts_view then
         local realm = util.globals.player_table(player).realm
         for district in realm:iterator() do district:refresh() end
-        util.raise.refresh(player, "districts_box")
+        util.gui.run_refresh(player, "districts_box")
     else
         local factory = util.context.get(player, "Factory")
         if factory and factory.valid then
             solver.update(player, factory)
-            util.raise.refresh(player, "factory")
+            util.gui.run_refresh(player, "factory")
         end
     end
 end
@@ -135,7 +135,7 @@ listeners.gui = {
             name = "refresh_production",
             timeout = 20,
             handler = (function(player, _, event)
-                if DEV_ACTIVE and not event.shift then  -- implicit mod reload for easier development
+                if DEBUGGER_ACTIVE and not event.shift then  -- implicit mod reload for easier development
                     util.gui.reset_player(player)  -- destroys all FP GUIs
                     util.gui.toggle_mod_gui(player)  -- fixes the mod gui button after its been destroyed
                     game.reload_mods()  -- toggle needs to be delayed by a tick since the reload is not instant
@@ -154,7 +154,7 @@ listeners.gui = {
                 local new_district = District.init()
                 realm:insert(new_district)
                 util.context.set(player, new_district)
-                util.raise.refresh(player, "all")
+                util.gui.run_refresh(player, "all")
             end)
         }
     },
@@ -167,7 +167,7 @@ listeners.gui = {
 
                 item_views.rebuild_data(player)
                 item_views.rebuild_interface(player)
-                util.raise.refresh(player, "factory")
+                util.gui.run_refresh(player, "factory")
             end)
         }
     }

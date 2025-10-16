@@ -242,17 +242,17 @@ local function close_beacon_dialog(player, action)
         beacon.total_amount = (total_amount > 0) and total_amount or nil
 
         solver.update(player, factory)
-        util.raise.refresh(player, "factory")
+        util.gui.run_refresh(player, "factory")
 
     elseif action == "delete" then
         modal_data.line:set_beacon(nil)
         solver.update(player, factory)
-        util.raise.refresh(player, "factory")
+        util.gui.run_refresh(player, "factory")
 
     else -- action == "cancel"
         modal_data.line:set_beacon(modal_data.backup_beacon)  -- could be nil
         -- Need to refresh so the buttons have the 'new' backup beacon for further actions
-        util.raise.refresh(player, "production_detail")
+        util.gui.run_refresh(player, "production_detail")
     end
 end
 
@@ -284,7 +284,7 @@ listeners.gui = {
             name = "confirm_beacon",
             handler = (function(player, _, event)
                 local confirmed = util.gui.confirm_expression_field(event.element, true)
-                if confirmed then util.raise.close_dialog(player, "submit") end
+                if confirmed then util.gui.close_dialog(player, "submit") end
             end)
         }
     },
@@ -328,13 +328,17 @@ listeners.global = {
 
 listeners.misc = {
     on_player_cursor_stack_changed = (function(player, _)
+        if util.globals.ui_state(player).active_selector == nil then return end
+
         -- If the cursor stack is not valid_for_read, it's empty, thus the selector has been put away
-        if util.globals.ui_state(player).selection_mode and not player.cursor_stack.valid_for_read then
+        if not player.cursor_stack.valid_for_read or player.cursor_stack.name ~= "fp_beacon_selector" then
             modal_dialog.leave_selection_mode(player)
         end
     end),
+
     on_player_selected_area = (function(player, event)
-        if event.item == "fp_beacon_selector" and util.globals.ui_state(player).selection_mode then
+        local active_selector = util.globals.ui_state(player).active_selector
+        if event.item == "fp_beacon_selector" and active_selector ~= nil then
             handle_beacon_selection(player, event.entities)
         end
     end)

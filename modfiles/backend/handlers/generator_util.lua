@@ -268,7 +268,6 @@ end
 
 -- Determines whether this recipe is irrelevant or not and should thus be excluded
 local irrelevant_recipe_categories = {
-    ["Transport_Drones_Meglinge_Fork"] = {"transport-drone-request", "transport-fluid-request"},
     --[[ ["Mining_Drones"] = {"mining-depot"},
     ["Deep_Storage_Unit"] = {"deep-storage-item", "deep-storage-fluid",
                              "deep-storage-item-big", "deep-storage-fluid-big",
@@ -344,41 +343,61 @@ function generator_util.determine_entity_sprite(proto)
     return nil
 end
 
--- This is wrong now that silos can have two rockets in progress at once
---[[
--- Determines how long a rocket takes to launch for the given rocket silo prototype
--- These stages mirror the in-game progression and timing exactly. Most steps take an additional tick (+1)
--- due to how the game code is written. If one stage is completed, you can only progress to the next one
--- in the next tick. No stages can be skipped, meaning a minimal sequence time is around 10 ticks long.
+
+-- Determines the tick count and energy consumption of launching a rocket for the given silo
+-- This does not take into account the full launch cycle, but instead calculates the fastest
+-- possible one, using the quick follow-up rocket mechanic, as that's the limiting case.
+-- The tick results are seemingly off by a handful of ticks, but it's close enough.
+-- Power consumption results might be low by 10% or so from light empirical testing.
 ---@param silo_proto LuaEntityPrototype
----@return number? launch_sequence_time
-function generator_util.determine_launch_sequence_time(silo_proto)
+---@return number launch_time
+---@return number energy_usage
+function generator_util.determine_launch_data(silo_proto)
+    local power = silo_proto.active_energy_usage
     local rocket_proto = silo_proto.rocket_entity_prototype
-    if not rocket_proto then return nil end  -- meaning this isn't a rocket silo proto
 
-    local rocket_flight_threshold = 0.5  -- hardcoded in the game files
-    local launch_steps = {
-        lights_blinking_open = (1 / silo_proto.light_blinking_speed) + 1,
-        doors_opening = (1 / silo_proto.door_opening_speed) + 1,
-        doors_opened = silo_proto.rocket_rising_delay + 1,
-        rocket_rising = (1 / rocket_proto.rising_speed) + 1,
-        rocket_ready = 14,  -- estimate for satellite insertion delay
-        launch_started = silo_proto.launch_wait_time + 1,
-        engine_starting = (1 / rocket_proto.engine_starting_speed) + 1,
-        -- This calculates a fractional amount of ticks. Also, math.log(x) calculates the natural logarithm
-        rocket_flying = math.log(1 + rocket_flight_threshold * rocket_proto.flying_acceleration
-            / rocket_proto.flying_speed) / math.log(1 + rocket_proto.flying_acceleration),
-        lights_blinking_close = (1 / silo_proto.light_blinking_speed) + 1,
-        doors_closing = (1 / silo_proto.door_opening_speed) + 1
-    }
+    -- These values are not accessible in the API
+    local frame_count, inverse_speed = 32, 1 / 0.3
+    local arm_move_offset = rocket_proto.rising_speed * frame_count * inverse_speed
+    local rocket_quick_relaunch_start_offset = -0.625
+    local rocket_flight_threshold = 0.1  -- hardcoded in the game files
 
-    local total_ticks = 0
-    for _, ticks_taken in pairs(launch_steps) do
-        total_ticks = total_ticks + ticks_taken
-    end
+    -- Cycle starts here
+    local launch_ticks, energy_usage = 0, 0
 
-    return (total_ticks / 60)  -- retured value is in seconds
-end ]]
+    local doors_opened = 1
+    launch_ticks = launch_ticks + doors_opened
+
+    local rocket_rising_threshold = 1 - rocket_quick_relaunch_start_offset - arm_move_offset
+    local rocket_rising = rocket_rising_threshold / rocket_proto.rising_speed
+    launch_ticks = launch_ticks + rocket_rising
+    energy_usage = energy_usage + (rocket_rising * power)
+
+    local arms_advance = arm_move_offset / rocket_proto.rising_speed
+    launch_ticks = launch_ticks + arms_advance
+    energy_usage = energy_usage + (arms_advance * power)
+
+    local launch_starting = 1
+    launch_ticks = launch_ticks + launch_starting
+
+    local launch_started = silo_proto.launch_wait_time
+    launch_ticks = launch_ticks + launch_started
+
+    local engine_starting = 1 / rocket_proto.engine_starting_speed
+    launch_ticks = launch_ticks + engine_starting
+    energy_usage = energy_usage + (engine_starting * power)
+
+    local arms_retract = arm_move_offset / rocket_proto.rising_speed
+    launch_ticks = launch_ticks + arms_retract
+    energy_usage = energy_usage + (arms_retract * power)
+
+    -- I'm not exactly sure why this behaves as the game code does, *but it do*
+    local rocket_flying = math.log(1 + rocket_flight_threshold * rocket_proto.flying_acceleration
+        / rocket_proto.flying_speed) / math.log(1 + rocket_proto.flying_acceleration)
+    launch_ticks = launch_ticks + rocket_flying - arms_retract
+
+    return (launch_ticks / 60), (energy_usage / launch_ticks)
+end
 
 
 ---@param proto FPMachinePrototype
@@ -400,8 +419,13 @@ end
 ---@return ModuleEffects
 function generator_util.formatted_effects(effects)
     effects = effects or {}
-    if effects["quality"] then  -- fix base game weirdness
-        effects["quality"] = effects["quality"] / 10
+    if effects["quality"] then
+        -- This is actually an incorrect implementation, as quality has its effect multiplied by the
+        --   next_probability of the quality of the current item/recipe. This means the quality effect
+        --   changes based on the quality of the item, and is not static as you might think. However,
+        --   the base game uses a next_probability of 0.1 for all qualities, so this works out as the
+        --   mod doesn't do actual quality calculations, it only shows this effect for completeness.
+        effects["quality"] = effects["quality"] * prototypes.quality["normal"].next_probability
     end
     return effects
 end
@@ -422,6 +446,37 @@ function generator_util.sort_machine_burner_categories(proto)
         category_index[category] = true
     end
     proto.burner.categories = category_index
+end
+
+
+---@param proto LuaEntityPrototype
+---@return string? category
+---@return LuaFluidBoxPrototype? input
+---@return LuaFluidBoxPrototype? output
+function generator_util.get_boiler_data(proto)
+    local input, output = nil, nil  -- need to find these manually
+    for _, fluid_box in pairs(proto.fluidbox_prototypes) do
+        if fluid_box.production_type == "input-output" or fluid_box.production_type == "input" then
+            input = fluid_box
+        elseif fluid_box.production_type == "output" then
+            output = fluid_box
+        end
+    end
+
+    if input == nil then return nil, nil, nil end
+
+    local category = "boiler"
+    if proto.boiler_mode == "output-to-separate-pipe" then
+        category = category .. "-target-" .. proto.target_temperature
+    end
+    if output.filter ~= nil then
+        category = category .. "-output-" .. output.filter.name
+    end
+    if input.filter ~= nil then
+        category = category .. "-filter-" .. input.filter.name
+    end
+
+    return category, input, output
 end
 
 

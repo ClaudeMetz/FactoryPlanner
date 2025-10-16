@@ -12,7 +12,7 @@ data:extend({
         hidden = true,
         stack_size = 1,
         select = {
-            mode = "entity-with-health",
+            mode = {"entity-with-health", "entity-ghost"},
             border_color = { r = 0.75, g = 0, b = 0.75 },
             cursor_box_type = "entity",
             entity_filter_mode = "whitelist",
