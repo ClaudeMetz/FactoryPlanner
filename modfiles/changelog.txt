@@ -2,6 +2,16 @@
 Version: 0.00.00
 Date: 00. 00. 0000
   Features:
+    - 
+  Changes:
+    - 
+  Bugfixes:
+    - 
+
+---------------------------------------------------------------------------------------------------
+Version: 2.0.41
+Date: 16. 10. 2025
+  Features:
     - Added the ability to set a default temperature ranking for fluid ingredients (#572)
   Changes:
     - Improved UI clarity when an ingredient temperature is not configured (#638)
