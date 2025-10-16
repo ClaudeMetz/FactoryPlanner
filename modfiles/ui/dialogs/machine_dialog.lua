@@ -265,7 +265,7 @@ local function open_machine_dialog(player, modal_data)
     -- Limit
     local factory = util.context.get(player, "Factory")
     -- Unavailable with matrix solver or special recipes
-    local limit_enabled = (factory.matrix_free_items == nil and modal_data.line.recipe.proto.energy > 0)
+    local limit_enabled = (not factory.matrix_solver_active and modal_data.line.recipe.proto.energy > 0)
     add_limit_frame(content_frame, player, limit_enabled)
 
     -- Modules

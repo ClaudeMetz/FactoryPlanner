@@ -176,19 +176,17 @@ function matrix_engine.get_matrix_solver_metadata(factory_data)
     local produced_outputs = matrix_engine.set_diff(factory_metadata.desired_outputs, unproduced_outputs)
     local free_variables = matrix_engine.union_sets(raw_inputs, byproducts, unproduced_outputs)
     local intermediate_items = matrix_engine.set_diff(all_items, free_variables)
-    if factory_data.matrix_free_items == nil then
-        eliminated_items = intermediate_items
-    else
-        -- by default when a factory is updated, add any new variables to eliminated and let the user select free.
-        local free_items_list = factory_data.matrix_free_items
-        for _, free_item in ipairs(free_items_list) do
-            local identifier = free_item.category_id.."_"..free_item.id
-            free_items[identifier] = true
-        end
-        -- make sure that any items that no longer exist are removed
-        free_items = matrix_engine.intersect_sets(free_items, intermediate_items)
-        eliminated_items = matrix_engine.set_diff(intermediate_items, free_items)
+
+    -- by default when a factory is updated, add any new variables to eliminated and let the user select free.
+    local free_items_list = factory_data.matrix_free_items
+    for _, free_item in ipairs(free_items_list) do
+        local identifier = free_item.category_id.."_"..free_item.id
+        free_items[identifier] = true
     end
+    -- make sure that any items that no longer exist are removed
+    free_items = matrix_engine.intersect_sets(free_items, intermediate_items)
+    eliminated_items = matrix_engine.set_diff(intermediate_items, free_items)
+
     local num_rows = matrix_engine.num_elements(raw_inputs, byproducts, eliminated_items, free_items)
     local num_cols = matrix_engine.num_elements(recipes, raw_inputs, byproducts, free_items)
     local result = {

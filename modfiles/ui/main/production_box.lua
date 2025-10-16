@@ -99,9 +99,10 @@ local function handle_solver_change(player, _, event)
     local new_solver = (event.element.switch_state == "left") and "traditional" or "matrix"
 
     if new_solver == "matrix" then
-        factory.matrix_free_items = {}  -- activate the matrix solver
+        factory.matrix_solver_active = true
     else
-        factory.matrix_free_items = nil  -- disable the matrix solver
+        factory.matrix_solver_active = false
+        factory.matrix_free_items = {}  -- reset could be avoided
         factory.linearly_dependant = false
     end
 
@@ -178,8 +179,7 @@ local function refresh_production_box(player)
 
     production_box_elements.solver_flow.visible = factory_valid
     if factory_valid then
-        local matrix_solver_active = (factory.matrix_free_items ~= nil)
-        local switch_state = (matrix_solver_active) and "right" or "left"
+        local switch_state = (factory.matrix_solver_active) and "right" or "left"
         production_box_elements.solver_choice_switch.switch_state = switch_state
         production_box_elements.solver_choice_switch.enabled = (not factory.archived)
     end
@@ -211,7 +211,7 @@ local function refresh_production_box(player)
     refresh_paste_button(player)
 
     ui_state.main_elements.solver_frame.visible = false
-    if any_lines_present and factory.matrix_free_items then
+    if any_lines_present and factory.matrix_solver_active then
         refresh_solver_frame(player)
     end
 end
