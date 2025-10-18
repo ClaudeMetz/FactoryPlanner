@@ -85,7 +85,8 @@ end
 function _cursor.set_item_combinator(player, item_filters)
     local slot_index = 1
     for _, filter in pairs(item_filters) do
-        filter.count = math.max(filter.count, 1)  -- make sure amounts < 1 are not excluded
+        -- make sure amounts < 1 are not excluded, and the int32 limit is not exceeded
+        filter.count = math.min(math.max(filter.count, 1), 2^31 - 1)
         filter.index = slot_index
         slot_index = slot_index + 1
     end
