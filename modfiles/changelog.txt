@@ -2,9 +2,15 @@
 Version: 0.00.00
 Date: 00. 00. 0000
   Features:
-    -
+    - 
   Changes:
-    -
+    - 
+  Bugfixes:
+    - 
+
+---------------------------------------------------------------------------------------------------
+Version: 2.0.42
+Date: 18. 10. 2025
   Bugfixes:
     - Fixed a crash when confirming the factory edit dialog (#651)
     - Fixed a crash when trying to create an ingredient combinator with huge item amounts (#656)
