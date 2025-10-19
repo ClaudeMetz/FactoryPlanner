@@ -93,6 +93,11 @@ local function attempt_adding_line(player, recipe_id, modal_data)
         local relative_object = OBJECT_INDEX[modal_data.add_after_line_id]  --[[@as LineObject]]
         floor:insert(line, relative_object, "next")  -- if not relative, insert uses last line
 
+        -- Apply defaults as appropriate
+        line.recipe:apply_temperature_defaults(player)
+        line.machine:reset(player)
+        line:setup_beacon(player)
+
         local recipe_name = recipe_proto.localised_name
         if not (recipe_proto.custom or player.force.recipes[recipe_proto.name].enabled) then
             util.messages.raise(player, "warning", {"fp.warning_recipe_disabled", recipe_name}, 1)
@@ -105,11 +110,6 @@ local function attempt_adding_line(player, recipe_id, modal_data)
         if not line.recipe:temperature_fully_configured() then
             util.messages.raise(player, "warning", {"fp.warning_temperature_not_configured", recipe_name}, 1)
         end
-
-        -- Apply defaults as appropriate
-        line.recipe:apply_temperature_defaults(player)
-        line.machine:reset(player)
-        line:setup_beacon(player)
 
         -- Set temperature on ingredient that this recipe fulfills
         if modal_data.temperature then

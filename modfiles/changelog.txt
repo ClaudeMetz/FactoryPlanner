@@ -2,11 +2,11 @@
 Version: 0.00.00
 Date: 00. 00. 0000
   Features:
-    - 
+    -
   Changes:
-    - 
+    -
   Bugfixes:
-    - 
+    - Fixed that the warning about an unconfigured temperature would show up even when a default was set (#658)
 
 ---------------------------------------------------------------------------------------------------
 Version: 2.0.42
