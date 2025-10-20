@@ -2,9 +2,15 @@
 Version: 0.00.00
 Date: 00. 00. 0000
   Features:
-    -
+    - 
   Changes:
-    -
+    - 
+  Bugfixes:
+    - 
+
+---------------------------------------------------------------------------------------------------
+Version: 2.0.43
+Date: 20. 10. 2025
   Bugfixes:
     - Fixed a crash that could occur after duplicating or importing a factory plan (#654)
     - Fixed a crash where beacons with an invalidated quality would not be repaired properly (#657)
