@@ -245,8 +245,11 @@ function Machine:validate()
     self.quality_proto = prototyper.util.validate_prototype_object(self.quality_proto, nil)
     self.valid = (not self.quality_proto.simplified) and self.valid
 
-    -- Only need to check compatibility when the below is valid, else it'll be replaced anyways
-    if not self.proto.simplified and not self.parent.recipe.proto.simplified then
+    -- Can't be valid with an invalid parent
+    self.valid = self.parent.valid and self.valid
+
+    -- Only need to check compatibility when the above is valid, else it'll be replaced anyways
+    if self.valid and not self.proto.simplified then
         self.valid = self.parent:is_machine_compatible(self.proto) and self.valid
     end
 

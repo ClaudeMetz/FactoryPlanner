@@ -121,9 +121,9 @@ function Fuel:validate()
     self.valid = (not self.proto.simplified)
 
     if self.valid then
-        local burner = (not self.parent.proto.simplified) and self.parent.proto.burner or nil
+        local burner = self.parent.proto.burner
         -- Machine being simplified or not having a burner anymore invalidates the fuel
-        self.valid = (not burner.simplified) and self.valid
+        self.valid = (burner ~= nil and not burner.simplified) and self.valid
 
         if self.valid and burner.combined_category ~= self.proto.combined_category then
             if burner.categories[self.proto.category] then

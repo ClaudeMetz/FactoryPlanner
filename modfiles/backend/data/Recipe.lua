@@ -21,15 +21,18 @@ script.register_metatable("Recipe", Recipe)
 
 ---@param proto FPRecipePrototype?
 ---@param production_type ProductionType
+---@param parent Line
 ---@return Recipe
-local function init(proto, production_type)
+local function init(proto, production_type, parent)
     local object = Object.init({
         proto = proto,
         production_type = production_type,
         priority_product = nil,
         temperatures = {},
 
-        temperature_data = nil
+        temperature_data = nil,
+
+        parent = parent
     }, "Recipe", Recipe)  --[[@as Recipe]]
 
     if proto and proto.simplified ~= true then
@@ -102,8 +105,8 @@ end
 
 ---@param packed_self PackedRecipe
 ---@return Recipe Recipe
-local function unpack(packed_self)
-    local unpacked_self = init(packed_self.proto, packed_self.production_type)
+local function unpack(packed_self, parent)
+    local unpacked_self = init(packed_self.proto, packed_self.production_type, parent)
 
     -- These will be automatically unpacked by the validation process
     unpacked_self.priority_product = packed_self.priority_product

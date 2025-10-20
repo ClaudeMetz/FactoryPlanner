@@ -33,7 +33,7 @@ script.register_metatable("Line", Line)
 ---@return Line
 local function init(recipe_proto, production_type)
     local object = Object.init({
-        recipe = Recipe.init(recipe_proto, production_type),
+        recipe = nil,  -- initialized below
         done = false,
         active = true,
         percentage = 100,
@@ -53,7 +53,7 @@ local function init(recipe_proto, production_type)
         production_ratio = 0
     }, "Line", Line)  --[[@as Line]]
 
-    object.recipe.parent = object
+    object.recipe = Recipe.init(recipe_proto, production_type, object)
 
     return object
 end
@@ -296,7 +296,7 @@ end
 ---@return Line line
 local function unpack(packed_self)
     local unpacked_self = init(nil, nil)  -- initialize empty, overwrite after
-    unpacked_self.recipe = Recipe.unpack(packed_self.recipe)  --[[@as Recipe]]
+    unpacked_self.recipe = Recipe.unpack(packed_self.recipe, unpacked_self)  --[[@as Recipe]]
     unpacked_self.done = packed_self.done
     unpacked_self.active = packed_self.active
     unpacked_self.percentage = packed_self.percentage
@@ -312,9 +312,9 @@ end
 function Line:validate()
     self.valid = self.recipe:validate()
 
-    if self.valid then self.valid = self.machine:validate() and self.valid end
+    if self.recipe.valid then self.valid = self.machine:validate() and self.valid end
 
-    if self.valid and self.beacon then self.valid = self.beacon:validate() and self.valid end
+    if self.recipe.valid and self.beacon then self.valid = self.beacon:validate() and self.valid end
 
     self.surface_compatibility = nil  -- reset cached value
 

@@ -170,8 +170,13 @@ function Beacon:validate()
     self.quality_proto = prototyper.util.validate_prototype_object(self.quality_proto, nil)
     self.valid = (not self.quality_proto.simplified) and self.valid
 
-    self.valid = self.parent:uses_beacon_effects() and self.valid
-    self.valid = self.module_set:validate() and self.valid
+    -- Can't be valid with an invalid parent
+    self.valid = self.parent.valid and self.valid
+
+    if self.valid then
+        self.valid = self.parent:uses_beacon_effects() and self.valid
+        self.valid = self.module_set:validate() and self.valid
+    end
 
     if self.valid and self:is_mono_beacon() then self.amount = 1 end
 
