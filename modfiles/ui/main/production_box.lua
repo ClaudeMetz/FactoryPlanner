@@ -23,7 +23,37 @@ local function refresh_solver_frame(player)
     local linear_dependence_data = matrix_engine.get_linear_dependence_data(factory_data, matrix_metadata)
     local num_needed_free_items = matrix_metadata.num_rows - matrix_metadata.num_cols + #matrix_metadata.free_items
 
-    if next(linear_dependence_data.linearly_dependent_recipes) then
+    local function build_item_flow(flow, status, items)
+        for _, proto in pairs(items) do
+            local tooltip = {"fp.turn_" .. status, proto.localised_name}
+            local color = (status == "unrestricted") and "green" or "default"
+            flow.add{type="sprite-button", sprite=proto.sprite, tooltip=tooltip,
+                tags={mod="fp", on_gui_click="switch_matrix_item", status=status, type=proto.type, name=proto.name},
+                style="flib_slot_button_" .. color .. "_small", mouse_button_filter={"left"}}
+        end
+    end
+
+    if next(linear_dependence_data.linearly_dependent_free_items) then
+        main_elements.solver_frame.visible = true
+
+        local item_count = 0
+        local num_needed_restricted_items = #linear_dependence_data.linearly_dependent_free_items
+
+        local caption = {"fp.error_message", {"fp.info_label", {"fp.remove_unrestricted_items"}}}
+        local tooltip = {"fp.remove_unrestricted_items_tt"}
+        solver_flow.add{type="label", caption=caption, tooltip=tooltip, style="bold_label"}
+
+        local flow_unrestricted = solver_flow.add{type="flow", direction="horizontal"}
+        build_item_flow(flow_unrestricted, "unrestricted", linear_dependence_data.linearly_dependent_free_items)
+        item_count = item_count + #matrix_metadata.free_items
+
+        -- This is some total bullshit because extra_bottom_padding_when_activated doesn't work
+        local total_width = 180 + (4 * 12) + (item_count * 40)
+        local interface_width = util.globals.ui_state(player).main_dialog_dimensions.width
+        local box_width = interface_width - MAGIC_NUMBERS.list_width
+        solver_flow.style.bottom_padding = (total_width > box_width) and 16 or 4
+
+    elseif next(linear_dependence_data.linearly_dependent_recipes) then
         main_elements.solver_frame.visible = true
 
         local caption = {"fp.error_message", {"fp.info_label", {"fp.linearly_dependent_recipes"}}}
@@ -39,16 +69,6 @@ local function refresh_solver_frame(player)
 
     elseif num_needed_free_items ~= 0 then
         main_elements.solver_frame.visible = true
-
-        local function build_item_flow(flow, status, items)
-            for _, proto in pairs(items) do
-                local tooltip = {"fp.turn_" .. status, proto.localised_name}
-                local color = (status == "unrestricted") and "green" or "default"
-                flow.add{type="sprite-button", sprite=proto.sprite, tooltip=tooltip,
-                    tags={mod="fp", on_gui_click="switch_matrix_item", status=status, type=proto.type, name=proto.name},
-                    style="flib_slot_button_" .. color .. "_small", mouse_button_filter={"left"}}
-            end
-        end
 
         local needs_choice = (#linear_dependence_data.allowed_free_items > 0)
         local item_count = 0
