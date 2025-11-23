@@ -14,6 +14,30 @@ local ModuleSet = Object.methods()
 ModuleSet.__index = ModuleSet
 script.register_metatable("ModuleSet", ModuleSet)
 
+-- Compute the effective module limit for a parent object, taking into account
+-- prototype-level flags and quality-level bonuses when applicable.
+local function compute_module_limit(parent)
+    local base = parent.proto.module_limit or 0
+    local proto = parent.proto
+    local quality = parent.quality_proto
+
+    if not proto.quality_affects_module_slots or not quality then return base end
+
+    local bonus = 0
+    local category = proto.prototype_category or proto.category
+    if category == "beacon" then
+        bonus = quality.beacon_module_slots_bonus or 0
+    elseif category == "lab" then
+        bonus = quality.lab_module_slots_bonus or 0
+    elseif category == "mining_drill" then
+        bonus = quality.mining_drill_module_slots_bonus or 0
+    elseif category == "furnace" or category == "assembling_machine" then
+        bonus = quality.crafting_machine_module_slots_bonus or 0
+    end
+
+    return base + (bonus or 0)
+end
+
 ---@param parent ModuledObject
 ---@return ModuleSet
 local function init(parent)
@@ -22,8 +46,8 @@ local function init(parent)
 
         module_count = 0,
         -- 0 as placeholder for simplified parents
-        module_limit = parent.proto.module_limit or 0,
-        empty_slots = parent.proto.module_limit or 0,
+        module_limit = compute_module_limit(parent),
+        empty_slots = compute_module_limit(parent),
 
         parent = parent
     }, "ModuleSet", ModuleSet)  --[[@as ModuleSet]]
@@ -100,7 +124,7 @@ end
 
 ---@param features ModuleNormalizeFeatures
 function ModuleSet:normalize(features)
-    self.module_limit = self.parent.proto.module_limit
+    self.module_limit = compute_module_limit(self.parent)
 
     if features.compatibility then self:verify_compatibility() end
     if features.trim then self:trim() end

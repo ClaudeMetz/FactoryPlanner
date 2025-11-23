@@ -193,6 +193,7 @@ function generator.machines.generate()
             allowed_effects = proto.allowed_effects or {},
             allowed_module_categories = proto.allowed_module_categories,
             module_limit = (proto.module_inventory_size or 0),
+            quality_affects_module_slots = proto.quality_affects_module_slots,
             surface_conditions = proto.surface_conditions,
             uses_force_mining_productivity_bonus = proto.uses_force_mining_productivity_bonus
         }
@@ -1218,6 +1219,7 @@ function generator.beacons.generate()
                 allowed_effects = proto.allowed_effects,
                 allowed_module_categories = proto.allowed_module_categories,
                 module_limit = proto.module_inventory_size,
+                quality_affects_module_slots = proto.quality_affects_module_slots,
                 effectivity = proto.distribution_effectivity,
                 quality_bonus = proto.distribution_effectivity_bonus_per_quality_level,
                 profile = (#proto.profile == 0) and {1} or proto.profile,
@@ -1374,7 +1376,11 @@ function generator.qualities.generate()
                     level = proto.level,
                     always_show = proto.draw_sprite_by_default,
                     beacon_power_usage_multiplier = proto.beacon_power_usage_multiplier,
-                    mining_drill_resource_drain_multiplier = proto.mining_drill_resource_drain_multiplier
+                    mining_drill_resource_drain_multiplier = proto.mining_drill_resource_drain_multiplier,
+                    beacon_module_slots_bonus = proto.beacon_module_slots_bonus,
+                    lab_module_slots_bonus = proto.lab_module_slots_bonus,
+                    crafting_machine_module_slots_bonus = proto.crafting_machine_module_slots_bonus,
+                    mining_drill_module_slots_bonus = proto.mining_drill_module_slots_bonus
                 }
                 insert_prototype(qualities, quality, nil)
             end
