@@ -29,11 +29,18 @@ defaults = {}
 ---@param player LuaPlayer
 ---@param data_type DataType
 ---@param category (integer | string)?
----@return DefaultPrototype
+---@return DefaultPrototype?
 function defaults.get(player, data_type, category)
     local default = util.globals.preferences(player)["default_" .. data_type]
     local category_table = prototyper.util.find(data_type, nil, category)
-    return (category_table == nil) and default or default[category_table.id]
+    if category_table then
+        return default[category_table.id]
+    elseif type(category) == "string" then
+        -- Support string keys for combined_category (e.g., "craftingadvanced-crafting")
+        return default[category]  -- may be nil if not yet set
+    else
+        return default
+    end
 end
 
 -- Sets the default for the given type, incorporating the category if given
@@ -41,11 +48,33 @@ end
 ---@param data_type DataType
 ---@param data DefaultData
 ---@param category (integer | string)?
-function defaults.set(player, data_type, data, category)
-    local default = defaults.get(player, data_type, category)
+---@param proto_category (integer | string)?  -- actual prototype category (for combined_category lookups)
+function defaults.set(player, data_type, data, category, proto_category)
+    local defaults_table = util.globals.preferences(player)["default_" .. data_type]
+    local category_table = prototyper.util.find(data_type, nil, category)
+
+    -- Determine the key to use for storage
+    local storage_key
+    if category_table then
+        storage_key = category_table.id
+    elseif type(category) == "string" then
+        -- combined_category: store under string key
+        storage_key = category
+    end
+
+    -- Get or create the default entry
+    local default = defaults_table[storage_key]
+    if not default then
+        default = {}
+        defaults_table[storage_key] = default
+    end
+
+    -- For prototype lookup, use proto_category if provided (machine's actual category),
+    -- otherwise fall back to category_table's name or category itself
+    local lookup_category = proto_category or (category_table and category_table.name) or category
 
     if data.prototype then
-        default.proto = prototyper.util.find(data_type, data.prototype, category)  --[[@as AnyFPPrototype]]
+        default.proto = prototyper.util.find(data_type, data.prototype, lookup_category)  --[[@as AnyFPPrototype]]
     end
     if data.quality then
         default.quality = prototyper.util.find("qualities", data.quality, nil)  --[[@as FPQualityPrototype]]
