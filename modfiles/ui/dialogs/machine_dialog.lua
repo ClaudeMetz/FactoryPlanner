@@ -203,6 +203,7 @@ end
 
 local function handle_machine_choice(player, _, event)
     local machine = util.globals.modal_data(player).object  --[[@as Machine]]
+    local line = machine.parent  --[[@as Line]]
     local elem_value = event.element.elem_value
 
     if not elem_value then
@@ -211,7 +212,13 @@ local function handle_machine_choice(player, _, event)
         return  -- nothing changed
     end
 
-    local new_machine_proto = prototyper.util.find("machines", elem_value.name, machine.proto.category)
+    -- Search all valid categories for this machine
+    local new_machine_proto = nil
+    for _, category in pairs(line:get_machine_categories()) do
+        new_machine_proto = prototyper.util.find("machines", elem_value.name, category)
+        if new_machine_proto then break end
+    end
+
     local new_quality_proto = prototyper.util.find("qualities", elem_value.quality, nil)
 
     -- Can't use Line:change_machine_to_proto() as that modifies the line, which we can't do

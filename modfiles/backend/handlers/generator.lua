@@ -413,18 +413,29 @@ function generator.recipes.generate()
         end
     end
 
+    -- Returns true if at least one machine category exists for this recipe
+    local function has_machine_category(recipe_proto)
+        if storage.prototypes.machines[recipe_proto.category] then return true end
+        if recipe_proto.additional_categories then
+            for _, category in pairs(recipe_proto.additional_categories) do
+                if storage.prototypes.machines[category] then return true end
+            end
+        end
+        return false
+    end
+
     -- Add all standard recipes
     local recipe_filter = {{filter="energy", comparison=">", value=0},
         {filter="energy", comparison="<", value=1e+21, mode="and"}}
     for recipe_name, proto in pairs(prototypes.get_recipe_filtered(recipe_filter)) do
-        local machine_category = storage.prototypes.machines[proto.category]  ---@type { [string]: FPMachinePrototype }
         -- Avoid any recipes that have no machine to produce them, or are irrelevant
-        if machine_category ~= nil and not generator_util.is_irrelevant_recipe(proto) and not proto.is_parameter then
+        if has_machine_category(proto) and not generator_util.is_irrelevant_recipe(proto) and not proto.is_parameter then
             local recipe = {
                 name = proto.name,
                 localised_name = proto.localised_name,
                 sprite = "recipe/" .. proto.name,
                 category = proto.category,
+                additional_categories = proto.additional_categories or {},
                 energy = proto.energy,
                 emissions_multiplier = proto.emissions_multiplier,
                 allowed_effects = proto.allowed_effects or {},
