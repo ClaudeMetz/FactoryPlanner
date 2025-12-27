@@ -177,19 +177,14 @@ end
 ---@param player LuaPlayer
 ---@return boolean success
 function Line:change_machine_to_default(player)
-    -- Try primary category first
-    if self:try_machine_from_category(player, self.recipe.proto.category) then
+    -- Try combined_category first (handles user-set defaults for multi-category recipes)
+    if self:try_machine_from_category(player, self.recipe.proto.combined_category) then
         return true
     end
 
-    -- Try additional categories if primary failed
-    local additional = self.recipe.proto.additional_categories
-    if additional then
-        for _, category in pairs(additional) do
-            if self:try_machine_from_category(player, category) then
-                return true
-            end
-        end
+    -- Fall back to primary category (always has a default from get_fallback)
+    if self:try_machine_from_category(player, self.recipe.proto.category) then
+        return true
     end
 
     return false

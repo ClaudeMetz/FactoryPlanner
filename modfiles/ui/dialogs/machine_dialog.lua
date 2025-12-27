@@ -19,10 +19,12 @@ local function refresh_defaults_frame(player)
     local modal_data = util.globals.modal_data(player)  --[[@as table]]
     local modal_elements = modal_data.modal_elements
     local machine = modal_data.object  --[[@as Machine]]
+    local line = modal_data.line  --[[@as Line]]
 
-    -- Machine
-    local machine_tooltip = defaults.generate_tooltip(player, "machines", machine.proto.category)
-    local equals_machine = defaults.equals_default(player, "machines", machine, machine.proto.category)
+    -- Machine (use recipe's combined_category for defaults lookup)
+    local machine_category = line.recipe.proto.combined_category
+    local machine_tooltip = defaults.generate_tooltip(player, "machines", machine_category)
+    local equals_machine = defaults.equals_default(player, "machines", machine, machine_category)
     local equals_all_machines = defaults.equals_all_defaults(player, "machines", machine)
 
     modal_elements.machine_title.tooltip = machine_tooltip
@@ -66,7 +68,9 @@ local function add_defaults_frame(parent_frame, player)
 end
 
 local function set_defaults(player, tags, _)
-    local machine = util.globals.modal_data(player).object
+    local modal_data = util.globals.modal_data(player)
+    local machine = modal_data.object
+    local line = modal_data.line
 
     local machine_data = {
         prototype = machine.proto.name,
@@ -77,7 +81,9 @@ local function set_defaults(player, tags, _)
     if tags.action == "machine_all" then
         defaults.set_all(player, "machines", machine_data)
     elseif tags.action == "machine" then
-        defaults.set(player, "machines", machine_data, machine.proto.category)
+        -- Use recipe's combined_category so defaults work for multi-category recipes
+        local machine_category = line.recipe.proto.combined_category
+        defaults.set(player, "machines", machine_data, machine_category)
 
     elseif tags.action == "fuel_all" then
         defaults.set_all(player, "fuels", {prototype=machine.fuel.proto.name})
