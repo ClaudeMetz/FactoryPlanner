@@ -430,12 +430,16 @@ function generator.recipes.generate()
     for recipe_name, proto in pairs(prototypes.get_recipe_filtered(recipe_filter)) do
         -- Avoid any recipes that have no machine to produce them, or are irrelevant
         if has_machine_category(proto) and not generator_util.is_irrelevant_recipe(proto) and not proto.is_parameter then
-            -- Build combined_category (sorted alphabetically for determinism)
-            local categories = {proto.category}
+            -- Build combined_category (sorted alphabetically, deduplicated)
+            local category_set = {[proto.category] = true}
             if proto.additional_categories then
                 for _, cat in pairs(proto.additional_categories) do
-                    table.insert(categories, cat)
+                    category_set[cat] = true
                 end
+            end
+            local categories = {}
+            for cat in pairs(category_set) do
+                table.insert(categories, cat)
             end
             table.sort(categories)
             local combined_category = table.concat(categories)

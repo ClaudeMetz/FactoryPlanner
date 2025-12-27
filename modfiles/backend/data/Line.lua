@@ -83,12 +83,16 @@ end
 -- Returns all valid machine categories for this line's recipe
 ---@return string[]
 function Line:get_machine_categories()
-    local categories = {self.recipe.proto.category}
+    local category_set = {[self.recipe.proto.category] = true}
     local additional = self.recipe.proto.additional_categories
     if additional then
         for _, category in pairs(additional) do
-            table.insert(categories, category)
+            category_set[category] = true
         end
+    end
+    local categories = {}
+    for category in pairs(category_set) do
+        table.insert(categories, category)
     end
     return categories
 end
