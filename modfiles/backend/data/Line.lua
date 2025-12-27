@@ -244,12 +244,14 @@ end
 ---@return PrototypeFilter filter
 function Line:compile_machine_filter()
     local compatible_machines = {}
+    local seen = {}
 
     for _, category in pairs(self:get_machine_categories()) do
         local machine_category = prototyper.util.find("machines", nil, category)
         if machine_category then
             for _, machine_proto in pairs(machine_category.members) do
-                if self:is_machine_compatible(machine_proto) then
+                if not seen[machine_proto.name] and self:is_machine_compatible(machine_proto) then
+                    seen[machine_proto.name] = true
                     table.insert(compatible_machines, machine_proto.name)
                 end
             end
