@@ -165,7 +165,7 @@ local function add_item_picker(parent_flow, player)
 
             -- Figure out the translated name here so search doesn't have to repeat the work for every character
             local translated_name = (translations) and translations[item_proto.type][item_name] or nil
-            translated_name = (translated_name) and translated_name:lower() or item_name
+            translated_name = (translated_name) and helpers.multilingual_to_lower(translated_name) or item_name
             subgroup_table[{name=item_name, translated_name=translated_name}] = button_item
         end
     end

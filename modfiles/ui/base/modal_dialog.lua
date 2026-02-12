@@ -275,8 +275,9 @@ function modal_dialog.run_search(player)
     if not modal_data or not modal_data.modal_elements then return end
 
     local searchfield = modal_data.modal_elements.search_textfield
-    local search_term = searchfield.text:gsub("^%s*(.-)%s*$", "%1"):lower()
-    GLOBAL_HANDLERS[modal_data.search_handler_name](player, search_term)
+    local search_term = helpers.multilingual_to_lower(searchfield.text)
+    local trimmed_search_term = search_term:gsub("^%s*(.-)%s*$", "%1")
+    GLOBAL_HANDLERS[modal_data.search_handler_name](player, trimmed_search_term)
 end
 
 function modal_dialog.set_submit_button_state(modal_elements, enabled, message)
