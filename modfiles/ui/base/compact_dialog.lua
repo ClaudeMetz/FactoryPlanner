@@ -301,7 +301,7 @@ local function refresh_compact_header(player, factory)
 
     local frame_width = compact_elements.compact_frame.style.maximal_width
     local available_space = frame_width - (2*12)  -- 12px padding on both sides
-    local column_count = math.floor(available_space / 40)
+    local column_count = math.max(math.floor(available_space / 40), 1)
     local padding = (available_space - (column_count * 40)) / 2
     ingredients_frame.style.padding = {0, padding}
 
