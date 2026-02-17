@@ -286,7 +286,7 @@ local function close_machine_dialog(player, action)
 
         local limit_switch = modal_data.modal_elements.force_limit_switch
         if limit_switch.enabled then
-            machine.limit = util.gui.parse_expression_field(modal_data.modal_elements.limit_textfield)
+            machine.limit = util.gui.parse_expression_field(modal_data.modal_elements.limit_textfield, true)
             machine.force_limit = util.gui.switch.convert_to_boolean(limit_switch.switch_state)
         end
 
@@ -321,7 +321,8 @@ listeners.gui = {
         {
             name = "machine_limit",
             handler = (function(_, _, event)
-                util.gui.update_expression_field(event.element)
+                local limit = util.gui.parse_expression_field(event.element, true)
+                util.gui.update_expression_field(event.element, limit ~= nil)
             end)
         }
     },
@@ -329,7 +330,7 @@ listeners.gui = {
         {
             name = "confirm_machine",
             handler = (function(player, _, event)
-                local confirmed = util.gui.confirm_expression_field(event.element)
+                local confirmed = util.gui.confirm_expression_field(event.element, true)
                 if confirmed then util.gui.close_dialog(player, "submit") end
             end)
         }

@@ -10,7 +10,7 @@ end
 local function run_calculation(player)
     local calculator_elements = util.globals.ui_state(player).calculator_elements
     local textfield = calculator_elements.textfield
-    local expression = tostring(util.gui.parse_expression_field(textfield))
+    local expression = tostring(util.gui.parse_expression_field(textfield, false))
 
     if expression == "nil" then
         style_textfield(textfield, "invalid_value_textfield")

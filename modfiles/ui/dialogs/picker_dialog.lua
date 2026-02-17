@@ -197,7 +197,7 @@ end
 local function sync_amounts(modal_data)
     local modal_elements = modal_data.modal_elements
 
-    local belt_amount = util.gui.parse_expression_field(modal_elements.belt_amount_textfield)
+    local belt_amount = util.gui.parse_expression_field(modal_elements.belt_amount_textfield, true)
     if belt_amount == nil then
         modal_elements.item_amount_textfield.text = ""
     else
@@ -224,7 +224,7 @@ local function set_belt_proto(modal_data, belt_proto)
         modal_elements.belt_choice_button.elem_value = belt_proto.name
         modal_data.amount_defined_by = modal_data.lob
 
-        local item_amount = util.gui.parse_expression_field(modal_elements.item_amount_textfield)
+        local item_amount = util.gui.parse_expression_field(modal_elements.item_amount_textfield, true)
         if item_amount ~= nil then
             local throughput = belt_proto.throughput * ((modal_data.lob == "belts") and 1 or 0.5)
             local belt_amount = item_amount / throughput / modal_data.timescale
@@ -256,7 +256,7 @@ end
 
 local function update_dialog_submit_button(modal_elements)
     local item_choice_button = modal_elements.item_choice_button
-    local item_amount = util.gui.parse_expression_field(modal_elements.item_amount_textfield)
+    local item_amount = util.gui.parse_expression_field(modal_elements.item_amount_textfield, true)
 
     local message = nil
     if item_choice_button.sprite == "" then
@@ -391,7 +391,9 @@ local function close_picker_dialog(player, action)
     if action == "submit" then
         local defined_by = modal_data.amount_defined_by
         local relevant_textfield_name = ((defined_by == "amount") and "item" or "belt") .. "_amount_textfield"
-        local relevant_amount = util.gui.parse_expression_field(modal_data.modal_elements[relevant_textfield_name]) or 0
+        local amount_textfield = modal_data.modal_elements[relevant_textfield_name]
+
+        local relevant_amount = util.gui.parse_expression_field(amount_textfield, true) or 0
         if defined_by == "amount" then
             relevant_amount = relevant_amount / modal_data.timescale
             relevant_amount = math.max(relevant_amount, MAGIC_NUMBERS.margin_of_error*10)
@@ -463,15 +465,19 @@ listeners.gui = {
         {
             name = "picker_item_amount",
             handler = (function(player, _, event)
-                util.gui.update_expression_field(event.element)
+                local item_amount = util.gui.parse_expression_field(event.element, true)
+                util.gui.update_expression_field(event.element, item_amount ~= nil)
+
                 update_dialog_submit_button(util.globals.modal_elements(player))
             end)
         },
         {
             name = "picker_belt_amount",
             handler = (function(player, _, event)
+                local belt_amount = util.gui.parse_expression_field(event.element, true)
+                util.gui.update_expression_field(event.element, belt_amount ~= nil)
+
                 local modal_data = util.globals.modal_data(player)
-                util.gui.update_expression_field(event.element)
                 sync_amounts(modal_data)  -- defined_by ~= "amount"
                 update_dialog_submit_button(modal_data.modal_elements)
             end)
@@ -481,7 +487,7 @@ listeners.gui = {
         {
             name = "picker_amount",
             handler = (function(player, _, event)
-                local confirmed = util.gui.confirm_expression_field(event.element)
+                local confirmed = util.gui.confirm_expression_field(event.element, true)
                 if confirmed then util.gui.close_dialog(player, "submit") end
             end)
         }

@@ -195,25 +195,28 @@ end
 local expression_variables = {k=1000, K=1000, m=1000000, M=1000000, g=1000000000, G=1000000000}
 
 ---@param textfield LuaGuiElement
+---@param positive boolean
 ---@return number? expression
-function _gui.parse_expression_field(textfield)
+function _gui.parse_expression_field(textfield, positive)
     local expression = nil
     pcall(function() expression = helpers.evaluate_expression(textfield.text, expression_variables) end)
-    return expression
+    if expression == nil then return nil
+    elseif positive and expression <= 0 then return nil
+    else return expression end
 end
 
 ---@param textfield LuaGuiElement
-function _gui.update_expression_field(textfield)
-    local expression = _gui.parse_expression_field(textfield)
-
-    textfield.style = (textfield.text ~= "" and expression == nil) and "invalid_value_textfield" or "textbox"
+---@param valid boolean
+function _gui.update_expression_field(textfield, valid)
+    textfield.style = (textfield.text ~= "" and not valid) and "invalid_value_textfield" or "textbox"
     textfield.style.width = textfield.tags.width  --[[@as number]]  -- this is stupid but styles work out that way
 end
 
 ---@param textfield LuaGuiElement
 ---@return boolean confirmed
-function _gui.confirm_expression_field(textfield)
-    local expression = _gui.parse_expression_field(textfield)
+function _gui.confirm_expression_field(textfield, positive)
+    local expression = _gui.parse_expression_field(textfield, positive)
+
     if expression then
         local exp = tostring(expression)
         if exp == textfield.text then

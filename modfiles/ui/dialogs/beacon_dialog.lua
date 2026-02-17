@@ -173,13 +173,11 @@ local function handle_amount_change(player, _, _)
     local modal_data = util.globals.modal_data(player)  --[[@as table]]
     local textfield = modal_data.modal_elements.beacon_amount
 
-    local expression = util.gui.parse_expression_field(textfield)
-    local invalid = (textfield.text ~= "" and (expression == nil or expression < 0 or expression % 1 ~= 0))
+    local amount = util.gui.parse_expression_field(textfield, true)
+    local valid = (amount ~= nil and amount % 1 == 0)
+    util.gui.update_expression_field(textfield, valid)
 
-    textfield.style = (invalid) and "invalid_value_textfield" or "textbox"
-    textfield.style.width = textfield.tags.width  --[[@as number]]  -- this is stupid but styles work out that way
-
-    modal_data.object.amount = (invalid) and 0 or (expression or 0)
+    modal_data.object.amount = (valid) and amount or 0
     modal_data.module_set:normalize({effects=true})
 
     update_profile_label(modal_data)
@@ -238,8 +236,7 @@ local function close_beacon_dialog(player, action)
 
     if action == "submit" then
         local beacon = modal_data.object
-        local total_amount = util.gui.parse_expression_field(modal_data.modal_elements.beacon_total) or 0
-        beacon.total_amount = (total_amount > 0) and total_amount or nil
+        beacon.total_amount = util.gui.parse_expression_field(modal_data.modal_elements.beacon_total, true)
 
         solver.update(player, factory)
         util.gui.run_refresh(player, "factory")
@@ -275,7 +272,8 @@ listeners.gui = {
         {
             name = "beacon_total_amount",
             handler = (function(_, _, event)
-                util.gui.update_expression_field(event.element)
+                local total_amount = util.gui.parse_expression_field(event.element, true)
+                util.gui.update_expression_field(event.element, total_amount ~= nil)
             end)
         }
     },

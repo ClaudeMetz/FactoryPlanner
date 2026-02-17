@@ -7,7 +7,7 @@ Date: 00. 00. 0000
     - Improved natural language search for non-latin languages
     - Bumped the required Factorio version to 2.0.67
   Bugfixes:
-    -
+    - Fixed an issue where some numeric textfields allowed negative values when they shouldn't (#706)
 
 ---------------------------------------------------------------------------------------------------
 Version: 2.0.43
