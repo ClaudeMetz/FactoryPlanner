@@ -127,6 +127,8 @@ end
 ---@param player LuaPlayer
 function Machine:reset(player)
     self.parent:change_machine_to_default(player)
+
+    self.fuel = nil
     self:normalize_fuel(player)
 
     self.limit = nil

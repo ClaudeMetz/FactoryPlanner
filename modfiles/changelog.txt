@@ -10,6 +10,7 @@ Date: 00. 00. 0000
     - Fixed a crash caused by recipes using one of their byproducts as fuel (#670)
     - Fixed an issue where some numeric textfields allowed negative values when they shouldn't (#706)
     - Fixed a crash caused by the Factorio window being resized by the OS in certain ways (#693)
+    - Fixed machine dialog reset button not resetting the selected fuel
 
 ---------------------------------------------------------------------------------------------------
 Version: 2.0.43
