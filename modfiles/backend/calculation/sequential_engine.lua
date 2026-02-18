@@ -10,21 +10,21 @@ local function update_line(line_data, aggregate, looped_fuel)
     local total_effects = line_data.total_effects
 
     local relevant_products, byproducts = {}, {}
-    local fuel_proto, original_aggregate = line_data.fuel_proto, nil
+    local fuel_proto, self_feeding, original_aggregate = line_data.fuel_proto, false, nil
 
+    -- Determine relevant products
     for _, product in pairs(recipe_proto.products) do
-        -- Determine relevant products
-        if aggregate.Ingredient[product.type][product.name] ~= nil then
-            table.insert(relevant_products, product)
-        else
-            table.insert(byproducts, product)
-        end
+        local is_product = (aggregate.Ingredient[product.type][product.name] ~= nil)
+        table.insert((is_product) and relevant_products or byproducts, product)
 
-        -- Prepare if this line produces its own fuel
-        if looped_fuel == nil and fuel_proto ~= nil then  -- don't loop if this is already the loop
+        -- Prepare for this line producing its own fuel
+        if looped_fuel == nil and fuel_proto ~= nil then  -- don't loop if this already is the loop
             if product.type == fuel_proto.type and product.name == fuel_proto.name then
-                original_aggregate = aggregate
-                aggregate = ftable.deep_copy(aggregate)
+                self_feeding = true
+                if is_product then  -- conserve aggregate reference if we'll restart the calculation
+                    original_aggregate = aggregate
+                    aggregate = ftable.deep_copy(aggregate)
+                end
             end
         end
     end
@@ -138,24 +138,32 @@ local function update_line(line_data, aggregate, looped_fuel)
 
     local fuel_amount = nil
     if fuel_proto ~= nil then
+        fuel_amount = solver_util.determine_fuel_amount(energy_consumption,
+            machine_proto.burner, fuel_proto.fuel_value)
         local fuel_item = line_data.fuel_item
-        fuel_amount = solver_util.determine_fuel_amount(energy_consumption, machine_proto.burner,
-            fuel_proto.fuel_value)
 
-        -- original_aggregate existing means this line produces its own fuel
-        if original_aggregate ~= nil and production_ratio > 0 then  -- production_ratio of 0 would divide by 0
-            local ingredient_class = original_aggregate.Ingredient[fuel_item.type]
-            local initial_demand = ingredient_class[fuel_item.name]
-            local ratio = fuel_amount / initial_demand
+        -- Handle recipes producing their own machine's fuel
+        if self_feeding and production_ratio > 0 then
+            if original_aggregate ~= nil then  -- means the fuel is a main product
+                local ingredient_class = original_aggregate.Ingredient[fuel_item.type]
+                local initial_demand = ingredient_class[fuel_item.name]
+                local ratio = fuel_amount / initial_demand
 
-            if ratio + 0.001 < 1 then  -- a ratio >= 1 means this can't outproduce itself
-                -- Need a lot of precision here, hence the exponent of 20
-                local bumped_demand = initial_demand * ((1 - ratio ^ 20) / (1 - ratio))
-                ingredient_class[fuel_item.name] = bumped_demand
+                if ratio + 0.001 < 1 then  -- a ratio >= 1 means this can't outproduce itself
+                    -- Need a lot of precision here, hence the exponent of 20
+                    local bumped_demand = initial_demand * ((1 - ratio ^ 20) / (1 - ratio))
+                    ingredient_class[fuel_item.name] = bumped_demand
 
-                -- Run line with fuel amount bumped to account for own consumption
-                update_line(line_data, original_aggregate, bumped_demand - initial_demand)
-                return
+                    -- Run line with fuel amount bumped to account for own consumption
+                    update_line(line_data, original_aggregate, bumped_demand - initial_demand)
+                    return
+                end
+            else  -- means the fuel is a byproduct only, which shouldn't affect production
+                local byproduct_amount = Byproduct[fuel_item.type][fuel_item.name]
+                local used_amount = math.min(fuel_amount, byproduct_amount)
+
+                structures.class.subtract(aggregate.Byproduct, fuel_item, used_amount)
+                looped_fuel = used_amount
             end
         end
 
@@ -163,7 +171,7 @@ local function update_line(line_data, aggregate, looped_fuel)
         local corrected_amount = fuel_amount - (looped_fuel or 0)
         local fuel_item = {type=fuel_item.type, name=fuel_item.name, amount=corrected_amount}
         structures.class.add(aggregate.Ingredient, fuel_item)  -- add to floor
-        -- Fuel is set via a special amount variable on the line itself
+        -- Fuel itself is set via a special amount variable on the line itself
 
         if fuel_proto.burnt_result then
             local burnt = {type="item", name=fuel_proto.burnt_result, amount=fuel_amount}
