@@ -28,9 +28,10 @@ function processors.throughput(metadata, raw_amount, item_proto, _)
 end
 
 function processors.items_per_second_per_machine(metadata, raw_amount, item_proto, machine_count)
-    if machine_count == 0 then return 0, nil end  -- avoid division by zero
+    local adjusted_count = (math.ceil((machine_count or 1) - 0.001))
+    if adjusted_count == 0 then return 0, nil end  -- avoid division by zero
 
-    local raw_number = raw_amount / (math.ceil((machine_count or 1) - 0.001))
+    local raw_number = raw_amount / adjusted_count
     local number = util.format.number(raw_number, metadata.formatting_precision)
 
     local plural_parameter = (number == "1") and 1 or 2

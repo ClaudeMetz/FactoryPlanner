@@ -417,7 +417,7 @@ function builders.fuel(line, parent_flow, metadata)
     local style = "flib_slot_button_cyan_small"
 
     if fuel.proto.type == "fluid" then
-        local temperature_data = fuel.temperature_data   -- exists for any fluid fuel
+        local temperature_data = fuel.temperature_data  -- exists for any fluid fuel
         table.insert(name_line, temperature_data.annotation)
 
         if fuel.temperature == nil then
@@ -434,7 +434,7 @@ function builders.fuel(line, parent_flow, metadata)
 
     local button = parent_flow.add{type="sprite-button", sprite=fuel.proto.sprite, style=style,
         tags={mod="fp", on_gui_click="act_on_line_fuel", fuel_id=fuel.id, on_gui_hover="set_tooltip",
-        context="production_table"},  number=amount, mouse_button_filter={"left-and-right"}, raise_hover_events=true}
+        context="production_table"}, number=amount, mouse_button_filter={"left-and-right"}, raise_hover_events=true}
     metadata.tooltips[button.index] = tooltip
 end
 

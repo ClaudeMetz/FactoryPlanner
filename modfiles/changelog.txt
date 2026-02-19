@@ -12,6 +12,7 @@ Date: 00. 00. 0000
     - Fixed a crash caused by the Factorio window being resized by the OS in certain ways (#693)
     - Fixed the interface not allowing beacons on machines that should allow them (#691)
     - Fixed that selecting a byproduct-consuming recipe would not set its ingredient temperature correctly (#683)
+    - Fixed a crash when using the items/second/machine view with buildings like the agriculture tower (#676)
     - Fixed machine dialog reset button not resetting the selected fuel
 
 ---------------------------------------------------------------------------------------------------
