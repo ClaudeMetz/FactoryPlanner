@@ -98,20 +98,7 @@ local function attempt_adding_line(player, recipe_id, modal_data)
         line.machine:reset(player)
         line:setup_beacon(player)
 
-        local recipe_name = recipe_proto.localised_name
-        if not (recipe_proto.custom or player.force.recipes[recipe_proto.name].enabled) then
-            util.messages.raise(player, "warning", {"fp.warning_recipe_disabled", recipe_name}, 1)
-        end
-
-        if not line:get_surface_compatibility().overall then
-            util.messages.raise(player, "warning", {"fp.warning_surface_not_compatible", recipe_name}, 1)
-        end
-
-        if not line.recipe:temperature_fully_configured() then
-            util.messages.raise(player, "warning", {"fp.warning_temperature_not_configured", recipe_name}, 1)
-        end
-
-        -- Set temperature on ingredient that this recipe fulfills
+        -- Set ingredient temperature if this is a base_fluid dialog
         if modal_data.temperature then
             if modal_data.recipe_id then
                 local fluid_name = modal_data.base_fluid.name
@@ -119,6 +106,25 @@ local function attempt_adding_line(player, recipe_id, modal_data)
             elseif modal_data.fuel_id then
                 OBJECT_INDEX[modal_data.fuel_id].temperature = modal_data.temperature
             end
+        end
+
+        -- Set ingredient temperature to match byproduct recipe
+        if modal_data.production_type == "consume" then
+            local proto = prototyper.util.find("items", modal_data.product_id, modal_data.category_id)
+            line.recipe.temperatures[proto.base_name] = proto.temperature
+        end
+
+        if not line.recipe:temperature_fully_configured() then
+            util.messages.raise(player, "warning", {"fp.warning_temperature_not_configured", recipe_name}, 1)
+        end
+
+        local recipe_name = recipe_proto.localised_name
+        if not (recipe_proto.custom or player.force.recipes[recipe_proto.name].enabled) then
+            util.messages.raise(player, "warning", {"fp.warning_recipe_disabled", recipe_name}, 1)
+        end
+
+        if not line:get_surface_compatibility().overall then
+            util.messages.raise(player, "warning", {"fp.warning_surface_not_compatible", recipe_name}, 1)
         end
 
         solver.update(player)
@@ -158,7 +164,7 @@ local function create_filter_box(modal_data)
         table_temperatures.style.top_margin = 8
 
         for _, temperature in pairs(modal_data.applicable_values) do
-            local toggled = temperature == modal_data.temperature
+            local toggled = (temperature == modal_data.temperature)
             table_temperatures.add{type="button", caption={"fp.temperature_value", temperature},
                 tags={mod="fp", on_gui_click="change_recipe_temperature", temperature=temperature},
                 style="fp_button_push", toggled=toggled, mouse_button_filter={"left"}}
