@@ -398,21 +398,6 @@ function generator_util.determine_launch_data(silo_proto)
 end
 
 
----@param proto FPMachinePrototype
-function generator_util.check_machine_effects(proto)
-    local any_positives = false
-    for _, effect in pairs(proto.allowed_effects) do
-        if effect == true then any_positives = true; break end
-    end
-
-    if proto.module_limit == 0 or not any_positives then
-        proto.effect_receiver.uses_module_effects = false
-    end
-    if proto.module_limit == 0 then
-        proto.effect_receiver.uses_beacon_effects = false
-    end
-end
-
 ---@param effects ModuleEffects
 ---@return ModuleEffects
 function generator_util.formatted_effects(effects)

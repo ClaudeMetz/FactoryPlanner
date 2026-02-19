@@ -163,6 +163,7 @@ function generator.machines.generate()
             end
         end
 
+        -- Handle effect reciever details
         local effect_receiver = proto.effect_receiver or {
             uses_module_effects = false,
             uses_beacon_effects = false,
@@ -170,6 +171,18 @@ function generator.machines.generate()
         }
         local base_effect = effect_receiver.base_effect  -- can be nil
         effect_receiver.base_effect = generator_util.formatted_effects(base_effect)
+
+        local any_positives = false
+        for _, effect in pairs(proto.allowed_effects or {}) do
+            if effect == true then any_positives = true; break end
+        end
+
+        if not any_positives then
+            if proto.module_limit == 0 then
+                proto.effect_receiver.uses_module_effects = false
+            end
+            proto.effect_receiver.uses_beacon_effects = false
+        end
 
         local machine = {
             name = proto.name,
@@ -196,7 +209,6 @@ function generator.machines.generate()
             surface_conditions = proto.surface_conditions,
             uses_force_mining_productivity_bonus = proto.uses_force_mining_productivity_bonus
         }
-        generator_util.check_machine_effects(machine)
         generator_util.sort_machine_burner_categories(machine)
 
         return machine
