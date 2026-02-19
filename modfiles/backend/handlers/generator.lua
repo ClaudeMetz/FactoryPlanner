@@ -72,7 +72,7 @@ end
 ---@field emissions_per_second EmissionsMap
 ---@field burner MachineBurner?
 ---@field built_by_item FPItemPrototype?
----@field effect_receiver EffectReceiver?
+---@field effect_receiver EffectReceiver
 ---@field allowed_effects AllowedEffects
 ---@field allowed_module_categories { [string]: boolean }?
 ---@field module_limit integer
@@ -163,27 +163,6 @@ function generator.machines.generate()
             end
         end
 
-        -- Handle effect reciever details
-        local effect_receiver = proto.effect_receiver or {
-            uses_module_effects = false,
-            uses_beacon_effects = false,
-            uses_surface_effects = false
-        }
-        local base_effect = effect_receiver.base_effect  -- can be nil
-        effect_receiver.base_effect = generator_util.formatted_effects(base_effect)
-
-        local any_positives = false
-        for _, effect in pairs(proto.allowed_effects or {}) do
-            if effect == true then any_positives = true; break end
-        end
-
-        if not any_positives then
-            if proto.module_limit == 0 then
-                proto.effect_receiver.uses_module_effects = false
-            end
-            proto.effect_receiver.uses_beacon_effects = false
-        end
-
         local machine = {
             name = proto.name,
             localised_name = proto.localised_name,
@@ -202,7 +181,7 @@ function generator.machines.generate()
             emissions_per_second = proto.emissions_per_second or {},
             burner = burner,
             built_by_item = built_by_item,
-            effect_receiver = effect_receiver,
+            effect_receiver = generator_util.format_effect_receiver(proto),
             allowed_effects = proto.allowed_effects or {},
             allowed_module_categories = proto.allowed_module_categories,
             module_limit = (proto.module_inventory_size or 0),
@@ -230,6 +209,7 @@ function generator.machines.generate()
 
                     machine.built_by_item = nil
                     machine.effect_receiver = {
+                        base_effect = {},
                         uses_module_effects = false,
                         uses_beacon_effects = false,
                         uses_surface_effects = false

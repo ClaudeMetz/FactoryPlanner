@@ -413,6 +413,33 @@ function generator_util.formatted_effects(effects)
     return effects
 end
 
+
+---@param proto LuaEntityPrototype
+---@return EffectReceiver effect_receiver
+function generator_util.format_effect_receiver(proto)
+    local effect_receiver = proto.effect_receiver or {
+        uses_module_effects = false,
+        uses_beacon_effects = false,
+        uses_surface_effects = false
+    }
+    local base_effect = effect_receiver.base_effect  -- can be nil
+    effect_receiver.base_effect = generator_util.formatted_effects(base_effect)
+
+    local any_positives = false
+    for _, effect in pairs(proto.allowed_effects or {}) do
+        if effect == true then any_positives = true; break end
+    end
+
+    if not any_positives then
+        if proto.module_inventory_size ~= nil then
+            effect_receiver.uses_module_effects = false
+        end
+        effect_receiver.uses_beacon_effects = false
+    end
+
+    return effect_receiver
+end
+
 --- Needs to be weird because ordering of non-integer keys depends on insertion order
 ---@param proto FPMachinePrototype
 function generator_util.sort_machine_burner_categories(proto)

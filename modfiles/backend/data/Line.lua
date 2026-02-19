@@ -189,9 +189,7 @@ end
 
 ---@return boolean uses_effects
 function Line:uses_beacon_effects(player)
-    local effect_receiver = self.machine.proto.effect_receiver  --[[@as EffectReceiver]]
-    if effect_receiver == nil then return false end
-    return effect_receiver.uses_beacon_effects
+    return self.machine.proto.effect_receiver.uses_beacon_effects
 end
 
 
