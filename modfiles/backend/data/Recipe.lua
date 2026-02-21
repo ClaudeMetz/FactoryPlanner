@@ -134,15 +134,18 @@ function Recipe:validate()
         self:build_temperatures_data()
 
         for _, ingredient in pairs(self.proto.ingredients) do
-            local previous_temperature = previous_temperatures[ingredient.name]
-
-            if ingredient.type == "fluid" and previous_temperature ~= nil then
+            if ingredient.type == "fluid" then
                 local applicable_values = self.temperature_data[ingredient.name].applicable_values
+                local previous_temperature = previous_temperatures[ingredient.name]
 
-                for _, temperature in pairs(applicable_values) do
-                    if temperature == previous_temperature then
-                        self.temperatures[ingredient.name] = previous_temperature
-                        break
+                if #applicable_values == 1 then
+                    self.temperatures[ingredient.name] = applicable_values[1]
+                elseif previous_temperature ~= nil then
+                    for _, temperature in pairs(applicable_values) do
+                        if temperature == previous_temperature then
+                            self.temperatures[ingredient.name] = previous_temperature
+                            break
+                        end
                     end
                 end
             end
