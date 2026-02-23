@@ -8,22 +8,30 @@ end
 
 function migration.player_table(player_table)
     local function update_modules(module_set)
+        module_set.valid = false
         for module in module_set:iterator() do
             module.quality_proto = normal_quality_proto()
+            module.valid = false
         end
     end
 
     for district in player_table.realm:iterator() do
         for factory in district:iterator() do
+            factory.valid = false
             local function iterate_floor(floor)
+                floor.valid = false
                 for line in floor:iterator() do
+                    line.valid = false
                     if line.class == "Floor" then
                         iterate_floor(line)
                     else
                         line.machine.quality_proto = normal_quality_proto()
+                        line.machine.valid = false
                         update_modules(line.machine.module_set)
+
                         if line.beacon then
                             line.beacon.quality_proto = normal_quality_proto()
+                            line.beacon.valid = false
                             update_modules(line.beacon.module_set)
                         end
                     end

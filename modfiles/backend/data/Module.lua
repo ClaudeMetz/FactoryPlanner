@@ -150,15 +150,19 @@ end
 ---@param player LuaPlayer
 ---@return boolean success
 function Module:repair(player)
+    self.valid = true
+
     if self.proto.simplified or not self.parent:check_compatibility(self.proto) then
-        return false  -- the module can not be salvaged in this case and will be removed
-    else  -- otherwise, the quality just needs to be reset
+        self.valid = false  -- the module can not be salvaged in this case and will be removed
+    end
+
+    if self.valid and self.quality_proto.simplified then
         self.quality_proto = defaults.get_fallback("qualities").proto
     end
 
-    self.valid = true  -- if it gets to here, the module was successfully repaired
-    self:summarize_effects()
-    return true
+    if self.valid then self:summarize_effects() end
+
+    return self.valid
 end
 
 

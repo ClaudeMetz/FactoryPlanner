@@ -14,6 +14,7 @@ Date: 00. 00. 0000
     - Fixed that selecting a byproduct-consuming recipe would not set its ingredient temperature correctly (#683)
     - Fixed a crash when using the items/second/machine view with buildings like the agriculture tower (#676)
     - Fixed recipe ingredients with only one possible temperature not being migrated properly (#674)
+    - Fixed a migration issue when coming from a pre 2.0 save file (#673)
     - Fixed machine dialog reset button not resetting the selected fuel
 
 ---------------------------------------------------------------------------------------------------
