@@ -1,5 +1,3 @@
-local active_mods = script.active_mods
-
 SPACE_TRAVEL = script.feature_flags["space_travel"]
 DEBUGGER_ACTIVE = settings.startup["fp_debug"].value
 llog = require("util.llog")
