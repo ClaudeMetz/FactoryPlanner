@@ -55,6 +55,10 @@ local function add_factory(player, _, event)
 end
 
 local function duplicate_factory(player, _, event)
+    -- Move out of empty floors to avoid orphaned subfloors in the clone
+    local current_floor = util.context.get(player, "Floor")  --[[@as Floor]]
+    if current_floor:count() == 1 then util.context.ascend_floors(player, "up") end
+
     local factory = util.context.get(player, "Factory")  --[[@as Factory]]
     local clone = factory:clone()
     clone.archived = false  -- always clone as unarchived
