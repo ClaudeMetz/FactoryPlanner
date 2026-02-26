@@ -6,7 +6,7 @@ local Object = require("backend.data.Object")
 ---@field proto FPModulePrototype | FPPackedPrototype
 ---@field quality_proto FPQualityPrototype
 ---@field amount integer
----@field total_effects ModuleEffects
+---@field total_effects IntegerModuleEffects
 ---@field effects_tooltip LocalisedString
 local Module = Object.methods()
 Module.__index = Module
@@ -52,10 +52,10 @@ function Module:summarize_effects()
     local effects = ftable.shallow_copy(BLANK_EFFECTS)
     for name, effect in pairs(self.proto.effects) do
         if util.effects.is_positive(name, effect) then
-            local multiplier = 1 + (self.quality_proto.level * 0.3)
-            effect = math.floor(effect * multiplier * 100 + 0.001) / 100
+            local e = effect * (1 + self.quality_proto.level * 0.3)  -- needs truncating towards zero
+            effect = (e < 0) and math.ceil(e - 1e-4) or math.floor(e + 1e-4)
         end
-        effects[name] = effect * self.amount
+        effects[name] = effect * self.amount  -- doesn't create decimals
     end
 
     self.total_effects = effects

@@ -283,12 +283,11 @@ function utility_structures.productivity_boni(player, modal_data)
             table.add{type="label", caption=caption}.style.width = 250
 
             local productivity = util.get_recipe_productivity(player.force, recipe_name)
-            local percentage = ("%+d"):format(math.floor((productivity * 100) + 0.5)) .. "%"
-            table.add{type="label", caption=percentage}
+            local percentage = math.floor(productivity * MAGIC_NUMBERS.effect_precision + 1e-4)
+            table.add{type="label", caption=(("%+d"):format(percentage) .. "%")}
 
             local current_bonus = current_factory.productivity_boni[recipe_name]
-            local current_percentage = (current_bonus) and current_bonus * 100 or nil
-            local textfield_bonus = table.add{type="textfield", text=current_percentage,
+            local textfield_bonus = table.add{type="textfield", text=current_bonus,
                 tags={mod="fp", on_gui_text_changed="productivity_bonus", recipe_name=recipe_name}}
             util.gui.setup_numeric_textfield(textfield_bonus, false, false)
             textfield_bonus.style.width = 52
@@ -515,7 +514,7 @@ listeners.gui = {
             handler = (function(player, tags, event)
                 local factory = util.context.get(player, "Factory")  --[[@as Factory]]
                 local bonus = tonumber(event.element.text)  -- nil if invalid or empty
-                factory.productivity_boni[tags.recipe_name] = (bonus) and bonus / 100 or nil
+                factory.productivity_boni[tags.recipe_name] = bonus  -- textfield disallow decimals
                 util.globals.modal_data(player).recalculate = true
             end)
         }

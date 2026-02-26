@@ -345,7 +345,7 @@ end
 ---@field products FormattedProduct[]
 ---@field main_product FormattedProduct?
 ---@field allowed_effects AllowedEffects?
----@field maximum_productivity double
+---@field maximum_productivity EffectValue
 ---@field allowed_module_categories { [string]: boolean }?
 ---@field type_counts { ingredients: ItemTypeCounts, products: ItemTypeCounts }
 ---@field catalysts { ingredients: Ingredient[], products: FormattedProduct[] }
@@ -420,7 +420,7 @@ function generator.recipes.generate()
                 energy = proto.energy,
                 emissions_multiplier = proto.emissions_multiplier,
                 allowed_effects = proto.allowed_effects or {},
-                maximum_productivity = proto.maximum_productivity,
+                maximum_productivity = math.floor(proto.maximum_productivity * MAGIC_NUMBERS.effect_precision + 1e-4),
                 allowed_module_categories = proto.allowed_module_categories,
                 type_counts = {},  -- filled out by format_recipe below
                 catalysts = {products={}, ingredients={}},  -- filled out by format_recipe below
@@ -1126,7 +1126,7 @@ end
 ---@field data_type "modules"
 ---@field category string
 ---@field tier uint
----@field effects ModuleEffects
+---@field effects IntegerModuleEffects
 
 -- Generates a table containing all available modules
 ---@return NamedPrototypesWithCategory<FPModulePrototype>

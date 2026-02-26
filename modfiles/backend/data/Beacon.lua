@@ -9,7 +9,7 @@ local ModuleSet = require("backend.data.ModuleSet")
 ---@field amount integer
 ---@field total_amount number?
 ---@field module_set ModuleSet
----@field total_effects ModuleEffects
+---@field total_effects IntegerModuleEffects
 ---@field effects_tooltip LocalisedString
 local Beacon = Object.methods()
 Beacon.__index = Beacon
@@ -71,7 +71,8 @@ function Beacon:summarize_effects()
 
     local effects = self.module_set:get_effects()
     for name, effect in pairs(effects) do
-        effects[name] = effect * effect_multiplier
+        local e = effect * effect_multiplier  -- needs truncating towards zero
+        effects[name] = (e < 0) and math.ceil(e - 1e-4) or math.floor(e + 1e-4)
     end
 
     self.total_effects = effects

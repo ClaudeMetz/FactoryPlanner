@@ -12,9 +12,9 @@ local ModuleSet = require("backend.data.ModuleSet")
 ---@field fuel Fuel?
 ---@field module_set ModuleSet
 ---@field amount number
----@field total_effects ModuleEffects
+---@field total_effects IntegerModuleEffects
 ---@field effects_tooltip LocalisedString
----@field recipe_effects ModuleEffects?
+---@field recipe_effects IntegerModuleEffects?
 local Machine = Object.methods()
 Machine.__index = Machine
 script.register_metatable("Machine", Machine)
@@ -106,8 +106,7 @@ function Machine:update_recipe_effects(force, factory)
     elseif not recipe_proto.custom then recipe_name = recipe_proto.name
     else return end  -- no recipe effects for custom recipes
 
-    local recipe_bonus = factory:get_productivity_bonus(force, recipe_name)
-    self.recipe_effects = {productivity=recipe_bonus}
+    self.recipe_effects = {productivity = factory:get_productivity_bonus(force, recipe_name)}
     self:summarize_effects()
 end
 

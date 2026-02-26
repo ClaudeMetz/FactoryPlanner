@@ -15,7 +15,7 @@ local Beacon = require("backend.data.Beacon")
 ---@field machine Machine
 ---@field beacon Beacon?
 ---@field comment string
----@field total_effects ModuleEffects
+---@field total_effects IntegerModuleEffects
 ---@field effects_tooltip LocalisedString
 ---@field surface_compatibility SurfaceCompatibility?
 ---@field products SimpleItem[]

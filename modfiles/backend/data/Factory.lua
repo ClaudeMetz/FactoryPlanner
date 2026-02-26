@@ -13,7 +13,7 @@ local Product = require("backend.data.Product")
 ---@field matrix_free_items FPItemPrototype[]?
 ---@field blueprints string[]
 ---@field notes string
----@field productivity_boni { string: ModuleEffectValue }
+---@field productivity_boni { string: EffectValue }
 ---@field first Product?
 ---@field top_floor Floor
 ---@field linearly_dependant boolean?
@@ -164,7 +164,7 @@ end
 
 ---@param force LuaForce
 ---@param recipe_name string
----@return ModuleEffectValue productivity_bonus
+---@return EffectValue productivity_bonus
 function Factory:get_productivity_bonus(force, recipe_name)
     local custom_bonus = self.productivity_boni[recipe_name]
     if custom_bonus then return custom_bonus
@@ -188,7 +188,7 @@ end
 ---@field matrix_free_items FPPackedPrototype[]?
 ---@field blueprints string[]
 ---@field notes string
----@field productivity_boni { string: ModuleEffectValue }
+---@field productivity_boni { string: EffectValue }
 ---@field products PackedProduct[]?
 ---@field top_floor PackedFloor
 

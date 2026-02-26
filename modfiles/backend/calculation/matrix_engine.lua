@@ -378,7 +378,7 @@ function matrix_engine.run_matrix_solver(factory_data, check_linear_dependence)
 
             -- Lines with subfloors show actual number of machines to build, so each counts are rounded up when summed
             floor_aggregate.machine_count = floor_aggregate.machine_count +
-                math.ceil(line_aggregate.machine_count - 0.001)
+                math.ceil(line_aggregate.machine_count - 1e-6)
 
             -- add line_aggregate to floor_aggregate first to track fuel as ingredient higher up
             floor_aggregate.energy_consumption = floor_aggregate.energy_consumption + line_aggregate.energy_consumption
@@ -635,7 +635,7 @@ function matrix_engine.get_line_aggregate(line_data, player_index, floor_id, mac
     local recipe_proto = line_data.recipe_proto
     local total_effects = line_data.total_effects
     local machine_speed = line_data.machine_speed
-    local speed_multiplier = 1 + total_effects.speed
+    local speed_multiplier = 1 + (total_effects.speed / MAGIC_NUMBERS.effect_precision)
     local energy = line_data.recipe_energy
     -- hacky workaround for recipes with zero energy - this really messes up the matrix
     if energy==0 then energy=0.000001 end
@@ -665,8 +665,8 @@ function matrix_engine.get_line_aggregate(line_data, player_index, floor_id, mac
     -- Determine energy consumption (including potential fuel needs) and emissions
     local fuel_proto = line_data.fuel_proto
     local energy_consumption, emissions = solver_util.determine_energy_consumption_and_emissions(
-        line_data.machine_proto, line_data.recipe_proto, fuel_proto, machine_count,
-        line_data.total_effects, line_data.pollutant_type)
+        line_data.machine_proto, line_data.recipe_proto, fuel_proto, machine_count, total_effects,
+        line_data.pollutant_type)
 
     local fuel, fuel_amount = nil, nil
     if fuel_proto ~= nil then  -- Seeing a fuel_proto here means it needs to be re-calculated

@@ -62,13 +62,15 @@ end
 
 ---@param force LuaForce
 ---@param recipe_name string
----@return ModuleEffectValue productivity_bonus
+---@return EffectValue productivity_bonus
 function _util.get_recipe_productivity(force, recipe_name)
+    local bonus = nil
     if recipe_name == "custom-mining" then
-        return force.mining_drill_productivity_bonus
+        bonus = force.mining_drill_productivity_bonus
     else
-        return force.recipes[recipe_name].productivity_bonus
+        bonus = force.recipes[recipe_name].productivity_bonus
     end
+    return math.floor(bonus * MAGIC_NUMBERS.effect_precision + 1e-4)
 end
 
 return _util

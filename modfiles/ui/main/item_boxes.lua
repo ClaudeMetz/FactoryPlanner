@@ -196,7 +196,7 @@ local function put_ingredients_into_cursor(player, _, _)
                 name = ingredient.proto.base_name or ingredient.proto.name,
                 quality = "normal",
                 comparator = "=",
-                count = math.ceil(amount - 0.001)
+                count = math.ceil(amount - 1e-6)
             })
         end
     end

@@ -401,21 +401,24 @@ function solver_util.determine_prodded_amount(item, total_effects, maximum_produ
     if productivity == 0 then return item.amount end
 
     -- Return formula is a simplification of the following formula:
-    -- item.amount - item.proddable_amount + (item.proddable_amount * (productivity + 1))
-    return item.amount + (item.proddable_amount * productivity)
+    -- item.amount - item.proddable_amount + (item.proddable_amount *
+    --   (1 + (productivity / MAGIC_NUMBERS.effect_precision)))
+    return item.amount + (item.proddable_amount * (productivity / MAGIC_NUMBERS.effect_precision))
 end
 
 -- Determines the amount of energy needed for a machine and the emissions that produces
 function solver_util.determine_energy_consumption_and_emissions(machine_proto, recipe_proto,
         fuel_proto, machine_count, total_effects, pollutant_type)
-    local energy_consumption = machine_count * (machine_proto.energy_usage * 60) * (1 + total_effects.consumption)
-    local drain = math.ceil(machine_count - 0.001) * (machine_proto.energy_drain * 60)
+    local consumption_multiplier = 1 + (total_effects.consumption / MAGIC_NUMBERS.effect_precision)
+    local energy_consumption = machine_count * (machine_proto.energy_usage * 60) * consumption_multiplier
+    local drain = math.ceil(machine_count - 1e-6) * (machine_proto.energy_drain * 60)
     local total_consumption = energy_consumption + drain
 
     if pollutant_type == nil then return total_consumption, 0 end
 
     local fuel_multiplier = (fuel_proto ~= nil) and fuel_proto.emissions_multiplier or 1
-    local total_multiplier = fuel_multiplier * (1 + total_effects.pollution) * recipe_proto.emissions_multiplier
+    local pollution_multiplier = 1 + (total_effects.pollution / MAGIC_NUMBERS.effect_precision)
+    local total_multiplier = fuel_multiplier * pollution_multiplier * recipe_proto.emissions_multiplier
 
     local emissions_per_joule = energy_consumption * (machine_proto.emissions_per_joule[pollutant_type] or 0)
     local emissions_per_second = machine_count * (machine_proto.emissions_per_second[pollutant_type] or 0)

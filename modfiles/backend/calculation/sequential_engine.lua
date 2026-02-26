@@ -62,7 +62,8 @@ local function update_line(line_data, aggregate, looped_fuel)
         end
     end
 
-    local crafts_per_second = (line_data.machine_speed * (1 + total_effects.speed)) / line_data.recipe_energy
+    local speed_multiplier = 1 + (total_effects.speed / MAGIC_NUMBERS.effect_precision)
+    local crafts_per_second = (line_data.machine_speed * speed_multiplier) / line_data.recipe_energy
 
     -- Limit the machine_count by reducing the production_ratio, if necessary
     local machine_limit = line_data.machine_limit
@@ -129,7 +130,7 @@ local function update_line(line_data, aggregate, looped_fuel)
     -- Determine machine count
     local machine_count = production_ratio / crafts_per_second
     -- Add the integer machine count to the aggregate so it can be displayed on the origin_line
-    aggregate.machine_count = aggregate.machine_count + math.ceil(machine_count - 0.001)
+    aggregate.machine_count = aggregate.machine_count + math.ceil(machine_count - 1e-6)
 
 
     -- Determine energy consumption (including potential fuel needs) and emissions
@@ -149,7 +150,7 @@ local function update_line(line_data, aggregate, looped_fuel)
                 local initial_demand = ingredient_class[fuel_item.name]
                 local ratio = fuel_amount / initial_demand
 
-                if ratio + 0.001 < 1 then  -- a ratio >= 1 means this can't outproduce itself
+                if ratio + 1e-6 < 1 then  -- a ratio >= 1 means this can't outproduce itself
                     -- Need a lot of precision here, hence the exponent of 20
                     local bumped_demand = initial_demand * ((1 - ratio ^ 20) / (1 - ratio))
                     ingredient_class[fuel_item.name] = bumped_demand

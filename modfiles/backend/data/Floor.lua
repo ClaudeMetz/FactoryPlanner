@@ -143,12 +143,12 @@ function Floor:get_component_data(skip_done, component_table)
 
         elseif not skip_done or not line.done then
             local machine = line.machine
-            local ceil_machine_count = math.ceil(machine.amount - 0.001)
+            local ceil_machine_count = math.ceil(machine.amount - 1e-6)
             add_machine(machine, ceil_machine_count)
 
             local beacon = line.beacon
             if beacon and beacon.total_amount then
-                local ceil_total_amount = math.ceil(beacon.total_amount - 0.001)
+                local ceil_total_amount = math.ceil(beacon.total_amount - 1e-6)
                 add_machine(beacon, ceil_total_amount)
             end
         end
