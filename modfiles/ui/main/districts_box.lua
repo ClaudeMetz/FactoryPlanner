@@ -1,3 +1,5 @@
+local Product = require("backend.data.Product")
+
 -- ** LOCAL UTIL **
 local function save_district_name(player, tags, _)
     local main_elements = util.globals.main_elements(player)
@@ -29,7 +31,18 @@ end
 local function handle_item_button_click(player, tags, action)
     local item = OBJECT_INDEX[tags.item_id]
 
-    if action == "copy" then  -- copy as SimpleItems makes most sense
+    if action == "create_factory" then  -- only on net ingredients
+        local factory = factory_list.add_factory(player, nil, item.proto)
+
+        local top_level_item = Product.init(item.proto)
+        top_level_item.required_amount = item.abs_diff
+        factory:insert(top_level_item)
+        solver.update(player, factory)
+
+        main_dialog.toggle_districts_view(player, true)
+        util.gui.run_refresh(player, "all")
+
+    elseif action == "copy" then  -- copy as SimpleItems makes most sense
         local copyable_item = {class="SimpleItem", proto=item.proto, amount=item.abs_diff}
         util.clipboard.copy(player, copyable_item)
 
@@ -69,15 +82,17 @@ local function build_items_flow(player, parent, district)
     local ingr_table = build_item_flow("ingredient")
     items_flow.add{type="empty-widget", style="flib_horizontal_pusher"}
 
-    local action_tooltip = MODIFIER_ACTIONS["act_on_district_item"].tooltip
     local tooltips = util.globals.ui_state(player).tooltips
-
     local color_map = {
         production = {half="flib_slot_button_cyan", full="flib_slot_button_blue"},
         consumption = {half="flib_slot_button_yellow", full="flib_slot_button_red"}
     }
 
     for item in district.item_set:iterator() do
+        local relevant_table = (item.overall == "production") and prod_table or ingr_table
+        local action = (item.overall == "production") and "act_on_district_product" or "act_on_district_ingredient"
+        local action_tooltip = MODIFIER_ACTIONS[action].tooltip
+
         local diff_string, amount_tooltip = item_views.process_item(player, item, item.abs_diff, nil)
 
         local total_amount = item[item.overall].amount
@@ -91,9 +106,8 @@ local function build_items_flow(player, parent, district)
         local colors = color_map[item.overall]
         local style = (item.abs_diff ~= total_amount) and colors.half or colors.full
 
-        local relevant_table = (item.overall == "production") and prod_table or ingr_table
         local button = relevant_table.add{type="sprite-button", number=diff_string, style=style,
-            sprite=item.proto.sprite, tags={mod="fp", on_gui_click="act_on_district_item",
+            sprite=item.proto.sprite, tags={mod="fp", on_gui_click=action,
             item_id=item.id, on_gui_hover="set_tooltip", context="districts_box"},
             raise_hover_events=true, mouse_button_filter={"left-and-right"}}
         tooltips.districts_box[button.index] = tooltip
@@ -322,8 +336,18 @@ listeners.gui = {
             end)
         },
         {
-            name = "act_on_district_item",
+            name = "act_on_district_product",
             actions_table = {
+                copy = {shortcut="shift-right"},
+                add_to_cursor = {shortcut="alt-right"},
+                factoriopedia = {shortcut="alt-left"}
+            },
+            handler = handle_item_button_click
+        },
+        {
+            name = "act_on_district_ingredient",
+            actions_table = {
+                create_factory = {shortcut="left", show=true},
                 copy = {shortcut="shift-right"},
                 add_to_cursor = {shortcut="alt-right"},
                 factoriopedia = {shortcut="alt-left"}

@@ -412,11 +412,7 @@ local function close_picker_dialog(player, action)
             top_level_item.belt_proto = modal_data.belt_proto
 
             if modal_data.create_factory then  -- if this flag is set, create a factory to put the item into
-                local translations = player_table.translation_tables
-                local translated_name = (translations) and translations[item_proto.type][item_proto.name] or ""
-                local icon = (not player_table.preferences.attach_factory_products)
-                    and "[img=" .. top_level_item.proto.sprite .. "] " or ""
-                factory = factory_list.add_factory(player, (icon .. translated_name))
+                factory = factory_list.add_factory(player, nil, item_proto)
             end
 
             factory:insert(top_level_item)

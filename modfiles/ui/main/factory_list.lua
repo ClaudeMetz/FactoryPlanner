@@ -277,13 +277,21 @@ end
 factory_list = {}  -- try to move elsewhere or smth to get rid of global variable
 
 -- Utility function to centralize factory creation behavior
-function factory_list.add_factory(player, name)
-    local preferences = util.globals.preferences(player)
+function factory_list.add_factory(player, name, item_proto)
+    local player_table = util.globals.player_table(player)
+    local preferences = player_table.preferences
+
+    if not name and item_proto then
+        local translations = player_table.translation_tables
+        local translated_name = (translations) and translations[item_proto.type][item_proto.name] or ""
+        local icon = (not preferences.attach_factory_products) and "[img=" .. item_proto.sprite .. "] " or ""
+        name = icon .. translated_name
+    end
+
     local factory = Factory.init(name, preferences.prefer_matrix_solver)
 
     local district = util.context.get(player, "District")  --[[@as District]]
     district:insert(factory)
-
     util.context.set(player, factory)
 
     return factory

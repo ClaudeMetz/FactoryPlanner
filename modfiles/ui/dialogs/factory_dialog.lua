@@ -42,7 +42,7 @@ local function close_factory_dialog(player, action)
         local factory_name = name_textfield.text:gsub("^%s*(.-)%s*$", "%1")
 
         if modal_data.factory == nil then
-            factory_list.add_factory(player, factory_name)
+            factory_list.add_factory(player, factory_name, nil)
         else
             local factory = modal_data.factory
             factory.name = factory_name
