@@ -238,10 +238,11 @@ function builders.beacon(line, parent_flow, metadata)
         local quality_proto = beacon.quality_proto
         local title_line = (not quality_proto.always_show) and {"fp.tt_title", beacon.proto.localised_name}
             or {"fp.tt_title_with_note", beacon.proto.localised_name, quality_proto.rich_text}
-        local plural_parameter = (beacon.amount == 1) and 1 or 2  -- needed because the amount can be decimal
-        local number_line = {"", "\n", beacon.amount, " ", {"fp.pl_beacon", plural_parameter}}
+        local number_line = {"", "\n", beacon.amount, " ", {"fp.pl_beacon", beacon.amount}}
         if beacon.total_amount then table.insert(number_line, {"", " - ", {"fp.in_total", beacon.total_amount}}) end
-        local tooltip = {"", title_line, number_line, format_effects_tooltip(beacon.effects_tooltip),
+        local effectivity = util.format.number(beacon:overall_effectivity() * 100, 4)
+        local effectivity_line = {"", "\n", {"fp.transmission_percentage", effectivity}}
+        local tooltip = {"", title_line, number_line, effectivity_line, format_effects_tooltip(beacon.effects_tooltip),
             "\n", metadata.action_tooltips["act_on_line_beacon"]}
 
         local button_beacon = parent_flow.add{type="sprite-button", sprite=beacon.proto.sprite, number=beacon.amount,
@@ -354,7 +355,7 @@ function builders.ingredients(line, parent_flow, metadata)
             style = "flib_slot_button_disabled_small"
         elseif metadata.ingredient_satisfaction and ingredient.amount > 0 then
             local satisfaction_percentage = (ingredient.satisfied_amount / ingredient.amount) * 100
-            local formatted_percentage = util.format.number(satisfaction_percentage, 3)
+            local formatted_percentage = util.format.number(satisfaction_percentage, 4)
 
             -- We use the formatted percentage here because it smooths out the number to 3 places
             local satisfaction = tonumber(formatted_percentage)

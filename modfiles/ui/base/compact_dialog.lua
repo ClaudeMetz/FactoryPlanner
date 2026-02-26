@@ -156,8 +156,7 @@ local function add_beacon_flow(parent_flow, line, metadata)
 
         local title_line = (not quality_proto.always_show) and {"fp.tt_title", beacon_proto.localised_name}
             or {"fp.tt_title_with_note", beacon_proto.localised_name, quality_proto.rich_text}
-        local plural_parameter = (beacon.amount == 1) and 1 or 2  -- needed because the amount can be decimal
-        local number_line = {"", "\n", beacon.amount, " ", {"fp.pl_beacon", plural_parameter}}
+        local number_line = {"", "\n", beacon.amount, " ", {"fp.pl_beacon", beacon.amount}}
         local tooltip = {"", title_line, number_line, "\n", metadata.action_tooltips["act_on_compact_beacon"]}
         local style = (line.done) and "flib_slot_button_grayscale_small" or "flib_slot_button_default_small"
 

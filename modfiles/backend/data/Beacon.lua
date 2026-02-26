@@ -59,17 +59,17 @@ function Beacon:profile_multiplier()
     end
 end
 
----@return boolean
-function Beacon:is_mono_beacon()
-    return (#self.proto.profile == 2 and self.proto.profile[2] == 0)
+---@return double effectivity
+function Beacon:overall_effectivity()
+    local profile_mulitplier = self:profile_multiplier()
+    local effectivity = self.proto.effectivity + (self.quality_proto.level * self.proto.quality_bonus)
+    return self.amount * profile_mulitplier * effectivity
 end
 
 function Beacon:summarize_effects()
-    local profile_mulitplier = self:profile_multiplier()
-    local effectivity = self.proto.effectivity + (self.quality_proto.level * self.proto.quality_bonus)
-    local effect_multiplier = self.amount * profile_mulitplier * effectivity
-
+    local effect_multiplier = self:overall_effectivity()
     local effects = self.module_set:get_effects()
+
     for name, effect in pairs(effects) do
         local e = effect * effect_multiplier  -- needs truncating towards zero
         effects[name] = (e < 0) and math.ceil(e - 1e-4) or math.floor(e + 1e-4)
@@ -81,10 +81,16 @@ function Beacon:summarize_effects()
     self.parent:summarize_effects()
 end
 
+
 ---@return boolean uses_effects
 function Beacon:uses_effects()
     -- This method is here for ModuleSet to use generically
     return self.parent:uses_beacon_effects()
+end
+
+---@return boolean
+function Beacon:is_mono_beacon()
+    return (#self.proto.profile == 2 and self.proto.profile[2] == 0)
 end
 
 
