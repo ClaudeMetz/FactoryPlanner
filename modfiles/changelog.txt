@@ -2,6 +2,16 @@
 Version: 0.00.00
 Date: 00. 00. 0000
   Features:
+    - 
+  Changes:
+    - 
+  Bugfixes:
+    - 
+
+---------------------------------------------------------------------------------------------------
+Version: 2.0.44
+Date: 02. 03. 2026
+  Features:
     - Added the ability to create a factory from a district ingredient
     - Added a textfield to filter the factory list by name
   Changes:
