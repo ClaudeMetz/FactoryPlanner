@@ -9,7 +9,7 @@ script.on_event(defines.events.on_game_created_from_scenario, function()
     -- (it totally doesn't correlate to the actual meanings in a sensible way)
     storage.scene = 1
     storage.shot = 1
-    storage.pause = 10
+    storage.pause = 25
 
     storage.setup = function() remote.call("screenshotter_input", "execute_action", 1, "player_setup") end
     storage.dimensions = {}
@@ -52,7 +52,7 @@ local scenes = {
 local shots = {
     function(scene)
         remote.call("screenshotter_input", "execute_action", 1, ("setup_" .. scene))
-        storage.pause = 20
+        storage.pause = 10
     end,
     function(scene)
         game.take_screenshot{path=(scene .. ".png"), show_gui=true, zoom=3}

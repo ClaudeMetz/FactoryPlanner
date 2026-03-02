@@ -232,6 +232,9 @@ end
 storage = {}  -- just for the type checker, doesn't do anything
 
 local function global_init()
+    -- Disable debugging actions when taking screenshots
+    if remote.interfaces["screenshotter_output"] then DEBUGGER_ACTIVE = false end
+
     -- Set up a new save for development if necessary
     local freeplay = remote.interfaces["freeplay"]
     if DEBUGGER_ACTIVE and freeplay then  -- Disable freeplay popup-message

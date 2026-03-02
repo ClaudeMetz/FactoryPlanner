@@ -19,7 +19,7 @@ prototyper.data_types = {machines = true, recipes = false, items = true, fuels =
                          belts = false, pumps = false, wagons = true, modules = true,
                          beacons = false, locations = false, qualities = false}
 
----@alias DataType "machines" | "recipes" | "items" | "fuels" | "belts" | "pump" | "wagons" | "modules" | "beacons" | "locations" | "qualities"
+---@alias DataType "machines" | "recipes" | "items" | "fuels" | "belts" | "pumps" | "wagons" | "modules" | "beacons" | "locations" | "qualities"
 
 ---@alias NamedPrototypes<T> { [string]: T }
 ---@alias NamedPrototypesWithCategory<T> { [string]: { name: string, members: { [string]: T } } } }

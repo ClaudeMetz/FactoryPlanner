@@ -40,11 +40,6 @@ local function get_handler(path, index, event, name)
     end
 end
 
-local function set_machine_default(player, proto_name, category_name)
-    local proto = prototyper.util.find("machines", proto_name, category_name)
-    defaults.set(player, "machines", {prototype=proto.name, quality="normal"}, proto.category_id)
-end
-
 
 local actions = {
     player_setup = function(player)
@@ -70,15 +65,10 @@ local actions = {
         player_table.preferences.ignore_recycling_recipes = true
 
         defaults.set(player, "belts", {prototype="fast-transport-belt"}, nil)
-        set_machine_default(player, "electric-mining-drill", "basic-solid")
-        set_machine_default(player, "steel-furnace", "smelting")
-        set_machine_default(player, "assembling-machine-2", "crafting")
-        set_machine_default(player, "assembling-machine-3", "advanced-crafting")
-        set_machine_default(player, "assembling-machine-2", "crafting-with-fluid")
+        defaults.set(player, "pumps", {prototype="pump", quality="epic"}, nil)
 
         -- Research
-        player.force.technologies["oil-processing"].researched=true
-        player.force.technologies["coal-liquefaction"].researched=true
+        player.force.technologies["advanced-oil-processing"].researched=true
 
         -- Player inventory
         player.insert{name="assembling-machine-3", count=9}
@@ -95,11 +85,11 @@ local actions = {
         main_dialog.toggle(player)
     end,
     teardown_01_main_interface = function(player)
-        util.globals.preferences(player).factory_list_rows = 30
-        main_dialog.rebuild(player, true)  -- avoid modal dialogs being squished
-
         local main_frame = util.globals.main_elements(player).main_frame
         return_dimensions("01_main_interface", main_frame)
+
+        util.globals.preferences(player).factory_list_rows = 30
+        main_dialog.rebuild(player, true)  -- avoid modal dialogs being squished
     end,
 
     setup_02_compact_interface = function(player)
@@ -110,6 +100,7 @@ local actions = {
     teardown_02_compact_interface = function(player)
         local compact_frame = util.globals.ui_state(player).compact_elements.compact_frame
         return_dimensions("02_compact_interface", compact_frame)
+
         local toggle_handler = get_handler("ui.base.compact_dialog", 2, "on_gui_click", "switch_to_main_view")
         toggle_handler(player, nil, nil)
     end,
@@ -137,7 +128,7 @@ local actions = {
     teardown_03_item_picker = (function(player) modal_teardown(player, "03_item_picker") end),
 
     setup_04_recipe_picker = function(player)
-        local product_proto = prototyper.util.find("items", "petroleum-gas", "fluid")
+        local product_proto = prototyper.util.find("items", "solid-fuel", "item")
         open_modal(player, "recipe", {category_id=product_proto.category_id,
             product_id=product_proto.id, production_type="produce"})
     end,
