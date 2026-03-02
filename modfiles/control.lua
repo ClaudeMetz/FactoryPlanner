@@ -13,6 +13,7 @@ MAGIC_NUMBERS = {
     title_bar_height = 28,  -- Height of the main dialog title bar
     district_info_height = 36,
     subheader_height = 36,  -- Height of the factory list subheader
+    search_footer_height = 36,  -- Height of the factory list search footer
     list_width = 300,  -- Width of the factory list
     list_element_height = 28,  -- Height of an individual factory list element
     item_button_size = 40,  -- Size of item box buttons

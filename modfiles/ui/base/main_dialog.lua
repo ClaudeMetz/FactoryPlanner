@@ -14,7 +14,7 @@ local function determine_main_dimensions(player, products_per_row, factory_list_
     local width = MAGIC_NUMBERS.list_width + boxes_width_1 + boxes_width_2 + ((2+3) * frame_spacing)
 
     local factory_list_height = (factory_list_rows * MAGIC_NUMBERS.list_element_height)
-        + MAGIC_NUMBERS.subheader_height
+        + MAGIC_NUMBERS.subheader_height + MAGIC_NUMBERS.search_footer_height
     local height = MAGIC_NUMBERS.title_bar_height + MAGIC_NUMBERS.district_info_height +
         factory_list_height + (3 * frame_spacing)
 

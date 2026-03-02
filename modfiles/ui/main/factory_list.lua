@@ -125,11 +125,12 @@ local function refresh_factory_list(player)
     listbox.clear()
 
     if selected_factory ~= nil then  -- only need to run this if any factory exists
+        local search_term = helpers.multilingual_to_lower(main_elements.factory_list["search_textfield"].text)
         local attach_factory_products = player_table.preferences.attach_factory_products
         local filter = {archived = archived}
 
         local function create_move_button(flow, direction, factory)
-            local enabled = (factory.parent:find(filter, factory[direction], direction) ~= nil)
+            local enabled = (search_term == "" and factory.parent:find(filter, factory[direction], direction) ~= nil)
             local endpoint = (direction == "next") and {"fp.bottom"} or {"fp.top"}
             local up_down = (direction == "next") and "down" or "up"
             local move_tooltip = (enabled) and {"", {"fp.move_object", {"fp.pl_factory", 1}, {"fp." .. up_down}},
@@ -146,25 +147,29 @@ local function refresh_factory_list(player)
 
         for factory in selected_factory.parent:iterator(filter) do
             local selected = (selected_factory.id == factory.id)
-            local caption, info_tooltip = factory:tostring(attach_factory_products, false)
-            local tooltip = {"", info_tooltip, "\n", MODIFIER_ACTIONS["act_on_factory"].tooltip}
+            local matched = (string.find(helpers.multilingual_to_lower(factory.name), search_term, 1, true) ~= nil)
 
-            local button_flow = listbox.add{type="flow", direction="horizontal"}
-            button_flow.style.horizontal_spacing = 0
+            if matched or selected then  -- always show selected factory
+                local caption, info_tooltip = factory:tostring(attach_factory_products, false)
+                local tooltip = {"", info_tooltip, "\n", MODIFIER_ACTIONS["act_on_factory"].tooltip}
 
-            local move_flow = button_flow.add{type="flow", direction="vertical"}
-            move_flow.style.vertical_spacing = 0
-            move_flow.style.padding = {2, 0}
-            create_move_button(move_flow, "previous", factory)
-            create_move_button(move_flow, "next", factory)
+                local button_flow = listbox.add{type="flow", direction="horizontal"}
+                button_flow.style.horizontal_spacing = 0
 
-            local factory_button = button_flow.add{type="button", caption=caption, toggled=selected,
-                tags={mod="fp", on_gui_click="act_on_factory", factory_id=factory.id, on_gui_hover="set_tooltip",
-                context="factory_list"}, style="list_box_item", mouse_button_filter={"left-and-right"},
-                raise_hover_events=true}
-            factory_button.style.padding = {0, 12, 0, 4}
-            factory_button.style.width = MAGIC_NUMBERS.list_width - 20
-            tooltips.factory_list[factory_button.index] = tooltip
+                local move_flow = button_flow.add{type="flow", direction="vertical"}
+                move_flow.style.vertical_spacing = 0
+                move_flow.style.padding = {2, 0}
+                create_move_button(move_flow, "previous", factory)
+                create_move_button(move_flow, "next", factory)
+
+                local factory_button = button_flow.add{type="button", caption=caption, toggled=selected,
+                    tags={mod="fp", on_gui_click="act_on_factory", factory_id=factory.id, on_gui_hover="set_tooltip",
+                    context="factory_list"}, style="list_box_item", mouse_button_filter={"left-and-right"},
+                    raise_hover_events=true}
+                factory_button.style.padding = {0, 12, 0, 4}
+                factory_button.style.width = MAGIC_NUMBERS.list_width - 20
+                tooltips.factory_list[factory_button.index] = tooltip
+            end
         end
     end
 
@@ -216,7 +221,8 @@ local function build_factory_list(player)
     local parent_flow = main_elements.flows.left_vertical
     local frame_vertical = parent_flow.add{type="frame", direction="vertical", style="inside_deep_frame"}
     local row_count = util.globals.preferences(player).factory_list_rows
-    frame_vertical.style.height = MAGIC_NUMBERS.subheader_height + (row_count * MAGIC_NUMBERS.list_element_height)
+    frame_vertical.style.height = (row_count * MAGIC_NUMBERS.list_element_height) +
+        MAGIC_NUMBERS.subheader_height + MAGIC_NUMBERS.search_footer_height
 
     local subheader = frame_vertical.add{type="frame", direction="horizontal", style="subheader_frame"}
 
@@ -268,6 +274,18 @@ local function build_factory_list(player)
     local flow_factories = listbox_factories.add{type="flow", direction="vertical"}
     flow_factories.style.vertical_spacing = 0
     main_elements.factory_list["factory_listbox"] = flow_factories
+
+    local flow_search = frame_vertical.add{type="flow", direction="horizontal"}
+    flow_search.style.height = MAGIC_NUMBERS.search_footer_height
+    flow_search.style.padding = {0, 12}
+    flow_search.style.vertical_align = "center"
+
+    flow_search.add{type="label", caption={"fp.search"}, tooltip={"fp.factory_search_tt"}}
+    flow_search.add{type="empty-widget", style="flib_horizontal_pusher"}
+    local textfield_search = flow_search.add{type="textfield", style="search_popup_textfield",
+        tags={mod="fp", on_gui_text_changed="factory_searchfield"}}
+    textfield_search.style.width = 225
+    main_elements.factory_list["search_textfield"] = textfield_search
 
     refresh_factory_list(player)
 end
@@ -385,7 +403,13 @@ listeners.gui = {
             },
             handler = handle_factory_click
         }
-    }
+    },
+    on_gui_text_changed = {
+        {
+            name = "factory_searchfield",
+            handler = refresh_factory_list
+        }
+    },
 }
 
 listeners.misc = {
