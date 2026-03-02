@@ -283,7 +283,7 @@ function utility_structures.productivity_boni(player, modal_data)
             table.add{type="label", caption=caption}.style.width = 250
 
             local productivity = util.get_recipe_productivity(player.force, recipe_name)
-            local percentage = math.floor(productivity * MAGIC_NUMBERS.effect_precision + 1e-4)
+            local percentage = math.floor(productivity + 1e-4)
             table.add{type="label", caption=(("%+d"):format(percentage) .. "%")}
 
             local current_bonus = current_factory.productivity_boni[recipe_name]
