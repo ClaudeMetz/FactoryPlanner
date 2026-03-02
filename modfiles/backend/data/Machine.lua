@@ -143,8 +143,14 @@ end
 ---@return string? error
 function Machine:paste(object, player)
     if object.class == "Machine" then
-        local corresponding_proto = prototyper.util.find("machines", object.proto.name, self.proto.category)
-        if corresponding_proto and self.parent:is_machine_compatible(object.proto) then
+        -- Search all valid categories for this machine
+        local corresponding_proto = nil
+        for _, category in pairs(self.parent:get_machine_categories()) do
+            corresponding_proto = prototyper.util.find("machines", object.proto.name, category)
+            if corresponding_proto then break end
+        end
+
+        if corresponding_proto and self.parent:is_machine_compatible(corresponding_proto) then
             self.parent:change_machine_to_proto(player, corresponding_proto)
             self.quality_proto = object.quality_proto
 
@@ -228,12 +234,28 @@ end
 
 ---@return boolean valid
 function Machine:validate()
-    local recipe_category = self.parent.recipe.proto.category
-    if recipe_category ~= self.proto.category then
-        local corresponding_proto = prototyper.util.find("machines", self.proto.name, recipe_category)
-        if corresponding_proto then  -- check if the machine just moved categories
-            self.proto = corresponding_proto  -- this is okay in this specific context
-        else  -- otherwise, this machine is invalid
+    -- Build set of valid categories for this recipe
+    local recipe_proto = self.parent.recipe.proto
+    local valid_categories = {[recipe_proto.category] = true}
+    if recipe_proto.additional_categories then
+        for _, cat in pairs(recipe_proto.additional_categories) do
+            valid_categories[cat] = true
+        end
+    end
+
+    if not valid_categories[self.proto.category] then
+        -- Machine is in a category not valid for this recipe
+        -- Try to find this machine in one of the valid categories
+        local found = false
+        for category, _ in pairs(valid_categories) do
+            local corresponding_proto = prototyper.util.find("machines", self.proto.name, category)
+            if corresponding_proto then
+                self.proto = corresponding_proto
+                found = true
+                break
+            end
+        end
+        if not found then
             self.proto = prototyper.util.simplify_prototype(self.proto, "category")
             self.valid = false
         end

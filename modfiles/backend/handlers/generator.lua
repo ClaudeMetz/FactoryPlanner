@@ -405,18 +405,44 @@ function generator.recipes.generate()
         end
     end
 
+    -- Returns true if at least one machine category exists for this recipe
+    local function has_machine_category(recipe_proto)
+        if storage.prototypes.machines[recipe_proto.category] then return true end
+        if recipe_proto.additional_categories then
+            for _, category in pairs(recipe_proto.additional_categories) do
+                if storage.prototypes.machines[category] then return true end
+            end
+        end
+        return false
+    end
+
     -- Add all standard recipes
     local recipe_filter = {{filter="energy", comparison=">", value=0},
         {filter="energy", comparison="<", value=1e+21, mode="and"}}
     for recipe_name, proto in pairs(prototypes.get_recipe_filtered(recipe_filter)) do
-        local machine_category = storage.prototypes.machines[proto.category]  ---@type { [string]: FPMachinePrototype }
         -- Avoid any recipes that have no machine to produce them, or are irrelevant
-        if machine_category ~= nil and not generator_util.is_irrelevant_recipe(proto) and not proto.is_parameter then
+        if has_machine_category(proto) and not generator_util.is_irrelevant_recipe(proto) and not proto.is_parameter then
+            -- Build combined_category (sorted alphabetically, deduplicated)
+            local category_set = {[proto.category] = true}
+            if proto.additional_categories then
+                for _, cat in pairs(proto.additional_categories) do
+                    category_set[cat] = true
+                end
+            end
+            local categories = {}
+            for cat in pairs(category_set) do
+                table.insert(categories, cat)
+            end
+            table.sort(categories)
+            local combined_category = table.concat(categories)
+
             local recipe = {
                 name = proto.name,
                 localised_name = proto.localised_name,
                 sprite = "recipe/" .. proto.name,
                 category = proto.category,
+                additional_categories = proto.additional_categories or {},
+                combined_category = combined_category,
                 energy = proto.energy,
                 emissions_multiplier = proto.emissions_multiplier,
                 allowed_effects = proto.allowed_effects or {},
@@ -453,6 +479,7 @@ function generator.recipes.generate()
             recipe.sprite = products[1].type .. "/" .. products[1].name
             recipe.order = proto.order
             recipe.category = proto.resource_category
+            recipe.combined_category = proto.resource_category
 
             local ingredients = {{type="entity", name="custom-" .. proto.name, amount=1}}
 
@@ -492,6 +519,7 @@ function generator.recipes.generate()
                 recipe.sprite = "fluid/" .. fluid.name
                 recipe.order = proto.order
                 recipe.category = "offshore-pump-" .. fluid.name
+                recipe.combined_category = "offshore-pump-" .. fluid.name
                 recipe.energy = 1
 
                 local products = {{type="fluid", name=fluid.name, amount=60,
@@ -513,6 +541,7 @@ function generator.recipes.generate()
             recipe.sprite = products[1].type .. "/" .. products[1].name
             recipe.order = proto.order
             recipe.category = "agricultural-tower"
+            recipe.combined_category = "agricultural-tower"
             recipe.energy = 0
 
             -- TODO Deal with proto.harvest_emissions + proto.emissions_per_second somehow, probably on machine?
@@ -545,6 +574,7 @@ function generator.recipes.generate()
                             launch_recipe.sprite = "item/" .. main_product.name
                             launch_recipe.order = main_product.order
                             launch_recipe.category = "launch-rocket"
+                            launch_recipe.combined_category = "launch-rocket"
                             launch_recipe.energy = 1
 
                             local ingredients = {ftable.deep_copy(rocket_parts_ingredient),
@@ -562,6 +592,7 @@ function generator.recipes.generate()
                         rocket_recipe.sprite = "fp_silo_rocket"
                         rocket_recipe.order = recipe.order .. "-" .. proto.order
                         rocket_recipe.category = "launch-rocket"
+                        rocket_recipe.combined_category = "launch-rocket"
                         rocket_recipe.energy = 1
 
                         local rocket_products = {{type="entity", name="custom-silo-rocket", amount=1}}
@@ -584,6 +615,7 @@ function generator.recipes.generate()
                 boiler_recipe.sprite = "fluid/" .. fluid_proto.name
                 boiler_recipe.order = proto.order .. "-" .. fluid_proto.order
                 boiler_recipe.category = category
+                boiler_recipe.combined_category = category
                 boiler_recipe.energy = 0  -- treated separately by solver
 
                 local ingredients = {{type="fluid", name=fluid_proto.name, amount=1,
@@ -627,6 +659,7 @@ function generator.recipes.generate()
             recipe.sprite = "fluid/" .. fluid.name
             recipe.order = proto.order
             recipe.category = "offshore-pump"
+            recipe.combined_category = "offshore-pump"
             recipe.energy = 1
 
             local products = {{type="fluid", name=fluid.name, amount=60,
@@ -647,6 +680,7 @@ function generator.recipes.generate()
             recipe.sprite = "item/" .. proto.spoil_result.name
             recipe.order = proto.spoil_result.order
             recipe.category = "purposeful-spoiling"
+            recipe.combined_category = "purposeful-spoiling"
             recipe.energy = 0
 
             local products = {{type="item", name=proto.spoil_result.name, amount=1}}

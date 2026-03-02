@@ -80,6 +80,23 @@ function Line:is_machine_compatible(machine_proto)
     return (valid_ingredient_count and valid_product_count and valid_input_channels and valid_output_channels)
 end
 
+-- Returns all valid machine categories for this line's recipe
+---@return string[]
+function Line:get_machine_categories()
+    local category_set = {[self.recipe.proto.category] = true}
+    local additional = self.recipe.proto.additional_categories
+    if additional then
+        for _, category in pairs(additional) do
+            category_set[category] = true
+        end
+    end
+    local categories = {}
+    for category in pairs(category_set) do
+        table.insert(categories, category)
+    end
+    return categories
+end
+
 -- Sets this line's machine to be the given prototype
 ---@param player LuaPlayer
 ---@param proto FPMachinePrototype
@@ -133,29 +150,48 @@ function Line:change_machine_by_action(player, action, current_proto)
     return false  -- if the above loop didn't return, no machine could be found
 end
 
+-- Tries to set machine from a specific category's default
+-- Returns true if a compatible machine was found, false otherwise
+---@param player LuaPlayer
+---@param category string
+---@return boolean success
+function Line:try_machine_from_category(player, category)
+    local machine_default = defaults.get(player, "machines", category)
+    if not machine_default then return false end
+
+    local default_proto = machine_default.proto  --[[@as FPMachinePrototype]]
+
+    if self:is_machine_compatible(default_proto) then
+        self:change_machine_to_proto(player, default_proto)
+        self.machine.quality_proto = machine_default.quality
+        return true
+    elseif self:change_machine_by_action(player, "upgrade", default_proto) then
+        self.machine.quality_proto = machine_default.quality
+        return true
+    elseif self:change_machine_by_action(player, "downgrade", default_proto) then
+        self.machine.quality_proto = machine_default.quality
+        return true
+    end
+
+    return false
+end
+
 -- Changes this line's machine to its default, if possible
 -- Returns false if no compatible machine can be found, true otherwise
 ---@param player LuaPlayer
 ---@return boolean success
 function Line:change_machine_to_default(player)
-    -- All categories are guaranteed to have at least one machine, so this is never nil
-    local machine_default = defaults.get(player, "machines", self.recipe.proto.category)
-    local default_proto = machine_default.proto  --[[@as FPMachinePrototype]]
-
-    local success = false
-    -- If the default is applicable, just set it straight away
-    if self:is_machine_compatible(default_proto) then
-        self:change_machine_to_proto(player, default_proto)
-        success = true
-    -- Otherwise, go up, then down the category to find an alternative
-    elseif self:change_machine_by_action(player, "upgrade", default_proto) then
-        success = true
-    elseif self:change_machine_by_action(player, "downgrade", default_proto) then
-        success = true
+    -- Try combined_category first (handles user-set defaults for multi-category recipes)
+    if self:try_machine_from_category(player, self.recipe.proto.combined_category) then
+        return true
     end
 
-    if success then self.machine.quality_proto = machine_default.quality end
-    return success
+    -- Fall back to primary category (always has a default from get_fallback)
+    if self:try_machine_from_category(player, self.recipe.proto.category) then
+        return true
+    end
+
+    return false
 end
 
 
@@ -206,11 +242,17 @@ end
 ---@return PrototypeFilter filter
 function Line:compile_machine_filter()
     local compatible_machines = {}
+    local seen = {}
 
-    local machine_category = prototyper.util.find("machines", nil, self.machine.proto.category)
-    for _, machine_proto in pairs(machine_category.members) do
-        if self:is_machine_compatible(machine_proto) then
-            table.insert(compatible_machines, machine_proto.name)
+    for _, category in pairs(self:get_machine_categories()) do
+        local machine_category = prototyper.util.find("machines", nil, category)
+        if machine_category then
+            for _, machine_proto in pairs(machine_category.members) do
+                if not seen[machine_proto.name] and self:is_machine_compatible(machine_proto) then
+                    seen[machine_proto.name] = true
+                    table.insert(compatible_machines, machine_proto.name)
+                end
+            end
         end
     end
 

@@ -19,10 +19,18 @@ local function refresh_defaults_frame(player)
     local modal_data = util.globals.modal_data(player)  --[[@as table]]
     local modal_elements = modal_data.modal_elements
     local machine = modal_data.object  --[[@as Machine]]
+    local line = modal_data.line  --[[@as Line]]
 
-    -- Machine
-    local machine_tooltip = defaults.generate_tooltip(player, "machines", machine.proto.category)
-    local equals_machine = defaults.equals_default(player, "machines", machine, machine.proto.category)
+    -- Machine (try combined_category first, fall back to primary category)
+    local combined_category = line.recipe.proto.combined_category
+    local primary_category = line.recipe.proto.category
+    local machine_category = combined_category
+    -- Fall back to primary category if no default set for combined_category
+    if not defaults.get(player, "machines", combined_category) then
+        machine_category = primary_category
+    end
+    local machine_tooltip = defaults.generate_tooltip(player, "machines", machine_category)
+    local equals_machine = defaults.equals_default(player, "machines", machine, machine_category)
     local equals_all_machines = defaults.equals_all_defaults(player, "machines", machine)
 
     modal_elements.machine_title.tooltip = machine_tooltip
@@ -66,7 +74,9 @@ local function add_defaults_frame(parent_frame, player)
 end
 
 local function set_defaults(player, tags, _)
-    local machine = util.globals.modal_data(player).object
+    local modal_data = util.globals.modal_data(player)
+    local machine = modal_data.object
+    local line = modal_data.line
 
     local machine_data = {
         prototype = machine.proto.name,
@@ -77,7 +87,11 @@ local function set_defaults(player, tags, _)
     if tags.action == "machine_all" then
         defaults.set_all(player, "machines", machine_data)
     elseif tags.action == "machine" then
-        defaults.set(player, "machines", machine_data, machine.proto.category)
+        -- Use recipe's combined_category so defaults work for multi-category recipes
+        -- Pass machine's actual category for prototype lookup
+        local combined_category = line.recipe.proto.combined_category
+        local proto_category = machine.proto.category
+        defaults.set(player, "machines", machine_data, combined_category, proto_category)
 
     elseif tags.action == "fuel_all" then
         defaults.set_all(player, "fuels", {prototype=machine.fuel.proto.name})
@@ -203,6 +217,7 @@ end
 
 local function handle_machine_choice(player, _, event)
     local machine = util.globals.modal_data(player).object  --[[@as Machine]]
+    local line = machine.parent  --[[@as Line]]
     local elem_value = event.element.elem_value
 
     if not elem_value then
@@ -211,7 +226,13 @@ local function handle_machine_choice(player, _, event)
         return  -- nothing changed
     end
 
-    local new_machine_proto = prototyper.util.find("machines", elem_value.name, machine.proto.category)
+    -- Search all valid categories for this machine
+    local new_machine_proto = nil
+    for _, category in pairs(line:get_machine_categories()) do
+        new_machine_proto = prototyper.util.find("machines", elem_value.name, category)
+        if new_machine_proto then break end
+    end
+
     local new_quality_proto = prototyper.util.find("qualities", elem_value.quality, nil)
 
     -- Can't use Line:change_machine_to_proto() as that modifies the line, which we can't do
