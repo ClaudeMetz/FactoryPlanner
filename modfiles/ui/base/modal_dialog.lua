@@ -59,7 +59,6 @@ local function create_base_dialog(player, dialog_settings, modal_data)
             local close_button = flow_title_bar.add{type="sprite-button", tooltip={"fp.close_button_tt"},
                 tags={mod="fp", on_gui_click="exit_modal_dialog", action="cancel"}, sprite="utility/close",
                 style="fp_button_frame", mouse_button_filter={"left"}}
-            close_button.style.left_margin = 4
             close_button.style.padding = 1
         end
     end

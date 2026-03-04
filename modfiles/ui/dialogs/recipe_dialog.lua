@@ -114,11 +114,11 @@ local function attempt_adding_line(player, recipe_id, modal_data)
             line.recipe.temperatures[proto.base_name] = proto.temperature
         end
 
+        local recipe_name = recipe_proto.localised_name
         if not line.recipe:temperature_fully_configured() then
             util.messages.raise(player, "warning", {"fp.warning_temperature_not_configured", recipe_name}, 1)
         end
 
-        local recipe_name = recipe_proto.localised_name
         if not (recipe_proto.custom or player.force.recipes[recipe_proto.name].enabled) then
             util.messages.raise(player, "warning", {"fp.warning_recipe_disabled", recipe_name}, 1)
         end

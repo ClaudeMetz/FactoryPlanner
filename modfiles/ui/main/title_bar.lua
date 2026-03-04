@@ -91,9 +91,7 @@ listeners.gui = {
             name = "re-center_main_dialog",
             handler = (function(player, _, event)
                 if event.button == defines.mouse_button_type.middle then
-                    local ui_state = util.globals.ui_state(player)
-                    local main_frame = ui_state.main_elements.main_frame
-                    util.gui.properly_center_frame(player, main_frame, ui_state.main_dialog_dimensions)
+                    main_dialog.center(player)
                 end
             end)
         },

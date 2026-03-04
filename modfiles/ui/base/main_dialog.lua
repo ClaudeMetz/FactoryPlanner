@@ -77,8 +77,7 @@ function main_dialog.rebuild(player, default_visibility)
     local dimensions = determine_main_dimensions(player)
     ui_state.main_dialog_dimensions = dimensions
     frame_main_dialog.style.size = dimensions
-    util.gui.properly_center_frame(player, frame_main_dialog, dimensions)
-
+    main_dialog.center(player)
 
     -- Create the actual dialog structure
     local frame_spacing = MAGIC_NUMBERS.frame_spacing
@@ -129,6 +128,19 @@ function main_dialog.toggle(player, skip_opened)
         -- Make sure FP is not behind some vanilla interfaces
         if new_dialog_visibility then frame_main_dialog.bring_to_front() end
     end
+end
+
+-- Centers main dialog properly, ignoring the hotbar
+function main_dialog.center(player)
+    local ui_state = util.globals.ui_state(player)
+    local dimensions = ui_state.main_dialog_dimensions
+    local main_frame = ui_state.main_elements.main_frame
+    if not dimensions or not main_frame or not main_frame.valid then return end
+
+    local resolution, scale = player.display_resolution, player.display_scale
+    local x_offset = ((resolution.width - (dimensions.width * scale)) / 2)
+    local y_offset = ((resolution.height - (dimensions.height * scale)) / 2)
+    main_frame.location = {x_offset, y_offset}
 end
 
 
@@ -229,6 +241,9 @@ listeners.misc = {
             main_dialog.toggle(player)
         end
     end),
+
+    on_player_display_resolution_changed = main_dialog.center,
+    on_player_display_scale_changed = main_dialog.center,
 
     fp_toggle_interface = (function(player, _)
         if not util.globals.ui_state(player).compact_view then main_dialog.toggle(player) end

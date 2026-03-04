@@ -128,6 +128,7 @@ local function refresh_factory_list(player)
         local search_term = helpers.multilingual_to_lower(main_elements.factory_list["search_textfield"].text)
         local attach_factory_products = player_table.preferences.attach_factory_products
         local filter = {archived = archived}
+        local move_button_width = 20
 
         local function create_move_button(flow, direction, factory)
             local enabled = (search_term == "" and factory.parent:find(filter, factory[direction], direction) ~= nil)
@@ -140,7 +141,7 @@ local function refresh_factory_list(player)
                 tags={mod="fp", on_gui_click="move_factory", direction=direction, factory_id=factory.id,
                 on_gui_hover="set_tooltip", context="factory_list"}, mouse_button_filter={"left"},
                 raise_hover_events=true, style="fp_sprite-button_move"}
-            move_button.style.size = {20, 12}
+            move_button.style.size = {move_button_width, 12}
             move_button.style.padding = -2
             tooltips.factory_list[move_button.index] = move_tooltip
         end
@@ -167,7 +168,7 @@ local function refresh_factory_list(player)
                     context="factory_list"}, style="list_box_item", mouse_button_filter={"left-and-right"},
                     raise_hover_events=true}
                 factory_button.style.padding = {0, 12, 0, 4}
-                factory_button.style.width = MAGIC_NUMBERS.list_width - 20
+                factory_button.style.width = MAGIC_NUMBERS.list_width - move_button_width
                 tooltips.factory_list[factory_button.index] = tooltip
             end
         end
@@ -270,6 +271,7 @@ local function build_factory_list(player)
     -- This is not really a list-box, but it imitates one and allows additional features
     local listbox_factories = frame_vertical.add{type="scroll-pane", style="list_box_under_subheader_scroll_pane"}
     listbox_factories.style.vertically_stretchable = true
+    listbox_factories.horizontal_scroll_policy = "never"
     listbox_factories.style.extra_right_padding_when_activated = -12
     local flow_factories = listbox_factories.add{type="flow", direction="vertical"}
     flow_factories.style.vertical_spacing = 0

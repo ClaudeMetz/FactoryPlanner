@@ -130,17 +130,6 @@ function _gui.run_refresh(player, trigger)
 end
 
 
--- Properly centers the given frame (need width/height parameters cause no API-read exists)
----@param player LuaPlayer
----@param frame LuaGuiElement
----@param dimensions DisplayResolution
-function _gui.properly_center_frame(player, frame, dimensions)
-    local resolution, scale = player.display_resolution, player.display_scale
-    local x_offset = ((resolution.width - (dimensions.width * scale)) / 2)
-    local y_offset = ((resolution.height - (dimensions.height * scale)) / 2)
-    frame.location = {x_offset, y_offset}
-end
-
 ---@param player LuaPlayer
 ---@return DisplayResolution
 function _gui.calculate_scaled_resolution(player)
