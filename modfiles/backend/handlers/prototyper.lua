@@ -12,14 +12,14 @@ prototyper = {
 -- removed when the user tells the factory to repair itself, giving him a chance to re-add the
 -- missing mods. It is also a better separation of responsibilities and avoids some redundant code.
 
--- Load order is important here: machines->recipes->items->fuels->modules->beacons->...
+-- Load order is important here: recipes->items->machines->fuels->modules->beacons->...
 -- The boolean indicates whether this prototype has categories or not
 ---@type { [DataType]: boolean }
-prototyper.data_types = {machines = true, recipes = false, items = true, fuels = true,
+prototyper.data_types = {recipes = false, items = true, machines = true, fuels = true,
                          belts = false, pumps = false, wagons = true, modules = true,
                          beacons = false, locations = false, qualities = false}
 
----@alias DataType "machines" | "recipes" | "items" | "fuels" | "belts" | "pumps" | "wagons" | "modules" | "beacons" | "locations" | "qualities"
+---@alias DataType "recipes" | "items" | "machines" | "fuels" | "belts" | "pumps" | "wagons" | "modules" | "beacons" | "locations" | "qualities"
 
 ---@alias NamedPrototypes<T> { [string]: T }
 ---@alias NamedPrototypesWithCategory<T> { [string]: { name: string, members: { [string]: T } } } }
@@ -32,9 +32,9 @@ prototyper.data_types = {machines = true, recipes = false, items = true, fuels =
 ---@alias AnyIndexedPrototypes IndexedPrototypes | IndexedPrototypesWithCategory
 
 ---@class PrototypeLists: { [DataType]: table }
----@field machines IndexedPrototypesWithCategory<FPMachinePrototype>
 ---@field recipes IndexedPrototypes<FPRecipePrototype>
 ---@field items IndexedPrototypesWithCategory<FPItemPrototype>
+---@field machines IndexedPrototypesWithCategory<FPMachinePrototype>
 ---@field fuels IndexedPrototypesWithCategory<FPFuelPrototype>
 ---@field belts IndexedPrototypes<FPBeltPrototype>
 ---@field pumps IndexedPrototypes<FPPumpPrototype>

@@ -142,9 +142,9 @@ end
 ---@alias MappedCategory { id: integer, name: string, members: { [string]: table } }
 
 ---@class PrototypeMaps: { [DataType]: table }
----@field machines MappedPrototypesWithCategory<FPMachinePrototype>
 ---@field recipes MappedPrototypes<FPRecipePrototype>
 ---@field items MappedPrototypesWithCategory<FPItemPrototype>
+---@field machines MappedPrototypesWithCategory<FPMachinePrototype>
 ---@field fuels MappedPrototypesWithCategory<FPFuelPrototype>
 ---@field belts MappedPrototypes<FPBeltPrototype>
 ---@field pumps MappedPrototypes<FPPumpPrototype>

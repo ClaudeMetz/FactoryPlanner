@@ -1,9 +1,9 @@
 local generator_util = require("backend.handlers.generator_util")
 
 local generator = {
-    machines = {},
     recipes = {},
     items = {},
+    machines = {},
     fuels = {},
     belts = {},
     pumps = {},
@@ -57,285 +57,6 @@ local function remove_prototype(list, name, category)
 end
 
 
----@class FPMachinePrototype: FPPrototypeWithCategory
----@field data_type "machines"
----@field category string
----@field elem_type ElemType
----@field prototype_category PrototypeCategory?
----@field ingredient_limit integer
----@field fluid_channels FluidChannels
----@field speed double
----@field energy_type "burner" | "electric" | "void"
----@field energy_usage double
----@field energy_drain double
----@field emissions_per_joule EmissionsMap
----@field emissions_per_second EmissionsMap
----@field burner MachineBurner?
----@field built_by_item FPItemPrototype?
----@field effect_receiver EffectReceiver
----@field allowed_effects AllowedEffects
----@field allowed_module_categories { [string]: boolean }?
----@field module_limit integer
----@field surface_conditions SurfaceCondition[]
----@field resource_drain_rate number?
----@field uses_force_mining_productivity_bonus boolean?
-
----@class FluidChannels
----@field input integer
----@field output integer
-
----@class MachineBurner
----@field effectivity double
----@field categories { [string]: boolean }
----@field combined_category string
-
----@alias EmissionsMap { [string]: double }
----@alias PrototypeCategory ("assembling_machine" | "furnace" | "rocket_silo" | "mining_drill" | "boiler")
-
--- Generates a table containing all machines for all categories
----@return NamedPrototypesWithCategory<FPMachinePrototype>
-function generator.machines.generate()
-    local machines = {}  ---@type NamedPrototypesWithCategory<FPMachinePrototype>
-
-    ---@param category string
-    ---@param proto LuaEntityPrototype
-    ---@param prototype_category PrototypeCategory?
-    ---@return FPMachinePrototype?
-    local function generate_category_entry(category, proto, prototype_category)
-        -- First, determine if there is a valid sprite for this machine
-        local sprite = generator_util.determine_entity_sprite(proto)
-        if sprite == nil then return end
-
-        -- Determine data related to the energy source
-        local energy_type, emissions_per_joule = "", {}  -- no emissions if no energy source is present
-        local burner = nil  ---@type MachineBurner
-
-        local max_usage = generator_util.get_base_value(proto.get_max_energy_usage())
-        local energy_usage = proto.energy_usage or max_usage or 0
-        local energy_drain = 0
-
-        -- Determine the name of the item that actually builds this machine for the item requester
-        -- There can technically be more than one, but bots use the first one, so I do too
-        local built_by_item = (proto.items_to_place_this) and proto.items_to_place_this[1].name or nil
-
-        -- Determine the details of this entities energy source
-        local burner_prototype, fluid_burner_prototype = proto.burner_prototype, proto.fluid_energy_source_prototype
-        if burner_prototype then
-            energy_type = "burner"
-            emissions_per_joule = burner_prototype.emissions_per_joule
-            burner = {effectivity=burner_prototype.effectivity, categories=burner_prototype.fuel_categories,
-                combined_category=""}  -- combined filled in by fuel generator
-
-        -- Only supports fluid energy that burns_fluid for now, as it works the same way as solid burners
-        -- Also doesn't respect scale_fluid_usage and fluid_usage_per_tick for now, let the reports come
-        elseif fluid_burner_prototype then
-            emissions_per_joule = fluid_burner_prototype.emissions_per_joule
-
-            if fluid_burner_prototype.burns_fluid then
-                energy_type = "burner"
-                burner = {effectivity=fluid_burner_prototype.effectivity, categories={["fluid-fuel"] = true},
-                    combined_category=""}  -- combined filled in by fuel generator
-
-            else  -- Avoid adding this type of complex fluid energy as electrical energy
-                -- When I add support for this, I need to take care of limiting min/max temps on the fuel
-                energy_type = "void"
-            end
-
-        elseif proto.electric_energy_source_prototype then
-            energy_type = "electric"
-            energy_drain = proto.electric_energy_source_prototype.drain
-            emissions_per_joule = proto.electric_energy_source_prototype.emissions_per_joule
-
-        elseif proto.void_energy_source_prototype then
-            energy_type = "void"
-            emissions_per_joule = proto.void_energy_source_prototype.emissions_per_joule
-        end
-
-        -- Determine fluid input/output channels
-        local fluid_channels = {input = 0, output = 0}
-        if fluid_burner_prototype then fluid_channels.input = fluid_channels.input - 1 end
-
-        for _, fluidbox in pairs(proto.fluidbox_prototypes) do
-            if fluidbox.production_type == "output" then
-                fluid_channels.output = fluid_channels.output + 1
-            else  -- "input" and "input-output"
-                fluid_channels.input = fluid_channels.input + 1
-            end
-        end
-
-        local machine = {
-            name = proto.name,
-            localised_name = proto.localised_name,
-            sprite = sprite,
-            category = category,
-            elem_type = "entity",
-            prototype_category = prototype_category,
-            ingredient_limit = (proto.ingredient_count or 255),
-            product_limit = (proto.max_item_product_count or 255),
-            fluid_channels = fluid_channels,
-            speed = generator_util.get_base_value(proto.get_crafting_speed()),
-            energy_type = energy_type,
-            energy_usage = energy_usage,
-            energy_drain = energy_drain,
-            emissions_per_joule = emissions_per_joule,
-            emissions_per_second = proto.emissions_per_second or {},
-            burner = burner,
-            built_by_item = built_by_item,
-            effect_receiver = generator_util.format_effect_receiver(proto),
-            allowed_effects = proto.allowed_effects or {},
-            allowed_module_categories = proto.allowed_module_categories,
-            module_limit = (proto.module_inventory_size or 0),
-            surface_conditions = proto.surface_conditions,
-            uses_force_mining_productivity_bonus = proto.uses_force_mining_productivity_bonus
-        }
-        generator_util.sort_machine_burner_categories(machine)
-
-        return machine
-    end
-
-    local biggest_chest = nil
-
-    local entity_filter = {{filter="hidden", invert=true}}
-    for _, proto in pairs(prototypes.get_entity_filtered(entity_filter)) do
-        if proto.crafting_categories and proto.energy_usage ~= nil
-                and not generator_util.is_irrelevant_machine(proto) then
-            -- Silo launch recipes use a separate machine
-            if proto.type == "rocket-silo" then
-                local machine = generate_category_entry("launch-rocket", proto, nil)
-                if machine then
-                    local launch_time, energy_usage = generator_util.determine_launch_data(proto)
-                    machine.speed = 1 / launch_time
-                    machine.energy_usage = energy_usage
-
-                    machine.built_by_item = nil
-                    machine.effect_receiver = {
-                        base_effect = {},
-                        uses_module_effects = false,
-                        uses_beacon_effects = false,
-                        uses_surface_effects = false
-                    }
-                    machine.allowed_effects = {}
-                    machine.module_limit = 0
-                    insert_prototype(machines, machine, machine.category)
-                end
-            end
-
-            -- Silos are also added as normal to produce rocket parts
-            for category, _ in pairs(proto.crafting_categories) do
-                local prototype_category = proto.type:gsub("-", "_")
-                local machine = generate_category_entry(category, proto, prototype_category)
-                if machine then insert_prototype(machines, machine, machine.category) end
-            end
-
-        elseif proto.type == "mining-drill" then
-            for category, _ in pairs(proto.resource_categories) do
-                local machine = generate_category_entry(category, proto, "mining_drill")
-                if machine then
-                    machine.speed = proto.mining_speed
-                    machine.resource_drain_rate = proto.resource_drain_rate_percent / 100
-                    insert_prototype(machines, machine, category)
-                end
-            end
-
-        elseif proto.type == "offshore-pump" then
-            local fluid_box = proto.fluidbox_prototypes[1]
-            local fixed_fluid = (fluid_box and fluid_box.filter) and fluid_box.filter.name or nil
-            local category = (fixed_fluid) and ("offshore-pump-" .. fixed_fluid) or "offshore-pump"
-            local machine = generate_category_entry(category, proto, nil)
-            if machine then
-                machine.speed = generator_util.get_base_value(proto.get_pumping_speed())
-                insert_prototype(machines, machine, category)
-            end
-
-        elseif proto.type == "agricultural-tower" then
-            local machine = generate_category_entry(proto.type, proto, nil)
-            if machine then
-                machine.speed = 1  -- could be based on available tiles, but not used for now
-                machine.energy_usage = 0  -- TODO implemented later: energy_usage, crane_energy_usage
-                insert_prototype(machines, machine, proto.type)
-            end
-
-        elseif proto.type == "container" then
-            -- Just find the biggest container as a spoilage machine
-            local size = proto.get_inventory_size(defines.inventory.chest) or 0
-            local current_size = biggest_chest and biggest_chest.get_inventory_size(defines.inventory.chest) or 0
-            if current_size < size then biggest_chest = proto end
-
-        elseif proto.type == "boiler" then
-            local category, _, _ = generator_util.get_boiler_data(proto)
-            if category == nil then goto skip_boiler end
-
-            local machine = generate_category_entry(category, proto, "boiler")
-            if machine then
-                machine.speed = machine.energy_usage * 60
-                insert_prototype(machines, machine, machine.category)
-            end
-
-            ::skip_boiler::
-        end
-    end
-
-    if biggest_chest then
-        local machine = generate_category_entry("purposeful-spoiling", biggest_chest, nil)
-        if machine then
-            machine.speed, machine.energy_usage = 1, 0
-            machine.surface_conditions = nil  -- the chest isn't actually needed for spoiling to happen
-            insert_prototype(machines, machine, "purposeful-spoiling")
-        end
-    end
-
-    return machines
-end
-
----@param machines NamedPrototypesWithCategory<FPMachinePrototype>
-function generator.machines.second_pass(machines)
-    -- Go over all recipes to find unused categories
-    local used_category_names = {}  ---@type { [string]: boolean }
-    for _, recipe_proto in pairs(storage.prototypes.recipes) do
-        used_category_names[recipe_proto.category] = true
-    end
-
-    for _, machine_category in pairs(machines) do
-        if used_category_names[machine_category.name] == nil then
-            machines[machine_category.name] = nil
-        end
-    end
-
-    -- Filter out burner machines that don't have any valid fuel categories
-    local fuels = storage.prototypes.fuels
-    for _, machine_category in pairs(machines) do
-        for _, machine_proto in pairs(machine_category.members) do
-            if machine_proto.energy_type == "burner" and not fuels[machine_proto.burner.combined_category] then
-                remove_prototype(machines, machine_proto.name, machine_category.name)
-            end
-        end
-
-        -- If the category ends up empty because of this, make sure to remove it
-        if not next(machine_category.members) then machines[machine_category.name] = nil end
-    end
-
-
-    -- Replace built_by_item names with prototype references
-    local item_prototypes = storage.prototypes.items["item"].members  ---@type { [string]: FPItemPrototype }
-    for _, machine_category in pairs(machines) do
-        for _, machine_proto in pairs(machine_category.members) do
-            if machine_proto.built_by_item then
-                machine_proto.built_by_item = item_prototypes[machine_proto.built_by_item]
-            end
-        end
-    end
-end
-
----@param a FPMachinePrototype
----@param b FPMachinePrototype
----@return boolean
-function generator.machines.sorting_function(a, b)
-    if a.speed < b.speed then return true
-    elseif a.speed > b.speed then return false end
-    return false
-end
-
-
 ---@class FPRecipePrototype: FPPrototype
 ---@field data_type "recipes"
 ---@field category string
@@ -361,7 +82,6 @@ end
 ---@field subgroup ItemGroup
 ---@field tooltip LocalisedString?
 
--- Returns all standard recipes + custom mining, steam and rocket recipes
 ---@return NamedPrototypes<FPRecipePrototype>
 function generator.recipes.generate()
     local recipes = {}   ---@type NamedPrototypes<FPRecipePrototype>
@@ -409,9 +129,7 @@ function generator.recipes.generate()
     local recipe_filter = {{filter="energy", comparison=">", value=0},
         {filter="energy", comparison="<", value=1e+21, mode="and"}}
     for recipe_name, proto in pairs(prototypes.get_recipe_filtered(recipe_filter)) do
-        local machine_category = storage.prototypes.machines[proto.category]  ---@type { [string]: FPMachinePrototype }
-        -- Avoid any recipes that have no machine to produce them, or are irrelevant
-        if machine_category ~= nil and not generator_util.is_irrelevant_recipe(proto) and not proto.is_parameter then
+        if not generator_util.is_irrelevant_recipe(proto) and not proto.is_parameter then
             local recipe = {
                 name = proto.name,
                 localised_name = proto.localised_name,
@@ -457,7 +175,6 @@ function generator.recipes.generate()
             local ingredients = {{type="entity", name="custom-" .. proto.name, amount=1}}
 
             if not proto.infinite_resource then
-                -- Set energy to mining time so the forumla for the machine_count works out
                 recipe.energy = proto.mineable_properties.mining_time
 
                 -- Add mining fluid, if required
@@ -664,7 +381,7 @@ end
 function generator.recipes.second_pass(recipes)
     local machines = storage.prototypes.machines
     for _, recipe in pairs(recipes) do
-        -- Check again if all recipes still have a machine to produce them after machine second pass
+        -- Check if recipes have a machine to produce them
         if not machines[recipe.category] then
             remove_prototype(recipes, recipe.name, nil)
         -- Give custom recipes a tooltip in a nice central place
@@ -696,7 +413,6 @@ end
 ---@field ingredient_only boolean
 ---@field temperature float?
 
--- Returns all relevant items and fluids
 ---@return NamedPrototypesWithCategory<FPItemPrototype>
 function generator.items.generate()
     local items = {}   ---@type NamedPrototypesWithCategory<FPItemPrototype>
@@ -859,6 +575,271 @@ function generator.items.generate()
 end
 
 
+---@class FPMachinePrototype: FPPrototypeWithCategory
+---@field data_type "machines"
+---@field category string
+---@field elem_type ElemType
+---@field prototype_category PrototypeCategory?
+---@field ingredient_limit integer
+---@field fluid_channels FluidChannels
+---@field speed double
+---@field energy_type "burner" | "electric" | "void"
+---@field energy_usage double
+---@field energy_drain double
+---@field emissions_per_joule EmissionsMap
+---@field emissions_per_second EmissionsMap
+---@field burner MachineBurner?
+---@field built_by_item FPItemPrototype?
+---@field effect_receiver EffectReceiver
+---@field allowed_effects AllowedEffects
+---@field allowed_module_categories { [string]: boolean }?
+---@field module_limit integer
+---@field surface_conditions SurfaceCondition[]
+---@field resource_drain_rate number?
+---@field uses_force_mining_productivity_bonus boolean?
+
+---@class FluidChannels
+---@field input integer
+---@field output integer
+
+---@class MachineBurner
+---@field effectivity double
+---@field categories { [string]: boolean }
+---@field combined_category string
+
+---@alias EmissionsMap { [string]: double }
+---@alias PrototypeCategory ("assembling_machine" | "furnace" | "rocket_silo" | "mining_drill" | "boiler")
+
+---@return NamedPrototypesWithCategory<FPMachinePrototype>
+function generator.machines.generate()
+    local machines = {}  ---@type NamedPrototypesWithCategory<FPMachinePrototype>
+
+    local used_category_names = {}  ---@type { [string]: boolean }
+    for _, recipe_proto in pairs(storage.prototypes.recipes) do
+        used_category_names[recipe_proto.category] = true
+    end
+
+    -- Used to fill in used_by_items with proper references
+    local item_prototypes = storage.prototypes.items["item"].members  ---@type { [string]: FPItemPrototype }
+
+    ---@param category string
+    ---@param proto LuaEntityPrototype
+    ---@param prototype_category PrototypeCategory?
+    ---@return FPMachinePrototype?
+    local function generate_category_entry(category, proto, prototype_category)
+        -- If no recipe uses this machine's category, it is pointless
+        if used_category_names[category] == nil then return end
+        -- First, determine if there is a valid sprite for this machine
+        local sprite = generator_util.determine_entity_sprite(proto)
+        if sprite == nil then return end
+
+        -- Determine data related to the energy source
+        local energy_type, emissions_per_joule = "", {}  -- no emissions if no energy source is present
+        local burner = nil  ---@type MachineBurner
+
+        local max_usage = generator_util.get_base_value(proto.get_max_energy_usage())
+        local energy_usage = proto.energy_usage or max_usage or 0
+        local energy_drain = 0
+
+        -- Determine the name of the item that actually builds this machine for the item requester
+        -- There can technically be more than one, but bots use the first one, so I do too
+        local built_by_item = (proto.items_to_place_this) and proto.items_to_place_this[1].name or nil
+
+        -- Determine the details of this entities energy source
+        local burner_prototype, fluid_burner_prototype = proto.burner_prototype, proto.fluid_energy_source_prototype
+        if burner_prototype then
+            energy_type = "burner"
+            emissions_per_joule = burner_prototype.emissions_per_joule
+            burner = {effectivity=burner_prototype.effectivity, categories=burner_prototype.fuel_categories,
+                combined_category=""}  -- combined filled in by fuel generator
+
+        -- Only supports fluid energy that burns_fluid for now, as it works the same way as solid burners
+        -- Also doesn't respect scale_fluid_usage and fluid_usage_per_tick for now, let the reports come
+        elseif fluid_burner_prototype then
+            emissions_per_joule = fluid_burner_prototype.emissions_per_joule
+
+            if fluid_burner_prototype.burns_fluid then
+                energy_type = "burner"
+                burner = {effectivity=fluid_burner_prototype.effectivity, categories={["fluid-fuel"] = true},
+                    combined_category=""}  -- combined filled in by fuel generator
+
+            else  -- Avoid adding this type of complex fluid energy as electrical energy
+                -- When I add support for this, I need to take care of limiting min/max temps on the fuel
+                energy_type = "void"
+            end
+
+        elseif proto.electric_energy_source_prototype then
+            energy_type = "electric"
+            energy_drain = proto.electric_energy_source_prototype.drain
+            emissions_per_joule = proto.electric_energy_source_prototype.emissions_per_joule
+
+        elseif proto.void_energy_source_prototype then
+            energy_type = "void"
+            emissions_per_joule = proto.void_energy_source_prototype.emissions_per_joule
+        end
+
+        -- Determine fluid input/output channels
+        local fluid_channels = {input = 0, output = 0}
+        if fluid_burner_prototype then fluid_channels.input = fluid_channels.input - 1 end
+
+        for _, fluidbox in pairs(proto.fluidbox_prototypes) do
+            if fluidbox.production_type == "output" then
+                fluid_channels.output = fluid_channels.output + 1
+            else  -- "input" and "input-output"
+                fluid_channels.input = fluid_channels.input + 1
+            end
+        end
+
+        local machine = {
+            name = proto.name,
+            localised_name = proto.localised_name,
+            sprite = sprite,
+            category = category,
+            elem_type = "entity",
+            prototype_category = prototype_category,
+            ingredient_limit = (proto.ingredient_count or 255),
+            product_limit = (proto.max_item_product_count or 255),
+            fluid_channels = fluid_channels,
+            speed = generator_util.get_base_value(proto.get_crafting_speed()),
+            energy_type = energy_type,
+            energy_usage = energy_usage,
+            energy_drain = energy_drain,
+            emissions_per_joule = emissions_per_joule,
+            emissions_per_second = proto.emissions_per_second or {},
+            burner = burner,
+            built_by_item = item_prototypes[built_by_item],
+            effect_receiver = generator_util.format_effect_receiver(proto),
+            allowed_effects = proto.allowed_effects or {},
+            allowed_module_categories = proto.allowed_module_categories,
+            module_limit = (proto.module_inventory_size or 0),
+            surface_conditions = proto.surface_conditions,
+            uses_force_mining_productivity_bonus = proto.uses_force_mining_productivity_bonus
+        }
+        generator_util.sort_machine_burner_categories(machine)
+
+        return machine
+    end
+
+    local biggest_chest = nil
+
+    local entity_filter = {{filter="hidden", invert=true}}
+    for _, proto in pairs(prototypes.get_entity_filtered(entity_filter)) do
+        if proto.crafting_categories and proto.energy_usage ~= nil
+                and not generator_util.is_irrelevant_machine(proto) then
+            -- Silo launch recipes use a separate machine
+            if proto.type == "rocket-silo" then
+                local machine = generate_category_entry("launch-rocket", proto, nil)
+                if machine then
+                    local launch_time, energy_usage = generator_util.determine_launch_data(proto)
+                    machine.speed = 1 / launch_time
+                    machine.energy_usage = energy_usage
+
+                    machine.built_by_item = nil
+                    machine.effect_receiver = {
+                        base_effect = {},
+                        uses_module_effects = false,
+                        uses_beacon_effects = false,
+                        uses_surface_effects = false
+                    }
+                    machine.allowed_effects = {}
+                    machine.module_limit = 0
+                    insert_prototype(machines, machine, machine.category)
+                end
+            end
+
+            -- Silos are also added as normal to produce rocket parts
+            for category, _ in pairs(proto.crafting_categories) do
+                local prototype_category = proto.type:gsub("-", "_")
+                local machine = generate_category_entry(category, proto, prototype_category)
+                if machine then insert_prototype(machines, machine, machine.category) end
+            end
+
+        elseif proto.type == "mining-drill" then
+            for category, _ in pairs(proto.resource_categories) do
+                local machine = generate_category_entry(category, proto, "mining_drill")
+                if machine then
+                    machine.speed = proto.mining_speed
+                    machine.resource_drain_rate = proto.resource_drain_rate_percent / 100
+                    insert_prototype(machines, machine, category)
+                end
+            end
+
+        elseif proto.type == "offshore-pump" then
+            local fluid_box = proto.fluidbox_prototypes[1]
+            local fixed_fluid = (fluid_box and fluid_box.filter) and fluid_box.filter.name or nil
+            local category = (fixed_fluid) and ("offshore-pump-" .. fixed_fluid) or "offshore-pump"
+            local machine = generate_category_entry(category, proto, nil)
+            if machine then
+                machine.speed = generator_util.get_base_value(proto.get_pumping_speed())
+                insert_prototype(machines, machine, category)
+            end
+
+        elseif proto.type == "agricultural-tower" then
+            local machine = generate_category_entry(proto.type, proto, nil)
+            if machine then
+                machine.speed = 1  -- could be based on available tiles, but not used for now
+                machine.energy_usage = 0  -- TODO implemented later: energy_usage, crane_energy_usage
+                insert_prototype(machines, machine, proto.type)
+            end
+
+        elseif proto.type == "container" then
+            -- Just find the biggest container as a spoilage machine
+            local size = proto.get_inventory_size(defines.inventory.chest) or 0
+            local current_size = biggest_chest and biggest_chest.get_inventory_size(defines.inventory.chest) or 0
+            if current_size < size then biggest_chest = proto end
+
+        elseif proto.type == "boiler" then
+            local category, _, _ = generator_util.get_boiler_data(proto)
+            if category == nil then goto skip_boiler end
+
+            local machine = generate_category_entry(category, proto, "boiler")
+            if machine then
+                machine.speed = machine.energy_usage * 60
+                insert_prototype(machines, machine, machine.category)
+            end
+
+            ::skip_boiler::
+        end
+    end
+
+    if biggest_chest then
+        local machine = generate_category_entry("purposeful-spoiling", biggest_chest, nil)
+        if machine then
+            machine.speed, machine.energy_usage = 1, 0
+            machine.surface_conditions = nil  -- the chest isn't actually needed for spoiling to happen
+            insert_prototype(machines, machine, "purposeful-spoiling")
+        end
+    end
+
+    return machines
+end
+
+---@param machines NamedPrototypesWithCategory<FPMachinePrototype>
+function generator.machines.second_pass(machines)
+    -- Filter out burner machines that don't have any valid fuel categories
+    local fuels = storage.prototypes.fuels
+    for _, machine_category in pairs(machines) do
+        for _, machine_proto in pairs(machine_category.members) do
+            if machine_proto.energy_type == "burner" and not fuels[machine_proto.burner.combined_category] then
+                remove_prototype(machines, machine_proto.name, machine_category.name)
+            end
+        end
+
+        -- If the category ends up empty because of this, make sure to remove it
+        if not next(machine_category.members) then machines[machine_category.name] = nil end
+    end
+end
+
+---@param a FPMachinePrototype
+---@param b FPMachinePrototype
+---@return boolean
+function generator.machines.sorting_function(a, b)
+    if a.speed < b.speed then return true
+    elseif a.speed > b.speed then return false end
+    return false
+end
+
+
 ---@class FPFuelPrototype: FPPrototypeWithCategory
 ---@field data_type "fuels"
 ---@field type "item" | "fluid"
@@ -871,7 +852,6 @@ end
 ---@field emissions_multiplier double
 ---@field burnt_result string?
 
--- Generates a table containing all fuels that can be used in a burner
 ---@return NamedPrototypesWithCategory<FPFuelPrototype>
 function generator.fuels.generate()
     local fuels = {}  ---@type NamedPrototypesWithCategory<FPFuelPrototype>
@@ -984,7 +964,6 @@ end
 ---@field rich_text string
 ---@field throughput double
 
--- Generates a table containing all available transport belts
 ---@return NamedPrototypes<FPBeltPrototype>
 function generator.belts.generate()
     local belts = {} ---@type NamedPrototypes<FPBeltPrototype>
@@ -1025,7 +1004,6 @@ end
 ---@field rich_text string
 ---@field pumping_speed double
 
--- Generates a table containing all available standard pumps
 ---@return NamedPrototypes<FPPumpPrototype>
 function generator.pumps.generate()
     local pumps = {} ---@type NamedPrototypes<FPPumpPrototype>
@@ -1067,7 +1045,6 @@ end
 ---@field rich_text string
 ---@field storage number
 
--- Generates a table containing all available cargo and fluid wagons
 ---@return NamedPrototypesWithCategory<FPWagonPrototype>
 function generator.wagons.generate()
     local wagons = {}  ---@type NamedPrototypesWithCategory<FPWagonPrototype>
@@ -1128,7 +1105,6 @@ end
 ---@field tier uint
 ---@field effects IntegerModuleEffects
 
--- Generates a table containing all available modules
 ---@return NamedPrototypesWithCategory<FPModulePrototype>
 function generator.modules.generate()
     local modules = {}  ---@type NamedPrototypesWithCategory<FPModulePrototype>
@@ -1180,7 +1156,6 @@ end
 ---@field profile double[]
 ---@field energy_usage double
 
--- Generates a table containing all available beacons
 ---@return NamedPrototypes<FPBeaconPrototype>
 function generator.beacons.generate()
     local beacons = {}  ---@type NamedPrototypes<FPBeaconPrototype>
