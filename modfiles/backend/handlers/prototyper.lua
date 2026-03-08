@@ -193,7 +193,7 @@ function prototyper.util.validate_prototype_object(prototype, category_designati
 
     if prototype.simplified then  -- try to unsimplify, otherwise it stays that way
         ---@cast prototype FPPackedPrototype
-        if not category_designation or prototype.category then  -- avoid broken simplified prototypes (now fixed)
+        if not category_designation or prototype.category then  -- failsafe
             local new_proto = prototyper.util.find(prototype.data_type, prototype.name, prototype.category)
             if new_proto then updated_proto = new_proto end
         end

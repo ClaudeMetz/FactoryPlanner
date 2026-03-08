@@ -36,6 +36,7 @@ local migration_masterlist = {  ---@type MigrationMasterList
     [25] = {version="2.0.41", migration=require("backend.migrations.migration_2_0_41")},
     [26] = {version="2.0.43", migration=require("backend.migrations.migration_2_0_43")},
     [27] = {version="2.0.44", migration=require("backend.migrations.migration_2_0_44")},
+    [28] = {version="2.0.45", migration=require("backend.migrations.migration_2_0_45")},
 }
 
 

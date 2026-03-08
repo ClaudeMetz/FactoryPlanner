@@ -384,7 +384,7 @@ function generator.recipes.second_pass(recipes)
         -- Check if recipes have a machine to produce them
         if not machines[recipe.category] then
             remove_prototype(recipes, recipe.name, nil)
-        -- Give custom recipes a tooltip in a nice central place
+        -- Give custom recipes a tooltip after items have been generated
         elseif recipe.custom then
             recipe.tooltip = generator_util.recipe_tooltip(recipe)
         end
@@ -814,22 +814,6 @@ function generator.machines.generate()
     return machines
 end
 
----@param machines NamedPrototypesWithCategory<FPMachinePrototype>
-function generator.machines.second_pass(machines)
-    -- Filter out burner machines that don't have any valid fuel categories
-    local fuels = storage.prototypes.fuels
-    for _, machine_category in pairs(machines) do
-        for _, machine_proto in pairs(machine_category.members) do
-            if machine_proto.energy_type == "burner" and not fuels[machine_proto.burner.combined_category] then
-                remove_prototype(machines, machine_proto.name, machine_category.name)
-            end
-        end
-
-        -- If the category ends up empty because of this, make sure to remove it
-        if not next(machine_category.members) then machines[machine_category.name] = nil end
-    end
-end
-
 ---@param a FPMachinePrototype
 ---@param b FPMachinePrototype
 ---@return boolean
@@ -855,6 +839,7 @@ end
 ---@return NamedPrototypesWithCategory<FPFuelPrototype>
 function generator.fuels.generate()
     local fuels = {}  ---@type NamedPrototypesWithCategory<FPFuelPrototype>
+    local fuel_categories = {}  -- temporary list to be combined later
 
     local fuel_filter = {{filter="fuel-value", comparison=">", value=0},
         {filter="fuel-value", comparison="<", value=1e+21, mode="and"},
@@ -862,7 +847,6 @@ function generator.fuels.generate()
 
     -- Build solid fuels - to be combined into categories afterwards
     local item_list = storage.prototypes.items["item"].members  ---@type NamedPrototypesWithCategory<FPItemPrototype>
-    local fuel_categories = {}  -- temporary list to be combined later
     for _, proto in pairs(prototypes.get_item_filtered(fuel_filter)) do
         -- Only use fuels that were actually detected/accepted to be items
         if item_list[proto.name] then
@@ -913,35 +897,52 @@ function generator.fuels.generate()
         end
     end
 
-    -- This manipulates the machine burner, which is improper but necessary
-    local function add_category(burner)
-        local combined_category = ""
+    local combined_categories = {}  -- set of every possible combined_category
+    local function set_combined_category(burner)
+        local list = {}
 
-        -- Determine combined category for the burner
-        for fuel_category, _ in pairs(burner.categories) do
-            if fuel_categories[fuel_category] then
-                combined_category = combined_category .. fuel_category
-            else
-                burner.categories[fuel_category] = nil
+        for category, _ in pairs(burner.categories) do
+            if fuel_categories[category] then
+                table.insert(list, category)
+            else  -- remove categories that don't have any valid fuels
+                burner.categories[category] = nil
             end
         end
-        burner.combined_category = combined_category
 
-        -- Add all relevant fuels to the combined category
-        for fuel_category, _ in pairs(burner.categories) do
-            for _, fuel in pairs(fuel_categories[fuel_category]) do
+        table.sort(list)  -- canonicalize the category order
+        burner.combined_category = table.concat(list, "|")
+
+        combined_categories[burner.combined_category] = list
+    end
+
+    -- Create category for each combination of fuels used by machines
+    -- Also completes the machine burner categories and combined_category fields
+    for _, machine_category in pairs(storage.prototypes.machines) do
+        for _, machine_proto in pairs(machine_category.members) do
+            if machine_proto.burner then
+                -- This removes invalid fuels from categories and sets the combined category
+                set_combined_category(machine_proto.burner)
+
+                if machine_proto.burner.combined_category == "" then
+                    -- An empty combined category means no valid fuels, so remove this machine
+                    remove_prototype(storage.prototypes.machines, machine_proto.name, machine_category.name)
+                end
+            end
+        end
+
+        -- If the machine category ends up empty because of this, make sure to remove it
+        if not next(machine_category.members) then storage.prototypes.machines[machine_category.name] = nil end
+    end
+
+    -- Add fuels to each combined category they belong to
+    -- Implicitly drops fuels that aren't used by any machine
+    for combined_category, list in pairs(combined_categories) do
+        for _, category in pairs(list) do
+            for _, fuel in pairs(fuel_categories[category]) do
                 local fuel_copy = ftable.deep_copy(fuel)
                 fuel_copy.combined_category = combined_category
                 insert_prototype(fuels, fuel_copy, combined_category)
             end
-        end
-    end
-
-    -- Create category for each combination of fuels used by machines
-    -- Also implicitly filters out fuels that aren't used by any actual machine
-    for _, machine_category in pairs(storage.prototypes.machines) do
-        for _, machine_proto in pairs(machine_category.members) do
-            if machine_proto.burner then add_category(machine_proto.burner) end
         end
     end
 
