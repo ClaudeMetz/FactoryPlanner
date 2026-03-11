@@ -139,7 +139,7 @@ end
 ---@return boolean success
 function Line:change_machine_to_default(player)
     -- All categories are guaranteed to have at least one machine, so this is never nil
-    local machine_default = defaults.get(player, "machines", self.recipe.proto.category)
+    local machine_default = defaults.get(player, "machines", self.recipe.proto.combined_category)
     local default_proto = machine_default.proto  --[[@as FPMachinePrototype]]
 
     local success = false
@@ -207,7 +207,7 @@ end
 function Line:compile_machine_filter()
     local compatible_machines = {}
 
-    local machine_category = prototyper.util.find("machines", nil, self.machine.proto.category)
+    local machine_category = prototyper.util.find("machines", nil, self.machine.proto.combined_category)
     for _, machine_proto in pairs(machine_category.members) do
         if self:is_machine_compatible(machine_proto) then
             table.insert(compatible_machines, machine_proto.name)

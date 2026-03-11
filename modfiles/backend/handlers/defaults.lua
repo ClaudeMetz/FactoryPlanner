@@ -183,7 +183,7 @@ local function migrate_prototype_default(data_type, fallback, default, category)
 end
 
 -- Kinda unclean that I have to do this, but it's better than storing it elsewhere
-local category_designations = {machines="category", items="type",
+local category_designations = {machines="combined_category", items="type",
     fuels="combined_category", wagons="category", modules="category"}
 
 -- Migrates the default prototype preferences, trying to preserve the users choices

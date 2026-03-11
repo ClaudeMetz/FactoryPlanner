@@ -21,8 +21,9 @@ local function refresh_defaults_frame(player)
     local machine = modal_data.object  --[[@as Machine]]
 
     -- Machine
-    local machine_tooltip = defaults.generate_tooltip(player, "machines", machine.proto.category)
-    local equals_machine = defaults.equals_default(player, "machines", machine, machine.proto.category)
+    local machine_category = machine.proto.combined_category
+    local machine_tooltip = defaults.generate_tooltip(player, "machines", machine_category)
+    local equals_machine = defaults.equals_default(player, "machines", machine, machine_category)
     local equals_all_machines = defaults.equals_all_defaults(player, "machines", machine)
 
     modal_elements.machine_title.tooltip = machine_tooltip
@@ -77,7 +78,7 @@ local function set_defaults(player, tags, _)
     if tags.action == "machine_all" then
         defaults.set_all(player, "machines", machine_data)
     elseif tags.action == "machine" then
-        defaults.set(player, "machines", machine_data, machine.proto.category)
+        defaults.set(player, "machines", machine_data, machine.proto.combined_category)
 
     elseif tags.action == "fuel_all" then
         defaults.set_all(player, "fuels", {prototype=machine.fuel.proto.name})
@@ -211,7 +212,7 @@ local function handle_machine_choice(player, _, event)
         return  -- nothing changed
     end
 
-    local new_machine_proto = prototyper.util.find("machines", elem_value.name, machine.proto.category)
+    local new_machine_proto = prototyper.util.find("machines", elem_value.name, machine.proto.combined_category)
     local new_quality_proto = prototyper.util.find("qualities", elem_value.quality, nil)
 
     -- Can't use Line:change_machine_to_proto() as that modifies the line, which we can't do

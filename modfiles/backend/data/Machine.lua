@@ -133,7 +133,7 @@ function Machine:reset(player)
     self.force_limit = true
 
     self.module_set:clear()
-    local machine_default = defaults.get(player, "machines", self.proto.category)
+    local machine_default = defaults.get(player, "machines", self.proto.combined_category)
     if machine_default.modules then self.module_set:ingest_default(machine_default.modules) end
 end
 
@@ -143,7 +143,7 @@ end
 ---@return string? error
 function Machine:paste(object, player)
     if object.class == "Machine" then
-        local corresponding_proto = prototyper.util.find("machines", object.proto.name, self.proto.category)
+        local corresponding_proto = prototyper.util.find("machines", object.proto.name, self.proto.combined_category)
         if corresponding_proto and self.parent:is_machine_compatible(object.proto) then
             self.parent:change_machine_to_proto(player, corresponding_proto)
             self.quality_proto = object.quality_proto
@@ -186,7 +186,7 @@ end
 function Machine:pack()
     return {
         class = self.class,
-        proto = prototyper.util.simplify_prototype(self.proto, "category"),
+        proto = prototyper.util.simplify_prototype(self.proto, "combined_category"),
         quality_proto = prototyper.util.simplify_prototype(self.quality_proto, nil),
         limit = self.limit,
         force_limit = self.force_limit,
@@ -228,17 +228,17 @@ end
 
 ---@return boolean valid
 function Machine:validate()
-    local recipe_category = self.parent.recipe.proto.category
-    if recipe_category ~= self.proto.category then
+    local recipe_category = self.parent.recipe.proto.combined_category
+    if recipe_category ~= self.proto.combined_category then
         local corresponding_proto = prototyper.util.find("machines", self.proto.name, recipe_category)
         if corresponding_proto then  -- check if the machine just moved categories
             self.proto = corresponding_proto  -- this is okay in this specific context
         else  -- otherwise, this machine is invalid
-            self.proto = prototyper.util.simplify_prototype(self.proto, "category")
+            self.proto = prototyper.util.simplify_prototype(self.proto, "combined_category")
             self.valid = false
         end
     else
-        self.proto = prototyper.util.validate_prototype_object(self.proto, "category")
+        self.proto = prototyper.util.validate_prototype_object(self.proto, "combined_category")
         self.valid = (not self.proto.simplified)
     end
 

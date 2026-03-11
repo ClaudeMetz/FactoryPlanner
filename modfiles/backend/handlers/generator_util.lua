@@ -264,56 +264,6 @@ function generator_util.is_compacting_recipe(proto)
 end
 
 
--- Determines whether this recipe is irrelevant or not and should thus be excluded
-local irrelevant_recipe_categories = {
-    --[[ ["Mining_Drones"] = {"mining-depot"},
-    ["Deep_Storage_Unit"] = {"deep-storage-item", "deep-storage-fluid",
-                             "deep-storage-item-big", "deep-storage-fluid-big",
-                             "deep-storage-item-mk2/3", "deep-storage-fluid-mk2/3"},
-    ["Satisfactorio"] = {"craft-bench", "equipment", "awesome-shop",
-                             "resource-scanner", "object-scanner", "building",
-                             "hub-progressing", "space-elevator", "mam"} ]]
-}
-
-local irrelevant_recipe_categories_lookup = {}  ---@type { [string] : true }
-for mod, categories in pairs(irrelevant_recipe_categories) do
-    for _, category in pairs(categories) do
-        if active_mods[mod] then
-            irrelevant_recipe_categories_lookup[category] = true
-        end
-    end
-end
-
----@param recipe LuaRecipePrototype
----@return boolean
-function generator_util.is_irrelevant_recipe(recipe)
-    return irrelevant_recipe_categories_lookup[recipe.category]
-end
-
-
--- Determines whether this machine is irrelevant or not and should thus be excluded
-local irrelevant_machine_mods = {
-    --[[ ["GhostOnWater"] = {"waterGhost%-.*"} ]]
-}
-
-local irrelevant_machines_lookup = {}  ---@type string[]
-for modname, patterns in pairs(irrelevant_machine_mods) do
-    for _, pattern in pairs(patterns) do
-        if active_mods[modname] then
-            table.insert(irrelevant_machines_lookup, pattern)
-        end
-    end
-end
-
----@param proto LuaEntityPrototype
----@return boolean
-function generator_util.is_irrelevant_machine(proto)
-    for _, pattern in pairs(irrelevant_machines_lookup) do
-        if string.match(proto.name, pattern) then return true end
-    end
-    return false
-end
-
 ---@param normal_quality_value number
 ---@return number base_value
 function generator_util.get_base_value(normal_quality_value)
@@ -440,24 +390,6 @@ function generator_util.format_effect_receiver(proto)
     return effect_receiver
 end
 
---- Needs to be weird because ordering of non-integer keys depends on insertion order
----@param proto FPMachinePrototype
-function generator_util.sort_machine_burner_categories(proto)
-    if not proto.burner then return end
-
-    local category_list = {}
-    for category, _ in pairs(proto.burner.categories) do
-        table.insert(category_list, category)
-    end
-    table.sort(category_list)
-
-    local category_index = {}
-    for _, category in ipairs(category_list) do
-        category_index[category] = true
-    end
-    proto.burner.categories = category_index
-end
-
 
 ---@param proto LuaEntityPrototype
 ---@return string? category
@@ -487,6 +419,43 @@ function generator_util.get_boiler_data(proto)
     end
 
     return category, input, output
+end
+
+
+---@param proto FPRecipePrototype | MachineBurner
+---@param combined_list { string: string[] }
+---@param used_categories { string: [FPMachinePrototype | FPFuelPrototype] }
+function generator_util.format_category_data(proto, combined_list, used_categories)
+    local list = {}
+
+    for category, _ in pairs(proto.categories) do
+        if used_categories[category] then
+            table.insert(list, category)
+        else  -- remove categories that don't have any valid uses
+            proto.categories[category] = nil
+        end
+    end
+
+    table.sort(list)  -- canonicalize the category order
+    proto.combined_category = table.concat(list, "|")
+
+    combined_list[proto.combined_category] = list
+end
+
+---@param combined_list { string: string[] }
+---@param used_categories { string: [FPMachinePrototype | FPFuelPrototype] }
+---@param final_list NamedPrototypesWithCategory<FPMachinePrototype | FPFuelPrototype>
+---@param insert_function function
+function generator_util.fill_categories(combined_list, used_categories, final_list, insert_function)
+    for combined_category, list in pairs(combined_list) do
+        for _, category in pairs(list) do
+            for _, proto in pairs(used_categories[category]) do
+                local copy = ftable.deep_copy(proto)
+                copy.combined_category = combined_category
+                insert_function(final_list, copy, combined_category)
+            end
+        end
+    end
 end
 
 
