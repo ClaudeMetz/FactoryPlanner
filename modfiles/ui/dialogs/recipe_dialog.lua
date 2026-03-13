@@ -111,7 +111,7 @@ local function attempt_adding_line(player, recipe_id, modal_data)
         -- Set ingredient temperature to match byproduct recipe
         if modal_data.production_type == "consume" then
             local proto = prototyper.util.find("items", modal_data.product_id, modal_data.category_id)
-            line.recipe.temperatures[proto.base_name] = proto.temperature
+            if proto.temperature then line.recipe.temperatures[proto.base_name] = proto.temperature end
         end
 
         local recipe_name = recipe_proto.localised_name
