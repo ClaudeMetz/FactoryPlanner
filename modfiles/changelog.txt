@@ -2,7 +2,15 @@
 Version: 0.00.00
 Date: 00. 00. 0000
   Features:
-    -
+    - 
+  Changes:
+    - 
+  Bugfixes:
+    - 
+
+---------------------------------------------------------------------------------------------------
+Version: 2.0.45
+Date: 13. 03. 2026
   Changes:
     - Implemented proper detection of machines for recipes with multiple categories (#611)
   Bugfixes:
