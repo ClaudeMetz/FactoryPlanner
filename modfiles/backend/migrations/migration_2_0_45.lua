@@ -59,9 +59,12 @@ function migration.player_table(player_table)
     end
 
     for _, default in pairs(player_table.preferences.default_fuels) do
-        local copy = ftable.deep_copy(default.proto)
-        copy.combined_category = fuels_map[default.proto.combined_category]
-        default.proto = copy
+        local new_category_name = fuels_map[default.proto.combined_category]
+        if new_category_name then
+            local copy = ftable.deep_copy(default.proto)
+            copy.combined_category = new_category_name
+            default.proto = copy
+        end
     end
 end
 
