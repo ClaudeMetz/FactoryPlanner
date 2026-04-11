@@ -81,6 +81,7 @@ function reload_preferences(player_table)
 
     reload("done_column", true)
     reload("percentage_column", false)
+    reload("energy_pollution_columns", false)
     reload("line_comment_column", false)
 
     reload("item_views", item_views.default_preferences())
