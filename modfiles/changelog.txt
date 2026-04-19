@@ -2,9 +2,15 @@
 Version: 0.00.00
 Date: 00. 00. 0000
   Features:
-    -
+    - 
   Changes:
-    -
+    - 
+  Bugfixes:
+    - 
+
+---------------------------------------------------------------------------------------------------
+Version: 2.0.50
+Date: 19. 04. 2026
   Bugfixes:
     - Fixed that the matrix solver would not work properly with high energy consumption recipes (#720) (Thanks scottmsul!)
 
