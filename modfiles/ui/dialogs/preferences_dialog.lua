@@ -316,7 +316,7 @@ local function open_preferences_dialog(player, modal_data)
     general_box.add{type="line", direction="horizontal"}.style.margin = {4, 0, 2, 0}
     add_dropdowns(preferences, general_box)
 
-    local production_preference_names = {"done_column", "percentage_column", "line_comment_column"}
+    local production_preference_names = {"done_column", "percentage_column", "energy_pollution_columns", "line_comment_column"}
     add_checkboxes_box(preferences, left_content_frame, "production", production_preference_names)
 
     left_content_frame.add{type="empty-widget", style="flib_vertical_pusher"}

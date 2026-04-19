@@ -9,6 +9,7 @@ local function generate_metadata(player, factory)
         matrix_solver_active = factory.matrix_solver_active,
         ingredient_satisfaction = preferences.ingredient_satisfaction,
         fold_out_subfloors = preferences.fold_out_subfloors,
+        energy_pollution_columns = (preferences.energy_pollution_columns == true),
         player = player,
         tooltips = tooltips.production_table,
         district = factory.parent
@@ -279,6 +280,8 @@ function builders.products(line, parent_flow, metadata)
         local tags = {mod="fp", on_gui_hover="set_tooltip", context="production_table"}
 
         if proto.type == "entity" and proto.special then
+            -- Skip special items when dedicated columns are enabled
+            if metadata.energy_pollution_columns then goto skip_product end
             relevant_flow = special_flow
 
             number_tooltip = util.format.special_tooltip(proto.name, product.amount)
@@ -329,6 +332,8 @@ function builders.byproducts(line, parent_flow, metadata)
         local amount, number_tooltip = nil, nil
 
         if proto.type == "entity" and proto.special then
+            -- Skip special items when dedicated columns are enabled
+            if metadata.energy_pollution_columns then goto skip_byproduct end
             relevant_flow = special_flow
             action = "act_on_line_special_byproduct"
 
@@ -409,6 +414,55 @@ local function add_special_ingredient(line, parent_flow, metadata, item, index, 
     metadata.tooltips[button.index] = tooltip
 end
 
+function builders.power(line, parent_flow, metadata)
+    local power_amount = 0
+    -- Sum up electric and heat power from ingredients
+    for _, ingredient in pairs(line.ingredients or {}) do
+        if ingredient.proto.type == "entity" and ingredient.proto.special then
+            if ingredient.proto.name == "custom-electric-power" or ingredient.proto.name == "custom-heat-power" then
+                power_amount = power_amount + ingredient.amount
+            end
+        end
+    end
+
+    if power_amount > 0 then
+        local label = parent_flow.add{type="label", caption=util.format.SI_value(power_amount, "W", 3)}
+        label.style.font = "default-semibold"
+    end
+end
+
+function builders.pollution(line, parent_flow, metadata)
+    local emission_amount = 0
+    local emission_name = nil
+    -- Find emissions from products (positive) or ingredients (negative/consumed)
+    for _, product in pairs(line.products or {}) do
+        if product.proto.type == "entity" and product.proto.special
+                and product.proto.name ~= "custom-electric-power" and product.proto.name ~= "custom-heat-power" then
+            emission_amount = emission_amount + product.amount
+            emission_name = product.proto.name
+        end
+    end
+    for _, byproduct in pairs(line.byproducts or {}) do
+        if byproduct.proto.type == "entity" and byproduct.proto.special
+                and byproduct.proto.name ~= "custom-electric-power" and byproduct.proto.name ~= "custom-heat-power" then
+            emission_amount = emission_amount + byproduct.amount
+            emission_name = byproduct.proto.name
+        end
+    end
+    for _, ingredient in pairs(line.ingredients or {}) do
+        if ingredient.proto.type == "entity" and ingredient.proto.special
+                and ingredient.proto.name ~= "custom-electric-power" and ingredient.proto.name ~= "custom-heat-power" then
+            emission_amount = emission_amount + ingredient.amount
+            emission_name = ingredient.proto.name
+        end
+    end
+
+    if emission_amount > 0 then
+        local label = parent_flow.add{type="label", caption=util.format.SI_value(emission_amount, "E/m", 3)}
+        label.style.font = "default-semibold"
+    end
+end
+
 function builders.ingredients(line, parent_flow, metadata)
     local items_flow = parent_flow.add{type="flow", direction="horizontal"}
     local special_flow = parent_flow.add{type="flow", direction="horizontal"}
@@ -417,6 +471,8 @@ function builders.ingredients(line, parent_flow, metadata)
         local proto = ingredient.proto
 
         if proto.type == "entity" and proto.special then
+            -- Skip special items (energy/pollution) when dedicated columns are enabled
+            if metadata.energy_pollution_columns then goto skip_ingredient end
             local number_line = {"", "\n", util.format.special_tooltip(proto.name, ingredient.amount)}
             add_special_ingredient(line, special_flow, metadata, ingredient, index, number_line)
             goto skip_ingredient
@@ -500,6 +556,8 @@ local all_production_columns = {
     {name="percentage", caption="% ", tooltip={"fp.column_percentage_tt"}, alignment="center"},
     {name="machine", caption={"fp.pu_machine", 1}, alignment="left"},
     {name="beacon", caption={"fp.pu_beacon", 1}, alignment="left"},
+    {name="power", caption={"fp.column_power"}, tooltip={"fp.column_power_tt"}, alignment="left"},
+    {name="pollution", caption={"fp.column_pollution"}, tooltip={"fp.column_pollution_tt"}, alignment="left"},
     {name="products", caption={"fp.pu_product", 2}, alignment="left"},
     {name="byproducts", caption={"fp.pu_byproduct", 2}, alignment="left"},
     {name="ingredients", caption={"fp.pu_ingredient", 2}, alignment="left"},
@@ -524,10 +582,16 @@ local function refresh_production_table(player)
     scroll_pane_production.clear()
 
     local production_columns = {}
+    local show_ep_columns = (preferences.energy_pollution_columns == true)
     for _, column_data in ipairs(all_production_columns) do
+        -- Power and pollution columns are controlled by a single preference
+        if column_data.name == "power" or column_data.name == "pollution" then
+            if show_ep_columns then
+                table.insert(production_columns, column_data)
+            end
         -- Explicit preferences comparison needed here, as both true and nil columns should be shown
         -- Some mods might remove all beacons, in which case the column shouldn't be shown at all
-        if preferences[column_data.name .. "_column"] ~= false and (next(storage.prototypes.beacons) ~= nil) then
+        elseif preferences[column_data.name .. "_column"] ~= false and (next(storage.prototypes.beacons) ~= nil) then
             table.insert(production_columns, column_data)
         end
     end
