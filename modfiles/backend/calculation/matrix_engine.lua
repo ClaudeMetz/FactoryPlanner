@@ -316,11 +316,12 @@ function matrix_engine.get_matrix_data(factory_data)
     local matrix = matrix_engine.get_matrix(factory_data, rows, columns)
 
     return {
-        matrix = matrix,
+        matrix = matrix.matrix,
         rows = rows,
         columns = columns,
         free_variables = free_variables,
         matrix_free_items = matrix_free_items,
+        free_variable_scale_factors = matrix.free_variable_scale_factors
     }
 end
 
@@ -332,6 +333,7 @@ function matrix_engine.run_matrix_solver(factory_data, check_linear_dependence)
     local columns = matrix_data.columns
     local free_variables = matrix_data.free_variables
     local matrix_free_items = matrix_data.matrix_free_items
+    local free_variable_scale_factors = matrix_data.free_variable_scale_factors
 
     matrix_engine.to_reduced_row_echelon_form(matrix)
     if check_linear_dependence then
@@ -355,6 +357,11 @@ function matrix_engine.run_matrix_solver(factory_data, check_linear_dependence)
             end
         end
         return linearly_dependent_variables
+    end
+
+    -- rescale ouput column based on free variable scale factors
+    for idx, scale_factor in pairs(free_variable_scale_factors) do
+        matrix[idx][#columns.values+1] = matrix[idx][#columns.values+1] * scale_factor
     end
 
     local function set_line_results(prefix, floor)
@@ -570,6 +577,7 @@ function matrix_engine.get_matrix(factory_data, rows, columns)
         local col_str = columns.values[col_num]
         local col_split_str = util.split_string(col_str, "_")
         local col_type = col_split_str[1]
+        -- note this string "item" is an internal matrix-solver convention and is unrelated to item types
         if col_type == "item" then
             local item_id = col_split_str[2].."_"..col_split_str[3]
             local row_num = rows.map[item_id]
@@ -617,7 +625,45 @@ function matrix_engine.get_matrix(factory_data, rows, columns)
         end
     end
 
-    return matrix
+    -- we rescale free items such that "1" is equal to the max value of its unit in any other equations
+    -- required to help mitigate issues with large units such as energy which can be greater than 10^9 in certain recipes
+    -- also rescale the matrix such that the max value is 1 in any row, which helps for the transpose solve
+    local free_variables = {}
+    for col = 1, #columns.values do
+        local num_non_zero = 0
+        for row = 1, #rows.values do
+            if matrix[row][col] ~= 0 then
+                num_non_zero = num_non_zero + 1
+            end
+        end
+        if num_non_zero == 1 then
+            free_variables[col] = row
+        end
+    end
+
+    local free_variable_scale_factors = {}
+    for row = 1, #rows.values do
+        local max_row_value = 0
+        for col = 1, #columns.values+1 do
+            if (free_variables[col] == nil) and (math.abs(matrix[row][col]) > max_row_value) then
+                max_row_value = math.abs(matrix[row][col])
+            end
+        end
+        if max_row_value > 0 then
+            for col = 1, #columns.values+1 do
+                if (free_variables[col] == nil) then
+                    matrix[row][col] = matrix[row][col] / max_row_value
+                elseif (free_variables[col] == row) then
+                    free_variable_scale_factors[col] = max_row_value
+                end
+            end
+        end
+    end
+
+    return {
+        matrix = matrix,
+        free_variable_scale_factors = free_variable_scale_factors
+    }
 end
 
 function matrix_engine.get_line_aggregate(line_data, player_index, floor_id, machine_count, factory_metadata, free_variables)
@@ -771,7 +817,7 @@ function matrix_engine.to_reduced_row_echelon_form(m)
             end
         end
     end
-    local tolerance = 1e-10 * max_value
+    local tolerance = 1e-12 * max_value
 
     local pivot_row = 1
 
