@@ -195,7 +195,9 @@ function Line:summarize_effects()
     if has_mupgrades then
 	local name = self.machine.proto.name
 	local meffects = remote.call("machine-upgrades-get-modifiers", "get_modifiers", name)
-	local productivity_applicable = self.recipe.proto.allowed_effects["productivity"]
+	local e = self.recipe.proto.allowed_effects
+	local productivity_applicable = false
+	if e ~= nil then productivity_applicable = e["productivity"] end
 	if not productivity_applicable then
 		meffects["productivity"] = 0
 	end
