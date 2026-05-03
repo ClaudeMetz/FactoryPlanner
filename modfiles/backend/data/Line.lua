@@ -195,6 +195,10 @@ function Line:summarize_effects()
     if has_mupgrades then
 	local name = self.machine.proto.name
 	local meffects = remote.call("machine-upgrades-get-modifiers", "get_modifiers", name)
+	local productivity_applicable = self.recipe.proto.allowed_effects["productivity"]
+	if not productivity_applicable then
+		meffects["productivity"] = 0
+	end
 	-- We use percent, machine upgrades does not.
 	for item, v in pairs(meffects) do
 		meffects[item] = v * 100
