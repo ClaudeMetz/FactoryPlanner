@@ -182,16 +182,26 @@ function Line:setup_beacon(player)
     end
 end
 
+local has_mupgrades = remote.interfaces["machine-upgrades-get-modifiers"]
 
 ---@return boolean uses_effects
 function Line:uses_beacon_effects(player)
     return self.machine.proto.effect_receiver.uses_beacon_effects
 end
 
-
 function Line:summarize_effects()
     local beacon_effects = (self.beacon) and self.beacon.total_effects or nil
     local merged_effects = util.effects.merge({self.machine.total_effects, beacon_effects})
+    if has_mupgrades then
+	local name = self.machine.proto.name
+	local meffects = remote.call("machine-upgrades-get-modifiers", "get_modifiers", name)
+	-- We use percent, machine upgrades does not.
+	for item, v in pairs(meffects) do
+		meffects[item] = v * 100
+	end
+	merged_effects = util.effects.merge({merged_effects, meffects})
+    end
+
     local limited_effects, indications = util.effects.limit(merged_effects, self.recipe.proto.maximum_productivity)
 
     self.total_effects = limited_effects
