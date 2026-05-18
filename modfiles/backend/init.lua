@@ -237,6 +237,8 @@ local function global_init()
     -- Disable debugging actions when taking screenshots
     if remote.interfaces["screenshotter_output"] then DEVELOPER_MODE = false end
 
+    if true then error("fail") end
+
     -- Set up a new save for development if necessary
     local freeplay = remote.interfaces["freeplay"]
     if DEVELOPER_MODE and freeplay then  -- Disable freeplay popup-message
