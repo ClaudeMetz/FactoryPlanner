@@ -261,9 +261,6 @@ local function global_init()
     for _, player in pairs(game.players) do player_init(player) end
 end
 
-
-if true then error("fail") end
-
 -- Prompts migrations, a GUI and prototype reload, and a validity check on all factories
 local function handle_configuration_change()
     local migrations = migrator.determine_migrations()
