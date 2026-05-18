@@ -21,6 +21,6 @@ jobs:
             --create /tmp/test-map.zip \
             2>&1 | tee /tmp/factorio.log || true
 
-          if grep -q "^Error" /tmp/factorio.log; then
+          if grep -q "Error" /tmp/factorio.log; then
             exit 1
           fi
