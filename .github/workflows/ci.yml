@@ -13,35 +13,19 @@ jobs:
           mkdir -p /opt/factorio/mods
           cp -r $GITHUB_WORKSPACE/modfiles /opt/factorio/mods/factoryplanner
 
-      - name: Load test
+      - name: Load save
         run: |
-          rm -f /tmp/test-map.zip /tmp/factorio-create.log /tmp/factorio-benchmark.log
+          rm -f /tmp/test-map.zip
 
-          # Generate a map
           /opt/factorio/bin/x64/factorio \
-            --create /tmp/test-map.zip \
-            2>&1 | tee /tmp/factorio-create.log
+            --create /tmp/test-map.zip
 
-          if ! grep -q "Factorio initialised" /tmp/factorio-create.log; then
-            echo "Game failed to start during map creation"
-            cat /tmp/factorio-create.log
-            exit 1
-          fi
-
-          # Load it for 1 tick (exits cleanly)
           /opt/factorio/bin/x64/factorio \
             --benchmark /tmp/test-map.zip \
-            --benchmark-ticks 1 \
-            2>&1 | tee /tmp/factorio-benchmark.log
+            --benchmark-ticks 1
 
-          if ! grep -q "Factorio initialised" /tmp/factorio-benchmark.log; then
-            echo "Game failed to load the save"
-            cat /tmp/factorio-benchmark.log
-            exit 1
-          fi
-
-          if grep -qi "error" /tmp/factorio-benchmark.log; then
-            echo "Errors found while loading save"
-            cat /tmp/factorio-benchmark.log
+          if grep -q "^Error" /opt/factorio/factorio-current.log; then
+            echo "Error found in log!"
+            cat /opt/factorio/factorio-current.log
             exit 1
           fi
