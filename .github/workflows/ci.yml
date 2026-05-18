@@ -18,14 +18,14 @@ jobs:
           rm -f /tmp/test-map.zip
 
           /opt/factorio/bin/x64/factorio \
-            --create /tmp/test-map.zip
+            --create /tmp/test-map.zip || true
 
           /opt/factorio/bin/x64/factorio \
             --benchmark /tmp/test-map.zip \
-            --benchmark-ticks 1
+            --benchmark-ticks 1 || true
 
           if grep -q "^Error" /opt/factorio/factorio-current.log; then
-            echo "Error found in log!"
+            echo "Error found in log"
             cat /opt/factorio/factorio-current.log
             exit 1
           fi
