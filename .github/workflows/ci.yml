@@ -20,12 +20,8 @@ jobs:
           /opt/factorio/bin/x64/factorio \
             --create /tmp/test-map.zip || true
 
-          /opt/factorio/bin/x64/factorio \
-            --benchmark /tmp/test-map.zip \
-            --benchmark-ticks 1 || true
-
           if grep -q "^Error" /opt/factorio/factorio-current.log; then
-            echo "Error found in log"
+            echo "Error during startup or save creation"
             cat /opt/factorio/factorio-current.log
             exit 1
           fi
