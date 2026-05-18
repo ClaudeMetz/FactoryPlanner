@@ -22,7 +22,5 @@ jobs:
             2>&1 | tee /tmp/factorio.log || true
 
           if grep -q "^Error" /tmp/factorio.log; then
-            echo "Error during startup or save creation"
-            cat /tmp/factorio.log
             exit 1
           fi
