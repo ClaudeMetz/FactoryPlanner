@@ -9,6 +9,7 @@ jobs:
 
       - name: Install mod
         run: |
+          rm -rf /opt/factorio/mods/factoryplanner
           mkdir -p /opt/factorio/mods
           cp -r $GITHUB_WORKSPACE/modfiles /opt/factorio/mods/factoryplanner
 
