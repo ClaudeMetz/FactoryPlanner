@@ -14,6 +14,8 @@ jobs:
 
       - name: Load test
         run: |
+          rm -f /tmp/test-map.zip /tmp/factorio-create.log /tmp/factorio-benchmark.log
+
           # Generate a map
           /opt/factorio/bin/x64/factorio \
             --create /tmp/test-map.zip \
