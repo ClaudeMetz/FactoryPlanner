@@ -1,0 +1,44 @@
+name: CI
+on: [push, pull_request]
+
+jobs:
+  test:
+    runs-on: self-hosted
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install mod
+        run: |
+          mkdir -p /opt/factorio/mods
+          cp -r $GITHUB_WORKSPACE/modfiles /opt/factorio/mods/factoryplanner
+
+      - name: Load test
+        run: |
+          # Generate a map
+          /opt/factorio/bin/x64/factorio \
+            --create /tmp/test-map.zip \
+            2>&1 | tee /tmp/factorio-create.log
+
+          if ! grep -q "Factorio initialised" /tmp/factorio-create.log; then
+            echo "Game failed to start during map creation"
+            cat /tmp/factorio-create.log
+            exit 1
+          fi
+
+          # Load it for 1 tick (exits cleanly)
+          /opt/factorio/bin/x64/factorio \
+            --benchmark /tmp/test-map.zip \
+            --benchmark-ticks 1 \
+            2>&1 | tee /tmp/factorio-benchmark.log
+
+          if ! grep -q "Factorio initialised" /tmp/factorio-benchmark.log; then
+            echo "Game failed to load the save"
+            cat /tmp/factorio-benchmark.log
+            exit 1
+          fi
+
+          if grep -qi "error" /tmp/factorio-benchmark.log; then
+            echo "Errors found while loading save"
+            cat /tmp/factorio-benchmark.log
+            exit 1
+          fi
