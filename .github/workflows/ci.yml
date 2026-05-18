@@ -19,8 +19,8 @@ jobs:
 
           /opt/factorio/bin/x64/factorio \
             --create /tmp/test-map.zip \
-            2>&1 | tee /tmp/factorio.log || true
+            2>&1 | tee /tmp/factorio.log
 
-          if grep -q "Error" /tmp/factorio.log; then
+          if [ ${PIPESTATUS[0]} -ne 0 ] || grep -q "Error" /tmp/factorio.log; then
             exit 1
           fi
