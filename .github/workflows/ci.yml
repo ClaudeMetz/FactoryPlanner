@@ -18,13 +18,11 @@ jobs:
           rm -f /tmp/test-map.zip
 
           /opt/factorio/bin/x64/factorio \
-            --create /tmp/test-map.zip || true
+            --create /tmp/test-map.zip \
+            2>&1 | tee /tmp/factorio.log || true
 
-          echo "--- Log file contents ---"
-            cat /opt/factorio/factorio-current.log
-
-          if grep -q "^Error" /opt/factorio/factorio-current.log; then
+          if grep -q "^Error" /tmp/factorio.log; then
             echo "Error during startup or save creation"
-            cat /opt/factorio/factorio-current.log
+            cat /tmp/factorio.log
             exit 1
           fi
