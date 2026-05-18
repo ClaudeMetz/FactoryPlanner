@@ -20,6 +20,9 @@ jobs:
           /opt/factorio/bin/x64/factorio \
             --create /tmp/test-map.zip || true
 
+          echo "--- Log file contents ---"
+            cat /opt/factorio/factorio-current.log
+
           if grep -q "^Error" /opt/factorio/factorio-current.log; then
             echo "Error during startup or save creation"
             cat /opt/factorio/factorio-current.log
