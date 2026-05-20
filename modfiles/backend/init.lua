@@ -259,6 +259,8 @@ local function global_init()
     prototyper.util.build_translation_dictionaries()
 
     for _, player in pairs(game.players) do player_init(player) end
+
+    if test_runner then test_runner() end  -- Run if a test mod is active
 end
 
 -- Prompts migrations, a GUI and prototype reload, and a validity check on all factories

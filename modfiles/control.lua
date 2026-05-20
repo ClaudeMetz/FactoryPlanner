@@ -77,8 +77,7 @@ local test_mods = {"tests-generator"}
 
 for _, mod in pairs(test_mods) do
     if script.active_mods[mod] then
-        -- Sets up on_game_created_from_scenario to start running
-        require("__" .. mod .. "__.hook")
+        test_runner = require("__" .. mod .. "__.runner")
         break  -- failsafe, one at a time
     end
 end
