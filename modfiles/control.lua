@@ -70,3 +70,5 @@ DEV_EXPORT_STRING = "eNrdVkuPnDAM/i85DyMew/PYQ0+tVKnHaoRCMLNRE8KGsO1oxH+vA8wUmJ3
 ---@alias AllowedEffects { [string]: boolean }
 ---@alias ItemType string
 ---@alias ItemName string
+
+error()

@@ -1,26 +1,9 @@
 name: Mod CI
 on: [push, pull_request]
-
 jobs:
   save-start:
     runs-on: self-hosted
     steps:
       - uses: actions/checkout@v5
-
-      - name: Install mod
-        run: |
-          rm -rf /opt/factorio/mods/factoryplanner
-          mkdir -p /opt/factorio/mods
-          cp -r $GITHUB_WORKSPACE/modfiles /opt/factorio/mods/factoryplanner
-
-      - name: Load save
-        run: |
-          rm -f /tmp/test-map.zip
-
-          /opt/factorio/bin/x64/factorio \
-            --create /tmp/test-map.zip \
-            2>&1 | tee /tmp/factorio.log
-
-          if [ ${PIPESTATUS[0]} -ne 0 ] || grep -q "Error" /tmp/factorio.log; then
-            exit 1
-          fi
+      - name: Run CI
+        run: bash tests/run.sh
