@@ -339,17 +339,12 @@ script.on_event(translator.on_player_dictionaries_ready, dictionaries_ready)
 
 
 -- ** COMMANDS **
--- These are existence-checked for resiliance to double-loading from test harness
-if not commands.commands['fp-restart-translation'] then
-    commands.add_command("fp-restart-translation", {"command-help.fp_restart_translation"}, function()
-        translator.on_init()
-        prototyper.util.build_translation_dictionaries()
-    end)
-end
-if not commands.commands['fp-shrinkwrap-interface'] then
-    commands.add_command("fp-shrinkwrap-interface", {"command-help.fp_shrinkwrap_interface"}, function(command)
-        if command.player_index then
-            util.nth_tick.register((game.tick + 1), "shrinkwrap_interface", {player_index=command.player_index})
-        end
-    end)
-end
+commands.add_command("fp-restart-translation", {"command-help.fp_restart_translation"}, function()
+    translator.on_init()
+    prototyper.util.build_translation_dictionaries()
+end)
+commands.add_command("fp-shrinkwrap-interface", {"command-help.fp_shrinkwrap_interface"}, function(command)
+    if command.player_index then
+        util.nth_tick.register((game.tick + 1), "shrinkwrap_interface", {player_index=command.player_index})
+    end
+end)

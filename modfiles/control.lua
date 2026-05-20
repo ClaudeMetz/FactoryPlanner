@@ -70,3 +70,15 @@ DEV_EXPORT_STRING = "eNrdVkuPnDAM/i85DyMew/PYQ0+tVKnHaoRCMLNRE8KGsO1oxH+vA8wUmJ3
 ---@alias AllowedEffects { [string]: boolean }
 ---@alias ItemType string
 ---@alias ItemName string
+
+
+-- Import test code to run within the mod's context
+local test_mods = {"tests-generator"}
+
+for _, mod in pairs(test_mods) do
+    if script.active_mods[mod] then
+        -- Sets up on_game_created_from_scenario to start running
+        require("__" .. mod .. "__.hook")
+        break  -- failsafe, one at a time
+    end
+end
