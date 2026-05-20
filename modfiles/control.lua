@@ -81,3 +81,9 @@ for _, mod in pairs(test_mods) do
         break  -- failsafe, one at a time
     end
 end
+
+-- Import screenshotter code if its scenario is active
+if remote.interfaces["fp_screenshotter"] then
+    DEVELOPER_MODE = false
+    require("scenarios.screenshotter.script")
+end

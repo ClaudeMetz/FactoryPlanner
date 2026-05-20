@@ -4,7 +4,6 @@ local loader = require("backend.handlers.loader")
 local migrator = require("backend.handlers.migrator")
 require("backend.handlers.prototyper")
 require("backend.handlers.defaults")
-require("backend.handlers.screenshotter")
 
 require("backend.calculation.solver")
 
@@ -234,9 +233,6 @@ end
 storage = {}  -- just for the type checker, doesn't do anything
 
 local function global_init()
-    -- Disable debugging actions when taking screenshots
-    if remote.interfaces["screenshotter_output"] then DEVELOPER_MODE = false end
-
     -- Set up a new save for development if necessary
     local freeplay = remote.interfaces["freeplay"]
     if DEVELOPER_MODE and freeplay then  -- Disable freeplay popup-message
