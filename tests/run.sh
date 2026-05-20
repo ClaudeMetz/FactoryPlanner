@@ -10,7 +10,11 @@ trap "rm -rf $TMPDIR" EXIT
 
 mkdir -p $TMPDIR/mods
 cp -r $WORKSPACE/modfiles $TMPDIR/mods/factoryplanner
-git clone -q --depth 1 --branch v0.16.5 https://codeberg.org/raiguard/flib $TMPDIR/mods/flib
+FLIB_CACHE="/tmp/flib-cache/v0.16.5"
+if [ ! -d "$FLIB_CACHE" ]; then
+  git clone -q --depth 1 --branch v0.16.5 https://codeberg.org/raiguard/flib "$FLIB_CACHE"
+fi
+cp -r "$FLIB_CACHE" $TMPDIR/mods/flib
 
 case $TEST in
   save-create)
