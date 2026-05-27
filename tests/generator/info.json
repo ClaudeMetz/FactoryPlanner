@@ -1,7 +1,7 @@
 {
     "name": "tests-generator",
-    "version": "2.0.0",
+    "version": "2.1.0",
     "title": "Tests: Generator",
     "author": "Therenas",
-    "factorio_version": "2.0"
+    "factorio_version": "2.1"
 }
