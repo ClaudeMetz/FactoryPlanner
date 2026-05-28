@@ -244,6 +244,16 @@ local function handle_view_move(player, tags, _)
     local new_index = (tags.direction == "up") and (tags.index-1) or (tags.index+1)
     table.insert(view_preferences.views, new_index, view_preference)
 
+    -- Make sure the selected view stays selected
+    local selected = view_preferences.selected_index
+    if tags.index == selected then
+        view_preferences.selected_index = new_index
+    elseif tags.index < selected and new_index >= selected then
+        view_preferences.selected_index = selected - 1
+    elseif tags.index > selected and new_index <= selected then
+        view_preferences.selected_index = selected + 1
+    end
+
     item_views.rebuild_interface(player)  -- rebuild because of the move
     refresh_views_table(player)
 
