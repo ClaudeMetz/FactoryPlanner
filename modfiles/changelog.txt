@@ -6,7 +6,7 @@ Date: 00. 00. 0000
   Changes:
     -
   Bugfixes:
-    -
+    - Fixed a crash when trying to add an item to a constant combinator in the cursor (#751)
 
 ---------------------------------------------------------------------------------------------------
 Version: 2.0.50
