@@ -271,22 +271,22 @@ local function build_factory_list(player)
     -- This is not really a list-box, but it imitates one and allows additional features
     local listbox_factories = frame_vertical.add{type="scroll-pane", style="list_box_under_subheader_scroll_pane"}
     listbox_factories.style.vertically_stretchable = true
+    listbox_factories.style.horizontally_stretchable = true
     listbox_factories.horizontal_scroll_policy = "never"
-    listbox_factories.style.extra_right_padding_when_activated = -12
     local flow_factories = listbox_factories.add{type="flow", direction="vertical"}
     flow_factories.style.vertical_spacing = 0
     main_elements.factory_list["factory_listbox"] = flow_factories
 
     local flow_search = frame_vertical.add{type="flow", direction="horizontal"}
     flow_search.style.height = MAGIC_NUMBERS.search_footer_height
-    flow_search.style.padding = {0, 12}
+    flow_search.style.padding = {0, 4, 0, 12}
     flow_search.style.vertical_align = "center"
 
     flow_search.add{type="label", caption={"fp.search"}, tooltip={"fp.factory_search_tt"}}
     flow_search.add{type="empty-widget", style="flib_horizontal_pusher"}
     local textfield_search = flow_search.add{type="textfield", style="search_popup_textfield",
         tags={mod="fp", on_gui_text_changed="factory_searchfield"}}
-    textfield_search.style.width = 225
+    textfield_search.style.width = 230
     main_elements.factory_list["search_textfield"] = textfield_search
 
     refresh_factory_list(player)
