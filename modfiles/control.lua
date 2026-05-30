@@ -1,5 +1,5 @@
 SPACE_TRAVEL = script.feature_flags["space_travel"]
-DEVELOPER_MODE = (__DebugAdapter) and __DebugAdapter.tags["FP_DEBUG"] or false
+DEVELOPER_MODE = (__DebugAdapter) and __DebugAdapter.tags["FP_DEBUG"] == "true" or false
 llog = require("util.llog")
 
 MAGIC_NUMBERS = {

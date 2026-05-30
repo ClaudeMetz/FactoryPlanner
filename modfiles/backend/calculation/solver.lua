@@ -368,7 +368,7 @@ function solver.set_line_result(result)
 end
 
 
--- **** UTIL ****
+-- ** UTIL **
 -- Calculates the product amount after applying productivity bonuses
 function solver_util.determine_prodded_amount(item, total_effects, maximum_productivity)
     -- No negative productivity, and none above the recipe-determined cap

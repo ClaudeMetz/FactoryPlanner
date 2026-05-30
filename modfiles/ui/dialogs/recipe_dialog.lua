@@ -12,44 +12,50 @@ local function match_recipes(player, modal_data, proto)
     local counts = {disabled = 0, hidden = 0, disabled_hidden = 0}
 
     local map = RECIPE_MAPS[modal_data.production_type][proto.category_id][proto.id]
+    local overwrite_recipe_picker = storage.integrations.overwrite_recipe_picker or {}
+
     if map ~= nil then  -- this being nil means that the item has no recipes
         for recipe_id, _ in pairs(map) do
             local recipe = prototyper.util.find("recipes", recipe_id, nil)
             local force_recipe = force_recipes[recipe.name]
 
-            if recipe.custom then  -- Add custom recipes by default
-                table.insert(relevant_recipes, {proto=recipe, enabled=true})
+            if recipe.custom then
                 -- These are always enabled and non-hidden, so no need to tally them
-                -- They can also not be disabled by user preference
+                table.insert(relevant_recipes, {proto=recipe, enabled=true})
 
             elseif force_recipe ~= nil then  -- only add recipes that exist on the current force
-                local user_disabled = (preferences.ignore_barreling_recipes and recipe.barreling)
-                    or (preferences.ignore_recycling_recipes and recipe.recycling)
-                user_disabled_recipe = user_disabled_recipe or user_disabled
+                local recipe_enabled, recipe_hidden = force_recipe.enabled, recipe.hidden
+                local overwrite = overwrite_recipe_picker[recipe.name]
+                local recipe_should_show = overwrite
 
-                if not user_disabled then  -- only add recipes that are not disabled by the user
-                    local recipe_enabled, recipe_hidden = force_recipe.enabled, recipe.hidden
-                    local recipe_should_show = recipe.enabled_from_the_start or recipe_enabled
+                if overwrite == nil then  -- run this in the normal case
+                    local user_disabled = (preferences.ignore_barreling_recipes and recipe.barreling)
+                        or (preferences.ignore_recycling_recipes and recipe.recycling)
+                    user_disabled_recipe = user_disabled_recipe or user_disabled
 
-                    -- If the recipe is not enabled, it has to be made sure that there is at
-                    -- least one enabled technology that could potentially enable it
-                    if not recipe_should_show and recipe.enabling_technologies ~= nil then
-                        for _, technology_name in pairs(recipe.enabling_technologies) do
-                            local force_tech = force_technologies[technology_name]
-                            if force_tech and (force_tech.enabled or force_tech.visible_when_disabled) then
-                                recipe_should_show = true
-                                break
+                    if not user_disabled then  -- only add recipes that are not disabled by the user
+                        recipe_should_show = recipe.enabled_from_the_start or recipe_enabled
+
+                        -- If the recipe is not enabled, it has to be made sure that there is at
+                        -- least one enabled technology that could potentially enable it
+                        if not recipe_should_show and recipe.enabling_technologies ~= nil then
+                            for _, technology_name in pairs(recipe.enabling_technologies) do
+                                local force_tech = force_technologies[technology_name]
+                                if force_tech and (force_tech.enabled or force_tech.visible_when_disabled) then
+                                    recipe_should_show = true
+                                    break
+                                end
                             end
                         end
                     end
+                end
 
-                    if recipe_should_show then
-                        table.insert(relevant_recipes, {proto=recipe, enabled=recipe_enabled})
+                if recipe_should_show then
+                    table.insert(relevant_recipes, {proto=recipe, enabled=recipe_enabled})
 
-                        if not recipe_enabled and recipe_hidden then counts.disabled_hidden = counts.disabled_hidden + 1
-                        elseif not recipe_enabled then counts.disabled = counts.disabled + 1
-                        elseif recipe_hidden then counts.hidden = counts.hidden + 1 end
-                    end
+                    if not recipe_enabled and recipe_hidden then counts.disabled_hidden = counts.disabled_hidden + 1
+                    elseif not recipe_enabled then counts.disabled = counts.disabled + 1
+                    elseif recipe_hidden then counts.hidden = counts.hidden + 1 end
                 end
             end
         end

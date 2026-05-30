@@ -4,6 +4,7 @@ local loader = require("backend.handlers.loader")
 local migrator = require("backend.handlers.migrator")
 require("backend.handlers.prototyper")
 require("backend.handlers.defaults")
+require("backend.handlers.integrator")
 
 require("backend.calculation.solver")
 
@@ -227,6 +228,7 @@ end
 ---@class GlobalTable
 ---@field players { [PlayerIndex]: PlayerTable }
 ---@field prototypes PrototypeLists
+---@field integrations IntegrationsTable
 ---@field next_object_ID integer
 ---@field nth_tick_events { [Tick]: NthTickEvent }
 ---@field installed_mods ModToVersion
@@ -245,6 +247,7 @@ local function global_init()
     storage.nth_tick_events = {}  -- Save metadata about currently registered on_nth_tick events
 
     storage.prototypes = {}  -- Table containing all relevant prototypes indexed by ID
+    storage.integrations = {}  -- Table containing all integration data collected from other mods
     prototyper.build()  -- Generate all relevant prototypes and save them in storage
     run_on_load(true)  -- Run loader which creates useful indexes of prototype data
     generate_object_index()  -- This just initializes the OBJECT_INDEX variable
@@ -271,6 +274,7 @@ local function handle_configuration_change()
     end
 
     storage.prototypes = {}
+    storage.integrations = {}
     prototyper.build()
     run_on_load(true)
 
