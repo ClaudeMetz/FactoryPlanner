@@ -150,7 +150,7 @@ local function add_to_item_combinator(player, blueprint_entity, item_proto, amou
             name = item_name,
             quality = "normal",
             comparator = "=",
-            count = math.ceil(amount * timescale - 1e-6)
+            count = math.ceil(amount * timescale - MAGIC_NUMBERS.margin_of_error)
         })
     end
 

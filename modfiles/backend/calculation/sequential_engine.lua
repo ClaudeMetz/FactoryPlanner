@@ -79,7 +79,7 @@ local function update_line(line_data, aggregate, looped_fuel)
     -- Determine machine count
     local machine_count = production_ratio / crafts_per_second
     -- Add the integer machine count to the aggregate so it can be displayed on the origin_line
-    aggregate.machine_count = aggregate.machine_count + math.ceil(machine_count - 1e-6)
+    aggregate.machine_count = aggregate.machine_count + math.ceil(machine_count - MAGIC_NUMBERS.margin_of_error)
 
 
     -- Determines the amount of the given item, considering productivity
@@ -106,7 +106,7 @@ local function update_line(line_data, aggregate, looped_fuel)
                 local initial_demand = ingredient_class[fuel_name]
                 local ratio = fuel_amount / initial_demand
 
-                if ratio + 1e-6 < 1 then  -- a ratio >= 1 means this can't outproduce itself
+                if ratio + MAGIC_NUMBERS.margin_of_error < 1 then  -- a ratio >= 1 means this can't outproduce itself
                     -- Need a lot of precision here, hence the exponent of 20
                     local bumped_demand = initial_demand * ((1 - ratio ^ 20) / (1 - ratio))
                     ingredient_class[fuel_name] = bumped_demand

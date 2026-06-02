@@ -386,7 +386,7 @@ function solver_util.determine_energy_consumption_and_emissions(machine_proto, r
         fuel_proto, machine_count, energy_usage, total_effects, pollutant_type)
     local consumption_multiplier = 1 + (total_effects.consumption / MAGIC_NUMBERS.effect_precision)
     local energy_consumption = machine_count * (energy_usage * 60) * consumption_multiplier
-    local drain = math.ceil(machine_count - 1e-6) * (machine_proto.energy_drain * 60)
+    local drain = math.ceil(machine_count - MAGIC_NUMBERS.margin_of_error) * (machine_proto.energy_drain * 60)
     local total_consumption = energy_consumption + drain
 
     if pollutant_type == nil then return total_consumption, 0 end

@@ -385,7 +385,7 @@ function matrix_engine.run_matrix_solver(factory_data, check_linear_dependence)
 
             -- Lines with subfloors show actual number of machines to build, so each counts are rounded up when summed
             floor_aggregate.machine_count = floor_aggregate.machine_count +
-                math.ceil(line_aggregate.machine_count - 1e-6)
+                math.ceil(line_aggregate.machine_count - MAGIC_NUMBERS.margin_of_error)
 
             for _, class in pairs{"Product", "Byproduct", "Ingredient"} do
                 for _, item in pairs(structures.class.list(line_aggregate[class])) do
