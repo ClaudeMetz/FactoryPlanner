@@ -1,7 +1,7 @@
 local Realm = require("backend.data.Realm")
 
 local loader = require("backend.handlers.loader")
-local migrator = require("backend.handlers.migrator")
+local migrator = require("backend.migrations.migrator")
 require("backend.handlers.prototyper")
 require("backend.handlers.defaults")
 require("backend.handlers.integrator")
