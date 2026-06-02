@@ -5,7 +5,6 @@
     "author": "Therenas",
     "factorio_version": "2.1",
     "dependencies": [
-        "base >= 2.1.0",
-        "flib >= 0.15.0"
+        "base >= 2.1.0"
     ]
 }

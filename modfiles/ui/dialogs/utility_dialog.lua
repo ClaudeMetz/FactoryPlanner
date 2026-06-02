@@ -441,7 +441,7 @@ local function import_productivity_boni(player, _, event)
     if not export_factory then return end  -- dropdown starts blank
 
     local import_factory = util.context.get(player, "Factory")  --[[@as Factory]]
-    import_factory.productivity_boni = ftable.deep_copy(export_factory.productivity_boni)
+    import_factory.productivity_boni = util.flib.deep_copy(export_factory.productivity_boni)
 
     utility_structures.productivity_boni(player, modal_data)
     modal_data.recalculate = true

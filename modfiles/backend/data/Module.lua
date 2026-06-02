@@ -49,7 +49,7 @@ function Module:set_amount(new_amount)
 end
 
 function Module:summarize_effects()
-    local effects = ftable.shallow_copy(BLANK_EFFECTS)
+    local effects = util.flib.shallow_copy(BLANK_EFFECTS)
     for name, effect in pairs(self.proto.effects) do
         if util.effects.is_positive(name, effect) then
             local e = effect * self.quality_proto.default_multiplier  -- needs truncating towards zero

@@ -169,7 +169,7 @@ function generator.recipes.generate()
             local recipe = recipes[proto.fixed_recipe]
             if recipe ~= nil then
                 local category = proto.name .. "-using-" .. proto.fixed_recipe
-                local recipe_copy = ftable.deep_copy(recipe)
+                local recipe_copy = util.flib.deep_copy(recipe)
                 recipe_copy.name = recipe.name .. "-for-" .. proto.name
                 recipe_copy.categories = {[category] = true}
                 recipe_copy.custom = true
@@ -286,7 +286,7 @@ function generator.recipes.generate()
                             launch_recipe.categories = {["launch-rocket"] = true}
                             launch_recipe.energy = 1
 
-                            local ingredients = {ftable.deep_copy(rocket_parts_ingredient),
+                            local ingredients = {util.flib.deep_copy(rocket_parts_ingredient),
                                 {type="item", name=item_name, amount=1}}
                             generator_util.format_recipe(launch_recipe, products, products[1], ingredients)
                             insert_prototype(recipes, launch_recipe, nil)
@@ -304,7 +304,7 @@ function generator.recipes.generate()
                         rocket_recipe.energy = 1
 
                         local rocket_products = {{type="entity", name="custom-silo-rocket", amount=1}}
-                        local ingredients = {ftable.deep_copy(rocket_parts_ingredient)}
+                        local ingredients = {util.flib.deep_copy(rocket_parts_ingredient)}
                         generator_util.format_recipe(rocket_recipe, rocket_products, rocket_products[1], ingredients)
                         insert_prototype(recipes, rocket_recipe, nil)
                     end

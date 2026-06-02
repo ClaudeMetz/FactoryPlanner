@@ -235,7 +235,7 @@ local function update_ingredient_satisfaction(floor, product_class)
     -- Iterates the lines from the bottom up, setting satisfaction amounts along the way
     for line in floor:iterator(nil, floor:find_last(), "previous") do
         if line.class == "Floor" then
-            local subfloor_product_class = ftable.deep_copy(product_class)
+            local subfloor_product_class = util.flib.deep_copy(product_class)
             update_ingredient_satisfaction(line, subfloor_product_class)
         elseif line.machine.fuel then
             local fuel = line.machine.fuel

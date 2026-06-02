@@ -84,7 +84,7 @@ local function create_type_indexed_list(item_list)
     local indexed_list = {item = {}, fluid = {}, entity = {}}  ---@type IndexedItemList
 
     for index, item in pairs(item_list) do
-        indexed_list[item.type][item.name] = {index = index, item = ftable.shallow_copy(item)}
+        indexed_list[item.type][item.name] = {index = index, item = util.flib.shallow_copy(item)}
     end
 
     return indexed_list
@@ -158,14 +158,14 @@ function generator_util.format_recipe(recipe_proto, products, main_product, ingr
                 local difference = ingredient.item.amount - peer_product.item.amount
 
                 if difference < 0 then
-                    local item = ftable.shallow_copy(ingredient.item)
+                    local item = util.flib.shallow_copy(ingredient.item)
                     item.amount = peer_product.item.amount + difference
                     recipe_proto.catalysts.ingredients[item.name] = item
 
                     ingredients[ingredient.index].amount = nil
                     formatted_products[peer_product.index].amount = -difference
                 elseif difference > 0 then
-                    local item = ftable.shallow_copy(peer_product.item)
+                    local item = util.flib.shallow_copy(peer_product.item)
                     item.amount = ingredient.item.amount - difference
                     recipe_proto.catalysts.products[item.name] = item
 
@@ -173,7 +173,7 @@ function generator_util.format_recipe(recipe_proto, products, main_product, ingr
                     formatted_products[peer_product.index].amount = nil
                 else
                     -- Nilled-out items are just shown as ingredient catalysts
-                    local item = ftable.shallow_copy(ingredient.item)
+                    local item = util.flib.shallow_copy(ingredient.item)
                     recipe_proto.catalysts.ingredients[item.name] = item
 
                     ingredients[ingredient.index].amount = nil
@@ -450,7 +450,7 @@ function generator_util.fill_categories(combined_list, used_categories, final_li
     for combined_category, list in pairs(combined_list) do
         for _, category in pairs(list) do
             for _, proto in pairs(used_categories[category]) do
-                local copy = ftable.deep_copy(proto)
+                local copy = util.flib.deep_copy(proto)
                 copy.combined_category = combined_category
                 insert_function(final_list, copy, combined_category)
             end

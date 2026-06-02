@@ -7,7 +7,7 @@ local _effects = {}
 ---@param effect_tables IntegerModuleEffects[]
 ---@return IntegerModuleEffects
 function _effects.merge(effect_tables)
-    local effects = ftable.shallow_copy(BLANK_EFFECTS)
+    local effects = util.flib.shallow_copy(BLANK_EFFECTS)
     for _, effect_table in pairs(effect_tables) do
         for name, effect in pairs(effect_table) do
             effects[name] = effects[name] + effect  -- doesn't create decimals

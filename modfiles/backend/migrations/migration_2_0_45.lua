@@ -33,14 +33,14 @@ function migration.player_table(player_table)
                         iterate_floor(line)
                     else
                         -- Machine validation fixes this to a proper combined_category if applicable
-                        local machine_copy = ftable.deep_copy(line.machine.proto)
+                        local machine_copy = util.flib.deep_copy(line.machine.proto)
                         machine_copy.combined_category = line.machine.proto.category
                         line.machine.proto = machine_copy
 
                         local fuel = line.machine.fuel
                         if fuel then
                             local burner = line.machine.proto.burner
-                            local fuel_copy = ftable.deep_copy(fuel.proto)
+                            local fuel_copy = util.flib.deep_copy(fuel.proto)
                             fuel_copy.combined_category = fuels_map[fuel.proto.combined_category]
                             fuel.proto = fuel_copy
                         end
@@ -53,7 +53,7 @@ function migration.player_table(player_table)
 
     for _, default in pairs(player_table.preferences.default_machines) do
         -- This is appropriate as there were no defaults with combined categories before
-        local copy = ftable.deep_copy(default.proto)
+        local copy = util.flib.deep_copy(default.proto)
         copy.combined_category = default.proto.category
         default.proto = copy
     end
@@ -61,7 +61,7 @@ function migration.player_table(player_table)
     for _, default in pairs(player_table.preferences.default_fuels) do
         local new_category_name = fuels_map[default.proto.combined_category]
         if new_category_name then
-            local copy = ftable.deep_copy(default.proto)
+            local copy = util.flib.deep_copy(default.proto)
             copy.combined_category = new_category_name
             default.proto = copy
         end

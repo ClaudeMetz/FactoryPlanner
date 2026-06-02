@@ -47,7 +47,7 @@ function _clipboard.paste(player, target)
             clone = unpackers[clip.class](clip.packed_object, clip.parent)  -- always returns fresh object
             clone:validate()
         else
-            clone = ftable.shallow_copy(clip.packed_object)
+            clone = util.flib.shallow_copy(clip.packed_object)
         end
         local success, error = target:paste(clone, player)
 

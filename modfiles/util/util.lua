@@ -1,4 +1,5 @@
 local _util = {
+    flib = require("util.flib"),
     globals = require("util.globals"),
     context = require("util.context"),
     clipboard = require("util.clipboard"),

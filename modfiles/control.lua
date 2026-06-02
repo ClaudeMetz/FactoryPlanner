@@ -1,5 +1,5 @@
 SPACE_TRAVEL = script.feature_flags["space_travel"]
-DEVELOPER_MODE = (__DebugAdapter) and __DebugAdapter.tags["FP_DEBUG"] == "true" or false
+DEVELOPER_MODE = (debugadapter) and (debugadapter.tags["FP_DEBUG"] == true) or false
 llog = require("util.llog")
 
 MAGIC_NUMBERS = {
@@ -40,11 +40,8 @@ COMPACT_WIDTH_PERCENTAGE = {8, 10, 12, 14, 16, 18, 20, 22, 24, 26, 28, 30, 32, 3
 TIMESCALE_MAP = {[1] = "second", [60] = "minute"}
 BLANK_EFFECTS = {speed = 0, productivity = 0, quality = 0, consumption = 0, pollution = 0}
 
-
-ftable = require("__flib__.table")  -- has more functionality than built-in table
-translator = require("__flib__.dictionary")  -- translation module for localised search
-
 util = require("util.util")
+translator = require("util.dictionary")  -- translation module for localised search
 
 require("ui.base.main_dialog")
 require("ui.base.compact_dialog")

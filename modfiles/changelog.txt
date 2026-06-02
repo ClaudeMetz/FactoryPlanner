@@ -4,7 +4,8 @@ Date: 00. 00. 0000
   Features:
     -
   Changes:
-    -
+    - Updated for Factorio 2.1, adopting new game features and APIs
+    - Removed dependency on the Factorio Library mod (flib)
   Bugfixes:
     - Fixed a crash when trying to add an item to a constant combinator in the cursor (#751)
 
