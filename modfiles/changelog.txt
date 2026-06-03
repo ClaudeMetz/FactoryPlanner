@@ -7,6 +7,7 @@ Date: 00. 00. 0000
     - Updated for Factorio 2.1, adopting new game features and APIs
     - Removed dependency on the Factorio Library mod (flib)
     - The minimum migratable version of the mod is 2.0.1 from here on out. This means any save from before 2.0l can not be loaded with any new versions of the mod any more. Old saves can be brought forward by first loading them with 2.0.1, saving them, then loading them with a recent version. Export strings are not affected by this, so they'll continue to work as expected.
+    - Added support for quality affecting machine speed, energy usage, and module count in all ways
   Bugfixes:
     - Fixed a crash when trying to add an item to a constant combinator in the cursor (#751)
 

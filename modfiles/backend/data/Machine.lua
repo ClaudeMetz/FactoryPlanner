@@ -121,7 +121,7 @@ function Machine:get_speed()
     elseif category == "boiler" or category == "offshore_pump" then
         return speed * self.quality_proto.default_multiplier
     else  -- "assembling_machine" | "furnace" | "rocket_silo"
-        return speed * self.quality_proto.crafting_machine_speed_multiplier
+        return speed * self.proto.crafting_speed_quality_multiplier[self.quality_proto.name]
     end
 end
 
@@ -130,10 +130,14 @@ function Machine:get_energy_usage()
     local energy_usage = self.proto.energy_usage
     local category = self.proto.prototype_category
 
-    if category == "boiler" then
-        return energy_usage * self.quality_proto.default_multiplier
-    else  -- "assembling_machine" | "furnace" | "rocket_silo" | "mining_drill" | "offshore_pump" | nil
+    if category == nil or category == "mining_drill" or category == "offshore_pump" then
         return energy_usage
+    elseif category == "boiler" then
+        return energy_usage * self.quality_proto.default_multiplier
+    elseif not self.proto.quality_affects_energy_usage then
+        return energy_usage
+    else  -- "assembling_machine" | "furnace" | "rocket_silo"
+        return energy_usage * self.proto.energy_usage_quality_multiplier[self.quality_proto.name]
     end
 end
 
@@ -153,14 +157,14 @@ function Machine:get_module_limit()
     local limit = self.proto.module_limit
     local category = self.proto.prototype_category
 
-    if not self.proto.quality_affects_module_slots then
+    if category == nil or category == "boiler" or category == "offshore_pump" then
         return limit
-    elseif category == nil or category == "boiler" or category == "offshore_pump" then
+    elseif not self.proto.quality_affects_module_slots then
         return limit
     elseif category == "mining_drill" then
         return limit + self.quality_proto.mining_drill_module_slots_bonus
     else  -- "assembling_machine" | "furnace" | "rocket_silo"
-        return limit + self.quality_proto.crafting_machine_module_slots_bonus
+        return limit + self.proto.module_slots_quality_bonus[self.quality_proto.name]
     end
 end
 

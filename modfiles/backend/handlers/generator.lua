@@ -651,9 +651,12 @@ end
 ---@field ingredient_limit integer
 ---@field fluid_channels FluidChannels
 ---@field speed double
+---@field crafting_speed_quality_multiplier { [QualityID]: double }
 ---@field energy_type "burner" | "electric" | "heat" | "void"
 ---@field energy_usage double
 ---@field energy_drain double
+---@field quality_affects_energy_usage boolean?
+---@field energy_usage_quality_multiplier { [QualityID]: double }
 ---@field emissions_per_joule EmissionsMap
 ---@field emissions_per_second EmissionsMap
 ---@field burner MachineBurner?
@@ -663,6 +666,7 @@ end
 ---@field allowed_module_categories { [string]: boolean }?
 ---@field module_limit uint16
 ---@field quality_affects_module_slots boolean?
+---@field module_slots_quality_bonus { [QualityID]: uint16 }
 ---@field surface_conditions SurfaceCondition[]
 ---@field resource_drain_rate number?
 ---@field uses_force_mining_productivity_bonus boolean?
@@ -780,9 +784,12 @@ function generator.machines.generate()
             product_limit = (proto.max_item_product_count or 255),
             fluid_channels = fluid_channels,
             speed = generator_util.get_base_value(proto.get_crafting_speed()),
+            crafting_speed_quality_multiplier = proto.crafting_speed_quality_multiplier,
             energy_type = energy_type,
             energy_usage = energy_usage,
             energy_drain = energy_drain,
+            quality_affects_energy_usage = proto.quality_affects_energy_usage,  -- can be nil
+            energy_usage_quality_multiplier = proto.energy_usage_quality_multiplier,
             emissions_per_joule = emissions_per_joule,
             emissions_per_second = proto.emissions_per_second or {},
             burner = burner,
@@ -792,6 +799,7 @@ function generator.machines.generate()
             allowed_module_categories = proto.allowed_module_categories,
             module_limit = (proto.module_inventory_size or 0),
             quality_affects_module_slots = proto.quality_affects_module_slots,  -- can be nil
+            module_slots_quality_bonus = proto.module_slots_quality_bonus,
             surface_conditions = proto.surface_conditions,
             uses_force_mining_productivity_bonus = proto.uses_force_mining_productivity_bonus
         }
@@ -1143,7 +1151,7 @@ function generator.wagons.generate()
                 category = "cargo-wagon",
                 elem_type = "entity",
                 rich_text = "[entity=" .. proto.name .. "]",
-                storage = inventory_size
+                storage = inventory_size  -- only used for sorting
             }
             insert_prototype(wagons, wagon, wagon.category)
         end
@@ -1161,7 +1169,7 @@ function generator.wagons.generate()
                 category = "fluid-wagon",
                 elem_type = "entity",
                 rich_text = "[entity=" .. proto.name .. "]",
-                storage = proto.fluid_capacity
+                storage = proto.fluid_capacity  -- only used for sorting
             }
             insert_prototype(wagons, wagon, wagon.category)
         end
@@ -1407,9 +1415,7 @@ end
 ---@field default_multiplier double
 ---@field beacon_power_usage_multiplier double
 ---@field mining_drill_resource_drain_multiplier double
----@field crafting_machine_speed_multiplier double
 ---@field beacon_module_slots_bonus uint16
----@field crafting_machine_module_slots_bonus uint16
 ---@field mining_drill_module_slots_bonus uint16
 
 ---@return NamedPrototypes<FPQualityPrototype>
@@ -1431,9 +1437,7 @@ function generator.qualities.generate()
                     default_multiplier = proto.default_multiplier,
                     beacon_power_usage_multiplier = proto.beacon_power_usage_multiplier,
                     mining_drill_resource_drain_multiplier = proto.mining_drill_resource_drain_multiplier,
-                    crafting_machine_speed_multiplier = proto.crafting_machine_speed_multiplier,
                     beacon_module_slots_bonus = proto.beacon_module_slots_bonus,
-                    crafting_machine_module_slots_bonus = proto.crafting_machine_module_slots_bonus,
                     mining_drill_module_slots_bonus = proto.mining_drill_module_slots_bonus
                 }
                 insert_prototype(qualities, quality, nil)

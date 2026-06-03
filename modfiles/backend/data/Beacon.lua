@@ -104,10 +104,10 @@ end
 function Beacon:get_module_limit()
     local limit = self.proto.module_limit
 
-    if self.proto.quality_affects_module_slots then
-        return limit + self.quality_proto.beacon_module_slots_bonus
-    else
+    if not self.proto.quality_affects_module_slots then
         return limit
+    else
+        return limit + self.quality_proto.beacon_module_slots_bonus
     end
 end
 
