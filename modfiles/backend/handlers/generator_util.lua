@@ -307,7 +307,6 @@ function generator_util.determine_launch_data(silo_proto)
     -- These values are not accessible in the API
     local frame_count, inverse_speed = 32, 1 / 0.3
     local arm_move_offset = rocket_proto.rising_speed * frame_count * inverse_speed
-    local rocket_quick_relaunch_start_offset = -0.625
     local rocket_flight_threshold = 0.1  -- hardcoded in the game files
 
     -- Cycle starts here
@@ -316,7 +315,7 @@ function generator_util.determine_launch_data(silo_proto)
     local doors_opened = 1
     launch_ticks = launch_ticks + doors_opened
 
-    local rocket_rising_threshold = 1 - rocket_quick_relaunch_start_offset - arm_move_offset
+    local rocket_rising_threshold = 1 - silo_proto.rocket_quick_relaunch_start_offset - arm_move_offset
     local rocket_rising = rocket_rising_threshold / rocket_proto.rising_speed
     launch_ticks = launch_ticks + rocket_rising
     energy_usage = energy_usage + (rocket_rising * power)
