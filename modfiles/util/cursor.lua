@@ -60,7 +60,7 @@ function _cursor.set_entity(player, line, object)
     end
 
     -- Put item directly into the cursor if it's simple
-    if #items_list == 0 and object.proto.prototype_category ~= "assembling_machine" then
+    if #items_list == 0 and object.proto.prototype_category ~= "crafter" then
         player.cursor_ghost = {
             name = object.proto.built_by_item.name,
             quality = object.quality_proto.name

@@ -120,7 +120,7 @@ function Machine:get_speed()
         return speed
     elseif category == "boiler" or category == "offshore_pump" then
         return speed * self.quality_proto.default_multiplier
-    else  -- "assembling_machine" | "furnace" | "rocket_silo"
+    else  -- "crafter"
         return speed * self.proto.crafting_speed_quality_multiplier[self.quality_proto.name]
     end
 end
@@ -136,7 +136,7 @@ function Machine:get_energy_usage()
         return energy_usage * self.quality_proto.default_multiplier
     elseif not self.proto.quality_affects_energy_usage then
         return energy_usage
-    else  -- "assembling_machine" | "furnace" | "rocket_silo"
+    else  -- "crafter"
         return energy_usage * self.proto.energy_usage_quality_multiplier[self.quality_proto.name]
     end
 end
@@ -147,7 +147,7 @@ function Machine:get_resource_drain_rate()
 
     if self.proto.prototype_category == "mining_drill" then
         return resource_drain_rate * self.quality_proto.mining_drill_resource_drain_multiplier
-    else  -- "assembling_machine" | "furnace" | "rocket_silo" | "boiler"| "offshore_pump" | nil
+    else  -- "crafter" | "boiler"| "offshore_pump" | nil
         return resource_drain_rate
     end
 end
@@ -163,7 +163,7 @@ function Machine:get_module_limit()
         return limit
     elseif category == "mining_drill" then
         return limit + self.quality_proto.mining_drill_module_slots_bonus
-    else  -- "assembling_machine" | "furnace" | "rocket_silo"
+    else  -- "crafter"
         return limit + self.proto.module_slots_quality_bonus[self.quality_proto.name]
     end
 end

@@ -681,7 +681,7 @@ end
 ---@field combined_category string
 
 ---@alias EmissionsMap { [string]: double }
----@alias PrototypeCategory ("assembling_machine" | "furnace" | "rocket_silo" | "mining_drill" | "boiler" | "offshore_pump")
+---@alias PrototypeCategory ("crafter" | "mining_drill" | "boiler" | "offshore_pump")
 
 ---@return NamedPrototypesWithCategory<FPMachinePrototype>
 function generator.machines.generate()
@@ -839,14 +839,12 @@ function generator.machines.generate()
             if proto.fixed_recipe then  -- fixed recipe machines get their own category
                 if recipe_prototypes[proto.fixed_recipe] ~= nil then
                     local category = proto.name .. "-using-" .. proto.fixed_recipe
-                    local prototype_category = proto.type:gsub("-", "_")
-                    local machine = generate_category_entry(category, proto, prototype_category)
+                    local machine = generate_category_entry(category, proto, "crafter")
                     if machine then insert_machine(machine) end
                 end
             else  -- otherwise add machines as normal
                 for category, _ in pairs(proto.crafting_categories) do
-                    local prototype_category = proto.type:gsub("-", "_")
-                    local machine = generate_category_entry(category, proto, prototype_category)
+                    local machine = generate_category_entry(category, proto, "crafter")
                     if machine then insert_machine(machine) end
                 end
             end
