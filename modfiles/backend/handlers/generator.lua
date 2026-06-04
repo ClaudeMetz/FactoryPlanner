@@ -132,11 +132,14 @@ function generator.recipes.generate()
         {filter="energy", comparison="<", value=1e+21, mode="and"}}
     for recipe_name, proto in pairs(prototypes.get_recipe_filtered(recipe_filter)) do
         if not proto.parameter then  -- not an option on the filter
+            local categories = {}
+            for _, category in pairs(proto.categories) do categories[category] = true end
+
             local recipe = {
                 name = proto.name,
                 localised_name = proto.localised_name,
                 sprite = "recipe/" .. proto.name,
-                categories = proto.categories,
+                categories = categories,
                 combined_category = "",  -- filled in by machine generator
                 energy = proto.energy,
                 emissions_multiplier = proto.emissions_multiplier,
