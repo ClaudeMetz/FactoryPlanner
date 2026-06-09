@@ -60,21 +60,19 @@ function _effects.limit(effects, maximum_productivity)
     return effects, indications
 end
 
--- It's weird that this is the value used to determine the factor that the quality effect is
---   multiplied by, but this is how the game does it, so here we are
-local quality_effect_factor = prototypes.quality["normal"].next_probability
 
 ---@param value EffectValue
 ---@param color string
 ---@param effect_name ModuleEffectName
 ---@return LocalisedString
-local function format_effect(value, color, effect_name)
+local function format_effect(value, color)
     if value == nil then return "" end
-    value = (effect_name == "quality") and value * quality_effect_factor or value
-    local format_string = (effect_name == "quality") and "%+.1f" or "%+d"
     local epsilon = (value < 0) and -1e-4 or 1e-4
-    -- Force display of either a '+' or '-', also round the result
-    return {"fp.effect_value", color, format_string:format(value + epsilon)}
+    -- Turn value into percentage, and divide out precision multiplier
+    local percentage = value * 100 / MAGIC_NUMBERS.effect_precision + epsilon
+    -- Show leading sign, two decimals, and remove trailing zeros
+    local effect = ("%+.2f"):format(percentage):gsub("%.?0+$", "")
+    return {"fp.effect_value", color, effect}
 end
 
 ---@class FormatModuleEffectsOptions
@@ -101,9 +99,9 @@ function _effects.format(module_effects, options)
         if options.indications[effect_name] ~= nil or module_effect ~= 0
                 or (machine_effect ~= nil and machine_effect ~= 0)
                 or (recipe_effect ~= nil and recipe_effect ~= 0) then
-            local module_percentage = format_effect(module_effect, "#FFE6C0", effect_name)
-            local machine_percentage = format_effect(machine_effect, "#7CFF01", effect_name)
-            local recipe_percentage = format_effect(recipe_effect, "#01FFF4", effect_name)
+            local module_percentage = format_effect(module_effect, "#FFE6C0")
+            local machine_percentage = format_effect(machine_effect, "#7CFF01")
+            local recipe_percentage = format_effect(recipe_effect, "#01FFF4")
 
             if #tooltip_lines > 1 then table.insert(tooltip_lines, "\n") end
             table.insert(tooltip_lines, {"fp.effect_line", {"fp." .. effect_name}, module_percentage,

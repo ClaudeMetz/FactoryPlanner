@@ -356,8 +356,8 @@ end
 function generator_util.formatted_effects(effects)
     if effects == nil then return {} end
 
-    -- This turns effects into an integer, multiplying by 100 as the values are allowed two decimals
-    -- The values need to be  divided by 100 and floored for calculation
+    -- This turns effects into an integer, multiplying by effect_precision for 0.01% precision
+    -- The values need to then be divided by effect_precision and floored for calculation
     for name, value in pairs(effects) do
         -- The API provides effects as values with only two decimals already
         effects[name] = value * MAGIC_NUMBERS.effect_precision

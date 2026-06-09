@@ -229,7 +229,7 @@ function builders.beacon(line, parent_flow, metadata)
             or {"fp.tt_title_with_note", beacon.proto.localised_name, quality_proto.rich_text}
         local number_line = {"", "\n", beacon.amount, " ", {"fp.pl_beacon", beacon.amount}}
         if beacon.total_amount then table.insert(number_line, {"", " - ", {"fp.in_total", beacon.total_amount}}) end
-        local effectivity = util.format.number(beacon:overall_effectivity() * 100, 4)
+        local effectivity = ("%.2f"):format(beacon:overall_effectivity() * 100):gsub("%.?0+$", "")
         local effectivity_line = {"", "\n", {"fp.transmission_percentage", effectivity}}
         local tooltip = {"", title_line, number_line, effectivity_line, format_effects_tooltip(beacon.effects_tooltip),
             "\n", MODIFIER_ACTIONS["act_on_line_beacon"].tooltip}
