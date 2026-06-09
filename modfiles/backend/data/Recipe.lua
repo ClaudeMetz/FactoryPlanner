@@ -15,6 +15,7 @@ local Object = require("backend.data.Object")
 ---@field priority_product (FPItemPrototype | FPPackedPrototype)?
 ---@field temperatures { [string]: float }
 ---@field temperature_data { [string]: TemperatureData }
+---@field effects IntegerModuleEffects?
 local Recipe = Object.methods()
 Recipe.__index = Recipe
 script.register_metatable("Recipe", Recipe)
@@ -31,6 +32,7 @@ local function init(proto, production_type, parent)
         temperatures = {},
 
         temperature_data = nil,
+        effects = nil,
 
         parent = parent
     }, "Recipe", Recipe)  --[[@as Recipe]]
@@ -82,6 +84,23 @@ function Recipe:temperature_fully_configured()
     if fuel and fuel.proto.type == "fluid" and not fuel.temperature then return false end
 
     return true
+end
+
+
+--- Called when the solver runs because it's the most convenient spot for it
+---@param force LuaForce
+---@param factory Factory
+function Recipe:update_effects(force, factory)
+    local machine_proto = self.parent.machine.proto
+
+    local recipe_name = nil
+    local drill = (machine_proto.prototype_category == "mining_drill")
+    if drill and machine_proto.uses_force_mining_productivity_bonus then recipe_name = "custom-mining"
+    elseif not self.proto.custom then recipe_name = self.proto.name
+    else return end  -- no recipe effects for custom recipes
+
+    self.effects = {productivity = factory:get_productivity_bonus(force, recipe_name)}
+    self.parent.machine:summarize_effects()  -- update machine to update its tooltip
 end
 
 

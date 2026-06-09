@@ -145,7 +145,7 @@ function generator.recipes.generate()
                 energy = proto.energy,
                 emissions_multiplier = proto.emissions_multiplier,
                 allowed_effects = proto.allowed_effects or {},
-                maximum_productivity = math.floor(proto.maximum_productivity * MAGIC_NUMBERS.effect_precision + 1e-4),
+                maximum_productivity = math.floor(proto.maximum_productivity + 1e-4),
                 allowed_module_categories = proto.allowed_module_categories,
                 type_counts = {},  -- filled out by format_recipe below
                 catalysts = {products={}, ingredients={}},  -- filled out by format_recipe below
@@ -838,14 +838,11 @@ function generator.machines.generate()
                     machine.energy_usage = energy_usage
 
                     machine.built_by_item = nil
-                    machine.effect_receiver = {
-                        base_effect = {},
-                        uses_module_effects = false,
-                        uses_beacon_effects = false,
-                        uses_surface_effects = false
-                    }
+
+                    machine.effect_receiver = generator_util.get_blank_effect_receiver()
                     machine.allowed_effects = {}
                     machine.module_limit = 0
+
                     insert_machine(machine)
                 end
             end  -- silos are also added as normal machines to produce rocket parts
@@ -1157,7 +1154,7 @@ function generator.silos.generate()
                 sprite = sprite,
                 elem_type = "entity",
                 rich_text = "[entity=" .. proto.name .. "]",
-                rocket_lift_weight = prototypes.utility_constants.default_rocket_lift_weight --TODO proto.lift_weight
+                rocket_lift_weight = proto.lift_weight
             }
             insert_prototype(silos, silo, nil)
         end

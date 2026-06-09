@@ -14,7 +14,6 @@ local ModuleSet = require("backend.data.ModuleSet")
 ---@field amount number
 ---@field total_effects IntegerModuleEffects
 ---@field effects_tooltip LocalisedString
----@field recipe_effects IntegerModuleEffects?
 local Machine = Object.methods()
 Machine.__index = Machine
 script.register_metatable("Machine", Machine)
@@ -34,7 +33,6 @@ local function init(proto, parent)
         amount = 0,
         total_effects = nil,
         effects_tooltip = "",
-        recipe_effects = nil,
 
         parent = parent
     }, "Machine", Machine)  --[[@as Machine]]
@@ -82,9 +80,9 @@ function Machine:summarize_effects()
     local module_effects = self.module_set:get_effects()
     local machine_effects = self.proto.effect_receiver.base_effect
 
-    self.total_effects = util.effects.merge({module_effects, machine_effects, self.recipe_effects})
+    self.total_effects = util.effects.merge({module_effects, machine_effects})
     self.effects_tooltip = util.effects.format(module_effects,
-        {machine_effects=machine_effects, recipe_effects=self.recipe_effects})
+        {machine_effects=machine_effects, recipe_effects=self.parent.recipe.effects})
 
     self.parent:summarize_effects()
 end
@@ -92,22 +90,6 @@ end
 ---@return boolean uses_effects
 function Machine:uses_effects()
     return self.proto.effect_receiver.uses_module_effects
-end
-
---- Called when the solver runs because it's the most convenient spot for it
----@param force LuaForce
----@param factory Factory
-function Machine:update_recipe_effects(force, factory)
-    local recipe_proto = self.parent.recipe.proto
-
-    local recipe_name = nil
-    local drill = (self.proto.prototype_category == "mining_drill")
-    if drill and self.proto.uses_force_mining_productivity_bonus then recipe_name = "custom-mining"
-    elseif not recipe_proto.custom then recipe_name = recipe_proto.name
-    else return end  -- no recipe effects for custom recipes
-
-    self.recipe_effects = {productivity = factory:get_productivity_bonus(force, recipe_name)}
-    self:summarize_effects()
 end
 
 

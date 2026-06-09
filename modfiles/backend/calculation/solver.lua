@@ -143,7 +143,7 @@ local function generate_floor_data(player, factory, floor, calculate_emissions)
                 end
 
                 -- Effects - update line with recipe effects here if applicable
-                machine:update_recipe_effects(player.force, factory)
+                line.recipe:update_effects(player.force, factory)
                 line_data.total_effects = line.total_effects
 
                 -- Beacon total - can be calculated here, which is faster and simpler

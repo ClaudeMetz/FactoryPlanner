@@ -30,31 +30,32 @@ function _effects.is_positive(name, value)
 end
 
 
-local upper_bound = 32767
+---@param effect EffectValue
+---@param bounds EffectValueRange
+function _effects.limit_value(effect, bounds)
+    local low_bound = bounds.low * MAGIC_NUMBERS.effect_precision
+    local high_bound = bounds.high * MAGIC_NUMBERS.effect_precision
+
+    if effect < low_bound then
+        return low_bound, "[img=fp_limited_down]"
+    elseif effect > high_bound then
+        return high_bound, "[img=fp_limited_up]"
+    else
+        return effect, nil
+    end
+end
 
 ---@param effects IntegerModuleEffects
----@param maximum_productivity EffectValue
+---@param effect_receiver EffectReceiver
 ---@return IntegerModuleEffects
 ---@return { ModuleEffectName: string }
-function _effects.limit(effects, maximum_productivity)
-    local bounds = {
-        speed = {lower = -80, upper = upper_bound},
-        productivity = {lower = 0, upper = maximum_productivity or upper_bound},
-        quality = {lower = 0, upper = upper_bound},
-        consumption = {lower = -80, upper = upper_bound},
-        pollution = {lower = -80, upper = upper_bound}
-    }
-
+function _effects.limit(effects, effect_receiver)
     local indications = {}
+
     -- Bound effects and note the indication if relevant
     for name, effect in pairs(effects) do
-        if effect < bounds[name].lower then
-            effects[name] = bounds[name].lower
-            indications[name] = "[img=fp_limited_down]"
-        elseif effect > bounds[name].upper then
-            effects[name] = bounds[name].upper
-            indications[name] = "[img=fp_limited_up]"
-        end
+        local bounds = effect_receiver[name .. "_limits"]
+        effects[name], indications[name] = _effects.limit_value(effect, bounds)
     end
 
     return effects, indications
