@@ -4,6 +4,7 @@ Date: 00. 00. 0000
   Features:
     - Updated for Factorio 2.1, adopting new game features and APIs, the most important of which are listed below
     - Added support for quality affecting machine speed, energy usage, and module count in all ways
+    - Added support for recipes using shared probability for its products
     - Added the ability to pick a preferred rocket silo to determine the lift capacity for the rockets/timescale view
     - Added support for burning fluids as fuel producing a byproduct fluid
   Changes:

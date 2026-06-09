@@ -38,7 +38,11 @@ local function generate_formatted_product(product)
         proddable_amount = math.max(base_amount - catalyst_amount, 0)
     end
 
-    local probability = (product.probability or 1)
+    -- These need defaults for products that are manually defined by FP
+    local shared_probability = product.shared_probability or {min = 0, max = 1}
+    local independent_probability = product.independent_probability or 1
+    local probability = independent_probability * (shared_probability.max - shared_probability.min)
+
     local formatted_product = {
         name = product.name,
         type = product.type,
