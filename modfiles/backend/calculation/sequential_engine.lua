@@ -132,8 +132,24 @@ local function update_line(line_data, aggregate, looped_fuel)
         -- Fuel itself is set via a special amount variable on the line itself
 
         if fuel_proto.burnt_result then
-            local burnt_result = {type="item", name=fuel_proto.burnt_result, amount=fuel_amount, constant=true}
-            table.insert(byproducts, burnt_result)
+            table.insert(byproducts, {
+                type="item",
+                name=fuel_proto.burnt_result,
+                amount=fuel_amount,
+                constant=true
+            })
+        end
+
+        if machine_proto.burner.produces_spent_fluid then
+            local spent_fluid = machine_proto.burner.spent_fluid or fuel_proto.spent_fluid
+            if spent_fluid then
+                table.insert(byproducts, {
+                    type="fluid",
+                    name=spent_fluid.name .. "-" .. spent_fluid.temperature,
+                    amount=fuel_amount * spent_fluid.amount,
+                    constant=true
+                })
+            end
         end
 
         energy_consumption = 0  -- set electrical consumption to 0 when fuel is used

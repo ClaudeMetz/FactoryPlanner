@@ -683,6 +683,8 @@ end
 ---@field effectivity double
 ---@field categories { [string]: boolean }
 ---@field combined_category string
+---@field produces_spent_fluid boolean
+---@field spent_fluid SpentFluidSpecification?
 
 ---@alias EmissionsMap { [string]: double }
 ---@alias PrototypeCategory ("crafter" | "mining_drill" | "boiler" | "offshore_pump")
@@ -732,8 +734,11 @@ function generator.machines.generate()
         if burner_prototype then
             energy_type = "burner"
             emissions_per_joule = burner_prototype.emissions_per_joule
-            burner = {effectivity=burner_prototype.effectivity, categories=burner_prototype.fuel_categories,
-                combined_category=nil}  -- combined filled in by fuel generator
+            burner = {
+                effectivity = burner_prototype.effectivity,
+                categories = burner_prototype.fuel_categories,
+                combined_category = nil  -- filled in by fuel generator
+            }
 
         -- Only supports fluid energy that burns_fluid for now, as it works the same way as solid burners
         -- Also doesn't respect scale_fluid_usage and fluid_usage_per_tick for now, let the reports come
@@ -742,8 +747,13 @@ function generator.machines.generate()
 
             if fluid_burner_prototype.burns_fluid then
                 energy_type = "burner"
-                burner = {effectivity=fluid_burner_prototype.effectivity, categories={["fluid-fuel"] = true},
-                    combined_category=nil}  -- combined filled in by fuel generator
+                burner = {
+                    effectivity = fluid_burner_prototype.effectivity,
+                    categories = {["fluid-fuel"] = true},
+                    combined_category = nil,  -- filled in by fuel generator
+                    produces_spent_fluid = (fluid_burner_prototype.output_fluid_box ~= nil),
+                    spent_fluid = fluid_burner_prototype.spent_fluid
+                }
 
             else  -- Avoid adding this type of complex fluid energy as electrical energy
                 -- When I add support for this, I need to take care of limiting min/max temps on the fuel
@@ -950,6 +960,7 @@ end
 ---@field weight double?
 ---@field emissions_multiplier double
 ---@field burnt_result string?
+---@field spent_fluid SpentFluidSpecification?
 
 ---@return NamedPrototypesWithCategory<FPFuelPrototype>
 function generator.fuels.generate()
@@ -979,7 +990,9 @@ function generator.fuels.generate()
                 stack_size = proto.stack_size,
                 weight = proto.weight,
                 emissions_multiplier = proto.fuel_emissions_multiplier,
-                burnt_result = (proto.burnt_result) and proto.burnt_result.name or nil
+                burnt_result = (proto.burnt_result) and proto.burnt_result.name or nil,
+                -- burnt_result item not explicitly added as FPItemPrototype, relies on mod to use it elsewhere
+                spent_fluid = nil  -- fluid-only
             }
             fuel_categories[fuel.category] = fuel_categories[fuel.category] or {}
             table.insert(fuel_categories[fuel.category], fuel)
@@ -1005,7 +1018,9 @@ function generator.fuels.generate()
                 stack_size = nil,  -- item-only
                 weight = nil,  -- item-only
                 emissions_multiplier = proto.emissions_multiplier,
-                burnt_result = nil  -- item-only
+                burnt_result = nil,  -- item-only
+                spent_fluid = proto.spent_fluid  -- can be nil
+                -- spent_fluid not explicitly added as FPItemPrototype, relies on mod to use it elsewhere
             }
             fuel_categories[fuel.category] = fuel_categories[fuel.category] or {}
             table.insert(fuel_categories[fuel.category], fuel)

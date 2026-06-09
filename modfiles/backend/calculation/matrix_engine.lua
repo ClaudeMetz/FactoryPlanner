@@ -712,15 +712,29 @@ function matrix_engine.get_line_aggregate(line_data, player_index, floor_id, mac
 
     local fuel, fuel_amount = nil, nil
     if line_data.machine_proto.energy_type == "burner" then
-        fuel_amount = solver_util.determine_fuel_amount(energy_consumption, line_data.machine_proto.burner,
-            fuel_proto.fuel_value)
+        local burner = line_data.machine_proto.burner
+        fuel_amount = solver_util.determine_fuel_amount(energy_consumption, burner, fuel_proto.fuel_value)
 
         fuel = {type=fuel_proto.type, name=line_data.fuel_name, amount=fuel_amount}
         structures.class.add(line_aggregate.Ingredient, fuel)
 
         if fuel_proto.burnt_result then
-            local burnt_result = {type="item", name=fuel_proto.burnt_result, amount=fuel_amount}
-            add_product(burnt_result)
+            add_product({
+                type="item",
+                name=fuel_proto.burnt_result,
+                amount=fuel_amount
+            })
+        end
+
+        if burner.produces_spent_fluid then
+            local spent_fluid = burner.spent_fluid or fuel_proto.spent_fluid
+            if spent_fluid then
+                add_product({
+                    type="fluid",
+                    name=spent_fluid.name .. "-" .. spent_fluid.temperature,
+                    amount=fuel_amount * spent_fluid.amount
+                })
+            end
         end
 
         energy_consumption = 0  -- set electrical consumption to 0 when fuel is used
@@ -738,7 +752,7 @@ function matrix_engine.get_line_aggregate(line_data, player_index, floor_id, mac
     energy_consumption = energy_consumption + (line_data.beacon_consumption or 0)
 
     if energy_consumption > 0 then
-        local electric_item = {type="entity", name="custom-electric-power", amount=energy_consumption, constant=true}
+        local electric_item = {type="entity", name="custom-electric-power", amount=energy_consumption}
         structures.class.add(line_aggregate.Ingredient, electric_item)
     end
 
