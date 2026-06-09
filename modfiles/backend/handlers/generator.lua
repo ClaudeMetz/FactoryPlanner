@@ -170,9 +170,9 @@ function generator.recipes.generate()
     for _, proto in pairs(prototypes.get_entity_filtered(entity_filter)) do
         -- Recipes fixed to machines are duplicated with a special category
         if proto.crafting_categories and proto.energy_usage and proto.fixed_recipe then
-            local recipe = recipes[proto.fixed_recipe]
+            local recipe = recipes[proto.fixed_recipe.name]
             if recipe ~= nil then
-                local category = proto.name .. "-using-" .. proto.fixed_recipe
+                local category = proto.name .. "-using-" .. recipe.name
                 local recipe_copy = util.flib.deep_copy(recipe)
                 recipe_copy.name = recipe.name .. "-for-" .. proto.name
                 recipe_copy.categories = {[category] = true}
@@ -841,8 +841,8 @@ function generator.machines.generate()
             end  -- silos are also added as normal machines to produce rocket parts
 
             if proto.fixed_recipe then  -- fixed recipe machines get their own category
-                if recipe_prototypes[proto.fixed_recipe] ~= nil then
-                    local category = proto.name .. "-using-" .. proto.fixed_recipe
+                if recipe_prototypes[proto.fixed_recipe.name] ~= nil then
+                    local category = proto.name .. "-using-" .. proto.fixed_recipe.name
                     local machine = generate_category_entry(category, proto, "crafter")
                     if machine then insert_machine(machine) end
                 end
