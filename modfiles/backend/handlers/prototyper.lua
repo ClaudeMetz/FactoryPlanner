@@ -16,10 +16,10 @@ prototyper = {
 -- The boolean indicates whether this prototype has categories or not
 ---@type { [DataType]: boolean }
 prototyper.data_types = {recipes = false, items = true, machines = true, fuels = true,
-                         belts = false, pumps = false, wagons = true, modules = true,
+                         belts = false, pumps = false, silos = false, wagons = true, modules = true,
                          beacons = false, locations = false, qualities = false}
 
----@alias DataType "recipes" | "items" | "machines" | "fuels" | "belts" | "pumps" | "wagons" | "modules" | "beacons" | "locations" | "qualities"
+---@alias DataType "recipes" | "items" | "machines" | "fuels" | "belts" | "pumps" | "silos" | "wagons" | "modules" | "beacons" | "locations" | "qualities"
 
 ---@alias NamedPrototypes<T> { [string]: T }
 ---@alias NamedPrototypesWithCategory<T> { [string]: { name: string, members: { [string]: T } } } }
@@ -38,6 +38,7 @@ prototyper.data_types = {recipes = false, items = true, machines = true, fuels =
 ---@field fuels IndexedPrototypesWithCategory<FPFuelPrototype>
 ---@field belts IndexedPrototypes<FPBeltPrototype>
 ---@field pumps IndexedPrototypes<FPPumpPrototype>
+---@field silos IndexedPrototypes<FPSiloPrototype>
 ---@field wagons IndexedPrototypesWithCategory<FPWagonPrototype>
 ---@field modules IndexedPrototypesWithCategory<FPModulePrototype>
 ---@field beacons IndexedPrototypes<FPBeaconPrototype>

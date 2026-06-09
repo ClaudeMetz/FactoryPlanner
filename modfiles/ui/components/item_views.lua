@@ -67,13 +67,12 @@ function processors.wagons_per_timescale(metadata, raw_amount, item_proto, _)
     return number, tooltip
 end
 
-local lift_capactity = prototypes.utility_constants.rocket_lift_weight
 function processors.rockets_per_timescale(metadata, raw_amount, item_proto, _)
     if item_proto.type == "fluid" then return nil, {"fp.fluid_item"} end
-    if item_proto.weight > lift_capactity then return nil, {"fp.item_too_heavy"} end
+    if item_proto.weight > metadata.lift_capacity then return nil, {"fp.item_too_heavy"} end
 
     local total_weight = raw_amount * metadata.timescale * item_proto.weight
-    local raw_number = total_weight / lift_capactity
+    local raw_number = total_weight / metadata.lift_capacity
     local number = util.format.number(raw_number, metadata.formatting_precision)
 
     local plural_parameter = (number == "1") and 1 or 2
@@ -146,6 +145,9 @@ function item_views.rebuild_data(player)
     local default_pump = defaults.get(player, "pumps")
     local pump_proto, pump_quality = proto_and_quality_string(default_pump)
 
+    local default_silo = defaults.get(player, "silos")
+    local silo_proto, silo_quality = proto_and_quality_string(default_silo)
+
     local default_cargo_wagon = defaults.get(player, "wagons", "cargo-wagon")
     local cargo_wagon_proto, cargo_wagon_quality = proto_and_quality_string(default_cargo_wagon)
 
@@ -188,7 +190,8 @@ function item_views.rebuild_data(player)
             rockets_per_timescale = {
                 index = 6,
                 caption = {"", "[img=fp_silo_rocket]", "/", {"fp.unit_" .. timescale_string}},
-                tooltip = {"fp.view_tt", {"fp.rockets_per_timescale", {"fp." .. timescale_string}}}
+                tooltip = {"fp.view_tt", {"fp.rockets_per_timescale", {"fp." .. timescale_string},
+                    default_silo.proto.rich_text, default_silo.proto.localised_name, silo_quality}}
             }
         },
         timescale = preferences.timescale,
@@ -197,6 +200,7 @@ function item_views.rebuild_data(player)
         belt_or_lane = belts_or_lanes:sub(1, -2),
         throughput_multiplier = 1 / throughput_divisor,
         pumping_speed = pump_proto.get_pumping_speed(default_pump.quality.name) * 60,
+        lift_capacity = default_silo.proto.rocket_lift_weight,
         cargo_wagon_capactiy = cargo_wagon_proto.get_inventory_size(defines.inventory.cargo_wagon,
             default_cargo_wagon.quality.name),
         fluid_wagon_capacity = fluid_wagon_proto.get_fluid_capacity(default_fluid_wagon.quality.name),

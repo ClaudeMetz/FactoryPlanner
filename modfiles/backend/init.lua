@@ -92,6 +92,7 @@ function reload_preferences(player_table)
     reload("default_beacons", defaults.get_fallback("beacons"))
     reload("default_belts", defaults.get_fallback("belts"))
     reload("default_pumps", defaults.get_fallback("pumps"))
+    reload("default_silos", defaults.get_fallback("silos"))
     reload("default_wagons", defaults.get_fallback("wagons"))
 
     reload("default_temperatures", util.temperature.get_fallback())

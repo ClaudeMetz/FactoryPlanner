@@ -149,6 +149,7 @@ end
 ---@field fuels MappedPrototypesWithCategory<FPFuelPrototype>
 ---@field belts MappedPrototypes<FPBeltPrototype>
 ---@field pumps MappedPrototypes<FPPumpPrototype>
+---@field silos MappedPrototypes<FPSiloPrototype>
 ---@field wagons MappedPrototypesWithCategory<FPWagonPrototype>
 ---@field modules MappedPrototypesWithCategory<FPModulePrototype>
 ---@field beacons MappedPrototypes<FPBeaconPrototype>
@@ -244,7 +245,6 @@ function loader.run(skip_check)
     PRODUCTIVITY_RECIPES = generate_productivity_recipes()
 
     MULTIPLE_PLANETS = #storage.prototypes.locations > 1
-    MULTIPLE_QUALITIES = #storage.prototypes.qualities > 1
 end
 
 return loader

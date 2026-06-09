@@ -7,6 +7,7 @@ local generator = {
     fuels = {},
     belts = {},
     pumps = {},
+    silos = {},
     wagons = {},
     modules = {},
     beacons = {},
@@ -1110,6 +1111,7 @@ function generator.pumps.generate()
                 elem_type = "entity",
                 rich_text = "[entity=" .. proto.name .. "]",
                 pumping_speed = generator_util.get_base_value(proto.get_pumping_speed()) * 60
+                -- pumping_speed is unused as the mod uses get_pumping_speed(quality)
             }
             insert_prototype(pumps, pump, nil)
         end
@@ -1118,13 +1120,35 @@ function generator.pumps.generate()
     return pumps
 end
 
----@param a FPPumpPrototype
----@param b FPPumpPrototype
----@return boolean
-function generator.pumps.sorting_function(a, b)
-    if a.pumping_speed < b.pumping_speed then return true
-    elseif a.pumping_speed > b.pumping_speed then return false end
-    return false
+
+---@class FPSiloPrototype: FPPrototype
+---@field data_type "silos"
+---@field elem_type ElemType
+---@field rich_text string
+---@field rocket_lift_weight double
+
+---@return NamedPrototypes<FPSiloPrototype>
+function generator.silos.generate()
+    local silos = {} ---@type NamedPrototypes<FPSiloPrototype>
+
+    local silo_filter = {{filter="type", type="rocket-silo"},
+        {filter="hidden", invert=true, mode="and"}}
+    for _, proto in pairs(prototypes.get_entity_filtered(silo_filter)) do
+        local sprite = generator_util.determine_entity_sprite(proto)
+        if sprite ~= nil then
+            local silo = {
+                name = proto.name,
+                localised_name = proto.localised_name,
+                sprite = sprite,
+                elem_type = "entity",
+                rich_text = "[entity=" .. proto.name .. "]",
+                rocket_lift_weight = prototypes.utility_constants.default_rocket_lift_weight --TODO proto.lift_weight
+            }
+            insert_prototype(silos, silo, nil)
+        end
+    end
+
+    return silos
 end
 
 
@@ -1152,7 +1176,8 @@ function generator.wagons.generate()
                 category = "cargo-wagon",
                 elem_type = "entity",
                 rich_text = "[entity=" .. proto.name .. "]",
-                storage = inventory_size  -- only used for sorting
+                storage = inventory_size
+                -- storage is unused as the mod uses get_inventory_size(quality)
             }
             insert_prototype(wagons, wagon, wagon.category)
         end
@@ -1170,22 +1195,14 @@ function generator.wagons.generate()
                 category = "fluid-wagon",
                 elem_type = "entity",
                 rich_text = "[entity=" .. proto.name .. "]",
-                storage = proto.fluid_capacity  -- only used for sorting
+                storage = proto.fluid_capacity
+                -- storage is unused as the mod uses get_fluid_capacity(quality)
             }
             insert_prototype(wagons, wagon, wagon.category)
         end
     end
 
     return wagons
-end
-
----@param a FPWagonPrototype
----@param b FPWagonPrototype
----@return boolean
-function generator.wagons.sorting_function(a, b)
-    if a.storage < b.storage then return true
-    elseif a.storage > b.storage then return false end
-    return false
 end
 
 

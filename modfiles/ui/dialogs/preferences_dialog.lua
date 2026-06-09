@@ -1,24 +1,24 @@
 -- ** LOCAL UTIL **
-local function add_preference_box(content_frame, type)
+local function add_preference_box(content_frame, box_type)
     local bordered_frame = content_frame.add{type="frame", direction="vertical", style="fp_frame_bordered_stretch"}
     local title_flow = bordered_frame.add{type="flow", direction="horizontal", name="title_flow"}
     title_flow.style.vertical_align = "center"
 
-    local caption = {"fp.info_label", {"fp.preference_".. type .. "_title"}}
-    local tooltip = {"fp.preference_".. type .. "_title_tt"}
+    local caption = {"fp.info_label", {"fp.preference_".. box_type .. "_title"}}
+    local tooltip = {"fp.preference_".. box_type .. "_title_tt"}
     title_flow.add{type="label", caption=caption, tooltip=tooltip, style="caption_label"}
 
     return bordered_frame
 end
 
-local function refresh_defaults_table(player, modal_elements, type, category_id)
-    local gui_id = (category_id) and (type .. "-" .. category_id) or type
+local function refresh_defaults_table(player, modal_elements, data_type, category_id)
+    local gui_id = (category_id) and (data_type .. "-" .. category_id) or data_type
     local table_prototypes = modal_elements[gui_id]
     table_prototypes.clear()
 
-    local prototypes = storage.prototypes[type]
+    local prototypes = storage.prototypes[data_type]
     if category_id then prototypes = prototypes[category_id].members end
-    local default = defaults.get(player, type, category_id)
+    local default = defaults.get(player, data_type, category_id)
 
     for prototype_id, prototype in ipairs(prototypes) do
         local selected = (default.proto.id == prototype_id)
@@ -28,8 +28,8 @@ local function refresh_defaults_table(player, modal_elements, type, category_id)
         local tooltip = {type=elem_type, name=prototype.name, quality=quality}
 
         table_prototypes.add{type="sprite-button", sprite=prototype.sprite, style=style, elem_tooltip=tooltip,
-            tags={mod="fp", on_gui_click="select_preference_default", type=type, prototype_name=prototype.name,
-            category_id=category_id}, quality=quality, mouse_button_filter={"left"}}
+            tags={mod="fp", on_gui_click="select_preference_table_default", type=data_type,
+            prototype_name=prototype.name, category_id=category_id}, quality=quality, mouse_button_filter={"left"}}
     end
 
     return #prototypes
@@ -72,17 +72,17 @@ local function refresh_views_table(player)
 end
 
 
-local function add_checkboxes_box(preferences, content_frame, type, preference_names)
-    local preference_box = add_preference_box(content_frame, type)
+local function add_checkboxes_box(preferences, content_frame, data_type, preference_names)
+    local preference_box = add_preference_box(content_frame, data_type)
     local flow_checkboxes = preference_box.add{type="flow", direction="vertical"}
     flow_checkboxes.style.right_padding = 16
 
     for _, pref_name in ipairs(preference_names) do
-        local identifier = type .. "_" .. pref_name
+        local identifier = data_type .. "_" .. pref_name
         local caption = {"fp.info_label", {"fp.preference_" .. identifier}}
         local tooltip ={"fp.preference_" .. identifier .. "_tt"}
         flow_checkboxes.add{type="checkbox", state=preferences[pref_name], caption=caption, tooltip=tooltip,
-            tags={mod="fp", on_gui_checked_state_changed="toggle_preference", type=type, name=pref_name}}
+            tags={mod="fp", on_gui_checked_state_changed="toggle_preference", data_type=data_type, name=pref_name}}
     end
 
     return preference_box
@@ -137,34 +137,34 @@ local function add_views_box(player, content_frame, modal_elements)
 end
 
 
-local function add_default_proto_box(player, content_frame, type, category_id, addition)
+local function add_belts_proto_box(player, content_frame)
     local modal_elements = util.globals.modal_elements(player)
-    local preference_box = add_preference_box(content_frame, "default_" .. type)
+    local preference_box = add_preference_box(content_frame, "default_belts")
 
     local frame = preference_box.add{type="frame", direction="horizontal", style="fp_frame_light_slots_small"}
-    local gui_id = (category_id) and (type .. "-" .. category_id) or type
-    modal_elements[gui_id] = frame.add{type="table", column_count=8, style="fp_table_slots_small"}
-    local prototype_count = refresh_defaults_table(player, modal_elements, type, category_id)
+    modal_elements["belts"] = frame.add{type="table", column_count=8, style="fp_table_slots_small"}
+    local prototype_count = refresh_defaults_table(player, modal_elements, "belts", nil)
 
-    if addition == "lanes_or_belts" then
-        preference_box.title_flow.add{type="empty-widget", style="flib_horizontal_pusher"}
-        local belts_or_lanes = util.globals.preferences(player).belts_or_lanes
-        local switch_state = (belts_or_lanes == "belts") and "left" or "right"
-        preference_box.title_flow.add{type="switch", switch_state=switch_state,
-            tooltip={"fp.preference_belts_or_lanes_tt"},
-            tags={mod="fp", on_gui_switch_state_changed="choose_belts_or_lanes"},
-            left_label_caption={"fp.pu_belt", 2}, right_label_caption={"fp.pu_lane", 2}}
+    preference_box.title_flow.add{type="empty-widget", style="flib_horizontal_pusher"}
+    local belts_or_lanes = util.globals.preferences(player).belts_or_lanes
+    local switch_state = (belts_or_lanes == "belts") and "left" or "right"
+    preference_box.title_flow.add{type="switch", switch_state=switch_state,
+        tooltip={"fp.preference_belts_or_lanes_tt"},
+        tags={mod="fp", on_gui_switch_state_changed="choose_belts_or_lanes"},
+        left_label_caption={"fp.pu_belt", 2}, right_label_caption={"fp.pu_lane", 2}}
+end
 
-    elseif addition == "quality_picker" and MULTIPLE_QUALITIES then
-        preference_box.title_flow.add{type="empty-widget", style="flib_horizontal_pusher"}
-        local default_quality = defaults.get(player, type, category_id).quality
-        local tags = {mod="fp", on_gui_selection_state_changed="select_preference_quality",
-            type=type, category_id=category_id}
-        util.gui.add_quality_dropdown(preference_box.title_flow, default_quality.id, tags)
-    end
+local function add_default_proto_box(player, content_frame, data_type, category_id, filter_type)
+    local flow = content_frame.add{type="flow", direction="horizontal"}
+    flow.style.vertical_align = "center"
+    flow.add{type="label", caption={"fp.pu_" .. data_type:sub(1, -2), 1}}
+    flow.add{type="empty-widget", style="flib_horizontal_pusher"}
 
-    -- This is inefficient, but it's fine
-    if not MULTIPLE_QUALITIES and prototype_count == 1 then preference_box.destroy() end
+    local filter = {{filter="type", type=filter_type}, {filter="hidden", invert=true, mode="and"}}
+    local button_module = flow.add{type="choose-elem-button", elem_type="entity-with-quality",
+        tags={mod="fp", on_gui_elem_changed="select_preference_box_default", data_type=data_type,
+        category_id=category_id}, elem_filters=filter, style="fp_sprite-button_inset", mouse_button_filter={"left"}}
+    button_module.elem_value = defaults.get_as_elem_value(player, data_type, category_id)
 end
 
 
@@ -172,7 +172,7 @@ local function handle_checkbox_preference_change(player, tags, event)
     local preference_name = tags.name
     util.globals.preferences(player)[preference_name] = event.element.state
 
-    if tags.type == "production" or preference_name == "show_floor_items" then
+    if tags.data_type == "production" or preference_name == "show_floor_items" then
         util.gui.run_refresh(player, "production")
 
     elseif preference_name == "ingredient_satisfaction" then
@@ -274,8 +274,8 @@ local function handle_bol_change(player, _, event)
     util.gui.run_refresh(player, "all")
 end
 
-local function handle_default_prototype_change(player, tags, _)
-    local data_type, category_id = tags.type, tags.category_id
+local function handle_table_default_change(player, tags, _)
+    local data_type, category_id = tags.data_type, tags.category_id
 
     local current_default = defaults.get(player, data_type, category_id)
     local quality_name = (current_default.quality) and current_default.quality.name or nil
@@ -292,17 +292,20 @@ local function handle_default_prototype_change(player, tags, _)
     util.gui.run_refresh(player, "all")
 end
 
-local function handle_prototype_quality_change(player, tags, event)
-    local data_type, category_id = tags.type, tags.category_id
-    -- Get the quality_proto by using the index as the quality level
-    local quality_proto = storage.prototypes.qualities[event.element.selected_index]
+local function handle_box_default_change(player, tags, event)
+    local data_type, category_id = tags.data_type, tags.category_id
 
-    local current_default = defaults.get(player, data_type, category_id)
-    local default_data = {prototype=current_default.proto.name, quality=quality_proto.name}
+    local elem_value = event.element.elem_value
+    if not elem_value then
+        event.element.elem_value = defaults.get_as_elem_value(player, data_type, category_id)
+        util.cursor.create_flying_text(player, {"fp.no_removal", {"fp.pu_" .. data_type:sub(1, -2), 1}})
+        return  -- nothing changed
+    end
+
+    local machine_proto = prototyper.util.find(data_type, elem_value.name, category_id)
+    local quality_proto = prototyper.util.find("qualities", elem_value.quality, nil)
+    local default_data = {prototype=machine_proto.name, quality=quality_proto.name}
     defaults.set(player, data_type, default_data, category_id)
-
-    local modal_elements = util.globals.modal_elements(player)
-    refresh_defaults_table(player, modal_elements, data_type, category_id)
 
     item_views.rebuild_data(player)
     item_views.rebuild_interface(player)
@@ -337,10 +340,18 @@ local function open_preferences_dialog(player, modal_data)
     -- Right side
     local right_content_frame = modal_elements.secondary_frame
     add_views_box(player, right_content_frame, modal_elements)
-    add_default_proto_box(player, right_content_frame, "belts", nil, "lanes_or_belts")
-    add_default_proto_box(player, right_content_frame, "pumps", nil, "quality_picker")
-    add_default_proto_box(player, right_content_frame, "wagons", 1, "quality_picker")  -- cargo-wagon
-    add_default_proto_box(player, right_content_frame, "wagons", 2, "quality_picker")  -- fluid-wagon
+    add_belts_proto_box(player, right_content_frame)
+
+    local preference_box = add_preference_box(right_content_frame, "box_defaults")
+    local default_boxes_table = preference_box.add{type="table", column_count=2}
+    default_boxes_table.style.horizontal_spacing = 60
+    default_boxes_table.style.vertical_spacing = 8
+    default_boxes_table.style.right_margin = 50
+    add_default_proto_box(player, default_boxes_table, "pumps", nil, "pump")
+    add_default_proto_box(player, default_boxes_table, "silos", nil, "rocket-silo")
+    add_default_proto_box(player, default_boxes_table, "wagons", 1, "cargo-wagon")
+    add_default_proto_box(player, default_boxes_table, "wagons", 2, "fluid-wagon")
+
     local pusher = right_content_frame.add{type="empty-widget", style="flib_vertical_pusher"}
     pusher.style.top_margin = -4  -- counteract vertical spacing
 end
@@ -362,12 +373,18 @@ local listeners = {}
 listeners.gui = {
     on_gui_click = {
         {
-            name = "select_preference_default",
-            handler = handle_default_prototype_change
+            name = "select_preference_table_default",
+            handler = handle_table_default_change
         },
         {
             name = "move_view",
             handler = handle_view_move
+        }
+    },
+    on_gui_elem_changed = {
+        {
+            name = "select_preference_box_default",
+            handler = handle_box_default_change
         }
     },
     on_gui_checked_state_changed = {
@@ -384,11 +401,7 @@ listeners.gui = {
         {
             name = "choose_preference",
             handler = handle_dropdown_preference_change
-        },
-        {
-            name = "select_preference_quality",
-            handler = handle_prototype_quality_change
-        },
+        }
     },
     on_gui_switch_state_changed = {
         {

@@ -114,7 +114,7 @@ function defaults.equals_all_defaults(player, data_type, object)
 end
 
 
-local prototypes_with_quality = {machines=true, beacons=true, modules=true, pumps=true, wagons=true}
+local prototypes_with_quality = {machines=true, beacons=true, modules=true, pumps=true, silos=true, wagons=true}
 
 -- Returns the fallback default for the given type of prototype
 ---@param data_type DataType
@@ -246,4 +246,13 @@ function defaults.generate_tooltip(player, data_type, category)
     end
 
     return tooltip
+end
+
+---@param player LuaPlayer
+---@param data_type DataType
+---@param category (integer | string)?
+---@return DefaultPrototype
+function defaults.get_as_elem_value(player, data_type, category_id)
+    local default = defaults.get(player, data_type, category_id)
+    return {name=default.proto.name, quality=default.quality.name}
 end
