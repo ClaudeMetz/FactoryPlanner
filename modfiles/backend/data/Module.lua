@@ -48,13 +48,18 @@ function Module:set_amount(new_amount)
     self:summarize_effects()
 end
 
+
 function Module:summarize_effects()
     local effects = util.flib.shallow_copy(BLANK_EFFECTS)
+
     for name, effect in pairs(self.proto.effects) do
-        if util.effects.is_positive(name, effect) then
-            local e = effect * self.quality_proto.default_multiplier  -- needs truncating towards zero
-            effect = (e < 0) and math.ceil(e - 1e-4) or math.floor(e + 1e-4)
+        local module_multiplier = self.proto.quality_multipliers[name]
+        if module_multiplier ~= 0 then
+            local quality_multiplier = self.quality_proto.module_multipliers[name]
+            effect = effect * (1 + module_multiplier * (quality_multiplier - 1))
         end
+
+        effect = (effect < 0) and math.ceil(effect - 1e-4) or math.floor(effect + 1e-4)  -- truncate towards zero
         effects[name] = effect * self.amount  -- doesn't create decimals
     end
 

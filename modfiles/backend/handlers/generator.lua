@@ -665,7 +665,7 @@ end
 ---@field emissions_per_second EmissionsMap
 ---@field burner MachineBurner?
 ---@field built_by_item FPItemPrototype?
----@field effect_receiver EffectReceiver
+---@field effect_receiver FormattedEffectReceiver
 ---@field allowed_effects AllowedEffects
 ---@field allowed_module_categories { [string]: boolean }?
 ---@field module_limit uint16
@@ -1223,6 +1223,7 @@ end
 ---@field category string
 ---@field tier uint
 ---@field effects IntegerModuleEffects
+---@field quality_multipliers { [ModuleEffectName]: float }
 
 ---@return NamedPrototypesWithCategory<FPModulePrototype>
 function generator.modules.generate()
@@ -1239,7 +1240,14 @@ function generator.modules.generate()
                 sprite = sprite,
                 category = proto.category,
                 tier = proto.tier,
-                effects = generator_util.formatted_effects(proto.module_effects)
+                effects = generator_util.formatted_effects(proto.module_effects),
+                quality_multipliers = {
+                    consumption = proto.consumption_quality_multiplier,
+                    speed = proto.speed_quality_multiplier,
+                    productivity = proto.productivity_quality_multiplier,
+                    pollution = proto.pollution_quality_multiplier,
+                    quality = proto.quality_quality_multiplier
+                }
             }
             insert_prototype(modules, module, module.category)
         end
@@ -1447,6 +1455,7 @@ end
 ---@field mining_drill_resource_drain_multiplier double
 ---@field beacon_module_slots_bonus uint16
 ---@field mining_drill_module_slots_bonus uint16
+---@field module_multipliers { [ModuleEffectName]: float }
 
 ---@return NamedPrototypes<FPQualityPrototype>
 function generator.qualities.generate()
@@ -1468,7 +1477,14 @@ function generator.qualities.generate()
                     beacon_power_usage_multiplier = proto.beacon_power_usage_multiplier,
                     mining_drill_resource_drain_multiplier = proto.mining_drill_resource_drain_multiplier,
                     beacon_module_slots_bonus = proto.beacon_module_slots_bonus,
-                    mining_drill_module_slots_bonus = proto.mining_drill_module_slots_bonus
+                    mining_drill_module_slots_bonus = proto.mining_drill_module_slots_bonus,
+                    module_multipliers = {
+                        consumption = proto.module_consumption_multiplier,
+                        speed = proto.module_speed_multiplier,
+                        productivity = proto.module_productivity_multiplier,
+                        pollution = proto.module_pollution_multiplier,
+                        quality = proto.module_quality_multiplier
+                    }
                 }
                 insert_prototype(qualities, quality, nil)
             end

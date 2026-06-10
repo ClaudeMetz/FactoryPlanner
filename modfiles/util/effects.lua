@@ -46,7 +46,7 @@ function _effects.limit_value(effect, bounds)
 end
 
 ---@param effects IntegerModuleEffects
----@param effect_receiver EffectReceiver
+---@param effect_receiver FormattedEffectReceiver
 ---@return IntegerModuleEffects
 ---@return { ModuleEffectName: string }
 function _effects.limit(effects, effect_receiver)
@@ -54,7 +54,7 @@ function _effects.limit(effects, effect_receiver)
 
     -- Bound effects and note the indication if relevant
     for name, effect in pairs(effects) do
-        local bounds = effect_receiver[name .. "_limits"]
+        local bounds = effect_receiver.limits[name]
         effects[name], indications[name] = _effects.limit_value(effect, bounds)
     end
 

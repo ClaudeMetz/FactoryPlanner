@@ -7,7 +7,7 @@ Date: 00. 00. 0000
     - Added support for recipes using shared probability for its products
     - Added the ability to pick a preferred rocket silo to determine the lift capacity for the rockets/timescale view
     - Added support for burning fluids as fuel producing a byproduct fluid
-    - Updated for new 0.01% resolution of module effects
+    - Updated for new 0.01% resolution of module effects, and the new quality effect multipliers
   Changes:
     - Removed dependency on the Factorio Library mod (flib)
     - The minimum migratable version of the mod is 2.0.1 from here on out. This means any save from before 2.0l can not be loaded with any new versions of the mod any more. Old saves can be brought forward by first loading them with 2.0.1, saving them, then loading them with a recent version. Export strings are not affected by this, so they'll continue to work as expected.

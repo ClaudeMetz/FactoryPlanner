@@ -382,8 +382,15 @@ function generator_util.get_blank_effect_receiver()
     }
 end
 
+---@class FormattedEffectReceiver
+---@field base_effect ModuleEffects
+---@field uses_module_effects boolean
+---@field uses_beacon_effects boolean
+---@field uses_surface_effects boolean
+---@field limits { [ModuleEffectName]: EffectValueRange }
+
 ---@param proto LuaEntityPrototype
----@return EffectReceiver effect_receiver
+---@return FormattedEffectReceiver effect_receiver
 function generator_util.format_effect_receiver(proto)
     local effect_receiver = proto.effect_receiver
     if effect_receiver == nil then
@@ -404,6 +411,19 @@ function generator_util.format_effect_receiver(proto)
         end
         effect_receiver.uses_beacon_effects = false
     end
+
+    effect_receiver.limits = {
+        consumption = effect_receiver.consumption_limits,
+        speed = effect_receiver.speed_limits,
+        productivity = effect_receiver.productivity_limits,
+        pollution = effect_receiver.pollution_limits,
+        quality = effect_receiver.quality_limits
+    }
+    effect_receiver.consumption_limits = nil
+    effect_receiver.speed_limits = nil
+    effect_receiver.productivity_limits = nil
+    effect_receiver.pollution_limits = nil
+    effect_receiver.quality_limits = nil
 
     return effect_receiver
 end
