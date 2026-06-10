@@ -197,7 +197,7 @@ local function create_recipe_group_box(modal_data, relevant_group)
     group_sprite.style.size = 64
     group_sprite.style.right_margin = 16
 
-    flow_group.add{type="empty-widget", style="flib_horizontal_pusher"}
+    flow_group.add{type="empty-widget", style="fflib_horizontal_pusher"}
     local frame_recipes = flow_group.add{type="frame", direction="horizontal", style="fp_frame_light_slots"}
     frame_recipes.style.width = MAGIC_NUMBERS.recipes_per_row * 40
     local table_recipes = frame_recipes.add{type="table", column_count=MAGIC_NUMBERS.recipes_per_row,
@@ -207,9 +207,9 @@ local function create_recipe_group_box(modal_data, relevant_group)
         local recipe_proto = recipe.proto
         local recipe_name = recipe_proto.name
 
-        local style = "flib_slot_button_green"
-        if not recipe.enabled then style = "flib_slot_button_yellow"
-        elseif recipe_proto.hidden then style = "flib_slot_button_default" end
+        local style = "fflib_slot_button_green"
+        if not recipe.enabled then style = "fflib_slot_button_yellow"
+        elseif recipe_proto.hidden then style = "fflib_slot_button_default" end
 
         local button_tags = {mod="fp", on_gui_click="pick_recipe", recipe_proto_id=recipe_proto.id}
         local button_recipe = nil

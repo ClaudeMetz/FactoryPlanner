@@ -88,7 +88,7 @@ local function build_calculator_dialog(player, elements)
     local flow_title = frame.add{type="flow", direction="horizontal", style="frame_header_flow"}
     flow_title.drag_target = frame
     flow_title.add{type="label", caption={"fp.calculator"}, style="fp_label_frame_title", ignored_by_interaction=true}
-    flow_title.add{type="empty-widget", style="flib_titlebar_drag_handle", ignored_by_interaction=true}
+    flow_title.add{type="empty-widget", style="fflib_titlebar_drag_handle", ignored_by_interaction=true}
 
     flow_title.add{type="sprite-button", sprite="fp_history", tooltip={"fp.toggle_history_tt"}, style="fp_button_frame",
         tags={mod="fp", on_gui_click="toggle_calculator_history"}, auto_toggle=true, mouse_button_filter={"left"}}

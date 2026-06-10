@@ -1,4 +1,5 @@
 -- Raiguard does not keep the flib API stable, so I copy the stuff I need here
+-- Styles & Sprites prefixed with fflib, to avoid clobbering any upstream changes
 
 --[[
 MIT License
@@ -24,13 +25,13 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 ]]
 
-local data_util = {dark_red_button_tileset = "__flib__/graphics/dark-red-button.png"}
+local data_util = {dark_red_button_tileset = "__factoryplanner__/graphics/flib/dark-red-button.png"}
 
 local styles = data.raw["gui-style"].default
 
 -- SLOT BUTTON STYLES
 
-local slot_tileset = "__factoryplanner__/graphics/flib-slots.png"
+local slot_tileset = "__factoryplanner__/graphics/flib/slots.png"
 
 local function gen_slot(x, y, default_offset)
   default_offset = default_offset or 0
@@ -121,17 +122,17 @@ local slot_data = {
 }
 
 for _, data in pairs(slot_data) do
-  styles["flib_slot_" .. data.name] = gen_slot(0, data.y)
-  styles["flib_selected_slot_" .. data.name] = gen_slot(0, data.y, 80)
-  styles["flib_slot_button_" .. data.name] = gen_slot_button(240, data.y, 0, data.glow)
-  styles["flib_selected_slot_button_" .. data.name] = gen_slot_button(240, data.y, 80, data.glow)
-  styles["flib_standalone_slot_button_" .. data.name] = gen_standalone_slot_button(240, data.y)
-  styles["flib_selected_standalone_slot_button_" .. data.name] = gen_standalone_slot_button(240, data.y, 80)
+  styles["fflib_slot_" .. data.name] = gen_slot(0, data.y)
+  styles["fflib_selected_slot_" .. data.name] = gen_slot(0, data.y, 80)
+  styles["fflib_slot_button_" .. data.name] = gen_slot_button(240, data.y, 0, data.glow)
+  styles["fflib_selected_slot_button_" .. data.name] = gen_slot_button(240, data.y, 80, data.glow)
+  styles["fflib_standalone_slot_button_" .. data.name] = gen_standalone_slot_button(240, data.y)
+  styles["fflib_selected_standalone_slot_button_" .. data.name] = gen_standalone_slot_button(240, data.y, 80)
 end
 
 -- BUTTON STYLES
 
-styles.flib_selected_frame_action_button = {
+styles.fflib_selected_frame_action_button = {
   type = "button_style",
   parent = "frame_action_button",
   default_font_color = button_hovered_font_color,
@@ -157,7 +158,7 @@ styles.flib_selected_frame_action_button = {
 
 local btn = styles.button
 
-styles.flib_selected_tool_button = {
+styles.fflib_selected_tool_button = {
   type = "button_style",
   parent = "tool_button",
   default_font_color = btn.selected_font_color,
@@ -172,7 +173,7 @@ styles.flib_selected_tool_button = {
   clicked_vertical_offset = 0,
 }
 
-styles.flib_tool_button_light_green = {
+styles.fflib_tool_button_light_green = {
   type = "button_style",
   parent = "item_and_count_select_confirm",
   padding = 2,
@@ -180,7 +181,7 @@ styles.flib_tool_button_light_green = {
   tooltip = "",
 }
 
-styles.flib_tool_button_dark_red = {
+styles.fflib_tool_button_dark_red = {
   type = "button_style",
   parent = "tool_button",
   default_graphical_set = {
@@ -200,31 +201,31 @@ styles.flib_tool_button_dark_red = {
 
 -- EMPTY-WIDGET STYLES
 
-styles.flib_dialog_footer_drag_handle = {
+styles.fflib_dialog_footer_drag_handle = {
   type = "empty_widget_style",
   parent = "draggable_space",
   height = 32,
   horizontally_stretchable = "on",
 }
 
-styles.flib_dialog_footer_drag_handle_no_right = {
+styles.fflib_dialog_footer_drag_handle_no_right = {
   type = "empty_widget_style",
-  parent = "flib_dialog_footer_drag_handle",
+  parent = "fflib_dialog_footer_drag_handle",
   right_margin = 0,
 }
 
-styles.flib_dialog_titlebar_drag_handle = {
+styles.fflib_dialog_titlebar_drag_handle = {
   type = "empty_widget_style",
-  parent = "flib_titlebar_drag_handle",
+  parent = "fflib_titlebar_drag_handle",
   right_margin = 0,
 }
 
-styles.flib_horizontal_pusher = {
+styles.fflib_horizontal_pusher = {
   type = "empty_widget_style",
   horizontally_stretchable = "on",
 }
 
-styles.flib_titlebar_drag_handle = {
+styles.fflib_titlebar_drag_handle = {
   type = "empty_widget_style",
   parent = "draggable_space",
   left_margin = 4,
@@ -233,26 +234,26 @@ styles.flib_titlebar_drag_handle = {
   horizontally_stretchable = "on",
 }
 
-styles.flib_vertical_pusher = {
+styles.fflib_vertical_pusher = {
   type = "empty_widget_style",
   vertically_stretchable = "on",
 }
 
 -- FLOW STYLES
 
-styles.flib_indicator_flow = {
+styles.fflib_indicator_flow = {
   type = "horizontal_flow_style",
   vertical_align = "center",
 }
 
-styles.flib_titlebar_flow = {
+styles.fflib_titlebar_flow = {
   type = "horizontal_flow_style",
   horizontal_spacing = 8,
 }
 
 -- FRAME STYLES
 
-styles.flib_shallow_frame_in_shallow_frame = {
+styles.fflib_shallow_frame_in_shallow_frame = {
   type = "frame_style",
   parent = "frame",
   padding = 0,
@@ -273,7 +274,7 @@ styles.flib_shallow_frame_in_shallow_frame = {
 
 -- IMAGE STYLES
 
-styles.flib_indicator = {
+styles.fflib_indicator = {
   type = "image_style",
   size = 16,
   stretch_image_to_widget_size = true,
@@ -281,7 +282,7 @@ styles.flib_indicator = {
 
 -- LABEL STYLES
 
-styles.flib_frame_title = {
+styles.fflib_frame_title = {
   type = "label_style",
   parent = "frame_title",
   bottom_padding = 3,
@@ -290,7 +291,7 @@ styles.flib_frame_title = {
 
 -- LINE STYLES
 
-styles.flib_subheader_horizontal_line = {
+styles.fflib_subheader_horizontal_line = {
   type = "line_style",
   horizontally_stretchable = "on",
   left_margin = -8,
@@ -299,11 +300,11 @@ styles.flib_subheader_horizontal_line = {
   bottom_margin = -2,
   border = {
     border_width = 8,
-    horizontal_line = { filename = "__flib__/graphics/subheader-line.png", size = { 1, 8 } },
+    horizontal_line = { filename = "__factoryplanner__/graphics/flib/subheader-line.png", size = { 1, 8 } },
   },
 }
 
-styles.flib_titlebar_separator_line = {
+styles.fflib_titlebar_separator_line = {
   type = "line_style",
   top_margin = -2,
   bottom_margin = 2,
@@ -311,7 +312,7 @@ styles.flib_titlebar_separator_line = {
 
 -- SCROLL-PANE STYLES
 
-styles.flib_naked_scroll_pane = {
+styles.fflib_naked_scroll_pane = {
   type = "scroll_pane_style",
   extra_padding_when_activated = 0,
   padding = 12,
@@ -320,9 +321,9 @@ styles.flib_naked_scroll_pane = {
   },
 }
 
-styles.flib_naked_scroll_pane_under_tabs = {
+styles.fflib_naked_scroll_pane_under_tabs = {
   type = "scroll_pane_style",
-  parent = "flib_naked_scroll_pane",
+  parent = "fflib_naked_scroll_pane",
   graphical_set = {
     base = {
       top = { position = { 93, 0 }, size = { 1, 8 } },
@@ -332,13 +333,13 @@ styles.flib_naked_scroll_pane_under_tabs = {
   },
 }
 
-styles.flib_naked_scroll_pane_no_padding = {
+styles.fflib_naked_scroll_pane_no_padding = {
   type = "scroll_pane_style",
-  parent = "flib_naked_scroll_pane",
+  parent = "fflib_naked_scroll_pane",
   padding = 0,
 }
 
-styles.flib_shallow_scroll_pane = {
+styles.fflib_shallow_scroll_pane = {
   type = "scroll_pane_style",
   padding = 0,
   graphical_set = {
@@ -349,7 +350,7 @@ styles.flib_shallow_scroll_pane = {
 
 -- TABBED PANE STYLES
 
-styles.flib_tabbed_pane_with_no_padding = {
+styles.fflib_tabbed_pane_with_no_padding = {
   type = "tabbed_pane_style",
   tab_content_frame = {
     type = "frame_style",
@@ -370,20 +371,32 @@ styles.flib_tabbed_pane_with_no_padding = {
 
 -- TEXTFIELD STYLES
 
-styles.flib_widthless_textfield = {
+styles.fflib_widthless_textfield = {
   type = "textbox_style",
   width = 0,
 }
 
-styles.flib_widthless_invalid_textfield = {
+styles.fflib_widthless_invalid_textfield = {
   type = "textbox_style",
   parent = "invalid_value_textfield",
   width = 0,
 }
 
-styles.flib_titlebar_search_textfield = {
+styles.fflib_titlebar_search_textfield = {
   type = "textbox_style",
   top_margin = -2,
   bottom_margin = 1,
   width = 150,
 }
+
+
+data:extend({
+  {
+    type = "sprite",
+    name = "fflib_settings_black",
+    filename = "__factoryplanner__/graphics/flib/frame-action-icons.png",
+    position = { 0, 32 },
+    size = 32,
+    flags = { "gui-icon" },
+  }
+})

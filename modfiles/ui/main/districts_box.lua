@@ -80,17 +80,17 @@ local function build_items_flow(player, parent, district)
         return table_items
     end
 
-    items_flow.add{type="empty-widget", style="flib_horizontal_pusher"}
+    items_flow.add{type="empty-widget", style="fflib_horizontal_pusher"}
     local prod_table = build_item_flow("product")
-    items_flow.add{type="empty-widget", style="flib_horizontal_pusher"}
-    items_flow.add{type="empty-widget", style="flib_horizontal_pusher"}
+    items_flow.add{type="empty-widget", style="fflib_horizontal_pusher"}
+    items_flow.add{type="empty-widget", style="fflib_horizontal_pusher"}
     local ingr_table = build_item_flow("ingredient")
-    items_flow.add{type="empty-widget", style="flib_horizontal_pusher"}
+    items_flow.add{type="empty-widget", style="fflib_horizontal_pusher"}
 
     local tooltips = util.globals.ui_state(player).tooltips
     local color_map = {
-        production = {half="flib_slot_button_cyan", full="flib_slot_button_blue"},
-        consumption = {half="flib_slot_button_yellow", full="flib_slot_button_red"}
+        production = {half="fflib_slot_button_cyan", full="fflib_slot_button_blue"},
+        consumption = {half="fflib_slot_button_yellow", full="fflib_slot_button_red"}
     }
 
     for item in district.item_set:iterator() do
@@ -210,7 +210,7 @@ local function build_district_frame(player, district, location_items)
     end
 
     -- Item toggle
-    subheader.add{type="empty-widget", style="flib_horizontal_pusher"}
+    subheader.add{type="empty-widget", style="fflib_horizontal_pusher"}
     local sprite = (district.collapsed) and "fp_expand" or "fp_collapse"
     local items_toggle = subheader.add{type="sprite-button", sprite=sprite,
         tags={mod="fp", on_gui_click="toggle_district_items", district_id=district.id},
@@ -223,7 +223,7 @@ local function build_district_frame(player, district, location_items)
     elements[district.id]["delete_toggle"] = delete_toggle
     local delete_confirm = subheader.add{type="sprite-button", sprite="utility/check_mark",
         tags={mod="fp", on_gui_click="delete_district_confirm", district_id=district.id},
-        style="flib_tool_button_light_green", visible=false, mouse_button_filter={"left"}}
+        style="fflib_tool_button_light_green", visible=false, mouse_button_filter={"left"}}
     delete_confirm.style.padding = 0
     elements[district.id]["delete_confirm"] = delete_confirm
 
@@ -260,7 +260,7 @@ local function build_districts_box(player)
     main_elements.districts_box = {}
 
     local parent_flow = main_elements.flows.right_vertical
-    local scroll_pane = parent_flow.add{type="scroll-pane", style="flib_naked_scroll_pane_no_padding"}
+    local scroll_pane = parent_flow.add{type="scroll-pane", style="fflib_naked_scroll_pane_no_padding"}
     scroll_pane.style.top_margin = -2
     scroll_pane.style.extra_right_margin_when_activated = -12
     local flow_vertical = scroll_pane.add{type="flow", direction="vertical"}

@@ -139,7 +139,7 @@ local function create_choice_frame(parent_frame, label_caption)
     flow_choices.style.vertical_align = "center"
 
     flow_choices.add{type="label", caption=label_caption, style="semibold_label"}
-    flow_choices.add{type="empty-widget", style="flib_horizontal_pusher"}
+    flow_choices.add{type="empty-widget", style="fflib_horizontal_pusher"}
 
     return flow_choices
 end

@@ -22,7 +22,7 @@ local function refresh_defaults_table(player, modal_elements, data_type, categor
 
     for prototype_id, prototype in ipairs(prototypes) do
         local selected = (default.proto.id == prototype_id)
-        local style = (selected) and "flib_slot_button_green_small" or "flib_slot_button_default_small"
+        local style = (selected) and "fflib_slot_button_green_small" or "fflib_slot_button_default_small"
         local elem_type = (default.quality) and prototype.elem_type .. "-with-quality" or prototype.elem_type
         local quality = (default.quality) and default.quality.name or nil
         local tooltip = {type=elem_type, name=prototype.name, quality=quality}
@@ -95,7 +95,7 @@ local function add_dropdowns(preferences, parent_flow)
 
         flow.add{type="label", caption={"fp.info_label", {"fp.preference_dropdown_" .. name}},
             tooltip={"fp.preference_dropdown_" .. name .. "_tt"}}
-        flow.add{type="empty-widget", style="flib_horizontal_pusher"}
+        flow.add{type="empty-widget", style="fflib_horizontal_pusher"}
         flow.add{type="drop-down", items=items, selected_index=selected_index, style="fp_drop-down_slim",
             tags={mod="fp", on_gui_selection_state_changed="choose_preference", name=name}}
     end
@@ -145,7 +145,7 @@ local function add_belts_proto_box(player, content_frame)
     modal_elements["belts"] = frame.add{type="table", column_count=8, style="fp_table_slots_small"}
     local prototype_count = refresh_defaults_table(player, modal_elements, "belts", nil)
 
-    preference_box.title_flow.add{type="empty-widget", style="flib_horizontal_pusher"}
+    preference_box.title_flow.add{type="empty-widget", style="fflib_horizontal_pusher"}
     local belts_or_lanes = util.globals.preferences(player).belts_or_lanes
     local switch_state = (belts_or_lanes == "belts") and "left" or "right"
     preference_box.title_flow.add{type="switch", switch_state=switch_state,
@@ -158,7 +158,7 @@ local function add_default_proto_box(player, content_frame, data_type, category_
     local flow = content_frame.add{type="flow", direction="horizontal"}
     flow.style.vertical_align = "center"
     flow.add{type="label", caption={"fp.pu_" .. data_type:sub(1, -2), 1}}
-    flow.add{type="empty-widget", style="flib_horizontal_pusher"}
+    flow.add{type="empty-widget", style="fflib_horizontal_pusher"}
 
     local filter = {{filter="type", type=filter_type}, {filter="hidden", invert=true, mode="and"}}
     local button_module = flow.add{type="choose-elem-button", elem_type="entity-with-quality",
@@ -332,7 +332,7 @@ local function open_preferences_dialog(player, modal_data)
     local production_preference_names = {"done_column", "percentage_column", "line_comment_column"}
     add_checkboxes_box(preferences, left_content_frame, "production", production_preference_names)
 
-    left_content_frame.add{type="empty-widget", style="flib_vertical_pusher"}
+    left_content_frame.add{type="empty-widget", style="fflib_vertical_pusher"}
     local support_frame = left_content_frame.add{type="frame", direction="vertical", style="fp_frame_bordered_stretch"}
     support_frame.style.top_padding = 8
     support_frame.add{type="label", caption={"fp.preferences_support"}}
@@ -352,7 +352,7 @@ local function open_preferences_dialog(player, modal_data)
     add_default_proto_box(player, default_boxes_table, "wagons", 1, "cargo-wagon")
     add_default_proto_box(player, default_boxes_table, "wagons", 2, "fluid-wagon")
 
-    local pusher = right_content_frame.add{type="empty-widget", style="flib_vertical_pusher"}
+    local pusher = right_content_frame.add{type="empty-widget", style="fflib_vertical_pusher"}
     pusher.style.top_margin = -4  -- counteract vertical spacing
 end
 

@@ -80,7 +80,7 @@ local function build_production_bar(player)
     button_add.style.minimal_width = 0
 
     -- Shared bar
-    subheader.add{type="empty-widget", style="flib_horizontal_pusher"}
+    subheader.add{type="empty-widget", style="fflib_horizontal_pusher"}
 
     local flow_timescale = subheader.add{type="flow", direction="horizontal"}
     flow_timescale.style.margin = {4, 16, 0, 0}

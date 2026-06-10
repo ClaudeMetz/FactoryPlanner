@@ -40,7 +40,7 @@ local function build_district_info(player)
         main_elements.district_info["location_sprite"] = button_sprite
     end
 
-    flow_horizontal.add{type="empty-widget", style="flib_horizontal_pusher"}
+    flow_horizontal.add{type="empty-widget", style="fflib_horizontal_pusher"}
     local button_districts = flow_horizontal.add{type="sprite-button", sprite="fp_panel",
         tooltip={"fp.view_districts"}, tags={mod="fp", on_gui_click="toggle_districts_view"},
         style="tool_button", auto_toggle=true, mouse_button_filter={"left"}}

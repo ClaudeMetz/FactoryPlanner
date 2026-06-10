@@ -181,7 +181,7 @@ local function refresh_factory_list(player)
 
     factory_list_elements.toggle_archive_button.enabled = (archived_factory_count > 0)
     factory_list_elements.toggle_archive_button.style = (archived)
-        and "flib_selected_tool_button" or "tool_button"
+        and "fflib_selected_tool_button" or "tool_button"
 
     if not archived then
         local factory_plural = {"fp.pl_factory", archived_factory_count}
@@ -235,7 +235,7 @@ local function build_factory_list(player)
         style="tool_button", mouse_button_filter={"left"}}
     main_elements.factory_list["archive_button"] = button_archive
 
-    subheader.add{type="empty-widget", style="flib_horizontal_pusher"}
+    subheader.add{type="empty-widget", style="fflib_horizontal_pusher"}
 
     local button_import = subheader.add{type="sprite-button", sprite="utility/import",
         tooltip={"fp.action_import_factory"}, style="tool_button", mouse_button_filter={"left"},
@@ -247,10 +247,10 @@ local function build_factory_list(player)
         tags={mod="fp", on_gui_click="factory_list_open_dialog", type="export"}}
     main_elements.factory_list["export_button"] = button_export
 
-    subheader.add{type="empty-widget", style="flib_horizontal_pusher"}
+    subheader.add{type="empty-widget", style="fflib_horizontal_pusher"}
 
     local button_add = subheader.add{type="sprite-button", tags={mod="fp", on_gui_click="add_factory"},
-        sprite="utility/add", style="flib_tool_button_light_green", mouse_button_filter={"left"}}
+        sprite="utility/add", style="fflib_tool_button_light_green", mouse_button_filter={"left"}}
     button_add.style.padding = 1
     main_elements.factory_list["add_button"] = button_add
 
@@ -283,7 +283,7 @@ local function build_factory_list(player)
     flow_search.style.vertical_align = "center"
 
     flow_search.add{type="label", caption={"fp.search"}, tooltip={"fp.factory_search_tt"}}
-    flow_search.add{type="empty-widget", style="flib_horizontal_pusher"}
+    flow_search.add{type="empty-widget", style="fflib_horizontal_pusher"}
     local textfield_search = flow_search.add{type="textfield", style="search_popup_textfield",
         tags={mod="fp", on_gui_text_changed="factory_searchfield"}}
     textfield_search.style.width = 230

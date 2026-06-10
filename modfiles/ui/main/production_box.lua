@@ -46,7 +46,7 @@ local function refresh_solver_frame(player)
                 local color = (status == "unrestricted") and "green" or "default"
                 flow.add{type="sprite-button", sprite=proto.sprite, tooltip=tooltip,
                     tags={mod="fp", on_gui_click="switch_matrix_item", status=status, type=proto.type, name=proto.name},
-                    style="flib_slot_button_" .. color .. "_small", mouse_button_filter={"left"}}
+                    style="fflib_slot_button_" .. color .. "_small", mouse_button_filter={"left"}}
             end
         end
 
@@ -230,7 +230,7 @@ local function build_production_box(player)
     local flow_production = subheader.add{type="flow", direction="horizontal"}
 
     local button_utility_dialog = flow_production.add{type="sprite-button", tooltip={"fp.utility_dialog_tt"},
-        tags={mod="fp", on_gui_click="open_utility_dialog"}, sprite="flib_settings_black", style="tool_button",
+        tags={mod="fp", on_gui_click="open_utility_dialog"}, sprite="fflib_settings_black", style="tool_button",
         mouse_button_filter={"left"}}
     button_utility_dialog.style.padding = 1
     main_elements.production_box["utility_dialog_button"] = button_utility_dialog
@@ -261,7 +261,7 @@ local function build_production_box(player)
     button_fold_out_subfloors.style.margin = {2, 0, 0, 16}
     main_elements.production_box["fold_out_subfloors_button"] = button_fold_out_subfloors
 
-    flow_production.add{type="empty-widget", style="flib_horizontal_pusher"}
+    flow_production.add{type="empty-widget", style="fflib_horizontal_pusher"}
 
     local flow_solver = flow_production.add{type="flow", direction="horizontal"}
     flow_solver.style.horizontal_spacing = 12
@@ -276,7 +276,7 @@ local function build_production_box(player)
 
 
     -- Main scrollpane
-    local scroll_pane_production = frame_vertical.add{type="scroll-pane", style="flib_naked_scroll_pane_no_padding"}
+    local scroll_pane_production = frame_vertical.add{type="scroll-pane", style="fflib_naked_scroll_pane_no_padding"}
     scroll_pane_production.style.extra_right_padding_when_activated = 0
     scroll_pane_production.style.bottom_padding = 12
     scroll_pane_production.style.extra_bottom_padding_when_activated = -12
@@ -300,7 +300,7 @@ local function build_production_box(player)
     flow_actions.style.top_margin = 8
     local label_diff = flow_actions.add{type="label", caption={"fp.modset_differences"}, style="bold_label"}
     main_elements.production_box["diff_label"] = label_diff
-    flow_actions.add{type="empty-widget", style="flib_horizontal_pusher"}
+    flow_actions.add{type="empty-widget", style="fflib_horizontal_pusher"}
     local button_repair = flow_actions.add{type="button", tags={mod="fp", on_gui_click="repair_factory"},
         caption={"fp.repair_factory"}, mouse_button_filter={"left"}}
     button_repair.style.minimal_width = 0
@@ -315,12 +315,12 @@ local function build_production_box(player)
     button_paste.style.minimal_width = 0
     main_elements.production_box["paste_button"] = button_paste
 
-    frame_vertical.add{type="empty-widget", style="flib_vertical_pusher"}
-    frame_vertical.add{type="empty-widget", style="flib_horizontal_pusher"}
+    frame_vertical.add{type="empty-widget", style="fflib_vertical_pusher"}
+    frame_vertical.add{type="empty-widget", style="fflib_horizontal_pusher"}
 
     -- Bottom UI for messages & solver
     local scroll_pane_messages = frame_vertical.add{type="scroll-pane", vertical_scroll_policy="never",
-        visible=false, style="flib_naked_scroll_pane_no_padding"}
+        visible=false, style="fflib_naked_scroll_pane_no_padding"}
     main_elements["messages_frame"] = scroll_pane_messages
 
     local line_messages = scroll_pane_messages.add{type="line", direction="horizontal"}
@@ -331,7 +331,7 @@ local function build_production_box(player)
     main_elements["messages_flow"] = flow_messages
 
     local scroll_pane_solver = frame_vertical.add{type="scroll-pane", vertical_scroll_policy="never",
-        visible=false, style="flib_naked_scroll_pane_no_padding"}
+        visible=false, style="fflib_naked_scroll_pane_no_padding"}
     main_elements["solver_frame"] = scroll_pane_solver
 
     local line_solver = scroll_pane_solver.add{type="line", direction="horizontal"}

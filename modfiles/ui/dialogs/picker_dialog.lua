@@ -153,7 +153,7 @@ local function add_item_picker(parent_flow, player)
 
             local item_name = item_proto.name
             local existing_product = existing_products[item_name]
-            local button_style = (existing_product) and "flib_slot_button_red" or "flib_slot_button_default"
+            local button_style = (existing_product) and "fflib_slot_button_red" or "fflib_slot_button_default"
 
             local name = (item_proto.temperature) and item_proto.base_name or item_proto.name
             local elem_tooltip = (item_proto.type ~= "entity") and {type=item_proto.type, name=name} or nil

@@ -51,7 +51,7 @@ local function refresh_item_box(player, factory, show_floor_items, item_category
     if item_category == "product" and (not show_floor_items or floor.level == 1) then
         for product in factory:iterator() do
             local action = (product.proto.special) and "act_on_top_level_special_product" or "act_on_top_level_product"
-            local style = "flib_slot_button_default"
+            local style = "fflib_slot_button_default"
 
             local amount, number_tooltip = nil, nil
             local required_amount = product:get_required_amount()
@@ -67,9 +67,9 @@ local function refresh_item_box(player, factory, show_floor_items, item_category
             local satisfaction_line, percentage_string = util.gui.calculate_satisfaction(
                 product.amount, required_amount)
 
-            if percentage_string == "0" then style = "flib_slot_button_red"
-            elseif percentage_string == "100" then style = "flib_slot_button_green"
-            else style = "flib_slot_button_yellow" end
+            if percentage_string == "0" then style = "fflib_slot_button_red"
+            elseif percentage_string == "100" then style = "fflib_slot_button_green"
+            else style = "fflib_slot_button_yellow" end
 
             local tooltip = {"", {"fp.tt_title", product.proto.localised_name}, "\n", number_tooltip,
                 satisfaction_line, "\n", MODIFIER_ACTIONS[action].tooltip}
@@ -104,7 +104,7 @@ local function refresh_item_box(player, factory, show_floor_items, item_category
                 if amount == -1 then goto skip_item end  -- an amount of -1 means it was below the margin of error
             end
 
-            local style = (item_category == "byproduct") and "flib_slot_button_red" or "flib_slot_button_default"
+            local style = (item_category == "byproduct") and "fflib_slot_button_red" or "fflib_slot_button_default"
             local tooltip = {"", {"fp.tt_title", item.proto.localised_name}, "\n", number_tooltip,
                 "\n", MODIFIER_ACTIONS[action].tooltip}
 

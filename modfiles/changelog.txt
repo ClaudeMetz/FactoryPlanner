@@ -2,11 +2,11 @@
 Version: 0.00.00
 Date: 00. 00. 0000
   Features:
-    - 
+    -
   Changes:
-    - 
+    -
   Bugfixes:
-    - 
+    -
 
 ---------------------------------------------------------------------------------------------------
 Version: 2.1.1
@@ -20,7 +20,7 @@ Date: 10. 06. 2026
     - Updated for new 0.01% resolution of module effects, and the new quality effect multipliers
   Changes:
     - Removed dependency on the Factorio Library mod (flib)
-    - The minimum migratable version of the mod is 2.0.1 from here on out. This means any save from before 2.0l can not be loaded with any new versions of the mod any more. Old saves can be brought forward by first loading them with 2.0.1, saving them, then loading them with a recent version. Export strings are not affected by this, so they'll continue to work as expected.
+    - The minimum migratable version of the mod is 2.0.1 from here on out. This means any save from before 2.0.1 can not be loaded with any new versions of the mod any more. Old saves can be brought forward by first loading them with 2.0.1, saving them, then loading them with a recent version. Export strings are not affected by this, so they'll continue to work as expected.
   Bugfixes:
     - Fixed a crash when trying to add an item to a constant combinator in the cursor (#751)
 

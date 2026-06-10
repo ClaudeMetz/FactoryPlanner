@@ -16,7 +16,7 @@ local function add_utility_box(player, modal_elements, parent_name, type, show_t
     label_title.style.top_margin = -2
 
     -- Empty flow for custom controls
-    flow_title_bar.add{type="empty-widget", style="flib_horizontal_pusher"}
+    flow_title_bar.add{type="empty-widget", style="fflib_horizontal_pusher"}
     local flow_custom = flow_title_bar.add{type="flow"}
     flow_custom.style.right_margin = 12
 
@@ -102,9 +102,9 @@ function utility_structures.components(player, modal_data)
                 end
 
                 local button_style = nil
-                if amount_in_inventory == 0 then button_style = "flib_slot_button_red"
-                elseif missing_amount > 0 then button_style = "flib_slot_button_yellow"
-                else button_style = "flib_slot_button_green" end
+                if amount_in_inventory == 0 then button_style = "fflib_slot_button_red"
+                elseif missing_amount > 0 then button_style = "fflib_slot_button_yellow"
+                else button_style = "fflib_slot_button_green" end
 
                 local title_line = (not quality_proto.always_show) and {"fp.tt_title",proto.localised_name}
                     or {"fp.tt_title_with_note", proto.localised_name, quality_proto.rich_text}
@@ -236,7 +236,7 @@ function utility_structures.productivity_boni(player, modal_data)
         flow_import.style.vertical_align = "center"
         flow_import.style.bottom_margin = 8
         flow_import.add{type="label", caption={"fp.import_from"}, style="bold_label"}
-        flow_import.add{type="empty-widget", style="flib_horizontal_pusher"}
+        flow_import.add{type="empty-widget", style="fflib_horizontal_pusher"}
 
         local factory_names = {}
         modal_data.factory_index = {}  -- used to find the factory later
@@ -253,7 +253,7 @@ function utility_structures.productivity_boni(player, modal_data)
         modal_data.modal_elements["factory_dropdown"] = dropdown_factory
 
         flow_import.add{type="sprite-button", tags={mod="fp", on_gui_click="import_productivity_boni"},
-            style="flib_tool_button_light_green", tooltip={"fp.import_from_tt"}, enabled=enabled,
+            style="fflib_tool_button_light_green", tooltip={"fp.import_from_tt"}, enabled=enabled,
             sprite="utility/check_mark", mouse_button_filter={"left"}}
 
         local table = boni_box.add{type="table", column_count=3}
@@ -262,7 +262,7 @@ function utility_structures.productivity_boni(player, modal_data)
         table.style.horizontal_spacing = 16
         modal_data.modal_elements["productivity_boni_table"] = table
 
-        boni_box.add{type="empty-widget", style="flib_vertical_pusher"}
+        boni_box.add{type="empty-widget", style="fflib_vertical_pusher"}
     end
     local table = modal_data.modal_elements["productivity_boni_table"]
     table.clear()

@@ -202,16 +202,16 @@ styles["fp_button_green"] = {
 
 -- Generate smaller versions of flib's slot buttons (size 36)
 for _, color in pairs{"default", "grey", "red", "orange", "yellow", "green", "cyan", "blue", "purple", "pink"} do
-    styles["flib_slot_button_" .. color .. "_small"] = {
+    styles["fflib_slot_button_" .. color .. "_small"] = {
         type = "button_style",
-        parent = "flib_slot_button_" .. color,
+        parent = "fflib_slot_button_" .. color,
         size = 36
     }
 end
 
-styles["flib_slot_button_disabled"] = {
+styles["fflib_slot_button_disabled"] = {
     type = "button_style",
-    parent = "flib_slot_button_default",
+    parent = "fflib_slot_button_default",
     default_graphical_set = {},
     hovered_graphical_set = {},
     clicked_graphical_set = {},
@@ -219,21 +219,21 @@ styles["flib_slot_button_disabled"] = {
     padding = 4
 }
 
-styles["flib_slot_button_disabled_small"] = {
+styles["fflib_slot_button_disabled_small"] = {
     type = "button_style",
-    parent = "flib_slot_button_disabled",
+    parent = "fflib_slot_button_disabled",
     size = 36
 }
 
-styles["flib_slot_button_grayscale_small"] = {
+styles["fflib_slot_button_grayscale_small"] = {
     type = "button_style",
-    parent = "flib_slot_button_default_small",
+    parent = "fflib_slot_button_default_small",
     draw_grayscale_picture = true
 }
 
-styles["flib_slot_button_disabled_grayscale_small"] = {
+styles["fflib_slot_button_disabled_grayscale_small"] = {
     type = "button_style",
-    parent = "flib_slot_button_disabled_small",
+    parent = "fflib_slot_button_disabled_small",
     draw_grayscale_picture = true
 }
 
