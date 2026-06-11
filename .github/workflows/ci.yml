@@ -5,7 +5,7 @@ jobs:
     runs-on: self-hosted
     strategy:
       matrix:
-        test: [save-create, generator]
+        test: [save-create, generator, runtime]
     steps:
       - uses: actions/checkout@v5
       - name: Run ${{ matrix.test }}

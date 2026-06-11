@@ -70,7 +70,7 @@ DEV_EXPORT_STRING = "eNrdVkuPnDAM/i85DyMew/PYQ0+tVKnHaoRCMLNRE8KGsO1oxH+vA8wUmJ3
 
 
 -- Import test code to run within the mod's context
-local test_mods = {"tests-generator"}
+local test_mods = {"tests-generator", "tests-runtime"}
 
 for _, mod in pairs(test_mods) do
     if script.active_mods[mod] then
