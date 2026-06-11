@@ -128,6 +128,9 @@ function generator.recipes.generate()
         end
     end
 
+    local recycling_recipes = storage.integrations.recycling_recipes
+    local compacting_recipes = storage.integrations.compacting_recipes
+
     -- Add all standard recipes
     local recipe_filter = {{filter="energy", comparison=">", value=0},
         {filter="energy", comparison="<", value=1e+21, mode="and"}}
@@ -150,8 +153,8 @@ function generator.recipes.generate()
                 type_counts = {},  -- filled out by format_recipe below
                 catalysts = {products={}, ingredients={}},  -- filled out by format_recipe below
                 surface_conditions = proto.surface_conditions,
-                recycling = generator_util.is_recycling_recipe(proto),
-                barreling = generator_util.is_compacting_recipe(proto),
+                recycling = recycling_recipes[proto.name],
+                barreling = compacting_recipes[proto.name],
                 enabling_technologies = researchable_recipes[recipe_name],  -- can be nil
                 custom = false,
                 enabled_from_the_start = proto.enabled,

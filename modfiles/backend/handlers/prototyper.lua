@@ -99,6 +99,9 @@ end
 
 
 function prototyper.build()
+    integrator.collect("recycling_recipes")
+    integrator.collect("compacting_recipes")
+
     for data_type, _ in pairs(prototyper.data_types) do
         ---@type AnyNamedPrototypes
         storage.prototypes[data_type] = generator[data_type].generate()
