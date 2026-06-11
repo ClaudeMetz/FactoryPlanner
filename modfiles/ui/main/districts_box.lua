@@ -99,7 +99,7 @@ local function build_items_flow(player, parent, district)
 
         local action_line = nil
         local tags = {mod="fp", item_id=item.id, on_gui_hover="set_tooltip", context="districts_box"}
-        local diff_string, amount_tooltip = nil, nil
+        local diff_number, amount_tooltip = nil, nil
         local total_tooltip = nil
 
         if item.proto.type == "entity" and item.proto.special then
@@ -115,7 +115,7 @@ local function build_items_flow(player, parent, district)
             tags.on_gui_click = action
             action_line = {"", "\n", MODIFIER_ACTIONS[action].tooltip}
 
-            diff_string, amount_tooltip = item_views.process_item(player, item, item.abs_diff, nil)
+            diff_number, amount_tooltip = item_views.process_item(player, item, item.abs_diff, nil)
             _, total_tooltip = item_views.process_item(player, item, total_amount, nil)
         end
 
@@ -127,7 +127,7 @@ local function build_items_flow(player, parent, district)
         local total_line = {"fp.item_amount_total", total_tooltip}
         local tooltip = {"", title_line, diff_line, total_line, action_line}
 
-        local button = relevant_table.add{type="sprite-button", number=diff_string, style=style,
+        local button = relevant_table.add{type="sprite-button", number=diff_number, style=style,
             sprite=item.proto.sprite, tags=tags, raise_hover_events=true, mouse_button_filter={"left-and-right"}}
         tooltips.districts_box[button.index] = tooltip
     end

@@ -3,10 +3,15 @@ item_views = {}
 local processors = {}  -- individual functions for each kind of view state
 
 function processors.items_per_timescale(metadata, raw_amount, item_proto, _)
-    local number = util.format.number(raw_amount * metadata.timescale, metadata.formatting_precision)
-    local plural_parameter = (number == "1") and 1 or 2
+    local raw_number = raw_amount * metadata.timescale
+    local button_number = util.format.button_number(raw_number)
+
+    local tooltip_number = util.format.number(raw_number, metadata.formatting_precision)
+    local plural_parameter = (tooltip_number == "1") and 1 or 2
     local type_string = (item_proto.type == "fluid") and {"fp.l_fluid"} or {"fp.pl_item", plural_parameter}
-    return number, {"", number, " ", type_string, "/", metadata.timescale_string}
+    local tooltip = {"", tooltip_number, " ", type_string, "/", metadata.timescale_string}
+
+    return button_number, tooltip
 end
 
 function processors.throughput(metadata, raw_amount, item_proto, _)
@@ -20,11 +25,13 @@ function processors.throughput(metadata, raw_amount, item_proto, _)
         unit_name = metadata.belt_or_lane
     end
 
-    local number = util.format.number(raw_number, metadata.formatting_precision)
-    local plural_parameter = (number == "1") and 1 or 2
-    local tooltip = {"", number, " ", {"fp.pl_" .. unit_name, plural_parameter}}
+    local button_number = util.format.button_number(raw_number)
 
-    return number, tooltip
+    local tooltip_number = util.format.number(raw_number, metadata.formatting_precision)
+    local plural_parameter = (tooltip_number == "1") and 1 or 2
+    local tooltip = {"", tooltip_number, " ", {"fp.pl_" .. unit_name, plural_parameter}}
+
+    return button_number, tooltip
 end
 
 function processors.items_per_second_per_machine(metadata, raw_amount, item_proto, machine_count)
@@ -32,39 +39,42 @@ function processors.items_per_second_per_machine(metadata, raw_amount, item_prot
     if adjusted_count == 0 then return 0, nil end  -- avoid division by zero
 
     local raw_number = raw_amount / adjusted_count
-    local number = util.format.number(raw_number, metadata.formatting_precision)
+    local button_number = util.format.button_number(raw_number)
 
-    local plural_parameter = (number == "1") and 1 or 2
+    local tooltip_number = util.format.number(raw_number, metadata.formatting_precision)
+    local plural_parameter = (tooltip_number == "1") and 1 or 2
     local type_string = (item_proto.type == "fluid") and {"fp.l_fluid"} or {"fp.pl_item", plural_parameter}
     -- If machine_count is nil, this shouldn't show /machine
     local per_machine = (machine_count ~= nil) and {"", "/", {"fp.pl_machine", 1}} or ""
-    local tooltip = {"", number, " ", type_string, "/", {"fp.second"}, per_machine}
+    local tooltip = {"", tooltip_number, " ", type_string, "/", {"fp.second"}, per_machine}
 
-    return number, tooltip
+    return button_number, tooltip
 end
 
 function processors.stacks_per_timescale(metadata, raw_amount, item_proto, _)
     if item_proto.type == "fluid" then return nil, {"fp.fluid_item"} end
 
     local raw_number = (raw_amount * metadata.timescale) / item_proto.stack_size
-    local number = util.format.number(raw_number, metadata.formatting_precision)
+    local button_number = util.format.button_number(raw_number)
 
-    local plural_parameter = (number == "1") and 1 or 2
-    local tooltip = {"", number, " ", {"fp.pl_stack", plural_parameter}, "/", metadata.timescale_string}
+    local tooltip_number = util.format.number(raw_number, metadata.formatting_precision)
+    local plural_parameter = (tooltip_number == "1") and 1 or 2
+    local tooltip = {"", tooltip_number, " ", {"fp.pl_stack", plural_parameter}, "/", metadata.timescale_string}
 
-    return number, tooltip
+    return button_number, tooltip
 end
 
 function processors.wagons_per_timescale(metadata, raw_amount, item_proto, _)
     local wagon_capacity = (item_proto.type == "fluid") and metadata.fluid_wagon_capacity
         or metadata.cargo_wagon_capactiy * item_proto.stack_size
-    local wagon_count = (raw_amount * metadata.timescale) / wagon_capacity
-    local number = util.format.number(wagon_count, metadata.formatting_precision)
+    local raw_number = (raw_amount * metadata.timescale) / wagon_capacity
+    local button_number = util.format.button_number(raw_number)
 
-    local plural_parameter = (number == "1") and 1 or 2
-    local tooltip = {"", number, " ", {"fp.pl_wagon", plural_parameter}, "/", metadata.timescale_string}
+    local tooltip_number = util.format.number(raw_number, metadata.formatting_precision)
+    local plural_parameter = (tooltip_number == "1") and 1 or 2
+    local tooltip = {"", tooltip_number, " ", {"fp.pl_wagon", plural_parameter}, "/", metadata.timescale_string}
 
-    return number, tooltip
+    return button_number, tooltip
 end
 
 function processors.rockets_per_timescale(metadata, raw_amount, item_proto, _)
@@ -73,20 +83,22 @@ function processors.rockets_per_timescale(metadata, raw_amount, item_proto, _)
 
     local total_weight = raw_amount * metadata.timescale * item_proto.weight
     local raw_number = total_weight / metadata.lift_capacity
-    local number = util.format.number(raw_number, metadata.formatting_precision)
+    local button_number = util.format.button_number(raw_number)
 
-    local plural_parameter = (number == "1") and 1 or 2
-    local tooltip = {"", number, " ", {"fp.pl_rocket", plural_parameter}, "/", metadata.timescale_string}
+    local tooltip_number = util.format.number(raw_number, metadata.formatting_precision)
+    local plural_parameter = (tooltip_number == "1") and 1 or 2
+    local tooltip = {"", tooltip_number, " ", {"fp.pl_rocket", plural_parameter}, "/", metadata.timescale_string}
 
-    return number, tooltip
+    return button_number, tooltip
 end
+
 
 ---@param player LuaPlayer
 ---@param item SimpleItem
 ---@param item_amount number?
 ---@param machine_count number?
----@return string | -1
----@return LocalisedString
+---@return (number | -1) button_number
+---@return LocalisedString tooltip_line
 function item_views.process_item(player, item, item_amount, machine_count)
     local views_data = util.globals.ui_state(player).views_data  ---@cast views_data -nil
 
@@ -204,7 +216,7 @@ function item_views.rebuild_data(player)
         cargo_wagon_capactiy = cargo_wagon_proto.get_inventory_size(defines.inventory.cargo_wagon,
             default_cargo_wagon.quality.name),
         fluid_wagon_capacity = fluid_wagon_proto.get_fluid_capacity(default_fluid_wagon.quality.name),
-        formatting_precision = 4
+        formatting_precision = 5
     }
 end
 

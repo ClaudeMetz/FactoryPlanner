@@ -179,7 +179,7 @@ function builders.machine(line, parent_flow, metadata)
     else
         local machine = line.machine
         local machine_proto, quality_proto = machine.proto, machine.quality_proto
-        local count, tooltip_line = util.format.machine_count(machine.amount, false)
+        local amount, tooltip_line = util.format.machine_count(machine.amount, false)
 
         local machine_limit = machine.limit
         local style, note = "fflib_slot_button_default_small", nil
@@ -199,7 +199,7 @@ function builders.machine(line, parent_flow, metadata)
         local tooltip = {"", title_line, tooltip_line, format_effects_tooltip(machine.effects_tooltip),
             "\n", MODIFIER_ACTIONS["act_on_line_machine"].tooltip}
 
-        local button = parent_flow.add{type="sprite-button", sprite=machine_proto.sprite, number=count,
+        local button = parent_flow.add{type="sprite-button", sprite=machine_proto.sprite, number=amount,
             tags={mod="fp", on_gui_click="act_on_line_machine", machine_id=machine.id, on_gui_hover="set_tooltip",
             context="production_table"}, quality=quality_proto.name, style=style,
             mouse_button_filter={"left-and-right"}, raise_hover_events=true}

@@ -2,7 +2,7 @@
 Version: 0.00.00
 Date: 00. 00. 0000
   Features:
-    -
+    - Improve numbers shown on buttons to no longer be cut off, but slightly round up instead (#55)
   Changes:
     -
   Bugfixes:

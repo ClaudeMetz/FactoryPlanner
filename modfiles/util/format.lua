@@ -72,29 +72,49 @@ function _format.special_tooltip(name, amount)
 end
 
 
----@param count number
----@param round_number boolean
----@return string? formatted_count
+-- Factorio truncates (rather than rounds) numbers on item buttons to fit the available space,
+-- so a value like 1.09 displays as "1.0" instead of "1.1". To compensate, we pre-ceil the number
+-- at the same precision Factorio will use, so that truncation produces the correct rounded result.
+--
+-- Factorio fits each number into ~4 characters including any SI suffix (k, M, G, T, P, E, ...).
+-- This means:
+--   no suffix:   1 decimal for values under 100 (e.g. "23.4"), 0 decimals from 100-999 (e.g. "234")
+--   with suffix: 1 decimal for values under 10  (e.g. "2.3k"), 0 decimals from 10 up   (e.g. "23k")
+-- The no-suffix range gets a wider threshold (100 vs 10) because the absent suffix character
+-- leaves room for an extra digit before decimals have to be dropped.
+--
+-- The 1e-9 epsilon prevents float representation noise (e.g. 2.3 stored as 2.2999...99) from
+-- spuriously bumping a clean value up to the next display increment.
+function _format.button_number(value)
+    if value <= 0 then return value end
+
+    local tier = math.max(0, math.floor(math.log10(value) / 3))
+    local scale = 10 ^ (3 * tier)
+    local scaled = value / scale
+    local threshold = (tier == 0) and 100 or 10
+    local factor = (scaled < threshold) and 10 or 1
+    return math.ceil(scaled * factor - 1e-9) / factor * scale
+end
+
+
+---@param amount number
+---@param ceil_number boolean
+---@return number button_number
 ---@return LocalisedString tooltip_line
-function _format.machine_count(count, round_number)
-    if count == 0 then return nil, {""} end
+function _format.machine_count(amount, ceil_number)
+    if amount == 0 then return nil, {""} end
 
-    -- The formatting is used to 'round down' when the decimal is very small
-    local formatted_count = util.format.number(count, 3)
-    local tooltip_count = formatted_count
-
+    local button_number = _format.button_number(amount)
     -- If the formatting returns 0, it is a very small number, so show it as 0.001
-    if formatted_count == "0" then
-        tooltip_count = "≤0.001"
-        formatted_count = "0.01"  -- shows up as 0.0 on the button
-    end
+    if ceil_number then button_number = math.ceil(button_number) end
 
-    if round_number then formatted_count = tostring(math.ceil(formatted_count --[[@as number]])) end
+    local tooltip_number = util.format.number(amount, 3)
+    if tooltip_number == "0" then tooltip_number = "≤0.001" end
 
-    local plural_parameter = (tooltip_count == "1") and 1 or 2
-    local tooltip_line = {"", "\n", tooltip_count, " ", {"fp.pl_machine", plural_parameter}}
+    local plural_parameter = (tooltip_number == "1") and 1 or 2
+    local tooltip_line = {"", "\n", tooltip_number, " ", {"fp.pl_machine", plural_parameter}}
 
-    return formatted_count, tooltip_line
+    return button_number, tooltip_line
 end
 
 
