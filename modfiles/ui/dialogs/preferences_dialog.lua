@@ -190,7 +190,7 @@ local function handle_checkbox_preference_change(player, tags, event)
         local realm = util.globals.player_table(player).realm
         for district in realm:iterator() do
             for factory in district:iterator() do
-                solver.update(player, factory)
+                solver.update(player, factory)  -- TODO spread out
             end
         end
         util.gui.run_refresh(player, "production")
@@ -270,7 +270,7 @@ local function handle_bol_change(player, _, event)
     item_views.rebuild_interface(player)
     refresh_views_table(player)
 
-    solver.update(player, nil)
+    solver.update(player)
     util.gui.run_refresh(player, "all")
 end
 

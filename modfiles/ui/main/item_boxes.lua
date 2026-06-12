@@ -174,9 +174,8 @@ local function handle_item_button_click(player, tags, action)
         util.clipboard.paste(player, item)
 
     elseif action == "delete" then
-        local factory = util.context.get(player, "Factory")  --[[@as Factory]]
-        factory:remove(item)
-        solver.update(player, factory)
+        util.context.get(player, "Factory"):remove(item)
+        solver.update(player)
         util.gui.run_refresh(player, "all")  -- make sure product icons are updated
 
     elseif action == "add_to_cursor" then

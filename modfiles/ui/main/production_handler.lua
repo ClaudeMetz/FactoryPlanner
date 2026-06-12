@@ -25,7 +25,6 @@ end
 
 -- Handles any line recipe, with or without subfloor
 local function handle_line_recipe_click(player, tags, action)
-    local factory = util.context.get(player, "Factory")  --[[@as Factory]]
     local line = OBJECT_INDEX[tags.line_id]
     local relevant_line = (line.class == "Floor") and line.first or line
 
@@ -37,7 +36,7 @@ local function handle_line_recipe_click(player, tags, action)
 
         local new_context = line
         if line.class == "Line" then
-            if factory.archived then
+            if util.context.get(player, "Factory").archived then
                 util.messages.raise(player, "error", {"fp.error_no_new_subfloors_in_archive"}, 1)
                 return
             end
@@ -48,7 +47,7 @@ local function handle_line_recipe_click(player, tags, action)
             subfloor:insert(line)
 
             new_context = subfloor
-            solver.update(player, factory)
+            solver.update(player)
         end
 
         util.context.set(player, new_context)
@@ -62,7 +61,7 @@ local function handle_line_recipe_click(player, tags, action)
 
     elseif action == "toggle" then
         relevant_line.active = not relevant_line.active
-        solver.update(player, factory)
+        solver.update(player)
         util.gui.run_refresh(player, "factory")
 
     elseif action == "delete" then
@@ -74,7 +73,7 @@ local function handle_line_recipe_click(player, tags, action)
             floor.parent:replace(floor, floor.first)
         end
 
-        solver.update(player, factory)
+        solver.update(player)
         util.gui.run_refresh(player, "factory")
 
     elseif action == "factoriopedia" then
@@ -84,7 +83,6 @@ end
 
 -- Handles the defining recipe of a floor (ie. first one of a subfloor)
 local function handle_floor_recipe_click(player, tags, action)
-    local factory = util.context.get(player, "Factory")  --[[@as Factory]]
     local line = OBJECT_INDEX[tags.line_id]
 
     if action == "copy" then
@@ -95,7 +93,7 @@ local function handle_floor_recipe_click(player, tags, action)
 
     elseif action == "toggle" then
         line.active = not line.active
-        solver.update(player, factory)
+        solver.update(player)
         util.gui.run_refresh(player, "factory")
 
     elseif action == "factoriopedia" then
@@ -110,6 +108,7 @@ local function handle_percentage_change(player, tags, event)
     relevant_line.percentage = tonumber(event.element.text) or 100
 
     util.globals.ui_state(player).recalculate_on_factory_change = true -- set flag to recalculate if necessary
+    -- TODO this should be replaced, with an nth_tick refresh some short time in the future, similar to tick_to_deletion
 end
 
 local function handle_percentage_confirmation(player, _, _)

@@ -20,8 +20,7 @@ end
 
 
 -- ** GUI EVENTS **
--- These handlers go out to the first thing that it finds that registered for it.
--- They can register either by element name or by a pattern matching element names.
+-- These events go out to a single handler that registered for it.
 local gui_identifier_map = {
     [defines.events.on_gui_click] = "on_gui_click",
     [defines.events.on_gui_closed] = "on_gui_closed",
@@ -227,8 +226,7 @@ end)
 
 
 -- ** MISC EVENTS **
--- These events call every handler that has subscribed to it by id or name. The difference to GUI events
--- is that multiple handlers can be registered to the same event, and there is no standard handler.
+-- These events go out to every handler that has subscribed to it by ID or name.
 local misc_identifier_map = {
     -- Standard events
     [defines.events.on_gui_opened] = "on_gui_opened",

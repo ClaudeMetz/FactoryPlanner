@@ -232,18 +232,17 @@ end
 
 local function close_beacon_dialog(player, action)
     local modal_data = util.globals.modal_data(player)  --[[@as table]]
-    local factory = util.context.get(player, "Factory")
 
     if action == "submit" then
         local beacon = modal_data.object
         beacon.total_amount = util.gui.parse_expression_field(modal_data.modal_elements.beacon_total, true)
 
-        solver.update(player, factory)
+        solver.update(player)
         util.gui.run_refresh(player, "factory")
 
     elseif action == "delete" then
         modal_data.line:set_beacon(nil)
-        solver.update(player, factory)
+        solver.update(player)
         util.gui.run_refresh(player, "factory")
 
     else -- action == "cancel"

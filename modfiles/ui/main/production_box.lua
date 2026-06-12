@@ -107,17 +107,16 @@ local function handle_solver_change(player, _, event)
     end
 
     main_dialog.toggle_districts_view(player, true)
-    solver.update(player, factory)
+    solver.update(player)
     util.gui.run_refresh(player, "factory")
 end
 
 local function repair_factory(player, _, _)
     -- This function can only run is a factory is selected and invalid
-    local factory = util.context.get(player, "Factory")  --[[@as Factory]]
-    factory:repair(player)
+    util.context.get(player, "Factory"):repair(player)
 
     main_dialog.toggle_districts_view(player, true)
-    solver.update(player, factory)
+    solver.update(player)
     util.gui.run_refresh(player, "all")  -- needs the full refresh to reset factory list buttons
 end
 
@@ -143,7 +142,7 @@ local function switch_matrix_item(player, tags, _)
         table.insert(factory.matrix_free_items, item_proto)
     end
 
-    solver.update(player, factory)
+    solver.update(player)
     util.gui.run_refresh(player, "factory")
 end
 

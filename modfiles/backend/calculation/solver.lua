@@ -263,14 +263,12 @@ end
 
 -- ** TOP LEVEL **
 -- Updates the whole factory calculations from top to bottom
-function solver.update(player, factory, blank)
+function solver.update(player, factory)
     factory = factory or util.context.get(player, "Factory")
     if factory and factory.valid then
         local factory_data = solver.generate_factory_data(player, factory)
 
-        if blank then  -- sets factory to a blank state
-            set_blank_factory(player, factory)
-        elseif factory.matrix_solver_active then
+        if factory.matrix_solver_active then
             local matrix_metadata = matrix_engine.get_matrix_solver_metadata(factory_data)
 
             if matrix_metadata.num_cols > matrix_metadata.num_rows and #factory.matrix_free_items > 0 then
