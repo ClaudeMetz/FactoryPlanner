@@ -172,14 +172,14 @@ function builders.machine(line, parent_flow, metadata)
 
     if line.class == "Floor" then  -- add a button that shows the total of all machines on the subfloor
         -- Machine count doesn't need any special formatting in this case because it'll always be an integer
-        local machine_count = line.machine_count
-        local tooltip = {"fp.subfloor_machine_count", machine_count, {"fp.pl_machine", machine_count}}
+        local machine_amount = line.machine_amount
+        local tooltip = {"fp.subfloor_machine_amount", machine_amount, {"fp.pl_machine", machine_amount}}
         parent_flow.add{type="sprite-button", sprite="fp_generic_assembler", style="fflib_slot_button_disabled_small",
-            number=machine_count, tooltip=tooltip}
+            number=machine_amount, tooltip=tooltip}
     else
         local machine = line.machine
         local machine_proto, quality_proto = machine.proto, machine.quality_proto
-        local amount, tooltip_line = util.format.machine_count(machine.amount, false)
+        local amount, tooltip_line = util.format.machine_amount(machine.amount, false)
 
         local machine_limit = machine.limit
         local style, note = "fflib_slot_button_default_small", nil
@@ -293,8 +293,8 @@ function builders.products(line, parent_flow, metadata)
             end
 
             -- items/s/machine does not make sense for lines with subfloors, show items/s instead
-            local machine_count = (line.class ~= "Floor") and line.machine.amount or nil
-            amount, number_tooltip = item_views.process_item(metadata.player, product, nil, machine_count)
+            local machine_amount = (line.class ~= "Floor") and line.machine.amount or nil
+            amount, number_tooltip = item_views.process_item(metadata.player, product, nil, machine_amount)
             if amount == -1 then goto skip_product end  -- an amount of -1 means it was below the margin of error
 
             tags.on_gui_click = "act_on_line_product"
@@ -338,8 +338,8 @@ function builders.byproducts(line, parent_flow, metadata)
             action = "act_on_line_byproduct"
 
             -- items/s/machine does not make sense for lines with subfloors, show items/s instead
-            local machine_count = (line.class ~= "Floor") and line.machine.amount or nil
-            amount, number_tooltip = item_views.process_item(metadata.player, byproduct, nil, machine_count)
+            local machine_amount = (line.class ~= "Floor") and line.machine.amount or nil
+            amount, number_tooltip = item_views.process_item(metadata.player, byproduct, nil, machine_amount)
             if amount == -1 then goto skip_byproduct end  -- an amount of -1 means it was below the margin of error
         end
 
@@ -423,8 +423,8 @@ function builders.ingredients(line, parent_flow, metadata)
         end
 
         -- items/s/machine does not make sense for lines with subfloors, show items/s instead
-        local machine_count = (line.class ~= "Floor") and line.machine.amount or nil
-        local amount, number_tooltip = item_views.process_item(metadata.player, ingredient, nil, machine_count)
+        local machine_amount = (line.class ~= "Floor") and line.machine.amount or nil
+        local amount, number_tooltip = item_views.process_item(metadata.player, ingredient, nil, machine_amount)
         if amount == -1 then goto skip_ingredient end  -- an amount of -1 means it was below the margin of error
 
         local style = "fflib_slot_button_green_small"

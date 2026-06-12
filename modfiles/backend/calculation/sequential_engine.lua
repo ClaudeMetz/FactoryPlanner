@@ -68,7 +68,7 @@ local function update_line(line_data, aggregate, looped_fuel)
     local speed_multiplier = 1 + (total_effects.speed / MAGIC_NUMBERS.effect_precision)
     local crafts_per_second = (line_data.machine_speed * speed_multiplier) / line_data.recipe_energy
 
-    -- Limit the machine_count by reducing the production_ratio, if necessary
+    -- Limit the machine_amount by reducing the production_ratio, if necessary
     local machine_limit = line_data.machine_limit
     if machine_limit.limit ~= nil and line_data.recipe_energy > 0 then
         local capped_production_ratio = crafts_per_second * machine_limit.limit
@@ -77,9 +77,9 @@ local function update_line(line_data, aggregate, looped_fuel)
     end
 
     -- Determine machine count
-    local machine_count = production_ratio / crafts_per_second
+    local machine_amount = production_ratio / crafts_per_second
     -- Add the integer machine count to the aggregate so it can be displayed on the origin_line
-    aggregate.machine_count = aggregate.machine_count + math.ceil(machine_count - MAGIC_NUMBERS.margin_of_error)
+    aggregate.machine_amount = aggregate.machine_amount + math.ceil(machine_amount - MAGIC_NUMBERS.margin_of_error)
 
 
     -- Determines the amount of the given item, considering productivity
@@ -91,7 +91,7 @@ local function update_line(line_data, aggregate, looped_fuel)
 
     -- Determine energy consumption (including potential fuel needs) and emissions
     local energy_consumption, emissions = solver_util.determine_energy_consumption_and_emissions(machine_proto,
-        recipe_proto, fuel_proto, machine_count, line_data.energy_usage, total_effects, line_data.pollutant_type)
+        recipe_proto, fuel_proto, machine_amount, line_data.energy_usage, total_effects, line_data.pollutant_type)
 
     local fuel_amount = nil
     if machine_proto.energy_type == "burner" then
@@ -236,7 +236,7 @@ local function update_line(line_data, aggregate, looped_fuel)
         player_index = aggregate.player_index,
         floor_id = aggregate.floor_id,
         line_id = line_data.id,
-        machine_count = machine_count,
+        machine_amount = machine_amount,
         production_ratio = production_ratio,
         Product = Product,
         Byproduct = Byproduct,
@@ -273,14 +273,14 @@ local function update_floor(floor_data, aggregate)
             structures.class.balance_items(subfloor_aggregate.Ingredient, aggregate.Byproduct, aggregate.Ingredient)
             structures.class.balance_items(subfloor_aggregate.Byproduct, aggregate.Product, aggregate.Byproduct)
 
-            aggregate.machine_count = aggregate.machine_count + subfloor_aggregate.machine_count
+            aggregate.machine_amount = aggregate.machine_amount + subfloor_aggregate.machine_amount
 
             -- Update the parent line of the subfloor with the results from the subfloor aggregate
             solver.set_line_result {
                 player_index = aggregate.player_index,
                 floor_id = aggregate.floor_id,
                 line_id = line_data.id,
-                machine_count = subfloor_aggregate.machine_count,
+                machine_amount = subfloor_aggregate.machine_amount,
                 production_ratio = nil,
                 Product = subfloor_aggregate.Product,
                 Byproduct = subfloor_aggregate.Byproduct,

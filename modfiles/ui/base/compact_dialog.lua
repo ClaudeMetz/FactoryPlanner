@@ -134,7 +134,7 @@ local function add_machine_flow(parent_flow, line, metadata)
 
         local title_line = (not quality_proto.always_show) and {"fp.tt_title", machine_proto.localised_name}
             or {"fp.tt_title_with_note", machine_proto.localised_name, quality_proto.rich_text}
-        local amount, tooltip_line = util.format.machine_count(machine.amount, true)
+        local amount, tooltip_line = util.format.machine_amount(machine.amount, true)
         local tooltip = {"", title_line, tooltip_line, "\n", metadata.action_tooltips["act_on_compact_machine"]}
         local style = (line.done) and "fflib_slot_button_grayscale_small" or "fflib_slot_button_default_small"
 
@@ -193,8 +193,8 @@ local function add_item_flow(line, relevant_line, item_category, button_color, m
             first_special_index = first_special_index or index
         else
             -- items/s/machine does not make sense for lines with subfloors, show items/s instead
-            local machine_count = (line.class == "Line") and line.machine.amount or nil
-            amount, number_tooltip = item_views.process_item(metadata.player, item, nil, machine_count)
+            local machine_amount = (line.class == "Line") and line.machine.amount or nil
+            amount, number_tooltip = item_views.process_item(metadata.player, item, nil, machine_amount)
             if amount == -1 then goto skip_item end  -- an amount of -1 means it was below the margin of error
 
             if type == "entity" then
@@ -250,8 +250,8 @@ local function add_item_flow(line, relevant_line, item_category, button_color, m
     end
 
     if item_category == "ingredient" and line.machine.fuel then
-        local fuel, machine_count = line.machine.fuel, line.machine.amount
-        local amount, number_tooltip = item_views.process_item(metadata.player, fuel, nil, machine_count)
+        local fuel, machine_amount = line.machine.fuel, line.machine.amount
+        local amount, number_tooltip = item_views.process_item(metadata.player, fuel, nil, machine_amount)
         if amount == -1 then goto skip_fuel end  -- an amount of -1 means it was below the margin of error
 
         local style = "fflib_slot_button_cyan_small"

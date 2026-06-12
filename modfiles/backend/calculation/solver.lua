@@ -11,7 +11,7 @@ local function set_blank_line(player, floor, line)
         player_index = player.index,
         floor_id = floor.id,
         line_id = line.id,
-        machine_count = 0,
+        machine_amount = 0,
         production_ratio = (line.class == "Line") and 0 or nil,
         Product = blank_class,
         Byproduct = blank_class,
@@ -347,9 +347,9 @@ function solver.set_line_result(result)
     local line = OBJECT_INDEX[result.line_id]  --[[@as LineObject]]
 
     if line.class == "Floor" then
-        line.machine_count = result.machine_count
+        line.machine_amount = result.machine_amount
     else
-        line.machine.amount = result.machine_count
+        line.machine.amount = result.machine_amount
         if line.machine.fuel ~= nil then line.machine.fuel.amount = result.fuel_amount end
 
         line.production_ratio = result.production_ratio
@@ -383,10 +383,10 @@ end
 
 -- Determines the amount of energy needed for a machine and the emissions that produces
 function solver_util.determine_energy_consumption_and_emissions(machine_proto, recipe_proto,
-        fuel_proto, machine_count, energy_usage, total_effects, pollutant_type)
+        fuel_proto, machine_amount, energy_usage, total_effects, pollutant_type)
     local consumption_multiplier = 1 + (total_effects.consumption / MAGIC_NUMBERS.effect_precision)
-    local energy_consumption = machine_count * (energy_usage * 60) * consumption_multiplier
-    local drain = math.ceil(machine_count - MAGIC_NUMBERS.margin_of_error) * (machine_proto.energy_drain * 60)
+    local energy_consumption = machine_amount * (energy_usage * 60) * consumption_multiplier
+    local drain = math.ceil(machine_amount - MAGIC_NUMBERS.margin_of_error) * (machine_proto.energy_drain * 60)
     local total_consumption = energy_consumption + drain
 
     if pollutant_type == nil then return total_consumption, 0 end
@@ -396,7 +396,7 @@ function solver_util.determine_energy_consumption_and_emissions(machine_proto, r
     local total_multiplier = fuel_multiplier * pollution_multiplier * recipe_proto.emissions_multiplier
 
     local emissions_per_joule = energy_consumption * (machine_proto.emissions_per_joule[pollutant_type] or 0)
-    local emissions_per_second = machine_count * (machine_proto.emissions_per_second[pollutant_type] or 0)
+    local emissions_per_second = machine_amount * (machine_proto.emissions_per_second[pollutant_type] or 0)
     local total_emissions = (emissions_per_joule + emissions_per_second) * total_multiplier * 60
 
     return total_consumption, total_emissions

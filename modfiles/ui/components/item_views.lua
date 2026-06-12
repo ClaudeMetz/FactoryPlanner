@@ -34,8 +34,8 @@ function processors.throughput(metadata, raw_amount, item_proto, _)
     return button_number, tooltip
 end
 
-function processors.items_per_second_per_machine(metadata, raw_amount, item_proto, machine_count)
-    local adjusted_count = (math.ceil((machine_count or 1) - MAGIC_NUMBERS.margin_of_error))
+function processors.items_per_second_per_machine(metadata, raw_amount, item_proto, machine_amount)
+    local adjusted_count = (math.ceil((machine_amount or 1) - MAGIC_NUMBERS.margin_of_error))
     if adjusted_count == 0 then return 0, nil end  -- avoid division by zero
 
     local raw_number = raw_amount / adjusted_count
@@ -44,8 +44,8 @@ function processors.items_per_second_per_machine(metadata, raw_amount, item_prot
     local tooltip_number = util.format.number(raw_number, metadata.formatting_precision)
     local plural_parameter = (tooltip_number == "1") and 1 or 2
     local type_string = (item_proto.type == "fluid") and {"fp.l_fluid"} or {"fp.pl_item", plural_parameter}
-    -- If machine_count is nil, this shouldn't show /machine
-    local per_machine = (machine_count ~= nil) and {"", "/", {"fp.pl_machine", 1}} or ""
+    -- If machine_amount is nil, this shouldn't show /machine
+    local per_machine = (machine_amount ~= nil) and {"", "/", {"fp.pl_machine", 1}} or ""
     local tooltip = {"", tooltip_number, " ", type_string, "/", {"fp.second"}, per_machine}
 
     return button_number, tooltip
@@ -96,10 +96,10 @@ end
 ---@param player LuaPlayer
 ---@param item SimpleItem
 ---@param item_amount number?
----@param machine_count number?
+---@param machine_amount number?
 ---@return (number | -1) button_number
 ---@return LocalisedString tooltip_line
-function item_views.process_item(player, item, item_amount, machine_count)
+function item_views.process_item(player, item, item_amount, machine_amount)
     local views_data = util.globals.ui_state(player).views_data  ---@cast views_data -nil
 
     local raw_amount = item_amount or item.amount
@@ -116,7 +116,7 @@ function item_views.process_item(player, item, item_amount, machine_count)
     else
         local view_preferences = util.globals.preferences(player).item_views
         local selected_view = view_preferences.views[view_preferences.selected_index].name
-        return processors[selected_view](views_data, raw_amount, proto, machine_count)
+        return processors[selected_view](views_data, raw_amount, proto, machine_amount)
     end
 end
 

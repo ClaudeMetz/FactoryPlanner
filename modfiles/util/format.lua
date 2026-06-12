@@ -101,7 +101,7 @@ end
 ---@param ceil_number boolean
 ---@return number button_number
 ---@return LocalisedString tooltip_line
-function _format.machine_count(amount, ceil_number)
+function _format.machine_amount(amount, ceil_number)
     if amount == 0 then return nil, {""} end
 
     local button_number = _format.button_number(amount)

@@ -14,7 +14,7 @@ local Line = require("backend.data.Line")
 ---@field products SimpleItem[]
 ---@field byproducts SimpleItem[]
 ---@field ingredients SimpleItem[]
----@field machine_count integer
+---@field machine_amount integer
 local Floor = Object.methods()
 Floor.__index = Floor
 script.register_metatable("Floor", Floor)
@@ -29,7 +29,7 @@ local function init(level)
         products = {},
         byproducts = {},
         ingredients = {},
-        machine_count = 0
+        machine_amount = 0
     }, "Floor", Floor)  --[[@as Floor]]
     return object
 end
@@ -139,8 +139,8 @@ function Floor:get_component_data(skip_done, component_table)
 
         elseif not skip_done or not line.done then
             local machine = line.machine
-            local ceil_machine_count = math.ceil(machine.amount - MAGIC_NUMBERS.margin_of_error)
-            add_machine(machine, ceil_machine_count)
+            local ceil_machine_amount = math.ceil(machine.amount - MAGIC_NUMBERS.margin_of_error)
+            add_machine(machine, ceil_machine_amount)
 
             local beacon = line.beacon
             if beacon and beacon.total_amount then
