@@ -33,12 +33,17 @@ require("backend.calculation.solver")
 ---@field line_comment_column boolean
 ---@field item_views ItemViewPreferences
 ---@field belts_or_lanes "belts" | "lanes"
----@field default_machines PrototypeDefaultWithCategory
----@field default_fuels PrototypeDefaultWithCategory
----@field default_beacons DefaultPrototype
----@field default_belts DefaultPrototype
----@field default_wagons PrototypeDefaultWithCategory
+---@field default_prototypes DefaultPrototypesTable
 ---@field default_temperatures TemperatureDefaultMap
+
+---@class DefaultPrototypesTable
+---@field machines PrototypeDefaultWithCategory
+---@field fuels PrototypeDefaultWithCategory
+---@field beacons DefaultPrototype
+---@field belts DefaultPrototype
+---@field pumps DefaultPrototype
+---@field silos DefaultPrototype
+---@field wagons PrototypeDefaultWithCategory
 
 ---@alias Timescale 1 | 60
 
@@ -87,13 +92,7 @@ function reload_preferences(player_table)
 
     reload("belts_or_lanes", "belts")
 
-    reload("default_machines", defaults.get_fallback("machines"))
-    reload("default_fuels", defaults.get_fallback("fuels"))
-    reload("default_beacons", defaults.get_fallback("beacons"))
-    reload("default_belts", defaults.get_fallback("belts"))
-    reload("default_pumps", defaults.get_fallback("pumps"))
-    reload("default_silos", defaults.get_fallback("silos"))
-    reload("default_wagons", defaults.get_fallback("wagons"))
+    updated_prefs.default_prototypes = defaults.refresh_preferences(player_preferences.default_prototypes)
 
     reload("default_temperatures", util.temperature.get_fallback())
 

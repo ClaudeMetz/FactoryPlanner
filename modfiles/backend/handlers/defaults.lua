@@ -31,7 +31,7 @@ defaults = {}
 ---@param category (integer | string)?
 ---@return DefaultPrototype
 function defaults.get(player, data_type, category)
-    local default = util.globals.preferences(player)["default_" .. data_type]
+    local default = util.globals.preferences(player).default_prototypes[data_type]
     local category_table = prototyper.util.find(data_type, nil, category)
     return (category_table == nil) and default or default[category_table.id]
 end
@@ -182,23 +182,35 @@ local function migrate_prototype_default(data_type, fallback, default, category)
     end
 end
 
+
 -- Kinda unclean that I have to do this, but it's better than storing it elsewhere
-local category_designations = {machines="combined_category", items="type",
-    fuels="combined_category", wagons="category", modules="category"}
+local category_designations = {machines="combined_category", fuels="combined_category",
+    beacons="", belts="", pumps="", silos="", wagons="category"}
+
+---@field previous DefaultPrototypesTable
+---@return DefaultPrototypesTable refreshed
+function defaults.refresh_preferences(previous)
+    local preference_defaults = {}
+    for name, _ in pairs(category_designations) do
+        preference_defaults[name] = previous and previous[name] or defaults.get_fallback(name)
+    end
+    return preference_defaults
+end
+
 
 -- Migrates the default prototype preferences, trying to preserve the users choices
 -- When this is called, the loader cache will already exist
 ---@param player_table PlayerTable
 function defaults.migrate(player_table)
-    local preferences = player_table.preferences
+    local preference_defaults = player_table.preferences.default_prototypes
 
     for data_type, has_categories in pairs(prototyper.data_types) do
         local fallback = defaults.get_fallback(data_type)
-        local default = preferences["default_" .. data_type]
+        local default = preference_defaults[data_type]
         if default == nil then goto skip end
 
         if not has_categories then
-            preferences["default_" .. data_type] = migrate_prototype_default(data_type, fallback, default, nil)
+            preference_defaults[data_type] = migrate_prototype_default(data_type, fallback, default, nil)
         else
             local default_map = {}
             for _, default_data in pairs(default) do
@@ -212,7 +224,7 @@ function defaults.migrate(player_table)
                 new_defaults[category.id] = (not previous_default) and fallback[category.id]
                     or migrate_prototype_default(data_type, fallback[category.id], previous_default, category.name)
             end
-            preferences["default_" .. data_type] = new_defaults
+            preference_defaults[data_type] = new_defaults
         end
 
         ::skip::
