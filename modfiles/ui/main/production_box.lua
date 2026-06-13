@@ -389,7 +389,7 @@ listeners.gui = {
     }
 }
 
-listeners.misc = {
+listeners.player = {
     fp_up_floor = (function(player, _, _)
         if main_dialog.is_in_focus(player) then change_floor(player, "up") end
     end),

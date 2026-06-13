@@ -129,7 +129,7 @@ listeners.gui = {
     }
 }
 
-listeners.misc = {
+listeners.player = {
     fp_toggle_pause = (function(player, _)
         if main_dialog.is_in_focus(player) then toggle_paused_state(player) end
     end),

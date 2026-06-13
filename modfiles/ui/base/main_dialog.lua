@@ -210,7 +210,7 @@ listeners.gui = {
     }
 }
 
-listeners.misc = {
+listeners.player = {
     -- Makes sure that another GUI can open properly while a modal dialog is open.
     -- The FP interface can have at most 3 layers of GUI: main interface, modal dialog, selection mode.
     -- We need to make sure opening the technology screen (for example) from any of those layers behaves properly.
@@ -228,13 +228,13 @@ listeners.misc = {
         if main_dialog.is_in_focus(player) then main_dialog.toggle(player, true) end
     end),
 
-    on_singleplayer_init = (function(player, _)
+    --[[ on_singleplayer_init = (function(player, _)
         main_dialog.rebuild(player, false)
     end),
 
     on_multiplayer_init = (function(player, _)
         main_dialog.rebuild(player, false)
-    end),
+    end), ]]
 
     on_lua_shortcut = (function(player, event)
         if event.prototype_name == "fp_open_interface" and not util.globals.ui_state(player).compact_view then

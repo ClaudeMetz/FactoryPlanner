@@ -536,6 +536,10 @@ listeners.gui = {
     }
 }
 
+listeners.player = {
+    on_player_main_inventory_changed = handle_inventory_change
+}
+
 listeners.dialog = {
     dialog = "utility",
     metadata = (function(_) return {
@@ -546,8 +550,5 @@ listeners.dialog = {
     close = close_utility_dialog
 }
 
-listeners.misc = {
-    on_player_main_inventory_changed = handle_inventory_change
-}
 
 return { listeners }

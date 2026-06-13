@@ -346,7 +346,7 @@ listeners.gui = {
     }
 }
 
-listeners.misc = {
+listeners.player = {
     fp_cycle_production_views = (function(player, _)
         item_views.cycle_views(player, "standard")
     end),

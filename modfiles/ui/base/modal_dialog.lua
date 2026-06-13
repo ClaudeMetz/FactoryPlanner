@@ -434,7 +434,7 @@ listeners.gui = {
     }
 }
 
-listeners.misc = {
+listeners.player = {
     fp_confirm_dialog = (function(player, _)
         if util.globals.ui_state(player).active_selector == nil then
             util.gui.close_dialog(player, "submit")

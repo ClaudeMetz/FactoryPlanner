@@ -146,7 +146,7 @@ listeners.gui = {
     }
 }
 
-listeners.misc = {
+listeners.player = {
     fp_refresh_production = (function(player, _, _)
         if main_dialog.is_in_focus(player) then refresh_production(player, nil, nil) end
     end),

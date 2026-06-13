@@ -20,7 +20,7 @@ end
 
 
 -- ** GUI EVENTS **
--- These events go out to a single handler that registered for it.
+-- These events go out to the single handler that registered for it.
 local gui_identifier_map = {
     [defines.events.on_gui_click] = "on_gui_click",
     [defines.events.on_gui_closed] = "on_gui_closed",
@@ -180,6 +180,102 @@ end
 for event_id, _ in pairs(gui_identifier_map) do script.on_event(event_id, handle_gui_event) end
 
 
+-- ** PLAYER EVENTS **
+-- These events go out to every handler that has subscribed to it by ID or name.
+local player_identifier_map = {
+    -- Standard events
+    [defines.events.on_gui_opened] = "on_gui_opened",
+    [defines.events.on_player_display_resolution_changed] = "on_player_display_resolution_changed",
+    [defines.events.on_player_display_scale_changed] = "on_player_display_scale_changed",
+    --[defines.events.on_singleplayer_init] = "on_singleplayer_init",
+    --[defines.events.on_multiplayer_init] = "on_multiplayer_init",
+    [defines.events.on_player_selected_area] = "on_player_selected_area",
+    [defines.events.on_player_cursor_stack_changed] = "on_player_cursor_stack_changed",
+    [defines.events.on_player_main_inventory_changed] = "on_player_main_inventory_changed",
+    [defines.events.on_lua_shortcut] = "on_lua_shortcut",
+
+    -- Keyboard shortcuts
+    ["fp_toggle_interface"] = "fp_toggle_interface",
+    ["fp_toggle_compact_view"] = "fp_toggle_compact_view",
+    ["fp_toggle_pause"] = "fp_toggle_pause",
+    ["fp_refresh_production"] = "fp_refresh_production",
+    ["fp_up_floor"] = "fp_up_floor",
+    ["fp_top_floor"] = "fp_top_floor",
+    ["fp_toggle_fold_out_subfloors"] = "fp_toggle_fold_out_subfloors",
+    ["fp_cycle_production_views"] = "fp_cycle_production_views",
+    ["fp_reverse_cycle_production_views"] = "fp_reverse_cycle_production_views",
+    ["fp_confirm_dialog"] = "fp_confirm_dialog",
+    ["fp_confirm_gui"] = "fp_confirm_gui",
+    ["fp_focus_searchfield"] = "fp_focus_searchfield",
+    ["fp_toggle_calculator"] = "fp_toggle_calculator"
+}
+
+local player_timeouts = {
+    fp_confirm_dialog = 20,
+    fp_confirm_gui = 20,
+    fp_refresh_production = 20
+}
+
+-- ** SPECIAL HANDLERS **
+local special_player_handlers = {}
+
+special_player_handlers.on_gui_opened = (function(event)
+    -- This should only fire when a UI not associated with FP is opened, so FP's dialogs can close properly
+    return (event.gui_type ~= defines.gui_type.custom or not event.element or event.element.tags.mod ~= "fp")
+end)
+
+
+local player_event_cache = {}
+-- Compile the list of player handlers
+for _, listener in pairs(event_listeners) do
+    if listener.player then
+        for event_name, handler in pairs(listener.player) do
+            player_event_cache[event_name] = player_event_cache[event_name] or {
+                registered_handlers = {},
+                special_handler = special_player_handlers[event_name],
+                timeout = player_timeouts[event_name]
+            }
+
+            table.insert(player_event_cache[event_name].registered_handlers, handler)
+        end
+    end
+end
+
+
+local function handle_player_event(event)
+    local event_name = event.input_name or event.name -- also handles keyboard shortcuts
+    local string_name = player_identifier_map[event_name] or event_name
+    local event_handlers = player_event_cache[string_name]
+    if not event_handlers then return end  -- make sure the given event is even handled
+
+    -- Guard against an event being called before the player is initialized
+    if not storage.players[event.player_index] then return end
+
+    -- We'll assume every one of the events has a player attached
+    local player = game.get_player(event.player_index)   ---@cast player -nil
+
+    -- Close context menu on any keyboard shortcut
+    if event.input_name then modal_dialog.close_context_menu(player) end
+
+    -- Check if the action is allowed to be carried out by rate limiting
+    if util.actions.rate_limited(player, event.tick, event_name, event_handlers.timeout) then return end
+
+    -- If a special handler is set, it needs to return true before proceeding with the registered handlers
+    local special_handler = event_handlers.special_handler
+    if special_handler and special_handler(event) == false then return end
+
+    for _, registered_handler in pairs(event_handlers.registered_handlers) do
+        registered_handler(player, event)  -- send actual event
+    end
+
+    -- Only refresh messages if this event was a keyboard shortcut
+    if event.input_name then util.messages.refresh(player) end
+end
+
+-- Register all the player events from the identifier map
+for event_id, _ in pairs(player_identifier_map) do script.on_event(event_id, handle_player_event) end
+
+
 -- ** DIALOG EVENTS **
 -- These custom events handle opening and closing modal dialogs
 local dialog_event_cache = {}
@@ -224,105 +320,9 @@ GLOBAL_HANDLERS["close_modal_dialog"] = (function(player, action, skip_opened)
     modal_dialog.exit(player, action, skip_opened, listener.close)
 end)
 
-
--- ** MISC EVENTS **
--- These events go out to every handler that has subscribed to it by ID or name.
-local misc_identifier_map = {
-    -- Standard events
-    [defines.events.on_gui_opened] = "on_gui_opened",
-    [defines.events.on_player_display_resolution_changed] = "on_player_display_resolution_changed",
-    [defines.events.on_player_display_scale_changed] = "on_player_display_scale_changed",
-    [defines.events.on_singleplayer_init] = "on_singleplayer_init",
-    [defines.events.on_multiplayer_init] = "on_multiplayer_init",
-    [defines.events.on_player_selected_area] = "on_player_selected_area",
-    [defines.events.on_player_cursor_stack_changed] = "on_player_cursor_stack_changed",
-    [defines.events.on_player_main_inventory_changed] = "on_player_main_inventory_changed",
-    [defines.events.on_lua_shortcut] = "on_lua_shortcut",
-
-    -- Keyboard shortcuts
-    ["fp_toggle_interface"] = "fp_toggle_interface",
-    ["fp_toggle_compact_view"] = "fp_toggle_compact_view",
-    ["fp_toggle_pause"] = "fp_toggle_pause",
-    ["fp_refresh_production"] = "fp_refresh_production",
-    ["fp_up_floor"] = "fp_up_floor",
-    ["fp_top_floor"] = "fp_top_floor",
-    ["fp_toggle_fold_out_subfloors"] = "fp_toggle_fold_out_subfloors",
-    ["fp_cycle_production_views"] = "fp_cycle_production_views",
-    ["fp_reverse_cycle_production_views"] = "fp_reverse_cycle_production_views",
-    ["fp_confirm_dialog"] = "fp_confirm_dialog",
-    ["fp_confirm_gui"] = "fp_confirm_gui",
-    ["fp_focus_searchfield"] = "fp_focus_searchfield",
-    ["fp_toggle_calculator"] = "fp_toggle_calculator"
-}
-
-local misc_timeouts = {
-    fp_confirm_dialog = 20,
-    fp_confirm_gui = 20,
-    fp_refresh_production = 20
-}
-
--- ** SPECIAL HANDLERS **
-local special_misc_handlers = {}
-
-special_misc_handlers.on_gui_opened = (function(event)
-    -- This should only fire when a UI not associated with FP is opened, so FP's dialogs can close properly
-    return (event.gui_type ~= defines.gui_type.custom or not event.element or event.element.tags.mod ~= "fp")
-end)
-
-
-local misc_event_cache = {}
--- Compile the list of misc handlers
-for _, listener in pairs(event_listeners) do
-    if listener.misc then
-        for event_name, handler in pairs(listener.misc) do
-            misc_event_cache[event_name] = misc_event_cache[event_name] or {
-                registered_handlers = {},
-                special_handler = special_misc_handlers[event_name],
-                timeout = misc_timeouts[event_name]
-            }
-
-            table.insert(misc_event_cache[event_name].registered_handlers, handler)
-        end
-    end
-end
-
-
-local function handle_misc_event(event)
-    local event_name = event.input_name or event.name -- also handles keyboard shortcuts
-    local string_name = misc_identifier_map[event_name] or event_name
-    local event_handlers = misc_event_cache[string_name]
-    if not event_handlers then return end  -- make sure the given event is even handled
-
-    -- Guard against an event being called before the player is initialized
-    if not storage.players[event.player_index] then return end
-
-    -- We'll assume every one of the events has a player attached
-    local player = game.get_player(event.player_index)   ---@cast player -nil
-
-    -- Close context menu on any keyboard shortcut
-    if event.input_name then modal_dialog.close_context_menu(player) end
-
-    -- Check if the action is allowed to be carried out by rate limiting
-    if util.actions.rate_limited(player, event.tick, event_name, event_handlers.timeout) then return end
-
-    -- If a special handler is set, it needs to return true before proceeding with the registered handlers
-    local special_handler = event_handlers.special_handler
-    if special_handler and special_handler(event) == false then return end
-
-    for _, registered_handler in pairs(event_handlers.registered_handlers) do
-        registered_handler(player, event)  -- send actual event
-    end
-
-    -- Only refresh messages if this event was a keyboard shortcut
-    if event.input_name then util.messages.refresh(player) end
-end
-
--- Register all the misc events from the identifier map
-for event_id, _ in pairs(misc_identifier_map) do script.on_event(event_id, handle_misc_event) end
-
 -- Save special GUI events as pseudo-events
-GLOBAL_HANDLERS["run_gui_build"] = handle_misc_event
-GLOBAL_HANDLERS["run_gui_refresh"] = handle_misc_event
+GLOBAL_HANDLERS["run_gui_build"] = handle_player_event
+GLOBAL_HANDLERS["run_gui_refresh"] = handle_player_event
 
 
 -- ** GLOBAL HANDLERS **

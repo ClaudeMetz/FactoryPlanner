@@ -66,7 +66,7 @@ listeners.gui = {
     }
 }
 
-listeners.misc = {
+listeners.player = {
     build_gui_element = (function(player, event)
         if event.trigger == "main_dialog" then
             build_district_info(player)

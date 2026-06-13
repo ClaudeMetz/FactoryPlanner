@@ -579,7 +579,7 @@ end
 -- ** EVENTS **
 local listeners = {}
 
-listeners.misc = {
+listeners.player = {
     build_gui_element = (function(player, event)
         if event.trigger == "main_dialog" then
             build_production_table(player)

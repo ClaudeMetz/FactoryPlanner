@@ -343,7 +343,7 @@ function flib_dictionary.on_tick()
   if game.tick - wip.request_tick > request_timeout_ticks then
     local request = wip.last_batch_end
     if not request then
-      -- TODO: Remove WIP because we actually finished somehow? This should never happen I think
+      -- Remove WIP because we actually finished somehow? This should never happen I think
       error("We're screwed")
     end
     wip.dict = request.dict

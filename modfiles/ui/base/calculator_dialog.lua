@@ -206,7 +206,7 @@ listeners.gui = {
     }
 }
 
-listeners.misc = {
+listeners.player = {
     fp_toggle_calculator = toggle_calculator_dialog
 }
 

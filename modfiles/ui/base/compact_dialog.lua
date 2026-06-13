@@ -706,7 +706,7 @@ factory_listeners.gui = {
     }
 }
 
-factory_listeners.misc = {
+factory_listeners.player = {
     fp_up_floor = (function(player, _, _)
         if compact_dialog.is_in_focus(player) then change_floor(player, "up") end
     end),
@@ -855,7 +855,7 @@ dialog_listeners.gui = {
     }
 }
 
-dialog_listeners.misc = {
+dialog_listeners.player = {
     on_player_display_resolution_changed = (function(player, _)
         compact_dialog.rebuild(player, false)
     end),
