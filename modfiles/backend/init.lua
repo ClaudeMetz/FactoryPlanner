@@ -254,7 +254,7 @@ local function global_init()
 
     storage.installed_mods = script.active_mods  -- Retain current modset to detect mod changes for invalid factories
 
-    translator.on_init()  -- Initialize flib's translation module
+    util.translator.on_init()  -- Initialize flib's translation module
     prototyper.util.build_translation_dictionaries()
 
     for _, player in pairs(game.players) do player_init(player) end
@@ -299,7 +299,7 @@ local function handle_configuration_change()
 
     storage.installed_mods = script.active_mods
 
-    translator.on_configuration_changed()
+    util.translator.on_configuration_changed()
     prototyper.util.build_translation_dictionaries()
 end
 
@@ -325,26 +325,26 @@ end)
 
 -- ** TRANSLATION **
 -- Required by flib's translation module
-script.on_event(defines.events.on_tick, translator.on_tick)
-script.on_event(defines.events.on_player_joined_game, translator.on_player_joined_game)
-script.on_event(defines.events.on_string_translated, translator.on_string_translated)
+script.on_event(defines.events.on_tick, util.translator.on_tick)
+script.on_event(defines.events.on_player_joined_game, util.translator.on_player_joined_game)
+script.on_event(defines.events.on_string_translated, util.translator.on_string_translated)
 
 ---@param event GuiEvent
 local function dictionaries_ready(event)
     local player = game.get_player(event.player_index)  ---@cast player -nil
     local player_table = util.globals.player_table(player)
 
-    player_table.translation_tables = translator.get_all(event.player_index)
+    player_table.translation_tables = util.translator.get_all(event.player_index)
     modal_dialog.set_searchfield_state(player)  -- enables searchfields if possible
 end
 
 -- Save translations once they are complete
-script.on_event(translator.on_player_dictionaries_ready, dictionaries_ready)
+script.on_event(util.translator.on_player_dictionaries_ready, dictionaries_ready)
 
 
 -- ** COMMANDS **
 commands.add_command("fp-restart-translation", {"command-help.fp_restart_translation"}, function()
-    translator.on_init()
+    util.translator.on_init()
     prototyper.util.build_translation_dictionaries()
 end)
 commands.add_command("fp-shrinkwrap-interface", {"command-help.fp_shrinkwrap_interface"}, function(command)

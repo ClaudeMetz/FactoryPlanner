@@ -41,11 +41,6 @@ TIMESCALE_MAP = {[1] = "second", [60] = "minute"}
 BLANK_EFFECTS = {speed = 0, productivity = 0, quality = 0, consumption = 0, pollution = 0}
 
 util = require("util.util")
-translator = require("util.dictionary")  -- translation module for localised search
-
-require("ui.base.main_dialog")
-require("ui.base.compact_dialog")
-require("ui.base.modal_dialog")
 
 require("backend.init")
 require("ui.event_handler")
