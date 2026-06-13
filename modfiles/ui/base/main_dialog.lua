@@ -228,14 +228,6 @@ listeners.player = {
         if main_dialog.is_in_focus(player) then main_dialog.toggle(player, true) end
     end),
 
-    --[[ on_singleplayer_init = (function(player, _)
-        main_dialog.rebuild(player, false)
-    end),
-
-    on_multiplayer_init = (function(player, _)
-        main_dialog.rebuild(player, false)
-    end), ]]
-
     on_lua_shortcut = (function(player, event)
         if event.prototype_name == "fp_open_interface" and not util.globals.ui_state(player).compact_view then
             main_dialog.toggle(player)
@@ -273,6 +265,20 @@ listeners.player = {
             main_dialog.toggle(player)
             compact_dialog.toggle(player)  -- toggle also refreshes
             ui_state.compact_view = true
+        end
+    end)
+}
+
+listeners.game = {
+    on_singleplayer_init = (function(_)
+        for _, player in pairs(game.players) do
+            main_dialog.rebuild(player, false)
+        end
+    end),
+
+    on_multiplayer_init = (function(_)
+        for _, player in pairs(game.players) do
+            main_dialog.rebuild(player, false)
         end
     end)
 }

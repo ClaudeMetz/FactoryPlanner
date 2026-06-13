@@ -35,7 +35,11 @@ local gui_identifier_map = {
     [defines.events.on_gui_leave] = "on_gui_leave"
 }
 
--- ** SPECIAL HANDLERS **
+local gui_timeouts = {
+    on_gui_click = 2,
+    on_gui_confirmed = 20
+}
+
 local special_gui_handlers = {}
 
 special_gui_handlers.on_gui_closed = (function(event, _, _)
@@ -51,11 +55,6 @@ special_gui_handlers.on_gui_confirmed = (function(_, player, action_name)
     end
     return false
 end)
-
-local gui_timeouts = {
-    on_gui_click = 2,
-    on_gui_confirmed = 20
-}
 
 
 ---@class ActionTable
@@ -176,7 +175,6 @@ local function handle_gui_event(event)
     if event_name ~= "on_gui_hover" and event_name ~= "on_gui_leave" then util.messages.refresh(player) end
 end
 
--- Register all the GUI events from the identifier map
 for event_id, _ in pairs(gui_identifier_map) do script.on_event(event_id, handle_gui_event) end
 
 
@@ -187,8 +185,6 @@ local player_identifier_map = {
     [defines.events.on_gui_opened] = "on_gui_opened",
     [defines.events.on_player_display_resolution_changed] = "on_player_display_resolution_changed",
     [defines.events.on_player_display_scale_changed] = "on_player_display_scale_changed",
-    --[defines.events.on_singleplayer_init] = "on_singleplayer_init",
-    --[defines.events.on_multiplayer_init] = "on_multiplayer_init",
     [defines.events.on_player_selected_area] = "on_player_selected_area",
     [defines.events.on_player_cursor_stack_changed] = "on_player_cursor_stack_changed",
     [defines.events.on_player_main_inventory_changed] = "on_player_main_inventory_changed",
@@ -216,7 +212,6 @@ local player_timeouts = {
     fp_refresh_production = 20
 }
 
--- ** SPECIAL HANDLERS **
 local special_player_handlers = {}
 
 special_player_handlers.on_gui_opened = (function(event)
@@ -241,7 +236,6 @@ for _, listener in pairs(event_listeners) do
     end
 end
 
-
 local function handle_player_event(event)
     local event_name = event.input_name or event.name -- also handles keyboard shortcuts
     local string_name = player_identifier_map[event_name] or event_name
@@ -250,8 +244,6 @@ local function handle_player_event(event)
 
     -- Guard against an event being called before the player is initialized
     if not storage.players[event.player_index] then return end
-
-    -- We'll assume every one of the events has a player attached
     local player = game.get_player(event.player_index)   ---@cast player -nil
 
     -- Close context menu on any keyboard shortcut
@@ -272,8 +264,38 @@ local function handle_player_event(event)
     if event.input_name then util.messages.refresh(player) end
 end
 
--- Register all the player events from the identifier map
 for event_id, _ in pairs(player_identifier_map) do script.on_event(event_id, handle_player_event) end
+
+
+-- ** GAME EVENTS **
+-- These events go out to every handler that has subscribed to it by ID.
+local game_identifier_map = {
+    [defines.events.on_singleplayer_init] = "on_singleplayer_init",
+    [defines.events.on_multiplayer_init] = "on_multiplayer_init"
+}
+
+local game_event_cache = {}
+-- Compile the list of game handlers
+for _, listener in pairs(event_listeners) do
+    if listener.game then
+        for event_name, handler in pairs(listener.game) do
+            game_event_cache[event_name] = game_event_cache[event_name] or {}
+            table.insert(game_event_cache[event_name], handler)
+        end
+    end
+end
+
+local function handle_game_event(event)
+    local event_name = game_identifier_map[event.name]
+    local event_handlers = game_event_cache[event_name]
+    if not event_handlers then return end  -- make sure the given event is even handled
+
+    for _, registered_handler in pairs(event_handlers) do
+        registered_handler(event)  -- send actual event
+    end
+end
+
+for event_id, _ in pairs(game_identifier_map) do script.on_event(event_id, handle_game_event) end
 
 
 -- ** DIALOG EVENTS **

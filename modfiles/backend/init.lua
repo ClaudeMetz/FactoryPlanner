@@ -8,7 +8,6 @@ require("backend.handlers.integrator")
 
 require("backend.calculation.solver")
 
-
 ---@class PreferencesTable
 ---@field timescale Timescale
 ---@field pause_on_interface boolean
