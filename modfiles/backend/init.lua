@@ -303,42 +303,11 @@ local function handle_configuration_change()
 end
 
 
--- ** TOP LEVEL **
 script.on_load(run_on_load)
 
 script.on_init(global_init)
 
 script.on_configuration_changed(handle_configuration_change)
-
-
--- ** PLAYER DATA **
-script.on_event(defines.events.on_player_created, function(event)
-    local player = game.get_player(event.player_index)  ---@cast player -nil
-    player_init(player)
-end)
-
-script.on_event(defines.events.on_player_removed, function(event)
-    storage.players[event.player_index] = nil
-end)
-
-
--- ** TRANSLATION **
--- Required by flib's translation module
-script.on_event(defines.events.on_tick, util.translator.on_tick)
-script.on_event(defines.events.on_player_joined_game, util.translator.on_player_joined_game)
-script.on_event(defines.events.on_string_translated, util.translator.on_string_translated)
-
----@param event GuiEvent
-local function dictionaries_ready(event)
-    local player = game.get_player(event.player_index)  ---@cast player -nil
-    local player_table = util.globals.player_table(player)
-
-    player_table.translation_tables = util.translator.get_all(event.player_index)
-    modal_dialog.set_searchfield_state(player)  -- enables searchfields if possible
-end
-
--- Save translations once they are complete
-script.on_event(util.translator.on_player_dictionaries_ready, dictionaries_ready)
 
 
 -- ** COMMANDS **
@@ -351,3 +320,39 @@ commands.add_command("fp-shrinkwrap-interface", {"command-help.fp_shrinkwrap_int
         util.nth_tick.register((game.tick + 1), "shrinkwrap_interface", {player_index=command.player_index})
     end
 end)
+
+
+-- ** EVENTS **
+local listeners = {}
+
+listeners.player = {
+    on_player_created = (function(player, _)
+        player_init(player)
+    end),
+    on_player_removed = (function(player, _)
+        storage.players[player.index] = nil
+    end),
+
+    on_player_dictionaries_ready = (function(player, _)
+        local player_table = util.globals.player_table(player)
+        player_table.translation_tables = util.translator.get_all(player.index)
+
+        modal_dialog.set_searchfield_state(player)  -- enables searchfields if possible
+    end),
+
+    on_player_joined_game = (function(_, event)
+        util.translator.on_player_joined_game(event)
+    end),
+    on_player_locale_changed = (function(_, event)
+        util.translator.on_player_locale_changed(event)
+    end),
+    on_string_translated = (function(_, event)
+        util.translator.on_string_translated(event)
+    end)
+}
+
+listeners.game = {
+    on_tick = util.translator.on_tick
+}
+
+return { listeners }
