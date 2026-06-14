@@ -78,4 +78,22 @@ listeners.player = {
     end)
 }
 
+listeners.game = {
+    on_research_finished = (function(event)
+        if game.tick == 0 then return end  -- no shenanigans during setup
+        for _, effect in pairs(event.research.prototype.effects) do
+            if effect.type == "mining-drill-productivity-bonus"
+                    or effect.type == "change-recipe-productivity" then
+                local offset = 0
+                for _, player in pairs(game.players) do
+                    local realm = util.globals.player_table(player).realm
+                    realm:schedule_solver_updates(game.tick + offset, player)
+                    offset = offset + 2
+                end
+                break
+            end
+        end
+    end)
+}
+
 return { listeners }

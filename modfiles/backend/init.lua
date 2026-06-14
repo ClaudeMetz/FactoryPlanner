@@ -6,8 +6,6 @@ require("backend.handlers.prototyper")
 require("backend.handlers.defaults")
 require("backend.handlers.integrator")
 
-require("backend.calculation.solver")
-
 ---@class PreferencesTable
 ---@field timescale Timescale
 ---@field pause_on_interface boolean
@@ -115,7 +113,6 @@ end
 ---@field active_selector string?
 ---@field compact_view boolean
 ---@field districts_view boolean
----@field recalculate_on_factory_change boolean
 
 ---@class LastAction
 ---@field action_name string
@@ -141,8 +138,7 @@ local function reset_ui_state(player_table)
         active_selector = nil,
 
         compact_view = false,
-        districts_view = false,
-        recalculate_on_factory_change = false
+        districts_view = false
     }
 end
 

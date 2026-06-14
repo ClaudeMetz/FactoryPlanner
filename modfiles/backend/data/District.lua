@@ -52,6 +52,8 @@ end
 function District:remove(factory)
     -- Make sure the nth_tick handlers are cleaned up
     if factory.tick_of_deletion then util.nth_tick.cancel(factory.tick_of_deletion) end
+    if factory.tick_of_solver_update then util.nth_tick.cancel(factory.tick_of_solver_update) end
+
     factory.parent = nil
     self:_remove(factory)
     self.needs_refresh = true
@@ -111,6 +113,19 @@ function District:refresh()
 
     self.item_set:diff()
     self.item_set:sort()
+end
+
+
+---@param starting_tick Tick
+---@param player LuaPlayer
+---@return Tick last_scheduled_tick
+function District:schedule_solver_updates(starting_tick, player)
+    local running_tick = starting_tick
+    for factory in self:iterator({valid=true}) do
+        factory:schedule_solver_update(running_tick, player)
+        running_tick = running_tick + MAGIC_NUMBERS.factory_solver_update_delay
+    end
+    return running_tick
 end
 
 

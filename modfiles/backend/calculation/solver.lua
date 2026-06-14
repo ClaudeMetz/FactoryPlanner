@@ -266,6 +266,12 @@ end
 function solver.update(player, factory)
     factory = factory or util.context.get(player, "Factory")
     if factory and factory.valid then
+        -- Cancel any pending update as it'll be running right now
+        if factory.tick_of_solver_update then
+            util.nth_tick.cancel(factory.tick_of_solver_update)
+            factory.tick_of_solver_update = nil
+        end
+
         local factory_data = solver.generate_factory_data(player, factory)
 
         if factory.matrix_solver_active then
@@ -404,3 +410,17 @@ end
 function solver_util.determine_fuel_amount(energy_consumption, burner, fuel_value)
     return (energy_consumption / burner.effectivity) / fuel_value
 end
+
+
+-- ** EVENTS **
+local listeners = {}
+
+listeners.global = {
+    update_solver = (function(metadata)
+        local player = game.get_player(metadata.player_index)
+        local factory = OBJECT_INDEX[metadata.factory_id]
+        solver.update(player, factory)
+    end)
+}
+
+return { listeners }

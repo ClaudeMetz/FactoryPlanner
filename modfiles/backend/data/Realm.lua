@@ -75,6 +75,18 @@ function Realm:count(filter, pivot, direction)
 end
 
 
+---@param starting_tick Tick
+---@param player LuaPlayer
+function Realm:schedule_solver_updates(starting_tick, player)
+    local running_tick = starting_tick
+    for district in self:iterator() do
+        -- District returns the last tick it registered for
+        running_tick = district:schedule_solver_updates(running_tick, player)
+        running_tick = running_tick + MAGIC_NUMBERS.factory_solver_update_delay
+    end
+end
+
+
 --- The realm can't be invalid, this just cleanly validates Districts
 function Realm:validate()
     self:_validate()

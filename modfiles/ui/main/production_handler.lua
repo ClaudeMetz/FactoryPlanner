@@ -101,23 +101,6 @@ local function handle_floor_recipe_click(player, tags, action)
     end
 end
 
-
-local function handle_percentage_change(player, tags, event)
-    local line = OBJECT_INDEX[tags.line_id]
-    local relevant_line = (line.class == "Floor") and line.first or line
-    relevant_line.percentage = tonumber(event.element.text) or 100
-
-    util.globals.ui_state(player).recalculate_on_factory_change = true -- set flag to recalculate if necessary
-    -- TODO this should be replaced, with an nth_tick refresh some short time in the future, similar to tick_to_deletion
-end
-
-local function handle_percentage_confirmation(player, _, _)
-    util.globals.ui_state(player).recalculate_on_factory_change = false  -- reset this flag as we refresh below
-    solver.update(player)
-    util.gui.run_refresh(player, "factory")
-end
-
-
 local function handle_machine_click(player, tags, action)
     local machine = OBJECT_INDEX[tags.machine_id]
     local line = machine.parent
@@ -540,7 +523,15 @@ listeners.gui = {
     on_gui_text_changed = {
         {
             name = "change_line_percentage",
-            handler = handle_percentage_change
+            handler = (function(player, tags, event)
+                local line = OBJECT_INDEX[tags.line_id]
+                local relevant_line = (line.class == "Floor") and line.first or line
+                relevant_line.percentage = tonumber(event.element.text) or 100
+
+                -- Re-run solve only after a delay so it doesn't become out of sync
+                local factory = util.context.get(player, "Factory")
+                factory:schedule_solver_update(game.tick + 300, player)
+            end)
         },
         {
             name = "line_comment",
@@ -554,7 +545,10 @@ listeners.gui = {
     on_gui_confirmed = {
         {
             name = "set_line_percentage",
-            handler = handle_percentage_confirmation
+            handler = (function(player, _, _)
+                solver.update(player)
+                util.gui.run_refresh(player, "factory")
+            end)
         }
     }
 }

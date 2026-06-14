@@ -18,6 +18,7 @@ local Product = require("backend.data.Product")
 ---@field top_floor Floor
 ---@field linearly_dependant boolean?
 ---@field tick_of_deletion uint?
+---@field tick_of_solver_update uint?
 ---@field last_valid_modset ModToVersion?
 local Factory = Object.methods()
 Factory.__index = Factory
@@ -43,6 +44,7 @@ local function init(name, matrix_solver_active)
 
         linearly_dependant = false,
         tick_of_deletion = nil,
+        tick_of_solver_update = nil,
         last_valid_modset = nil
     }, "Factory", Factory)  --[[@as Factory]]
     object.top_floor.parent = object
@@ -178,6 +180,21 @@ function Factory:update_product_definitions(new_defined_by)
     for product in self:iterator() do
         product:change_definition(new_defined_by)
     end
+end
+
+
+---@param desired_tick Tick
+---@param player LuaPlayer
+function Factory:schedule_solver_update(desired_tick, player)
+    -- Get rid of any previously scheduled refreshes
+    if self.tick_of_solver_update then
+        util.nth_tick.cancel(self.tick_of_solver_update)
+        self.tick_of_solver_update = nil
+    end
+
+    local actual_tick = util.nth_tick.register(desired_tick, "update_solver",
+        {player_index=player.index, factory_id=self.id})
+    self.tick_of_solver_update = actual_tick
 end
 
 

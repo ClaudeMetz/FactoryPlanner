@@ -22,7 +22,7 @@ local function change_district_location(player, tags, event)
 
     for factory in district:iterator() do
         factory.top_floor:reset_surface_compatibility()
-        solver.update(player, factory)  -- TODO spread out?
+        solver.update(player, factory)
     end
     util.gui.run_refresh(player, "all")
 end

@@ -1,7 +1,7 @@
 -- Assembles event handlers from all the relevant files to register them
 
 local event_listener_names = {
-    "backend.init",
+    "backend.init", "backend.calculation.solver",
     "ui.base.main_dialog", "ui.base.compact_dialog", "ui.base.modal_dialog", "ui.base.calculator_dialog",
     "ui.components.module_configurator", "ui.components.item_views",
     "ui.dialogs.beacon_dialog", "ui.dialogs.machine_dialog", "ui.dialogs.picker_dialog",
@@ -285,7 +285,8 @@ for event_id, _ in pairs(player_identifier_map) do script.on_event(event_id, han
 local game_identifier_map = {
     [defines.events.on_tick] = "on_tick",
     [defines.events.on_singleplayer_init] = "on_singleplayer_init",
-    [defines.events.on_multiplayer_init] = "on_multiplayer_init"
+    [defines.events.on_multiplayer_init] = "on_multiplayer_init",
+    [defines.events.on_research_finished] = "on_research_finished"
 }
 
 local game_event_cache = {}

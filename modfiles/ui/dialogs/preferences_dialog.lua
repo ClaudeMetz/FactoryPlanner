@@ -188,12 +188,7 @@ local function handle_checkbox_preference_change(player, tags, event)
 
     elseif preference_name == "calculate_emissions" then
         local realm = util.globals.player_table(player).realm
-        for district in realm:iterator() do
-            for factory in district:iterator() do
-                solver.update(player, factory)  -- TODO spread out
-            end
-        end
-        util.gui.run_refresh(player, "production")
+        realm:schedule_solver_updates(game.tick, player)
 
     elseif preference_name == "attach_factory_products" or preference_name == "skip_factory_naming" then
         util.gui.run_refresh(player, "factory_list")
