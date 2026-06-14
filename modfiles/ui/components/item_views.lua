@@ -216,7 +216,7 @@ function item_views.rebuild_data(player)
         cargo_wagon_capactiy = cargo_wagon_proto.get_inventory_size(defines.inventory.cargo_wagon,
             default_cargo_wagon.quality.name),
         fluid_wagon_capacity = fluid_wagon_proto.get_fluid_capacity(default_fluid_wagon.quality.name),
-        formatting_precision = 5
+        formatting_precision = MAGIC_NUMBERS.formatting_precision
     }
 end
 

@@ -5,27 +5,16 @@ local _format = {}
 ---@param precision integer
 ---@return string formatted_number
 function _format.number(number, precision)
-    -- To avoid scientific notation, chop off the decimals points for big numbers
-    if (number / (10 ^ precision)) >= 1 then
-        return ("%d"):format(number)
-    else
-        -- Set very small numbers to 0
-        if number < (0.1 ^ precision) then
-            number = 0
-
-        -- Decrease significant digits for every zero after the decimal point
-        -- This keeps the number of digits after the decimal point constant
-        elseif number < 1 then
-            local n = number
-            while n < 1 do
-                precision = precision - 1
-                n = n * 10
-            end
-        end
-
-        -- Show the number in the shortest possible way
-        return ("%." .. precision .. "g"):format(number)
+    if number >= 10 ^ precision then
+        return ("%d"):format(number)  -- %g uses scientific notation here, avoid it
     end
+    if number < 10 ^ -precision then
+        number = 0
+    elseif number < 1 then
+        -- log10 gives -(leading zero count), reducing sig figs to keep display width consistent with numbers >= 1
+        precision = precision + math.floor(math.log10(number))
+    end
+    return ("%." .. precision .. "g"):format(number)
 end
 
 local prefixes = {"", "kilo", "mega", "giga", "tera", "peta", "exa", "zetta", "yotta"}
@@ -41,21 +30,17 @@ local units = {
 ---@return LocalisedString formatted_number
 function _format.SI_value(value, unit, precision)
     local sign = (value >= 0) and "" or "-"
-    value = math.abs(value) or 0
+    value = math.abs(value)
 
     local scale_counter = 0
-    -- Determine unit of the energy consumption, while keeping the result above 1 (ie no 0.1kW, but 100W)
-    while scale_counter < #prefixes and value > (1000 ^ (scale_counter + 1)) do
-        scale_counter = scale_counter + 1
-    end
-
-    -- Round up if energy consumption is close to the next tier
-    if (value / (1000 ^ scale_counter)) > 999 then
-        scale_counter = scale_counter + 1
+    if value > 0 then
+        scale_counter = math.max(0, math.floor(math.log10(value) / 3))  -- /3 because SI prefixes are powers of 1000
+        -- Values that round to 1000 would produce scientific notation in %g
+        if value / (1000 ^ scale_counter) > 999 then scale_counter = scale_counter + 1 end
     end
 
     value = value / (1000 ^ scale_counter)
-    local prefix = (scale_counter == 0) and "" or {"fp.prefix_" .. prefixes[scale_counter + 1]}
+    local prefix = scale_counter == 0 and "" or {"fp.prefix_" .. prefixes[scale_counter + 1]}
     return {"", sign .. util.format.number(value, precision) .. " ", prefix, units[unit]}
 end
 
@@ -65,9 +50,9 @@ end
 ---@return LocalisedString tooltip_line
 function _format.special_tooltip(name, amount)
     if name == "custom-electric-power" or name == "custom-heat-power" then
-        return util.format.SI_value(amount, "W", 3)
+        return util.format.SI_value(amount, "W", MAGIC_NUMBERS.formatting_precision)
     else  -- any of the emission types
-        return util.format.SI_value(amount, "E/m", 3)
+        return util.format.SI_value(amount, "E/m", MAGIC_NUMBERS.formatting_precision)
     end
 end
 
@@ -108,7 +93,7 @@ function _format.machine_amount(amount, ceil_number)
     -- If the formatting returns 0, it is a very small number, so show it as 0.001
     if ceil_number then button_number = math.ceil(button_number) end
 
-    local tooltip_number = util.format.number(amount, 3)
+    local tooltip_number = util.format.number(amount, MAGIC_NUMBERS.formatting_precision)
     if tooltip_number == "0" then tooltip_number = "≤0.001" end
 
     local plural_parameter = (tooltip_number == "1") and 1 or 2

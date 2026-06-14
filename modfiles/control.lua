@@ -8,6 +8,7 @@ MAGIC_NUMBERS = {
     factory_solver_update_delay = 10,  -- ticks between factories being re-solved in the background
     modal_search_rate_limit = 10,  -- ticks between modal search runs
     effect_precision = 10000,  -- The multiplier to turn module effects into integers (and back)
+    formatting_precision = 4,  -- precision of decimal formatting in tooltips
 
     -- Some magic numbers to determine and calculate the dimensions of the main dialog
     frame_spacing = 12,  -- Spacing between the base frames in the main dialog

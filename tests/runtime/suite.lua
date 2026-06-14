@@ -3,6 +3,88 @@
 -- Test cases consist of a runtime check, which is run in the main mod's environment
 
 return {
+    testUtilFormatNumber = {
+        check = function()
+            local function run(number, precision, expected, label)
+                local result = util.format.number(number, precision)
+                if result ~= expected then
+                    error(string.format("FAIL [%s]: number(%g, %d) -> expected %q, got %q",
+                        label, number, precision, expected, result))
+                end
+            end
+
+            -- Large numbers use %d to avoid %g's scientific notation
+            run(1000,  3, "1000",  "1k threshold")
+            run(9999,  3, "9999",  "4 digit")
+            run(12345, 3, "12345", "5 digit")
+
+            -- Normal range: 3 sig figs via %g
+            run(999,  3, "999",  "just under 1k")
+            run(123,  3, "123",  "3 digit")
+            run(12.3, 3, "12.3", "1 decimal")
+            run(1.23, 3, "1.23", "2 decimal")
+            run(1,    3, "1",    "1")
+
+            -- Numbers < 1: precision reduced by leading zero count
+            run(0.5,   3, "0.5",  "0.5")
+            run(0.567, 3, "0.57", "0.567 -> 2 sig figs")
+            run(0.123, 3, "0.12", "0.123 -> 2 sig figs")
+            run(0.05,  3, "0.05", "0.05")
+
+            -- Tiny numbers clamp to zero
+            run(0.0009, 3, "0", "tiny")
+            run(0,      3, "0", "zero")
+
+            -- Precision 4
+            run(10000, 4, "10000", "10k threshold at precision 4")
+            run(9999,  4, "9999",  "4 digit at precision 4")
+            run(1.234, 4, "1.234", "4 sig figs")
+        end
+    },
+
+    testUtilFormatSIValue = {
+        check = function()
+            local function run(value, unit, precision, expected_num, expected_prefix, label)
+                local result = util.format.SI_value(value, unit, precision)
+                local num_str, prefix = result[2], result[3]
+                local prefix_key = (type(prefix) == "table") and prefix[1] or prefix
+
+                if num_str ~= expected_num then
+                    error(string.format("FAIL [%s] number: expected %q, got %q", label, expected_num, num_str))
+                end
+                if prefix_key ~= expected_prefix then
+                    error(string.format("FAIL [%s] prefix: expected %q, got %q", label, expected_prefix, prefix_key))
+                end
+            end
+
+            -- Base scale (no prefix)
+            run(0,   "W", 3, "0 ",   "", "zero")
+            run(1,   "W", 3, "1 ",   "", "1W")
+            run(500, "W", 3, "500 ", "", "500W")
+            run(999, "W", 3, "999 ", "", "999W")
+
+            -- Round-up bump: values above 999 bump to next tier to avoid %g scientific notation
+            run(999.5, "W", 3, "1 ",   "fp.prefix_kilo", "999.5W -> 1kW")
+
+            -- Kilo
+            run(1000,  "W", 3, "1 ",   "fp.prefix_kilo", "1kW")
+            run(1500,  "W", 3, "1.5 ", "fp.prefix_kilo", "1.5kW")
+            run(12000, "W", 3, "12 ",  "fp.prefix_kilo", "12kW")
+
+            -- Mega, Giga
+            run(1e6,   "W", 3, "1 ",   "fp.prefix_mega", "1MW")
+            run(1.5e6, "W", 3, "1.5 ", "fp.prefix_mega", "1.5MW")
+            run(1e9,   "W", 3, "1 ",   "fp.prefix_giga", "1GW")
+
+            -- Negative values
+            run(-500,  "W", 3, "-500 ", "",               "-500W")
+            run(-1500, "W", 3, "-1.5 ", "fp.prefix_kilo", "-1.5kW")
+
+            -- Emissions unit
+            run(1500, "E/m", 3, "1.5 ", "fp.prefix_kilo", "1.5k E/m")
+        end
+    },
+
     testUtilFormatButtonNumber = {
         check = function()
             local function run(input, expected, label)
