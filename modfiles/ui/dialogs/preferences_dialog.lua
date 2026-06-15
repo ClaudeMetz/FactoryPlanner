@@ -190,6 +190,9 @@ local function handle_checkbox_preference_change(player, tags, event)
         local realm = util.globals.player_table(player).realm
         realm:schedule_solver_updates(game.tick, player)
 
+        solver.update(player)  -- update current factory right away
+        util.gui.run_refresh(player, "production")
+
     elseif preference_name == "attach_factory_products" or preference_name == "skip_factory_naming" then
         util.gui.run_refresh(player, "factory_list")
 
