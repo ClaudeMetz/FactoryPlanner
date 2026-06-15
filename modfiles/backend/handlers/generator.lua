@@ -842,7 +842,8 @@ function generator.machines.generate()
 
                     machine.built_by_item = nil
 
-                    machine.effect_receiver = generator_util.get_blank_effect_receiver()
+                    -- Passing an empty prototype table makes it return a default receiver
+                    machine.effect_receiver = generator_util.format_effect_receiver({})
                     machine.allowed_effects = {}
                     machine.module_limit = 0
 

@@ -298,21 +298,6 @@ function generator_util.formatted_effects(effects)
 end
 
 
----@return EffectReceiver
-function generator_util.get_blank_effect_receiver()
-    return {
-        base_effect = {},
-        uses_module_effects = false,
-        uses_beacon_effects = false,
-        uses_surface_effects = false,
-        consumption_limits = {low = -0.8, high = 1000},
-        speed_limits = {low = -0.8, high = 1000},
-        productivity_limits = {low = -0.8, high = 1000},
-        pollution_limits = {low = -0.8, high = 1000},
-        quality_limits = {low = 0, high = 1000}
-    }
-end
-
 ---@class FormattedEffectReceiver
 ---@field base_effect ModuleEffects
 ---@field uses_module_effects boolean
@@ -325,7 +310,17 @@ end
 function generator_util.format_effect_receiver(proto)
     local effect_receiver = proto.effect_receiver
     if effect_receiver == nil then
-        effect_receiver = generator_util.get_blank_effect_receiver()
+        effect_receiver = {
+            base_effect = {},
+            uses_module_effects = false,
+            uses_beacon_effects = false,
+            uses_surface_effects = false,
+            consumption_limits = {low = -0.8, high = 1000},
+            speed_limits = {low = -0.8, high = 1000},
+            productivity_limits = {low = -0.8, high = 1000},
+            pollution_limits = {low = -0.8, high = 1000},
+            quality_limits = {low = 0, high = 1000}
+        }
     else
         local base_effect = effect_receiver.base_effect  -- can be nil
         effect_receiver.base_effect = generator_util.formatted_effects(base_effect)
