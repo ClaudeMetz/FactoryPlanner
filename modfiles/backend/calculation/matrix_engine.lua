@@ -670,6 +670,7 @@ function matrix_engine.get_line_aggregate(line_data, player_index, floor_id, mac
     -- the index in the factory_data.top_floor.lines table can be different from the line_id!
     local recipe_proto = line_data.recipe_proto
     local total_effects = line_data.total_effects
+    local machine_proto = line_data.machine_proto
     local machine_speed = line_data.machine_speed
     local speed_multiplier = 1 + (total_effects.speed / MAGIC_NUMBERS.effect_precision)
     local energy = line_data.recipe_energy
@@ -705,12 +706,12 @@ function matrix_engine.get_line_aggregate(line_data, player_index, floor_id, mac
     -- Determine energy consumption (including potential fuel needs) and emissions
     local fuel_proto = line_data.fuel_proto
     local energy_consumption, emissions = solver_util.determine_energy_consumption_and_emissions(
-        line_data.machine_proto, line_data.recipe_proto, fuel_proto, machine_amount, line_data.energy_usage,
+        machine_proto, line_data.recipe_proto, fuel_proto, machine_amount, line_data.energy_usage,
         total_effects, line_data.pollutant_type)
 
     local fuel, fuel_amount = nil, nil
-    if line_data.machine_proto.energy_type == "burner" then
-        local burner = line_data.machine_proto.burner
+    if machine_proto.energy_type == "burner" then
+        local burner = machine_proto.burner
         fuel_amount = solver_util.determine_fuel_amount(energy_consumption, burner, fuel_proto.fuel_value)
 
         fuel = {type=fuel_proto.type, name=line_data.fuel_name, amount=fuel_amount}
@@ -737,13 +738,13 @@ function matrix_engine.get_line_aggregate(line_data, player_index, floor_id, mac
 
         energy_consumption = 0  -- set electrical consumption to 0 when fuel is used
 
-    elseif line_data.machine_proto.energy_type == "heat" then
+    elseif machine_proto.energy_type == "heat" then
         local heat_item = {type="entity", name="custom-heat-power", amount=energy_consumption}
         structures.class.add(line_aggregate.Ingredient, heat_item)
 
         energy_consumption = 0  -- set electrical consumption to 0 when heat is used
 
-    elseif line_data.machine_proto.energy_type == "void" then
+    elseif machine_proto.energy_type == "void" then
         energy_consumption = 0  -- set electrical consumption to 0 while still polluting
     end
 
@@ -752,6 +753,12 @@ function matrix_engine.get_line_aggregate(line_data, player_index, floor_id, mac
     if energy_consumption > 0 then
         local electric_item = {type="entity", name="custom-electric-power", amount=energy_consumption}
         structures.class.add(line_aggregate.Ingredient, electric_item)
+    end
+
+    if line_data.entities_require_heating and machine_proto.heating_energy > 0 then
+        local heating_energy = machine_proto.heating_energy * machine_amount
+        local heating_item = {type="entity", name="custom-heating-power", amount=heating_energy}
+        structures.class.add(line_aggregate.Ingredient, heating_item)
     end
 
     if emissions ~= 0 then  -- emissions are either produced or consumed

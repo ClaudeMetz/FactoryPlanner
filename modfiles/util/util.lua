@@ -88,4 +88,12 @@ function _util.get_factoriopedia_proto(type, name, proto)
     else return prototypes[type][name] end
 end
 
+
+---@param name string
+---@return boolean
+function _util.is_special_power_item(name)
+    return (name == "custom-electric-power" or name == "custom-heat-power" or name == "custom-heating-power")
+end
+
+
 return _util

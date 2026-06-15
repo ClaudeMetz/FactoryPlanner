@@ -132,6 +132,7 @@ local function generate_floor_data(player, factory, floor, calculate_emissions)
                 line_data.energy_usage = machine:get_energy_usage()
                 line_data.resource_drain_rate = machine:get_resource_drain_rate()
                 line_data.pollutant_type = (calculate_emissions) and factory.parent.location_proto.pollutant_type or nil
+                line_data.entities_require_heating = factory.parent.location_proto.entities_require_heating
 
                 -- Boiler recipe energy
                 if machine.proto.prototype_category == "boiler" then

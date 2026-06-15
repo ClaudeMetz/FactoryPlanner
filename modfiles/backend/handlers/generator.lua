@@ -555,6 +555,16 @@ function generator.items.generate()
     }
     generator_util.add_default_groups(custom_items["custom-heat-power"])
 
+    custom_items["custom-heating-power"] = {
+        name = "custom-heating-power",
+        localised_name = {"fp.heating_power"},
+        sprite = "fp_heating_power",
+        hidden = true,
+        order = "z-c3",
+        special = true
+    }
+    generator_util.add_default_groups(custom_items["custom-heating-power"])
+
     local relevant_items = {item={}, fluid={}, entity={}}
     local fluid_has_temperature = {}
     -- Extract items from recipes and note whether they are ever used as a product
@@ -616,6 +626,7 @@ function generator.items.generate()
     -- No recipes use these (yet) so they need to be added manually
     relevant_items["entity"]["custom-electric-power"] = {ingredient_only=true}
     relevant_items["entity"]["custom-heat-power"] = {ingredient_only=true}
+    relevant_items["entity"]["custom-heating-power"] = {ingredient_only=true}
 
     for type, item_table in pairs(relevant_items) do
         for item_name, item_details in pairs(item_table) do
@@ -687,6 +698,7 @@ end
 ---@field surface_conditions SurfaceCondition[]
 ---@field resource_drain_rate number?
 ---@field uses_force_mining_productivity_bonus boolean?
+---@field heating_energy double
 
 ---@class FluidChannels
 ---@field input integer
@@ -828,7 +840,8 @@ function generator.machines.generate()
             quality_affects_module_slots = proto.quality_affects_module_slots,  -- can be nil
             module_slots_quality_bonus = proto.module_slots_quality_bonus,
             surface_conditions = proto.surface_conditions,
-            uses_force_mining_productivity_bonus = proto.uses_force_mining_productivity_bonus
+            uses_force_mining_productivity_bonus = proto.uses_force_mining_productivity_bonus,
+            heating_energy = proto.heating_energy * 60
         }
     end
 
@@ -1389,6 +1402,7 @@ end
 ---@field tooltip LocalisedString
 ---@field surface_properties SurfaceProperties?
 ---@field pollutant_type string?
+---@field entities_require_heating boolean
 
 ---@alias SurfaceProperties { string: double }
 
@@ -1430,7 +1444,8 @@ function generator.locations.generate()
             tooltip = tooltip,
             surface_properties = surface_properties,
             pollutant_type = (category == "space-location" and proto.pollutant_type)
-                and proto.pollutant_type.name or nil
+                and proto.pollutant_type.name or nil,
+            entities_require_heating = (category == "space-location" and proto.entities_require_heating)
         }
     end
 

@@ -171,6 +171,12 @@ local function update_line(line_data, aggregate, looped_fuel)
         table.insert(ingredients, electric_item)
     end
 
+    if line_data.entities_require_heating and machine_proto.heating_energy > 0 then
+        local heating_energy = machine_proto.heating_energy * machine_amount
+        local heating_item = {type="entity", name="custom-heating-power", amount=heating_energy, constant=true}
+        table.insert(ingredients, heating_item)
+    end
+
     if emissions ~= 0 then  -- emissions are either produced or consumed
         local emission_name = "custom-" .. line_data.pollutant_type
         local emission_item = {type="entity", name=emission_name, amount=math.abs(emissions), constant=true}

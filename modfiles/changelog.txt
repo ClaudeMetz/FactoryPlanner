@@ -2,7 +2,7 @@
 Version: 0.00.00
 Date: 00. 00. 0000
   Features:
-    -
+    - Added indication of heating power required for buildings that can freeze
   Changes:
     - Improved numbers shown on buttons to no longer be cut off, but slightly round up instead (#55)
     - The mod now updates all factory plans after a productivity-affecting technology is researched

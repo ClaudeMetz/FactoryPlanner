@@ -49,7 +49,7 @@ end
 ---@param amount number
 ---@return LocalisedString tooltip_line
 function _format.special_tooltip(name, amount)
-    if name == "custom-electric-power" or name == "custom-heat-power" then
+    if util.is_special_power_item(name) then
         return util.format.SI_value(amount, "W", MAGIC_NUMBERS.formatting_precision)
     else  -- any of the emission types
         return util.format.SI_value(amount, "E/m", MAGIC_NUMBERS.formatting_precision)

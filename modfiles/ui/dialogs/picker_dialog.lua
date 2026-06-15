@@ -294,7 +294,7 @@ local function add_item_pane(parent_flow, modal_data, item_category, item)
     local item_amount = ""
     if item and defined_by == "amount" then
         if item.proto.special then
-            if item.proto.name == "custom-electric-power" or item.proto.name == "custom-heat-power" then
+            if util.is_special_power_item(item.proto.name) then
                 item_amount = tostring(item.required_amount / 1e6) .. "M"
             else  -- any of the emission types
                 item_amount = tostring(item.required_amount)
