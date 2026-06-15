@@ -75,4 +75,17 @@ function _util.get_recipe_productivity(force, recipe_name)
     return math.floor(bonus * MAGIC_NUMBERS.effect_precision + 1e-4)
 end
 
+
+---@alias FactoriopedaIDType "item" | "fluid" | "recipe" | "entity" | "tile" | "space-location" | "ammo-category" | "space-connection" | "asteroid-chunk" | "virtual-signal" | "surface"
+
+---@param type FactoriopediaIDType
+---@param name string
+---@param proto FPPrototype?
+function _util.get_factoriopedia_proto(type, name, proto)
+    local fp_id = proto and proto.factoriopedia_id or nil
+
+    if fp_id then return prototypes[fp_id.type][fp_id.name]
+    else return prototypes[type][name] end
+end
+
 return _util

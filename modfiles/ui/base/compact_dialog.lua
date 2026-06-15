@@ -536,7 +536,8 @@ local function handle_recipe_click(player, tags, action)
             refresh_compact_factory(player)
         end
     elseif action == "factoriopedia" then
-        player.open_factoriopedia_gui(prototypes["recipe"][relevant_line.recipe.proto.name])
+        local proto = relevant_line.recipe.proto
+        player.open_factoriopedia_gui(util.get_factoriopedia_proto("recipe", proto.name, proto))
     end
 end
 

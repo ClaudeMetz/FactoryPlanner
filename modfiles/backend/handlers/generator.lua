@@ -62,6 +62,7 @@ end
 ---@field data_type "recipes"
 ---@field categories { [string]: boolean }
 ---@field combined_category string
+---@field factoriopedia_id { type: FactoriopediaIDType, name: string}?
 ---@field energy double
 ---@field emissions_multiplier double
 ---@field ingredients Ingredient[]
@@ -179,6 +180,7 @@ function generator.recipes.generate()
                 local recipe_copy = util.flib.deep_copy(recipe)
                 recipe_copy.name = recipe.name .. "-for-" .. proto.name
                 recipe_copy.categories = {[category] = true}
+                recipe_copy.factoriopedia_id = {type="recipe", name=recipe.name}
                 recipe_copy.custom = true
                 insert_prototype(recipes, recipe_copy, nil)
             end
@@ -190,6 +192,7 @@ function generator.recipes.generate()
 
             local recipe = custom_recipe()
             recipe.name = "impostor-" .. proto.name
+            recipe.factoriopedia_id = {type="entity", name=proto.name}
             recipe.localised_name = {"", proto.localised_name, " ", {"fp.mining_recipe"}}
             recipe.sprite = products[1].type .. "/" .. products[1].name
             recipe.order = proto.order
@@ -228,6 +231,7 @@ function generator.recipes.generate()
 
                 local recipe = custom_recipe()
                 recipe.name = "impostor-" .. fluid.name .. "-" .. proto.name
+                recipe.factoriopedia_id = {type="entity", name=proto.name}
                 recipe.localised_name = {"", fluid.localised_name, " ", {"fp.pumping_recipe"}}
                 recipe.sprite = "fluid/" .. fluid.name
                 recipe.order = proto.order
@@ -249,6 +253,7 @@ function generator.recipes.generate()
 
             local recipe = custom_recipe()
             recipe.name = "impostor-" .. proto.name
+            recipe.factoriopedia_id = {type="entity", name=proto.name}
             recipe.localised_name = {"", proto.localised_name, " ", {"fp.planting_recipe"}}
             recipe.sprite = products[1].type .. "/" .. products[1].name
             recipe.order = proto.order
@@ -287,6 +292,7 @@ function generator.recipes.generate()
 
                             local launch_recipe = custom_recipe()
                             launch_recipe.name = "impostor-launch-" .. item_name .. "-from-" .. proto.name
+                            launch_recipe.factoriopedia_id = {type="entity", name=proto.name}
                             launch_recipe.localised_name = {"", main_product.localised_name, " ", {"fp.launch_recipe"}}
                             launch_recipe.sprite = "item/" .. main_product.name
                             launch_recipe.order = main_product.order
@@ -304,6 +310,7 @@ function generator.recipes.generate()
                     if SPACE_TRAVEL then
                         local rocket_recipe = custom_recipe()
                         rocket_recipe.name = "impostor-" .. proto.name .. "-rocket"
+                        rocket_recipe.factoriopedia_id = {type="entity", name=proto.name}
                         rocket_recipe.localised_name = {"", proto.localised_name, " ", {"fp.launch_recipe"}}
                         rocket_recipe.sprite = "fp_silo_rocket"
                         rocket_recipe.order = recipe.order .. "-" .. proto.order
@@ -327,6 +334,7 @@ function generator.recipes.generate()
 
                 local boiler_recipe = custom_recipe()
                 boiler_recipe.name = "impostor-" .. category .. "-fluid-" .. fluid_proto.name
+                boiler_recipe.factoriopedia_id = {type="entity", name=proto.name}
                 boiler_recipe.localised_name = {"", fluid_proto.localised_name, " ", {"fp.boiling_recipe"}}
                 boiler_recipe.sprite = "fluid/" .. fluid_proto.name
                 boiler_recipe.order = proto.order .. "-" .. fluid_proto.order
@@ -370,6 +378,7 @@ function generator.recipes.generate()
 
             local recipe = custom_recipe()
             recipe.name = "impostor-" .. fluid.name .. "-" .. proto.name
+            recipe.factoriopedia_id = {type="tile", name=proto.name}
             recipe.localised_name = {"", fluid.localised_name, " ", {"fp.pumping_recipe"}}
             recipe.sprite = "fluid/" .. fluid.name
             recipe.order = proto.order
@@ -390,6 +399,7 @@ function generator.recipes.generate()
         if proto.get_spoil_ticks() > 0 and proto.spoil_result then
             local recipe = custom_recipe()
             recipe.name = "impostor-spoiling-" .. proto.name
+            recipe.factoriopedia_id = {type="item", name=proto.name}
             recipe.localised_name = {"", proto.spoil_result.localised_name, " ", {"fp.spoiling_recipe"}}
             recipe.sprite = "item/" .. proto.spoil_result.name
             recipe.order = proto.spoil_result.order

@@ -77,7 +77,8 @@ local function handle_line_recipe_click(player, tags, action)
         util.gui.run_refresh(player, "factory")
 
     elseif action == "factoriopedia" then
-        player.open_factoriopedia_gui(prototypes["recipe"][relevant_line.recipe.proto.name])
+        local proto = relevant_line.recipe.proto
+        player.open_factoriopedia_gui(util.get_factoriopedia_proto("recipe", proto.name, proto))
     end
 end
 
@@ -97,7 +98,8 @@ local function handle_floor_recipe_click(player, tags, action)
         util.gui.run_refresh(player, "factory")
 
     elseif action == "factoriopedia" then
-        player.open_factoriopedia_gui(prototypes["recipe"][line.recipe.proto.name])
+        local proto = line.recipe.proto
+        player.open_factoriopedia_gui(util.get_factoriopedia_proto("recipe", proto.name, proto))
     end
 end
 

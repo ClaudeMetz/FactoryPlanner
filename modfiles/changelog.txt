@@ -7,7 +7,7 @@ Date: 00. 00. 0000
     - Improved numbers shown on buttons to no longer be cut off, but slightly round up instead (#55)
     - The mod now updates all factory plans after a productivity-affecting technology is researched
   Bugfixes:
-    -
+    - Fixed that certain recipes could not be opened in Factoriopedia
 
 ---------------------------------------------------------------------------------------------------
 Version: 2.1.1
