@@ -586,7 +586,7 @@ listeners.player = {
         end
     end),
     refresh_gui_element = (function(player, event)
-        local triggers = {production_table=true, production_detail=true, production=true, factory=true, all=true}
+        local triggers = {production_table=true, production=true, factory=true, all=true}
         if triggers[event.trigger] then refresh_production_table(player) end
     end)
 }

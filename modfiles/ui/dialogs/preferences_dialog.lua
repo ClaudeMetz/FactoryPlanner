@@ -266,7 +266,7 @@ local function handle_bol_change(player, _, event)
     refresh_views_table(player)
 
     solver.update(player)
-    util.gui.run_refresh(player, "all")
+    util.gui.run_refresh(player, "factory")
 end
 
 local function handle_table_default_change(player, tags, _)
@@ -284,7 +284,7 @@ local function handle_table_default_change(player, tags, _)
     item_views.rebuild_interface(player)
     refresh_views_table(player)
 
-    util.gui.run_refresh(player, "all")
+    util.gui.run_refresh(player, "factory")
 end
 
 local function handle_box_default_change(player, tags, event)
@@ -305,7 +305,7 @@ local function handle_box_default_change(player, tags, event)
     item_views.rebuild_data(player)
     item_views.rebuild_interface(player)
 
-    util.gui.run_refresh(player, "all")
+    util.gui.run_refresh(player, "factory")
 end
 
 

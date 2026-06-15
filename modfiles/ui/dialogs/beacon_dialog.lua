@@ -238,17 +238,17 @@ local function close_beacon_dialog(player, action)
         beacon.total_amount = util.gui.parse_expression_field(modal_data.modal_elements.beacon_total, true)
 
         solver.update(player)
-        util.gui.run_refresh(player, "factory")
+        util.gui.run_refresh(player, "production")
 
     elseif action == "delete" then
         modal_data.line:set_beacon(nil)
         solver.update(player)
-        util.gui.run_refresh(player, "factory")
+        util.gui.run_refresh(player, "production")
 
     else -- action == "cancel"
         modal_data.line:set_beacon(modal_data.backup_beacon)  -- could be nil
         -- Need to refresh so the buttons have the 'new' backup beacon for further actions
-        util.gui.run_refresh(player, "production_detail")
+        util.gui.run_refresh(player, "production")
     end
 end
 

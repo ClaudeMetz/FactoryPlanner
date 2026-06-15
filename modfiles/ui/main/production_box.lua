@@ -91,7 +91,7 @@ end
 local function toggle_fold_out_subfloors(player)
     local preferences = util.globals.preferences(player)
     preferences.fold_out_subfloors = not preferences.fold_out_subfloors
-    util.gui.run_refresh(player, "production_detail")
+    util.gui.run_refresh(player, "production_table")
 end
 
 local function handle_solver_change(player, _, event)
@@ -108,7 +108,7 @@ local function handle_solver_change(player, _, event)
 
     main_dialog.toggle_districts_view(player, true)
     solver.update(player)
-    util.gui.run_refresh(player, "factory")
+    util.gui.run_refresh(player, "production")
 end
 
 local function repair_factory(player, _, _)
@@ -143,7 +143,7 @@ local function switch_matrix_item(player, tags, _)
     end
 
     solver.update(player)
-    util.gui.run_refresh(player, "factory")
+    util.gui.run_refresh(player, "production")
 end
 
 
@@ -406,7 +406,7 @@ listeners.player = {
         end
     end),
     refresh_gui_element = (function(player, event)
-        local triggers = {production_box=true, production_detail=true, production=true, factory=true, all=true}
+        local triggers = {production_box=true, production=true, factory=true, all=true}
         if triggers[event.trigger] then refresh_production_box(player)
         elseif event.trigger == "paste_button" then refresh_paste_button(player) end
     end)

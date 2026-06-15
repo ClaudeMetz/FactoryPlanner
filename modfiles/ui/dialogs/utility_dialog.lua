@@ -468,7 +468,7 @@ local function close_utility_dialog(player, _)
     local modal_data = util.globals.modal_data(player)  --[[@as table]]
     if modal_data.recalculate then
         solver.update(player)
-        util.gui.run_refresh(player, "factory")
+        util.gui.run_refresh(player, "production")
     end
     modal_data.utility_inventory.destroy()
 end

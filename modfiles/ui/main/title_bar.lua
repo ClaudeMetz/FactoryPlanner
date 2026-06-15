@@ -140,7 +140,7 @@ listeners.player = {
         end
     end),
     refresh_gui_element = (function(player, event)
-        local triggers = {title_bar=true, factory=true, all=true}
+        local triggers = {title_bar=true, all=true}
         if triggers[event.trigger] then refresh_title_bar(player) end
     end)
 }

@@ -86,11 +86,11 @@ local function handle_factory_click(player, tags, action)
     if action == "select" then
         main_dialog.toggle_districts_view(player, true)
         util.context.set(player, selected_factory)
-        util.gui.run_refresh(player, "all")  -- refresh to update the selected factory
+        util.gui.run_refresh(player, "all")
 
     elseif action == "edit" then
         util.context.set(player, selected_factory)
-        util.gui.run_refresh(player, "all")  -- refresh to update the selected factory
+        util.gui.run_refresh(player, "all")
 
         util.gui.open_dialog(player, {dialog="factory", modal_data={factory_id=selected_factory.id}})
 

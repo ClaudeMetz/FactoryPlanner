@@ -394,7 +394,7 @@ listeners.player = {
         end
     end),
     refresh_gui_element = (function(player, event)
-        local triggers = {districts_box=true, production=true, factory=true, all=true}
+        local triggers = {districts_box=true, factory=true, all=true}
         if triggers[event.trigger] then refresh_districts_box(player) end
     end)
 }

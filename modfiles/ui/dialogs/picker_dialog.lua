@@ -405,10 +405,9 @@ local function close_picker_dialog(player, action)
         local relevant_amount = util.gui.parse_expression_field(amount_textfield, true) or 0
         if defined_by == "amount" then
             relevant_amount = relevant_amount / modal_data.timescale
-            relevant_amount = math.max(relevant_amount, MAGIC_NUMBERS.margin_of_error*10)
+            relevant_amount = math.max(relevant_amount, MAGIC_NUMBERS.margin_of_error * 10)
         end
 
-        local refresh_scope = "factory"
         if modal_data.item ~= nil then  -- ie. this is an edit
             modal_data.item.defined_by = defined_by
             modal_data.item.required_amount = relevant_amount
@@ -425,17 +424,18 @@ local function close_picker_dialog(player, action)
             end
 
             factory:insert(top_level_item)
-            refresh_scope = "all"  -- need to refresh factory list too
+            util.gui.run_refresh(player, "factory_list")  -- for product icons
         end
 
         solver.update(player, factory)
         main_dialog.toggle_districts_view(player, true)
-        util.gui.run_refresh(player, refresh_scope)
+        util.gui.run_refresh(player, "production")
 
     elseif action == "delete" then
         factory:remove(modal_data.item)
         solver.update(player, factory)
-        util.gui.run_refresh(player, "factory")
+        util.gui.run_refresh(player, "factory_list")  -- for product icons
+        util.gui.run_refresh(player, "production")
     end
 
     -- Remember selected group so it can be re-applied when the dialog is re-opened

@@ -19,7 +19,7 @@ local function handle_line_move_click(player, tags, event)
     line.parent:shift(line, tags.direction, spots_to_shift)
 
     solver.update(player)
-    util.gui.run_refresh(player, "factory")
+    util.gui.run_refresh(player, "production")
 end
 
 
@@ -62,7 +62,7 @@ local function handle_line_recipe_click(player, tags, action)
     elseif action == "toggle" then
         relevant_line.active = not relevant_line.active
         solver.update(player)
-        util.gui.run_refresh(player, "factory")
+        util.gui.run_refresh(player, "production")
 
     elseif action == "delete" then
         local floor = line.parent
@@ -74,7 +74,7 @@ local function handle_line_recipe_click(player, tags, action)
         end
 
         solver.update(player)
-        util.gui.run_refresh(player, "factory")
+        util.gui.run_refresh(player, "production")
 
     elseif action == "factoriopedia" then
         local proto = relevant_line.recipe.proto
@@ -95,7 +95,7 @@ local function handle_floor_recipe_click(player, tags, action)
     elseif action == "toggle" then
         line.active = not line.active
         solver.update(player)
-        util.gui.run_refresh(player, "factory")
+        util.gui.run_refresh(player, "production")
 
     elseif action == "factoriopedia" then
         local proto = line.recipe.proto
@@ -160,7 +160,7 @@ local function handle_beacon_click(player, tags, action)
     elseif action == "delete" then
         line:set_beacon(nil)
         solver.update(player)
-        util.gui.run_refresh(player, "factory")
+        util.gui.run_refresh(player, "production")
 
     elseif action == "factoriopedia" then
         player.open_factoriopedia_gui(prototypes["entity"][beacon.proto.name])
@@ -206,7 +206,7 @@ local function handle_module_click(player, tags, action)
 
         module_set:normalize({effects=true})
         solver.update(player)
-        util.gui.run_refresh(player, "factory")
+        util.gui.run_refresh(player, "production")
 
     elseif action == "factoriopedia" then
         player.open_factoriopedia_gui(prototypes["item"][module.proto.name])
@@ -231,7 +231,7 @@ local function handle_item_click(player, tags, action)
         line.recipe.priority_product = (line.recipe.priority_product ~= item.proto) and item.proto or nil
 
         solver.update(player)
-        util.gui.run_refresh(player, "factory")
+        util.gui.run_refresh(player, "production")
 
     elseif action == "add_recipe_to_end" or action == "add_recipe_below" then
         local production_type = (tags.item_category == "byproduct") and "consume" or "produce"
@@ -549,7 +549,7 @@ listeners.gui = {
             name = "set_line_percentage",
             handler = (function(player, _, _)
                 solver.update(player)
-                util.gui.run_refresh(player, "factory")
+                util.gui.run_refresh(player, "production")
             end)
         }
     }

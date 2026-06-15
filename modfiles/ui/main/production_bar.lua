@@ -11,7 +11,7 @@ local function refresh_production(player, _, _)
         local factory = util.context.get(player, "Factory")
         if factory and factory.valid then
             solver.update(player, factory)
-            util.gui.run_refresh(player, "factory")
+            util.gui.run_refresh(player, "production")
         end
     end
 end
@@ -140,7 +140,7 @@ listeners.gui = {
 
                 item_views.rebuild_data(player)
                 item_views.rebuild_interface(player)
-                util.gui.run_refresh(player, "factory")
+                util.gui.run_refresh(player, "production")
             end)
         }
     }
@@ -157,7 +157,7 @@ listeners.player = {
         end
     end),
     refresh_gui_element = (function(player, event)
-        local triggers = {production_bar=true, production=true, factory=true, all=true}
+        local triggers = {production_bar=true, factory=true, all=true}
         if triggers[event.trigger] then refresh_production_bar(player) end
     end)
 }

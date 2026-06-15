@@ -117,8 +117,10 @@ function _gui.run_build(player, trigger, parent)
     GLOBAL_HANDLERS["run_gui_build"](event_data)
 end
 
+--- "factory" includes districts_box, production_bar, item_boxes, production_box, production_table
+--- "production" includes item_boxes, production_box, production_table
 ---@param player LuaPlayer
----@param trigger "all" | "factory" | "production" | "production_detail" | "title_bar" | "district_info" | "factory_list" | "production_bar" | "districts_box" | "item_boxes" | "production_box" | "production_table" | "compact_factory" | "paste_button"
+---@param trigger "all" | "factory" | "production" | "title_bar" | "district_info" | "factory_list" | "districts_box" | "production_bar" | "item_boxes" | "production_box" | "production_table" | "compact_factory" | "paste_button"
 function _gui.run_refresh(player, trigger)
     local event_data = {
         name = "refresh_gui_element",
