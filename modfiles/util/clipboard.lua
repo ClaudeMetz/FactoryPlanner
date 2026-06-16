@@ -25,7 +25,7 @@ function _clipboard.copy(player, object)
     local player_table = util.globals.player_table(player)
     player_table.clipboard = {
         class = object.class,
-        packed_object = (object.pack ~= nil) and object:pack() or object,
+        packed_object = (object.pack ~= nil) and object:pack(true) or object,
         parent = object.parent  -- just used for unpacking, will remain a reference even if deleted elsewhere
     }
 

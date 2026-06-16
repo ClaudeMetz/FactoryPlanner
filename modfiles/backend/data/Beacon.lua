@@ -154,15 +154,16 @@ end
 ---@field total_amount number?
 ---@field module_set PackedModuleSet
 
+---@param full boolean
 ---@return PackedBeacon packed_self
-function Beacon:pack()
+function Beacon:pack(full)
     return {
         class = self.class,
         proto = prototyper.util.simplify_prototype(self.proto, nil),
         quality_proto = prototyper.util.simplify_prototype(self.quality_proto, nil),
         amount = self.amount,
         total_amount = self.total_amount,
-        module_set = self.module_set:pack()
+        module_set = self.module_set:pack(full)
     }
 end
 

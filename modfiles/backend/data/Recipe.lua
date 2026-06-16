@@ -111,8 +111,9 @@ end
 ---@field priority_product FPPackedPrototype?
 ---@field temperatures { [string]: float }
 
+---@param full boolean
 ---@return PackedRecipe packed_self
-function Recipe:pack()
+function Recipe:pack(full)
     return {
         class = self.class,
         proto = prototyper.util.simplify_prototype(self.proto, nil),

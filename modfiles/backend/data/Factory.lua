@@ -209,8 +209,9 @@ end
 ---@field products PackedProduct[]?
 ---@field top_floor PackedFloor
 
+---@param full boolean
 ---@return PackedFactory packed_self
-function Factory:pack()
+function Factory:pack(full)
     return {
         class = self.class,
         name = self.name,
@@ -219,8 +220,8 @@ function Factory:pack()
         blueprints = self.blueprints,
         notes = self.notes,
         productivity_boni = self.productivity_boni,
-        products = self:_pack(),
-        top_floor = self.top_floor:pack()
+        products = self:_pack(full),
+        top_floor = self.top_floor:pack(full)
     }
 end
 

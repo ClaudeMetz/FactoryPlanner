@@ -310,11 +310,12 @@ end
 ---@field class "ModuleSet"
 ---@field modules PackedModule[]?
 
+---@param full boolean
 ---@return PackedModuleSet packed_self
-function ModuleSet:pack()
+function ModuleSet:pack(full)
     return {
         class = self.class,
-        modules = self:_pack()
+        modules = self:_pack(full)
     }
 end
 

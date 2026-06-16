@@ -23,7 +23,7 @@ function _porter.generate_export_string(factories)
     }
 
     for _, factory in pairs(factories) do
-        table.insert(export_table.factories, factory:pack())
+        table.insert(export_table.factories, factory:pack(false))
     end
 
     return helpers.encode_string(helpers.table_to_json(export_table))  --[[@as ExportString]]

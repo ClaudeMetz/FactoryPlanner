@@ -93,14 +93,17 @@ end
 ---@field required_amount number
 ---@field belt_proto FPPackedPrototype?
 
+---@param full boolean
 ---@return PackedProduct packed_self
-function Product:pack()
+function Product:pack(full)
     return {
         class = self.class,
         proto = prototyper.util.simplify_prototype(self.proto, "type"),
         defined_by = self.defined_by,
         required_amount = self.required_amount,
-        belt_proto = (self.belt_proto) and prototyper.util.simplify_prototype(self.belt_proto, nil)
+        belt_proto = (self.belt_proto) and prototyper.util.simplify_prototype(self.belt_proto, nil),
+
+        amount = (full) and self.amount or nil
     }
 end
 

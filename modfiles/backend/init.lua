@@ -5,6 +5,7 @@ local migrator = require("backend.migrations.migrator")
 require("backend.handlers.prototyper")
 require("backend.handlers.defaults")
 require("backend.handlers.integrator")
+require("backend.handlers.interface")
 
 ---@class PreferencesTable
 ---@field timescale Timescale

@@ -278,17 +278,22 @@ end
 ---@field beacon PackedBeacon?
 ---@field comment string
 
+---@param full boolean
 ---@return PackedLine packed_self
-function Line:pack()
+function Line:pack(full)
     return {
         class = self.class,
-        recipe = self.recipe:pack(),
+        recipe = self.recipe:pack(full),
         done = self.done,
         active = self.active,
         percentage = self.percentage,
-        machine = self.machine:pack(),
-        beacon = self.beacon and self.beacon:pack(),
-        comment = self.comment
+        machine = self.machine:pack(full),
+        beacon = self.beacon and self.beacon:pack(full),
+        comment = self.comment,
+
+        products = (full) and interface.pack_items(self.products) or nil,
+        byproducts = (full) and interface.pack_items(self.byproducts) or nil,
+        ingredients = (full) and interface.pack_items(self.ingredients) or nil,
     }
 end
 

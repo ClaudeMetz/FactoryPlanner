@@ -208,12 +208,17 @@ end
 ---@field level integer
 ---@field lines PackedLineObject[]?
 
+---@param full boolean
 ---@return PackedFloor packed_self
-function Floor:pack()
+function Floor:pack(full)
     return {
         class = self.class,
         level = self.level,
-        lines = self:_pack()
+        lines = self:_pack(full),
+
+        products = (full) and interface.pack_items(self.products) or nil,
+        byproducts = (full) and interface.pack_items(self.byproducts) or nil,
+        ingredients = (full) and interface.pack_items(self.ingredients) or nil,
     }
 end
 

@@ -93,13 +93,15 @@ end
 ---@field proto FPFuelPrototype
 ---@field temperature float?
 
+---@param full boolean
 ---@return PackedFuel packed_self
-function Fuel:pack()
+function Fuel:pack(full)
     return {
         class = self.class,
         proto = prototyper.util.simplify_prototype(self.proto, "combined_category"),
         temperature = self.temperature,
-        amount = self.amount  -- only used for paste
+
+        amount = (full) and self.amount or nil
     }
 end
 

@@ -112,8 +112,9 @@ end
 ---@field quality_proto FPQualityPrototype
 ---@field amount integer
 
+---@param full boolean
 ---@return PackedModule packed_self
-function Module:pack()
+function Module:pack(full)
     return {
         class = self.class,
         proto = prototyper.util.simplify_prototype(self.proto, "category"),

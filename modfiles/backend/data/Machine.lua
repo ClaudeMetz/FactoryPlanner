@@ -222,16 +222,19 @@ end
 ---@field fuel PackedFuel?
 ---@field module_set PackedModuleSet
 
+---@param full boolean
 ---@return PackedMachine packed_self
-function Machine:pack()
+function Machine:pack(full)
     return {
         class = self.class,
         proto = prototyper.util.simplify_prototype(self.proto, "combined_category"),
         quality_proto = prototyper.util.simplify_prototype(self.quality_proto, nil),
         limit = self.limit,
         force_limit = self.force_limit,
-        fuel = self.fuel and self.fuel:pack(),
-        module_set = self.module_set:pack()
+        fuel = self.fuel and self.fuel:pack(full),
+        module_set = self.module_set:pack(full),
+
+        amount = (full) and self.amount or nil
     }
 end
 
