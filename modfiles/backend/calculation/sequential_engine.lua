@@ -35,8 +35,7 @@ local function update_line(line_data, aggregate, looped_fuel)
     -- Determines the production ratio that would be needed to fully satisfy the given product
     local function determine_production_ratio(relevant_product)
         local demand = aggregate.Ingredient[relevant_product.type][relevant_product.name]
-        local prodded_amount = solver_util.determine_prodded_amount(relevant_product,
-        total_effects, recipe_proto.maximum_productivity)
+        local prodded_amount = solver_util.determine_prodded_amount(relevant_product, total_effects)
         return (demand * (line_data.percentage / 100)) / prodded_amount
     end
 
@@ -84,8 +83,7 @@ local function update_line(line_data, aggregate, looped_fuel)
 
     -- Determines the amount of the given item, considering productivity
     local function determine_amount_with_productivity(item)
-        local prodded_amount = solver_util.determine_prodded_amount(
-            item, total_effects, recipe_proto.maximum_productivity)
+        local prodded_amount = solver_util.determine_prodded_amount(item, total_effects)
         return prodded_amount * production_ratio
     end
 

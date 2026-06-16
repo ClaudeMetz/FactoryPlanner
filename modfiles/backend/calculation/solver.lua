@@ -375,15 +375,13 @@ end
 
 -- ** UTIL **
 -- Calculates the product amount after applying productivity bonuses
-function solver_util.determine_prodded_amount(item, total_effects, maximum_productivity)
-    -- No negative productivity, and none above the recipe-determined cap
-    local productivity = math.min(math.max(total_effects.productivity, 0), maximum_productivity)
-    if productivity == 0 then return item.amount end
+function solver_util.determine_prodded_amount(item, total_effects)
+    if total_effects.productivity <= 0 then return item.amount end  -- no negative productivity
 
     -- Return formula is a simplification of the following formula:
     -- item.amount - item.proddable_amount + (item.proddable_amount *
     --   (1 + (productivity / MAGIC_NUMBERS.effect_precision)))
-    return item.amount + (item.proddable_amount * (productivity / MAGIC_NUMBERS.effect_precision))
+    return item.amount + (item.proddable_amount * (total_effects.productivity / MAGIC_NUMBERS.effect_precision))
 end
 
 -- Determines the amount of energy needed for a machine and the emissions that produces

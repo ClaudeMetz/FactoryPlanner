@@ -668,15 +668,13 @@ function matrix_engine.get_line_aggregate(line_data, player_index, floor_id, mac
     local line_aggregate = structures.aggregate.init(player_index, floor_id)
     line_aggregate.machine_amount = machine_amount
     -- the index in the factory_data.top_floor.lines table can be different from the line_id!
-    local recipe_proto = line_data.recipe_proto
     local total_effects = line_data.total_effects
     local machine_proto = line_data.machine_proto
-    local machine_speed = line_data.machine_speed
     local speed_multiplier = 1 + (total_effects.speed / MAGIC_NUMBERS.effect_precision)
     local energy = line_data.recipe_energy
     -- hacky workaround for recipes with zero energy - this really messes up the matrix
     if energy==0 then energy=0.000001 end
-    local time_per_craft = energy / (machine_speed * speed_multiplier)
+    local time_per_craft = energy / (line_data.machine_speed * speed_multiplier)
     local total_crafts = machine_amount * (1 / time_per_craft)
     line_aggregate.production_ratio = total_crafts
 
@@ -689,9 +687,8 @@ function matrix_engine.get_line_aggregate(line_data, player_index, floor_id, mac
         end
     end
 
-    for _, product in pairs(recipe_proto.products) do
-        local prodded_amount = solver_util.determine_prodded_amount(product, total_effects,
-            recipe_proto.maximum_productivity)
+    for _, product in pairs(line_data.recipe_proto.products) do
+        local prodded_amount = solver_util.determine_prodded_amount(product, total_effects)
         add_product(product, prodded_amount * total_crafts)
     end
 
