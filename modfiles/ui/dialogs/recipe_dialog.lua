@@ -141,6 +141,18 @@ local function attempt_adding_line(player, recipe_id, modal_data)
 end
 
 
+local function handle_recipe_click(player, tags, event)
+    if event.shift then
+        local recipe_proto = prototyper.util.find("recipes", tags.recipe_proto_id, nil)
+        player.open_technology_gui(recipe_proto.enabling_technologies[1])
+    else
+        local modal_data = util.globals.modal_data(player)
+        attempt_adding_line(player, tags.recipe_proto_id, modal_data)
+        util.gui.close_dialog(player, "cancel")
+    end
+end
+
+
 local function create_filter_box(modal_data)
     local content_frame =  modal_data.modal_elements.content_frame
     local bordered_frame = content_frame.add{type="frame", direction="vertical", style="fp_frame_bordered_stretch"}
@@ -214,10 +226,16 @@ local function create_recipe_group_box(modal_data, relevant_group)
         local button_tags = {mod="fp", on_gui_click="pick_recipe", recipe_proto_id=recipe_proto.id}
         local button_recipe = nil
 
+        local tooltip = {""}
+        if recipe_proto.custom then table.insert(tooltip, recipe_proto.tooltip) end
+        if not recipe.enabled and recipe_proto.enabling_technologies then
+            local technology = prototypes.technology[recipe_proto.enabling_technologies[1]]
+            table.insert(tooltip, {"fp.recipe_unlocked_by", technology.localised_name})
+        end
+
         button_recipe = table_recipes.add{type="sprite-button", tags=button_tags, style=style,
-            sprite=recipe_proto.sprite, mouse_button_filter={"left"}}
-        if recipe_proto.custom then button_recipe.tooltip = recipe_proto.tooltip
-        else button_recipe.elem_tooltip = {type="recipe", name=recipe_name} end
+            sprite=recipe_proto.sprite, tooltip=tooltip, mouse_button_filter={"left"}}
+        if not recipe_proto.custom then button_recipe.elem_tooltip = {type="recipe", name=recipe_name} end
 
         -- Figure out the translated name here so search doesn't have to repeat the work for every character
         local translations = modal_data.translations
@@ -372,11 +390,7 @@ listeners.gui = {
         {
             name = "pick_recipe",
             timeout = 20,
-            handler = (function(player, tags, _)
-                local modal_data = util.globals.modal_data(player)
-                attempt_adding_line(player, tags.recipe_proto_id, modal_data)
-                util.gui.close_dialog(player, "cancel")
-            end)
+            handler = handle_recipe_click
         },
         {
             name = "change_recipe_temperature",

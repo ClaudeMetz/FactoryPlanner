@@ -2,11 +2,11 @@
 Version: 0.00.00
 Date: 00. 00. 0000
   Features:
-    - 
+    - Added the ability to view the technology that unlocks a recipe in the picker
   Changes:
-    - 
+    -
   Bugfixes:
-    - 
+    -
 
 ---------------------------------------------------------------------------------------------------
 Version: 2.1.2

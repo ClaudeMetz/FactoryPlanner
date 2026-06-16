@@ -76,7 +76,7 @@ end
 ---@field surface_conditions SurfaceCondition[]?
 ---@field recycling boolean
 ---@field barreling boolean
----@field enabling_technologies string[]
+---@field enabling_technologies string[]?
 ---@field custom boolean
 ---@field enabled_from_the_start boolean
 ---@field hidden boolean
