@@ -35,18 +35,9 @@ MAGIC_NUMBERS = {
 MODIFIER_ACTIONS = {}  ---@type ActionTable
 GLOBAL_HANDLERS = {}  ---@type { [string]: function }
 
-PRODUCTS_PER_ROW_OPTIONS = {5, 6, 7, 8, 9, 10}
-FACTORY_LIST_ROWS_OPTIONS = {20, 22, 24, 26, 28, 30, 32}
-COMPACT_WIDTH_PERCENTAGE = {8, 10, 12, 14, 16, 18, 20, 22, 24, 26, 28, 30, 32, 34, 36}
-
-TIMESCALE_MAP = {[1] = "second", [60] = "minute"}
-BLANK_EFFECTS = {speed = 0, productivity = 0, quality = 0, consumption = 0, pollution = 0}
-
 util = require("util.util")
 
 require("ui.event_handler")
-
-DEV_EXPORT_STRING = "eNrdVkuPnDAM/i85DyMew/PYQ0+tVKnHaoRCMLNRE8KGsO1oxH+vA8wUmJ3VrratdssJG3+2P9sxORH42ShtcqnKFgzJTqSgLZCM+Ft368VkQ0oougMtaWNAT/oA1SDggRooHU25aOeASvACZZSirYvyfUcFN8eFCWVG6WMjaF1fvHrWuG0oA4ceZin0Z3sOGOfbiTBBWxvx4+gFUTWVFvCBtpyhWIgOGs1rg1YnhNfKWCjBT41WZccMf8CM8kLVfLSY1Ev/X0bliDLKFmcKhOSZ0YhmDuOaddwaMSzHweaTEW5A2tJRQ3NzbGBStZYgl43gFYeSZEZ30NsKV7yGMi8slErV1dadhvuOa1RPmszbRssnTkI3dXdhmEau60VRGke70EviII5TP42SOOw3z2HDkYlzAKqdH3cA4h9QcbdJsHxSP9yFvh+nieu6SbBLEt8P0yBKkjTaJbsAuew3xKgmr4RS2mZ/GYNBsSE4kJh85uEb5rBs5SfUDIkw3kD+rHbOGY+4G5zPI6Xqs/mosQFLhXGziooWNoTauYMRhzDQDGozjLrnuhsiKbuzac6ofZ5U1z3D7yALJHpwJpwTLBv3m1S7YjMBbtCZjutVkWqlJRUrV6Mxv+WrUsgxF1xiRSfauGg6Afm0bC5EB+1XsIUfLZb9G78/dhKrijMONTs6I87xV2W4GKyrMIX560U4D73f73sUmZISrEzI/Hg+PaHDEcV1aeDNT2Zr0LNTdbqmQ6BZL1oJwuDIvqV5rDq7NGbbpBs24DoaU3S1GNkdSM6uMrD+Ho3ev2j2T/0Ts7LaeP7LN971yn93685btUPT6q3N1p/q93+zG8Z/Ev5m3816eFUL98PGf+rCihfg76+8sFrpZfcim+i+/wV3PxDb"
 
 
 ---@class Event
@@ -63,6 +54,7 @@ DEV_EXPORT_STRING = "eNrdVkuPnDAM/i85DyMew/PYQ0+tVKnHaoRCMLNRE8KGsO1oxH+vA8wUmJ3
 ---@alias AllowedEffects { [string]: boolean }
 ---@alias ItemType string
 ---@alias ItemName string
+---@alias ExportString string
 
 
 -- Import test code to run within the mod's context

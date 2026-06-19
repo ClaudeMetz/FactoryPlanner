@@ -77,7 +77,6 @@ local function build_production_bar(player)
         tags={mod="fp", on_gui_click="add_district"}, mouse_button_filter={"left"}}
     button_add.style.height = 26
     button_add.style.left_margin = 12
-    button_add.style.minimal_width = 0
 
     -- Shared bar
     subheader.add{type="empty-widget", style="fflib_horizontal_pusher"}

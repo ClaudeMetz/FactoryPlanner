@@ -27,13 +27,13 @@ local function shrinkwrap_interface(metadata)
     local scaled_resolution = util.gui.calculate_scaled_resolution(player)
     local preferences = util.globals.preferences(player)
 
-    local width_minimum = PRODUCTS_PER_ROW_OPTIONS[1]
+    local width_minimum = util.preferences.products_per_row_options[1]
     while (scaled_resolution.width * 0.95) < determine_main_dimensions(player).width
             and preferences.products_per_row > width_minimum do
         preferences.products_per_row = preferences.products_per_row - 1
     end
 
-    local height_minimum = FACTORY_LIST_ROWS_OPTIONS[1]
+    local height_minimum = util.preferences.factory_list_rows_options[1]
     while (scaled_resolution.height * 0.95) < determine_main_dimensions(player).height
             and preferences.factory_list_rows > height_minimum do
         preferences.factory_list_rows = preferences.factory_list_rows - 2

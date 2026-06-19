@@ -37,6 +37,11 @@ local function create_base_dialog(player, dialog_settings, modal_data)
                 style="fp_button_frame", mouse_button_filter={"left"}}
         end
 
+        -- Titlebar flow
+        local titlebar_flow = flow_title_bar.add{type="flow", direction="horizontal"}
+        titlebar_flow.visible = false
+        modal_elements.titlebar_flow = titlebar_flow
+
         if dialog_settings.reset_handler_name then  -- add a reset button if requested
             modal_data.reset_handler_name = dialog_settings.reset_handler_name
 
@@ -92,6 +97,7 @@ local function create_base_dialog(player, dialog_settings, modal_data)
         modal_elements.secondary_frame = scroll_pane_secondary
     end
 
+    -- Auxiliary flow
     modal_elements.auxiliary_flow = frame_modal_dialog.add{type="flow", direction="vertical"}
 
     local dialog_max_height = (util.globals.ui_state(player).main_dialog_dimensions.height) * 0.96

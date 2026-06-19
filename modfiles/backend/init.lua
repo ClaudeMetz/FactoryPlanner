@@ -7,96 +7,7 @@ require("backend.handlers.defaults")
 require("backend.handlers.integrator")
 require("backend.handlers.interface")
 
----@class PreferencesTable
----@field timescale Timescale
----@field pause_on_interface boolean
----@field utility_scopes { components: "Factory" | "Floor" }
----@field recipe_filters { disabled: boolean, hidden: boolean }
----@field compact_ingredients boolean
----@field fold_out_subfloors boolean
----@field products_per_row integer
----@field factory_list_rows integer
----@field compact_width_percentage integer
----@field show_gui_button boolean
----@field attach_factory_products boolean
----@field skip_factory_naming boolean
----@field prefer_matrix_solver boolean
----@field show_floor_items boolean
----@field ingredient_satisfaction boolean
----@field calculate_emissions boolean
----@field ignore_barreling_recipes boolean
----@field ignore_recycling_recipes boolean
----@field done_column boolean
----@field percentage_column boolean
----@field line_comment_column boolean
----@field item_views ItemViewPreferences
----@field belts_or_lanes "belts" | "lanes"
----@field default_prototypes DefaultPrototypesTable
----@field default_temperatures TemperatureDefaultMap
-
----@class DefaultPrototypesTable
----@field machines PrototypeDefaultWithCategory
----@field fuels PrototypeDefaultWithCategory
----@field beacons DefaultPrototype
----@field belts DefaultPrototype
----@field pumps DefaultPrototype
----@field silos DefaultPrototype
----@field wagons PrototypeDefaultWithCategory
-
----@alias Timescale 1 | 60
-
----@param player_table PlayerTable
-function reload_preferences(player_table)
-    -- Reloads the user preferences, incorporating previous preferences if possible
-    local player_preferences = player_table.preferences or {}
-    local updated_prefs = {}
-
-    local function reload(name, default)
-        -- Needs to be longform-if because true is a valid default
-        if player_preferences[name] == nil then
-            updated_prefs[name] = default
-        else
-            updated_prefs[name] = player_preferences[name]
-        end
-    end
-
-    reload("timescale", 60)
-    reload("pause_on_interface", false)
-    reload("utility_scopes", {components = "Factory"})
-    reload("recipe_filters", {disabled = false, hidden = false})
-    reload("compact_ingredients", false)
-    reload("fold_out_subfloors", false)
-
-    -- Main dimensions are maxed, to be shrinkwrapped down
-    reload("products_per_row", 10)
-    reload("factory_list_rows", 32)
-    reload("compact_width_percentage", 26)
-
-    reload("show_gui_button", true)
-    reload("skip_factory_naming", true)
-    reload("attach_factory_products", false)
-    reload("prefer_matrix_solver", false)
-    reload("show_floor_items", true)
-    reload("ingredient_satisfaction", false)
-    reload("calculate_emissions", false)
-    reload("ignore_barreling_recipes", false)
-    reload("ignore_recycling_recipes", false)
-
-    reload("done_column", true)
-    reload("percentage_column", false)
-    reload("line_comment_column", false)
-
-    reload("item_views", item_views.default_preferences())
-
-    reload("belts_or_lanes", "belts")
-
-    updated_prefs.default_prototypes = defaults.refresh_preferences(player_preferences.default_prototypes)
-
-    reload("default_temperatures", util.temperature.get_fallback())
-
-    player_table.preferences = updated_prefs
-end
-
+local dev_export_string = "eNrdVkuPnDAM/i85DyMew/PYQ0+tVKnHaoRCMLNRE8KGsO1oxH+vA8wUmJ3VrratdssJG3+2P9sxORH42ShtcqnKFgzJTqSgLZCM+Ft368VkQ0oougMtaWNAT/oA1SDggRooHU25aOeASvACZZSirYvyfUcFN8eFCWVG6WMjaF1fvHrWuG0oA4ceZin0Z3sOGOfbiTBBWxvx4+gFUTWVFvCBtpyhWIgOGs1rg1YnhNfKWCjBT41WZccMf8CM8kLVfLSY1Ev/X0bliDLKFmcKhOSZ0YhmDuOaddwaMSzHweaTEW5A2tJRQ3NzbGBStZYgl43gFYeSZEZ30NsKV7yGMi8slErV1dadhvuOa1RPmszbRssnTkI3dXdhmEau60VRGke70EviII5TP42SOOw3z2HDkYlzAKqdH3cA4h9QcbdJsHxSP9yFvh+nieu6SbBLEt8P0yBKkjTaJbsAuew3xKgmr4RS2mZ/GYNBsSE4kJh85uEb5rBs5SfUDIkw3kD+rHbOGY+4G5zPI6Xqs/mosQFLhXGziooWNoTauYMRhzDQDGozjLrnuhsiKbuzac6ofZ5U1z3D7yALJHpwJpwTLBv3m1S7YjMBbtCZjutVkWqlJRUrV6Mxv+WrUsgxF1xiRSfauGg6Afm0bC5EB+1XsIUfLZb9G78/dhKrijMONTs6I87xV2W4GKyrMIX560U4D73f73sUmZISrEzI/Hg+PaHDEcV1aeDNT2Zr0LNTdbqmQ6BZL1oJwuDIvqV5rDq7NGbbpBs24DoaU3S1GNkdSM6uMrD+Ho3ev2j2T/0Ts7LaeP7LN971yn93685btUPT6q3N1p/q93+zG8Z/Ev5m3816eFUL98PGf+rCihfg76+8sFrpZfcim+i+/wV3PxDb"
 
 ---@class UIStateTable
 ---@field main_dialog_dimensions DisplayResolution?
@@ -161,7 +72,7 @@ local function player_init(player)
     util.context.init(player_table)
     util.context.set(player, player_table.realm.first)
 
-    reload_preferences(player_table)
+    util.preferences.reload(player_table)
     reset_ui_state(player_table)
 
     -- Set default fuel to coal because anything else is awkward
@@ -171,7 +82,7 @@ local function player_init(player)
     util.nth_tick.register((game.tick + 1), "shrinkwrap_interface", {player_index=player.index})
 
     if DEVELOPER_MODE then
-        util.porter.add_factories(player, DEV_EXPORT_STRING)
+        util.porter.add_factories(player, dev_export_string)
 
         player.force.research_all_technologies()
         player.clear_recipe_notifications()
@@ -183,7 +94,7 @@ end
 local function refresh_player_table(player)
     local player_table = storage.players[player.index]
 
-    reload_preferences(player_table)
+    util.preferences.reload(player_table)
     reset_ui_state(player_table)
 
     defaults.migrate(player_table)

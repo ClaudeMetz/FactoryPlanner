@@ -1,5 +1,7 @@
 local _effects = {}
 
+_effects.blank = {speed = 0, productivity = 0, quality = 0, consumption = 0, pollution = 0}
+
 ---@alias EffectValue integer
 ---@alias ModuleEffectName "speed" | "productivity" | "quality" | "consumption" | "pollution"
 ---@alias IntegerModuleEffects { [ModuleEffectName]: EffectValue }
@@ -7,7 +9,7 @@ local _effects = {}
 ---@param effect_tables IntegerModuleEffects[]
 ---@return IntegerModuleEffects
 function _effects.merge(effect_tables)
-    local effects = util.flib.shallow_copy(BLANK_EFFECTS)
+    local effects = util.flib.shallow_copy(util.effects.blank)
     for _, effect_table in pairs(effect_tables) do
         for name, effect in pairs(effect_table) do
             effects[name] = effects[name] + effect  -- doesn't create decimals
@@ -92,7 +94,7 @@ function _effects.format(module_effects, options)
     options.recipe_effects = options.recipe_effects or {}
 
     local tooltip_lines = {""}
-    for effect_name, _ in pairs(BLANK_EFFECTS) do
+    for effect_name, _ in pairs(util.effects.blank) do
         local module_effect = module_effects[effect_name]
         local machine_effect = options.machine_effects[effect_name]
         local recipe_effect = options.recipe_effects[effect_name]

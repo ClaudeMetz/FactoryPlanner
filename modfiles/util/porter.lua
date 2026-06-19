@@ -11,8 +11,6 @@ local _porter = {}
 ---@field export_modset ModToVersion
 ---@field factories Factory[]
 
----@alias ExportString string
-
 -- Converts the given factories into a factory exchange string
 ---@param factories Factory[]
 ---@return ExportString

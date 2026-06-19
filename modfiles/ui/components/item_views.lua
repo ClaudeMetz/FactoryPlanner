@@ -1,5 +1,7 @@
 item_views = {}
 
+local timescale_map = {[1] = "second", [60] = "minute"}
+
 local processors = {}  -- individual functions for each kind of view state
 
 function processors.items_per_timescale(metadata, raw_amount, item_proto, _)
@@ -111,7 +113,7 @@ function item_views.process_item(player, item, item_amount, machine_amount)
     if proto.type == "entity" then
         local amount = (proto.fixed_unit) and raw_amount or raw_amount * views_data.timescale
         local number = util.format.number(amount, views_data.formatting_precision)
-        local unit = proto.fixed_unit or {"fp.per_timescale", {"fp." .. TIMESCALE_MAP[views_data.timescale]}}
+        local unit = proto.fixed_unit or {"fp.per_timescale", {"fp." .. timescale_map[views_data.timescale]}}
         return number, {"", number, " ", unit}
     else
         local view_preferences = util.globals.preferences(player).item_views
@@ -148,7 +150,7 @@ end
 ---@param player LuaPlayer
 function item_views.rebuild_data(player)
     local preferences = util.globals.preferences(player)
-    local timescale_string = TIMESCALE_MAP[preferences.timescale]
+    local timescale_string = timescale_map[preferences.timescale]
 
     local belt_proto = defaults.get(player, "belts").proto  --[[@as FPBeltPrototype]]
     local belts_or_lanes = preferences.belts_or_lanes
@@ -207,7 +209,7 @@ function item_views.rebuild_data(player)
             }
         },
         timescale = preferences.timescale,
-        timescale_string = {"fp.unit_" .. TIMESCALE_MAP[preferences.timescale]},
+        timescale_string = {"fp.unit_" .. timescale_map[preferences.timescale]},
         adjusted_margin_of_error = MAGIC_NUMBERS.margin_of_error / preferences.timescale,
         belt_or_lane = belts_or_lanes:sub(1, -2),
         throughput_multiplier = 1 / throughput_divisor,

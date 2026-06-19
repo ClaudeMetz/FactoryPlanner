@@ -50,7 +50,7 @@ end
 
 
 function Module:summarize_effects()
-    local effects = util.flib.shallow_copy(BLANK_EFFECTS)
+    local effects = util.flib.shallow_copy(util.effects.blank)
 
     for name, effect in pairs(self.proto.effects) do
         local module_multiplier = self.proto.quality_multipliers[name]

@@ -101,21 +101,21 @@ local function add_dropdowns(preferences, parent_flow)
     end
 
     local width_items, width_index = {}, nil
-    for index, value in pairs(PRODUCTS_PER_ROW_OPTIONS) do
+    for index, value in pairs(util.preferences.products_per_row_options) do
         width_items[index] = {"", value .. " ", {"fp.pl_product", 2}}
         if value == preferences.products_per_row then width_index = index end
     end
     add_dropdown("products_per_row", width_items, width_index)
 
     local height_items, height_index = {}, nil
-    for index, value in pairs(FACTORY_LIST_ROWS_OPTIONS) do
+    for index, value in pairs(util.preferences.factory_list_rows_options) do
         height_items[index] = {"", value .. " ", {"fp.pl_factory", 2}}
         if value == preferences.factory_list_rows then height_index = index end
     end
     add_dropdown("factory_list_rows", height_items, height_index)
 
     local compact_items, compact_index = {}, nil
-    for index, value in pairs(COMPACT_WIDTH_PERCENTAGE) do
+    for index, value in pairs(util.preferences.compact_width_percentages) do
         compact_items[index] = {"", value .. " %"}
         if value == preferences.compact_width_percentage then compact_index = index end
     end
@@ -167,6 +167,42 @@ local function add_default_proto_box(player, content_frame, data_type, category_
     button_module.elem_value = defaults.get_as_elem_value(player, data_type, category_id)
 end
 
+local function add_export_box(player, modal_elements)
+    modal_elements.titlebar_flow.visible = true
+    local export_toggle_button = modal_elements.titlebar_flow.add{type="sprite-button", sprite="fp_export",
+        tooltip={"fp.preferences_export_tt"}, tags={mod="fp", on_gui_click="preferences_toggle_export"},
+        style="fp_button_frame", auto_toggle=true, mouse_button_filter={"left"}}
+    modal_elements.export_toggle_button = export_toggle_button
+
+    local export_content_frame = modal_elements.auxiliary_flow.add{type="frame",
+        direction="vertical", style="inside_shallow_frame"}
+    export_content_frame.style.top_margin = 8
+    export_content_frame.style.padding = 12
+    export_content_frame.visible = false
+    modal_elements.export_content_frame = export_content_frame
+
+    local export_flow = export_content_frame.add{type="flow", direction="horizontal"}
+    export_flow.style.horizontal_spacing = 16
+    export_flow.style.vertical_align = "center"
+
+    export_flow.add{type="label", caption={"fp.preferences_export_string"}, tooltip={"fp.preferences_export_string_tt"}}
+    local export_textfield = export_flow.add{type="textfield"}
+    export_textfield.style.width = 0  -- needs to be set to 0 so stretching works
+    export_textfield.style.horizontally_stretchable = true
+    modal_elements.export_textfield = export_textfield
+
+    export_flow.add{type="button", caption={"fp.export"}, style="fp_button_green", mouse_button_filter={"left"},
+        tags={mod="fp", on_gui_click="preferences_export"}}
+    export_flow.add{type="button", caption={"fp.import"}, style="fp_button_green", mouse_button_filter={"left"},
+        tags={mod="fp", on_gui_click="preferences_import"}}
+
+    local export_label = modal_elements.export_content_frame.add{type="label", caption=""}
+    export_label.style.top_margin = 8
+    export_label.style.single_line = false
+    export_label.visible = false
+    modal_elements.export_label = export_label
+end
+
 
 local function handle_checkbox_preference_change(player, tags, event)
     local preference_name = tags.name
@@ -206,13 +242,13 @@ local function handle_dropdown_preference_change(player, tags, event)
     local preferences = util.globals.preferences(player)
 
     if tags.name == "products_per_row" then
-        preferences.products_per_row = PRODUCTS_PER_ROW_OPTIONS[selected_index]
+        preferences.products_per_row = util.preferences.products_per_row_options[selected_index]
         util.globals.modal_data(player).rebuild = true
     elseif tags.name == "factory_list_rows" then
-        preferences.factory_list_rows = FACTORY_LIST_ROWS_OPTIONS[selected_index]
+        preferences.factory_list_rows = util.preferences.factory_list_rows_options[selected_index]
         util.globals.modal_data(player).rebuild = true
     elseif tags.name == "compact_width_percentage" then
-        preferences.compact_width_percentage = COMPACT_WIDTH_PERCENTAGE[selected_index]
+        preferences.compact_width_percentage = util.preferences.compact_width_percentages[selected_index]
         util.globals.modal_data(player).rebuild_compact = true
     end
 end
@@ -352,6 +388,8 @@ local function open_preferences_dialog(player, modal_data)
 
     local pusher = right_content_frame.add{type="empty-widget", style="fflib_vertical_pusher"}
     pusher.style.top_margin = -4  -- counteract vertical spacing
+
+    add_export_box(player, modal_elements)  -- export UI
 end
 
 local function close_preferences_dialog(player, _)
@@ -377,6 +415,41 @@ listeners.gui = {
         {
             name = "move_view",
             handler = handle_view_move
+        },
+        {
+            name = "preferences_toggle_export",
+            handler = (function(player, _, _)
+                local modal_elements = util.globals.modal_elements(player)
+                local state = modal_elements.export_toggle_button.toggled
+                modal_elements.export_content_frame.visible = state
+                modal_elements.export_label.visible = false
+            end)
+        },
+        {
+            name = "preferences_export",
+            handler = (function(player)
+                local modal_elements = util.globals.modal_elements(player)
+                modal_elements.export_textfield.text = util.preferences.export(player)
+                util.gui.select_all(modal_elements.export_textfield)
+                modal_elements.export_label.visible = false
+            end)
+        },
+        {
+            name = "preferences_import",
+            handler = (function(player)
+                local modal_elements = util.globals.modal_elements(player)
+                local error = util.preferences.import(player, modal_elements.export_textfield.text)
+                modal_elements.export_label.visible = (error ~= nil)
+
+                if error ~= nil then  -- something went wrong
+                    modal_elements.export_label.caption = {"fp.error_message", {"fp.preferences_" .. error}}
+                else
+                    -- This rebuilds the main interface implicitly
+                    GLOBAL_HANDLERS["shrinkwrap_interface"]{player_index=player.index}
+
+                    util.gui.open_dialog(player, {dialog="preferences"})
+                end
+            end)
         }
     },
     on_gui_elem_changed = {
@@ -424,7 +497,7 @@ listeners.global = {
     reset_preferences = (function(player)
         local player_table = util.globals.player_table(player)
         player_table.preferences = nil
-        reload_preferences(player_table)
+        util.preferences.reload(player_table)
 
         -- This rebuilds the main interface implicitly
         GLOBAL_HANDLERS["shrinkwrap_interface"]{player_index=player.index}

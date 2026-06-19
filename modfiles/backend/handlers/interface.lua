@@ -29,6 +29,28 @@ local function export_current_factory(player_index)
     return current_factory:pack(true)
 end
 
+local function export_preferences(player_index)
+    local player = game.get_player(player_index)
+    if not player then return nil end
+
+    local player_table = util.globals.player_table(player)
+    if not player_table then return nil end
+
+    return util.preferences.export(player)
+end
+
+local function import_preferences(player_index, export_string)
+    local player = game.get_player(player_index)
+    if not player then return nil end
+
+    local player_table = util.globals.player_table(player)
+    if not player_table then return nil end
+
+    return util.preferences.import(player, export_string)
+end
+
 remote.add_interface("fp-interface", {
-    export_current_factory = export_current_factory
+    export_current_factory = export_current_factory,
+    export_preferences = export_preferences,
+    import_preferences = import_preferences
 })

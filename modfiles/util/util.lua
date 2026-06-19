@@ -12,7 +12,8 @@ local _util = {
     porter = require("util.porter"),
     actions = require("util.actions"),
     effects = require("util.effects"),
-    temperature = require("util.temperature")
+    temperature = require("util.temperature"),
+    preferences = require("util.preferences")
 }
 
 

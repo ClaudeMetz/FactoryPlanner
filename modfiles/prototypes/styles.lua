@@ -180,6 +180,7 @@ styles["fp_sprite-button_move_small"] = {
 styles["fp_button_green"] = {
     type = "button_style",
     parent = "button",
+    minimal_width = 0,
     default_graphical_set = {
         base = {position = {68, 17}, corner_size = 8},
         shadow = default_dirt
