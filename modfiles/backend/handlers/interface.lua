@@ -36,17 +36,25 @@ local function export_preferences(player_index)
     local player_table = util.globals.player_table(player)
     if not player_table then return nil end
 
-    return util.preferences.export(player)
+    return util.unpack_export_string(util.preferences.export(player))
 end
 
-local function import_preferences(player_index, export_string)
+local function import_preferences(player_index, export_table)
     local player = game.get_player(player_index)
     if not player then return nil end
 
     local player_table = util.globals.player_table(player)
     if not player_table then return nil end
 
-    return util.preferences.import(player, export_string)
+    local export_string = util.pack_export_string(export_table)
+    local error = util.preferences.import(player, export_string)
+    if error then
+        return error
+    else
+        -- This rebuilds the main interface implicitly
+        GLOBAL_HANDLERS["shrinkwrap_interface"]{player_index=player.index}
+        return true
+    end
 end
 
 remote.add_interface("fp-interface", {

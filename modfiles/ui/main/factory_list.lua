@@ -46,7 +46,8 @@ end
 local function add_factory(player, _, event)
     local skip_factory_naming = util.globals.preferences(player).skip_factory_naming
 
-    if util.xor(event.shift, skip_factory_naming) then  -- go right to the item picker with automatic factory naming
+    -- Go right to item picker if either shift is pressed or the preference is enabled
+    if not event.shift ~= not skip_factory_naming then  -- will set factory name automatically
         util.gui.open_dialog(player, {dialog="picker", modal_data={item_id=nil, item_category="product",
             create_factory=true}})
     else  -- otherwise, have the user pick a factory name first

@@ -151,7 +151,7 @@ function _preferences.export(player)
         belts_or_lanes = prefs.belts_or_lanes
     }
 
-    return helpers.encode_string(helpers.table_to_json(export_table))  --[[@as ExportString]]
+    return util.pack_export_string(export_table)  --[[@as ExportString]]
 end
 
 local function verify_range(value, options)
@@ -169,7 +169,7 @@ function _preferences.import(player, export_string)
     local export_table = nil  ---@type AnyBasic?
 
     if not pcall(function()
-        export_table = helpers.json_to_table(helpers.decode_string(export_string) --[[@as string]])
+        export_table = util.unpack_export_string(export_string)
         assert(type(export_table) == "table")
     end) then return "decoding_failure" end
     ---@cast export_table ExportTable

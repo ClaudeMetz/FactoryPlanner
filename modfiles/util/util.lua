@@ -31,6 +31,19 @@ function _util.split_string(str, separator)
 end
 
 
+---@param export_table table
+---@return ExportString export_string
+function _util.pack_export_string(export_table)
+    return helpers.encode_string(helpers.table_to_json(export_table))
+end
+
+---@param export_string ExportString
+---@return table export_table
+function _util.unpack_export_string(export_string)
+    return helpers.json_to_table(helpers.decode_string(export_string))
+end
+
+
 -- Fills up the localised table in a smart way to avoid the limit of 20 strings per level
 -- To make it stateless, it needs its return values passed back as arguments
 -- Uses state to avoid needing to call table_size() because that function is slow
@@ -52,14 +65,6 @@ function _util.build_localised_string(string_to_insert, current_table, next_inde
     next_index = next_index + 1
 
     return current_table, next_index
-end
-
-
----@param a boolean
----@param b boolean
----@return boolean
-function _util.xor(a, b)
-    return not a ~= not b
 end
 
 

@@ -28,7 +28,7 @@ local function refresh_defaults_table(player, modal_elements, data_type, categor
         local tooltip = {type=elem_type, name=prototype.name, quality=quality}
 
         table_prototypes.add{type="sprite-button", sprite=prototype.sprite, style=style, elem_tooltip=tooltip,
-            tags={mod="fp", on_gui_click="select_preference_table_default", type=data_type,
+            tags={mod="fp", on_gui_click="select_preference_table_default", data_type=data_type,
             prototype_name=prototype.name, category_id=category_id}, quality=quality, mouse_button_filter={"left"}}
     end
 
@@ -214,11 +214,9 @@ local function handle_checkbox_preference_change(player, tags, event)
     elseif preference_name == "ingredient_satisfaction" then
         if event.element.state == true then  -- only recalculate if enabled
             local realm = util.globals.player_table(player).realm
-            for district in realm:iterator() do
-                for factory in district:iterator() do
-                    solver.determine_ingredient_satisfaction(factory)
-                end
-            end
+            realm:schedule_solver_updates(game.tick, player)
+
+            solver.update(player)  -- update current factory right away
         end
         util.gui.run_refresh(player, "production")
 
@@ -446,7 +444,6 @@ listeners.gui = {
                 else
                     -- This rebuilds the main interface implicitly
                     GLOBAL_HANDLERS["shrinkwrap_interface"]{player_index=player.index}
-
                     util.gui.open_dialog(player, {dialog="preferences"})
                 end
             end)
@@ -501,7 +498,6 @@ listeners.global = {
 
         -- This rebuilds the main interface implicitly
         GLOBAL_HANDLERS["shrinkwrap_interface"]{player_index=player.index}
-
         util.gui.open_dialog(player, {dialog="preferences"})
     end)
 }

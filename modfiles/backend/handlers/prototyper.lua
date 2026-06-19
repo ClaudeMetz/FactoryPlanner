@@ -129,7 +129,7 @@ end
 function prototyper.util.find(data_type, prototype, category)
     local prototypes, prototype_map = storage.prototypes[data_type], PROTOTYPE_MAPS[data_type]
 
-    if util.xor((category ~= nil), (prototype ~= nil)) then  -- either category or prototype provided
+    if (category == nil) ~= (prototype == nil) then  -- either category or prototype provided
         local identifier = category or prototype
         local relevant_map = (type(identifier) == "string") and prototype_map or prototypes
         return relevant_map[identifier]  -- can be nil
