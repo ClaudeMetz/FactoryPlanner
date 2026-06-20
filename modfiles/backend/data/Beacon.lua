@@ -137,7 +137,7 @@ function Beacon:paste(object)
         else
             return true, nil
         end
-    elseif object.class == "Module" and self.module_set ~= nil then
+    elseif object.class == "Module" and self.module_set ~= nil and not self.proto.simplified then
         -- Only allow modules to be pasted if this is a non-fake beacon
        return self.module_set:paste(object)
     else
