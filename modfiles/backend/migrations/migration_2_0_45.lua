@@ -51,19 +51,23 @@ function migration.player_table(player_table)
         end
     end
 
-    for _, default in pairs(player_table.preferences.default_machines) do
-        -- This is appropriate as there were no defaults with combined categories before
-        local copy = util.flib.deep_copy(default.proto)
-        copy.combined_category = default.proto.category
-        default.proto = copy
+    if player_table.preferences.default_machines then
+        for _, default in pairs(player_table.preferences.default_machines) do
+            -- This is appropriate as there were no defaults with combined categories before
+            local copy = util.flib.deep_copy(default.proto)
+            copy.combined_category = default.proto.category
+            default.proto = copy
+        end
     end
 
-    for _, default in pairs(player_table.preferences.default_fuels) do
-        local new_category_name = fuels_map[default.proto.combined_category]
-        if new_category_name then
-            local copy = util.flib.deep_copy(default.proto)
-            copy.combined_category = new_category_name
-            default.proto = copy
+    if player_table.preferences.default_fuels then
+        for _, default in pairs(player_table.preferences.default_fuels) do
+            local new_category_name = fuels_map[default.proto.combined_category]
+            if new_category_name then
+                local copy = util.flib.deep_copy(default.proto)
+                copy.combined_category = new_category_name
+                default.proto = copy
+            end
         end
     end
 end
