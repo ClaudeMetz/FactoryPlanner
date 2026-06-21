@@ -1,6 +1,4 @@
-SPACE_TRAVEL = script.feature_flags["space_travel"]
 DEVELOPER_MODE = (debugadapter and debugadapter.tags) and (debugadapter.tags["FP_DEBUG"] == true) or false
-llog = require("util.llog")
 
 MAGIC_NUMBERS = {
     margin_of_error = 1e-6,  -- the margin of error for floating point calculations
@@ -36,6 +34,7 @@ MODIFIER_ACTIONS = {}  ---@type ActionTable
 GLOBAL_HANDLERS = {}  ---@type { [string]: function }
 
 util = require("util.util")
+llog = require("util.llog")
 
 require("ui.event_handler")
 

@@ -307,7 +307,7 @@ function generator.recipes.generate()
                     end
 
                     -- Add convenience recipe to build whole rocket instead of parts
-                    if SPACE_TRAVEL then
+                    if script.feature_flags["space_travel"] then
                         local rocket_recipe = custom_recipe()
                         rocket_recipe.name = "impostor-" .. proto.name .. "-rocket"
                         rocket_recipe.factoriopedia_id = {type="entity", name=proto.name}
@@ -506,7 +506,7 @@ function generator.items.generate()
         end
     end
 
-    if SPACE_TRAVEL then
+    if script.feature_flags["space_travel"] then
         -- Only need one rocket item for all silos/recipes
         local rocket_recipe = {
             name = "custom-silo-rocket",
