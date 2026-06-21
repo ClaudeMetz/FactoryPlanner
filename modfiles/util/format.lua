@@ -1,16 +1,18 @@
 local _format = {}
 
 -- Formats given number to given number of significant digits
----@param number number
+---@param number number Non-negative
 ---@param precision integer
 ---@return string formatted_number
 function _format.number(number, precision)
+    if number == 0 then return "0" end
+    if number < 10 ^ -precision then
+        return "≤" .. ("%." .. precision .. "g"):format(10 ^ -precision)
+    end
     if number >= 10 ^ precision then
         return ("%d"):format(number)  -- %g uses scientific notation here, avoid it
     end
-    if number < 10 ^ -precision then
-        number = 0
-    elseif number < 1 then
+    if number < 1 then
         -- log10 gives -(leading zero count), reducing sig figs to keep display width consistent with numbers >= 1
         precision = precision + math.floor(math.log10(number))
     end
@@ -94,8 +96,6 @@ function _format.machine_amount(amount, ceil_number)
     if ceil_number then button_number = math.ceil(button_number) end
 
     local tooltip_number = util.format.number(amount, MAGIC_NUMBERS.formatting_precision)
-    if tooltip_number == "0" then tooltip_number = "≤0.001" end
-
     local plural_parameter = (tooltip_number == "1") and 1 or 2
     local tooltip_line = {"", "\n", tooltip_number, " ", {"fp.pl_machine", plural_parameter}}
 

@@ -31,14 +31,16 @@ return {
             run(0.123, 3, "0.12", "0.123 -> 2 sig figs")
             run(0.05,  3, "0.05", "0.05")
 
-            -- Tiny numbers clamp to zero
-            run(0.0009, 3, "0", "tiny")
-            run(0,      3, "0", "zero")
+            -- Tiny positive numbers show ≤ threshold; zero stays "0"
+            run(0.001,  3, "0.001",   "threshold boundary")
+            run(0.0009, 3, "≤0.001",  "tiny positive")
+            run(0,      3, "0",       "zero")
 
             -- Precision 4
-            run(10000, 4, "10000", "10k threshold at precision 4")
-            run(9999,  4, "9999",  "4 digit at precision 4")
-            run(1.234, 4, "1.234", "4 sig figs")
+            run(10000,  4, "10000",   "10k threshold at precision 4")
+            run(9999,   4, "9999",    "4 digit at precision 4")
+            run(1.234,  4, "1.234",   "4 sig figs")
+            run(0.00009, 4, "≤0.0001", "tiny at precision 4")
         end
     },
 
