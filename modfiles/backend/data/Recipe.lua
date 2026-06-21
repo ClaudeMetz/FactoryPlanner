@@ -93,13 +93,13 @@ end
 function Recipe:update_effects(force, factory)
     local machine_proto = self.parent.machine.proto
 
-    local recipe_name = nil
+    local name = nil
     local drill = (machine_proto.prototype_category == "mining_drill")
-    if drill and machine_proto.uses_force_mining_productivity_bonus then recipe_name = "custom-mining"
-    elseif not self.proto.custom then recipe_name = self.proto.name
+    if drill and machine_proto.uses_force_mining_productivity_bonus then name = "custom-mining"
+    elseif self.proto.productivity_recipe ~= nil then name = self.proto.productivity_recipe
     else return end  -- no recipe effects for custom recipes
 
-    self.effects = {productivity = factory:get_productivity_bonus(force, recipe_name)}
+    self.effects = {productivity = factory:get_productivity_bonus(force, name)}
     self.parent.machine:summarize_effects()  -- update machine to update its tooltip
 end
 

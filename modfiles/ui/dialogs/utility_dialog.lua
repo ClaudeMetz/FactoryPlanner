@@ -272,12 +272,11 @@ function utility_structures.productivity_boni(player, modal_data)
     table.add{type="label", caption={"fp.custom"}, style="bold_label"}
 
     local force_recipes = player.force.recipes
-    for recipe_name in pairs(PRODUCTIVITY_RECIPES) do
+    for recipe_name, _ in pairs(PRODUCTIVITY_RECIPES) do
         if not force_recipes[recipe_name] or force_recipes[recipe_name].enabled then
-            local recipe_proto = prototyper.util.find("recipes", recipe_name, nil)  --[[@as FPRecipePrototype]]
             local caption = (recipe_name == "custom-mining")
                 and {"", "[img=utility/mining_drill_productivity_bonus_modifier_icon]  ", {"fp.mining_recipes"}}
-                or {"", "[recipe=" .. recipe_name .. "]  ", recipe_proto.localised_name}
+                or {"", "[recipe=" .. recipe_name .. "]  ", prototypes.recipe[recipe_name].localised_name}
             table.add{type="label", caption=caption}.style.width = 250
 
             local recipe_productivity = util.get_recipe_productivity(player.force, recipe_name)

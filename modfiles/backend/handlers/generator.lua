@@ -70,6 +70,7 @@ end
 ---@field main_product FormattedProduct?
 ---@field allowed_effects AllowedEffects?
 ---@field maximum_productivity EffectValue
+---@field productivity_recipe string?
 ---@field allowed_module_categories { [string]: boolean }?
 ---@field type_counts { ingredients: ItemTypeCounts, products: ItemTypeCounts }
 ---@field catalysts { ingredients: Ingredient[], products: FormattedProduct[] }
@@ -105,9 +106,10 @@ function generator.recipes.generate()
         return recipe
     end
 
-
-    -- Determine researchable recipes
+    -- Determine researchable & productivity recipes
     local researchable_recipes = {}  ---@type { [string]: string[] }
+    local productivity_recipes = {}  ---@type { [string]: boolean }
+    local any_mining_productivity = false
     local tech_filter = {{filter="hidden", invert=true}, {filter="has-effects", mode="and"}}
     for _, tech_proto in pairs(prototypes.get_technology_filtered(tech_filter)) do
         for _, effect in pairs(tech_proto.effects) do
@@ -115,6 +117,10 @@ function generator.recipes.generate()
                 local recipe_name = effect.recipe
                 researchable_recipes[recipe_name] = researchable_recipes[recipe_name] or {}
                 table.insert(researchable_recipes[recipe_name], tech_proto.name)
+            elseif effect.type == "change-recipe-productivity" then
+                productivity_recipes[effect.recipe] = true
+            elseif effect.type == "mining-drill-productivity-bonus" then
+                any_mining_productivity = true
             end
         end
     end
@@ -150,6 +156,7 @@ function generator.recipes.generate()
                 emissions_multiplier = proto.emissions_multiplier,
                 allowed_effects = proto.allowed_effects or {},
                 maximum_productivity = math.floor(proto.maximum_productivity + 1e-4),
+                productivity_recipe = (productivity_recipes[proto.name]) and proto.name or nil,
                 allowed_module_categories = proto.allowed_module_categories,
                 type_counts = {},  -- filled out by format_recipe below
                 catalysts = {products={}, ingredients={}},  -- filled out by format_recipe below
@@ -197,6 +204,7 @@ function generator.recipes.generate()
             recipe.sprite = products[1].type .. "/" .. products[1].name
             recipe.order = proto.order
             recipe.categories = {[proto.resource_category] = true}
+            recipe.productivity_recipe = (any_mining_productivity) and "custom-mining" or nil
 
             local ingredients = {{type="entity", name="custom-" .. proto.name, amount=1}}
 
