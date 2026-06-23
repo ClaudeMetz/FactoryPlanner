@@ -1,6 +1,6 @@
 ---@diagnostic disable
 
-util = require("__factoryplanner__.util.util")
+fp_util = require("__factoryplanner__.util.util")
 
 local suite = require("suite")
 
