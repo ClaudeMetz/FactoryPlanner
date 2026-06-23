@@ -183,8 +183,6 @@ for event_id, _ in pairs(gui_identifier_map) do script.on_event(event_id, handle
 -- These events go out to every handler that has subscribed to it by ID or name.
 local player_identifier_map = {
     -- Standard events
-    [defines.events.on_player_created] = "on_player_created",
-    [defines.events.on_player_removed] = "on_player_removed",
     [defines.events.on_gui_opened] = "on_gui_opened",
     [defines.events.on_player_display_resolution_changed] = "on_player_display_resolution_changed",
     [defines.events.on_player_display_scale_changed] = "on_player_display_scale_changed",
@@ -251,13 +249,9 @@ local function handle_player_event(event)
     local event_handlers = player_event_cache[string_name]
     if not event_handlers then return end  -- make sure the given event is even handled
 
-    local player = game.get_player(event.player_index)  ---@cast player -nil
-
-    -- Need special case for on_player_created to get through
-    if string_name == "on_player_created" then goto player_created end
-
     -- Guard against an event being called before the player is initialized
     if not storage.players[event.player_index] then return end
+    local player = game.get_player(event.player_index)   ---@cast player -nil
 
     -- Close context menu on any keyboard shortcut
     if event.input_name then modal_dialog.close_context_menu(player) end
@@ -283,6 +277,8 @@ for event_id, _ in pairs(player_identifier_map) do script.on_event(event_id, han
 -- ** GAME EVENTS **
 -- These events go out to every handler that has subscribed to it by ID.
 local game_identifier_map = {
+    [defines.events.on_player_created] = "on_player_created",
+    [defines.events.on_player_removed] = "on_player_removed",
     [defines.events.on_tick] = "on_tick",
     [defines.events.on_singleplayer_init] = "on_singleplayer_init",
     [defines.events.on_multiplayer_init] = "on_multiplayer_init",

@@ -234,13 +234,6 @@ end)
 local listeners = {}
 
 listeners.player = {
-    on_player_created = (function(player, _)
-        player_init(player)
-    end),
-    on_player_removed = (function(player, _)
-        storage.players[player.index] = nil
-    end),
-
     on_player_dictionaries_ready = (function(player, _)
         local player_table = util.globals.player_table(player)
         player_table.translation_tables = util.translator.get_all(player.index)
@@ -260,6 +253,14 @@ listeners.player = {
 }
 
 listeners.game = {
+    on_player_created = (function(event)
+        local player = game.get_player(event.player_index)
+        player_init(player)
+    end),
+    on_player_removed = (function(event)
+        storage.players[event.player_index] = nil
+    end),
+
     on_tick = util.translator.on_tick
 }
 
