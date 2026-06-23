@@ -8,7 +8,8 @@ local migrator = {}
 ---@alias MigrationObject PlayerTable | Factory | PackedFactory
 
 -- Returns a table containing all existing migrations in order
-local migration_masterlist = {  ---@type MigrationMasterList
+---@type MigrationMasterList
+local migration_masterlist = {
     [1] = {version="1.0.6", migration=require("backend.migrations.migration_1_0_6")},
     [2] = {version="1.1.5", migration=require("backend.migrations.migration_1_1_5")},
     [3] = {version="1.1.14", migration=require("backend.migrations.migration_1_1_14")},
@@ -48,7 +49,7 @@ local function apply_migrations(migrations, function_name, object, player)
         local migration_function = migration[function_name]
 
         if migration_function ~= nil then
-            migration_function(object, player)  ---@type string
+            migration_function(object, player)
         end
     end
 end

@@ -187,7 +187,7 @@ end
 local category_designations = {machines="combined_category", fuels="combined_category",
     beacons="", belts="", pumps="", silos="", wagons="category"}
 
----@field previous DefaultPrototypesTable
+---@param previous DefaultPrototypesTable
 ---@return DefaultPrototypesTable refreshed
 function defaults.refresh_preferences(previous)
     local preference_defaults = {}
