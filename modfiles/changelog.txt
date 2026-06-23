@@ -2,6 +2,16 @@
 Version: 0.00.00
 Date: 00. 00. 0000
   Features:
+    - 
+  Changes:
+    - 
+  Bugfixes:
+    - 
+
+---------------------------------------------------------------------------------------------------
+Version: 2.1.3
+Date: 23. 06. 2026
+  Features:
     - Updated for Factorio 2.1, adopting new game features and APIs, the most important of which are listed below
     - Added support for quality affecting machine speed, energy usage, and module count in all ways
     - Added support for recipes using shared probability for its products
