@@ -1,4 +1,4 @@
-local _util = {
+local _util = (helpers.stage == "runtime") and {
     flib = require("util.flib"),
     translator = require("util.dictionary"),
     globals = require("util.globals"),
@@ -14,6 +14,9 @@ local _util = {
     effects = require("util.effects"),
     temperature = require("util.temperature"),
     preferences = require("util.preferences")
+} or {  -- reduced selection
+    flib = require("util.flib"),
+    format = require("util.format")
 }
 
 
