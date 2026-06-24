@@ -2,11 +2,11 @@
 Version: 0.00.00
 Date: 00. 00. 0000
   Features:
-    - 
+    -
   Changes:
-    - 
+    -
   Bugfixes:
-    - 
+    - Fixed a crash caused by an issue with how fuel categories are handled (#764) (Thanks vapopescu!)
 
 ---------------------------------------------------------------------------------------------------
 Version: 2.1.3
