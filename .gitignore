@@ -2,3 +2,4 @@
 .vscode
 modfiles/scenarios
 .luarc.json
+.emmyrc.json
