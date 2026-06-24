@@ -853,6 +853,7 @@ function generator.machines.generate()
         }
     end
 
+    ---@param machine FPMachinePrototype
     local function insert_machine(machine)
         machine_categories[machine.category] = machine_categories[machine.category] or {}
         table.insert(machine_categories[machine.category], machine)
@@ -1075,9 +1076,6 @@ function generator.fuels.generate()
                 end
             end
         end
-
-        -- If the machine category ends up empty because of this, make sure to remove it
-        if not next(machine_category.members) then machine_prototypes[machine_category.name] = nil end
     end
 
     -- Fill fuel list, implicitly dropping fuels that aren't used by any machine
