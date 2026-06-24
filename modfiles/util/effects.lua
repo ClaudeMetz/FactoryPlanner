@@ -6,6 +6,35 @@ _effects.blank = {speed = 0, productivity = 0, quality = 0, consumption = 0, pol
 ---@alias ModuleEffectName "speed" | "productivity" | "quality" | "consumption" | "pollution"
 ---@alias IntegerModuleEffects { [ModuleEffectName]: EffectValue }
 
+local is_effect_positive = {speed=true, productivity=true, quality=true,
+                            consumption=false, pollution=false}
+
+---@param proto FPMachinePrototype | FPBeaconPrototype | FPRecipePrototype
+---@param module FPModulePrototype
+---@return boolean
+function _effects.is_compatible(proto, module)
+    local allowed_categories = proto.allowed_module_categories
+    -- No allowed categories means everything is compatible
+    if allowed_categories ~= nil and not allowed_categories[module.category] then
+        return false
+    end
+
+    local allowed_effects = proto.allowed_effects
+    -- No allowed effects means nothing is compatible
+    if allowed_effects == nil then return false end
+    for name, value in pairs(module.effects) do
+        -- Effects only need to be in the allowed list if they are considered positive
+        -- Effects are considered positive if their effect is actually in the
+        -- 'desirable' direction, ie. positive speed, or negative pollution
+        if not allowed_effects[name] and (value > 0) == is_effect_positive[name] then
+            return false
+        end
+    end
+
+    return true
+end
+
+
 ---@param effect_tables IntegerModuleEffects[]
 ---@return IntegerModuleEffects
 function _effects.merge(effect_tables)
@@ -16,19 +45,6 @@ function _effects.merge(effect_tables)
         end
     end
     return effects
-end
-
-
-local is_effect_positive = {speed=true, productivity=true, quality=true,
-                            consumption=false, pollution=false}
-
----@param name string
----@param value EffectValue
----@return boolean is_positive_effect
-function _effects.is_positive(name, value)
-    -- Effects are considered positive if their effect is actually in the 'desirable'
-    -- direction, ie. positive speed, or negative pollution
-    return (value > 0) == is_effect_positive[name]
 end
 
 

@@ -7,6 +7,7 @@ Date: 00. 00. 0000
     -
   Bugfixes:
     - Fixed a crash caused by an issue with how fuel categories are handled (#764) (Thanks vapopescu!)
+    - Fixed detection of modules that can be used in beacons being too permissive (#712)
 
 ---------------------------------------------------------------------------------------------------
 Version: 2.1.3

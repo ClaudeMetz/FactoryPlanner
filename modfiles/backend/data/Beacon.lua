@@ -48,6 +48,11 @@ function Beacon:elem_value()
 end
 
 
+---@return boolean
+function Beacon:is_mono_beacon()
+    return (#self.proto.profile == 2 and self.proto.profile[2] == 0)
+end
+
 ---@return double profile_multiplier
 function Beacon:profile_multiplier()
     if self.amount == 0 then
@@ -81,16 +86,16 @@ function Beacon:summarize_effects()
     self.parent:summarize_effects()
 end
 
-
----@return boolean uses_effects
+---@return boolean
 function Beacon:uses_effects()
-    -- This method is here for ModuleSet to use generically
     return self.parent:uses_beacon_effects()
 end
 
+---@param proto FPModulePrototype
 ---@return boolean
-function Beacon:is_mono_beacon()
-    return (#self.proto.profile == 2 and self.proto.profile[2] == 0)
+function Beacon:allows_module(proto)
+    return util.effects.is_compatible(self.proto, proto) and
+           self.parent.machine:allows_module(proto)
 end
 
 

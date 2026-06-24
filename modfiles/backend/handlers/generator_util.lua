@@ -297,6 +297,23 @@ function generator_util.formatted_effects(effects)
     return effects
 end
 
+---@param proto LuaEntityPrototype
+---@return boolean
+function generator_util.is_any_effect_viable(proto)
+    local allowed_categories = proto.allowed_module_categories
+    if allowed_categories ~= nil and table_size(allowed_categories) == 0 then
+        return false
+    end
+
+    local allowed_effects = proto.allowed_effects
+    if allowed_effects == nil then return false end
+
+    for _, effect in pairs(allowed_effects or {}) do
+        if effect == true then return true end
+    end
+
+    return false
+end
 
 ---@class FormattedEffectReceiver
 ---@field base_effect ModuleEffects
@@ -326,30 +343,23 @@ function generator_util.format_effect_receiver(proto)
         effect_receiver.base_effect = generator_util.formatted_effects(base_effect)
     end
 
-    local any_positives = false
-    for _, effect in pairs(proto.allowed_effects or {}) do
-        if effect == true then any_positives = true; break end
+    local module_limit = proto.module_inventory_size
+    if module_limit == nil or module_limit == 0 then
+        effect_receiver.uses_module_effects = false
+        -- Beacons can still be used even if the machine can't have modules
     end
 
-    if not any_positives then
-        if proto.module_inventory_size ~= nil then
-            effect_receiver.uses_module_effects = false
-        end
+    if not generator_util.is_any_effect_viable(proto) then
+        effect_receiver.uses_module_effects = false
         effect_receiver.uses_beacon_effects = false
     end
 
-    effect_receiver.limits = {
-        consumption = effect_receiver.consumption_limits,
-        speed = effect_receiver.speed_limits,
-        productivity = effect_receiver.productivity_limits,
-        pollution = effect_receiver.pollution_limits,
-        quality = effect_receiver.quality_limits
-    }
-    effect_receiver.consumption_limits = nil
-    effect_receiver.speed_limits = nil
-    effect_receiver.productivity_limits = nil
-    effect_receiver.pollution_limits = nil
-    effect_receiver.quality_limits = nil
+    -- Adjust limits format to be more convenient
+    effect_receiver.limits = {}
+    for name, _ in pairs(util.effects.blank) do
+        effect_receiver.limits[name] = effect_receiver[name .. "_limits"]
+        effect_receiver[name .. "_limits"] = nil
+    end
 
     return effect_receiver
 end

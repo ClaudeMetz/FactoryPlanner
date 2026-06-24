@@ -182,9 +182,8 @@ function Line:setup_beacon(player)
     end
 end
 
-
----@return boolean uses_effects
-function Line:uses_beacon_effects(player)
+---@return boolean
+function Line:uses_beacon_effects()
     return self.machine.proto.effect_receiver.uses_beacon_effects
 end
 

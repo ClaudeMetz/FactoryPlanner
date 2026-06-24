@@ -87,9 +87,16 @@ function Machine:summarize_effects()
     self.parent:summarize_effects()
 end
 
----@return boolean uses_effects
+---@return boolean
 function Machine:uses_effects()
     return self.proto.effect_receiver.uses_module_effects
+end
+
+---@param proto FPModulePrototype
+---@return boolean
+function Machine:allows_module(proto)
+    return util.effects.is_compatible(self.proto, proto) and
+           util.effects.is_compatible(self.parent.recipe.proto, proto)
 end
 
 
