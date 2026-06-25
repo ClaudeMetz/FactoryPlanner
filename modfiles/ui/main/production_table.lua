@@ -523,11 +523,13 @@ local function refresh_production_table(player)
     if not factory_valid then return end
     scroll_pane_production.clear()
 
+    local any_beacons = (next(storage.prototypes.beacons) ~= nil)
     local production_columns = {}
     for _, column_data in ipairs(all_production_columns) do
         -- Explicit preferences comparison needed here, as both true and nil columns should be shown
         -- Some mods might remove all beacons, in which case the column shouldn't be shown at all
-        if preferences[column_data.name .. "_column"] ~= false and (next(storage.prototypes.beacons) ~= nil) then
+        if preferences[column_data.name .. "_column"] ~= false and
+                (column_data.name ~= "beacon" or any_beacons) then
             table.insert(production_columns, column_data)
         end
     end
