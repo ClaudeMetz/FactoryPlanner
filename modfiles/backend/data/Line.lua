@@ -219,6 +219,19 @@ function Line:compile_machine_filter()
 end
 
 
+---@return boolean
+function Line:is_temperature_fully_configured()
+    for _, ingredient in pairs(self.recipe.proto.ingredients) do
+        if not self.recipe:is_temperature_configured(ingredient) then return false end
+    end
+
+    local fuel = self.machine.fuel
+    if fuel and fuel:is_temperature_configured() then return false end
+
+    return true
+end
+
+
 ---@param properties SurfaceProperties?
 ---@param conditions SurfaceCondition[]?
 ---@return boolean compatible

@@ -226,9 +226,10 @@ local function add_item_flow(line, relevant_line, item_category, button_color, m
             tags=tags, style=style, mouse_button_filter={"left-and-right"}, raise_hover_events=true}
         metadata.tooltips[button.index] = tooltip
 
+        local name = (line.class == "Line") and line.recipe:get_name_with_temperature(proto) or proto.name
         item_buttons[type] = item_buttons[type] or {}
-        item_buttons[type][proto.name] = item_buttons[type][proto.name] or {}
-        table.insert(item_buttons[type][proto.name], {button=button, proper_style=style, size="_small"})
+        item_buttons[type][name] = item_buttons[type][name] or {}
+        table.insert(item_buttons[type][name], {button=button, proper_style=style, size="_small"})
 
         ::skip_item::
     end
@@ -280,7 +281,7 @@ local function add_item_flow(line, relevant_line, item_category, button_color, m
             raise_hover_events=true, index=first_special_index}
         metadata.tooltips[button.index] = tooltip
 
-        local type, name = fuel.proto.type, fuel.proto.name
+        local type, name = fuel.proto.type, fuel:get_name_with_temperature()
         item_buttons[type] = item_buttons[type] or {}
         item_buttons[type][name] = item_buttons[type][name] or {}
         table.insert(item_buttons[type][name], {button=button, proper_style=style, size="_small"})
@@ -590,17 +591,25 @@ local function handle_item_click(player, tags, action)
 end
 
 local function handle_hover_change(player, tags, event)
-    local proto = nil
+    local type, name = nil, nil
     if tags.floor_id then
-        proto = OBJECT_INDEX[tags.floor_id].ingredients[tags.item_index].proto
+        local proto = OBJECT_INDEX[tags.floor_id].ingredients[tags.item_index].proto
+        type, name = proto.type, proto.name
     elseif tags.fuel_id then
-        proto = OBJECT_INDEX[tags.fuel_id].proto
+        local fuel = OBJECT_INDEX[tags.fuel_id]  ---@type Fuel
+        type, name = fuel.proto.type, fuel:get_name_with_temperature()
     else
-        proto = OBJECT_INDEX[tags.line_id][tags.item_category][tags.item_index].proto
+        local line = OBJECT_INDEX[tags.line_id]  ---@type Line
+        local proto = line[tags.item_category][tags.item_index].proto
+        if line.class == "Line" and tags.item_category == "ingredients" then
+            type, name = proto.type, line.recipe:get_name_with_temperature(proto)
+        else
+            type, name = proto.type, proto.name
+        end
     end
 
     local compact_elements = util.globals.ui_state(player).compact_elements
-    local relevant_buttons = compact_elements.item_buttons[proto.type][proto.name]
+    local relevant_buttons = compact_elements.item_buttons[type][name]
     for _, button_data in pairs(relevant_buttons) do
         button_data.button.style = (event.name == defines.events.on_gui_hover)
             and "fflib_slot_button_pink" .. button_data.size or button_data.proper_style

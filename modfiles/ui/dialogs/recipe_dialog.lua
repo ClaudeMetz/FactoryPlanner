@@ -123,7 +123,7 @@ local function attempt_adding_line(player, recipe_id, modal_data)
             if proto.temperature then line.recipe.temperatures[proto.base_name] = proto.temperature end
         end
 
-        if not line.recipe:temperature_fully_configured() then
+        if not line:is_temperature_fully_configured() then
             util.messages.raise(player, "warning", {"fp.warning_temperature_not_configured", recipe_name}, 1)
         end
 

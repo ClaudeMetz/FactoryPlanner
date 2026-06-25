@@ -72,18 +72,26 @@ function Recipe:apply_temperature_defaults(player)
     end
 end
 
----@return boolean is_fully_configured
-function Recipe:temperature_fully_configured()
-    for _, ingredient in pairs(self.proto.ingredients) do
-        if ingredient.type == "fluid" and self.temperatures[ingredient.name] == nil then
-            return false
+
+---@param ingredient Ingredient | FPItemPrototype
+---@return boolean
+function Recipe:is_temperature_configured(ingredient)
+    return (ingredient.type ~= "fluid" or self.temperatures[ingredient.name] ~= nil)
+end
+
+---@param ingredient Ingredient | FPItemPrototype
+---@return string
+function Recipe:get_name_with_temperature(ingredient)
+    if ingredient.type ~= "fluid" then
+        return ingredient.name
+    else
+        local temperature = self.temperatures[ingredient.name]
+        if temperature ~= nil then
+            return ingredient.name .. "-" .. temperature
+        else
+            return ingredient.name
         end
     end
-
-    local fuel = self.parent.machine.fuel
-    if fuel and fuel.proto.type == "fluid" and not fuel.temperature then return false end
-
-    return true
 end
 
 

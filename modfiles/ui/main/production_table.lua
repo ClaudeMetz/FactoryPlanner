@@ -95,7 +95,7 @@ function builders.recipe(line, parent_flow, metadata, indent)
             table.insert(status_info, {"fp.incompatible_solver"})
         end
 
-        if not relevant_line.recipe:temperature_fully_configured() then
+        if not relevant_line:is_temperature_fully_configured() then
             table.insert(status_info, {"fp.temperature_not_configured"})
         end
     end

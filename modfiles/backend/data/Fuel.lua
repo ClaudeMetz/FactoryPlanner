@@ -48,6 +48,20 @@ function Fuel:set_proto(proto, player)
 end
 
 
+---@return boolean
+function Fuel:is_temperature_configured()
+    return (self.proto.type ~= "fluid" or self.temperature ~= nil)
+end
+
+---@return string
+function Fuel:get_name_with_temperature()
+    if self.proto.type ~= "fluid" or self.temperature == nil then
+        return self.proto.name
+    else
+        return self.proto.name .. "-" .. self.temperature
+    end
+end
+
 function Fuel:build_temperature_data()
     self.temperature_data = nil
 
