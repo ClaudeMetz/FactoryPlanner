@@ -94,6 +94,15 @@ function Recipe:get_name_with_temperature(ingredient)
     end
 end
 
+---@param ingredient Ingredient | FPItemPrototype
+---@return float?
+function Recipe:get_temperature(ingredient)
+    if ingredient.type == "fluid" then
+        return self.temperatures[ingredient.name]
+    end
+    return nil
+end
+
 
 --- Called when the solver runs because it's the most convenient spot for it
 ---@param force LuaForce

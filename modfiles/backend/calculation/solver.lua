@@ -60,28 +60,17 @@ local function factory_products(factory)
     return products
 end
 
-local function get_temperature_name(line, ingredient)
-    local name, temperature = ingredient.name, nil
-    if ingredient.type == "fluid" then
-        temperature = line.recipe.temperatures[ingredient.name]
-        name = (temperature ~= nil) and (ingredient.name .. "-" .. temperature) or nil
-    end
-
-    return name, temperature
-end
-
 local function line_ingredients(line)
     local ingredients = {}
     for _, ingredient in pairs(line.recipe.proto.ingredients) do
-        local name, temperature = get_temperature_name(line, ingredient)
         -- If any relevant ingredient has no temperature set, this line is invalid
-        if name == nil then return nil end
+        if not line.recipe:is_temperature_configured(ingredient) then return nil end
 
         table.insert(ingredients, {
-            name = name,
+            name = line.recipe:get_name_with_temperature(ingredient),
             type = ingredient.type,
             amount = ingredient.amount,
-            temperature = temperature
+            temperature = line.recipe:get_temperature(ingredient)
         })  -- don't need min/max temperatures here
     end
     return ingredients
@@ -107,16 +96,14 @@ local function generate_floor_data(player, factory, floor, calculate_emissions)
         else
             local relevant_line = (line.parent.level > 1) and line.parent.first or nil  --[[@as Line]]
             local ingredients = line_ingredients(line)  -- builds in chosen temperatures
-
             local fuel = line.machine.fuel
-            local missing_fuel_temp = (fuel and fuel.proto.type == "fluid" and not fuel.temperature)
 
             -- If a line has a percentage of zero or is inactive, it is not useful to the result of the factory
             -- Alternatively, if this line is on a subfloor and the top line of the floor is useless, it is useless too
             if (relevant_line and (relevant_line.percentage == 0 or not relevant_line.active))
                     or line.percentage == 0 or not line.active or not line:get_surface_compatibility().overall
                     or (not factory.matrix_solver_active and line.recipe.production_type == "consume")
-                    or ingredients == nil or missing_fuel_temp == true then
+                    or ingredients == nil or (fuel and not fuel:is_temperature_configured()) then
                 set_blank_line(player, floor, line)  -- useless lines don't need to run through the solver
             else
                 local machine = line.machine
@@ -152,10 +139,9 @@ local function generate_floor_data(player, factory, floor, calculate_emissions)
                     line_data.beacon_consumption = line.beacon:get_total_consumption()
                 end
 
-                if machine.fuel then
+                if fuel then
                     line_data.fuel_proto = machine.fuel.proto
-                    line_data.fuel_name = (fuel.proto.type ~= "fluid") and fuel.proto.name
-                        or (fuel.proto.name .. "-" .. fuel.temperature)
+                    line_data.fuel_name = fuel:get_name_with_temperature()
                 end
 
                 table.insert(floor_data.lines, line_data)
@@ -240,14 +226,13 @@ local function update_ingredient_satisfaction(floor, product_class)
             update_ingredient_satisfaction(line, subfloor_product_class)
         elseif line.machine.fuel then
             local fuel = line.machine.fuel
-            local name = (fuel.temperature) and (fuel.proto.name .. "-" .. fuel.temperature) or fuel.proto.name
-            determine_satisfaction(fuel, name)
+            determine_satisfaction(fuel, fuel:get_name_with_temperature())
         end
 
         for _, ingredient in pairs(line.ingredients) do
             if ingredient.proto.type ~= "entity" or ingredient.proto.special then
                 local name = ingredient.proto.name
-                if line.class ~= "Floor" then name, _ = get_temperature_name(line, ingredient.proto) end
+                if line.class ~= "Floor" then name = line:get_name_with_temperature(ingredient) end
                 determine_satisfaction(ingredient, name)
             end
         end

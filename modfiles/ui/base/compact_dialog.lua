@@ -207,7 +207,7 @@ local function add_item_flow(line, relevant_line, item_category, button_color, m
                     local temperature_data = line.recipe.temperature_data[proto.name]
                     table.insert(name_line, temperature_data.annotation)
 
-                    local temperature = line.recipe.temperatures[proto.name]
+                    local temperature = line.recipe:get_temperature(proto)
                     if temperature == nil then
                         button_color = "purple"
                         temperature_line = {"fp.no_temperature_configured"}

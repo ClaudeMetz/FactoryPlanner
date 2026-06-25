@@ -451,7 +451,7 @@ function builders.ingredients(line, parent_flow, metadata)
             local temperature_data = line.recipe.temperature_data[proto.name]   -- exists for any fluid ingredient
             table.insert(name_line, temperature_data.annotation)
 
-            local temperature = line.recipe.temperatures[proto.name]
+            local temperature = line.recipe:get_temperature(proto)
             if temperature == nil then
                 style = "fflib_slot_button_orange_small"
                 temperature_line = {"fp.no_temperature_configured"}

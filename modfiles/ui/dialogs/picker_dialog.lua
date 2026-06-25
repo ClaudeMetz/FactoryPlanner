@@ -155,7 +155,7 @@ local function add_item_picker(parent_flow, player)
             local existing_product = existing_products[item_name]
             local button_style = (existing_product) and "fflib_slot_button_red" or "fflib_slot_button_default"
 
-            local name = (item_proto.temperature) and item_proto.base_name or item_proto.name
+            local name = (item_proto.temperature) and item_proto.base_name or item_name
             local elem_tooltip = (item_proto.type ~= "entity") and {type=item_proto.type, name=name} or nil
 
             local button_item = table_subgroup.add{type="sprite-button", sprite=item_proto.sprite, style=button_style,

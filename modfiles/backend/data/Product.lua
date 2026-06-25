@@ -65,9 +65,8 @@ function Product:paste(object)
     -- Product objects are converted to SimpleItems when copied, so they can't appear here
     if object.class == "SimpleItem" or object.class == "Fuel" then
         local proto = object.proto
-        if object.class == "Fuel" then
-            local name = (proto.class == "fluid") and proto.name .. "-" .. object.temperature or proto.name
-            proto = prototyper.util.find("items", name, proto.type)  -- need an Item prototype here, not Fuel
+        if object.class == "Fuel" then  -- need an Item prototype here, not Fuel
+            proto = prototyper.util.find("items", object:get_name_with_temperature(), proto.type)
         end
 
         -- Avoid duplicate items, but allow pasting over the same item proto

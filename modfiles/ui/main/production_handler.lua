@@ -239,8 +239,8 @@ local function handle_item_click(player, tags, action)
 
         local proto, recipe_id = item.proto, nil
         if production_type == "produce" and proto.type == "fluid" and line.class == "Line" then
-            local temperature = line.recipe.temperatures[item.proto.name]
-            if temperature then proto = prototyper.util.find("items", proto.name .. "-" .. temperature, "fluid") end
+            local item_name = line.recipe:get_name_with_temperature(item.proto)
+            proto = prototyper.util.find("items", item_name, "fluid")
             -- If a no-temperature fluid is passed, it'll show all compatible temperatures/recipes
             recipe_id = line.recipe.id
         end
@@ -267,9 +267,8 @@ local function handle_item_click(player, tags, action)
     elseif action == "copy" then
         local proto = item.proto
         if item.proto.type == "fluid" and line.class == "Line" then
-            local temperature = line.recipe.temperatures[item.proto.name]
-            if not temperature then return end
-            proto = prototyper.util.find("items", proto.name .. "-" .. temperature, "fluid")
+            local item_name = line.recipe:get_name_with_temperature(item.proto)
+            proto = prototyper.util.find("items", item_name, "fluid")
         end
 
         local copyable_item = {class="SimpleItem", proto=proto, amount=item.amount}
@@ -323,8 +322,7 @@ local function handle_fuel_click(player, tags, action)
 
         local proto = prototyper.util.find("items", fuel.proto.name, fuel.proto.type)
         if fuel.proto.type == "fluid" then
-            local temperature = fuel.temperature
-            if temperature then proto = prototyper.util.find("items", proto.name .. "-" .. temperature, "fluid") end
+            proto = prototyper.util.find("items", fuel:get_name_with_temperature(), "fluid")
             -- If a no-temperature fluid is passed, it'll show all compatible temperatures/recipes
         end
 
