@@ -65,8 +65,8 @@ function Product:paste(object)
     -- Product objects are converted to SimpleItems when copied, so they can't appear here
     if object.class == "SimpleItem" or object.class == "Fuel" then
         local proto = object.proto
-        if object.class == "Fuel" and proto.type == "fluid" then
-            proto = prototyper.util.find("items", proto.name .. "-" .. object.temperature, "fluid")
+        if object.class == "Fuel" then  -- need an Item prototype here, not Fuel
+            proto = prototyper.util.find("items", object:get_name_with_temperature(), proto.type)
         end
 
         -- Avoid duplicate items, but allow pasting over the same item proto
@@ -93,14 +93,17 @@ end
 ---@field required_amount number
 ---@field belt_proto FPPackedPrototype?
 
+---@param full boolean
 ---@return PackedProduct packed_self
-function Product:pack()
+function Product:pack(full)
     return {
         class = self.class,
         proto = prototyper.util.simplify_prototype(self.proto, "type"),
         defined_by = self.defined_by,
         required_amount = self.required_amount,
-        belt_proto = (self.belt_proto) and prototyper.util.simplify_prototype(self.belt_proto, nil)
+        belt_proto = (self.belt_proto) and prototyper.util.simplify_prototype(self.belt_proto, nil),
+
+        amount = (full) and self.amount or nil
     }
 end
 

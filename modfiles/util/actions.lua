@@ -57,7 +57,7 @@ end
 function _actions.shortcut_string(shortcut)
     if not shortcut then return nil end
     local split_modifiers, modifier_string = util.split_string(shortcut, "-"), {""}
-    for _, modifier in pairs(ftable.slice(split_modifiers, 1, -1)) do
+    for _, modifier in pairs(util.flib.slice(split_modifiers, 1, -1)) do
         table.insert(modifier_string, {"", {"fp.action_" .. modifier}, " + "})
     end
     table.insert(modifier_string, {"fp.action_" .. split_modifiers[#split_modifiers]})

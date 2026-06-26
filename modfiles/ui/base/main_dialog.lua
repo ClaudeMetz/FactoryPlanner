@@ -27,13 +27,13 @@ local function shrinkwrap_interface(metadata)
     local scaled_resolution = util.gui.calculate_scaled_resolution(player)
     local preferences = util.globals.preferences(player)
 
-    local width_minimum = PRODUCTS_PER_ROW_OPTIONS[1]
+    local width_minimum = util.preferences.products_per_row_options[1]
     while (scaled_resolution.width * 0.95) < determine_main_dimensions(player).width
             and preferences.products_per_row > width_minimum do
         preferences.products_per_row = preferences.products_per_row - 1
     end
 
-    local height_minimum = FACTORY_LIST_ROWS_OPTIONS[1]
+    local height_minimum = util.preferences.factory_list_rows_options[1]
     while (scaled_resolution.height * 0.95) < determine_main_dimensions(player).height
             and preferences.factory_list_rows > height_minimum do
         preferences.factory_list_rows = preferences.factory_list_rows - 2
@@ -210,7 +210,7 @@ listeners.gui = {
     }
 }
 
-listeners.misc = {
+listeners.player = {
     -- Makes sure that another GUI can open properly while a modal dialog is open.
     -- The FP interface can have at most 3 layers of GUI: main interface, modal dialog, selection mode.
     -- We need to make sure opening the technology screen (for example) from any of those layers behaves properly.
@@ -226,14 +226,6 @@ listeners.misc = {
 
         -- Then, at this point we're at most at the stage where the main dialog is open, so close it
         if main_dialog.is_in_focus(player) then main_dialog.toggle(player, true) end
-    end),
-
-    on_singleplayer_init = (function(player, _)
-        main_dialog.rebuild(player, false)
-    end),
-
-    on_multiplayer_init = (function(player, _)
-        main_dialog.rebuild(player, false)
     end),
 
     on_lua_shortcut = (function(player, event)
@@ -273,6 +265,20 @@ listeners.misc = {
             main_dialog.toggle(player)
             compact_dialog.toggle(player)  -- toggle also refreshes
             ui_state.compact_view = true
+        end
+    end)
+}
+
+listeners.game = {
+    on_singleplayer_init = (function(_)
+        for _, player in pairs(game.players) do
+            main_dialog.rebuild(player, false)
+        end
+    end),
+
+    on_multiplayer_init = (function(_)
+        for _, player in pairs(game.players) do
+            main_dialog.rebuild(player, false)
         end
     end)
 }

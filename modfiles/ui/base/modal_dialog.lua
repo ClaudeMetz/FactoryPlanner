@@ -19,7 +19,7 @@ local function create_base_dialog(player, dialog_settings, modal_data)
         flow_title_bar.add{type="label", caption=dialog_settings.caption, style="fp_label_frame_title",
             ignored_by_interaction=true}
 
-        flow_title_bar.add{type="empty-widget", style="flib_titlebar_drag_handle", ignored_by_interaction=true}
+        flow_title_bar.add{type="empty-widget", style="fflib_titlebar_drag_handle", ignored_by_interaction=true}
 
         if dialog_settings.search_handler_name then  -- add a search field if requested
             modal_data.search_handler_name = dialog_settings.search_handler_name
@@ -37,6 +37,11 @@ local function create_base_dialog(player, dialog_settings, modal_data)
                 style="fp_button_frame", mouse_button_filter={"left"}}
         end
 
+        -- Titlebar flow
+        local titlebar_flow = flow_title_bar.add{type="flow", direction="horizontal"}
+        titlebar_flow.visible = false
+        modal_elements.titlebar_flow = titlebar_flow
+
         if dialog_settings.reset_handler_name then  -- add a reset button if requested
             modal_data.reset_handler_name = dialog_settings.reset_handler_name
 
@@ -49,7 +54,7 @@ local function create_base_dialog(player, dialog_settings, modal_data)
 
             local reset_confirm = flow_title_bar.add{type="sprite-button", tooltip={"fp.reset_confirm_tt"},
                 tags={mod="fp", on_gui_click="modal_dialog_confirm_reset"}, sprite="utility/check_mark",
-                style="flib_tool_button_light_green", visible=false, mouse_button_filter={"left"}}
+                style="fflib_tool_button_light_green", visible=false, mouse_button_filter={"left"}}
             reset_confirm.style.size = 24
             reset_confirm.style.padding = -1
             modal_elements.confirm_reset = reset_confirm
@@ -78,7 +83,7 @@ local function create_base_dialog(player, dialog_settings, modal_data)
             tooltip=dialog_settings.subheader_tooltip, style="semibold_label"}
     end
 
-    local scroll_pane = content_frame.add{type="scroll-pane", style="flib_naked_scroll_pane"}
+    local scroll_pane = content_frame.add{type="scroll-pane", style="fflib_naked_scroll_pane"}
     if dialog_settings.disable_scroll_pane then scroll_pane.vertical_scroll_policy = "never" end
     modal_elements.content_frame = scroll_pane
 
@@ -86,12 +91,13 @@ local function create_base_dialog(player, dialog_settings, modal_data)
     if dialog_settings.secondary_frame then
         local frame_secondary = flow_content.add{type="frame", direction="vertical", style="inside_shallow_frame"}
 
-        local scroll_pane_secondary = frame_secondary.add{type="scroll-pane", style="flib_naked_scroll_pane"}
+        local scroll_pane_secondary = frame_secondary.add{type="scroll-pane", style="fflib_naked_scroll_pane"}
         scroll_pane_secondary.style.padding = 12
 
         modal_elements.secondary_frame = scroll_pane_secondary
     end
 
+    -- Auxiliary flow
     modal_elements.auxiliary_flow = frame_modal_dialog.add{type="flow", direction="vertical"}
 
     local dialog_max_height = (util.globals.ui_state(player).main_dialog_dimensions.height) * 0.96
@@ -112,7 +118,7 @@ local function create_base_dialog(player, dialog_settings, modal_data)
 
         -- Delete button and spacers
         if dialog_settings.show_delete_button then
-            local left_drag_handle = button_bar.add{type="empty-widget", style="flib_dialog_footer_drag_handle"}
+            local left_drag_handle = button_bar.add{type="empty-widget", style="fflib_dialog_footer_drag_handle"}
             left_drag_handle.drag_target = frame_modal_dialog
 
             local button_delete = button_bar.add{type="button", caption={"fp.delete"}, style="red_button",
@@ -127,7 +133,7 @@ local function create_base_dialog(player, dialog_settings, modal_data)
         end
 
         -- One 'drag handle' should always be visible
-        local right_drag_handle = button_bar.add{type="empty-widget", style="flib_dialog_footer_drag_handle"}
+        local right_drag_handle = button_bar.add{type="empty-widget", style="fflib_dialog_footer_drag_handle"}
         right_drag_handle.drag_target = frame_modal_dialog
 
         -- Submit button
@@ -221,7 +227,7 @@ function modal_dialog.open_context_menu(player, tags, handler, actions, location
             flow.style.width = MAGIC_NUMBERS.context_menu_width
             flow.style.right_padding = 20
             flow.add{type="label", caption=caption, style="bold_label"}
-            flow.add{type="empty-widget", style="flib_horizontal_pusher"}
+            flow.add{type="empty-widget", style="fflib_horizontal_pusher"}
             flow.add{type="label", caption=action.shortcut_string}
 
             action_counter = action_counter + 1
@@ -434,7 +440,7 @@ listeners.gui = {
     }
 }
 
-listeners.misc = {
+listeners.player = {
     fp_confirm_dialog = (function(player, _)
         if util.globals.ui_state(player).active_selector == nil then
             util.gui.close_dialog(player, "submit")

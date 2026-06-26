@@ -46,7 +46,8 @@ end
 local function add_factory(player, _, event)
     local skip_factory_naming = util.globals.preferences(player).skip_factory_naming
 
-    if util.xor(event.shift, skip_factory_naming) then  -- go right to the item picker with automatic factory naming
+    -- Go right to item picker if either shift is pressed or the preference is enabled
+    if not event.shift ~= not skip_factory_naming then  -- will set factory name automatically
         util.gui.open_dialog(player, {dialog="picker", modal_data={item_id=nil, item_category="product",
             create_factory=true}})
     else  -- otherwise, have the user pick a factory name first
@@ -84,21 +85,13 @@ local function handle_factory_click(player, tags, action)
     local selected_factory = OBJECT_INDEX[tags.factory_id]  --[[@as Factory]]
 
     if action == "select" then
-        local ui_state = util.globals.ui_state(player)
-        if ui_state.recalculate_on_factory_change then
-            -- This flag is set when a textfield is changed but not confirmed
-            ui_state.recalculate_on_factory_change = false
-            local previous_factory = util.context.get(player, "Factory")
-            solver.update(player, previous_factory)
-        end
-
         main_dialog.toggle_districts_view(player, true)
         util.context.set(player, selected_factory)
-        util.gui.run_refresh(player, "all")  -- refresh to update the selected factory
+        util.gui.run_refresh(player, "all")
 
     elseif action == "edit" then
         util.context.set(player, selected_factory)
-        util.gui.run_refresh(player, "all")  -- refresh to update the selected factory
+        util.gui.run_refresh(player, "all")
 
         util.gui.open_dialog(player, {dialog="factory", modal_data={factory_id=selected_factory.id}})
 
@@ -181,7 +174,7 @@ local function refresh_factory_list(player)
 
     factory_list_elements.toggle_archive_button.enabled = (archived_factory_count > 0)
     factory_list_elements.toggle_archive_button.style = (archived)
-        and "flib_selected_tool_button" or "tool_button"
+        and "fflib_selected_tool_button" or "tool_button"
 
     if not archived then
         local factory_plural = {"fp.pl_factory", archived_factory_count}
@@ -235,7 +228,7 @@ local function build_factory_list(player)
         style="tool_button", mouse_button_filter={"left"}}
     main_elements.factory_list["archive_button"] = button_archive
 
-    subheader.add{type="empty-widget", style="flib_horizontal_pusher"}
+    subheader.add{type="empty-widget", style="fflib_horizontal_pusher"}
 
     local button_import = subheader.add{type="sprite-button", sprite="utility/import",
         tooltip={"fp.action_import_factory"}, style="tool_button", mouse_button_filter={"left"},
@@ -247,10 +240,10 @@ local function build_factory_list(player)
         tags={mod="fp", on_gui_click="factory_list_open_dialog", type="export"}}
     main_elements.factory_list["export_button"] = button_export
 
-    subheader.add{type="empty-widget", style="flib_horizontal_pusher"}
+    subheader.add{type="empty-widget", style="fflib_horizontal_pusher"}
 
     local button_add = subheader.add{type="sprite-button", tags={mod="fp", on_gui_click="add_factory"},
-        sprite="utility/add", style="flib_tool_button_light_green", mouse_button_filter={"left"}}
+        sprite="utility/add", style="fflib_tool_button_light_green", mouse_button_filter={"left"}}
     button_add.style.padding = 1
     main_elements.factory_list["add_button"] = button_add
 
@@ -271,22 +264,22 @@ local function build_factory_list(player)
     -- This is not really a list-box, but it imitates one and allows additional features
     local listbox_factories = frame_vertical.add{type="scroll-pane", style="list_box_under_subheader_scroll_pane"}
     listbox_factories.style.vertically_stretchable = true
+    listbox_factories.style.horizontally_stretchable = true
     listbox_factories.horizontal_scroll_policy = "never"
-    listbox_factories.style.extra_right_padding_when_activated = -12
     local flow_factories = listbox_factories.add{type="flow", direction="vertical"}
     flow_factories.style.vertical_spacing = 0
     main_elements.factory_list["factory_listbox"] = flow_factories
 
     local flow_search = frame_vertical.add{type="flow", direction="horizontal"}
     flow_search.style.height = MAGIC_NUMBERS.search_footer_height
-    flow_search.style.padding = {0, 12}
+    flow_search.style.padding = {0, 4, 0, 12}
     flow_search.style.vertical_align = "center"
 
     flow_search.add{type="label", caption={"fp.search"}, tooltip={"fp.factory_search_tt"}}
-    flow_search.add{type="empty-widget", style="flib_horizontal_pusher"}
+    flow_search.add{type="empty-widget", style="fflib_horizontal_pusher"}
     local textfield_search = flow_search.add{type="textfield", style="search_popup_textfield",
         tags={mod="fp", on_gui_text_changed="factory_searchfield"}}
-    textfield_search.style.width = 225
+    textfield_search.style.width = 230
     main_elements.factory_list["search_textfield"] = textfield_search
 
     refresh_factory_list(player)
@@ -414,7 +407,7 @@ listeners.gui = {
     },
 }
 
-listeners.misc = {
+listeners.player = {
     build_gui_element = (function(player, event)
         if event.trigger == "main_dialog" then
             build_factory_list(player)

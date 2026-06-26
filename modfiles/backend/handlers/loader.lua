@@ -149,6 +149,7 @@ end
 ---@field fuels MappedPrototypesWithCategory<FPFuelPrototype>
 ---@field belts MappedPrototypes<FPBeltPrototype>
 ---@field pumps MappedPrototypes<FPPumpPrototype>
+---@field silos MappedPrototypes<FPSiloPrototype>
 ---@field wagons MappedPrototypesWithCategory<FPWagonPrototype>
 ---@field modules MappedPrototypesWithCategory<FPModulePrototype>
 ---@field beacons MappedPrototypes<FPBeaconPrototype>
@@ -211,15 +212,9 @@ end
 ---@return { [string]: boolean }
 local function generate_productivity_recipes()
     local productivity_recipes = {}
-    for _, technology in pairs(prototypes.technology) do
-        for _, effect in pairs(technology.effects or {}) do
-            if effect.type == "mining-drill-productivity-bonus" then
-                productivity_recipes["custom-mining"] = true
-            elseif effect.type == "change-recipe-productivity" then
-                if PROTOTYPE_MAPS.recipes[effect.recipe] then
-                    productivity_recipes[effect.recipe] = true
-                end
-            end
+    for _, recipe in pairs(storage.prototypes.recipes) do
+        if recipe.productivity_recipe then
+            productivity_recipes[recipe.productivity_recipe] = true
         end
     end
     return productivity_recipes
@@ -244,7 +239,6 @@ function loader.run(skip_check)
     PRODUCTIVITY_RECIPES = generate_productivity_recipes()
 
     MULTIPLE_PLANETS = #storage.prototypes.locations > 1
-    MULTIPLE_QUALITIES = #storage.prototypes.qualities > 1
 end
 
 return loader

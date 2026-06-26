@@ -232,24 +232,23 @@ end
 
 local function close_beacon_dialog(player, action)
     local modal_data = util.globals.modal_data(player)  --[[@as table]]
-    local factory = util.context.get(player, "Factory")
 
     if action == "submit" then
         local beacon = modal_data.object
         beacon.total_amount = util.gui.parse_expression_field(modal_data.modal_elements.beacon_total, true)
 
-        solver.update(player, factory)
-        util.gui.run_refresh(player, "factory")
+        solver.update(player)
+        util.gui.run_refresh(player, "production")
 
     elseif action == "delete" then
         modal_data.line:set_beacon(nil)
-        solver.update(player, factory)
-        util.gui.run_refresh(player, "factory")
+        solver.update(player)
+        util.gui.run_refresh(player, "production")
 
     else -- action == "cancel"
         modal_data.line:set_beacon(modal_data.backup_beacon)  -- could be nil
         -- Need to refresh so the buttons have the 'new' backup beacon for further actions
-        util.gui.run_refresh(player, "production_detail")
+        util.gui.run_refresh(player, "production")
     end
 end
 
@@ -301,6 +300,24 @@ listeners.gui = {
     }
 }
 
+listeners.player = {
+    on_player_cursor_stack_changed = (function(player, _)
+        if util.globals.ui_state(player).active_selector == nil then return end
+
+        -- If the cursor stack is not valid_for_read, it's empty, thus the selector has been put away
+        if not player.cursor_stack.valid_for_read or player.cursor_stack.name ~= "fp_beacon_selector" then
+            modal_dialog.leave_selection_mode(player)
+        end
+    end),
+
+    on_player_selected_area = (function(player, event)
+        local active_selector = util.globals.ui_state(player).active_selector
+        if event.item == "fp_beacon_selector" and active_selector ~= nil then
+            handle_beacon_selection(player, event.entities)
+        end
+    end)
+}
+
 listeners.dialog = {
     dialog = "beacon",
     metadata = (function(modal_data)
@@ -322,24 +339,6 @@ listeners.global = {
     beacon_defaults_refresher = refresh_defaults_frame,
     beacon_submit_checker = update_dialog_submit_button,
     reset_beacon = reset_beacon
-}
-
-listeners.misc = {
-    on_player_cursor_stack_changed = (function(player, _)
-        if util.globals.ui_state(player).active_selector == nil then return end
-
-        -- If the cursor stack is not valid_for_read, it's empty, thus the selector has been put away
-        if not player.cursor_stack.valid_for_read or player.cursor_stack.name ~= "fp_beacon_selector" then
-            modal_dialog.leave_selection_mode(player)
-        end
-    end),
-
-    on_player_selected_area = (function(player, event)
-        local active_selector = util.globals.ui_state(player).active_selector
-        if event.item == "fp_beacon_selector" and active_selector ~= nil then
-            handle_beacon_selection(player, event.entities)
-        end
-    end)
 }
 
 return { listeners }

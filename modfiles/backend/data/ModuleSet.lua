@@ -174,7 +174,7 @@ end
 
 ---@return IntegerModuleEffects
 function ModuleSet:get_effects()
-    local effects = ftable.shallow_copy(BLANK_EFFECTS)
+    local effects = util.flib.shallow_copy(util.effects.blank)
     for module in self:iterator() do
         for name, effect in pairs(module.total_effects) do
             effects[name] = effects[name] + effect  -- doesn't create decimals
@@ -187,36 +187,7 @@ end
 ---@param module_proto FPModulePrototype
 ---@return boolean compatible
 function ModuleSet:check_compatibility(module_proto)
-    if not self.parent:uses_effects() then
-        return false
-    else
-        local compatible = true
-        local entity, recipe = self.parent.proto, self.parent.parent.recipe.proto
-        -- Any non-existing allowed list means all modules are allowed
-
-        local function check_effect_compatibility(allowed_effects)
-            if allowed_effects == nil then return end
-            for name, value in pairs(module_proto.effects) do
-                -- Effects only need to be in the allowed list if they are considered positive
-                if not allowed_effects[name] and util.effects.is_positive(name, value) then
-                    compatible = false
-                end
-            end
-        end
-        check_effect_compatibility(entity.allowed_effects)
-        check_effect_compatibility(recipe.allowed_effects)
-
-        local function check_category_compatibility(allowed_categories)
-            if allowed_categories == nil then return end
-            if not allowed_categories[module_proto.category] then
-                compatible = false
-            end
-        end
-        check_category_compatibility(entity.allowed_module_categories)
-        check_category_compatibility(recipe.allowed_module_categories)
-
-        return compatible
-    end
+    return self.parent:uses_effects() and self.parent:allows_module(module_proto)
 end
 
 ---@return ItemPrototypeFilter[]
@@ -310,11 +281,12 @@ end
 ---@field class "ModuleSet"
 ---@field modules PackedModule[]?
 
+---@param full boolean
 ---@return PackedModuleSet packed_self
-function ModuleSet:pack()
+function ModuleSet:pack(full)
     return {
         class = self.class,
-        modules = self:_pack()
+        modules = self:_pack(full)
     }
 end
 

@@ -128,11 +128,11 @@ local function open_item_dialog(player, modal_data)
     line.style.margin = {8, 0, 8, 0}
 
     local flow_defaults = content_frame.add{type="flow", direction="horizontal"}
-    flow_defaults.add{type="empty-widget", style="flib_horizontal_pusher"}
+    flow_defaults.add{type="empty-widget", style="fflib_horizontal_pusher"}
     local frame_defaults = flow_defaults.add{type="frame", style="deep_frame_in_shallow_frame"}
     local table_defaults = frame_defaults.add{type="table", style="table_with_selection", column_count=2}
     modal_data.modal_elements["defaults_table"] = table_defaults
-    flow_defaults.add{type="empty-widget", style="flib_horizontal_pusher"}
+    flow_defaults.add{type="empty-widget", style="fflib_horizontal_pusher"}
 
     modal_data.defaults = util.globals.preferences(player).default_temperatures[modal_data.name]
     refresh_defaults_table(player)
@@ -160,7 +160,7 @@ local function close_item_dialog(player, action)
         end
 
         solver.update(player)
-        util.gui.run_refresh(player, "factory")
+        util.gui.run_refresh(player, "production")
     end
 end
 

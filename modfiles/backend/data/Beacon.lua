@@ -48,6 +48,11 @@ function Beacon:elem_value()
 end
 
 
+---@return boolean
+function Beacon:is_mono_beacon()
+    return (#self.proto.profile == 2 and self.proto.profile[2] == 0)
+end
+
 ---@return double profile_multiplier
 function Beacon:profile_multiplier()
     if self.amount == 0 then
@@ -81,16 +86,16 @@ function Beacon:summarize_effects()
     self.parent:summarize_effects()
 end
 
-
----@return boolean uses_effects
+---@return boolean
 function Beacon:uses_effects()
-    -- This method is here for ModuleSet to use generically
     return self.parent:uses_beacon_effects()
 end
 
+---@param proto FPModulePrototype
 ---@return boolean
-function Beacon:is_mono_beacon()
-    return (#self.proto.profile == 2 and self.proto.profile[2] == 0)
+function Beacon:allows_module(proto)
+    return util.effects.is_compatible(self.proto, proto) and
+           self.parent.machine:allows_module(proto)
 end
 
 
@@ -104,10 +109,10 @@ end
 function Beacon:get_module_limit()
     local limit = self.proto.module_limit
 
-    if self.proto.quality_affects_module_slots then
-        return limit + self.quality_proto.beacon_module_slots_bonus
-    else
+    if not self.proto.quality_affects_module_slots then
         return limit
+    else
+        return limit + self.quality_proto.beacon_module_slots_bonus
     end
 end
 
@@ -154,15 +159,16 @@ end
 ---@field total_amount number?
 ---@field module_set PackedModuleSet
 
+---@param full boolean
 ---@return PackedBeacon packed_self
-function Beacon:pack()
+function Beacon:pack(full)
     return {
         class = self.class,
         proto = prototyper.util.simplify_prototype(self.proto, nil),
         quality_proto = prototyper.util.simplify_prototype(self.quality_proto, nil),
         amount = self.amount,
         total_amount = self.total_amount,
-        module_set = self.module_set:pack()
+        module_set = self.module_set:pack(full)
     }
 end
 

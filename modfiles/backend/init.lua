@@ -1,104 +1,13 @@
 local Realm = require("backend.data.Realm")
 
 local loader = require("backend.handlers.loader")
-local migrator = require("backend.handlers.migrator")
+local migrator = require("backend.migrations.migrator")
 require("backend.handlers.prototyper")
 require("backend.handlers.defaults")
-require("backend.handlers.screenshotter")
+require("backend.handlers.integrator")
+require("backend.handlers.interface")
 
-require("backend.calculation.solver")
-
-
----@class PreferencesTable
----@field timescale Timescale
----@field pause_on_interface boolean
----@field utility_scopes { components: "Factory" | "Floor" }
----@field recipe_filters { disabled: boolean, hidden: boolean }
----@field compact_ingredients boolean
----@field fold_out_subfloors boolean
----@field products_per_row integer
----@field factory_list_rows integer
----@field compact_width_percentage integer
----@field show_gui_button boolean
----@field attach_factory_products boolean
----@field skip_factory_naming boolean
----@field prefer_matrix_solver boolean
----@field show_floor_items boolean
----@field ingredient_satisfaction boolean
----@field calculate_emissions boolean
----@field ignore_barreling_recipes boolean
----@field ignore_recycling_recipes boolean
----@field done_column boolean
----@field percentage_column boolean
----@field line_comment_column boolean
----@field item_views ItemViewPreferences
----@field belts_or_lanes "belts" | "lanes"
----@field default_machines PrototypeDefaultWithCategory
----@field default_fuels PrototypeDefaultWithCategory
----@field default_beacons DefaultPrototype
----@field default_belts DefaultPrototype
----@field default_wagons PrototypeDefaultWithCategory
----@field default_temperatures TemperatureDefaultMap
-
----@alias Timescale 1 | 60
-
----@param player_table PlayerTable
-function reload_preferences(player_table)
-    -- Reloads the user preferences, incorporating previous preferences if possible
-    local player_preferences = player_table.preferences or {}
-    local updated_prefs = {}
-
-    local function reload(name, default)
-        -- Needs to be longform-if because true is a valid default
-        if player_preferences[name] == nil then
-            updated_prefs[name] = default
-        else
-            updated_prefs[name] = player_preferences[name]
-        end
-    end
-
-    reload("timescale", 60)
-    reload("pause_on_interface", false)
-    reload("utility_scopes", {components = "Factory"})
-    reload("recipe_filters", {disabled = false, hidden = false})
-    reload("compact_ingredients", false)
-    reload("fold_out_subfloors", false)
-
-    -- Main dimensions are maxed, to be shrinkwrapped down
-    reload("products_per_row", 10)
-    reload("factory_list_rows", 32)
-    reload("compact_width_percentage", 26)
-
-    reload("show_gui_button", true)
-    reload("skip_factory_naming", true)
-    reload("attach_factory_products", false)
-    reload("prefer_matrix_solver", false)
-    reload("show_floor_items", true)
-    reload("ingredient_satisfaction", false)
-    reload("calculate_emissions", false)
-    reload("ignore_barreling_recipes", false)
-    reload("ignore_recycling_recipes", false)
-
-    reload("done_column", true)
-    reload("percentage_column", false)
-    reload("line_comment_column", false)
-
-    reload("item_views", item_views.default_preferences())
-
-    reload("belts_or_lanes", "belts")
-
-    reload("default_machines", defaults.get_fallback("machines"))
-    reload("default_fuels", defaults.get_fallback("fuels"))
-    reload("default_beacons", defaults.get_fallback("beacons"))
-    reload("default_belts", defaults.get_fallback("belts"))
-    reload("default_pumps", defaults.get_fallback("pumps"))
-    reload("default_wagons", defaults.get_fallback("wagons"))
-
-    reload("default_temperatures", util.temperature.get_fallback())
-
-    player_table.preferences = updated_prefs
-end
-
+local dev_export_string = "eNrdVkuPnDAM/i85DyMew/PYQ0+tVKnHaoRCMLNRE8KGsO1oxH+vA8wUmJ3VrratdssJG3+2P9sxORH42ShtcqnKFgzJTqSgLZCM+Ft368VkQ0oougMtaWNAT/oA1SDggRooHU25aOeASvACZZSirYvyfUcFN8eFCWVG6WMjaF1fvHrWuG0oA4ceZin0Z3sOGOfbiTBBWxvx4+gFUTWVFvCBtpyhWIgOGs1rg1YnhNfKWCjBT41WZccMf8CM8kLVfLSY1Ev/X0bliDLKFmcKhOSZ0YhmDuOaddwaMSzHweaTEW5A2tJRQ3NzbGBStZYgl43gFYeSZEZ30NsKV7yGMi8slErV1dadhvuOa1RPmszbRssnTkI3dXdhmEau60VRGke70EviII5TP42SOOw3z2HDkYlzAKqdH3cA4h9QcbdJsHxSP9yFvh+nieu6SbBLEt8P0yBKkjTaJbsAuew3xKgmr4RS2mZ/GYNBsSE4kJh85uEb5rBs5SfUDIkw3kD+rHbOGY+4G5zPI6Xqs/mosQFLhXGziooWNoTauYMRhzDQDGozjLrnuhsiKbuzac6ofZ5U1z3D7yALJHpwJpwTLBv3m1S7YjMBbtCZjutVkWqlJRUrV6Mxv+WrUsgxF1xiRSfauGg6Afm0bC5EB+1XsIUfLZb9G78/dhKrijMONTs6I87xV2W4GKyrMIX560U4D73f73sUmZISrEzI/Hg+PaHDEcV1aeDNT2Zr0LNTdbqmQ6BZL1oJwuDIvqV5rDq7NGbbpBs24DoaU3S1GNkdSM6uMrD+Ho3ev2j2T/0Ts7LaeP7LN971yn93685btUPT6q3N1p/q93+zG8Z/Ev5m3816eFUL98PGf+rCihfg76+8sFrpZfcim+i+/wV3PxDb"
 
 ---@class UIStateTable
 ---@field main_dialog_dimensions DisplayResolution?
@@ -116,7 +25,6 @@ end
 ---@field active_selector string?
 ---@field compact_view boolean
 ---@field districts_view boolean
----@field recalculate_on_factory_change boolean
 
 ---@class LastAction
 ---@field action_name string
@@ -142,8 +50,7 @@ local function reset_ui_state(player_table)
         active_selector = nil,
 
         compact_view = false,
-        districts_view = false,
-        recalculate_on_factory_change = false
+        districts_view = false
     }
 end
 
@@ -165,7 +72,7 @@ local function player_init(player)
     util.context.init(player_table)
     util.context.set(player, player_table.realm.first)
 
-    reload_preferences(player_table)
+    util.preferences.reload(player_table)
     reset_ui_state(player_table)
 
     -- Set default fuel to coal because anything else is awkward
@@ -174,8 +81,8 @@ local function player_init(player)
     util.gui.toggle_mod_gui(player)
     util.nth_tick.register((game.tick + 1), "shrinkwrap_interface", {player_index=player.index})
 
-    if DEBUGGER_ACTIVE then
-        util.porter.add_factories(player, DEV_EXPORT_STRING)
+    if DEVELOPER_MODE then
+        util.porter.add_factories(player, dev_export_string)
 
         player.force.research_all_technologies()
         player.clear_recipe_notifications()
@@ -187,7 +94,7 @@ end
 local function refresh_player_table(player)
     local player_table = storage.players[player.index]
 
-    reload_preferences(player_table)
+    util.preferences.reload(player_table)
     reset_ui_state(player_table)
 
     defaults.migrate(player_table)
@@ -228,18 +135,16 @@ end
 ---@class GlobalTable
 ---@field players { [PlayerIndex]: PlayerTable }
 ---@field prototypes PrototypeLists
+---@field integrations IntegrationsTable
 ---@field next_object_ID integer
 ---@field nth_tick_events { [Tick]: NthTickEvent }
 ---@field installed_mods ModToVersion
 storage = {}  -- just for the type checker, doesn't do anything
 
 local function global_init()
-    -- Disable debugging actions when taking screenshots
-    if remote.interfaces["screenshotter_output"] then DEBUGGER_ACTIVE = false end
-
     -- Set up a new save for development if necessary
     local freeplay = remote.interfaces["freeplay"]
-    if DEBUGGER_ACTIVE and freeplay then  -- Disable freeplay popup-message
+    if DEVELOPER_MODE and freeplay then  -- Disable freeplay popup-message
         if freeplay["set_skip_intro"] then remote.call("freeplay", "set_skip_intro", true) end
         if freeplay["set_disable_crashsite"] then remote.call("freeplay", "set_disable_crashsite", true) end
     end
@@ -249,18 +154,20 @@ local function global_init()
     storage.nth_tick_events = {}  -- Save metadata about currently registered on_nth_tick events
 
     storage.prototypes = {}  -- Table containing all relevant prototypes indexed by ID
+    storage.integrations = {}  -- Table containing all integration data collected from other mods
     prototyper.build()  -- Generate all relevant prototypes and save them in storage
     run_on_load(true)  -- Run loader which creates useful indexes of prototype data
     generate_object_index()  -- This just initializes the OBJECT_INDEX variable
 
     storage.installed_mods = script.active_mods  -- Retain current modset to detect mod changes for invalid factories
 
-    translator.on_init()  -- Initialize flib's translation module
+    util.translator.on_init()  -- Initialize flib's translation module
     prototyper.util.build_translation_dictionaries()
 
     for _, player in pairs(game.players) do player_init(player) end
-end
 
+    if test_runner then test_runner() end  -- Run if a test mod is active
+end
 
 -- Prompts migrations, a GUI and prototype reload, and a validity check on all factories
 local function handle_configuration_change()
@@ -274,6 +181,7 @@ local function handle_configuration_change()
     end
 
     storage.prototypes = {}
+    storage.integrations = {}
     prototyper.build()
     run_on_load(true)
 
@@ -290,18 +198,19 @@ local function handle_configuration_change()
         -- Update calculations in case prototypes changed in a relevant way
         for district in storage.players[index].realm:iterator() do
             district.needs_refresh = true
-            for factory in district:iterator() do solver.update(player, factory) end
+            for factory in district:iterator() do
+                solver.update(player, factory)
+            end
         end
     end
 
     storage.installed_mods = script.active_mods
 
-    translator.on_configuration_changed()
+    util.translator.on_configuration_changed()
     prototyper.util.build_translation_dictionaries()
 end
 
 
--- ** TOP LEVEL **
 script.on_load(run_on_load)
 
 script.on_init(global_init)
@@ -309,48 +218,50 @@ script.on_init(global_init)
 script.on_configuration_changed(handle_configuration_change)
 
 
--- ** PLAYER DATA **
-script.on_event(defines.events.on_player_created, function(event)
-    local player = game.get_player(event.player_index)  ---@cast player -nil
-    player_init(player)
-end)
-
-script.on_event(defines.events.on_player_removed, function(event)
-    storage.players[event.player_index] = nil
-end)
-
-
--- ** TRANSLATION **
--- Required by flib's translation module
-script.on_event(defines.events.on_tick, translator.on_tick)
-script.on_event(defines.events.on_player_joined_game, translator.on_player_joined_game)
-script.on_event(defines.events.on_string_translated, translator.on_string_translated)
-
----@param event GuiEvent
-local function dictionaries_ready(event)
-    local player = game.get_player(event.player_index)  ---@cast player -nil
-    local player_table = util.globals.player_table(player)
-
-    player_table.translation_tables = translator.get_all(event.player_index)
-    modal_dialog.set_searchfield_state(player)  -- enables searchfields if possible
-end
-
--- Save translations once they are complete
-script.on_event(translator.on_player_dictionaries_ready, dictionaries_ready)
-
-
 -- ** COMMANDS **
--- These are existence-checked for resiliance to double-loading from test harness
-if not commands.commands['fp-restart-translation'] then
-    commands.add_command("fp-restart-translation", {"command-help.fp_restart_translation"}, function()
-        translator.on_init()
-        prototyper.util.build_translation_dictionaries()
+commands.add_command("fp-restart-translation", {"command-help.fp_restart_translation"}, function()
+    util.translator.on_init()
+    prototyper.util.build_translation_dictionaries()
+end)
+commands.add_command("fp-shrinkwrap-interface", {"command-help.fp_shrinkwrap_interface"}, function(command)
+    if command.player_index then
+        util.nth_tick.register((game.tick + 1), "shrinkwrap_interface", {player_index=command.player_index})
+    end
+end)
+
+
+-- ** EVENTS **
+local listeners = {}
+
+listeners.player = {
+    on_player_dictionaries_ready = (function(player, _)
+        local player_table = util.globals.player_table(player)
+        player_table.translation_tables = util.translator.get_all(player.index)
+
+        modal_dialog.set_searchfield_state(player)  -- enables searchfields if possible
+    end),
+
+    on_player_joined_game = (function(_, event)
+        util.translator.on_player_joined_game(event)
+    end),
+    on_player_locale_changed = (function(_, event)
+        util.translator.on_player_locale_changed(event)
+    end),
+    on_string_translated = (function(_, event)
+        util.translator.on_string_translated(event)
     end)
-end
-if not commands.commands['fp-shrinkwrap-interface'] then
-    commands.add_command("fp-shrinkwrap-interface", {"command-help.fp_shrinkwrap_interface"}, function(command)
-        if command.player_index then
-            util.nth_tick.register((game.tick + 1), "shrinkwrap_interface", {player_index=command.player_index})
-        end
-    end)
-end
+}
+
+listeners.game = {
+    on_player_created = (function(event)
+        local player = game.get_player(event.player_index)
+        player_init(player)
+    end),
+    on_player_removed = (function(event)
+        storage.players[event.player_index] = nil
+    end),
+
+    on_tick = util.translator.on_tick
+}
+
+return { listeners }

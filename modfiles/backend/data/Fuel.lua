@@ -48,6 +48,20 @@ function Fuel:set_proto(proto, player)
 end
 
 
+---@return boolean
+function Fuel:is_temperature_configured()
+    return (self.proto.type ~= "fluid" or self.temperature ~= nil)
+end
+
+---@return string
+function Fuel:get_name_with_temperature()
+    if self.proto.type ~= "fluid" or self.temperature == nil then
+        return self.proto.name
+    else
+        return self.proto.name .. "-" .. self.temperature
+    end
+end
+
 function Fuel:build_temperature_data()
     self.temperature_data = nil
 
@@ -93,13 +107,15 @@ end
 ---@field proto FPFuelPrototype
 ---@field temperature float?
 
+---@param full boolean
 ---@return PackedFuel packed_self
-function Fuel:pack()
+function Fuel:pack(full)
     return {
         class = self.class,
         proto = prototyper.util.simplify_prototype(self.proto, "combined_category"),
         temperature = self.temperature,
-        amount = self.amount  -- only used for paste
+
+        amount = (full) and self.amount or nil
     }
 end
 

@@ -139,7 +139,7 @@ local function create_choice_frame(parent_frame, label_caption)
     flow_choices.style.vertical_align = "center"
 
     flow_choices.add{type="label", caption=label_caption, style="semibold_label"}
-    flow_choices.add{type="empty-widget", style="flib_horizontal_pusher"}
+    flow_choices.add{type="empty-widget", style="fflib_horizontal_pusher"}
 
     return flow_choices
 end
@@ -292,14 +292,14 @@ local function close_machine_dialog(player, action)
         end
 
         solver.update(player)
-        util.gui.run_refresh(player, "factory")
+        util.gui.run_refresh(player, "production")
 
     else  -- action == "cancel"
         line.machine = modal_data.machine_backup
         line.machine.module_set:normalize({effects=true})
         line:set_beacon(modal_data.beacon_backup)
         -- Need to refresh so the buttons have the 'new' backup machine for further actions
-        util.gui.run_refresh(player, "production_detail")
+        util.gui.run_refresh(player, "production")
     end
 end
 

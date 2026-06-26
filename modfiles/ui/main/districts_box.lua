@@ -80,17 +80,17 @@ local function build_items_flow(player, parent, district)
         return table_items
     end
 
-    items_flow.add{type="empty-widget", style="flib_horizontal_pusher"}
+    items_flow.add{type="empty-widget", style="fflib_horizontal_pusher"}
     local prod_table = build_item_flow("product")
-    items_flow.add{type="empty-widget", style="flib_horizontal_pusher"}
-    items_flow.add{type="empty-widget", style="flib_horizontal_pusher"}
+    items_flow.add{type="empty-widget", style="fflib_horizontal_pusher"}
+    items_flow.add{type="empty-widget", style="fflib_horizontal_pusher"}
     local ingr_table = build_item_flow("ingredient")
-    items_flow.add{type="empty-widget", style="flib_horizontal_pusher"}
+    items_flow.add{type="empty-widget", style="fflib_horizontal_pusher"}
 
     local tooltips = util.globals.ui_state(player).tooltips
     local color_map = {
-        production = {half="flib_slot_button_cyan", full="flib_slot_button_blue"},
-        consumption = {half="flib_slot_button_yellow", full="flib_slot_button_red"}
+        production = {half="fflib_slot_button_cyan", full="fflib_slot_button_blue"},
+        consumption = {half="fflib_slot_button_yellow", full="fflib_slot_button_red"}
     }
 
     for item in district.item_set:iterator() do
@@ -99,7 +99,7 @@ local function build_items_flow(player, parent, district)
 
         local action_line = nil
         local tags = {mod="fp", item_id=item.id, on_gui_hover="set_tooltip", context="districts_box"}
-        local diff_string, amount_tooltip = nil, nil
+        local diff_number, amount_tooltip = nil, nil
         local total_tooltip = nil
 
         if item.proto.type == "entity" and item.proto.special then
@@ -115,7 +115,7 @@ local function build_items_flow(player, parent, district)
             tags.on_gui_click = action
             action_line = {"", "\n", MODIFIER_ACTIONS[action].tooltip}
 
-            diff_string, amount_tooltip = item_views.process_item(player, item, item.abs_diff, nil)
+            diff_number, amount_tooltip = item_views.process_item(player, item, item.abs_diff, nil)
             _, total_tooltip = item_views.process_item(player, item, total_amount, nil)
         end
 
@@ -127,7 +127,7 @@ local function build_items_flow(player, parent, district)
         local total_line = {"fp.item_amount_total", total_tooltip}
         local tooltip = {"", title_line, diff_line, total_line, action_line}
 
-        local button = relevant_table.add{type="sprite-button", number=diff_string, style=style,
+        local button = relevant_table.add{type="sprite-button", number=diff_number, style=style,
             sprite=item.proto.sprite, tags=tags, raise_hover_events=true, mouse_button_filter={"left-and-right"}}
         tooltips.districts_box[button.index] = tooltip
     end
@@ -210,7 +210,7 @@ local function build_district_frame(player, district, location_items)
     end
 
     -- Item toggle
-    subheader.add{type="empty-widget", style="flib_horizontal_pusher"}
+    subheader.add{type="empty-widget", style="fflib_horizontal_pusher"}
     local sprite = (district.collapsed) and "fp_expand" or "fp_collapse"
     local items_toggle = subheader.add{type="sprite-button", sprite=sprite,
         tags={mod="fp", on_gui_click="toggle_district_items", district_id=district.id},
@@ -223,7 +223,7 @@ local function build_district_frame(player, district, location_items)
     elements[district.id]["delete_toggle"] = delete_toggle
     local delete_confirm = subheader.add{type="sprite-button", sprite="utility/check_mark",
         tags={mod="fp", on_gui_click="delete_district_confirm", district_id=district.id},
-        style="flib_tool_button_light_green", visible=false, mouse_button_filter={"left"}}
+        style="fflib_tool_button_light_green", visible=false, mouse_button_filter={"left"}}
     delete_confirm.style.padding = 0
     elements[district.id]["delete_confirm"] = delete_confirm
 
@@ -260,7 +260,7 @@ local function build_districts_box(player)
     main_elements.districts_box = {}
 
     local parent_flow = main_elements.flows.right_vertical
-    local scroll_pane = parent_flow.add{type="scroll-pane", style="flib_naked_scroll_pane_no_padding"}
+    local scroll_pane = parent_flow.add{type="scroll-pane", style="fflib_naked_scroll_pane_no_padding"}
     scroll_pane.style.top_margin = -2
     scroll_pane.style.extra_right_margin_when_activated = -12
     local flow_vertical = scroll_pane.add{type="flow", direction="vertical"}
@@ -387,14 +387,14 @@ listeners.gui = {
     },
 }
 
-listeners.misc = {
+listeners.player = {
     build_gui_element = (function(player, event)
         if event.trigger == "main_dialog" then
             build_districts_box(player)
         end
     end),
     refresh_gui_element = (function(player, event)
-        local triggers = {districts_box=true, production=true, factory=true, all=true}
+        local triggers = {districts_box=true, factory=true, all=true}
         if triggers[event.trigger] then refresh_districts_box(player) end
     end)
 }

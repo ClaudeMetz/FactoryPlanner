@@ -16,7 +16,7 @@ local function add_utility_box(player, modal_elements, parent_name, type, show_t
     label_title.style.top_margin = -2
 
     -- Empty flow for custom controls
-    flow_title_bar.add{type="empty-widget", style="flib_horizontal_pusher"}
+    flow_title_bar.add{type="empty-widget", style="fflib_horizontal_pusher"}
     local flow_custom = flow_title_bar.add{type="flow"}
     flow_custom.style.right_margin = 12
 
@@ -102,9 +102,9 @@ function utility_structures.components(player, modal_data)
                 end
 
                 local button_style = nil
-                if amount_in_inventory == 0 then button_style = "flib_slot_button_red"
-                elseif missing_amount > 0 then button_style = "flib_slot_button_yellow"
-                else button_style = "flib_slot_button_green" end
+                if amount_in_inventory == 0 then button_style = "fflib_slot_button_red"
+                elseif missing_amount > 0 then button_style = "fflib_slot_button_yellow"
+                else button_style = "fflib_slot_button_green" end
 
                 local title_line = (not quality_proto.always_show) and {"fp.tt_title",proto.localised_name}
                     or {"fp.tt_title_with_note", proto.localised_name, quality_proto.rich_text}
@@ -236,7 +236,7 @@ function utility_structures.productivity_boni(player, modal_data)
         flow_import.style.vertical_align = "center"
         flow_import.style.bottom_margin = 8
         flow_import.add{type="label", caption={"fp.import_from"}, style="bold_label"}
-        flow_import.add{type="empty-widget", style="flib_horizontal_pusher"}
+        flow_import.add{type="empty-widget", style="fflib_horizontal_pusher"}
 
         local factory_names = {}
         modal_data.factory_index = {}  -- used to find the factory later
@@ -253,7 +253,7 @@ function utility_structures.productivity_boni(player, modal_data)
         modal_data.modal_elements["factory_dropdown"] = dropdown_factory
 
         flow_import.add{type="sprite-button", tags={mod="fp", on_gui_click="import_productivity_boni"},
-            style="flib_tool_button_light_green", tooltip={"fp.import_from_tt"}, enabled=enabled,
+            style="fflib_tool_button_light_green", tooltip={"fp.import_from_tt"}, enabled=enabled,
             sprite="utility/check_mark", mouse_button_filter={"left"}}
 
         local table = boni_box.add{type="table", column_count=3}
@@ -262,7 +262,7 @@ function utility_structures.productivity_boni(player, modal_data)
         table.style.horizontal_spacing = 16
         modal_data.modal_elements["productivity_boni_table"] = table
 
-        boni_box.add{type="empty-widget", style="flib_vertical_pusher"}
+        boni_box.add{type="empty-widget", style="fflib_vertical_pusher"}
     end
     local table = modal_data.modal_elements["productivity_boni_table"]
     table.clear()
@@ -272,23 +272,24 @@ function utility_structures.productivity_boni(player, modal_data)
     table.add{type="label", caption={"fp.custom"}, style="bold_label"}
 
     local force_recipes = player.force.recipes
-    for recipe_name in pairs(PRODUCTIVITY_RECIPES) do
+    for recipe_name, _ in pairs(PRODUCTIVITY_RECIPES) do
         if not force_recipes[recipe_name] or force_recipes[recipe_name].enabled then
-            local recipe_proto = prototyper.util.find("recipes", recipe_name, nil)  --[[@as FPRecipePrototype]]
             local caption = (recipe_name == "custom-mining")
                 and {"", "[img=utility/mining_drill_productivity_bonus_modifier_icon]  ", {"fp.mining_recipes"}}
-                or {"", "[recipe=" .. recipe_name .. "]  ", recipe_proto.localised_name}
+                or {"", "[recipe=" .. recipe_name .. "]  ", prototypes.recipe[recipe_name].localised_name}
             table.add{type="label", caption=caption}.style.width = 250
 
-            local productivity = util.get_recipe_productivity(player.force, recipe_name)
-            local percentage = math.floor(productivity + 1e-4)
+            local recipe_productivity = util.get_recipe_productivity(player.force, recipe_name)
+            local percentage = recipe_productivity * 100 / MAGIC_NUMBERS.effect_precision
             table.add{type="label", caption=(("%+d"):format(percentage) .. "%")}
 
             local current_bonus = current_factory.productivity_boni[recipe_name]
+            if current_bonus then current_bonus = current_bonus * 100 / MAGIC_NUMBERS.effect_precision end
             local textfield_bonus = table.add{type="textfield", text=current_bonus,
                 tags={mod="fp", on_gui_text_changed="productivity_bonus", recipe_name=recipe_name}}
-            util.gui.setup_numeric_textfield(textfield_bonus, false, false)
-            textfield_bonus.style.width = 52
+            util.gui.setup_numeric_textfield(textfield_bonus, true, false)
+            textfield_bonus.style.width = 68
+            textfield_bonus.style.horizontal_align = "center"
         end
     end
 end
@@ -441,7 +442,7 @@ local function import_productivity_boni(player, _, event)
     if not export_factory then return end  -- dropdown starts blank
 
     local import_factory = util.context.get(player, "Factory")  --[[@as Factory]]
-    import_factory.productivity_boni = ftable.deep_copy(export_factory.productivity_boni)
+    import_factory.productivity_boni = util.flib.deep_copy(export_factory.productivity_boni)
 
     utility_structures.productivity_boni(player, modal_data)
     modal_data.recalculate = true
@@ -465,9 +466,8 @@ end
 local function close_utility_dialog(player, _)
     local modal_data = util.globals.modal_data(player)  --[[@as table]]
     if modal_data.recalculate then
-        local factory = util.context.get(player, "Factory")  --[[@as Factory]]
-        solver.update(player, factory)
-        util.gui.run_refresh(player, "factory")
+        solver.update(player)
+        util.gui.run_refresh(player, "production")
     end
     modal_data.utility_inventory.destroy()
 end
@@ -527,11 +527,16 @@ listeners.gui = {
             handler = (function(player, tags, event)
                 local factory = util.context.get(player, "Factory")  --[[@as Factory]]
                 local bonus = tonumber(event.element.text)  -- nil if invalid or empty
-                factory.productivity_boni[tags.recipe_name] = bonus  -- textfield disallow decimals
+                if bonus then bonus = math.floor(bonus / 100 * MAGIC_NUMBERS.effect_precision + 1e-4) end
+                factory.productivity_boni[tags.recipe_name] = bonus
                 util.globals.modal_data(player).recalculate = true
             end)
         }
     }
+}
+
+listeners.player = {
+    on_player_main_inventory_changed = handle_inventory_change
 }
 
 listeners.dialog = {
@@ -544,8 +549,5 @@ listeners.dialog = {
     close = close_utility_dialog
 }
 
-listeners.misc = {
-    on_player_main_inventory_changed = handle_inventory_change
-}
 
 return { listeners }

@@ -1,0 +1,12 @@
+name: Mod CI
+on: [push, pull_request]
+jobs:
+  test:
+    runs-on: self-hosted
+    strategy:
+      matrix:
+        test: [save-create, generator, runtime]
+    steps:
+      - uses: actions/checkout@v5
+      - name: Run ${{ matrix.test }}
+        run: bash tests/run.sh ${{ matrix.test }}

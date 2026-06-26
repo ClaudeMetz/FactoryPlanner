@@ -14,7 +14,6 @@ local ModuleSet = require("backend.data.ModuleSet")
 ---@field amount number
 ---@field total_effects IntegerModuleEffects
 ---@field effects_tooltip LocalisedString
----@field recipe_effects IntegerModuleEffects?
 local Machine = Object.methods()
 Machine.__index = Machine
 script.register_metatable("Machine", Machine)
@@ -34,7 +33,6 @@ local function init(proto, parent)
         amount = 0,
         total_effects = nil,
         effects_tooltip = "",
-        recipe_effects = nil,
 
         parent = parent
     }, "Machine", Machine)  --[[@as Machine]]
@@ -82,32 +80,23 @@ function Machine:summarize_effects()
     local module_effects = self.module_set:get_effects()
     local machine_effects = self.proto.effect_receiver.base_effect
 
-    self.total_effects = util.effects.merge({module_effects, machine_effects, self.recipe_effects})
+    self.total_effects = util.effects.merge({module_effects, machine_effects})
     self.effects_tooltip = util.effects.format(module_effects,
-        {machine_effects=machine_effects, recipe_effects=self.recipe_effects})
+        {machine_effects=machine_effects, recipe_effects=self.parent.recipe.effects})
 
     self.parent:summarize_effects()
 end
 
----@return boolean uses_effects
+---@return boolean
 function Machine:uses_effects()
     return self.proto.effect_receiver.uses_module_effects
 end
 
---- Called when the solver runs because it's the most convenient spot for it
----@param force LuaForce
----@param factory Factory
-function Machine:update_recipe_effects(force, factory)
-    local recipe_proto = self.parent.recipe.proto
-
-    local recipe_name = nil
-    local drill = (self.proto.prototype_category == "mining_drill")
-    if drill and self.proto.uses_force_mining_productivity_bonus then recipe_name = "custom-mining"
-    elseif not recipe_proto.custom then recipe_name = recipe_proto.name
-    else return end  -- no recipe effects for custom recipes
-
-    self.recipe_effects = {productivity = factory:get_productivity_bonus(force, recipe_name)}
-    self:summarize_effects()
+---@param proto FPModulePrototype
+---@return boolean
+function Machine:allows_module(proto)
+    return util.effects.is_compatible(self.proto, proto) and
+           util.effects.is_compatible(self.parent.recipe.proto, proto)
 end
 
 
@@ -120,8 +109,8 @@ function Machine:get_speed()
         return speed
     elseif category == "boiler" or category == "offshore_pump" then
         return speed * self.quality_proto.default_multiplier
-    else  -- "assembling_machine" | "furnace" | "rocket_silo"
-        return speed * self.quality_proto.crafting_machine_speed_multiplier
+    else  -- "crafter"
+        return speed * self.proto.crafting_speed_quality_multiplier[self.quality_proto.name]
     end
 end
 
@@ -130,10 +119,14 @@ function Machine:get_energy_usage()
     local energy_usage = self.proto.energy_usage
     local category = self.proto.prototype_category
 
-    if category == "boiler" then
-        return energy_usage * self.quality_proto.default_multiplier
-    else  -- "assembling_machine" | "furnace" | "rocket_silo" | "mining_drill" | "offshore_pump" | nil
+    if category == nil or category == "mining_drill" or category == "offshore_pump" then
         return energy_usage
+    elseif category == "boiler" then
+        return energy_usage * self.quality_proto.default_multiplier
+    elseif not self.proto.quality_affects_energy_usage then
+        return energy_usage
+    else  -- "crafter"
+        return energy_usage * self.proto.energy_usage_quality_multiplier[self.quality_proto.name]
     end
 end
 
@@ -143,7 +136,7 @@ function Machine:get_resource_drain_rate()
 
     if self.proto.prototype_category == "mining_drill" then
         return resource_drain_rate * self.quality_proto.mining_drill_resource_drain_multiplier
-    else  -- "assembling_machine" | "furnace" | "rocket_silo" | "boiler"| "offshore_pump" | nil
+    else  -- "crafter" | "boiler"| "offshore_pump" | nil
         return resource_drain_rate
     end
 end
@@ -153,14 +146,14 @@ function Machine:get_module_limit()
     local limit = self.proto.module_limit
     local category = self.proto.prototype_category
 
-    if not self.proto.quality_affects_module_slots then
+    if category == nil or category == "boiler" or category == "offshore_pump" then
         return limit
-    elseif category == nil or category == "boiler" or category == "offshore_pump" then
+    elseif not self.proto.quality_affects_module_slots then
         return limit
     elseif category == "mining_drill" then
         return limit + self.quality_proto.mining_drill_module_slots_bonus
-    else  -- "assembling_machine" | "furnace" | "rocket_silo"
-        return limit + self.quality_proto.crafting_machine_module_slots_bonus
+    else  -- "crafter"
+        return limit + self.proto.module_slots_quality_bonus[self.quality_proto.name]
     end
 end
 
@@ -236,16 +229,19 @@ end
 ---@field fuel PackedFuel?
 ---@field module_set PackedModuleSet
 
+---@param full boolean
 ---@return PackedMachine packed_self
-function Machine:pack()
+function Machine:pack(full)
     return {
         class = self.class,
         proto = prototyper.util.simplify_prototype(self.proto, "combined_category"),
         quality_proto = prototyper.util.simplify_prototype(self.quality_proto, nil),
         limit = self.limit,
         force_limit = self.force_limit,
-        fuel = self.fuel and self.fuel:pack(),
-        module_set = self.module_set:pack()
+        fuel = self.fuel and self.fuel:pack(full),
+        module_set = self.module_set:pack(full),
+
+        amount = (full) and self.amount or nil
     }
 end
 

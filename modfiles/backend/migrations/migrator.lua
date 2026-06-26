@@ -8,35 +8,34 @@ local migrator = {}
 ---@alias MigrationObject PlayerTable | Factory | PackedFactory
 
 -- Returns a table containing all existing migrations in order
-local migration_masterlist = {  ---@type MigrationMasterList
+---@type MigrationMasterList
+local migration_masterlist = {
     [1] = {version="1.0.6", migration=require("backend.migrations.migration_1_0_6")},
     [2] = {version="1.1.5", migration=require("backend.migrations.migration_1_1_5")},
     [3] = {version="1.1.14", migration=require("backend.migrations.migration_1_1_14")},
     [4] = {version="1.1.27", migration=require("backend.migrations.migration_1_1_27")},
     [5] = {version="1.1.42", migration=require("backend.migrations.migration_1_1_42")},
     [6] = {version="1.1.59", migration=require("backend.migrations.migration_1_1_59")},
-    [7] = {version="1.1.61", migration=require("backend.migrations.migration_1_1_61")},
-    [8] = {version="1.1.65", migration=require("backend.migrations.migration_1_1_65")},
-    [9] = {version="1.1.66", migration=require("backend.migrations.migration_1_1_66")},
-    [10] = {version="1.1.67", migration=require("backend.migrations.migration_1_1_67")},
-    [11] = {version="1.1.73", migration=require("backend.migrations.migration_1_1_73")},
-    [12] = {version="1.2.1", migration=require("backend.migrations.migration_1_2_1")},
-    [13] = {version="1.2.2", migration=require("backend.migrations.migration_1_2_2")},
-    [14] = {version="1.2.4", migration=require("backend.migrations.migration_1_2_4")},
-    [15] = {version="1.2.6", migration=require("backend.migrations.migration_1_2_6")},
-    [16] = {version="1.2.8", migration=require("backend.migrations.migration_1_2_8")},
-    [17] = {version="1.2.15", migration=require("backend.migrations.migration_1_2_15")},
-    [18] = {version="2.0.2", migration=require("backend.migrations.migration_2_0_2")},
-    [19] = {version="2.0.6", migration=require("backend.migrations.migration_2_0_6")},
-    [20] = {version="2.0.8", migration=require("backend.migrations.migration_2_0_8")},
-    [21] = {version="2.0.16", migration=require("backend.migrations.migration_2_0_16")},
-    [22] = {version="2.0.21", migration=require("backend.migrations.migration_2_0_21")},
-    [23] = {version="2.0.26", migration=require("backend.migrations.migration_2_0_26")},
-    [24] = {version="2.0.39", migration=require("backend.migrations.migration_2_0_39")},
-    [25] = {version="2.0.41", migration=require("backend.migrations.migration_2_0_41")},
-    [26] = {version="2.0.43", migration=require("backend.migrations.migration_2_0_43")},
-    [27] = {version="2.0.44", migration=require("backend.migrations.migration_2_0_44")},
-    [28] = {version="2.0.45", migration=require("backend.migrations.migration_2_0_45")},
+    [7] = {version="1.1.65", migration=require("backend.migrations.migration_1_1_65")},
+    [8] = {version="1.1.67", migration=require("backend.migrations.migration_1_1_67")},
+    [9] = {version="1.1.73", migration=require("backend.migrations.migration_1_1_73")},
+    [10] = {version="1.2.1", migration=require("backend.migrations.migration_1_2_1")},
+    [11] = {version="1.2.2", migration=require("backend.migrations.migration_1_2_2")},
+    [12] = {version="1.2.4", migration=require("backend.migrations.migration_1_2_4")},
+    [13] = {version="1.2.6", migration=require("backend.migrations.migration_1_2_6")},
+    [14] = {version="2.0.2", migration=require("backend.migrations.migration_2_0_2")},
+    [15] = {version="2.0.6", migration=require("backend.migrations.migration_2_0_6")},
+    [16] = {version="2.0.8", migration=require("backend.migrations.migration_2_0_8")},
+    [17] = {version="2.0.16", migration=require("backend.migrations.migration_2_0_16")},
+    [18] = {version="2.0.21", migration=require("backend.migrations.migration_2_0_21")},
+    [19] = {version="2.0.26", migration=require("backend.migrations.migration_2_0_26")},
+    [20] = {version="2.0.39", migration=require("backend.migrations.migration_2_0_39")},
+    [21] = {version="2.0.41", migration=require("backend.migrations.migration_2_0_41")},
+    [22] = {version="2.0.43", migration=require("backend.migrations.migration_2_0_43")},
+    [23] = {version="2.0.44", migration=require("backend.migrations.migration_2_0_44")},
+    [24] = {version="2.0.45", migration=require("backend.migrations.migration_2_0_45")},
+    [25] = {version="2.1.1", migration=require("backend.migrations.migration_2_1_1")},
+    [26] = {version="2.1.2", migration=require("backend.migrations.migration_2_1_2")},
 }
 
 
@@ -50,7 +49,7 @@ local function apply_migrations(migrations, function_name, object, player)
         local migration_function = migration[function_name]
 
         if migration_function ~= nil then
-            migration_function(object, player)  ---@type string
+            migration_function(object, player)
         end
     end
 end
@@ -63,8 +62,8 @@ end
 function migrator.determine_migrations(comparison_version)
     local previous_version = storage.installed_mods["factoryplanner"]
 
-    -- 1.1.60 is the first version that can be properly migrated (doesn't apply to export strings)
-    if not comparison_version and helpers.compare_versions(previous_version, "1.1.59") < 0 then return nil end
+    -- 2.0.1 is the first version that can be properly migrated (doesn't apply to export strings)
+    if not comparison_version and helpers.compare_versions(previous_version, "2.0.1") < 0 then return nil end
     comparison_version = comparison_version or previous_version
 
     local migrations = {}

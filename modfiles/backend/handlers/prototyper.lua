@@ -16,10 +16,10 @@ prototyper = {
 -- The boolean indicates whether this prototype has categories or not
 ---@type { [DataType]: boolean }
 prototyper.data_types = {recipes = false, items = true, machines = true, fuels = true,
-                         belts = false, pumps = false, wagons = true, modules = true,
+                         belts = false, pumps = false, silos = false, wagons = true, modules = true,
                          beacons = false, locations = false, qualities = false}
 
----@alias DataType "recipes" | "items" | "machines" | "fuels" | "belts" | "pumps" | "wagons" | "modules" | "beacons" | "locations" | "qualities"
+---@alias DataType "recipes" | "items" | "machines" | "fuels" | "belts" | "pumps" | "silos" | "wagons" | "modules" | "beacons" | "locations" | "qualities"
 
 ---@alias NamedPrototypes<T> { [string]: T }
 ---@alias NamedPrototypesWithCategory<T> { [string]: { name: string, members: { [string]: T } } } }
@@ -38,6 +38,7 @@ prototyper.data_types = {recipes = false, items = true, machines = true, fuels =
 ---@field fuels IndexedPrototypesWithCategory<FPFuelPrototype>
 ---@field belts IndexedPrototypes<FPBeltPrototype>
 ---@field pumps IndexedPrototypes<FPPumpPrototype>
+---@field silos IndexedPrototypes<FPSiloPrototype>
 ---@field wagons IndexedPrototypesWithCategory<FPWagonPrototype>
 ---@field modules IndexedPrototypesWithCategory<FPModulePrototype>
 ---@field beacons IndexedPrototypes<FPBeaconPrototype>
@@ -98,6 +99,9 @@ end
 
 
 function prototyper.build()
+    integrator.collect("recycling_recipes")
+    integrator.collect("compacting_recipes")
+
     for data_type, _ in pairs(prototyper.data_types) do
         ---@type AnyNamedPrototypes
         storage.prototypes[data_type] = generator[data_type].generate()
@@ -125,7 +129,7 @@ end
 function prototyper.util.find(data_type, prototype, category)
     local prototypes, prototype_map = storage.prototypes[data_type], PROTOTYPE_MAPS[data_type]
 
-    if util.xor((category ~= nil), (prototype ~= nil)) then  -- either category or prototype provided
+    if (category == nil) ~= (prototype == nil) then  -- either category or prototype provided
         local identifier = category or prototype
         local relevant_map = (type(identifier) == "string") and prototype_map or prototypes
         return relevant_map[identifier]  -- can be nil
@@ -226,14 +230,14 @@ end
 -- Build the necessary RawDictionaries for translation
 function prototyper.util.build_translation_dictionaries()
     for _, item_category in ipairs(storage.prototypes.items) do
-        translator.new(item_category.name)
+        util.translator.new(item_category.name)
         for _, proto in pairs(item_category.members) do
-            translator.add(item_category.name, proto.name, proto.localised_name)
+            util.translator.add(item_category.name, proto.name, proto.localised_name)
         end
     end
 
-    translator.new("recipe")
+    util.translator.new("recipe")
     for _, proto in pairs(storage.prototypes.recipes) do
-        translator.add("recipe", proto.name, proto.localised_name)
+        util.translator.add("recipe", proto.name, proto.localised_name)
     end
 end

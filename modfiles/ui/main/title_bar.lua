@@ -59,13 +59,13 @@ local function build_title_bar(player)
         tags={mod="fp", on_gui_click="open_calculator_dialog"}}
     button_calculator.style.padding = -3
 
-    local left_handle = flow_title_bar.add{type="empty-widget", style="flib_titlebar_drag_handle",
+    local left_handle = flow_title_bar.add{type="empty-widget", style="fflib_titlebar_drag_handle",
         ignored_by_interaction=true}
     left_handle.style.horizontally_stretchable = false  -- necessary so the other side stretches properly
     left_handle.style.width = determine_left_handle_width(player)
     flow_title_bar.add{type="label", caption="Factory Planner", style="fp_label_frame_title",
         ignored_by_interaction=true}
-    flow_title_bar.add{type="empty-widget", style="flib_titlebar_drag_handle", ignored_by_interaction=true}
+    flow_title_bar.add{type="empty-widget", style="fflib_titlebar_drag_handle", ignored_by_interaction=true}
 
     flow_title_bar.add{type="button", caption={"fp.preferences"}, style="fp_button_frame_tool",
         tags={mod="fp", on_gui_click="title_bar_open_preferences"}, mouse_button_filter={"left"}}
@@ -129,7 +129,7 @@ listeners.gui = {
     }
 }
 
-listeners.misc = {
+listeners.player = {
     fp_toggle_pause = (function(player, _)
         if main_dialog.is_in_focus(player) then toggle_paused_state(player) end
     end),
@@ -140,7 +140,7 @@ listeners.misc = {
         end
     end),
     refresh_gui_element = (function(player, event)
-        local triggers = {title_bar=true, factory=true, all=true}
+        local triggers = {title_bar=true, all=true}
         if triggers[event.trigger] then refresh_title_bar(player) end
     end)
 }

@@ -49,7 +49,7 @@ local function add_textfield_and_button(modal_elements, dialog_type, button_firs
 
     local function add_button()
         local button = flow.add{type="sprite-button", tags={mod="fp", on_gui_click=(dialog_type .. "_factories")},
-            style="flib_tool_button_light_green", tooltip={"fp." .. dialog_type .. "_button_tooltip"},
+            style="fflib_tool_button_light_green", tooltip={"fp." .. dialog_type .. "_button_tooltip"},
             sprite="utility/" .. dialog_type, enabled=button_enabled, mouse_button_filter={"left"}}
         modal_elements[dialog_type .. "_button"] = button
     end
@@ -118,7 +118,7 @@ local function add_to_factories_table(modal_elements, factory, enable_checkbox, 
     local label_flow = table_factories.add{type="flow", direction="horizontal"}
     label_flow.style.maximal_width = 350
     label_flow.add{type="label", caption=factory:tostring(attach_products, true)}
-    label_flow.add{type="empty-widget", style="flib_horizontal_pusher"}
+    label_flow.add{type="empty-widget", style="fflib_horizontal_pusher"}
 
     local validity_caption = (factory.valid) and {"fp.valid"} or {"fp.error_message", {"fp.invalid"}}
     table_factories.add{type="label", caption=validity_caption}

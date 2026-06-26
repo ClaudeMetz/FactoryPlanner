@@ -11,7 +11,7 @@ local function refresh_production(player, _, _)
         local factory = util.context.get(player, "Factory")
         if factory and factory.valid then
             solver.update(player, factory)
-            util.gui.run_refresh(player, "factory")
+            util.gui.run_refresh(player, "production")
         end
     end
 end
@@ -77,10 +77,9 @@ local function build_production_bar(player)
         tags={mod="fp", on_gui_click="add_district"}, mouse_button_filter={"left"}}
     button_add.style.height = 26
     button_add.style.left_margin = 12
-    button_add.style.minimal_width = 0
 
     -- Shared bar
-    subheader.add{type="empty-widget", style="flib_horizontal_pusher"}
+    subheader.add{type="empty-widget", style="fflib_horizontal_pusher"}
 
     local flow_timescale = subheader.add{type="flow", direction="horizontal"}
     flow_timescale.style.margin = {4, 16, 0, 0}
@@ -108,7 +107,7 @@ listeners.gui = {
             name = "refresh_production",
             timeout = 20,
             handler = (function(player, _, event)
-                if DEBUGGER_ACTIVE and not event.shift then  -- implicit mod reload for easier development
+                if DEVELOPER_MODE and not event.shift then  -- implicit mod reload for easier development
                     util.gui.reset_player(player)  -- destroys all FP GUIs
                     util.gui.toggle_mod_gui(player)  -- fixes the mod gui button after its been destroyed
                     game.reload_mods()  -- toggle needs to be delayed by a tick since the reload is not instant
@@ -140,13 +139,13 @@ listeners.gui = {
 
                 item_views.rebuild_data(player)
                 item_views.rebuild_interface(player)
-                util.gui.run_refresh(player, "factory")
+                util.gui.run_refresh(player, "production")
             end)
         }
     }
 }
 
-listeners.misc = {
+listeners.player = {
     fp_refresh_production = (function(player, _, _)
         if main_dialog.is_in_focus(player) then refresh_production(player, nil, nil) end
     end),
@@ -157,7 +156,7 @@ listeners.misc = {
         end
     end),
     refresh_gui_element = (function(player, event)
-        local triggers = {production_bar=true, production=true, factory=true, all=true}
+        local triggers = {production_bar=true, factory=true, all=true}
         if triggers[event.trigger] then refresh_production_bar(player) end
     end)
 }

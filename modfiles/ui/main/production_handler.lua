@@ -19,13 +19,12 @@ local function handle_line_move_click(player, tags, event)
     line.parent:shift(line, tags.direction, spots_to_shift)
 
     solver.update(player)
-    util.gui.run_refresh(player, "factory")
+    util.gui.run_refresh(player, "production")
 end
 
 
 -- Handles any line recipe, with or without subfloor
 local function handle_line_recipe_click(player, tags, action)
-    local factory = util.context.get(player, "Factory")  --[[@as Factory]]
     local line = OBJECT_INDEX[tags.line_id]
     local relevant_line = (line.class == "Floor") and line.first or line
 
@@ -37,7 +36,7 @@ local function handle_line_recipe_click(player, tags, action)
 
         local new_context = line
         if line.class == "Line" then
-            if factory.archived then
+            if util.context.get(player, "Factory").archived then
                 util.messages.raise(player, "error", {"fp.error_no_new_subfloors_in_archive"}, 1)
                 return
             end
@@ -48,7 +47,7 @@ local function handle_line_recipe_click(player, tags, action)
             subfloor:insert(line)
 
             new_context = subfloor
-            solver.update(player, factory)
+            solver.update(player)
         end
 
         util.context.set(player, new_context)
@@ -62,8 +61,8 @@ local function handle_line_recipe_click(player, tags, action)
 
     elseif action == "toggle" then
         relevant_line.active = not relevant_line.active
-        solver.update(player, factory)
-        util.gui.run_refresh(player, "factory")
+        solver.update(player)
+        util.gui.run_refresh(player, "production")
 
     elseif action == "delete" then
         local floor = line.parent
@@ -74,17 +73,17 @@ local function handle_line_recipe_click(player, tags, action)
             floor.parent:replace(floor, floor.first)
         end
 
-        solver.update(player, factory)
-        util.gui.run_refresh(player, "factory")
+        solver.update(player)
+        util.gui.run_refresh(player, "production")
 
     elseif action == "factoriopedia" then
-        player.open_factoriopedia_gui(prototypes["recipe"][relevant_line.recipe.proto.name])
+        local proto = relevant_line.recipe.proto
+        player.open_factoriopedia_gui(util.get_factoriopedia_proto("recipe", proto.name, proto))
     end
 end
 
 -- Handles the defining recipe of a floor (ie. first one of a subfloor)
 local function handle_floor_recipe_click(player, tags, action)
-    local factory = util.context.get(player, "Factory")  --[[@as Factory]]
     local line = OBJECT_INDEX[tags.line_id]
 
     if action == "copy" then
@@ -95,29 +94,14 @@ local function handle_floor_recipe_click(player, tags, action)
 
     elseif action == "toggle" then
         line.active = not line.active
-        solver.update(player, factory)
-        util.gui.run_refresh(player, "factory")
+        solver.update(player)
+        util.gui.run_refresh(player, "production")
 
     elseif action == "factoriopedia" then
-        player.open_factoriopedia_gui(prototypes["recipe"][line.recipe.proto.name])
+        local proto = line.recipe.proto
+        player.open_factoriopedia_gui(util.get_factoriopedia_proto("recipe", proto.name, proto))
     end
 end
-
-
-local function handle_percentage_change(player, tags, event)
-    local line = OBJECT_INDEX[tags.line_id]
-    local relevant_line = (line.class == "Floor") and line.first or line
-    relevant_line.percentage = tonumber(event.element.text) or 100
-
-    util.globals.ui_state(player).recalculate_on_factory_change = true -- set flag to recalculate if necessary
-end
-
-local function handle_percentage_confirmation(player, _, _)
-    util.globals.ui_state(player).recalculate_on_factory_change = false  -- reset this flag as we refresh below
-    solver.update(player)
-    util.gui.run_refresh(player, "factory")
-end
-
 
 local function handle_machine_click(player, tags, action)
     local machine = OBJECT_INDEX[tags.machine_id]
@@ -176,7 +160,7 @@ local function handle_beacon_click(player, tags, action)
     elseif action == "delete" then
         line:set_beacon(nil)
         solver.update(player)
-        util.gui.run_refresh(player, "factory")
+        util.gui.run_refresh(player, "production")
 
     elseif action == "factoriopedia" then
         player.open_factoriopedia_gui(prototypes["entity"][beacon.proto.name])
@@ -223,7 +207,7 @@ local function handle_module_click(player, tags, action)
 
         module_set:normalize({effects=true})
         solver.update(player)
-        util.gui.run_refresh(player, "factory")
+        util.gui.run_refresh(player, "production")
 
     elseif action == "factoriopedia" then
         player.open_factoriopedia_gui(prototypes["item"][module.proto.name])
@@ -248,7 +232,7 @@ local function handle_item_click(player, tags, action)
         line.recipe.priority_product = (line.recipe.priority_product ~= item.proto) and item.proto or nil
 
         solver.update(player)
-        util.gui.run_refresh(player, "factory")
+        util.gui.run_refresh(player, "production")
 
     elseif action == "add_recipe_to_end" or action == "add_recipe_below" then
         local production_type = (tags.item_category == "byproduct") and "consume" or "produce"
@@ -256,8 +240,8 @@ local function handle_item_click(player, tags, action)
 
         local proto, recipe_id = item.proto, nil
         if production_type == "produce" and proto.type == "fluid" and line.class == "Line" then
-            local temperature = line.recipe.temperatures[item.proto.name]
-            if temperature then proto = prototyper.util.find("items", proto.name .. "-" .. temperature, "fluid") end
+            local item_name = line.recipe:get_name_with_temperature(item.proto)
+            proto = prototyper.util.find("items", item_name, "fluid")
             -- If a no-temperature fluid is passed, it'll show all compatible temperatures/recipes
             recipe_id = line.recipe.id
         end
@@ -284,9 +268,8 @@ local function handle_item_click(player, tags, action)
     elseif action == "copy" then
         local proto = item.proto
         if item.proto.type == "fluid" and line.class == "Line" then
-            local temperature = line.recipe.temperatures[item.proto.name]
-            if not temperature then return end
-            proto = prototyper.util.find("items", proto.name .. "-" .. temperature, "fluid")
+            local item_name = line.recipe:get_name_with_temperature(item.proto)
+            proto = prototyper.util.find("items", item_name, "fluid")
         end
 
         local copyable_item = {class="SimpleItem", proto=proto, amount=item.amount}
@@ -340,8 +323,7 @@ local function handle_fuel_click(player, tags, action)
 
         local proto = prototyper.util.find("items", fuel.proto.name, fuel.proto.type)
         if fuel.proto.type == "fluid" then
-            local temperature = fuel.temperature
-            if temperature then proto = prototyper.util.find("items", proto.name .. "-" .. temperature, "fluid") end
+            proto = prototyper.util.find("items", fuel:get_name_with_temperature(), "fluid")
             -- If a no-temperature fluid is passed, it'll show all compatible temperatures/recipes
         end
 
@@ -542,7 +524,15 @@ listeners.gui = {
     on_gui_text_changed = {
         {
             name = "change_line_percentage",
-            handler = handle_percentage_change
+            handler = (function(player, tags, event)
+                local line = OBJECT_INDEX[tags.line_id]
+                local relevant_line = (line.class == "Floor") and line.first or line
+                relevant_line.percentage = tonumber(event.element.text) or 100
+
+                -- Re-run solve only after a delay so it doesn't become out of sync
+                local factory = util.context.get(player, "Factory")
+                factory:schedule_solver_update(game.tick + 300, player)
+            end)
         },
         {
             name = "line_comment",
@@ -556,7 +546,10 @@ listeners.gui = {
     on_gui_confirmed = {
         {
             name = "set_line_percentage",
-            handler = handle_percentage_confirmation
+            handler = (function(player, _, _)
+                solver.update(player)
+                util.gui.run_refresh(player, "production")
+            end)
         }
     }
 }

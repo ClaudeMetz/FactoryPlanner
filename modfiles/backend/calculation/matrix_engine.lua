@@ -372,20 +372,18 @@ function matrix_engine.run_matrix_solver(factory_data, check_linear_dependence)
             if line.subfloor == nil then
                 local col_num = columns.map[line_key]
                  -- want the j-th entry in the last column (output of row-reduction)
-                local machine_count = matrix[col_num][#columns.values+1]
-                if machine_count < 0 then
-                    machine_count = 0
-                end
+                local machine_amount = matrix[col_num][#columns.values+1]
+                if machine_amount < 0 then machine_amount = 0 end
                 line_aggregate = matrix_engine.get_line_aggregate(line, factory_data.player_index, floor.id,
-                    machine_count, factory_metadata, free_variables)
+                    machine_amount, factory_metadata, free_variables)
             else
                 line_aggregate = set_line_results(prefix.."_"..i, line.subfloor)
                 matrix_engine.consolidate(line_aggregate)
             end
 
             -- Lines with subfloors show actual number of machines to build, so each counts are rounded up when summed
-            floor_aggregate.machine_count = floor_aggregate.machine_count +
-                math.ceil(line_aggregate.machine_count - 1e-6)
+            floor_aggregate.machine_amount = floor_aggregate.machine_amount +
+                math.ceil(line_aggregate.machine_amount - MAGIC_NUMBERS.margin_of_error)
 
             for _, class in pairs{"Product", "Byproduct", "Ingredient"} do
                 for _, item in pairs(structures.class.list(line_aggregate[class])) do
@@ -402,14 +400,14 @@ function matrix_engine.run_matrix_solver(factory_data, check_linear_dependence)
             matrix_engine.consolidate(line_aggregate)
 
             -- Set machine count back to nothing if the recipe doesn't require energy
-            local machine_count = (line_aggregate.machine_count < MAGIC_NUMBERS.margin_of_error)
-                and 0 or line_aggregate.machine_count
+            local machine_amount = (line_aggregate.machine_amount < MAGIC_NUMBERS.margin_of_error)
+                and 0 or line_aggregate.machine_amount
 
             solver.set_line_result {
                 player_index = factory_data.player_index,
                 floor_id = floor.id,
                 line_id = line.id,
-                machine_count = machine_count,
+                machine_amount = machine_amount,
                 production_ratio = line_aggregate.production_ratio,
                 Product = line_aggregate.Product,
                 Byproduct = line_aggregate.Byproduct,
@@ -666,19 +664,18 @@ function matrix_engine.get_matrix(factory_data, rows, columns)
     }
 end
 
-function matrix_engine.get_line_aggregate(line_data, player_index, floor_id, machine_count, factory_metadata, free_variables)
+function matrix_engine.get_line_aggregate(line_data, player_index, floor_id, machine_amount, factory_metadata, free_variables)
     local line_aggregate = structures.aggregate.init(player_index, floor_id)
-    line_aggregate.machine_count = machine_count
+    line_aggregate.machine_amount = machine_amount
     -- the index in the factory_data.top_floor.lines table can be different from the line_id!
-    local recipe_proto = line_data.recipe_proto
     local total_effects = line_data.total_effects
-    local machine_speed = line_data.machine_speed
+    local machine_proto = line_data.machine_proto
     local speed_multiplier = 1 + (total_effects.speed / MAGIC_NUMBERS.effect_precision)
     local energy = line_data.recipe_energy
     -- hacky workaround for recipes with zero energy - this really messes up the matrix
     if energy==0 then energy=0.000001 end
-    local time_per_craft = energy / (machine_speed * speed_multiplier)
-    local total_crafts = machine_count * (1 / time_per_craft)
+    local time_per_craft = energy / (line_data.machine_speed * speed_multiplier)
+    local total_crafts = machine_amount * (1 / time_per_craft)
     line_aggregate.production_ratio = total_crafts
 
     local function add_product(product, amount)
@@ -690,9 +687,8 @@ function matrix_engine.get_line_aggregate(line_data, player_index, floor_id, mac
         end
     end
 
-    for _, product in pairs(recipe_proto.products) do
-        local prodded_amount = solver_util.determine_prodded_amount(product, total_effects,
-            recipe_proto.maximum_productivity)
+    for _, product in pairs(line_data.recipe_proto.products) do
+        local prodded_amount = solver_util.determine_prodded_amount(product, total_effects)
         add_product(product, prodded_amount * total_crafts)
     end
 
@@ -707,39 +703,59 @@ function matrix_engine.get_line_aggregate(line_data, player_index, floor_id, mac
     -- Determine energy consumption (including potential fuel needs) and emissions
     local fuel_proto = line_data.fuel_proto
     local energy_consumption, emissions = solver_util.determine_energy_consumption_and_emissions(
-        line_data.machine_proto, line_data.recipe_proto, fuel_proto, machine_count, line_data.energy_usage,
+        machine_proto, line_data.recipe_proto, fuel_proto, machine_amount, line_data.energy_usage,
         total_effects, line_data.pollutant_type)
 
     local fuel, fuel_amount = nil, nil
-    if line_data.machine_proto.energy_type == "burner" then
-        fuel_amount = solver_util.determine_fuel_amount(energy_consumption, line_data.machine_proto.burner,
-            fuel_proto.fuel_value)
+    if machine_proto.energy_type == "burner" then
+        local burner = machine_proto.burner
+        fuel_amount = solver_util.determine_fuel_amount(energy_consumption, burner, fuel_proto.fuel_value)
 
         fuel = {type=fuel_proto.type, name=line_data.fuel_name, amount=fuel_amount}
         structures.class.add(line_aggregate.Ingredient, fuel)
 
         if fuel_proto.burnt_result then
-            local burnt_result = {type="item", name=fuel_proto.burnt_result, amount=fuel_amount}
-            add_product(burnt_result)
+            add_product({
+                type="item",
+                name=fuel_proto.burnt_result,
+                amount=fuel_amount
+            })
+        end
+
+        if burner.produces_spent_fluid then
+            local spent_fluid = burner.spent_fluid or fuel_proto.spent_fluid
+            if spent_fluid then
+                add_product({
+                    type="fluid",
+                    name=spent_fluid.name .. "-" .. spent_fluid.temperature,
+                    amount=fuel_amount * spent_fluid.amount
+                })
+            end
         end
 
         energy_consumption = 0  -- set electrical consumption to 0 when fuel is used
 
-    elseif line_data.machine_proto.energy_type == "heat" then
+    elseif machine_proto.energy_type == "heat" then
         local heat_item = {type="entity", name="custom-heat-power", amount=energy_consumption}
         structures.class.add(line_aggregate.Ingredient, heat_item)
 
         energy_consumption = 0  -- set electrical consumption to 0 when heat is used
 
-    elseif line_data.machine_proto.energy_type == "void" then
+    elseif machine_proto.energy_type == "void" then
         energy_consumption = 0  -- set electrical consumption to 0 while still polluting
     end
 
     energy_consumption = energy_consumption + (line_data.beacon_consumption or 0)
 
     if energy_consumption > 0 then
-        local electric_item = {type="entity", name="custom-electric-power", amount=energy_consumption, constant=true}
+        local electric_item = {type="entity", name="custom-electric-power", amount=energy_consumption}
         structures.class.add(line_aggregate.Ingredient, electric_item)
+    end
+
+    if line_data.entities_require_heating and machine_proto.heating_energy > 0 then
+        local heating_energy = machine_proto.heating_energy * machine_amount
+        local heating_item = {type="entity", name="custom-heating-power", amount=heating_energy}
+        structures.class.add(line_aggregate.Ingredient, heating_item)
     end
 
     if emissions ~= 0 then  -- emissions are either produced or consumed

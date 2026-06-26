@@ -19,20 +19,18 @@ local Object = {}  -- class annotation purposefully not attached
 ---@param metatable table
 ---@return Object
 function Object.init(data, class, metatable)
-    local object = ftable.shallow_merge{
-        {
-            id = storage.next_object_ID,
-            class = class,
-            valid = true,
-            parent = nil,
-            next = nil,
-            previous = nil
-        },
-        data
+    local object = {
+        id = storage.next_object_ID,
+        class = class,
+        valid = true,
+        parent = nil,
+        next = nil,
+        previous = nil
     }
-    storage.next_object_ID = storage.next_object_ID + 1
+    for key, value in pairs(data) do object[key] = value end
 
     setmetatable(object, metatable)
+    storage.next_object_ID = storage.next_object_ID + 1
 
     -- If the index doesn't exist yet, it will be filled in later
     if OBJECT_INDEX then OBJECT_INDEX[object.id] = object end
@@ -42,7 +40,11 @@ end
 
 ---@return ObjectMethods
 function Object.methods()
-    return ftable.shallow_copy(methods)
+    local output = {}
+    for k, v in pairs(methods) do
+        output[k] = v
+    end
+    return output
 end
 
 

@@ -2,8 +2,6 @@
 ---@param table_to_print AnyBasic
 ---@return string
 local function _llog(table_to_print)
-    local excludes = LLOG_EXCLUDES or {}  -- Optional custom excludes defined by the parent mod
-
     if type(table_to_print) ~= "table" then return (tostring(table_to_print)) end
 
     local tab_width, super_space = 2, ""
@@ -27,11 +25,7 @@ local function _llog(table_to_print)
             if type(value) == "string" then
                 element = "'" .. element .. "'"
             elseif type(value) == "table" then
-                if excludes[name] ~= nil then
-                    element = value.name or "EXCLUDE"
-                else
-                    element = format(value, depth+tab_width)
-                end
+                element = format(value, depth+tab_width)
             end
 
             local comma = (first_element) and "" or ","

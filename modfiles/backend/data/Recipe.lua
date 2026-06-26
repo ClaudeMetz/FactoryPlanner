@@ -15,6 +15,7 @@ local Object = require("backend.data.Object")
 ---@field priority_product (FPItemPrototype | FPPackedPrototype)?
 ---@field temperatures { [string]: float }
 ---@field temperature_data { [string]: TemperatureData }
+---@field effects IntegerModuleEffects?
 local Recipe = Object.methods()
 Recipe.__index = Recipe
 script.register_metatable("Recipe", Recipe)
@@ -31,6 +32,7 @@ local function init(proto, production_type, parent)
         temperatures = {},
 
         temperature_data = nil,
+        effects = nil,
 
         parent = parent
     }, "Recipe", Recipe)  --[[@as Recipe]]
@@ -70,18 +72,52 @@ function Recipe:apply_temperature_defaults(player)
     end
 end
 
----@return boolean is_fully_configured
-function Recipe:temperature_fully_configured()
-    for _, ingredient in pairs(self.proto.ingredients) do
-        if ingredient.type == "fluid" and self.temperatures[ingredient.name] == nil then
-            return false
+
+---@param ingredient Ingredient | FPItemPrototype
+---@return boolean
+function Recipe:is_temperature_configured(ingredient)
+    return (ingredient.type ~= "fluid" or self.temperatures[ingredient.name] ~= nil)
+end
+
+---@param ingredient Ingredient | FPItemPrototype
+---@return string
+function Recipe:get_name_with_temperature(ingredient)
+    if ingredient.type ~= "fluid" then
+        return ingredient.name
+    else
+        local temperature = self.temperatures[ingredient.name]
+        if temperature ~= nil then
+            return ingredient.name .. "-" .. temperature
+        else
+            return ingredient.name
         end
     end
+end
 
-    local fuel = self.parent.machine.fuel
-    if fuel and fuel.proto.type == "fluid" and not fuel.temperature then return false end
+---@param ingredient Ingredient | FPItemPrototype
+---@return float?
+function Recipe:get_temperature(ingredient)
+    if ingredient.type == "fluid" then
+        return self.temperatures[ingredient.name]
+    end
+    return nil
+end
 
-    return true
+
+--- Called when the solver runs because it's the most convenient spot for it
+---@param force LuaForce
+---@param factory Factory
+function Recipe:update_effects(force, factory)
+    local machine_proto = self.parent.machine.proto
+
+    local name = nil
+    local drill = (machine_proto.prototype_category == "mining_drill")
+    if drill and machine_proto.uses_force_mining_productivity_bonus then name = "custom-mining"
+    elseif self.proto.productivity_recipe ~= nil then name = self.proto.productivity_recipe
+    else return end  -- no recipe effects for custom recipes
+
+    self.effects = {productivity = factory:get_productivity_bonus(force, name)}
+    self.parent.machine:summarize_effects()  -- update machine to update its tooltip
 end
 
 
@@ -92,8 +128,9 @@ end
 ---@field priority_product FPPackedPrototype?
 ---@field temperatures { [string]: float }
 
+---@param full boolean
 ---@return PackedRecipe packed_self
-function Recipe:pack()
+function Recipe:pack(full)
     return {
         class = self.class,
         proto = prototyper.util.simplify_prototype(self.proto, nil),

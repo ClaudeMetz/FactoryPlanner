@@ -2,11 +2,38 @@
 Version: 0.00.00
 Date: 00. 00. 0000
   Features:
-    - 
+    -
   Changes:
-    - 
+    -
   Bugfixes:
-    - 
+    - Fixed a crash caused by an issue with how fuel categories are handled (#764) (Thanks vapopescu!)
+    - Fixed detection of modules that can be used in beacons being too permissive (#712)
+    - Fixed that ingredients with temperature would not be highlighted on hover in the compact dialog (#728)
+    - Fixed a couple of issues for mod configurations that don't include any beacons (#686)
+
+---------------------------------------------------------------------------------------------------
+Version: 2.1.3
+Date: 23. 06. 2026
+  Features:
+    - Updated for Factorio 2.1, adopting new game features and APIs, the most important of which are listed below
+    - Added support for quality affecting machine speed, energy usage, and module count in all ways
+    - Added support for recipes using shared probability for its products
+    - Added the ability to pick a preferred rocket silo to determine the lift capacity for the rockets/timescale view
+    - Added support for burning fluids as fuel producing a byproduct fluid
+    - Updated for new 0.01% resolution of module effects, and the new quality effect multipliers
+    - Added the ability to view the technology that unlocks a recipe in the picker
+    - Added a panel to import/export all preferences that are not prototype-related
+    - Added indication of heating power required for buildings that can freeze
+  Changes:
+    - Improved numbers shown on buttons to no longer be cut off, but slightly round up instead (#55)
+    - The mod now updates all factory plans after a productivity-affecting technology is researched
+    - Removed dependency on the Factorio Library mod (flib)
+    - The minimum migratable version of the mod is 2.0.1 from here on out. This means any save from before 2.0.1 can not be loaded with any new versions of the mod any more. Old saves can be brought forward by first loading them with 2.0.1, saving them, then loading them with a recent version. Export strings are not affected by this, so they'll continue to work as expected.
+  Bugfixes:
+    - Fixed a crash when trying to add an item to a constant combinator in the cursor (#751)
+    - Fixed a crash when trying to paste a module onto an empty beacon slot (#756)
+    - Fixed that researched productivity would not apply to rocket part recipes (#745)
+    - Fixed that certain recipes could not be opened in Factoriopedia
 
 ---------------------------------------------------------------------------------------------------
 Version: 2.0.50
@@ -198,7 +225,7 @@ Version: 2.0.31
 Date: 18. 07. 2025
   Changes:
     - Allowed adding recipes via the top item buttons on subfloors if the 'Show floor items' preference is enabled (#570)
-    - Added smaller values for the comapct dialog width setting, supporting ultrawide monitors better (#540) (Thanks NIronwolf!)
+    - Added smaller values for the compact dialog width setting, supporting ultrawide monitors better (#540) (Thanks NIronwolf!)
   Bugfixes:
     - Fixed an issue where productivity wasn't being applied correctly for recipes involving randomized product amounts (#323) (Thanks kalenedrael!)
     - Fixed burnt fuel items always being categorized as a byproduct (#579) (Thanks scottmsul!)
@@ -455,7 +482,7 @@ Date: 12. 11. 2024
     - Fixed that the utility dialog machine and module section didn't take quality into account
     - Fixed that the custom rocket recipes didn't consider rocket part recipe productivity
     - Fixed an issue where copying fuels didn't properly check for compatibility
-    - Fixed a migration issue that erroniously marked fuel as invalid
+    - Fixed a migration issue that erroneously marked fuel as invalid
     - Fixed an issue where cancelling the machine dialog would reset fuel amounts
 
 ---------------------------------------------------------------------------------------------------
@@ -495,7 +522,7 @@ Date: 22. 10. 2024
 Version: 2.0.1
 Date: 21. 10. 2024
   Features:
-    - Updated the mod for Factorio 2.0 and the Space Age expansion. This means adoption to changes in existing systems and support for new systems, the most significant of which will be listed here. The mod will still work just fine without Space Age, with automatic adjustements to the interface.
+    - Updated the mod for Factorio 2.0 and the Space Age expansion. This means adoption to changes in existing systems and support for new systems, the most significant of which will be listed here. The mod will still work just fine without Space Age, with automatic adjustments to the interface.
     - This release is considered [Experimental]. While it was beta-tested with a small group for a few months, the many changes will have introduced some bugs and crashes. Please let me know about anything you encounter on Github.
     - Lastly: This update was a huge amount of effort over many months, and puts the mod in a much better place for the future. It's a big step forward, I hope you enjoy it, and thanks for the support so far!
     - Implemented Districts, which are a collection of factories, summing up their products and ingredients. They also allow for specification of a planet, which determines compatible machines and the relevant type of emissions.
@@ -561,7 +588,7 @@ Date: 29. 11. 2023
   Bugfixes:
     - Fixed various related crashes when deleting all the lines on a subfloor (#182)
     - Fixed a migration crash that would show up in certain setups (#173)
-    - Fixed an embarrasing migration issue that would overwrite beacon modules with machine ones (#169)
+    - Fixed an embarrassing migration issue that would overwrite beacon modules with machine ones (#169)
     - Fixed a crash when trying to migrate from a mod version of 1.1.64 or earlier (#190) (Thanks francoiscampbell!)
     - Fixed an issue when trying to open top level byproducts and ingredients in Recipe Book (#191)
 
@@ -590,7 +617,7 @@ Date: 17. 11. 2023
     - Rewrote basically the entire data storage backend of the mod. This is not a feature in itself, but lays the groundwork for future ones, like undo/redo, multiplayer support, and more. What it also means is a period of lower stability, as thousands of lines of code were changed. The mod was beta-tested, so the worst issues should be fixed, but there will still be some bugs.
     - Due to this rewrite, the minimum migratable version of the mod is 1.1.60 from here on out. This means any save from before 1.1.60 can not be loaded with any new versions of the mod any more. Old saves can be brought forward by first loading them with 1.1.60, saving them, then loading them with a recent version. Export strings are not affected by this, so they'll continue to work as expected.
     - Replaced the matrix configuration dialog with an in-line solution, allowing you to set up recipes without the constant nagging, then doing the final configuration only once.
-    - Moved standard mod settings to the in-mod preferences dialog, unifying all adjustements in one place.
+    - Moved standard mod settings to the in-mod preferences dialog, unifying all adjustments in one place.
     - Improved performance of the main interface substantially. This is due to both fixing a big bug introduced a few versions ago, and some other targeted optimizations.
     - Made the utility dialog only show components for lines that have not been marked as 'done' yet (Thanks microlith57!)
     - Allowed the various 'put into combinator' actions to also work on fluids
@@ -833,7 +860,7 @@ Date: 26. 08. 2022
 Version: 1.1.51
 Date: 16. 07. 2022
   Changes:
-    - Changed the key combo for putting machines/beacons into the cursor in the main interface to Alt+Left-click to avoid accidental activation. issues.
+    - Changed the key combo for putting machines/beacons into the cursor in the main interface to Alt+Left-click to avoid accidental activation.
     - Marking recipes as done in the compact subfactory view now grays them out
     - Duplicating a subfactory now inserts it right below the cloned subfactory instead of at the end
     - Improved performance of opening dialogs (Thanks curiosity!)
@@ -860,8 +887,9 @@ Date: 05. 06. 2022
 ---------------------------------------------------------------------------------------------------
 Version: 1.1.49
 Date: 27. 05. 2022
+  Changes:
+    - Changed a keyboard shortcut that was interfering with game functionality
   Bugfixes:
-    - Changes a keyboard shortcut that was interferring with game functionality
     - Fixed fuel not being shown in the compact view
     - Fixed a few minor UI issues related to the production table
     - Fixed a minor rounding issue with compact view machines
@@ -1224,7 +1252,7 @@ Date: 19. 12. 2020
 Version: 1.1.10
 Date: 17. 12. 2020
   Changes:
-    - The matrix solver now tells you which recipes it has detected as linearly dependant, letting you know the ones that cause it to not be able to solve
+    - The matrix solver now tells you which recipes it has detected as linearly dependent, letting you know the ones that cause it to not be able to solve
   Bugfixes:
     - Fixed an issue with the matrix solver that would lead to an infinite loop. Whew, there's a first time for everything!
     - Fixed that alt-adding a subfactory would crash if you had no other subfactories
@@ -1265,9 +1293,9 @@ Date: 13. 12. 2020
 Version: 1.1.6
 Date: 13. 12. 2020
   Changes:
-    - The message that your current subfactory is linearly dependant is now shown more consistently
+    - The message that your current subfactory is linearly dependent is now shown more consistently
   Bugfixes:
-    - Fixed a frequent crash when manipulating a subfactory that has linearly dependant recipes
+    - Fixed a frequent crash when manipulating a subfactory that has linearly dependent recipes
     - Fixed that the example subfactory was improperly cached, leading to several issues all over the UI
     - Fixed that hitting certain Factory Planer hotkeys before opening the UI for the first time would crash
     - Fixed that the matrix solver calculations would be incorrect when productivity modules were involved
@@ -1290,7 +1318,7 @@ Date: 11. 12. 2020
     - Hitting the 'E' keyboard shortcut now confirms the dialog that is open if possible, mirroring the vanilla behavior introduced with 1.1
     - The tutorial subfactory can now be imported in a wider range of modded situations (as long as it is compatible)
     - Removed the 'automatic cleanup' functionality that would delete lines that became useless after you removed a top level product. This functionality had been broken in several ways that are hard to fix, so I decided it was not worth keeping around.
-    - Increased the maximum length of subfactory names to 256 characters, while accomodating for longer names in the UI
+    - Increased the maximum length of subfactory names to 256 characters, while accommodating for longer names in the UI
     - Added some dimming to the interface to indicate that a modal dialog is open and/or the game is paused while the main interface is open
     - Various minor UI improvements unrelated to the main interface redesign
     - Removed migrations for versions before 0.18 since the game doesn't load those saves anymore
@@ -1608,7 +1636,7 @@ Date: 16. 06. 2020
     - The mod-setting for pausing the game when the main interface is open is now a button in the top right of it
     - The numbers shown on item/machine/etc-buttons are now rounded somewhat correctly, instead of being truncated
   Bugfixes:
-    - Fixed that beacon selection would not work then the game was being paused on open FP-interface
+    - Fixed that beacon selection would not work when the game was being paused on open FP-interface
 
 ---------------------------------------------------------------------------------------------------
 Version: 0.18.32
@@ -1792,7 +1820,7 @@ Date: 16. 05. 2020
     - Added a temporary fix for some dialogs showing up behind the main interface. I'll have to wait on the reaction of the devs for a proper fix. For now, opening the product picker dialog will be slower. Sorry about that.
     - Fixed that rocket silo recipes would be calculated incorrectly, which had lead to inaccurate machine counts and wacky numbers when using the items/s/machine view
     - Fixed that machines with negative pollution values would display as having 0 pollution
-    - Fixed that you could be stranded on a non-existant subfloor after deleting its main recipe
+    - Fixed that you could be stranded on a non-existent subfloor after deleting its main recipe
     - Fixed that alt-tabbing or changing resolution while FP is pausing the game could cause it to be stuck in the paused state
     - Fixed that deleting subfloors could sometimes leave behind remnants that lead to a crash when clicked on
     - Fixed that energy consumption for machines in tooltips was off by a factor of 60; The calculations were still correct
@@ -1826,7 +1854,7 @@ Date: 29. 03. 2020
   Changes:
     - Added exact numbers to the utility dialog machine/module tooltips
   Bugfixes:
-    - Fixed a calculation issue where byproducts where not being used up by recipes on subfloors
+    - Fixed a calculation issue where byproducts were not being used up by recipes on subfloors
 
 ---------------------------------------------------------------------------------------------------
 Version: 0.18.8
@@ -1852,7 +1880,7 @@ Date: 10. 03. 2020
   Bugfixes:
     - Fixed the recipe dialog dimensions to be less jumpy
     - Fixed a crash that was caused by the mod assuming that the steam prototype will always exist
-    - Fixed a problem where byproducts and ingredients where added up incorrectly in some cases
+    - Fixed a problem where byproducts and ingredients were added up incorrectly in some cases
     - Fixed a problem where fluid buttons didn't show up when certain views were active
 
 ---------------------------------------------------------------------------------------------------
@@ -1937,7 +1965,7 @@ Date: 27. 11. 2019
 Version: 0.17.70
 Date: 26. 11. 2019
   Bugfixes:
-    - Fixed a bug where byproducts where sometimes not used as ingredients
+    - Fixed a bug where byproducts were sometimes not used as ingredients
     - Added a missing locale key
     - Fixed a couple migration crashes
 
@@ -2170,7 +2198,7 @@ Date: 19. 08. 2019
   Bugfixes:
     - Fixed that you could add a product (or beacon) with an amount of 0
     - Fixed a crash when removing beacons under certain conditions
-    - Fixed that you couldn't select an subfactory that's become invalid
+    - Fixed that you couldn't select a subfactory that's become invalid
     - Fixed product picker not always centering correctly
     - Fixed a couple of migration crashes
 
@@ -2437,8 +2465,7 @@ Version: 0.17.13
 Date: 15. 06. 2019
   Features:
     - (This release is experimental. It also loses your preferences, my apologies)
-    - Now calculates the fuel consumed by burner machines for you
-      The type of fuel is adjutable in preferences or per line (right-click it)
+    - Now calculates the fuel consumed by burner machines for you. The type of fuel is adjustable in preferences or per line (right-click it)
     - Now links to FNEI. Alt-click on any item or recipe to see it in FNEI
     - Ingredient limits on assemblers are now respected
     - Now hides all items that don't have a recipe

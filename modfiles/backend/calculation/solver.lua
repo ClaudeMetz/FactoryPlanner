@@ -11,7 +11,7 @@ local function set_blank_line(player, floor, line)
         player_index = player.index,
         floor_id = floor.id,
         line_id = line.id,
-        machine_count = 0,
+        machine_amount = 0,
         production_ratio = (line.class == "Line") and 0 or nil,
         Product = blank_class,
         Byproduct = blank_class,
@@ -60,28 +60,17 @@ local function factory_products(factory)
     return products
 end
 
-local function get_temperature_name(line, ingredient)
-    local name, temperature = ingredient.name, nil
-    if ingredient.type == "fluid" then
-        temperature = line.recipe.temperatures[ingredient.name]
-        name = (temperature ~= nil) and (ingredient.name .. "-" .. temperature) or nil
-    end
-
-    return name, temperature
-end
-
 local function line_ingredients(line)
     local ingredients = {}
     for _, ingredient in pairs(line.recipe.proto.ingredients) do
-        local name, temperature = get_temperature_name(line, ingredient)
         -- If any relevant ingredient has no temperature set, this line is invalid
-        if name == nil then return nil end
+        if not line.recipe:is_temperature_configured(ingredient) then return nil end
 
         table.insert(ingredients, {
-            name = name,
+            name = line.recipe:get_name_with_temperature(ingredient),
             type = ingredient.type,
             amount = ingredient.amount,
-            temperature = temperature
+            temperature = line.recipe:get_temperature(ingredient)
         })  -- don't need min/max temperatures here
     end
     return ingredients
@@ -107,16 +96,14 @@ local function generate_floor_data(player, factory, floor, calculate_emissions)
         else
             local relevant_line = (line.parent.level > 1) and line.parent.first or nil  --[[@as Line]]
             local ingredients = line_ingredients(line)  -- builds in chosen temperatures
-
             local fuel = line.machine.fuel
-            local missing_fuel_temp = (fuel and fuel.proto.type == "fluid" and not fuel.temperature)
 
             -- If a line has a percentage of zero or is inactive, it is not useful to the result of the factory
             -- Alternatively, if this line is on a subfloor and the top line of the floor is useless, it is useless too
             if (relevant_line and (relevant_line.percentage == 0 or not relevant_line.active))
                     or line.percentage == 0 or not line.active or not line:get_surface_compatibility().overall
                     or (not factory.matrix_solver_active and line.recipe.production_type == "consume")
-                    or ingredients == nil or missing_fuel_temp == true then
+                    or ingredients == nil or (fuel and not fuel:is_temperature_configured()) then
                 set_blank_line(player, floor, line)  -- useless lines don't need to run through the solver
             else
                 local machine = line.machine
@@ -132,6 +119,7 @@ local function generate_floor_data(player, factory, floor, calculate_emissions)
                 line_data.energy_usage = machine:get_energy_usage()
                 line_data.resource_drain_rate = machine:get_resource_drain_rate()
                 line_data.pollutant_type = (calculate_emissions) and factory.parent.location_proto.pollutant_type or nil
+                line_data.entities_require_heating = factory.parent.location_proto.entities_require_heating
 
                 -- Boiler recipe energy
                 if machine.proto.prototype_category == "boiler" then
@@ -143,7 +131,7 @@ local function generate_floor_data(player, factory, floor, calculate_emissions)
                 end
 
                 -- Effects - update line with recipe effects here if applicable
-                machine:update_recipe_effects(player.force, factory)
+                line.recipe:update_effects(player.force, factory)
                 line_data.total_effects = line.total_effects
 
                 -- Beacon total - can be calculated here, which is faster and simpler
@@ -151,10 +139,9 @@ local function generate_floor_data(player, factory, floor, calculate_emissions)
                     line_data.beacon_consumption = line.beacon:get_total_consumption()
                 end
 
-                if machine.fuel then
+                if fuel then
                     line_data.fuel_proto = machine.fuel.proto
-                    line_data.fuel_name = (fuel.proto.type ~= "fluid") and fuel.proto.name
-                        or (fuel.proto.name .. "-" .. fuel.temperature)
+                    line_data.fuel_name = fuel:get_name_with_temperature()
                 end
 
                 table.insert(floor_data.lines, line_data)
@@ -235,18 +222,17 @@ local function update_ingredient_satisfaction(floor, product_class)
     -- Iterates the lines from the bottom up, setting satisfaction amounts along the way
     for line in floor:iterator(nil, floor:find_last(), "previous") do
         if line.class == "Floor" then
-            local subfloor_product_class = ftable.deep_copy(product_class)
+            local subfloor_product_class = util.flib.deep_copy(product_class)
             update_ingredient_satisfaction(line, subfloor_product_class)
         elseif line.machine.fuel then
             local fuel = line.machine.fuel
-            local name = (fuel.temperature) and (fuel.proto.name .. "-" .. fuel.temperature) or fuel.proto.name
-            determine_satisfaction(fuel, name)
+            determine_satisfaction(fuel, fuel:get_name_with_temperature())
         end
 
         for _, ingredient in pairs(line.ingredients) do
             if ingredient.proto.type ~= "entity" or ingredient.proto.special then
                 local name = ingredient.proto.name
-                if line.class ~= "Floor" then name, _ = get_temperature_name(line, ingredient.proto) end
+                if line.class ~= "Floor" then name = line:get_name_with_temperature(ingredient) end
                 determine_satisfaction(ingredient, name)
             end
         end
@@ -263,14 +249,18 @@ end
 
 -- ** TOP LEVEL **
 -- Updates the whole factory calculations from top to bottom
-function solver.update(player, factory, blank)
+function solver.update(player, factory)
     factory = factory or util.context.get(player, "Factory")
     if factory and factory.valid then
+        -- Cancel any pending update as it'll be running right now
+        if factory.tick_of_solver_update then
+            util.nth_tick.cancel(factory.tick_of_solver_update)
+            factory.tick_of_solver_update = nil
+        end
+
         local factory_data = solver.generate_factory_data(player, factory)
 
-        if blank then  -- sets factory to a blank state
-            set_blank_factory(player, factory)
-        elseif factory.matrix_solver_active then
+        if factory.matrix_solver_active then
             local matrix_metadata = matrix_engine.get_matrix_solver_metadata(factory_data)
 
             if matrix_metadata.num_cols > matrix_metadata.num_rows and #factory.matrix_free_items > 0 then
@@ -347,9 +337,9 @@ function solver.set_line_result(result)
     local line = OBJECT_INDEX[result.line_id]  --[[@as LineObject]]
 
     if line.class == "Floor" then
-        line.machine_count = result.machine_count
+        line.machine_amount = result.machine_amount
     else
-        line.machine.amount = result.machine_count
+        line.machine.amount = result.machine_amount
         if line.machine.fuel ~= nil then line.machine.fuel.amount = result.fuel_amount end
 
         line.production_ratio = result.production_ratio
@@ -368,25 +358,23 @@ function solver.set_line_result(result)
 end
 
 
--- **** UTIL ****
+-- ** UTIL **
 -- Calculates the product amount after applying productivity bonuses
-function solver_util.determine_prodded_amount(item, total_effects, maximum_productivity)
-    -- No negative productivity, and none above the recipe-determined cap
-    local productivity = math.min(math.max(total_effects.productivity, 0), maximum_productivity)
-    if productivity == 0 then return item.amount end
+function solver_util.determine_prodded_amount(item, total_effects)
+    if total_effects.productivity <= 0 then return item.amount end  -- no negative productivity
 
     -- Return formula is a simplification of the following formula:
     -- item.amount - item.proddable_amount + (item.proddable_amount *
     --   (1 + (productivity / MAGIC_NUMBERS.effect_precision)))
-    return item.amount + (item.proddable_amount * (productivity / MAGIC_NUMBERS.effect_precision))
+    return item.amount + (item.proddable_amount * (total_effects.productivity / MAGIC_NUMBERS.effect_precision))
 end
 
 -- Determines the amount of energy needed for a machine and the emissions that produces
 function solver_util.determine_energy_consumption_and_emissions(machine_proto, recipe_proto,
-        fuel_proto, machine_count, energy_usage, total_effects, pollutant_type)
+        fuel_proto, machine_amount, energy_usage, total_effects, pollutant_type)
     local consumption_multiplier = 1 + (total_effects.consumption / MAGIC_NUMBERS.effect_precision)
-    local energy_consumption = machine_count * (energy_usage * 60) * consumption_multiplier
-    local drain = math.ceil(machine_count - 1e-6) * (machine_proto.energy_drain * 60)
+    local energy_consumption = machine_amount * (energy_usage * 60) * consumption_multiplier
+    local drain = math.ceil(machine_amount - MAGIC_NUMBERS.margin_of_error) * (machine_proto.energy_drain * 60)
     local total_consumption = energy_consumption + drain
 
     if pollutant_type == nil then return total_consumption, 0 end
@@ -396,7 +384,7 @@ function solver_util.determine_energy_consumption_and_emissions(machine_proto, r
     local total_multiplier = fuel_multiplier * pollution_multiplier * recipe_proto.emissions_multiplier
 
     local emissions_per_joule = energy_consumption * (machine_proto.emissions_per_joule[pollutant_type] or 0)
-    local emissions_per_second = machine_count * (machine_proto.emissions_per_second[pollutant_type] or 0)
+    local emissions_per_second = machine_amount * (machine_proto.emissions_per_second[pollutant_type] or 0)
     local total_emissions = (emissions_per_joule + emissions_per_second) * total_multiplier * 60
 
     return total_consumption, total_emissions
@@ -406,3 +394,17 @@ end
 function solver_util.determine_fuel_amount(energy_consumption, burner, fuel_value)
     return (energy_consumption / burner.effectivity) / fuel_value
 end
+
+
+-- ** EVENTS **
+local listeners = {}
+
+listeners.global = {
+    update_solver = (function(metadata)
+        local player = game.get_player(metadata.player_index)
+        local factory = OBJECT_INDEX[metadata.factory_id]
+        solver.update(player, factory)
+    end)
+}
+
+return { listeners }

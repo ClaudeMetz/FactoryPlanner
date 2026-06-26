@@ -26,6 +26,7 @@ add_sprite("silo_rocket", nil, 120, 1)
 add_sprite("agriculture_square", nil, 120, 1)
 add_sprite("electric_power", nil, 120, 1)
 add_sprite("heat_power", nil, 120, 1)
+add_sprite("heating_power", nil, 120, 1)
 add_sprite("emissions", nil, 120, 1)
 add_sprite("play", nil, 32, 2)
 add_sprite("limited_up", nil, 20, 1)
@@ -45,6 +46,7 @@ add_sprite("fold_out_subfloors", nil, 32, 1)
 add_sprite("universal_planet", nil, 64, 1)
 add_sprite("collapse", nil, 32, 1)
 add_sprite("expand", nil, 32, 1)
+add_sprite("export", nil, 64, 1)
 
 
 -- Base game sprites

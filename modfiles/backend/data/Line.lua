@@ -182,9 +182,8 @@ function Line:setup_beacon(player)
     end
 end
 
-
----@return boolean uses_effects
-function Line:uses_beacon_effects(player)
+---@return boolean
+function Line:uses_beacon_effects()
     return self.machine.proto.effect_receiver.uses_beacon_effects
 end
 
@@ -192,10 +191,16 @@ end
 function Line:summarize_effects()
     local beacon_effects = (self.beacon) and self.beacon.total_effects or nil
     local merged_effects = util.effects.merge({self.machine.total_effects, beacon_effects})
-    local limited_effects, indications = util.effects.limit(merged_effects, self.recipe.proto.maximum_productivity)
+    local limited_effects, indications = util.effects.limit(merged_effects, self.machine.proto.effect_receiver)
 
-    self.total_effects = limited_effects
-    self.effects_tooltip = util.effects.format(limited_effects, {indications=indications})
+    local limited_effects_plus = util.effects.merge({limited_effects, self.recipe.effects})
+    -- These bounds are applied after normal limits and recipe effects
+    local bounds = {low = 0, high = self.recipe.proto.maximum_productivity}
+    limited_effects_plus["productivity"], indications["productivity"] =
+        util.effects.limit_value(limited_effects_plus["productivity"], bounds)
+
+    self.total_effects = limited_effects_plus
+    self.effects_tooltip = util.effects.format(limited_effects_plus, {indications=indications})
 end
 
 
@@ -211,6 +216,19 @@ function Line:compile_machine_filter()
     end
 
     return {{filter="name", name=compatible_machines}}
+end
+
+
+---@return boolean
+function Line:is_temperature_fully_configured()
+    for _, ingredient in pairs(self.recipe.proto.ingredients) do
+        if not self.recipe:is_temperature_configured(ingredient) then return false end
+    end
+
+    local fuel = self.machine.fuel
+    if fuel and fuel:is_temperature_configured() then return false end
+
+    return true
 end
 
 
@@ -272,17 +290,22 @@ end
 ---@field beacon PackedBeacon?
 ---@field comment string
 
+---@param full boolean
 ---@return PackedLine packed_self
-function Line:pack()
+function Line:pack(full)
     return {
         class = self.class,
-        recipe = self.recipe:pack(),
+        recipe = self.recipe:pack(full),
         done = self.done,
         active = self.active,
         percentage = self.percentage,
-        machine = self.machine:pack(),
-        beacon = self.beacon and self.beacon:pack(),
-        comment = self.comment
+        machine = self.machine:pack(full),
+        beacon = self.beacon and self.beacon:pack(full),
+        comment = self.comment,
+
+        products = (full) and interface.pack_items(self.products) or nil,
+        byproducts = (full) and interface.pack_items(self.byproducts) or nil,
+        ingredients = (full) and interface.pack_items(self.ingredients) or nil,
     }
 end
 

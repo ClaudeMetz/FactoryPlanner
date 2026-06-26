@@ -25,7 +25,7 @@ function _clipboard.copy(player, object)
     local player_table = util.globals.player_table(player)
     player_table.clipboard = {
         class = object.class,
-        packed_object = (object.pack ~= nil) and object:pack() or object,
+        packed_object = (object.pack ~= nil) and object:pack(true) or object,
         parent = object.parent  -- just used for unpacking, will remain a reference even if deleted elsewhere
     }
 
@@ -47,7 +47,7 @@ function _clipboard.paste(player, target)
             clone = unpackers[clip.class](clip.packed_object, clip.parent)  -- always returns fresh object
             clone:validate()
         else
-            clone = ftable.shallow_copy(clip.packed_object)
+            clone = util.flib.shallow_copy(clip.packed_object)
         end
         local success, error = target:paste(clone, player)
 
@@ -55,7 +55,7 @@ function _clipboard.paste(player, target)
             util.cursor.create_flying_text(player, {"fp.pasted_from_clipboard", {"fp.pu_" .. clip.class:lower(), 1}})
 
             solver.update(player)
-            util.gui.run_refresh(player, "factory")
+            util.gui.run_refresh(player, "production")
         else
             local object_lower, target_lower = {"fp.pl_" .. clip.class:lower(), 1}, {"fp.pl_" .. target.class:lower(), 1}
             if error == "incompatible_class" then

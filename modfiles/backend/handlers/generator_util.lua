@@ -38,7 +38,11 @@ local function generate_formatted_product(product)
         proddable_amount = math.max(base_amount - catalyst_amount, 0)
     end
 
-    local probability = (product.probability or 1)
+    -- These need defaults for products that are manually defined by FP
+    local shared_probability = product.shared_probability or {min = 0, max = 1}
+    local independent_probability = product.independent_probability or 1
+    local probability = independent_probability * (shared_probability.max - shared_probability.min)
+
     local formatted_product = {
         name = product.name,
         type = product.type,
@@ -84,7 +88,7 @@ local function create_type_indexed_list(item_list)
     local indexed_list = {item = {}, fluid = {}, entity = {}}  ---@type IndexedItemList
 
     for index, item in pairs(item_list) do
-        indexed_list[item.type][item.name] = {index = index, item = ftable.shallow_copy(item)}
+        indexed_list[item.type][item.name] = {index = index, item = util.flib.shallow_copy(item)}
     end
 
     return indexed_list
@@ -158,14 +162,14 @@ function generator_util.format_recipe(recipe_proto, products, main_product, ingr
                 local difference = ingredient.item.amount - peer_product.item.amount
 
                 if difference < 0 then
-                    local item = ftable.shallow_copy(ingredient.item)
+                    local item = util.flib.shallow_copy(ingredient.item)
                     item.amount = peer_product.item.amount + difference
                     recipe_proto.catalysts.ingredients[item.name] = item
 
                     ingredients[ingredient.index].amount = nil
                     formatted_products[peer_product.index].amount = -difference
                 elseif difference > 0 then
-                    local item = ftable.shallow_copy(peer_product.item)
+                    local item = util.flib.shallow_copy(peer_product.item)
                     item.amount = ingredient.item.amount - difference
                     recipe_proto.catalysts.products[item.name] = item
 
@@ -173,7 +177,7 @@ function generator_util.format_recipe(recipe_proto, products, main_product, ingr
                     formatted_products[peer_product.index].amount = nil
                 else
                     -- Nilled-out items are just shown as ingredient catalysts
-                    local item = ftable.shallow_copy(ingredient.item)
+                    local item = util.flib.shallow_copy(ingredient.item)
                     recipe_proto.catalysts.ingredients[item.name] = item
 
                     ingredients[ingredient.index].amount = nil
@@ -192,75 +196,6 @@ function generator_util.format_recipe(recipe_proto, products, main_product, ingr
 
     recipe_proto.ingredients = ingredients
     recipe_proto.products = formatted_products
-end
-
-
--- Active mods table needed for the funtions below
-local active_mods = script.active_mods
-
--- Determines whether this recipe is a recycling one or not
-local recycling_recipe_mods = {
-    ["base"] = {".*%-recycling$"},
-    --[[ ["IndustrialRevolution"] = {"^scrap%-.*"},
-    ["space-exploration"] = {"^se%-recycle%-.*"},
-    ["angelspetrochem"] = {"^converter%-.*"},
-    ["reverse-factory"] = {"^rf%-.*"},
-    ["ZRecycling"] = {"^dry411srev%-.*"} ]]
-}
-
-local active_recycling_recipe_mods = {}  ---@type string[]
-for modname, patterns in pairs(recycling_recipe_mods) do
-    for _, pattern in pairs(patterns) do
-        if active_mods[modname] then
-            table.insert(active_recycling_recipe_mods, pattern)
-        end
-    end
-end
-
----@param proto LuaRecipePrototype
----@return boolean
-function generator_util.is_recycling_recipe(proto)
-    for _, pattern in pairs(active_recycling_recipe_mods) do
-        if string.match(proto.name, pattern) and proto.hidden then return true end
-    end
-    return false
-end
-
-
--- Determines whether the given recipe is a barreling or stacking one
-local compacting_recipe_mods = {
-    ["base"] = {patterns = {"^fill%-.*", "^empty%-.*"}, item = "barrel"},
-    ["pycoalprocessing"] = {patterns = {"^fill%-.*%-canister$", "^empty%-.*%-canister$"}}
-    --[[ ["deadlock-beltboxes-loaders"] = {"^deadlock%-stacks%-.*", "^deadlock%-packrecipe%-.*",
-                                      "^deadlock%-unpackrecipe%-.*"},
-    ["DeadlockCrating"] = {"^deadlock%-packrecipe%-.*", "^deadlock%-unpackrecipe%-.*"},
-    ["IntermodalContainers"] = {"^ic%-load%-.*", "^ic%-unload%-.*"},
-    ["space-exploration"] = {"^se%-delivery%-cannon%-pack%-.*"},
-    ["Satisfactorio"] = {"^packaged%-.*", "^unpack%-.*"} ]]
-}
-
----@param proto LuaRecipePrototype
----@return boolean
-function generator_util.is_compacting_recipe(proto)
-    for mod, filter_data in pairs(compacting_recipe_mods) do
-        if active_mods[mod] then
-            for _, pattern in pairs(filter_data.patterns) do
-                if string.match(proto.name, pattern) then
-                    if not filter_data.item then
-                        return true
-                    else
-                        for _, product in pairs(proto.products) do
-                            if product.name == filter_data.item then return true end
-                        end
-                        for _, ingredient in pairs(proto.ingredients) do
-                            if ingredient.name == filter_data.item then return true end
-                        end
-                    end
-                end
-            end
-        end
-    end
-    return false
 end
 
 
@@ -307,7 +242,6 @@ function generator_util.determine_launch_data(silo_proto)
     -- These values are not accessible in the API
     local frame_count, inverse_speed = 32, 1 / 0.3
     local arm_move_offset = rocket_proto.rising_speed * frame_count * inverse_speed
-    local rocket_quick_relaunch_start_offset = -0.625
     local rocket_flight_threshold = 0.1  -- hardcoded in the game files
 
     -- Cycle starts here
@@ -316,7 +250,7 @@ function generator_util.determine_launch_data(silo_proto)
     local doors_opened = 1
     launch_ticks = launch_ticks + doors_opened
 
-    local rocket_rising_threshold = 1 - rocket_quick_relaunch_start_offset - arm_move_offset
+    local rocket_rising_threshold = 1 - silo_proto.rocket_quick_relaunch_start_offset - arm_move_offset
     local rocket_rising = rocket_rising_threshold / rocket_proto.rising_speed
     launch_ticks = launch_ticks + rocket_rising
     energy_usage = energy_usage + (rocket_rising * power)
@@ -353,8 +287,8 @@ end
 function generator_util.formatted_effects(effects)
     if effects == nil then return {} end
 
-    -- This turns effects into an integer, multiplying by 100 as the values are allowed two decimals
-    -- The values need to be  divided by 100 and floored for calculation
+    -- This turns effects into an integer, multiplying by effect_precision for 0.01% precision
+    -- The values need to then be divided by effect_precision and floored for calculation
     for name, value in pairs(effects) do
         -- The API provides effects as values with only two decimals already
         effects[name] = value * MAGIC_NUMBERS.effect_precision
@@ -363,28 +297,68 @@ function generator_util.formatted_effects(effects)
     return effects
 end
 
-
 ---@param proto LuaEntityPrototype
----@return EffectReceiver effect_receiver
-function generator_util.format_effect_receiver(proto)
-    local effect_receiver = proto.effect_receiver or {
-        uses_module_effects = false,
-        uses_beacon_effects = false,
-        uses_surface_effects = false
-    }
-    local base_effect = effect_receiver.base_effect  -- can be nil
-    effect_receiver.base_effect = generator_util.formatted_effects(base_effect)
-
-    local any_positives = false
-    for _, effect in pairs(proto.allowed_effects or {}) do
-        if effect == true then any_positives = true; break end
+---@return boolean
+function generator_util.is_any_effect_viable(proto)
+    local allowed_categories = proto.allowed_module_categories
+    if allowed_categories ~= nil and table_size(allowed_categories) == 0 then
+        return false
     end
 
-    if not any_positives then
-        if proto.module_inventory_size ~= nil then
-            effect_receiver.uses_module_effects = false
-        end
+    local allowed_effects = proto.allowed_effects
+    if allowed_effects == nil then return false end
+
+    for _, effect in pairs(allowed_effects or {}) do
+        if effect == true then return true end
+    end
+
+    return false
+end
+
+---@class FormattedEffectReceiver
+---@field base_effect ModuleEffects
+---@field uses_module_effects boolean
+---@field uses_beacon_effects boolean
+---@field uses_surface_effects boolean
+---@field limits { [ModuleEffectName]: EffectValueRange }
+
+---@param proto LuaEntityPrototype
+---@return FormattedEffectReceiver effect_receiver
+function generator_util.format_effect_receiver(proto)
+    local effect_receiver = proto.effect_receiver
+    if effect_receiver == nil then
+        effect_receiver = {
+            base_effect = {},
+            uses_module_effects = false,
+            uses_beacon_effects = false,
+            uses_surface_effects = false,
+            consumption_limits = {low = -0.8, high = 1000},
+            speed_limits = {low = -0.8, high = 1000},
+            productivity_limits = {low = -0.8, high = 1000},
+            pollution_limits = {low = -0.8, high = 1000},
+            quality_limits = {low = 0, high = 1000}
+        }
+    else
+        local base_effect = effect_receiver.base_effect  -- can be nil
+        effect_receiver.base_effect = generator_util.formatted_effects(base_effect)
+    end
+
+    local module_limit = proto.module_inventory_size
+    if module_limit == nil or module_limit == 0 then
+        effect_receiver.uses_module_effects = false
+        -- Beacons can still be used even if the machine can't have modules
+    end
+
+    if not generator_util.is_any_effect_viable(proto) then
+        effect_receiver.uses_module_effects = false
         effect_receiver.uses_beacon_effects = false
+    end
+
+    -- Adjust limits format to be more convenient
+    effect_receiver.limits = {}
+    for name, _ in pairs(util.effects.blank) do
+        effect_receiver.limits[name] = effect_receiver[name .. "_limits"]
+        effect_receiver[name .. "_limits"] = nil
     end
 
     return effect_receiver
@@ -450,7 +424,7 @@ function generator_util.fill_categories(combined_list, used_categories, final_li
     for combined_category, list in pairs(combined_list) do
         for _, category in pairs(list) do
             for _, proto in pairs(used_categories[category]) do
-                local copy = ftable.deep_copy(proto)
+                local copy = util.flib.deep_copy(proto)
                 copy.combined_category = combined_category
                 insert_function(final_list, copy, combined_category)
             end

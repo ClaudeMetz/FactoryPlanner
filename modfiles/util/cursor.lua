@@ -35,7 +35,7 @@ function _cursor.set_entity(player, line, object)
     end
 
     local items_list, slot_index = {}, 0
-    if object.class == "Beacon" or object.proto.effect_receiver.uses_module_effects then
+    if object.class == "Beacon" or object:uses_effects() then
         local inventory = defines.inventory[object.proto.prototype_category .. "_modules"]
         for module in object.module_set:iterator() do
             local inventory_list = {}
@@ -60,7 +60,7 @@ function _cursor.set_entity(player, line, object)
     end
 
     -- Put item directly into the cursor if it's simple
-    if #items_list == 0 and object.proto.prototype_category ~= "assembling_machine" then
+    if #items_list == 0 and object.proto.prototype_category ~= "crafter" then
         player.cursor_ghost = {
             name = object.proto.built_by_item.name,
             quality = object.quality_proto.name
@@ -124,7 +124,10 @@ local function add_to_item_combinator(player, blueprint_entity, item_proto, amou
         if not blueprint_entity then goto skip_cursor end
         if not blueprint_entity.name == "constant-combinator" then goto skip_cursor end
 
-        local sections = blueprint_entity.control_behavior.sections
+        local control_behavior = blueprint_entity.control_behavior
+        if not control_behavior then goto skip_cursor end
+
+        local sections = control_behavior.sections
         if not (sections and sections.sections and #sections.sections == 1) then goto skip_cursor end
 
         local section = sections.sections[1]
@@ -147,7 +150,7 @@ local function add_to_item_combinator(player, blueprint_entity, item_proto, amou
             name = item_name,
             quality = "normal",
             comparator = "=",
-            count = math.ceil(amount * timescale - 1e-6)
+            count = math.ceil(amount * timescale - MAGIC_NUMBERS.margin_of_error)
         })
     end
 

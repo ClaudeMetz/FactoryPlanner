@@ -1,4 +1,4 @@
-local migrator = require("backend.handlers.migrator")
+local migrator = require("backend.migrations.migrator")
 local Factory = require("backend.data.Factory")
 
 local _porter = {}
@@ -11,8 +11,6 @@ local _porter = {}
 ---@field export_modset ModToVersion
 ---@field factories Factory[]
 
----@alias ExportString string
-
 -- Converts the given factories into a factory exchange string
 ---@param factories Factory[]
 ---@return ExportString
@@ -23,10 +21,10 @@ function _porter.generate_export_string(factories)
     }
 
     for _, factory in pairs(factories) do
-        table.insert(export_table.factories, factory:pack())
+        table.insert(export_table.factories, factory:pack(false))
     end
 
-    return helpers.encode_string(helpers.table_to_json(export_table))  --[[@as ExportString]]
+    return util.pack_export_string(export_table)  --[[@as ExportString]]
 end
 
 -- Converts the given factory exchange string into a temporary Factory
@@ -37,7 +35,7 @@ function _porter.process_export_string(export_string)
     local export_table = nil  ---@type AnyBasic?
 
     if not pcall(function()
-        export_table = helpers.json_to_table(helpers.decode_string(export_string) --[[@as string]])
+        export_table = util.unpack_export_string(export_string)
         assert(type(export_table) == "table")
     end) then return nil, "decoding_failure" end
     ---@cast export_table ExportTable
