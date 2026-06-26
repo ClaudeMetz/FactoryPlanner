@@ -1,4 +1,4 @@
-local generator_util = {}
+local _util = {}
 
 -- ** LOCAL UTIL **
 ---@alias RecipeItem FormattedProduct | Ingredient
@@ -110,7 +110,7 @@ end
 ---@param products Product[]
 ---@param main_product Product?
 ---@param ingredients Ingredient[]
-function generator_util.format_recipe(recipe_proto, products, main_product, ingredients)
+function _util.format_recipe(recipe_proto, products, main_product, ingredients)
     local temperature_limit = 3.4e+38
 
     for _, base_ingredient in pairs(ingredients) do
@@ -201,7 +201,7 @@ end
 
 ---@param normal_quality_value number
 ---@return number base_value
-function generator_util.get_base_value(normal_quality_value)
+function _util.get_base_value(normal_quality_value)
     if normal_quality_value == nil then return nil end
     return normal_quality_value / prototypes.quality["normal"].default_multiplier
 end
@@ -209,7 +209,7 @@ end
 -- Finds a sprite for the given entity prototype
 ---@param proto LuaEntityPrototype
 ---@return SpritePath | nil
-function generator_util.determine_entity_sprite(proto)
+function _util.determine_entity_sprite(proto)
     local entity_sprite = "entity/" .. proto.name  ---@type SpritePath
     if helpers.is_valid_sprite_path(entity_sprite) then
         return entity_sprite
@@ -235,7 +235,7 @@ end
 ---@param silo_proto LuaEntityPrototype
 ---@return number launch_time
 ---@return number energy_usage
-function generator_util.determine_launch_data(silo_proto)
+function _util.determine_launch_data(silo_proto)
     local power = silo_proto.active_energy_usage
     local rocket_proto = silo_proto.rocket_entity_prototype
 
@@ -284,7 +284,7 @@ end
 
 ---@param effects ModuleEffects?
 ---@return IntegerModuleEffects
-function generator_util.formatted_effects(effects)
+function _util.formatted_effects(effects)
     if effects == nil then return {} end
 
     -- This turns effects into an integer, multiplying by effect_precision for 0.01% precision
@@ -299,7 +299,7 @@ end
 
 ---@param proto LuaEntityPrototype
 ---@return boolean
-function generator_util.is_any_effect_viable(proto)
+function _util.is_any_effect_viable(proto)
     local allowed_categories = proto.allowed_module_categories
     if allowed_categories ~= nil and table_size(allowed_categories) == 0 then
         return false
@@ -324,7 +324,7 @@ end
 
 ---@param proto LuaEntityPrototype
 ---@return FormattedEffectReceiver effect_receiver
-function generator_util.format_effect_receiver(proto)
+function _util.format_effect_receiver(proto)
     local effect_receiver = proto.effect_receiver
     if effect_receiver == nil then
         effect_receiver = {
@@ -340,7 +340,7 @@ function generator_util.format_effect_receiver(proto)
         }
     else
         local base_effect = effect_receiver.base_effect  -- can be nil
-        effect_receiver.base_effect = generator_util.formatted_effects(base_effect)
+        effect_receiver.base_effect = _util.formatted_effects(base_effect)
     end
 
     local module_limit = proto.module_inventory_size
@@ -349,7 +349,7 @@ function generator_util.format_effect_receiver(proto)
         -- Beacons can still be used even if the machine can't have modules
     end
 
-    if not generator_util.is_any_effect_viable(proto) then
+    if not _util.is_any_effect_viable(proto) then
         effect_receiver.uses_module_effects = false
         effect_receiver.uses_beacon_effects = false
     end
@@ -369,7 +369,7 @@ end
 ---@return string? category
 ---@return LuaFluidBoxPrototype? input
 ---@return LuaFluidBoxPrototype? output
-function generator_util.get_boiler_data(proto)
+function _util.get_boiler_data(proto)
     local input, output = nil, nil  -- need to find these manually
     for _, fluid_box in pairs(proto.fluidbox_prototypes) do
         if fluid_box.production_type == "input-output" or fluid_box.production_type == "input" then
@@ -399,7 +399,7 @@ end
 ---@param proto FPRecipePrototype | MachineBurner
 ---@param combined_list { string: string[] }
 ---@param used_categories { string: [FPMachinePrototype | FPFuelPrototype] }
-function generator_util.format_category_data(proto, combined_list, used_categories)
+function _util.format_category_data(proto, combined_list, used_categories)
     local list = {}
 
     for category, _ in pairs(proto.categories) do
@@ -420,7 +420,7 @@ end
 ---@param used_categories { string: [FPMachinePrototype | FPFuelPrototype] }
 ---@param final_list NamedPrototypesWithCategory<FPMachinePrototype | FPFuelPrototype>
 ---@param insert_function function
-function generator_util.fill_categories(combined_list, used_categories, final_list, insert_function)
+function _util.fill_categories(combined_list, used_categories, final_list, insert_function)
     for combined_category, list in pairs(combined_list) do
         for _, category in pairs(list) do
             for _, proto in pairs(used_categories[category]) do
@@ -436,7 +436,7 @@ end
 -- Adds the tooltip for the given recipe
 ---@param recipe FPRecipePrototype
 ---@return LocalisedString
-function generator_util.recipe_tooltip(recipe)
+function _util.recipe_tooltip(recipe)
     local tooltip = {"", {"fp.recipe_title", recipe.sprite, recipe.localised_name}}  ---@type LocalisedString
     local current_table, next_index = tooltip, 3
 
@@ -474,22 +474,22 @@ end
 -- Generates a table imitating LuaGroup to avoid lua-cpp bridging
 ---@param group LuaGroup
 ---@return ItemGroup group_table
-function generator_util.generate_group_table(group)
+function _util.generate_group_table(group)
     return {name=group.name, localised_name=group.localised_name, order=group.order, valid=true}
 end
 
 ---@param proto FPItemPrototype | FPRecipePrototype
-function generator_util.add_default_groups(proto)
-    proto.group = generator_util.generate_group_table(prototypes.item_group["other"])
-    proto.subgroup = generator_util.generate_group_table(prototypes.item_subgroup["other"])
+function _util.add_default_groups(proto)
+    proto.group = _util.generate_group_table(prototypes.item_group["other"])
+    proto.subgroup = _util.generate_group_table(prototypes.item_subgroup["other"])
 end
 
 
 ---@param text LocalisedString
 ---@param color Color
 ---@return LocalisedString
-function generator_util.colored_rich_text(text, color)
+function _util.colored_rich_text(text, color)
     return {"", "[color=", color.r, ",", color.g, ",", color.b, "]", text, "[/color]"}
 end
 
-return generator_util
+return _util
