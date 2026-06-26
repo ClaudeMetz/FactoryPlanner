@@ -8,7 +8,7 @@ local Object = require("backend.data.Object")
 ---@field proto FPItemPrototype | FPPackedPrototype
 ---@field defined_by ProductDefinedBy
 ---@field required_amount number
----@field belt_proto FPBeltPrototype | FPPackedPrototype
+---@field belt_proto (FPBeltPrototype | FPPackedPrototype)?
 ---@field amount number
 local Product = Object.methods()
 Product.__index = Product
@@ -25,6 +25,25 @@ local function init(proto)
 
         amount = 0  -- the amount satisfied by the solver
     }, "Product", Product)  --[[@as Product]]
+    return object
+end
+
+
+---@return Product
+local function initDummy()
+    local object = Object.init({
+        proto = {
+            name="",
+            category="item",
+            data_type="items",
+            simplified=true
+        }, --[[@as FPPackedPrototype]]
+        defined_by = "amount",
+        required_amount = 0,
+        belt_proto = nil,
+        amount = 0,
+        dummy = true
+    }, "Product", Product) --[[@as Product]]
     return object
 end
 
@@ -64,10 +83,12 @@ end
 function Product:paste(object)
     -- Product objects are converted to SimpleItems when copied, so they can't appear here
     if object.class == "SimpleItem" or object.class == "Fuel" then
-        local proto = object.proto
+        local proto = object.proto --[[@as FPItemPrototype | FPPackedPrototype]]
         if object.class == "Fuel" then  -- need an Item prototype here, not Fuel
-            proto = prototyper.util.find("items", object:get_name_with_temperature(), proto.type)
+            proto = prototyper.util.find("items", object:get_name_with_temperature(), proto.type) --[[@as FPItemPrototype | FPPackedPrototype]]
         end
+
+        if proto.simplified then return false, "incompatible" end
 
         -- Avoid duplicate items, but allow pasting over the same item proto
         local existing_item = self.parent:find({proto=proto})
@@ -110,11 +131,12 @@ end
 ---@param packed_self PackedProduct
 ---@return Product Product
 local function unpack(packed_self)
+    -- Prototypes are unpacked at validate
     local unpacked_self = init(packed_self.proto)
+    unpacked_self.belt_proto = packed_self.belt_proto
 
     unpacked_self.defined_by = packed_self.defined_by
     unpacked_self.required_amount = packed_self.required_amount
-    unpacked_self.belt_proto = packed_self.belt_proto
 
     return unpacked_self
 end
@@ -140,4 +162,4 @@ function Product:repair(player)
     return false
 end
 
-return {init = init, unpack = unpack}
+return {init = init, initDummy = initDummy, unpack = unpack}

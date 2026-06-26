@@ -32,6 +32,22 @@ local function init(parent)
 end
 
 
+---@param parent ModuledObject?
+---@return ModuleSet
+local function initDummy(parent)
+    local object = Object.init({
+        first = nil,
+
+        module_count = 0,
+        module_limit = 0,
+        empty_slots = 0,
+
+        parent = parent
+    }, "ModuleSet", ModuleSet)  --[[@as ModuleSet]]
+    return object
+end
+
+
 function ModuleSet:index()
     OBJECT_INDEX[self.id] = self
     for module in self:iterator() do module:index() end
@@ -123,7 +139,7 @@ end
 function ModuleSet:verify_compatibility()
     local modules_to_remove = {}
     for module in self:iterator() do
-        if not self:check_compatibility(module.proto) then
+        if module.proto.simplified or not self:check_compatibility(module.proto --[[@as FPModulePrototype]]) then
             table.insert(modules_to_remove, module)
         end
     end
@@ -257,7 +273,7 @@ end
 ---@return boolean success
 ---@return string? error
 function ModuleSet:paste(module)
-    if not self:check_compatibility(module.proto) then
+    if module.proto.simplified or not self:check_compatibility(module.proto --[[@as FPModulePrototype]]) then
         return false, "incompatible"
     elseif self.empty_slots == 0 then
         return false, "no_empty_slots"
@@ -327,4 +343,4 @@ function ModuleSet:repair(player)
     return self.valid
 end
 
-return {init = init, unpack = unpack}
+return {init = init, initDummy = initDummy, unpack = unpack}

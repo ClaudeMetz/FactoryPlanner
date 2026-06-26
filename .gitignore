@@ -1,5 +1,6 @@
 .DS_Store
-.vscode
+.vscode/*
+!.vscode/extensions.json
 modfiles/scenarios
 .luarc.json
 .emmyrc.json

@@ -24,12 +24,12 @@ prototyper.data_types = {recipes = false, items = true, machines = true, fuels =
 ---@alias NamedPrototypes<T> { [string]: T }
 ---@alias NamedPrototypesWithCategory<T> { [string]: { name: string, members: { [string]: T } } } }
 ---@alias NamedCategory { name: string, members: { [string]: table } }
----@alias AnyNamedPrototypes NamedPrototypes | NamedPrototypesWithCategory
+---@alias AnyNamedPrototypes<T> NamedPrototypes<T> | NamedPrototypesWithCategory<T>
 
 ---@alias IndexedPrototypes<T> { [integer]: T }
 ---@alias IndexedPrototypesWithCategory<T> { [integer]: { id: integer, name: string, members: { [integer]: T } } }
----@alias IndexedCategory { id: integer, name: string, members: { [integer]: table } }
----@alias AnyIndexedPrototypes IndexedPrototypes | IndexedPrototypesWithCategory
+---@alias IndexedCategory { id: integer, name: string, data_type: DataType, category_id: integer?, members: { [integer]: table } }
+---@alias AnyIndexedPrototypes<T> IndexedPrototypes<T> | IndexedPrototypesWithCategory<T>
 
 ---@class PrototypeLists: { [DataType]: table }
 ---@field recipes IndexedPrototypes<FPRecipePrototype>
@@ -205,7 +205,7 @@ function prototyper.util.validate_prototype_object(prototype, category_designati
         ---@cast prototype AnyFPPrototype
         local category = prototype[category_designation]  ---@type string
         local new_proto = prototyper.util.find(prototype.data_type, prototype.name, category)
-        updated_proto = new_proto or prototyper.util.simplify_prototype(prototype, category_designation)
+        updated_proto = new_proto or prototyper.util.simplify_prototype(prototype, category_designation) --[[@as AnyPrototype]]
     end
 
     return updated_proto

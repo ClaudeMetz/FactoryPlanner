@@ -126,8 +126,7 @@ end
 local function handle_item_add(player, tags, event)
     if event.shift then  -- paste
         local factory = util.context.get(player, "Factory")  --[[@as Factory]]
-        local dummy_proto = { name="", category="item", data_type="items", simplified=true} --[[@as FPPackedPrototype]]
-        local dummy_product = Product.init(dummy_proto)
+        local dummy_product = Product.initDummy()
         util.clipboard.dummy_paste(player, dummy_product, factory)
     else
         util.gui.open_dialog(player, {dialog="picker", modal_data={item_id=nil, item_category=tags.item_category}})
@@ -181,7 +180,9 @@ local function handle_item_button_click(player, tags, action)
 
     elseif action == "add_to_cursor" then
         local amount = (item.class == "Product") and item:get_required_amount() or item.amount
-        util.cursor.handle_item_click(player, item.proto, amount)
+        if not item.proto.simplified then
+            util.cursor.handle_item_click(player, item.proto --[[@as FPItemPrototype]], amount)
+        end
 
     elseif action == "factoriopedia" then
         local name = (item.proto.temperature) and item.proto.base_name or item.proto.name

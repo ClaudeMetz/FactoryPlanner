@@ -14,7 +14,7 @@ script.register_metatable("Module", Module)
 
 ---@param proto FPModulePrototype | FPPackedPrototype
 ---@param amount integer
----@param quality_proto FPQualityPrototype
+---@param quality_proto FPQualityPrototype | FPPackedPrototype
 ---@return Module
 local function init(proto, amount, quality_proto)
     local object = Object.init({
@@ -25,7 +25,8 @@ local function init(proto, amount, quality_proto)
         total_effects = nil,
         effects_tooltip = ""
     }, "Module", Module)  --[[@as Module]]
-    if not proto.simplified then object:summarize_effects() end
+
+    object:summarize_effects()
     return object
 end
 
@@ -74,7 +75,7 @@ end
 function Module:paste(object)
     if object.class == "Module" then
         ---@cast object Module
-        if self.parent:check_compatibility(object.proto) then
+        if not self.proto.simplified and self.parent:check_compatibility(object.proto --[[@as FPModulePrototype]]) then
             if self.proto == object.proto and self.quality_proto == object.quality_proto then
                 local available_slots = self.parent.module_limit - self.parent.module_count + self.amount
                 self:set_amount(math.min(object.amount, available_slots))
@@ -91,7 +92,7 @@ function Module:paste(object)
                     parent:remove(self)
                 else
                     object:set_amount(math.min(object.amount, self.amount))
-                    parent:replace(self.parent, object)
+                    parent:replace(self, object)
                 end
 
                 parent:normalize({sort=true, effects=true})
@@ -108,8 +109,8 @@ end
 
 ---@class PackedModule: PackedObject
 ---@field class "Module"
----@field proto FPModulePrototype
----@field quality_proto FPQualityPrototype
+---@field proto FPPackedPrototype
+---@field quality_proto FPPackedPrototype
 ---@field amount integer
 
 ---@param full boolean
@@ -126,8 +127,9 @@ end
 ---@param packed_self PackedModule
 ---@return Module module
 local function unpack(packed_self, parent)
-    local unpacked_self = init(packed_self.proto, packed_self.amount)
-    unpacked_self.quality_proto = packed_self.quality_proto
+    -- Prototypes are unpacked at validate
+    local unpacked_self = init(packed_self.proto, packed_self.amount, packed_self.quality_proto)
+
     unpacked_self.parent = parent
 
     return unpacked_self

@@ -18,7 +18,7 @@ local Machine = Object.methods()
 Machine.__index = Machine
 script.register_metatable("Machine", Machine)
 
----@param proto FPMachinePrototype
+---@param proto FPMachinePrototype | FPPackedPrototype
 ---@param parent Line
 ---@return Machine
 local function init(proto, parent)
@@ -28,7 +28,7 @@ local function init(proto, parent)
         limit = nil,
         force_limit = true,  -- ignored if limit is not set
         fuel = nil,  -- needs to be set by calling Machine.normalize_fuel afterwards
-        module_set = nil,
+        module_set = nil, -- set below
 
         amount = 0,
         total_effects = nil,
@@ -36,7 +36,37 @@ local function init(proto, parent)
 
         parent = parent
     }, "Machine", Machine)  --[[@as Machine]]
+
     object.module_set = ModuleSet.init(object)
+    return object
+end
+
+
+---@param parent Line?
+---@return Machine
+local function initDummy(parent)
+    local object = Object.init({
+        proto = {
+            name = "",
+            category = "machine",
+            data_type = "machines",
+            simplified = true
+        }, --[[@as FPPackedPrototype]]
+        quality_proto = defaults.get_fallback("qualities").proto,
+        limit = nil,
+        force_limit = true,
+        fuel = nil,
+        module_set = nil,
+
+        amount = 0,
+        total_effects = nil,
+        effects_tooltip = "",
+        recipe_effects = nil,
+
+        parent = parent,
+        dummy = true
+    }, "Machine", Machine)  --[[@as Machine]]
+    object.module_set = ModuleSet.initDummy(object)
     return object
 end
 
@@ -60,17 +90,27 @@ function Machine:normalize_fuel(player)
     -- no need to continue if this machine doesn't have a burner
 
     local burner = self.proto.burner
+
+    --- Sanity Check
+    if burner == nil then self.fuel = nil return end
+
     -- Check if fuel has a valid category for this machine, replace otherwise
     if self.fuel and not burner.categories[self.fuel.proto.category] then self.fuel = nil end
 
     if self.fuel == nil then  -- add a fuel for this machine if it doesn't have one here
         local default_fuel_proto = defaults.get(player, "fuels", burner.combined_category).proto
-        self.fuel = Fuel.init(default_fuel_proto, self)  -- builds temperature_data implicitly
-        self.fuel:apply_temperature_default(player)
+        if not default_fuel_proto.simplified then
+            ---@cast default_fuel_proto FPFuelPrototype
+            self.fuel = Fuel.init(default_fuel_proto, self)  -- builds temperature_data implicitly
+            self.fuel:apply_temperature_default(player)
+        end
     else  -- make sure the fuel is of the right combined category
         if burner.combined_category ~= self.fuel.proto.category then
             local proto = prototyper.util.find("fuels", self.fuel.proto.name, burner.combined_category)
-            self.fuel:set_proto(proto, player)
+            if proto ~= nil and not proto.simplified then
+                ---@cast proto FPFuelPrototype
+                self.fuel:set_proto(proto, player)
+            end
         end
     end
 end
@@ -162,8 +202,11 @@ function Machine:compile_fuel_filter()
     local compatible_fuels = {}
 
     local fuel_category = prototyper.util.find("fuels", nil, self.proto.burner.combined_category)
-    for _, fuel_proto in pairs(fuel_category.members) do
-        table.insert(compatible_fuels, fuel_proto.name)
+
+    if fuel_category ~= nil and not fuel_category.simplified then
+        for _, fuel_proto in pairs(fuel_category.members) do
+            table.insert(compatible_fuels, fuel_proto.name)
+        end
     end
 
     return {{filter="name", name=compatible_fuels}}
@@ -191,27 +234,32 @@ end
 function Machine:paste(object, player)
     if object.class == "Machine" then
         local corresponding_proto = prototyper.util.find("machines", object.proto.name, self.proto.combined_category)
-        if corresponding_proto and self.parent:is_machine_compatible(object.proto) then
-            self.parent:change_machine_to_proto(player, corresponding_proto)
-            self.quality_proto = object.quality_proto
-
-            self.limit = object.limit
-            self.force_limit = object.force_limit
-
-            if object.fuel then
-                self.fuel = object.fuel
-                self.fuel.parent = self
-            end
-
-            self.module_set = object.module_set
-            self.module_set.parent = self
-            -- Need to verify compatibility because it depends on the recipe too
-            self.module_set:normalize({compatibility=true, effects=true})
-
-            return true, nil
-        else
+        if corresponding_proto == nil or corresponding_proto.simplified then
             return false, "incompatible"
         end
+
+        ---@cast corresponding_proto FPMachinePrototype
+        if not self.parent:is_machine_compatible(corresponding_proto) then
+            return false, "incompatible"
+        end
+
+        self.parent:change_machine_to_proto(player, corresponding_proto)
+        self.quality_proto = object.quality_proto
+
+        self.limit = object.limit
+        self.force_limit = object.force_limit
+
+        if object.fuel then
+            self.fuel = object.fuel
+            self.fuel.parent = self
+        end
+
+        self.module_set = object.module_set
+        self.module_set.parent = self
+        -- Need to verify compatibility because it depends on the recipe too
+        self.module_set:normalize({compatibility=true, effects=true})
+
+        return true, nil
     elseif object.class == "Module" then
        return self.module_set:paste(object)
     else
@@ -222,8 +270,8 @@ end
 
 ---@class PackedMachine: PackedObject
 ---@field class "Machine"
----@field proto FPMachinePrototype
----@field quality_proto FPQualityPrototype
+---@field proto FPPackedPrototype
+---@field quality_proto FPPackedPrototype
 ---@field limit number?
 ---@field force_limit boolean
 ---@field fuel PackedFuel?
@@ -249,8 +297,10 @@ end
 ---@param parent Line
 ---@return Machine machine
 local function unpack(packed_self, parent)
+    -- Prototypes are unpacked at validate
     local unpacked_self = init(packed_self.proto, parent)
     unpacked_self.quality_proto = packed_self.quality_proto
+
     unpacked_self.limit = packed_self.limit
     unpacked_self.force_limit = packed_self.force_limit
     unpacked_self.fuel = packed_self.fuel and Fuel.unpack(packed_self.fuel, unpacked_self)
@@ -280,11 +330,11 @@ end
 function Machine:validate()
     local recipe_category = self.parent.recipe.proto.combined_category
     if recipe_category ~= self.proto.combined_category then
-        local corresponding_proto = prototyper.util.find("machines", self.proto.name, recipe_category)
-        if corresponding_proto then  -- check if the machine just moved categories
-            self.proto = corresponding_proto --[[@as FPMachinePrototype]] -- this is okay in this specific context
+        local corresponding_proto = prototyper.util.find("machines", self.proto.name, recipe_category) --[[@as FPMachinePrototype | FPPackedPrototype]]
+        if corresponding_proto and not corresponding_proto.simplified then  -- check if the machine just moved categories
+            self.proto = corresponding_proto -- this is okay in this specific context
         else  -- otherwise, this machine is invalid
-            self.proto = prototyper.util.simplify_prototype(self.proto, "combined_category") --[[@as FPPackedPrototype]]
+            self.proto = prototyper.util.simplify_prototype(self.proto, "combined_category") --[[@as FPMachinePrototype | FPPackedPrototype]]
             self.valid = false
         end
     else
@@ -307,13 +357,7 @@ function Machine:validate()
     if self.valid then  -- only makes sense if the machine is valid
         if self.proto.burner and not self.fuel then
             -- If this machine changed to require fuel, add this dummy
-            local dummy_proto = {
-                name = "",
-                category = self.proto.burner.combined_category,
-                data_type = "fuels",
-                simplified = true
-            } --[[@as FPPackedPrototype]]
-            self.fuel = Fuel.init(dummy_proto, self)
+            self.fuel = Fuel.initDummy(self.proto.burner.combined_category, self)
         end
         if self.fuel then self.valid = self.fuel:validate() and self.valid end
     end
@@ -354,4 +398,4 @@ function Machine:repair(player)
     return self.valid
 end
 
-return {init = init, unpack = unpack}
+return {init = init, initDummy=initDummy, unpack = unpack}

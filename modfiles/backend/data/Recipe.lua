@@ -37,9 +37,32 @@ local function init(proto, production_type, parent)
         parent = parent
     }, "Recipe", Recipe)  --[[@as Recipe]]
 
-    if proto.simplified ~= true then
+    if not proto.simplified then
         object:build_temperatures_data()
     end
+
+    return object
+end
+
+
+---@param parent Line?
+---@return Recipe
+local function initDummy(parent)
+    local object = Object.init({
+        proto = {
+            name="",
+            category="recipe",
+            data_type="recipes",
+            simplified=true
+        }, --[[@as FPPackedPrototype]]
+        production_type = "produce",
+        priority_product = nil,
+        temperatures = {},
+
+        temperature_data = nil,
+
+        parent = parent
+    }, "Recipe", Recipe) --[[@as Recipe]]
 
     return object
 end
@@ -143,10 +166,11 @@ end
 ---@param packed_self PackedRecipe
 ---@return Recipe Recipe
 local function unpack(packed_self, parent)
+    -- Prototypes are unpacked at validate
     local unpacked_self = init(packed_self.proto, packed_self.production_type, parent)
-
-    -- These will be automatically unpacked by the validation process
     unpacked_self.priority_product = packed_self.priority_product
+
+    -- Will be automatically unpacked by the validation process
     unpacked_self.temperatures = packed_self.temperatures
 
     return unpacked_self
@@ -206,4 +230,4 @@ function Recipe:repair(player)
     return self.valid
 end
 
-return {init = init, unpack = unpack}
+return {init = init, initDummy=initDummy, unpack = unpack}
