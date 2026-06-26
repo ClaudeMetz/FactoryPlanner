@@ -89,7 +89,7 @@ function Product:paste(object)
             proto = prototyper.util.find("items", proto.name .. "-" .. object.temperature, "fluid") --[[@as FPItemPrototype?]]
         end
 
-        if proto == nil then return false, "incompatible" end
+        if proto == nil or proto.simplified then return false, "incompatible" end
 
         -- Avoid duplicate items, but allow pasting over the same item proto
         local existing_item = self.parent:find({proto=proto})
