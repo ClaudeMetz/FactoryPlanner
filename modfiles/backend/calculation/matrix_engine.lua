@@ -688,7 +688,7 @@ function matrix_engine.get_line_aggregate(line_data, player_index, floor_id, mac
     end
 
     for _, product in pairs(line_data.recipe_proto.products) do
-        local prodded_amount = solver_util.determine_prodded_amount(product, total_effects)
+        local prodded_amount = solver.util.determine_prodded_amount(product, total_effects)
         add_product(product, prodded_amount * total_crafts)
     end
 
@@ -702,14 +702,14 @@ function matrix_engine.get_line_aggregate(line_data, player_index, floor_id, mac
 
     -- Determine energy consumption (including potential fuel needs) and emissions
     local fuel_proto = line_data.fuel_proto
-    local energy_consumption, emissions = solver_util.determine_energy_consumption_and_emissions(
+    local energy_consumption, emissions = solver.util.determine_energy_consumption_and_emissions(
         machine_proto, line_data.recipe_proto, fuel_proto, machine_amount, line_data.energy_usage,
         total_effects, line_data.pollutant_type)
 
     local fuel, fuel_amount = nil, nil
     if machine_proto.energy_type == "burner" then
         local burner = machine_proto.burner
-        fuel_amount = solver_util.determine_fuel_amount(energy_consumption, burner, fuel_proto.fuel_value)
+        fuel_amount = solver.util.determine_fuel_amount(energy_consumption, burner, fuel_proto.fuel_value)
 
         fuel = {type=fuel_proto.type, name=line_data.fuel_name, amount=fuel_amount}
         structures.class.add(line_aggregate.Ingredient, fuel)

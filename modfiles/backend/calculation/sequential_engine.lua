@@ -35,7 +35,7 @@ local function update_line(line_data, aggregate, looped_fuel)
     -- Determines the production ratio that would be needed to fully satisfy the given product
     local function determine_production_ratio(relevant_product)
         local demand = aggregate.Ingredient[relevant_product.type][relevant_product.name]
-        local prodded_amount = solver_util.determine_prodded_amount(relevant_product, total_effects)
+        local prodded_amount = solver.util.determine_prodded_amount(relevant_product, total_effects)
         return (demand * (line_data.percentage / 100)) / prodded_amount
     end
 
@@ -83,18 +83,18 @@ local function update_line(line_data, aggregate, looped_fuel)
 
     -- Determines the amount of the given item, considering productivity
     local function determine_amount_with_productivity(item)
-        local prodded_amount = solver_util.determine_prodded_amount(item, total_effects)
+        local prodded_amount = solver.util.determine_prodded_amount(item, total_effects)
         return prodded_amount * production_ratio
     end
 
     -- Determine energy consumption (including potential fuel needs) and emissions
-    local energy_consumption, emissions = solver_util.determine_energy_consumption_and_emissions(machine_proto,
+    local energy_consumption, emissions = solver.util.determine_energy_consumption_and_emissions(machine_proto,
         recipe_proto, fuel_proto, machine_amount, line_data.energy_usage, total_effects, line_data.pollutant_type)
 
     local fuel_amount = nil
     if machine_proto.energy_type == "burner" then
         local fuel_name = line_data.fuel_name
-        fuel_amount = solver_util.determine_fuel_amount(energy_consumption,
+        fuel_amount = solver.util.determine_fuel_amount(energy_consumption,
             machine_proto.burner, fuel_proto.fuel_value)
 
         -- Handle recipes producing their own machine's fuel

@@ -2,7 +2,9 @@ local sequential_engine = require("backend.calculation.sequential_engine")
 local matrix_engine = require("backend.calculation.matrix_engine")
 local structures = require("backend.calculation.structures")
 
-solver, solver_util = {}, {}
+solver = {
+    util = {}
+}
 
 -- ** LOCAL UTIL **
 local function set_blank_line(player, floor, line)
@@ -360,7 +362,7 @@ end
 
 -- ** UTIL **
 -- Calculates the product amount after applying productivity bonuses
-function solver_util.determine_prodded_amount(item, total_effects)
+function solver.util.determine_prodded_amount(item, total_effects)
     if total_effects.productivity <= 0 then return item.amount end  -- no negative productivity
 
     -- Return formula is a simplification of the following formula:
@@ -370,7 +372,7 @@ function solver_util.determine_prodded_amount(item, total_effects)
 end
 
 -- Determines the amount of energy needed for a machine and the emissions that produces
-function solver_util.determine_energy_consumption_and_emissions(machine_proto, recipe_proto,
+function solver.util.determine_energy_consumption_and_emissions(machine_proto, recipe_proto,
         fuel_proto, machine_amount, energy_usage, total_effects, pollutant_type)
     local consumption_multiplier = 1 + (total_effects.consumption / MAGIC_NUMBERS.effect_precision)
     local energy_consumption = machine_amount * (energy_usage * 60) * consumption_multiplier
@@ -391,7 +393,7 @@ function solver_util.determine_energy_consumption_and_emissions(machine_proto, r
 end
 
 -- Determines the amount of fuel needed in the given context
-function solver_util.determine_fuel_amount(energy_consumption, burner, fuel_value)
+function solver.util.determine_fuel_amount(energy_consumption, burner, fuel_value)
     return (energy_consumption / burner.effectivity) / fuel_value
 end
 
