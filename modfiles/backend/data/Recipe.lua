@@ -139,6 +139,8 @@ function Recipe:update_effects(force, factory)
     elseif self.proto.productivity_recipe ~= nil then name = self.proto.productivity_recipe
     else return end  -- no recipe effects for custom recipes
 
+    if not name then return end
+
     self.effects = {productivity = factory:get_productivity_bonus(force, name)}
     self.parent.machine:summarize_effects()  -- update machine to update its tooltip
 end

@@ -247,7 +247,7 @@ end
 
 ---@return Factory clone
 function Factory:clone()
-    local clone = unpack(self:pack())
+    local clone = unpack(self:pack(false))
     clone:validate()
     return clone
 end

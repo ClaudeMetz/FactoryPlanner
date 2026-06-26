@@ -61,7 +61,6 @@ local function initDummy(parent)
         amount = 0,
         total_effects = nil,
         effects_tooltip = "",
-        recipe_effects = nil,
 
         parent = parent,
         dummy = true
@@ -135,8 +134,10 @@ end
 ---@param proto FPModulePrototype
 ---@return boolean
 function Machine:allows_module(proto)
-    return util.effects.is_compatible(self.proto, proto) and
-           util.effects.is_compatible(self.parent.recipe.proto, proto)
+    return not self.proto.simplified and
+           util.effects.is_compatible(self.proto --[[@as FPMachinePrototype]], proto) and
+           not self.parent.recipe.proto.simplified and
+           util.effects.is_compatible(self.parent.recipe.proto --[[@as FPRecipePrototype]], proto)
 end
 
 
@@ -311,11 +312,11 @@ end
 
 ---@return Machine clone
 function Machine:clone()
-    local clone = unpack(self:pack(), self.parent)
+    local clone = unpack(self:pack(false), self.parent)
 
     -- Copy these over so we don't need to run the solver
     clone.amount = self.amount
-    clone.recipe_effects = self.recipe_effects
+
     if self.fuel then
         clone.fuel.amount = self.fuel.amount
         clone.fuel.satisfied_amount = self.fuel.satisfied_amount

@@ -254,11 +254,12 @@ end
 ---@field class string
 
 ---@protected
+---@param full boolean
 ---@return PackedObject[] packed_objects
-function methods:_pack()
+function methods:_pack(full)
     local packed_objects = {}
     for object in self:_iterator() do
-        table.insert(packed_objects, object:pack())
+        table.insert(packed_objects, object:pack(full))
     end
     return packed_objects
 end

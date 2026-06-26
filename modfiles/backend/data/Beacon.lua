@@ -120,7 +120,8 @@ end
 ---@param proto FPModulePrototype
 ---@return boolean
 function Beacon:allows_module(proto)
-    return util.effects.is_compatible(self.proto, proto) and
+    return not self.proto.simplified and
+           util.effects.is_compatible(self.proto --[[@as FPBeaconPrototype]], proto) and
            self.parent.machine:allows_module(proto)
 end
 
@@ -215,7 +216,7 @@ end
 
 ---@return Beacon clone
 function Beacon:clone()
-    local clone = unpack(self:pack(), self.parent)
+    local clone = unpack(self:pack(false), self.parent)
     clone:validate()
     return clone
 end
