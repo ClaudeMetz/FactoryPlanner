@@ -81,7 +81,7 @@ function Beacon:summarize_effects()
     end
 
     self.total_effects = effects
-    self.effects_tooltip = util.effects.format(effects)
+    self.effects_tooltip = lib.effects.format(effects)
 
     self.parent:summarize_effects()
 end
@@ -94,7 +94,7 @@ end
 ---@param proto FPModulePrototype
 ---@return boolean
 function Beacon:allows_module(proto)
-    return util.effects.is_compatible(self.proto, proto) and
+    return lib.effects.is_compatible(self.proto, proto) and
            self.parent.machine:allows_module(proto)
 end
 

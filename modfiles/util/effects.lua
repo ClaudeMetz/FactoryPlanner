@@ -38,7 +38,7 @@ end
 ---@param effect_tables IntegerModuleEffects[]
 ---@return IntegerModuleEffects
 function _effects.merge(effect_tables)
-    local effects = util.flib.shallow_copy(util.effects.blank)
+    local effects = lib.flib.shallow_copy(lib.effects.blank)
     for _, effect_table in pairs(effect_tables) do
         for name, effect in pairs(effect_table) do
             effects[name] = effects[name] + effect  -- doesn't create decimals
@@ -110,7 +110,7 @@ function _effects.format(module_effects, options)
     options.recipe_effects = options.recipe_effects or {}
 
     local tooltip_lines = {""}
-    for effect_name, _ in pairs(util.effects.blank) do
+    for effect_name, _ in pairs(lib.effects.blank) do
         local module_effect = module_effects[effect_name]
         local machine_effect = options.machine_effects[effect_name]
         local recipe_effect = options.recipe_effects[effect_name]

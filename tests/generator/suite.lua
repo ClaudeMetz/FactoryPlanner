@@ -12,7 +12,7 @@ end
 return {
     testOffshorePumpWithNoFilter = {
         setup = function()
-            local copy = data_util.flib.deep_copy(data.raw["offshore-pump"]["offshore-pump"])
+            local copy = lib.flib.deep_copy(data.raw["offshore-pump"]["offshore-pump"])
             copy.name = "offshore-pump-no-filter"
             copy.fluid_box.filter = nil
             data:extend{ copy }

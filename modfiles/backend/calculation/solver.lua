@@ -222,7 +222,7 @@ local function update_ingredient_satisfaction(floor, product_class)
     -- Iterates the lines from the bottom up, setting satisfaction amounts along the way
     for line in floor:iterator(nil, floor:find_last(), "previous") do
         if line.class == "Floor" then
-            local subfloor_product_class = util.flib.deep_copy(product_class)
+            local subfloor_product_class = lib.flib.deep_copy(product_class)
             update_ingredient_satisfaction(line, subfloor_product_class)
         elseif line.machine.fuel then
             local fuel = line.machine.fuel
@@ -250,11 +250,11 @@ end
 -- ** TOP LEVEL **
 -- Updates the whole factory calculations from top to bottom
 function solver.update(player, factory)
-    factory = factory or util.context.get(player, "Factory")
+    factory = factory or lib.context.get(player, "Factory")
     if factory and factory.valid then
         -- Cancel any pending update as it'll be running right now
         if factory.tick_of_solver_update then
-            util.nth_tick.cancel(factory.tick_of_solver_update)
+            lib.nth_tick.cancel(factory.tick_of_solver_update)
             factory.tick_of_solver_update = nil
         end
 
@@ -298,7 +298,7 @@ end
 -- ** INTERFACE **
 -- Returns a table containing all the data needed to run the calculations for the given factory
 function solver.generate_factory_data(player, factory)
-    local calculate_emissions = util.globals.preferences(player).calculate_emissions
+    local calculate_emissions = lib.globals.preferences(player).calculate_emissions
     local factory_data = {
         player_index = player.index,
         factory_id = factory.id,
@@ -327,7 +327,7 @@ function solver.set_factory_result(result)
 
     -- Determine satisfaction-amounts for all line ingredients
     local player = game.players[result.player_index]
-    if util.globals.preferences(player).ingredient_satisfaction then
+    if lib.globals.preferences(player).ingredient_satisfaction then
         solver.determine_ingredient_satisfaction(factory)
     end
 end

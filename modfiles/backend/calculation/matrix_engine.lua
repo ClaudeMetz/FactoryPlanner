@@ -55,14 +55,14 @@ function matrix_engine.get_item_key(item_type_name, item_name)
 end
 
 function matrix_engine.get_item(item_key)
-    local split_str = util.split_string(item_key, "_")
+    local split_str = lib.split_string(item_key, "_")
     local item_type_id, item_id = split_str[1], split_str[2]
     return prototyper.util.find("items", item_id, item_type_id)
 end
 
 -- this is really only used for debugging
 function matrix_engine.get_item_name(item_key)
-    local split_str = util.split_string(item_key, "_")
+    local split_str = lib.split_string(item_key, "_")
     local item_type_id, item_id = split_str[1], split_str[2]
     local item_info = prototyper.util.find("items", item_id, item_type_id)
     return item_info.type .. "_" .. item_info.name
@@ -80,7 +80,7 @@ end
 function matrix_engine.print_columns(columns)
     local s = 'COLUMNS\n'
     for i, k in ipairs(columns.values) do
-        local col_split_str = util.split_string(k, "_")
+        local col_split_str = lib.split_string(k, "_")
         if col_split_str[1]=="line" then
             s = s..'COL '..i..': '..k..'\n'
         else
@@ -229,7 +229,7 @@ function matrix_engine.get_linear_dependence_data(factory_data, matrix_metadata)
 
     local linearly_dependent_cols = matrix_engine.run_matrix_solver(factory_data, true)
     for col_name, _ in pairs(linearly_dependent_cols) do
-        local col_split_str = util.split_string(col_name, "_")
+        local col_split_str = lib.split_string(col_name, "_")
         if col_split_str[1] == "recipe" then
             local recipe_key = col_split_str[2]
             linearly_dependent_recipes[recipe_key] = true
@@ -341,7 +341,7 @@ function matrix_engine.run_matrix_solver(factory_data, check_linear_dependence)
         local linearly_dependent_variables = {}
         for col, _ in pairs(linearly_dependent_cols) do
             local col_name = columns.values[col]
-            local col_split_str = util.split_string(col_name, "_")
+            local col_split_str = lib.split_string(col_name, "_")
             if col_split_str[1] == "line" then
                 local floor = factory_data.top_floor
                 for i=2, #col_split_str-1 do
@@ -573,7 +573,7 @@ function matrix_engine.get_matrix(factory_data, rows, columns)
     -- loop over columns since it's easier to look up items for lines/free vars than vice-versa
     for col_num=1, #columns.values do
         local col_str = columns.values[col_num]
-        local col_split_str = util.split_string(col_str, "_")
+        local col_split_str = lib.split_string(col_str, "_")
         local col_type = col_split_str[1]
         -- note this string "item" is an internal matrix-solver convention and is unrelated to item types
         if col_type == "item" then

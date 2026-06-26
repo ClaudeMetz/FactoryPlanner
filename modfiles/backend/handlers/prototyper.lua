@@ -230,14 +230,14 @@ end
 -- Build the necessary RawDictionaries for translation
 function prototyper.util.build_translation_dictionaries()
     for _, item_category in ipairs(storage.prototypes.items) do
-        util.translator.new(item_category.name)
+        lib.translator.new(item_category.name)
         for _, proto in pairs(item_category.members) do
-            util.translator.add(item_category.name, proto.name, proto.localised_name)
+            lib.translator.add(item_category.name, proto.name, proto.localised_name)
         end
     end
 
-    util.translator.new("recipe")
+    lib.translator.new("recipe")
     for _, proto in pairs(storage.prototypes.recipes) do
-        util.translator.add("recipe", proto.name, proto.localised_name)
+        lib.translator.add("recipe", proto.name, proto.localised_name)
     end
 end

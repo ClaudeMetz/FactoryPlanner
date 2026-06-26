@@ -184,7 +184,7 @@ function generator.recipes.generate()
             local recipe = recipes[proto.fixed_recipe.name]
             if recipe ~= nil then
                 local category = proto.name .. "-using-" .. recipe.name
-                local recipe_copy = util.flib.deep_copy(recipe)
+                local recipe_copy = lib.flib.deep_copy(recipe)
                 recipe_copy.name = recipe.name .. "-for-" .. proto.name
                 recipe_copy.categories = {[category] = true}
                 recipe_copy.factoriopedia_id = {type="recipe", name=recipe.name}
@@ -307,7 +307,7 @@ function generator.recipes.generate()
                             launch_recipe.categories = {["launch-rocket"] = true}
                             launch_recipe.energy = 1
 
-                            local ingredients = {util.flib.deep_copy(rocket_parts_ingredient),
+                            local ingredients = {lib.flib.deep_copy(rocket_parts_ingredient),
                                 {type="item", name=item_name, amount=1}}
                             generator_util.format_recipe(launch_recipe, products, products[1], ingredients)
                             insert_prototype(recipes, launch_recipe, nil)
@@ -326,7 +326,7 @@ function generator.recipes.generate()
                         rocket_recipe.energy = 1
 
                         local rocket_products = {{type="entity", name="custom-silo-rocket", amount=1}}
-                        local ingredients = {util.flib.deep_copy(rocket_parts_ingredient)}
+                        local ingredients = {lib.flib.deep_copy(rocket_parts_ingredient)}
                         generator_util.format_recipe(rocket_recipe, rocket_products, rocket_products[1], ingredients)
                         insert_prototype(recipes, rocket_recipe, nil)
                     end
@@ -1439,9 +1439,9 @@ function generator.locations.generate()
             surface_properties[property_proto.name] = value
 
             local value_and_unit = {property_proto.localised_unit_key, value}  ---@type LocalisedString
-            if property_proto.is_time then value_and_unit = util.format.time(value) end
+            if property_proto.is_time then value_and_unit = lib.format.time(value) end
 
-            current_table, next_index = util.build_localised_string(
+            current_table, next_index = lib.build_localised_string(
                 {"fp.surface_property", property_proto.localised_name, value_and_unit}, current_table, next_index)
         end
 

@@ -33,7 +33,7 @@ MAGIC_NUMBERS = {
 MODIFIER_ACTIONS = {}  ---@type ActionTable
 GLOBAL_HANDLERS = {}  ---@type { [string]: function }
 
-util = require("util.util")
+lib = require('util.lib')
 llog = require("util.llog")
 
 require("ui.event_handler")

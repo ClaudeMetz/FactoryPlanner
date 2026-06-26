@@ -16,7 +16,7 @@ local function add_defaults_section(modal_elements, identifier, info_caption)
 end
 
 local function refresh_defaults_frame(player)
-    local modal_data = util.globals.modal_data(player)  --[[@as table]]
+    local modal_data = lib.globals.modal_data(player)  --[[@as table]]
     local modal_elements = modal_data.modal_elements
     local machine = modal_data.object  --[[@as Machine]]
 
@@ -47,7 +47,7 @@ local function refresh_defaults_frame(player)
 end
 
 local function add_defaults_frame(parent_frame, player)
-    local modal_elements = util.globals.modal_elements(player)
+    local modal_elements = lib.globals.modal_elements(player)
 
     local frame_defaults = parent_frame.add{type="frame", direction="horizontal", style="fp_frame_bordered_stretch"}
     frame_defaults.style.top_padding = 7
@@ -67,7 +67,7 @@ local function add_defaults_frame(parent_frame, player)
 end
 
 local function set_defaults(player, tags, _)
-    local machine = util.globals.modal_data(player).object
+    local machine = lib.globals.modal_data(player).object
 
     local machine_data = {
         prototype = machine.proto.name,
@@ -92,7 +92,7 @@ end
 
 
 local function refresh_fuel_frame(player)
-    local modal_data = util.globals.modal_data(player)  --[[@as table]]
+    local modal_data = lib.globals.modal_data(player)  --[[@as table]]
     local modal_elements = modal_data.modal_elements
     local machine = modal_data.object
 
@@ -112,17 +112,17 @@ end
 
 
 local function reset_machine(player)
-    local machine = util.globals.modal_data(player).object  --[[@as Machine]]
+    local machine = lib.globals.modal_data(player).object  --[[@as Machine]]
     machine:reset(player)
 
     -- Some manual refreshing which don't have their own method
-    local modal_elements = util.globals.modal_elements(player)  --[[@as table]]
+    local modal_elements = lib.globals.modal_elements(player)  --[[@as table]]
     modal_elements["machine_button"].elem_value = machine:elem_value()
 
     local limit_switch = modal_elements.force_limit_switch
     if limit_switch.enabled then
         modal_elements["limit_textfield"].text = machine.limit or ""
-        limit_switch.switch_state = util.gui.switch.convert_to_state(machine.force_limit)
+        limit_switch.switch_state = lib.gui.switch.convert_to_state(machine.force_limit)
     end
 
     refresh_fuel_frame(player)
@@ -145,7 +145,7 @@ local function create_choice_frame(parent_frame, label_caption)
 end
 
 local function add_machine_frame(parent_frame, player, line)
-    local modal_elements = util.globals.modal_data(player).modal_elements
+    local modal_elements = lib.globals.modal_data(player).modal_elements
     local flow_choices = create_choice_frame(parent_frame, {"fp.pu_machine", 1})
 
     local button_machine = flow_choices.add{type="choose-elem-button", elem_type="entity-with-quality",
@@ -156,7 +156,7 @@ local function add_machine_frame(parent_frame, player, line)
 end
 
 local function add_fuel_frame(parent_frame, player, line)
-    local modal_elements = util.globals.modal_data(player).modal_elements
+    local modal_elements = lib.globals.modal_data(player).modal_elements
     local flow_choices = create_choice_frame(parent_frame, {"fp.pu_fuel", 1})
 
     local label_fuel = flow_choices.add{type="label", caption={"fp.machine_no_fuel_required"}}
@@ -172,7 +172,7 @@ end
 
 
 local function add_limit_frame(parent_frame, player, enabled)
-    local modal_data = util.globals.modal_data(player)  --[[@as table]]
+    local modal_data = lib.globals.modal_data(player)  --[[@as table]]
     local machine = modal_data.object
 
     local frame_limit = parent_frame.add{type="frame", direction="horizontal", style="fp_frame_module"}
@@ -190,8 +190,8 @@ local function add_limit_frame(parent_frame, player, enabled)
         tooltip={"fp.machine_force_limit_tt"}, style="semibold_label"}
     label_force.style.left_margin = 12
 
-    local state = util.gui.switch.convert_to_state(machine.force_limit)
-    local switch_force_limit = util.gui.switch.add_on_off(frame_limit, nil, {}, state)
+    local state = lib.gui.switch.convert_to_state(machine.force_limit)
+    local switch_force_limit = lib.gui.switch.add_on_off(frame_limit, nil, {}, state)
     switch_force_limit.enabled = enabled
     modal_data.modal_elements["force_limit_switch"] = switch_force_limit
 
@@ -203,12 +203,12 @@ end
 
 
 local function handle_machine_choice(player, _, event)
-    local machine = util.globals.modal_data(player).object  --[[@as Machine]]
+    local machine = lib.globals.modal_data(player).object  --[[@as Machine]]
     local elem_value = event.element.elem_value
 
     if not elem_value then
         event.element.elem_value = machine:elem_value()  -- reset the machine so it can't be nil
-        util.cursor.create_flying_text(player, {"fp.no_removal", {"fp.pu_machine", 1}})
+        lib.cursor.create_flying_text(player, {"fp.no_removal", {"fp.pu_machine", 1}})
         return  -- nothing changed
     end
 
@@ -231,12 +231,12 @@ local function handle_machine_choice(player, _, event)
 end
 
 local function handle_fuel_choice(player, _, event)
-    local machine = util.globals.modal_data(player).object
+    local machine = lib.globals.modal_data(player).object
     local elem_value = event.element.elem_value
 
     if not elem_value then
         event.element.elem_value = machine.fuel.proto.name  -- reset the fuel so it can't be nil
-        util.cursor.create_flying_text(player, {"fp.no_removal", {"fp.pu_fuel", 1}})
+        lib.cursor.create_flying_text(player, {"fp.no_removal", {"fp.pu_fuel", 1}})
         return  -- nothing changed
     end
 
@@ -264,7 +264,7 @@ local function open_machine_dialog(player, modal_data)
     add_fuel_frame(flow_machine, player, modal_data.line)
 
     -- Limit
-    local factory = util.context.get(player, "Factory")
+    local factory = lib.context.get(player, "Factory")
     -- Unavailable with matrix solver or special recipes
     local limit_enabled = (not factory.matrix_solver_active and modal_data.line.recipe.proto.energy > 0)
     add_limit_frame(content_frame, player, limit_enabled)
@@ -279,7 +279,7 @@ local function open_machine_dialog(player, modal_data)
 end
 
 local function close_machine_dialog(player, action)
-    local modal_data = util.globals.modal_data(player)  --[[@as table]]
+    local modal_data = lib.globals.modal_data(player)  --[[@as table]]
     local machine, line = modal_data.object, modal_data.line
 
     if action == "submit" then
@@ -287,19 +287,19 @@ local function close_machine_dialog(player, action)
 
         local limit_switch = modal_data.modal_elements.force_limit_switch
         if limit_switch.enabled then
-            machine.limit = util.gui.parse_expression_field(modal_data.modal_elements.limit_textfield, true)
-            machine.force_limit = util.gui.switch.convert_to_boolean(limit_switch.switch_state)
+            machine.limit = lib.gui.parse_expression_field(modal_data.modal_elements.limit_textfield, true)
+            machine.force_limit = lib.gui.switch.convert_to_boolean(limit_switch.switch_state)
         end
 
         solver.update(player)
-        util.gui.run_refresh(player, "production")
+        lib.gui.run_refresh(player, "production")
 
     else  -- action == "cancel"
         line.machine = modal_data.machine_backup
         line.machine.module_set:normalize({effects=true})
         line:set_beacon(modal_data.beacon_backup)
         -- Need to refresh so the buttons have the 'new' backup machine for further actions
-        util.gui.run_refresh(player, "production")
+        lib.gui.run_refresh(player, "production")
     end
 end
 
@@ -322,8 +322,8 @@ listeners.gui = {
         {
             name = "machine_limit",
             handler = (function(_, _, event)
-                local limit = util.gui.parse_expression_field(event.element, true)
-                util.gui.update_expression_field(event.element, limit ~= nil)
+                local limit = lib.gui.parse_expression_field(event.element, true)
+                lib.gui.update_expression_field(event.element, limit ~= nil)
             end)
         }
     },
@@ -331,8 +331,8 @@ listeners.gui = {
         {
             name = "confirm_machine",
             handler = (function(player, _, event)
-                local confirmed = util.gui.confirm_expression_field(event.element, true)
-                if confirmed then util.gui.close_dialog(player, "submit") end
+                local confirmed = lib.gui.confirm_expression_field(event.element, true)
+                if confirmed then lib.gui.close_dialog(player, "submit") end
             end)
         }
     },

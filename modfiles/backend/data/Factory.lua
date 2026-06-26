@@ -170,7 +170,7 @@ end
 function Factory:get_productivity_bonus(force, recipe_name)
     local custom_bonus = self.productivity_boni[recipe_name]
     if custom_bonus then return custom_bonus
-    else return util.get_recipe_productivity(force, recipe_name) end
+    else return lib.get_recipe_productivity(force, recipe_name) end
 end
 
 
@@ -188,11 +188,11 @@ end
 function Factory:schedule_solver_update(desired_tick, player)
     -- Get rid of any previously scheduled refreshes
     if self.tick_of_solver_update then
-        util.nth_tick.cancel(self.tick_of_solver_update)
+        lib.nth_tick.cancel(self.tick_of_solver_update)
         self.tick_of_solver_update = nil
     end
 
-    local actual_tick = util.nth_tick.register(desired_tick, "update_solver",
+    local actual_tick = lib.nth_tick.register(desired_tick, "update_solver",
         {player_index=player.index, factory_id=self.id})
     self.tick_of_solver_update = actual_tick
 end

@@ -16,7 +16,7 @@ end
 
 -- Sets the slave checkboxes after the master one has been clicked
 local function set_all_checkboxes(player, checkbox_state)
-    local ui_state = util.globals.ui_state(player)
+    local ui_state = lib.globals.ui_state(player)
     local modal_elements = ui_state.modal_data.modal_elements
 
     for _, checkbox in pairs(modal_elements.factory_checkboxes) do
@@ -28,7 +28,7 @@ end
 
 -- Sets the master checkbox to the appropriate state after a slave one is changed
 local function adjust_after_checkbox_click(player, _, _)
-    local ui_state = util.globals.ui_state(player)
+    local ui_state = lib.globals.ui_state(player)
     local modal_elements = ui_state.modal_data.modal_elements
 
     local checked_element_count, unchecked_element_count = 0, 0
@@ -134,14 +134,14 @@ end
 
 -- Tries importing the given string, showing the resulting factories-table, if possible
 local function import_factories(player, _, _)
-    local player_table = util.globals.player_table(player)
+    local player_table = lib.globals.player_table(player)
     local attach_factory_products = player_table.preferences.attach_factory_products
     local modal_data = player_table.ui_state.modal_data  ---@cast modal_data -nil
     local modal_elements = modal_data.modal_elements
     local content_frame = modal_elements.content_frame
     local textfield_export_string = modal_elements.import_textfield
 
-    local import_table, error = util.porter.process_export_string(textfield_export_string.text)
+    local import_table, error = lib.porter.process_export_string(textfield_export_string.text)
 
     local function add_info_label(caption)
         local label_info = content_frame.add{type="label", caption=caption}
@@ -162,7 +162,7 @@ local function import_factories(player, _, _)
 
     if error ~= nil then
         add_info_label({"fp.error_message", {"fp.importer_" .. error}})
-        util.gui.select_all(textfield_export_string)
+        lib.gui.select_all(textfield_export_string)
     else
         ---@cast import_table -nil
 
@@ -181,7 +181,7 @@ local function import_factories(player, _, _)
         if any_invalid_factories then
             modal_data.export_modset = import_table.export_modset
 
-            local diff_tooltip = util.porter.format_modset_diff(import_table.export_modset)
+            local diff_tooltip = lib.porter.format_modset_diff(import_table.export_modset)
             if diff_tooltip ~= "" then
                 modal_elements.info_label.caption = {"fp.info_label", {"fp.import_instruction_2"}}
                 modal_elements.info_label.tooltip = diff_tooltip
@@ -198,7 +198,7 @@ end
 
 -- Exports the currently selected factories and puts the resulting string into the textbox
 local function export_factories(player, _, _)
-    local modal_data = util.globals.modal_data(player)
+    local modal_data = lib.globals.modal_data(player)
     local modal_elements = modal_data.modal_elements
     local factories_to_export = {}
 
@@ -208,10 +208,10 @@ local function export_factories(player, _, _)
             table.insert(factories_to_export, factory)
         end
     end
-    local export_string = util.porter.generate_export_string(factories_to_export)
+    local export_string = lib.porter.generate_export_string(factories_to_export)
 
     modal_elements.export_textfield.text = export_string
-    util.gui.select_all(modal_elements.export_textfield)
+    lib.gui.select_all(modal_elements.export_textfield)
 end
 
 
@@ -220,14 +220,14 @@ local function open_import_dialog(_, modal_data)
     set_dialog_submit_button(modal_elements, false, "import_string")
 
     add_textfield_and_button(modal_elements, "import", false, false)
-    util.gui.select_all(modal_elements.import_textfield)
+    lib.gui.select_all(modal_elements.import_textfield)
 end
 
 -- Imports the selected factories into the player's current District
 local function close_import_dialog(player, action)
     if action == "submit" then
-        local modal_data = util.globals.modal_data(player)  ---@cast modal_data -nil
-        local district = util.context.get(player, "District")  --[[@as District]]
+        local modal_data = lib.globals.modal_data(player)  ---@cast modal_data -nil
+        local district = lib.context.get(player, "District")  --[[@as District]]
 
         local first_factory = nil
         for factory_id, checkbox in pairs(modal_data.modal_elements.factory_checkboxes) do
@@ -243,8 +243,8 @@ local function close_import_dialog(player, action)
         ---@cast first_factory Factory
 
         main_dialog.toggle_districts_view(player, true)
-        util.context.set(player, first_factory)
-        util.gui.run_refresh(player, "all")
+        lib.context.set(player, first_factory)
+        lib.gui.run_refresh(player, "all")
     end
 end
 
@@ -264,7 +264,7 @@ import_listeners.gui = {
         {
             name = "import_string",
             handler = (function(player, _, event)
-                local button_import = util.globals.modal_elements(player).import_button
+                local button_import = lib.globals.modal_elements(player).import_button
                 button_import.enabled = (string.len(event.element.text) > 0)
             end)
         }
@@ -293,8 +293,8 @@ import_listeners.dialog = {
 
 
 local function open_export_dialog(player, modal_data)
-    local attach_factory_products = util.globals.preferences(player).attach_factory_products
-    local district = util.context.get(player, "District")  --[[@as District]]
+    local attach_factory_products = lib.globals.preferences(player).attach_factory_products
+    local district = lib.context.get(player, "District")  --[[@as District]]
     local modal_elements = modal_data.modal_elements
 
     setup_factories_table(modal_elements, true)

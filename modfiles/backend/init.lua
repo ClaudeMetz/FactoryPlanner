@@ -69,20 +69,20 @@ local function player_init(player)
     local player_table = storage.players[player.index]
 
     player_table.realm = Realm.init()
-    util.context.init(player_table)
-    util.context.set(player, player_table.realm.first)
+    lib.context.init(player_table)
+    lib.context.set(player, player_table.realm.first)
 
-    util.preferences.reload(player_table)
+    lib.preferences.reload(player_table)
     reset_ui_state(player_table)
 
     -- Set default fuel to coal because anything else is awkward
     defaults.set_all(player, "fuels", {prototype="coal"})
 
-    util.gui.toggle_mod_gui(player)
-    util.nth_tick.register((game.tick + 1), "shrinkwrap_interface", {player_index=player.index})
+    lib.gui.toggle_mod_gui(player)
+    lib.nth_tick.register((game.tick + 1), "shrinkwrap_interface", {player_index=player.index})
 
     if DEVELOPER_MODE then
-        util.porter.add_factories(player, dev_export_string)
+        lib.porter.add_factories(player, dev_export_string)
 
         player.force.research_all_technologies()
         player.clear_recipe_notifications()
@@ -94,13 +94,13 @@ end
 local function refresh_player_table(player)
     local player_table = storage.players[player.index]
 
-    util.preferences.reload(player_table)
+    lib.preferences.reload(player_table)
     reset_ui_state(player_table)
 
     defaults.migrate(player_table)
-    util.temperature.migrate(player_table)
+    lib.temperature.migrate(player_table)
 
-    util.context.validate(player)
+    lib.context.validate(player)
 
     player_table.translation_tables = nil
     player_table.clipboard = nil
@@ -126,7 +126,7 @@ local function run_on_load(fake_load)
         generate_object_index()
     end
 
-    util.nth_tick.register_all()
+    lib.nth_tick.register_all()
 
     loader.run()
 end
@@ -161,7 +161,7 @@ local function global_init()
 
     storage.installed_mods = script.active_mods  -- Retain current modset to detect mod changes for invalid factories
 
-    util.translator.on_init()  -- Initialize flib's translation module
+    lib.translator.on_init()  -- Initialize flib's translation module
     prototyper.util.build_translation_dictionaries()
 
     for _, player in pairs(game.players) do player_init(player) end
@@ -174,7 +174,7 @@ local function handle_configuration_change()
     local migrations = migrator.determine_migrations()
 
     if not migrations then  -- implies this save can't be migrated anymore
-        for _, player in pairs(game.players) do util.gui.reset_player(player) end
+        for _, player in pairs(game.players) do lib.gui.reset_player(player) end
         storage = {}; global_init()
         game.print{"fp.mod_reset"};
         return
@@ -192,8 +192,8 @@ local function handle_configuration_change()
     for index, player in pairs(game.players) do
         refresh_player_table(player)  -- part of migration cleanup
 
-        util.gui.reset_player(player)  -- Destroys all existing GUI's
-        util.gui.toggle_mod_gui(player)  -- Recreates the mod-GUI if necessary
+        lib.gui.reset_player(player)  -- Destroys all existing GUI's
+        lib.gui.toggle_mod_gui(player)  -- Recreates the mod-GUI if necessary
 
         -- Update calculations in case prototypes changed in a relevant way
         for district in storage.players[index].realm:iterator() do
@@ -206,7 +206,7 @@ local function handle_configuration_change()
 
     storage.installed_mods = script.active_mods
 
-    util.translator.on_configuration_changed()
+    lib.translator.on_configuration_changed()
     prototyper.util.build_translation_dictionaries()
 end
 
@@ -220,12 +220,12 @@ script.on_configuration_changed(handle_configuration_change)
 
 -- ** COMMANDS **
 commands.add_command("fp-restart-translation", {"command-help.fp_restart_translation"}, function()
-    util.translator.on_init()
+    lib.translator.on_init()
     prototyper.util.build_translation_dictionaries()
 end)
 commands.add_command("fp-shrinkwrap-interface", {"command-help.fp_shrinkwrap_interface"}, function(command)
     if command.player_index then
-        util.nth_tick.register((game.tick + 1), "shrinkwrap_interface", {player_index=command.player_index})
+        lib.nth_tick.register((game.tick + 1), "shrinkwrap_interface", {player_index=command.player_index})
     end
 end)
 
@@ -235,20 +235,20 @@ local listeners = {}
 
 listeners.player = {
     on_player_dictionaries_ready = (function(player, _)
-        local player_table = util.globals.player_table(player)
-        player_table.translation_tables = util.translator.get_all(player.index)
+        local player_table = lib.globals.player_table(player)
+        player_table.translation_tables = lib.translator.get_all(player.index)
 
         modal_dialog.set_searchfield_state(player)  -- enables searchfields if possible
     end),
 
     on_player_joined_game = (function(_, event)
-        util.translator.on_player_joined_game(event)
+        lib.translator.on_player_joined_game(event)
     end),
     on_player_locale_changed = (function(_, event)
-        util.translator.on_player_locale_changed(event)
+        lib.translator.on_player_locale_changed(event)
     end),
     on_string_translated = (function(_, event)
-        util.translator.on_string_translated(event)
+        lib.translator.on_string_translated(event)
     end)
 }
 
@@ -261,7 +261,7 @@ listeners.game = {
         storage.players[event.player_index] = nil
     end),
 
-    on_tick = util.translator.on_tick
+    on_tick = lib.translator.on_tick
 }
 
 return { listeners }

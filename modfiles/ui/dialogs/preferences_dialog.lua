@@ -36,9 +36,9 @@ local function refresh_defaults_table(player, modal_elements, data_type, categor
 end
 
 local function refresh_views_table(player)
-    local view_preferences = util.globals.preferences(player).item_views
-    local views_table = util.globals.modal_elements(player).views_table
-    local views = util.globals.ui_state(player).views_data.views
+    local view_preferences = lib.globals.preferences(player).item_views
+    local views_table = lib.globals.modal_elements(player).views_table
+    local views = lib.globals.ui_state(player).views_data.views
 
     local function add_move_button(parent, index, direction, enabled)
         local move_button = parent.add{type="sprite-button", sprite="fp_arrow_" .. direction,
@@ -101,21 +101,21 @@ local function add_dropdowns(preferences, parent_flow)
     end
 
     local width_items, width_index = {}, nil
-    for index, value in pairs(util.preferences.products_per_row_options) do
+    for index, value in pairs(lib.preferences.products_per_row_options) do
         width_items[index] = {"", value .. " ", {"fp.pl_product", 2}}
         if value == preferences.products_per_row then width_index = index end
     end
     add_dropdown("products_per_row", width_items, width_index)
 
     local height_items, height_index = {}, nil
-    for index, value in pairs(util.preferences.factory_list_rows_options) do
+    for index, value in pairs(lib.preferences.factory_list_rows_options) do
         height_items[index] = {"", value .. " ", {"fp.pl_factory", 2}}
         if value == preferences.factory_list_rows then height_index = index end
     end
     add_dropdown("factory_list_rows", height_items, height_index)
 
     local compact_items, compact_index = {}, nil
-    for index, value in pairs(util.preferences.compact_width_percentages) do
+    for index, value in pairs(lib.preferences.compact_width_percentages) do
         compact_items[index] = {"", value .. " %"}
         if value == preferences.compact_width_percentage then compact_index = index end
     end
@@ -138,7 +138,7 @@ end
 
 
 local function add_belts_proto_box(player, content_frame)
-    local modal_elements = util.globals.modal_elements(player)
+    local modal_elements = lib.globals.modal_elements(player)
     local preference_box = add_preference_box(content_frame, "default_belts")
 
     local frame = preference_box.add{type="frame", direction="horizontal", style="fp_frame_light_slots_small"}
@@ -146,7 +146,7 @@ local function add_belts_proto_box(player, content_frame)
     local prototype_count = refresh_defaults_table(player, modal_elements, "belts", nil)
 
     preference_box.title_flow.add{type="empty-widget", style="fflib_horizontal_pusher"}
-    local belts_or_lanes = util.globals.preferences(player).belts_or_lanes
+    local belts_or_lanes = lib.globals.preferences(player).belts_or_lanes
     local switch_state = (belts_or_lanes == "belts") and "left" or "right"
     preference_box.title_flow.add{type="switch", switch_state=switch_state,
         tooltip={"fp.preference_belts_or_lanes_tt"},
@@ -206,53 +206,53 @@ end
 
 local function handle_checkbox_preference_change(player, tags, event)
     local preference_name = tags.name
-    util.globals.preferences(player)[preference_name] = event.element.state
+    lib.globals.preferences(player)[preference_name] = event.element.state
 
     if tags.data_type == "production" or preference_name == "show_floor_items" then
-        util.gui.run_refresh(player, "production")
+        lib.gui.run_refresh(player, "production")
 
     elseif preference_name == "ingredient_satisfaction" then
         if event.element.state == true then  -- only recalculate if enabled
-            local realm = util.globals.player_table(player).realm
+            local realm = lib.globals.player_table(player).realm
             realm:schedule_solver_updates(game.tick, player)
 
             solver.update(player)  -- update current factory right away
         end
-        util.gui.run_refresh(player, "production")
+        lib.gui.run_refresh(player, "production")
 
     elseif preference_name == "calculate_emissions" then
-        local realm = util.globals.player_table(player).realm
+        local realm = lib.globals.player_table(player).realm
         realm:schedule_solver_updates(game.tick, player)
 
         solver.update(player)  -- update current factory right away
-        util.gui.run_refresh(player, "production")
+        lib.gui.run_refresh(player, "production")
 
     elseif preference_name == "attach_factory_products" or preference_name == "skip_factory_naming" then
-        util.gui.run_refresh(player, "factory_list")
+        lib.gui.run_refresh(player, "factory_list")
 
     elseif preference_name == "show_gui_button" then
-        util.gui.toggle_mod_gui(player)
+        lib.gui.toggle_mod_gui(player)
     end
 end
 
 local function handle_dropdown_preference_change(player, tags, event)
     local selected_index = event.element.selected_index
-    local preferences = util.globals.preferences(player)
+    local preferences = lib.globals.preferences(player)
 
     if tags.name == "products_per_row" then
-        preferences.products_per_row = util.preferences.products_per_row_options[selected_index]
-        util.globals.modal_data(player).rebuild = true
+        preferences.products_per_row = lib.preferences.products_per_row_options[selected_index]
+        lib.globals.modal_data(player).rebuild = true
     elseif tags.name == "factory_list_rows" then
-        preferences.factory_list_rows = util.preferences.factory_list_rows_options[selected_index]
-        util.globals.modal_data(player).rebuild = true
+        preferences.factory_list_rows = lib.preferences.factory_list_rows_options[selected_index]
+        lib.globals.modal_data(player).rebuild = true
     elseif tags.name == "compact_width_percentage" then
-        preferences.compact_width_percentage = util.preferences.compact_width_percentages[selected_index]
-        util.globals.modal_data(player).rebuild_compact = true
+        preferences.compact_width_percentage = lib.preferences.compact_width_percentages[selected_index]
+        lib.globals.modal_data(player).rebuild_compact = true
     end
 end
 
 local function handle_view_toggle(player, tags, _)
-    local view_preferences = util.globals.preferences(player).item_views
+    local view_preferences = lib.globals.preferences(player).item_views
     for index, view_preference in ipairs(view_preferences.views) do
         if view_preference.name == tags.name then
             view_preference.enabled = not view_preference.enabled
@@ -267,11 +267,11 @@ local function handle_view_toggle(player, tags, _)
     item_views.refresh_interface(player)
     refresh_views_table(player)
 
-    util.gui.run_refresh(player, "factory")
+    lib.gui.run_refresh(player, "factory")
 end
 
 local function handle_view_move(player, tags, _)
-    local view_preferences = util.globals.preferences(player).item_views
+    local view_preferences = lib.globals.preferences(player).item_views
     local view_preference = table.remove(view_preferences.views, tags.index)
     local new_index = (tags.direction == "up") and (tags.index-1) or (tags.index+1)
     table.insert(view_preferences.views, new_index, view_preference)
@@ -289,11 +289,11 @@ local function handle_view_move(player, tags, _)
     item_views.rebuild_interface(player)  -- rebuild because of the move
     refresh_views_table(player)
 
-    util.gui.run_refresh(player, "factory")
+    lib.gui.run_refresh(player, "factory")
 end
 
 local function handle_bol_change(player, _, event)
-    local player_table = util.globals.player_table(player)
+    local player_table = lib.globals.player_table(player)
     local defined_by = (event.element.switch_state == "left") and "belts" or "lanes"
 
     player_table.preferences.belts_or_lanes = defined_by
@@ -303,7 +303,7 @@ local function handle_bol_change(player, _, event)
     refresh_views_table(player)
 
     solver.update(player)
-    util.gui.run_refresh(player, "factory")
+    lib.gui.run_refresh(player, "factory")
 end
 
 local function handle_table_default_change(player, tags, _)
@@ -314,14 +314,14 @@ local function handle_table_default_change(player, tags, _)
     local default_data = {prototype=tags.prototype_name,  quality=quality_name}
     defaults.set(player, data_type, default_data, category_id)
 
-    local modal_elements = util.globals.modal_elements(player)
+    local modal_elements = lib.globals.modal_elements(player)
     refresh_defaults_table(player, modal_elements, data_type, category_id)
 
     item_views.rebuild_data(player)
     item_views.rebuild_interface(player)
     refresh_views_table(player)
 
-    util.gui.run_refresh(player, "factory")
+    lib.gui.run_refresh(player, "factory")
 end
 
 local function handle_box_default_change(player, tags, event)
@@ -330,7 +330,7 @@ local function handle_box_default_change(player, tags, event)
     local elem_value = event.element.elem_value
     if not elem_value then
         event.element.elem_value = defaults.get_as_elem_value(player, data_type, category_id)
-        util.cursor.create_flying_text(player, {"fp.no_removal", {"fp.pu_" .. data_type:sub(1, -2), 1}})
+        lib.cursor.create_flying_text(player, {"fp.no_removal", {"fp.pu_" .. data_type:sub(1, -2), 1}})
         return  -- nothing changed
     end
 
@@ -342,12 +342,12 @@ local function handle_box_default_change(player, tags, event)
     item_views.rebuild_data(player)
     item_views.rebuild_interface(player)
 
-    util.gui.run_refresh(player, "factory")
+    lib.gui.run_refresh(player, "factory")
 end
 
 
 local function open_preferences_dialog(player, modal_data)
-    local preferences = util.globals.preferences(player)
+    local preferences = lib.globals.preferences(player)
     local modal_elements = modal_data.modal_elements
 
     -- Left side
@@ -391,7 +391,7 @@ local function open_preferences_dialog(player, modal_data)
 end
 
 local function close_preferences_dialog(player, _)
-    local ui_state = util.globals.ui_state(player)
+    local ui_state = lib.globals.ui_state(player)
     if ui_state.modal_data.rebuild then
         main_dialog.rebuild(player, true)
         ui_state.modal_data = {}  -- fix as rebuild deletes the table
@@ -417,7 +417,7 @@ listeners.gui = {
         {
             name = "preferences_toggle_export",
             handler = (function(player, _, _)
-                local modal_elements = util.globals.modal_elements(player)
+                local modal_elements = lib.globals.modal_elements(player)
                 local state = modal_elements.export_toggle_button.toggled
                 modal_elements.export_content_frame.visible = state
                 modal_elements.export_label.visible = false
@@ -426,17 +426,17 @@ listeners.gui = {
         {
             name = "preferences_export",
             handler = (function(player)
-                local modal_elements = util.globals.modal_elements(player)
-                modal_elements.export_textfield.text = util.preferences.export(player)
-                util.gui.select_all(modal_elements.export_textfield)
+                local modal_elements = lib.globals.modal_elements(player)
+                modal_elements.export_textfield.text = lib.preferences.export(player)
+                lib.gui.select_all(modal_elements.export_textfield)
                 modal_elements.export_label.visible = false
             end)
         },
         {
             name = "preferences_import",
             handler = (function(player)
-                local modal_elements = util.globals.modal_elements(player)
-                local error = util.preferences.import(player, modal_elements.export_textfield.text)
+                local modal_elements = lib.globals.modal_elements(player)
+                local error = lib.preferences.import(player, modal_elements.export_textfield.text)
                 modal_elements.export_label.visible = (error ~= nil)
 
                 if error ~= nil then  -- something went wrong
@@ -444,7 +444,7 @@ listeners.gui = {
                 else
                     -- This rebuilds the main interface implicitly
                     GLOBAL_HANDLERS["shrinkwrap_interface"]{player_index=player.index}
-                    util.gui.open_dialog(player, {dialog="preferences"})
+                    lib.gui.open_dialog(player, {dialog="preferences"})
                 end
             end)
         }
@@ -492,13 +492,13 @@ listeners.dialog = {
 
 listeners.global = {
     reset_preferences = (function(player)
-        local player_table = util.globals.player_table(player)
+        local player_table = lib.globals.player_table(player)
         player_table.preferences = nil
-        util.preferences.reload(player_table)
+        lib.preferences.reload(player_table)
 
         -- This rebuilds the main interface implicitly
         GLOBAL_HANDLERS["shrinkwrap_interface"]{player_index=player.index}
-        util.gui.open_dialog(player, {dialog="preferences"})
+        lib.gui.open_dialog(player, {dialog="preferences"})
     end)
 }
 

@@ -66,7 +66,7 @@ function Fuel:build_temperature_data()
     self.temperature_data = nil
 
     if self.proto.type == "fluid" then
-        self.temperature_data = util.temperature.generate_data(self.proto)
+        self.temperature_data = lib.temperature.generate_data(self.proto)
     end
 end
 
@@ -74,7 +74,7 @@ end
 ---@param player LuaPlayer
 function Fuel:apply_temperature_default(player)
     if self.proto.type == "fluid" then
-        self.temperature = util.temperature.determine_applicable_default(
+        self.temperature = lib.temperature.determine_applicable_default(
             player, self.proto, self.temperature_data.applicable_values)
     end
 end

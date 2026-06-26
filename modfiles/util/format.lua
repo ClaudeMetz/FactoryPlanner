@@ -43,7 +43,7 @@ function _format.SI_value(value, unit, precision)
 
     value = value / (1000 ^ scale_counter)
     local prefix = scale_counter == 0 and "" or {"fp.prefix_" .. prefixes[scale_counter + 1]}
-    return {"", sign .. util.format.number(value, precision) .. " ", prefix, units[unit]}
+    return {"", sign .. lib.format.number(value, precision) .. " ", prefix, units[unit]}
 end
 
 
@@ -51,10 +51,10 @@ end
 ---@param amount number
 ---@return LocalisedString tooltip_line
 function _format.special_tooltip(name, amount)
-    if util.is_special_power_item(name) then
-        return util.format.SI_value(amount, "W", MAGIC_NUMBERS.formatting_precision)
+    if lib.is_special_power_item(name) then
+        return lib.format.SI_value(amount, "W", MAGIC_NUMBERS.formatting_precision)
     else  -- any of the emission types
-        return util.format.SI_value(amount, "E/m", MAGIC_NUMBERS.formatting_precision)
+        return lib.format.SI_value(amount, "E/m", MAGIC_NUMBERS.formatting_precision)
     end
 end
 
@@ -95,7 +95,7 @@ function _format.machine_amount(amount, ceil_number)
     -- If the formatting returns 0, it is a very small number, so show it as 0.001
     if ceil_number then button_number = math.ceil(button_number) end
 
-    local tooltip_number = util.format.number(amount, MAGIC_NUMBERS.formatting_precision)
+    local tooltip_number = lib.format.number(amount, MAGIC_NUMBERS.formatting_precision)
     local plural_parameter = (tooltip_number == "1") and 1 or 2
     local tooltip_line = {"", "\n", tooltip_number, " ", {"fp.pl_machine", plural_parameter}}
 

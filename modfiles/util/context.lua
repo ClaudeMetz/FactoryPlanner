@@ -31,7 +31,7 @@ end
 ---@return ContextObject?
 --- Gets the given object type by going up the hierarchy from the current context
 function _context.get(player, class)
-    local player_table = util.globals.player_table(player)
+    local player_table = lib.globals.player_table(player)
     local object = OBJECT_INDEX[player_table.context.object_id]
 
     repeat
@@ -50,7 +50,7 @@ end
 --- Restores the appropriate floor from context cache depending on the given object
 --- This covers the happy path, extra care needs to be taken when objects were removed
 function _context.set(player, object, force_district)
-    local context = util.globals.player_table(player).context
+    local context = lib.globals.player_table(player).context
     local cache = context.cache
 
     if object.class == "District" then
@@ -103,7 +103,7 @@ end
 ---@return ContextObject? replacement
 --- Cleans up after the given object was removed and tries to find a replacement
 function _context.remove(player, object)
-    local cache = util.globals.player_table(player).context.cache
+    local cache = lib.globals.player_table(player).context.cache
 
     -- Clean up the cache from the removed object
     if object.class == "District" then
@@ -159,7 +159,7 @@ end
 ---@param player LuaPlayer
 --- Clean up cache after a config change that potentially deleted objects
 function _context.validate(player)
-    local player_table = util.globals.player_table(player)
+    local player_table = lib.globals.player_table(player)
     local context = player_table.context
     local cache = context.cache
 

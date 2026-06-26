@@ -14,7 +14,7 @@ local _gui = { switch = {}, mod = {} }
 ---@param label_first boolean?
 ---@return LuaGuiElement created_switch
 function _gui.switch.add_on_off(parent_flow, action, additional_tags, state, caption, tooltip, label_first)
-    if type(state) == "boolean" then state = util.gui.switch.convert_to_state(state) end
+    if type(state) == "boolean" then state = lib.gui.switch.convert_to_state(state) end
 
     local flow = parent_flow.add{type="flow", direction="horizontal"}
     flow.style.vertical_align = "center"
@@ -71,7 +71,7 @@ end
 -- Toggles the visibility of the toggle-main-dialog-button
 ---@param player LuaPlayer
 function _gui.toggle_mod_gui(player)
-    local enable = util.globals.preferences(player).show_gui_button
+    local enable = lib.globals.preferences(player).show_gui_button
 
     local frame_flow = mod_gui.get_button_flow(player)
     local mod_gui_button = frame_flow["fp_button_toggle_interface"]
@@ -172,7 +172,7 @@ end
 
 function _gui.calculate_satisfaction(satisfied_amount, actual_amount)
     local satisfied_percentage = (satisfied_amount / actual_amount) * 100
-    local percentage_string = util.format.number(satisfied_percentage, 3)
+    local percentage_string = lib.format.number(satisfied_percentage, 3)
     local satisfaction_line = {"", "\n", {"fp.bold_label", (percentage_string .. "%")}, " ", {"fp.satisfied"}}
     return satisfaction_line, percentage_string
 end

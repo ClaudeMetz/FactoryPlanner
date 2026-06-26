@@ -88,7 +88,7 @@ local function create_type_indexed_list(item_list)
     local indexed_list = {item = {}, fluid = {}, entity = {}}  ---@type IndexedItemList
 
     for index, item in pairs(item_list) do
-        indexed_list[item.type][item.name] = {index = index, item = util.flib.shallow_copy(item)}
+        indexed_list[item.type][item.name] = {index = index, item = lib.flib.shallow_copy(item)}
     end
 
     return indexed_list
@@ -162,14 +162,14 @@ function generator_util.format_recipe(recipe_proto, products, main_product, ingr
                 local difference = ingredient.item.amount - peer_product.item.amount
 
                 if difference < 0 then
-                    local item = util.flib.shallow_copy(ingredient.item)
+                    local item = lib.flib.shallow_copy(ingredient.item)
                     item.amount = peer_product.item.amount + difference
                     recipe_proto.catalysts.ingredients[item.name] = item
 
                     ingredients[ingredient.index].amount = nil
                     formatted_products[peer_product.index].amount = -difference
                 elseif difference > 0 then
-                    local item = util.flib.shallow_copy(peer_product.item)
+                    local item = lib.flib.shallow_copy(peer_product.item)
                     item.amount = ingredient.item.amount - difference
                     recipe_proto.catalysts.products[item.name] = item
 
@@ -177,7 +177,7 @@ function generator_util.format_recipe(recipe_proto, products, main_product, ingr
                     formatted_products[peer_product.index].amount = nil
                 else
                     -- Nilled-out items are just shown as ingredient catalysts
-                    local item = util.flib.shallow_copy(ingredient.item)
+                    local item = lib.flib.shallow_copy(ingredient.item)
                     recipe_proto.catalysts.ingredients[item.name] = item
 
                     ingredients[ingredient.index].amount = nil
@@ -356,7 +356,7 @@ function generator_util.format_effect_receiver(proto)
 
     -- Adjust limits format to be more convenient
     effect_receiver.limits = {}
-    for name, _ in pairs(util.effects.blank) do
+    for name, _ in pairs(lib.effects.blank) do
         effect_receiver.limits[name] = effect_receiver[name .. "_limits"]
         effect_receiver[name .. "_limits"] = nil
     end
@@ -424,7 +424,7 @@ function generator_util.fill_categories(combined_list, used_categories, final_li
     for combined_category, list in pairs(combined_list) do
         for _, category in pairs(list) do
             for _, proto in pairs(used_categories[category]) do
-                local copy = util.flib.deep_copy(proto)
+                local copy = lib.flib.deep_copy(proto)
                 copy.combined_category = combined_category
                 insert_function(final_list, copy, combined_category)
             end
@@ -442,22 +442,22 @@ function generator_util.recipe_tooltip(recipe)
 
     if recipe.energy ~= nil then
         local energy_line = {"fp.recipe_crafting_time", recipe.energy}
-        current_table, next_index = util.build_localised_string(energy_line, current_table, next_index)
+        current_table, next_index = lib.build_localised_string(energy_line, current_table, next_index)
     end
 
     local item_protos = storage.prototypes.items
     for _, item_type in ipairs{"ingredients", "products"} do
         local locale_key = (item_type == "ingredients") and "fp.pu_ingredient" or "fp.pu_product"
         local header_line = {"fp.recipe_header", {locale_key, 2}}
-        current_table, next_index = util.build_localised_string(header_line, current_table, next_index)
+        current_table, next_index = lib.build_localised_string(header_line, current_table, next_index)
         if not next(recipe[item_type]) then
-            current_table, next_index = util.build_localised_string({"fp.recipe_none"}, current_table, next_index)
+            current_table, next_index = lib.build_localised_string({"fp.recipe_none"}, current_table, next_index)
         else
             local items = recipe[item_type]
             for _, item in ipairs(items) do
                 local proto = item_protos[item.type].members[item.name]
                 local item_line = {"fp.recipe_item", proto.sprite, item.amount, proto.localised_name}
-                current_table, next_index = util.build_localised_string(item_line, current_table, next_index)
+                current_table, next_index = lib.build_localised_string(item_line, current_table, next_index)
             end
         end
     end

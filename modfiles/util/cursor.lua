@@ -116,7 +116,7 @@ end
 ---@param item_proto FPItemPrototype | FPFuelPrototype
 ---@param amount number
 local function add_to_item_combinator(player, blueprint_entity, item_proto, amount)
-    local timescale = util.globals.preferences(player).timescale
+    local timescale = lib.globals.preferences(player).timescale
     local item_signals, filter_matched = {}, false
     local item_name = item_proto.base_name or item_proto.name
 

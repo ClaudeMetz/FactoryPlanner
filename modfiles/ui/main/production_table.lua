@@ -1,7 +1,7 @@
 -- ** LOCAL UTIL **
 local function generate_metadata(player, factory)
-    local preferences = util.globals.preferences(player)
-    local tooltips = util.globals.ui_state(player).tooltips
+    local preferences = lib.globals.preferences(player)
+    local tooltips = lib.globals.ui_state(player).tooltips
     tooltips.production_table = {}
 
     local metadata = {
@@ -132,7 +132,7 @@ function builders.percentage(line, parent_flow, metadata)
     local textfield_percentage = parent_flow.add{type="textfield", text=tostring(relevant_line.percentage),
         tags={mod="fp", on_gui_text_changed="change_line_percentage", on_gui_confirmed="set_line_percentage",
         line_id=line.id}, enabled=enabled}
-    util.gui.setup_numeric_textfield(textfield_percentage, true, false)
+    lib.gui.setup_numeric_textfield(textfield_percentage, true, false)
     textfield_percentage.style.horizontal_align = "center"
     textfield_percentage.style.width = 55
 end
@@ -179,7 +179,7 @@ function builders.machine(line, parent_flow, metadata)
     else
         local machine = line.machine
         local machine_proto, quality_proto = machine.proto, machine.quality_proto
-        local amount, tooltip_line = util.format.machine_amount(machine.amount, false)
+        local amount, tooltip_line = lib.format.machine_amount(machine.amount, false)
 
         local machine_limit = machine.limit
         local style, note = "fflib_slot_button_default_small", nil
@@ -281,7 +281,7 @@ function builders.products(line, parent_flow, metadata)
         if proto.type == "entity" and proto.special then
             relevant_flow = special_flow
 
-            number_tooltip = util.format.special_tooltip(proto.name, product.amount)
+            number_tooltip = lib.format.special_tooltip(proto.name, product.amount)
         else
             relevant_flow = items_flow
             action_tooltip = {"", "\n", MODIFIER_ACTIONS["act_on_line_product"].tooltip}
@@ -332,7 +332,7 @@ function builders.byproducts(line, parent_flow, metadata)
             relevant_flow = special_flow
             action = "act_on_line_special_byproduct"
 
-            number_tooltip = util.format.special_tooltip(proto.name, byproduct.amount)
+            number_tooltip = lib.format.special_tooltip(proto.name, byproduct.amount)
         else
             relevant_flow = items_flow
             action = "act_on_line_byproduct"
@@ -364,7 +364,7 @@ local function add_fuel(line, parent_flow, metadata)
 
     local satisfaction_line = ""  ---@type LocalisedString
     if metadata.ingredient_satisfaction and fuel.amount > 0 then
-        satisfaction_line, _ = util.gui.calculate_satisfaction(fuel.satisfied_amount, fuel.amount)
+        satisfaction_line, _ = lib.gui.calculate_satisfaction(fuel.satisfied_amount, fuel.amount)
     end
 
     local name_line, temperature_line = {"fp.tt_title_with_note", fuel.proto.localised_name, {"fp.pu_fuel", 1}}, ""
@@ -396,7 +396,7 @@ end
 local function add_special_ingredient(line, parent_flow, metadata, item, index, number_line)
     local satisfaction_line = ""  ---@type LocalisedString
     if metadata.ingredient_satisfaction and item.amount > 0 then
-        satisfaction_line, _ = util.gui.calculate_satisfaction(item.satisfied_amount, item.amount)
+        satisfaction_line, _ = lib.gui.calculate_satisfaction(item.satisfied_amount, item.amount)
     end
 
     local tooltip = {"", {"fp.tt_title", item.proto.localised_name}, number_line, satisfaction_line,
@@ -417,7 +417,7 @@ function builders.ingredients(line, parent_flow, metadata)
         local proto = ingredient.proto
 
         if proto.type == "entity" and proto.special then
-            local number_line = {"", "\n", util.format.special_tooltip(proto.name, ingredient.amount)}
+            local number_line = {"", "\n", lib.format.special_tooltip(proto.name, ingredient.amount)}
             add_special_ingredient(line, special_flow, metadata, ingredient, index, number_line)
             goto skip_ingredient
         end
@@ -433,7 +433,7 @@ function builders.ingredients(line, parent_flow, metadata)
         if proto.type == "entity" then
             style = "fflib_slot_button_disabled_small"
         elseif metadata.ingredient_satisfaction and ingredient.amount > 0 then
-            local line, percentage_string = util.gui.calculate_satisfaction(
+            local line, percentage_string = lib.gui.calculate_satisfaction(
                 ingredient.satisfied_amount, ingredient.amount)
             satisfaction_line = line
 
@@ -507,13 +507,13 @@ local all_production_columns = {
 }
 
 local function refresh_production_table(player)
-    local main_elements = util.globals.main_elements(player)
+    local main_elements = lib.globals.main_elements(player)
     if main_elements.main_frame == nil then return end
 
     -- Determine the column_count first, because not all columns are nessecarily shown
-    local preferences = util.globals.preferences(player)
-    local factory = util.context.get(player, "Factory")  --[[@as Factory]]
-    local floor = util.context.get(player, "Floor")  --[[@as Floor]]
+    local preferences = lib.globals.preferences(player)
+    local factory = lib.context.get(player, "Factory")  --[[@as Factory]]
+    local floor = lib.context.get(player, "Floor")  --[[@as Floor]]
 
     local factory_valid = (factory and factory.valid)
     local any_lines_present = (factory_valid) and (floor:count() > 0) or false

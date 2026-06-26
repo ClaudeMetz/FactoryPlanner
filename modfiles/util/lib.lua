@@ -1,4 +1,5 @@
-local _util = (helpers.stage == "runtime") and {
+---@class FPLib
+local _lib = {
     flib = require("util.flib"),
     translator = require("util.dictionary"),
     globals = require("util.globals"),
@@ -14,10 +15,10 @@ local _util = (helpers.stage == "runtime") and {
     effects = require("util.effects"),
     temperature = require("util.temperature"),
     preferences = require("util.preferences")
-} or {  -- reduced selection
-    flib = require("util.flib"),
-    format = require("util.format")
 }
+
+
+-- TODO check which libs to not import during data stage
 
 
 -- Still can't believe this is not a thing in Lua
@@ -25,7 +26,7 @@ local _util = (helpers.stage == "runtime") and {
 ---@param str string
 ---@param separator string
 ---@return string[]
-function _util.split_string(str, separator)
+function _lib.split_string(str, separator)
     local result = {}
     for token in string.gmatch(str, "[^" .. separator .. "]+") do
         table.insert(result, (tonumber(token) or token))
@@ -36,13 +37,13 @@ end
 
 ---@param export_table table
 ---@return ExportString export_string
-function _util.pack_export_string(export_table)
+function _lib.pack_export_string(export_table)
     return helpers.encode_string(helpers.table_to_json(export_table)) --[[@as ExportString]]
 end
 
 ---@param export_string ExportString
 ---@return table export_table
-function _util.unpack_export_string(export_string)
+function _lib.unpack_export_string(export_string)
     return helpers.json_to_table(helpers.decode_string(export_string) --[[@as string]]) --[[@as table]]
 end
 
@@ -54,7 +55,7 @@ end
 ---@param current_table LocalisedString
 ---@param next_index integer
 ---@return LocalisedString, integer
-function _util.build_localised_string(string_to_insert, current_table, next_index)
+function _lib.build_localised_string(string_to_insert, current_table, next_index)
     current_table = current_table or {""}
     next_index = next_index or 2
 
@@ -74,7 +75,7 @@ end
 ---@param force LuaForce
 ---@param recipe_name string
 ---@return EffectValue productivity_bonus
-function _util.get_recipe_productivity(force, recipe_name)
+function _lib.get_recipe_productivity(force, recipe_name)
     local bonus = nil
     if recipe_name == "custom-mining" then
         bonus = force.mining_drill_productivity_bonus
@@ -90,7 +91,8 @@ end
 ---@param type FactoriopediaIDType
 ---@param name string
 ---@param proto FPPrototype?
-function _util.get_factoriopedia_proto(type, name, proto)
+---@return LuaPrototypeBase
+function _lib.get_factoriopedia_proto(type, name, proto)
     local fp_id = proto and proto.factoriopedia_id or nil
 
     if fp_id then return prototypes[fp_id.type][fp_id.name]
@@ -100,9 +102,8 @@ end
 
 ---@param name string
 ---@return boolean
-function _util.is_special_power_item(name)
+function _lib.is_special_power_item(name)
     return (name == "custom-electric-power" or name == "custom-heat-power" or name == "custom-heating-power")
 end
 
-
-return _util
+return _lib

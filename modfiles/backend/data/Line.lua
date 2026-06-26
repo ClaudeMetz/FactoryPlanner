@@ -190,17 +190,17 @@ end
 
 function Line:summarize_effects()
     local beacon_effects = (self.beacon) and self.beacon.total_effects or nil
-    local merged_effects = util.effects.merge({self.machine.total_effects, beacon_effects})
-    local limited_effects, indications = util.effects.limit(merged_effects, self.machine.proto.effect_receiver)
+    local merged_effects = lib.effects.merge({self.machine.total_effects, beacon_effects})
+    local limited_effects, indications = lib.effects.limit(merged_effects, self.machine.proto.effect_receiver)
 
-    local limited_effects_plus = util.effects.merge({limited_effects, self.recipe.effects})
+    local limited_effects_plus = lib.effects.merge({limited_effects, self.recipe.effects})
     -- These bounds are applied after normal limits and recipe effects
     local bounds = {low = 0, high = self.recipe.proto.maximum_productivity}
     limited_effects_plus["productivity"], indications["productivity"] =
-        util.effects.limit_value(limited_effects_plus["productivity"], bounds)
+        lib.effects.limit_value(limited_effects_plus["productivity"], bounds)
 
     self.total_effects = limited_effects_plus
-    self.effects_tooltip = util.effects.format(limited_effects_plus, {indications=indications})
+    self.effects_tooltip = lib.effects.format(limited_effects_plus, {indications=indications})
 end
 
 

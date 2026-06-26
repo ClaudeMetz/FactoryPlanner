@@ -24,7 +24,7 @@ local function update_line(line_data, aggregate, looped_fuel)
                 self_feeding = true
                 if is_product then  -- conserve aggregate reference if we'll restart the calculation
                     original_aggregate = aggregate
-                    aggregate = util.flib.deep_copy(aggregate)
+                    aggregate = lib.flib.deep_copy(aggregate)
                 else  -- retain byproduct item for later
                     fuel_byproduct = product
                 end

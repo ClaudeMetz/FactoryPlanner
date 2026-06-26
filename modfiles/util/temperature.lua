@@ -39,7 +39,7 @@ end
 ---@param applicable_values float[]
 ---@return number? default
 function _temperature.determine_applicable_default(player, ingredient, applicable_values)
-    local preferences = util.globals.preferences(player)
+    local preferences = lib.globals.preferences(player)
     local defaults = preferences.default_temperatures[ingredient.name]
 
     if #applicable_values == 1 then

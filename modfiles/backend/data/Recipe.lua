@@ -55,7 +55,7 @@ function Recipe:build_temperatures_data()
 
     for _, ingredient in pairs(self.proto.ingredients) do
         if ingredient.type == "fluid" then
-            self.temperature_data[ingredient.name] = util.temperature.generate_data(ingredient)
+            self.temperature_data[ingredient.name] = lib.temperature.generate_data(ingredient)
         end
     end
 end
@@ -66,7 +66,7 @@ function Recipe:apply_temperature_defaults(player)
     for _, ingredient in pairs(self.proto.ingredients) do
         if ingredient.type == "fluid" then
             local applicable_values = self.temperature_data[ingredient.name].applicable_values
-            self.temperatures[ingredient.name] = util.temperature.determine_applicable_default(
+            self.temperatures[ingredient.name] = lib.temperature.determine_applicable_default(
                 player, ingredient, applicable_values)
         end
     end

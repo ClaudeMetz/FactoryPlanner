@@ -5,7 +5,7 @@ local Line = require("backend.data.Line")
 -- and finding any recipes that produce the given prototype
 local function match_recipes(player, modal_data, proto)
     local force_recipes, force_technologies = player.force.recipes, player.force.technologies
-    local preferences = util.globals.preferences(player)
+    local preferences = lib.globals.preferences(player)
 
     local relevant_recipes = {}
     local user_disabled_recipe = false
@@ -96,9 +96,9 @@ local function attempt_adding_line(player, recipe_id, modal_data)
 
     -- If finding a machine fails, this line is invalid
     if line:change_machine_to_default(player) == false then
-        util.messages.raise(player, "error", {"fp.error_no_compatible_machine", recipe_name}, 1)
+        lib.messages.raise(player, "error", {"fp.error_no_compatible_machine", recipe_name}, 1)
     else
-        local floor = util.context.get(player, "Floor")  --[[@as Floor]]
+        local floor = lib.context.get(player, "Floor")  --[[@as Floor]]
         local relative_object = OBJECT_INDEX[modal_data.add_after_line_id]  --[[@as LineObject]]
         floor:insert(line, relative_object, "next")  -- if not relative, insert uses last line
 
@@ -124,19 +124,19 @@ local function attempt_adding_line(player, recipe_id, modal_data)
         end
 
         if not line:is_temperature_fully_configured() then
-            util.messages.raise(player, "warning", {"fp.warning_temperature_not_configured", recipe_name}, 1)
+            lib.messages.raise(player, "warning", {"fp.warning_temperature_not_configured", recipe_name}, 1)
         end
 
         if not (recipe_proto.custom or player.force.recipes[recipe_proto.name].enabled) then
-            util.messages.raise(player, "warning", {"fp.warning_recipe_disabled", recipe_name}, 1)
+            lib.messages.raise(player, "warning", {"fp.warning_recipe_disabled", recipe_name}, 1)
         end
 
         if not line:get_surface_compatibility().overall then
-            util.messages.raise(player, "warning", {"fp.warning_surface_not_compatible", recipe_name}, 1)
+            lib.messages.raise(player, "warning", {"fp.warning_surface_not_compatible", recipe_name}, 1)
         end
 
         solver.update(player)
-        util.gui.run_refresh(player, "production")
+        lib.gui.run_refresh(player, "production")
     end
 end
 
@@ -146,9 +146,9 @@ local function handle_recipe_click(player, tags, event)
         local recipe_proto = prototyper.util.find("recipes", tags.recipe_proto_id, nil)
         player.open_technology_gui(recipe_proto.enabling_technologies[1])
     else
-        local modal_data = util.globals.modal_data(player)
+        local modal_data = lib.globals.modal_data(player)
         attempt_adding_line(player, tags.recipe_proto_id, modal_data)
-        util.gui.close_dialog(player, "cancel")
+        lib.gui.close_dialog(player, "cancel")
     end
 end
 
@@ -165,9 +165,9 @@ local function create_filter_box(modal_data)
     label_filters.style.top_margin = 2
 
     local flow_filter_switches = table_filters.add{type="flow", direction="vertical"}
-    util.gui.switch.add_on_off(flow_filter_switches, "toggle_recipe_filter", {filter_name="disabled"},
+    lib.gui.switch.add_on_off(flow_filter_switches, "toggle_recipe_filter", {filter_name="disabled"},
         modal_data.filters.disabled, {"fp.unresearched_recipes"}, nil, false)
-    util.gui.switch.add_on_off(flow_filter_switches, "toggle_recipe_filter", {filter_name="hidden"},
+    lib.gui.switch.add_on_off(flow_filter_switches, "toggle_recipe_filter", {filter_name="hidden"},
         modal_data.filters.hidden, {"fp.hidden_recipes"}, nil, false)
 
     if modal_data.temperature then
@@ -275,7 +275,7 @@ local function build_dialog_structure(modal_data)
 end
 
 local function apply_recipe_filter(player, search_term)
-    local modal_data = util.globals.modal_data(player)  --[[@as table]]
+    local modal_data = lib.globals.modal_data(player)  --[[@as table]]
     local disabled, hidden = modal_data.filters.disabled, modal_data.filters.hidden
 
     local any_recipe_visible, added_scroll_pane_height = false, 0
@@ -314,15 +314,15 @@ end
 
 
 local function handle_filter_change(player, tags, event)
-    local boolean_state = util.gui.switch.convert_to_boolean(event.element.switch_state)
-    util.globals.modal_data(player).filters[tags.filter_name] = boolean_state
-    util.globals.preferences(player).recipe_filters[tags.filter_name] = boolean_state
+    local boolean_state = lib.gui.switch.convert_to_boolean(event.element.switch_state)
+    lib.globals.modal_data(player).filters[tags.filter_name] = boolean_state
+    lib.globals.preferences(player).recipe_filters[tags.filter_name] = boolean_state
 
     modal_dialog.run_search(player)
 end
 
 local function apply_temperature(player, temperature)
-    local modal_data = util.globals.modal_data(player)  --[[@as table]]
+    local modal_data = lib.globals.modal_data(player)  --[[@as table]]
     modal_data.temperature = temperature
 
     local name = modal_data.base_fluid.name .. "-" .. temperature
@@ -344,7 +344,7 @@ local function recipe_early_abort_check(player, modal_data)
     local result, error, filters = match_recipes(player, modal_data, proto)
 
     if error ~= nil then
-        util.messages.raise(player, "error", error, 1)
+        lib.messages.raise(player, "error", error, 1)
         return true  -- signal that the dialog does not need to actually be opened
 
     else
@@ -375,7 +375,7 @@ local function open_recipe_dialog(player, modal_data)
         apply_temperature(player, modal_data.applicable_values[1])
     end
 
-    modal_data.translations = util.globals.player_table(player).translation_tables
+    modal_data.translations = lib.globals.player_table(player).translation_tables
     build_dialog_structure(modal_data)
     modal_dialog.run_search(player)
     modal_data.modal_elements.search_textfield.focus()
@@ -397,7 +397,7 @@ listeners.gui = {
             handler = (function(player, tags, _)
                 apply_temperature(player, tags.temperature)
 
-                local modal_data = util.globals.modal_data(player)
+                local modal_data = lib.globals.modal_data(player)
                 build_dialog_structure(modal_data)
                 modal_dialog.run_search(player)
             end)
