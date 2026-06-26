@@ -33,6 +33,29 @@ local function init(proto, parent)
     return object
 end
 
+---@param category string?
+---@param parent Machine?
+---@return Fuel
+local function initDummy(category, parent)
+    local object = Object.init({
+        proto = {
+            name = "",
+            category = (category ~= nil) and category or "fuel",
+            data_type = "fuels",
+            simplified = true
+        }, --[[@as FPPackedPrototype]]
+
+        temperature = nil,
+        temperature_data = nil,
+
+        amount = 0,
+        satisfied_amount = 0,
+
+        parent = parent,
+        dummy = true
+    }, "Fuel", Fuel) --[[@as Fuel]]
+    return object
+end
 
 function Fuel:index()
     OBJECT_INDEX[self.id] = self
@@ -71,7 +94,13 @@ end
 ---@return string? error
 function Fuel:paste(object, player)
     if object.class == "Fuel" then
-        local burner = self.parent.proto.burner  -- will exist if there is fuel to paste on
+        local burner = self.parent.proto.burner
+
+        -- Sanity check. Should exist if fuel can be pasted
+        if burner == nil then
+            return false, "incompatible"
+        end
+
         -- Check invididual categories so you can paste between combined_categories
         for category_name, _ in pairs(burner.categories) do
             if object.proto.category == category_name then
@@ -88,10 +117,11 @@ function Fuel:paste(object, player)
 end
 
 
----@class PackedFuel: PackedObject
+---@class PackedFuel: Object
 ---@field class "Fuel"
----@field proto FPFuelPrototype
+---@field proto FPPackedPrototype
 ---@field temperature float?
+---@field amount float?
 
 ---@return PackedFuel packed_self
 function Fuel:pack()
@@ -107,9 +137,11 @@ end
 ---@param parent Machine
 ---@return Fuel machine
 local function unpack(packed_self, parent)
+    -- Prototypes are unpacked at validate
     local unpacked_self = init(packed_self.proto, parent)
+
     unpacked_self.temperature = packed_self.temperature  -- will be migrated through validation
-    unpacked_self.amount = packed_self.amount  -- only used for paste
+    unpacked_self.amount = (packed_self.amount ~= nil) and packed_self.amount or 0  -- only used for paste
 
     return unpacked_self
 end
@@ -168,4 +200,4 @@ function Fuel:repair(player)
     return false  -- the parent machine will try to replace it with another fuel of the same category
 end
 
-return {init = init, unpack = unpack}
+return {init = init, initDummy=initDummy, unpack = unpack}

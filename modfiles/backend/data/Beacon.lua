@@ -15,7 +15,7 @@ local Beacon = Object.methods()
 Beacon.__index = Beacon
 script.register_metatable("Beacon", Beacon)
 
----@param proto FPBeaconPrototype
+---@param proto FPBeaconPrototype | FPPackedPrototype
 ---@param parent Line
 ---@return Beacon
 local function init(proto, parent)
@@ -32,6 +32,32 @@ local function init(proto, parent)
         parent = parent
     }, "Beacon", Beacon)  --[[@as Beacon]]
     object.module_set = ModuleSet.init(object)
+    return object
+end
+
+
+---@param parent Line?
+---@return Beacon
+local function initDummy(parent)
+    local object = Object.init({
+        proto = {
+            name="",
+            category="beacon",
+            data_type="beacons",
+            simplified=true
+        }, --[[@as FPPackedPrototype]]
+        quality_proto = defaults.get_fallback("qualities").proto,
+
+        amount = 0,
+        total_amount = nil,
+        module_set = nil,
+
+        total_effects = nil,
+        effects_tooltip = "",
+
+        parent = parent
+    }, "Beacon", Beacon) --[[@as Beacon]]
+    object.module_set = ModuleSet.initDummy(object)
     return object
 end
 
@@ -148,8 +174,8 @@ end
 
 ---@class PackedBeacon: PackedObject
 ---@field class "Beacon"
----@field proto FPBeaconPrototype
----@field quality_proto FPQualityPrototype
+---@field proto FPPackedPrototype
+---@field quality_proto FPPackedPrototype
 ---@field amount number
 ---@field total_amount number?
 ---@field module_set PackedModuleSet
@@ -170,8 +196,10 @@ end
 ---@param parent Line
 ---@return Beacon machine
 local function unpack(packed_self, parent)
+    -- Prototypes are unpacked at validate
     local unpacked_self = init(packed_self.proto, parent)
     unpacked_self.quality_proto = packed_self.quality_proto
+
     unpacked_self.amount = packed_self.amount
     unpacked_self.total_amount = packed_self.total_amount
     unpacked_self.module_set = ModuleSet.unpack(packed_self.module_set, unpacked_self)
@@ -232,4 +260,4 @@ function Beacon:repair(player)
     return self.valid
 end
 
-return {init = init, unpack = unpack}
+return {init = init, initDummy = initDummy, unpack = unpack}

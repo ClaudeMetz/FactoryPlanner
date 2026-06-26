@@ -32,6 +32,22 @@ local function init(parent)
 end
 
 
+---@param parent ModuledObject?
+---@return ModuleSet
+local function initDummy(parent)
+    local object = Object.init({
+        first = nil,
+
+        module_count = 0,
+        module_limit = 0,
+        empty_slots = 0,
+
+        parent = parent
+    }, "ModuleSet", ModuleSet)  --[[@as ModuleSet]]
+    return object
+end
+
+
 function ModuleSet:index()
     OBJECT_INDEX[self.id] = self
     for module in self:iterator() do module:index() end
@@ -123,7 +139,7 @@ end
 function ModuleSet:verify_compatibility()
     local modules_to_remove = {}
     for module in self:iterator() do
-        if not self:check_compatibility(module.proto) then
+        if module.proto.simplified or not self:check_compatibility(module.proto --[[@as FPModulePrototype]]) then
             table.insert(modules_to_remove, module)
         end
     end
@@ -189,34 +205,40 @@ end
 function ModuleSet:check_compatibility(module_proto)
     if not self.parent:uses_effects() then
         return false
-    else
-        local compatible = true
-        local entity, recipe = self.parent.proto, self.parent.parent.recipe.proto
-        -- Any non-existing allowed list means all modules are allowed
+    end
 
-        local function check_effect_compatibility(allowed_effects)
-            if allowed_effects == nil then return end
-            for name, value in pairs(module_proto.effects) do
-                -- Effects only need to be in the allowed list if they are considered positive
-                if not allowed_effects[name] and util.effects.is_positive(name, value) then
-                    compatible = false
-                end
-            end
-        end
-        check_effect_compatibility(entity.allowed_effects)
-        check_effect_compatibility(recipe.allowed_effects)
+    local compatible = true
+    local entity, recipe = self.parent.proto, self.parent.parent.recipe.proto
+    -- Any non-existing allowed list means all modules are allowed
 
-        local function check_category_compatibility(allowed_categories)
-            if allowed_categories == nil then return end
-            if not allowed_categories[module_proto.category] then
+    if entity.simplified or recipe.simplified then
+        return false
+    end
+    ---@cast entity FPBeaconPrototype | FPMachinePrototype
+    ---@cast recipe FPRecipePrototype
+
+    local function check_effect_compatibility(allowed_effects)
+        if allowed_effects == nil then return end
+        for name, value in pairs(module_proto.effects) do
+            -- Effects only need to be in the allowed list if they are considered positive
+            if not allowed_effects[name] and util.effects.is_positive(name, value) then
                 compatible = false
             end
         end
-        check_category_compatibility(entity.allowed_module_categories)
-        check_category_compatibility(recipe.allowed_module_categories)
-
-        return compatible
     end
+    check_effect_compatibility(entity.allowed_effects)
+    check_effect_compatibility(recipe.allowed_effects)
+
+    local function check_category_compatibility(allowed_categories)
+        if allowed_categories == nil then return end
+        if not allowed_categories[module_proto.category] then
+            compatible = false
+        end
+    end
+    check_category_compatibility(entity.allowed_module_categories)
+    check_category_compatibility(recipe.allowed_module_categories)
+
+    return compatible
 end
 
 ---@return ItemPrototypeFilter[]
@@ -286,7 +308,7 @@ end
 ---@return boolean success
 ---@return string? error
 function ModuleSet:paste(module)
-    if not self:check_compatibility(module.proto) then
+    if module.proto.simplified or not self:check_compatibility(module.proto --[[@as FPModulePrototype]]) then
         return false, "incompatible"
     elseif self.empty_slots == 0 then
         return false, "no_empty_slots"
@@ -355,4 +377,4 @@ function ModuleSet:repair(player)
     return self.valid
 end
 
-return {init = init, unpack = unpack}
+return {init = init, initDummy = initDummy, unpack = unpack}

@@ -210,7 +210,7 @@ end
 ---@param packed_self PackedFactory
 ---@return Factory factory
 local function unpack(packed_self)
-    local unpacked_self = init(packed_self.name)
+    local unpacked_self = init(packed_self.name, packed_self.matrix_solver_active)
 
     -- Product prototypes will be automatically unpacked by the validation process
     unpacked_self.matrix_solver_active = packed_self.matrix_solver_active

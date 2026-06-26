@@ -26,7 +26,7 @@ local Line = Object.methods()
 Line.__index = Line
 script.register_metatable("Line", Line)
 
----@param recipe_proto FPRecipePrototype | FPPackedPrototype
+---@param recipe_proto FPRecipePrototype
 ---@param production_type ProductionType
 ---@return Line
 local function init(recipe_proto, production_type)
@@ -50,6 +50,33 @@ local function init(recipe_proto, production_type)
     }, "Line", Line)  --[[@as Line]]
 
     object.recipe = Recipe.init(recipe_proto, production_type, object)
+
+    return object
+end
+
+
+---@return Line
+local function initDummy()
+    local object = Object.init({
+        recipe = nil, -- initialized below
+        done = false,
+        active = false,
+        percentage = 100,
+        machine = nil,
+        beacon = nil,
+        comment = "",
+
+        total_effects = nil,
+        effects_tooltip = "",
+        surface_compatibility = nil, -- determined on demand
+
+        products = {},
+        byproducts = {},
+        ingredients = {},
+        production_ratio = 0
+    }, "Line", Line) --[[@as Line]]
+
+    recipe = Recipe.initDummy(object)
 
     return object
 end
@@ -175,8 +202,9 @@ end
 ---@param player LuaPlayer
 function Line:setup_beacon(player)
     local beacon_defaults = defaults.get(player, "beacons", nil)
-    if beacon_defaults.modules and beacon_defaults.beacon_amount ~= 0 then
-        local blank_beacon = Beacon.init(beacon_defaults.proto, self)
+    if not beacon_defaults.proto.simplified and beacon_defaults.modules and beacon_defaults.beacon_amount ~= 0 then
+        local proto = beacon_defaults.proto  --[[@as FPBeaconPrototype]]
+        local blank_beacon = Beacon.init(proto, self)
         self:set_beacon(blank_beacon)
         blank_beacon:reset(player)
     end
@@ -204,9 +232,12 @@ function Line:compile_machine_filter()
     local compatible_machines = {}
 
     local machine_category = prototyper.util.find("machines", nil, self.machine.proto.combined_category)
-    for _, machine_proto in pairs(machine_category.members) do
-        if self:is_machine_compatible(machine_proto) then
-            table.insert(compatible_machines, machine_proto.name)
+
+    if machine_category ~= nil then
+        for _, machine_proto in pairs(machine_category.members) do
+            if self:is_machine_compatible(machine_proto) then
+                table.insert(compatible_machines, machine_proto.name)
+            end
         end
     end
 
@@ -289,7 +320,7 @@ end
 ---@param packed_self PackedLine
 ---@return Line line
 local function unpack(packed_self)
-    local unpacked_self = init(nil, nil)  -- initialize empty, overwrite after
+    local unpacked_self = initDummy()  -- initialize empty, overwrite after
     unpacked_self.recipe = Recipe.unpack(packed_self.recipe, unpacked_self)  --[[@as Recipe]]
     unpacked_self.done = packed_self.done
     unpacked_self.active = packed_self.active
@@ -336,4 +367,4 @@ function Line:repair(player)
     return self.valid
 end
 
-return {init = init, unpack = unpack}
+return {init = init, initDummy = initDummy, unpack = unpack}

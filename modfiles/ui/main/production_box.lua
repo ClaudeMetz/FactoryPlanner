@@ -123,8 +123,7 @@ end
 
 local function paste_line(player, _, _)
     local floor = util.context.get(player, "Floor")  --[[@as Floor]]
-    local dummy_proto = { name="", category="recipe", data_type="recipes", simplified=true} --[[@as FPPackedPrototype]]
-    local dummy_line = Line.init(dummy_proto, "produce")
+    local dummy_line = Line.initDummy()
     util.clipboard.dummy_paste(player, dummy_line, floor)
 end
 
