@@ -37,13 +37,13 @@ end
 ---@param export_table table
 ---@return ExportString export_string
 function _util.pack_export_string(export_table)
-    return helpers.encode_string(helpers.table_to_json(export_table))
+    return helpers.encode_string(helpers.table_to_json(export_table)) --[[@as ExportString]]
 end
 
 ---@param export_string ExportString
 ---@return table export_table
 function _util.unpack_export_string(export_string)
-    return helpers.json_to_table(helpers.decode_string(export_string))
+    return helpers.json_to_table(helpers.decode_string(export_string) --[[@as string]]) --[[@as table]]
 end
 
 
@@ -85,7 +85,7 @@ function _util.get_recipe_productivity(force, recipe_name)
 end
 
 
----@alias FactoriopedaIDType "item" | "fluid" | "recipe" | "entity" | "tile" | "space-location" | "ammo-category" | "space-connection" | "asteroid-chunk" | "virtual-signal" | "surface"
+---@alias FactoriopediaIDType "item" | "fluid" | "recipe" | "entity" | "tile" | "space-location" | "ammo-category" | "space-connection" | "asteroid-chunk" | "virtual-signal" | "surface"
 
 ---@param type FactoriopediaIDType
 ---@param name string

@@ -1,6 +1,6 @@
 local Object = require("backend.data.Object")
 
----@alias ProductionType "produce" | "consume"
+---@alias RecipeProductionType "produce" | "consume"
 
 ---@class SurfaceCompatibility
 ---@field recipe boolean
@@ -11,7 +11,7 @@ local Object = require("backend.data.Object")
 ---@field class "Recipe"
 ---@field parent Line
 ---@field proto FPRecipePrototype | FPPackedPrototype
----@field production_type ProductionType
+---@field production_type RecipeProductionType
 ---@field priority_product (FPItemPrototype | FPPackedPrototype)?
 ---@field temperatures { [string]: float }
 ---@field temperature_data { [string]: TemperatureData }
@@ -21,7 +21,7 @@ Recipe.__index = Recipe
 script.register_metatable("Recipe", Recipe)
 
 ---@param proto FPRecipePrototype?
----@param production_type ProductionType
+---@param production_type RecipeProductionType
 ---@param parent Line
 ---@return Recipe
 local function init(proto, production_type, parent)
@@ -124,7 +124,7 @@ end
 ---@class PackedRecipe: PackedObject
 ---@field class "Recipe"
 ---@field proto FPPackedPrototype
----@field production_type ProductionType
+---@field production_type RecipeProductionType
 ---@field priority_product FPPackedPrototype?
 ---@field temperatures { [string]: float }
 

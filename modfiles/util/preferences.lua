@@ -48,6 +48,8 @@ function _preferences.reload(player_table)
     local player_preferences = player_table.preferences or {}
     local updated_prefs = {}
 
+    ---@param name string
+    ---@param default any
     local function reload(name, default)
         -- Needs to be longform-if because true is a valid default
         if player_preferences[name] == nil then

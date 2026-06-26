@@ -22,6 +22,7 @@ local generator = {
 ---@field name string
 ---@field localised_name LocalisedString
 ---@field sprite SpritePath
+---@field factoriopedia_id { type: FactoriopediaIDType, name: string}?
 
 ---@class FPPrototypeWithCategory: FPPrototype
 ---@field category_id integer
@@ -62,7 +63,6 @@ end
 ---@field data_type "recipes"
 ---@field categories { [string]: boolean }
 ---@field combined_category string
----@field factoriopedia_id { type: FactoriopediaIDType, name: string}?
 ---@field energy double
 ---@field emissions_multiplier double
 ---@field ingredients Ingredient[]

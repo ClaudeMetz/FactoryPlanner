@@ -1,5 +1,6 @@
 -- Raiguard does not keep the flib API stable, so I copy the stuff I need here
 -- Styles & Sprites prefixed with fflib, to avoid clobbering any upstream changes
+---@diagnostic disable
 
 --[[
 MIT License

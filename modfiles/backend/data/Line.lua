@@ -27,7 +27,7 @@ Line.__index = Line
 script.register_metatable("Line", Line)
 
 ---@param recipe_proto FPRecipePrototype?
----@param production_type ProductionType
+---@param production_type RecipeProductionType
 ---@return Line
 local function init(recipe_proto, production_type)
     local object = Object.init({

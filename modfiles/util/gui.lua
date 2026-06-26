@@ -50,6 +50,7 @@ function _gui.switch.convert_to_state(boolean)
 end
 
 
+---@param player LuaPlayer
 local function check_empty_flow(player)
     local button_flow = mod_gui.get_button_flow(player)
     -- parent.parent is to check that I'm not deleting a top level element. Now, I have no idea how that

@@ -34,8 +34,10 @@ function _temperature.generate_data(ingredient)
 end
 
 
+---@param player LuaPlayer
 ---@param ingredient Ingredient.fluid
----@return number default
+---@param applicable_values float[]
+---@return number? default
 function _temperature.determine_applicable_default(player, ingredient, applicable_values)
     local preferences = util.globals.preferences(player)
     local defaults = preferences.default_temperatures[ingredient.name]
@@ -54,13 +56,13 @@ function _temperature.determine_applicable_default(player, ingredient, applicabl
 end
 
 
----@alias TemperatureDefaultMap { string: TemperatureDefault }
+---@alias TemperatureDefaultMap table<string, TemperatureDefault>
 ---@alias TemperatureDefault number[]
 
 ---@return TemperatureDefaultMap
 function _temperature.get_fallback()
     local fallback = {}
-    for name, prototypes in pairs(TEMPERATURE_MAP) do
+    for name, _ in pairs(TEMPERATURE_MAP) do
         fallback[name] = {}
     end
     return fallback
