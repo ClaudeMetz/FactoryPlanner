@@ -26,7 +26,7 @@ local function init(proto, amount, quality_proto)
         effects_tooltip = ""
     }, "Module", Module)  --[[@as Module]]
 
-    object:summarize_effects()
+    if not proto.simplified then object:summarize_effects() end
     return object
 end
 

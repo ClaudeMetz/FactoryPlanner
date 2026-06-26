@@ -131,7 +131,7 @@ function Fuel:paste(object, player)
 end
 
 
----@class PackedFuel: Object
+---@class PackedFuel: PackedObject
 ---@field class "Fuel"
 ---@field proto FPPackedPrototype
 ---@field temperature float?
@@ -186,7 +186,14 @@ function Fuel:validate()
     if burner.combined_category ~= self.proto.combined_category then
         if burner.categories[self.proto.category] then
             -- Fix the fuel if the combined category changed but it still has a compatible category
-            self.proto = prototyper.util.find("fuels", self.proto.name, burner.combined_category) --[[@as FPFuelPrototype]]
+            local proto = prototyper.util.find("fuels", self.proto.name, burner.combined_category) --[[@as FPFuelPrototype?]]
+
+            if proto ~= nil then
+                self.proto = proto
+            else
+                self.valid = false
+                return self.valid
+            end
         else
             self.valid = false
             return self.valid

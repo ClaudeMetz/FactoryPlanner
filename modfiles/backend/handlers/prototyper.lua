@@ -161,12 +161,11 @@ end
 ---@alias CategoryDesignation ("category" | "type" | "combined_category")
 
 -- Returns a new table that only contains the given prototypes' identifiers
----@param prototype AnyFPPrototype?
+---@param prototype AnyPrototype?
 ---@param category_designation CategoryDesignation?
 ---@return FPPackedPrototype?
 function prototyper.util.simplify_prototype(prototype, category_designation)
     if not prototype then return nil end
-    if prototype.simplified then return prototype --[[@as FPPackedPrototype]] end  -- failsafe
     return {name = prototype.name, category = prototype[category_designation],
         data_type = prototype.data_type, simplified = true}
 end
