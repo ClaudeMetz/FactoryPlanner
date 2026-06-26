@@ -126,7 +126,8 @@ end
 local function handle_item_add(player, tags, event)
     if event.shift then  -- paste
         local factory = util.context.get(player, "Factory")  --[[@as Factory]]
-        local dummy_product = Product.init({})
+        local dummy_proto = { name="", category="item", data_type="items", simplified=true} --[[@as FPPackedPrototype]]
+        local dummy_product = Product.init(dummy_proto)
         util.clipboard.dummy_paste(player, dummy_product, factory)
     else
         util.gui.open_dialog(player, {dialog="picker", modal_data={item_id=nil, item_category=tags.item_category}})
@@ -138,12 +139,12 @@ local function handle_item_button_click(player, tags, action)
 
     local item = nil
     if tags.item_id then
-        item = OBJECT_INDEX[tags.item_id]
+        item = OBJECT_INDEX[tags.item_id] --[[@as Product]]
     else
         -- Need to get items from the right floor depending on display settings
         local floor = (show_floor_items) and util.context.get(player, "Floor")
             or util.context.get(player, "Factory").top_floor
-        item = floor[tags.item_category .. "s"][tags.item_index]
+        item = floor[tags.item_category .. "s"][tags.item_index] --[[@as Product]]
     end
 
     if action == "add_recipe" then

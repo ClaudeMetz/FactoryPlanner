@@ -5,7 +5,7 @@ local ModuleSet = require("backend.data.ModuleSet")
 ---@field class "Beacon"
 ---@field parent Line
 ---@field proto FPBeaconPrototype | FPPackedPrototype
----@field quality_proto FPQualityPrototype
+---@field quality_proto FPQualityPrototype | FPPackedPrototype
 ---@field amount integer
 ---@field total_amount number?
 ---@field module_set ModuleSet
@@ -189,10 +189,10 @@ end
 
 ---@return boolean valid
 function Beacon:validate()
-    self.proto = prototyper.util.validate_prototype_object(self.proto, nil)
+    self.proto = prototyper.util.validate_prototype_object(self.proto, nil) --[[@as FPBeaconPrototype | FPPackedPrototype]]
     self.valid = (not self.proto.simplified)
 
-    self.quality_proto = prototyper.util.validate_prototype_object(self.quality_proto, nil)
+    self.quality_proto = prototyper.util.validate_prototype_object(self.quality_proto, nil) --[[@as FPQualityPrototype | FPPackedPrototype]]
     self.valid = (not self.quality_proto.simplified) and self.valid
 
     -- Can't be valid with an invalid parent
@@ -219,7 +219,7 @@ function Beacon:repair(player)
     end
 
     if self.valid and self.quality_proto.simplified then
-        self.quality_proto = defaults.get_fallback("qualities").proto
+        self.quality_proto = defaults.get_fallback("qualities").proto --[[@as FPQualityPrototype]]
     end
 
     if self.valid then

@@ -4,7 +4,7 @@ local Object = require("backend.data.Object")
 ---@field class "Module"
 ---@field parent ModuleSet
 ---@field proto FPModulePrototype | FPPackedPrototype
----@field quality_proto FPQualityPrototype
+---@field quality_proto FPQualityPrototype | FPPackedPrototype
 ---@field amount integer
 ---@field total_effects IntegerModuleEffects
 ---@field effects_tooltip LocalisedString
@@ -130,17 +130,17 @@ end
 
 ---@return boolean valid
 function Module:validate()
-    self.proto = prototyper.util.validate_prototype_object(self.proto, "category")
+    self.proto = prototyper.util.validate_prototype_object(self.proto, "category") --[[@as FPModulePrototype | FPPackedPrototype]]
     self.valid = (not self.proto.simplified)
 
-    self.quality_proto = prototyper.util.validate_prototype_object(self.quality_proto, nil)
+    self.quality_proto = prototyper.util.validate_prototype_object(self.quality_proto, nil) --[[@as FPQualityPrototype | FPPackedPrototype]]
     self.valid = (not self.quality_proto.simplified) and self.valid
 
     -- Can't be valid with an invalid parent
     self.valid = self.parent.parent.valid and self.parent.valid and self.valid
 
     -- Check whether the module is still compatible with its machine or beacon
-    if self.valid then self.valid = self.parent:check_compatibility(self.proto) end
+    if self.valid then self.valid = self.parent:check_compatibility(self.proto --[[@as FPModulePrototype]]) end
 
     if self.valid then self:summarize_effects() end
 
@@ -152,12 +152,12 @@ end
 function Module:repair(player)
     self.valid = true
 
-    if self.proto.simplified or not self.parent:check_compatibility(self.proto) then
+    if self.proto.simplified or not self.parent:check_compatibility(self.proto --[[@as FPModulePrototype]]) then
         self.valid = false  -- the module can not be salvaged in this case and will be removed
     end
 
     if self.valid and self.quality_proto.simplified then
-        self.quality_proto = defaults.get_fallback("qualities").proto
+        self.quality_proto = defaults.get_fallback("qualities").proto --[[@as FPQualityPrototype]]
     end
 
     if self.valid then self:summarize_effects() end

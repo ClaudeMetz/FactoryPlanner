@@ -14,7 +14,7 @@ local Product = Object.methods()
 Product.__index = Product
 script.register_metatable("Product", Product)
 
----@param proto FPItemPrototype
+---@param proto FPItemPrototype | FPPackedPrototype
 ---@return Product
 local function init(proto)
     local object = Object.init({
@@ -121,10 +121,10 @@ end
 function Product:validate()
     self.valid = true
 
-    self.proto = prototyper.util.validate_prototype_object(self.proto, "type")
+    self.proto = prototyper.util.validate_prototype_object(self.proto, "type") --[[@as FPItemPrototype | FPPackedPrototype]]
     self.valid = (not self.proto.simplified) and self.valid
 
-    self.belt_proto = (self.belt_proto) and prototyper.util.validate_prototype_object(self.belt_proto, nil)
+    self.belt_proto = (self.belt_proto) and prototyper.util.validate_prototype_object(self.belt_proto, nil) --[[@as FPBeltPrototype | FPPackedPrototype]]
     if self.belt_proto then self.valid = (not self.belt_proto.simplified) and self.valid end
 
     return self.valid

@@ -7,6 +7,7 @@
 ---@field parent Object?
 ---@field next Object?
 ---@field previous Object?
+---@field dummy boolean?
 
 ---@class ObjectMethods
 local methods = {}

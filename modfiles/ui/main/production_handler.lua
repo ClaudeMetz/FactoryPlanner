@@ -184,10 +184,11 @@ local function handle_beacon_click(player, tags, action)
 end
 
 local function handle_beacon_add(player, tags, event)
-    local line = OBJECT_INDEX[tags.line_id]
+    local line = OBJECT_INDEX[tags.line_id] --[[@as Line]]
 
     if event.shift then  -- paste
-        local dummy_beacon = Beacon.init({simplified=true}, line)
+        local dummy_proto = { name="", category="beacon", data_type="beacons", simplified=true} --[[@as FPPackedPrototype]]
+        local dummy_beacon = Beacon.init(dummy_proto, line)
         util.clipboard.paste(player, dummy_beacon)
     else
         util.gui.open_dialog(player, {dialog="beacon", modal_data={line_id=line.id}})

@@ -19,7 +19,7 @@ local Recipe = Object.methods()
 Recipe.__index = Recipe
 script.register_metatable("Recipe", Recipe)
 
----@param proto FPRecipePrototype?
+---@param proto FPRecipePrototype | FPPackedPrototype
 ---@param production_type ProductionType
 ---@param parent Line
 ---@return Recipe
@@ -35,7 +35,7 @@ local function init(proto, production_type, parent)
         parent = parent
     }, "Recipe", Recipe)  --[[@as Recipe]]
 
-    if proto and proto.simplified ~= true then
+    if proto.simplified ~= true then
         object:build_temperatures_data()
     end
 
@@ -118,11 +118,11 @@ end
 
 ---@return boolean valid
 function Recipe:validate()
-    self.proto = prototyper.util.validate_prototype_object(self.proto, nil)
+    self.proto = prototyper.util.validate_prototype_object(self.proto, nil) --[[@as FPRecipePrototype | FPPackedPrototype]]
     self.valid = (not self.proto.simplified)
 
     if self.valid and self.priority_product then
-        self.priority_product = prototyper.util.validate_prototype_object(self.priority_product, "type")
+        self.priority_product = prototyper.util.validate_prototype_object(self.priority_product, "type") --[[@as FPItemPrototype | FPPackedPrototype]]
         self.valid = (not self.priority_product.simplified) and self.valid
     end
 

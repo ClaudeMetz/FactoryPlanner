@@ -6,7 +6,7 @@ local ModuleSet = require("backend.data.ModuleSet")
 ---@field class "Machine"
 ---@field parent Line
 ---@field proto FPMachinePrototype | FPPackedPrototype
----@field quality_proto FPQualityPrototype
+---@field quality_proto FPQualityPrototype | FPPackedPrototype
 ---@field limit number?
 ---@field force_limit boolean
 ---@field fuel Fuel?
@@ -286,17 +286,17 @@ function Machine:validate()
     if recipe_category ~= self.proto.combined_category then
         local corresponding_proto = prototyper.util.find("machines", self.proto.name, recipe_category)
         if corresponding_proto then  -- check if the machine just moved categories
-            self.proto = corresponding_proto  -- this is okay in this specific context
+            self.proto = corresponding_proto --[[@as FPMachinePrototype]] -- this is okay in this specific context
         else  -- otherwise, this machine is invalid
-            self.proto = prototyper.util.simplify_prototype(self.proto, "combined_category")
+            self.proto = prototyper.util.simplify_prototype(self.proto, "combined_category") --[[@as FPPackedPrototype]]
             self.valid = false
         end
     else
-        self.proto = prototyper.util.validate_prototype_object(self.proto, "combined_category")
+        self.proto = prototyper.util.validate_prototype_object(self.proto, "combined_category") --[[@as FPMachinePrototype | FPPackedPrototype]]
         self.valid = (not self.proto.simplified)
     end
 
-    self.quality_proto = prototyper.util.validate_prototype_object(self.quality_proto, nil)
+    self.quality_proto = prototyper.util.validate_prototype_object(self.quality_proto, nil) --[[@as FPQualityPrototype | FPPackedPrototype]]
     self.valid = (not self.quality_proto.simplified) and self.valid
 
     -- Can't be valid with an invalid parent
@@ -304,15 +304,20 @@ function Machine:validate()
 
     -- Only need to check compatibility when the above is valid, else it'll be replaced anyways
     if self.valid and not self.proto.simplified then
-        self.valid = self.parent:is_machine_compatible(self.proto) and self.valid
+        local proto = self.proto --[[@as FPMachinePrototype]]
+        self.valid = self.parent:is_machine_compatible(proto) and self.valid
     end
 
     if self.valid then  -- only makes sense if the machine is valid
         if self.proto.burner and not self.fuel then
             -- If this machine changed to require fuel, add this dummy
-            local dummy = {name = "", category = self.proto.burner.combined_category,
-                data_type = "fuels", simplified = true}
-            self.fuel = Fuel.init(dummy, self)
+            local dummy_proto = {
+                name = "",
+                category = self.proto.burner.combined_category,
+                data_type = "fuels",
+                simplified = true
+            } --[[@as FPPackedPrototype]]
+            self.fuel = Fuel.init(dummy_proto, self)
         end
         if self.fuel then self.valid = self.fuel:validate() and self.valid end
     end
@@ -328,7 +333,7 @@ function Machine:repair(player)
     self.valid = true
 
     -- Simplified or incompatible machine can potentially be replaced with a different one
-    if self.proto.simplified or not self.parent:is_machine_compatible(self.proto) then
+    if self.proto.simplified or not self.parent:is_machine_compatible(self.proto --[[@as FPMachinePrototype]]) then
         -- Changing to the default machine also fixes the category not matching the recipe
         if not self.parent:change_machine_to_default(player) then
             self.valid = false  -- this situation can't be repaired
@@ -336,7 +341,7 @@ function Machine:repair(player)
     end
 
     if self.valid and self.quality_proto.simplified then
-        self.quality_proto = defaults.get_fallback("qualities").proto
+        self.quality_proto = defaults.get_fallback("qualities").proto --[[@as FPQualityPrototype]]
     end
 
     if self.valid and self.fuel and not self.fuel.valid then

@@ -162,7 +162,7 @@ end
 ---@return FPPackedPrototype?
 function prototyper.util.simplify_prototype(prototype, category_designation)
     if not prototype then return nil end
-    if prototype.simplified then return prototype end  -- failsafe
+    if prototype.simplified then return prototype --[[@as FPPackedPrototype]] end  -- failsafe
     return {name = prototype.name, category = prototype[category_designation],
         data_type = prototype.data_type, simplified = true}
 end

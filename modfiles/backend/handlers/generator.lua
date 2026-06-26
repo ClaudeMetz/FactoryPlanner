@@ -25,7 +25,7 @@ local generator = {
 ---@class FPPrototypeWithCategory: FPPrototype
 ---@field category_id integer
 
----@alias AnyFPPrototype FPPrototype | FPPrototypeWithCategory
+---@alias AnyFPPrototype FPPrototype | FPPrototypeWithCategory | FPPackedPrototype
 
 
 ---@param list AnyNamedPrototypes
@@ -652,6 +652,7 @@ end
 ---@field elem_type ElemType
 ---@field prototype_category PrototypeCategory?
 ---@field ingredient_limit integer
+---@field product_limit integer
 ---@field fluid_channels FluidChannels
 ---@field speed double
 ---@field energy_type "burner" | "electric" | "heat" | "void"
@@ -678,6 +679,7 @@ end
 ---@field effectivity double
 ---@field categories { [string]: boolean }
 ---@field combined_category string
+---@field simplified boolean?
 
 ---@alias EmissionsMap { [string]: double }
 ---@alias PrototypeCategory ("assembling_machine" | "furnace" | "rocket_silo" | "mining_drill" | "boiler" | "offshore_pump")
@@ -727,8 +729,11 @@ function generator.machines.generate()
         if burner_prototype then
             energy_type = "burner"
             emissions_per_joule = burner_prototype.emissions_per_joule
-            burner = {effectivity=burner_prototype.effectivity, categories=burner_prototype.fuel_categories,
-                combined_category=nil}  -- combined filled in by fuel generator
+            burner = {
+                effectivity = burner_prototype.effectivity,
+                categories = burner_prototype.fuel_categories,
+                combined_category = ""  -- filled in by fuel generator
+            }
 
         -- Only supports fluid energy that burns_fluid for now, as it works the same way as solid burners
         -- Also doesn't respect scale_fluid_usage and fluid_usage_per_tick for now, let the reports come
@@ -737,8 +742,11 @@ function generator.machines.generate()
 
             if fluid_burner_prototype.burns_fluid then
                 energy_type = "burner"
-                burner = {effectivity=fluid_burner_prototype.effectivity, categories={["fluid-fuel"] = true},
-                    combined_category=nil}  -- combined filled in by fuel generator
+                burner = {
+                    effectivity = fluid_burner_prototype.effectivity,
+                    categories = {["fluid-fuel"] = true},
+                    combined_category = "",  -- filled in by fuel generator
+                }
 
             else  -- Avoid adding this type of complex fluid energy as electrical energy
                 -- When I add support for this, I need to take care of limiting min/max temps on the fuel
@@ -936,7 +944,7 @@ end
 ---@class FPFuelPrototype: FPPrototypeWithCategory
 ---@field data_type "fuels"
 ---@field type "item" | "fluid"
----@field category string | "fluid-fuel"
+---@field category string
 ---@field combined_category string
 ---@field elem_type ElemType
 ---@field fuel_value float
@@ -944,6 +952,15 @@ end
 ---@field weight double?
 ---@field emissions_multiplier double
 ---@field burnt_result string?
+
+---@class FPItemFuelPrototype: FPFuelPrototype
+---@field type "item"
+
+---@class FPFluidFuelPrototype: FPFuelPrototype
+---@field type "fluid"
+---@field category "fluid-fuel"
+---@field minimum_temperature float?
+---@field maximum_temperature float?
 
 ---@return NamedPrototypesWithCategory<FPFuelPrototype>
 function generator.fuels.generate()
