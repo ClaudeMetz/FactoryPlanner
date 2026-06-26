@@ -83,10 +83,13 @@ end
 function Product:paste(object)
     -- Product objects are converted to SimpleItems when copied, so they can't appear here
     if object.class == "SimpleItem" or object.class == "Fuel" then
-        local proto = object.proto --[[@as FPItemPrototype]]
+        local proto ---@type (FPItemPrototype | FPPackedPrototype)?
+        proto = object.proto --[[@as FPItemPrototype | FPPackedPrototype]]
         if object.class == "Fuel" and proto.type == "fluid" then
-            proto = prototyper.util.find("items", proto.name .. "-" .. object.temperature, "fluid") --[[@as FPItemPrototype]]
+            proto = prototyper.util.find("items", proto.name .. "-" .. object.temperature, "fluid") --[[@as FPItemPrototype?]]
         end
+
+        if proto == nil then return false, "incompatible" end
 
         -- Avoid duplicate items, but allow pasting over the same item proto
         local existing_item = self.parent:find({proto=proto})

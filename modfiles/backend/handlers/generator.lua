@@ -25,7 +25,7 @@ local generator = {
 ---@class FPPrototypeWithCategory: FPPrototype
 ---@field category_id integer
 
----@alias AnyFPPrototype FPPrototype | FPPrototypeWithCategory | FPPackedPrototype
+---@alias AnyFPPrototype FPPrototype | FPPrototypeWithCategory
 
 
 ---@param list AnyNamedPrototypes

@@ -133,6 +133,7 @@ function Line:change_machine_by_action(player, action, current_proto)
     local category_id = current_machine_proto.category_id
 
     local function try_machine(new_machine_id)
+        -- Assume a match while inside the upgrade/downgrade loop
         current_machine_proto = prototyper.util.find("machines", new_machine_id, category_id) --[[@as FPMachinePrototype]]
 
         if self:is_machine_compatible(current_machine_proto) then
@@ -202,7 +203,7 @@ end
 ---@param player LuaPlayer
 function Line:setup_beacon(player)
     local beacon_defaults = defaults.get(player, "beacons", nil)
-    if not beacon_defaults.proto.simplified and beacon_defaults.modules and beacon_defaults.beacon_amount ~= 0 then
+    if beacon_defaults.modules and beacon_defaults.beacon_amount ~= 0 then
         local proto = beacon_defaults.proto  --[[@as FPBeaconPrototype]]
         local blank_beacon = Beacon.init(proto, self)
         self:set_beacon(blank_beacon)
@@ -231,7 +232,7 @@ end
 function Line:compile_machine_filter()
     local compatible_machines = {}
 
-    local machine_category = prototyper.util.find("machines", nil, self.machine.proto.combined_category)
+    local machine_category = prototyper.util.find("machines", nil, self.machine.proto.combined_category) --[[@as NamedCategory?]]
 
     if machine_category ~= nil then
         for _, machine_proto in pairs(machine_category.members) do
