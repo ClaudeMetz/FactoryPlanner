@@ -1,3 +1,5 @@
+if helpers.stage ~= "runtime" then return {} end
+
 local unpackers = {
     Product = require("backend.data.Product").unpack,
     Floor = require("backend.data.Floor").unpack,

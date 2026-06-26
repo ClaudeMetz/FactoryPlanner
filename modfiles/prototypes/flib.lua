@@ -186,16 +186,16 @@ styles.fflib_tool_button_dark_red = {
   type = "button_style",
   parent = "tool_button",
   default_graphical_set = {
-    base = { filename = data_lib.dark_red_button_tileset, position = { 0, 0 }, corner_size = 8 },
+    base = { filename = data_util.dark_red_button_tileset, position = { 0, 0 }, corner_size = 8 },
     shadow = default_dirt,
   },
   hovered_graphical_set = {
-    base = { filename = data_lib.dark_red_button_tileset, position = { 17, 0 }, corner_size = 8 },
+    base = { filename = data_util.dark_red_button_tileset, position = { 17, 0 }, corner_size = 8 },
     shadow = default_dirt,
     glow = default_glow({ 236, 130, 130, 127 }, 0.5),
   },
   clicked_graphical_set = {
-    base = { filename = data_lib.dark_red_button_tileset, position = { 34, 0 }, corner_size = 8 },
+    base = { filename = data_util.dark_red_button_tileset, position = { 34, 0 }, corner_size = 8 },
     shadow = default_dirt,
   },
 }

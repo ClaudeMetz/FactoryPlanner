@@ -1,3 +1,5 @@
+if helpers.stage ~= "runtime" then return {} end
+
 local migrator = require("backend.migrations.migrator")
 local Factory = require("backend.data.Factory")
 
