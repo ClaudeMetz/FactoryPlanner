@@ -1,6 +1,6 @@
 local Object = require("backend.data.Object")
 local Floor = require("backend.data.Floor")
-local Product = require("backend.data.Product")
+local TLProduct = require("backend.data.TLProduct")
 
 ---@class Factory: Object, ObjectMethods
 ---@field class "Factory"
@@ -14,7 +14,7 @@ local Product = require("backend.data.Product")
 ---@field blueprints string[]
 ---@field notes string
 ---@field productivity_boni { string: EffectValue }
----@field first Product?
+---@field first TLProduct?
 ---@field top_floor Floor
 ---@field linearly_dependant boolean?
 ---@field tick_of_deletion uint?
@@ -59,28 +59,28 @@ function Factory:index()
 end
 
 
----@param product Product
----@param relative_object Product?
+---@param product TLProduct
+---@param relative_object TLProduct?
 ---@param direction NeighbourDirection?
 function Factory:insert(product, relative_object, direction)
     product.parent = self
     self:_insert(product, relative_object, direction)
 end
 
----@param product Product
+---@param product TLProduct
 function Factory:remove(product)
     product.parent = nil
     self:_remove(product)
 end
 
----@param product Product
----@param new_product Product
+---@param product TLProduct
+---@param new_product TLProduct
 function Factory:replace(product, new_product)
     new_product.parent = self
     self:_replace(product, new_product)
 end
 
----@param product Product
+---@param product TLProduct
 ---@param direction NeighbourDirection
 ---@param spots integer?
 function Factory:shift(product, direction, spots)
@@ -89,37 +89,37 @@ end
 
 
 ---@param filter ObjectFilter
----@param pivot Product?
+---@param pivot TLProduct?
 ---@param direction NeighbourDirection?
----@return Product? product
+---@return TLProduct? product
 function Factory:find(filter, pivot, direction)
-    return self:_find(filter, pivot, direction)  --[[@as Product?]]
+    return self:_find(filter, pivot, direction)  --[[@as TLProduct?]]
 end
 
----@return Product?
+---@return TLProduct?
 function Factory:find_last()
-    return self:_find_last()  --[[@as Product?]]
+    return self:_find_last()  --[[@as TLProduct?]]
 end
 
 
 ---@param filter ObjectFilter?
----@param pivot Product?
+---@param pivot TLProduct?
 ---@param direction NeighbourDirection?
----@return fun(): Product?
+---@return fun(): TLProduct?
 function Factory:iterator(filter, pivot, direction)
     return self:_iterator(filter, pivot, direction)
 end
 
 ---@param filter ObjectFilter?
----@param pivot Product?
+---@param pivot TLProduct?
 ---@param direction NeighbourDirection?
----@return Product[]
+---@return TLProduct[]
 function Factory:as_list(filter, pivot, direction)
     return self:_as_list(filter, pivot, direction)
 end
 
 ---@param filter ObjectFilter?
----@param pivot Product?
+---@param pivot TLProduct?
 ---@param direction NeighbourDirection?
 ---@return number count
 function Factory:count(filter, pivot, direction)
@@ -230,14 +230,14 @@ end
 local function unpack(packed_self)
     local unpacked_self = init(packed_self.name)
 
-    -- Product prototypes will be automatically unpacked by the validation process
+    -- TLProduct prototypes will be automatically unpacked by the validation process
     unpacked_self.matrix_solver_active = packed_self.matrix_solver_active
     unpacked_self.matrix_free_items = packed_self.matrix_free_items or {}
     unpacked_self.blueprints = packed_self.blueprints
     unpacked_self.notes = packed_self.notes
     unpacked_self.productivity_boni = packed_self.productivity_boni
 
-    unpacked_self.first = Object.unpack(packed_self.products, Product.unpack, unpacked_self)  --[[@as Product]]
+    unpacked_self.first = Object.unpack(packed_self.products, TLProduct.unpack, unpacked_self)  --[[@as TLProduct]]
 
     unpacked_self.top_floor = Floor.unpack(packed_self.top_floor)
     unpacked_self.top_floor.parent = unpacked_self

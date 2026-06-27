@@ -2,20 +2,20 @@ local Object = require("backend.data.Object")
 
 ---@alias ProductDefinedBy "amount" | "belts" | "lanes"
 
----@class Product: Object, ObjectMethods
----@field class "Product"
+---@class TLProduct: Object, ObjectMethods
+---@field class "TLProduct"
 ---@field parent Factory
 ---@field proto FPItemPrototype | FPPackedPrototype
 ---@field defined_by ProductDefinedBy
 ---@field required_amount number
 ---@field belt_proto FPBeltPrototype | FPPackedPrototype
 ---@field amount number
-local Product = Object.methods()
-Product.__index = Product
-script.register_metatable("Product", Product)
+local TLProduct = Object.methods()
+TLProduct.__index = TLProduct
+script.register_metatable("TLProduct", TLProduct)
 
 ---@param proto FPItemPrototype
----@return Product
+---@return TLProduct
 local function init(proto)
     local object = Object.init({
         proto = proto,
@@ -24,19 +24,19 @@ local function init(proto)
         belt_proto = nil,
 
         amount = 0  -- the amount satisfied by the solver
-    }, "Product", Product)  --[[@as Product]]
+    }, "TLProduct", TLProduct)  --[[@as TLProduct]]
     return object
 end
 
 
-function Product:index()
+function TLProduct:index()
     OBJECT_INDEX[self.id] = self
 end
 
 
 -- Returns the amount needed to satisfy this item
 ---@return number required_amount
-function Product:get_required_amount()
+function TLProduct:get_required_amount()
     if self.defined_by == "amount" then
         return self.required_amount
     else   -- defined_by == "belts" | "lanes"
@@ -48,7 +48,7 @@ end
 
 -- Only used when switching between belts and lanes
 ---@param new_defined_by ProductDefinedBy
-function Product:change_definition(new_defined_by)
+function TLProduct:change_definition(new_defined_by)
     if self.defined_by ~= "amount" and new_defined_by ~= self.defined_by then
         self.defined_by = new_defined_by
 
@@ -61,8 +61,8 @@ end
 ---@param object CopyableObject
 ---@return boolean success
 ---@return string? error
-function Product:paste(object)
-    -- Product objects are converted to SimpleItems when copied, so they can't appear here
+function TLProduct:paste(object)
+    -- TLProduct objects are converted to SimpleItems when copied, so they can't appear here
     if object.class == "SimpleItem" or object.class == "Fuel" then
         local proto = object.proto
         if object.class == "Fuel" then  -- need an Item prototype here, not Fuel
@@ -87,7 +87,7 @@ end
 
 
 ---@class PackedProduct: PackedObject
----@field class "Product"
+---@field class "TLProduct"
 ---@field proto FPPackedPrototype
 ---@field defined_by ProductDefinedBy
 ---@field required_amount number
@@ -95,7 +95,7 @@ end
 
 ---@param full boolean
 ---@return PackedProduct packed_self
-function Product:pack(full)
+function TLProduct:pack(full)
     return {
         class = self.class,
         proto = prototyper.util.simplify_prototype(self.proto, "type"),
@@ -108,7 +108,7 @@ function Product:pack(full)
 end
 
 ---@param packed_self PackedProduct
----@return Product Product
+---@return TLProduct product
 local function unpack(packed_self)
     local unpacked_self = init(packed_self.proto)
 
@@ -121,7 +121,7 @@ end
 
 
 ---@return boolean valid
-function Product:validate()
+function TLProduct:validate()
     self.valid = true
 
     self.proto = prototyper.util.validate_prototype_object(self.proto, "type")
@@ -135,7 +135,7 @@ end
 
 ---@param player LuaPlayer
 ---@return boolean success
-function Product:repair(player)
+function TLProduct:repair(player)
     -- If the item is invalid, either prototype is simplified, making this unrepairable
     return false
 end

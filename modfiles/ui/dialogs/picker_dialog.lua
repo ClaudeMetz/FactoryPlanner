@@ -1,4 +1,4 @@
-local Product = require("backend.data.Product")
+local TLProduct = require("backend.data.TLProduct")
 
 -- This dialog works as the product picker currently, but could also work as an ingredient picker down the line
 -- ** ITEM PICKER **
@@ -414,7 +414,7 @@ local function close_picker_dialog(player, action)
             modal_data.item.belt_proto = modal_data.belt_proto
         else
             local item_proto = modal_data.item_proto
-            local top_level_item = Product.init(item_proto)
+            local top_level_item = TLProduct.init(item_proto)
             top_level_item.defined_by = defined_by
             top_level_item.required_amount = relevant_amount
             top_level_item.belt_proto = modal_data.belt_proto

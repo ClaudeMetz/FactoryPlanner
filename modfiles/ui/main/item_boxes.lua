@@ -1,4 +1,4 @@
-local Product = require("backend.data.Product")
+local TLProduct = require("backend.data.TLProduct")
 
 -- ** LOCAL UTIL **
 local function build_item_box(player, category, column_count)
@@ -126,7 +126,7 @@ end
 local function handle_item_add(player, tags, event)
     if event.shift then  -- paste
         local factory = lib.context.get(player, "Factory")  --[[@as Factory]]
-        local dummy_product = Product.init({})
+        local dummy_product = TLProduct.init({})
         lib.clipboard.dummy_paste(player, dummy_product, factory)
     else
         lib.gui.open_dialog(player, {dialog="picker", modal_data={item_id=nil, item_category=tags.item_category}})
@@ -179,7 +179,7 @@ local function handle_item_button_click(player, tags, action)
         lib.gui.run_refresh(player, "all")  -- make sure product icons are updated
 
     elseif action == "add_to_cursor" then
-        local amount = (item.class == "Product") and item:get_required_amount() or item.amount
+        local amount = (item.class == "TLProduct") and item:get_required_amount() or item.amount
         lib.cursor.handle_item_click(player, item.proto, amount)
 
     elseif action == "factoriopedia" then

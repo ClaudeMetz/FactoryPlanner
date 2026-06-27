@@ -1,7 +1,7 @@
 if helpers.stage ~= "runtime" then return {} end
 
 local unpackers = {
-    Product = require("backend.data.Product").unpack,
+    TLProduct = require("backend.data.TLProduct").unpack,
     Floor = require("backend.data.Floor").unpack,
     Line = require("backend.data.Line").unpack,
     Machine = require("backend.data.Machine").unpack,
@@ -12,7 +12,7 @@ local unpackers = {
 
 local _clipboard = {}
 
----@alias CopyableObject Product | Floor | Line | Machine | Beacon | Module | Fuel
+---@alias CopyableObject TLProduct | Floor | Line | Machine | Beacon | Module | Fuel
 ---@alias CopyableObjectParent Factory | Floor | Line | ModuleSet
 
 ---@class ClipboardEntry

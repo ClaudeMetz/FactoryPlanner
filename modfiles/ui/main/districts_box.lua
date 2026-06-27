@@ -1,4 +1,4 @@
-local Product = require("backend.data.Product")
+local TLProduct = require("backend.data.TLProduct")
 
 -- ** LOCAL UTIL **
 local function save_district_name(player, tags, _)
@@ -39,7 +39,7 @@ local function handle_item_button_click(player, tags, action)
 
         local factory = factory_list.add_factory(player, nil, item.proto)
 
-        local top_level_item = Product.init(item.proto)
+        local top_level_item = TLProduct.init(item.proto)
         top_level_item.required_amount = item.abs_diff
         factory:insert(top_level_item)
         solver.update(player, factory)
