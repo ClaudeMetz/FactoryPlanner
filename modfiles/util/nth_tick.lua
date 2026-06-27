@@ -7,7 +7,7 @@ local function register_nth_tick_handler(tick)
     script.on_nth_tick(tick, function(nth_tick_data)
         if nth_tick_data.tick == 0 then return end
         local event_data = storage.nth_tick_events[nth_tick_data.nth_tick]
-        local handler = GLOBAL_HANDLERS[event_data.handler_name]  ---@type function
+        local handler = GLOBAL_HANDLERS[event_data.handler_name]
         handler(event_data.metadata)
         lib.nth_tick.cancel(tick)
     end)

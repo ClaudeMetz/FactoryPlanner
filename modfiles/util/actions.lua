@@ -2,7 +2,7 @@ local _actions = {}
 
 ---@alias ActionLimitations { archive_open: boolean?, matrix_active: boolean? }
 ---@alias ActiveLimitations { archive_open: boolean, matrix_active: boolean }
----@alias ActionList { [string]: string }
+---@alias ActionList table<string, string>
 
 ---@param player LuaPlayer
 ---@return ActiveLimitations
@@ -28,6 +28,11 @@ end
 
 -- Returns whether rate limiting is active for the given action, stopping it from proceeding
 -- This is essentially to prevent duplicate commands in quick succession, enabled by lag
+---@param player LuaPlayer
+---@param tick Tick
+---@param action_name string
+---@param timeout integer
+---@return boolean
 function _actions.rate_limited(player, tick, action_name, timeout)
     local ui_state = lib.globals.ui_state(player)
 

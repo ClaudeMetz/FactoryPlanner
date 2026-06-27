@@ -55,7 +55,7 @@ local function check_empty_flow(player)
     local button_flow = mod_gui.get_button_flow(player)
     -- parent.parent is to check that I'm not deleting a top level element. Now, I have no idea how that
     -- could ever be a top level element, but oh well, can't know everything now can we?
-    if #button_flow.children_names == 0 and button_flow.parent.parent then
+    if #button_flow.children_names == 0 and button_flow.parent and button_flow.parent.parent then
         button_flow.parent.destroy()
     end
 end
@@ -170,6 +170,10 @@ function _gui.reset_player(player)
 end
 
 
+---@param satisfied_amount number
+---@param actual_amount number
+---@return LocalisedString satisfaction_line
+---@return string percentage_string
 function _gui.calculate_satisfaction(satisfied_amount, actual_amount)
     local satisfied_percentage = (satisfied_amount / actual_amount) * 100
     local percentage_string = lib.format.number(satisfied_percentage, 3)
@@ -186,6 +190,8 @@ local expression_variables = {k=1000, K=1000, m=1000000, M=1000000, g=1000000000
 function _gui.parse_expression_field(textfield, positive)
     local expression = nil
     pcall(function() expression = helpers.evaluate_expression(textfield.text, expression_variables) end)
+    ---@cast expression double?
+
     if expression == nil then return nil
     elseif positive and expression <= 0 then return nil
     else return expression end
@@ -195,10 +201,12 @@ end
 ---@param valid boolean
 function _gui.update_expression_field(textfield, valid)
     textfield.style = (textfield.text ~= "" and not valid) and "invalid_value_textfield" or "textbox"
-    textfield.style.width = textfield.tags.width  --[[@as number]]  -- this is stupid but styles work out that way
+    -- This is stupid but styles work out that way
+    textfield.style--[[@as LuaStyle]].width = textfield.tags.width  --[[@as int32]]
 end
 
 ---@param textfield LuaGuiElement
+---@param positive boolean
 ---@return boolean confirmed
 function _gui.confirm_expression_field(textfield, positive)
     local expression = _gui.parse_expression_field(textfield, positive)
@@ -216,7 +224,7 @@ end
 
 
 ---@param data_type DataType
----@return ElemFilter[] elem_filter
+---@return PrototypeFilter elem_filter
 function _gui.compile_elem_filter(data_type)
     local names = {}
     for _, proto in pairs(storage.prototypes[data_type]) do

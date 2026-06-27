@@ -6,11 +6,11 @@ local _context = {}
 
 ---@class ContextCache
 ---@field district ObjectID? DistrictID
----@field factories { [ObjectID]: ContextFactories } DistrictID ->
+---@field factories table<ObjectID, ContextFactories> DistrictID -> ContextFactories
 
 ---@class ContextFactories
 ---@field factory ObjectID? FactoryID
----@field floors { [ObjectID]: ObjectID } FactoryID -> FloorID
+---@field floors table<ObjectID, ObjectID> FactoryID -> FloorID
 
 ---@alias ContextObject (District | Factory | Floor)
 
@@ -26,29 +26,30 @@ function _context.init(player_table)
 end
 
 
+--- Gets the given object type by going up the hierarchy from the current context
 ---@param player LuaPlayer
 ---@param class string
 ---@return ContextObject?
---- Gets the given object type by going up the hierarchy from the current context
 function _context.get(player, class)
-    local player_table = lib.globals.player_table(player)
-    local object = OBJECT_INDEX[player_table.context.object_id]
+    local object_id = lib.globals.player_table(player).context.object_id
+    if object_id == nil then return nil end
+    local object = OBJECT_INDEX[object_id]  ---@type ContextObject?
 
-    repeat
+    while object ~= nil do
         if object.class == class then
-            return object --[[@as ContextObject]]
+            return object
         end
-        object = object.parent
-    until object == nil
+        object = object.parent --[[@as ContextObject?]]
+    end
 
     return nil
 end
 
+--- Restores the appropriate floor from context cache depending on the given object
+--- This covers the happy path, extra care needs to be taken when objects were removed
 ---@param player LuaPlayer
 ---@param object ContextObject
 ---@param force_district boolean?
---- Restores the appropriate floor from context cache depending on the given object
---- This covers the happy path, extra care needs to be taken when objects were removed
 function _context.set(player, object, force_district)
     local context = lib.globals.player_table(player).context
     local cache = context.cache
@@ -98,10 +99,10 @@ function _context.set(player, object, force_district)
     end
 end
 
+--- Cleans up after the given object was removed and tries to find a replacement
 ---@param player LuaPlayer
 ---@param object (District | Factory)
 ---@return ContextObject? replacement
---- Cleans up after the given object was removed and tries to find a replacement
 function _context.remove(player, object)
     local cache = lib.globals.player_table(player).context.cache
 
@@ -156,8 +157,8 @@ function _context.ascend_floors(player, destination)
 end
 
 
----@param player LuaPlayer
 --- Clean up cache after a config change that potentially deleted objects
+---@param player LuaPlayer
 function _context.validate(player)
     local player_table = lib.globals.player_table(player)
     local context = player_table.context

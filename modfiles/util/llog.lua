@@ -7,7 +7,7 @@ local function _llog(table_to_print)
     local tab_width, super_space = 2, ""
     for _=0, tab_width-1, 1 do super_space = super_space .. " " end
 
-    ---@param table_part { [AnyBasic]: AnyBasic }
+    ---@param table_part table<AnyBasic, AnyBasic>
     ---@param depth number
     ---@return string
     local function format(table_part, depth)

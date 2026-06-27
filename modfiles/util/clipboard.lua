@@ -82,12 +82,12 @@ function _clipboard.dummy_paste(player, dummy, parent)
     dummy.dummy = true
     parent:insert(dummy)
     _clipboard.paste(player, dummy)
-    local last = parent:find_last()  --[[@as CopyableObject]]
+    local last = parent:find_last()
     if last.dummy then parent:remove(last) end
 end
 
 ---@param player LuaPlayer
----@param classes { [CopyableObject]: boolean }
+---@param classes table<CopyableObject, boolean>
 ---@return boolean present
 function _clipboard.check_classes(player, classes)
     local clip = lib.globals.player_table(player).clipboard

@@ -64,7 +64,7 @@ function _porter.process_export_string(export_string)
     return import_table, nil
 end
 
----@alias UpdatedMods { [string]: { old: VersionString, current: VersionString } }
+---@alias UpdatedMods table<string, { old: VersionString, current: VersionString }>
 
 -- Creates a nice tooltip laying out which mods were added, removed and updated since the factory became invalid
 ---@param old_modset ModToVersion
@@ -143,6 +143,7 @@ function _porter.add_factories(player, export_string)
         solver.update(player, factory)
         first_factory = first_factory or factory
     end
+    ---@cast first_factory Factory
 
     lib.context.set(player, first_factory)
 end
