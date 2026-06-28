@@ -54,7 +54,7 @@ function _context.set(player, object, force_district)
     local context = lib.globals.player_table(player).context
     local cache = context.cache
 
-    if object.class == "District" then
+    if object.class == "District" then  ---@cast object District
         -- Update cache
         cache.district = object.id
 
@@ -67,7 +67,7 @@ function _context.set(player, object, force_district)
         else context.object_id = object.id; return end
     end
 
-    if object.class == "Factory" then
+    if object.class == "Factory" then  ---@cast object Factory
         -- Update cache
         local factory_cache = cache.factories[object.parent.id]
         if not factory_cache then
@@ -86,7 +86,7 @@ function _context.set(player, object, force_district)
         else object = OBJECT_INDEX[object.top_floor.id] end  -- always exists
     end
 
-    if object.class == "Floor" then
+    if object.class == "Floor" then  ---@cast object Floor
         -- Needs to be done first so .get() can work
         context.object_id = object.id
 
@@ -101,7 +101,7 @@ end
 
 --- Cleans up after the given object was removed and tries to find a replacement
 ---@param player LuaPlayer
----@param object (District | Factory)
+---@param object District | Factory
 ---@return ContextObject? replacement
 function _context.remove(player, object)
     local cache = lib.globals.player_table(player).context.cache
@@ -117,10 +117,13 @@ function _context.remove(player, object)
     end
 
     -- Try finding an adjacent object to return
-    local filter = (object.class == "Factory") and { archived = object.archived } or {}
+    local filter = (object.class == "Factory") and
+        { archived = object.archived } or {}  ---@type ObjectFilter
 
+    ---@diagnostic disable-next-line: param-type-mismatch
     local previous = object.parent:find(filter, object["previous"], "previous")
     if previous then return previous end
+    ---@diagnostic disable-next-line: param-type-mismatch
     local next = object.parent:find(filter, object["next"], "next")
     if next then return next end
 
@@ -141,13 +144,13 @@ function _context.ascend_floors(player, destination)
     if destination == "up" and floor.level > 1 then
         selected_floor = floor.parent
     elseif destination == "top" then
-        local top_floor = _context.get(player, "Factory").top_floor
+        local top_floor = _context.get(player, "Factory")--[[@cast -nil]].top_floor
         if top_floor ~= floor then selected_floor = top_floor end
     end
 
     if selected_floor ~= nil then
         -- Reset the subfloor we moved from if it doesn't have any additional recipes
-        if floor:count() == 1 then floor.parent:replace(floor, floor.first) end
+        if floor:count() == 1 then floor.parent:replace(floor, floor.first--[[@cast -nil]]) end
 
         _context.set(player, selected_floor)
         return true

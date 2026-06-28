@@ -156,6 +156,7 @@ end
 
 
 ---@class SimpleItem
+---@field class "SimpleItem"
 ---@field proto FPItemPrototype
 ---@field amount number
 ---@field satisfied_amount number?
@@ -181,7 +182,7 @@ local function update_object_items(object, item_category, item_results)
         end
 
         if object.class ~= "Floor" or item_proto.type ~= "entity" or item_proto.special then
-            table.insert(item_list, {proto=item_proto, amount=item_result.amount})
+            table.insert(item_list, {class="SimpleItem", proto=item_proto, amount=item_result.amount})
         end
     end
 
@@ -194,7 +195,7 @@ local function set_zeroed_items(line, item_category, items)
 
     for _, item in pairs(items) do
         local item_proto = prototyper.util.find("items", item.name, item.type)
-        table.insert(item_list, {proto=item_proto, amount=0})
+        table.insert(item_list, {class="SimpleItem", proto=item_proto, amount=0})
     end
 
     line[item_category] = item_list

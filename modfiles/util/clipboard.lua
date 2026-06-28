@@ -12,11 +12,12 @@ local unpackers = {
 
 local _clipboard = {}
 
----@alias CopyableObject TLProduct | Floor | Line | Machine | Beacon | Module | Fuel
----@alias CopyableObjectParent Factory | Floor | Line | ModuleSet
+---@alias CopyableObject Floor | Line | Machine | Beacon | Module | Fuel | SimpleItem
+---@alias CopyableObjectClass "Floor" | "Line" | "Machine" | "Beacon" | "Module" | "Fuel" | "SimpleItem"
+---@alias CopyableObjectParent Factory | Floor | Line | ModuleSet | Machine
 
 ---@class ClipboardEntry
----@field class string
+---@field class CopyableObjectClass
 ---@field packed_object PackedObject
 ---@field parent CopyableObjectParent?
 
@@ -44,12 +45,13 @@ function _clipboard.paste(player, target)
     if clip == nil then
         lib.cursor.create_flying_text(player, {"fp.clipboard_empty"})
     else
-        local clone = nil
+        local clone
         if clip.parent then  -- only real objects have parents
-            clone = unpackers[clip.class](clip.packed_object, clip.parent)  -- always returns fresh object
+            clone = unpackers[clip.class](clip.packed_object, clip.parent)  --[[@as CopyableObject]]
+            ---@cast clone -SimpleItem
             clone:validate()
         else
-            clone = lib.flib.shallow_copy(clip.packed_object)
+            clone = lib.flib.shallow_copy(clip.packed_object)  --[[@as SimpleItem]]
         end
         local success, error = target:paste(clone, player)
 
