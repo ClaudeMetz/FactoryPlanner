@@ -3,17 +3,17 @@ local matrix_engine = require("backend.calculation.matrix_engine")
 
 -- ** LOCAL UTIL **
 local function refresh_paste_button(player)
-    local main_elements = util.globals.main_elements(player)
+    local main_elements = lib.globals.main_elements(player)
     if not main_elements.production_box then return end
-    local factory = util.context.get(player, "Factory")  --[[@as Factory?]]
+    local factory = lib.context.get(player, "Factory")  --[[@as Factory?]]
 
-    local line_copied = util.clipboard.check_classes(player, {Floor=true, Line=true})
+    local line_copied = lib.clipboard.check_classes(player, {Floor=true, Line=true})
     main_elements.production_box.paste_button.visible = (factory ~= nil and line_copied) or false
 end
 
 local function refresh_solver_frame(player)
-    local factory = util.context.get(player, "Factory")  --[[@as Factory]]
-    local main_elements = util.globals.main_elements(player)
+    local factory = lib.context.get(player, "Factory")  --[[@as Factory]]
+    local main_elements = lib.globals.main_elements(player)
     local solver_flow = main_elements.solver_flow
     solver_flow.clear()
 
@@ -75,7 +75,7 @@ local function refresh_solver_frame(player)
 
         -- This is some total bullshit because extra_bottom_padding_when_activated doesn't work
         local total_width = 180 + (4 * 12) + (item_count * 40)
-        local interface_width = util.globals.ui_state(player).main_dialog_dimensions.width
+        local interface_width = lib.globals.ui_state(player).main_dialog_dimensions.width
         local box_width = interface_width - MAGIC_NUMBERS.list_width
         solver_flow.style.bottom_padding = (total_width > box_width) and 16 or 4
     end
@@ -83,19 +83,19 @@ end
 
 
 local function change_floor(player, destination)
-    if util.context.ascend_floors(player, destination) then
-        util.gui.run_refresh(player, "production")
+    if lib.context.ascend_floors(player, destination) then
+        lib.gui.run_refresh(player, "production")
     end
 end
 
 local function toggle_fold_out_subfloors(player)
-    local preferences = util.globals.preferences(player)
+    local preferences = lib.globals.preferences(player)
     preferences.fold_out_subfloors = not preferences.fold_out_subfloors
-    util.gui.run_refresh(player, "production_table")
+    lib.gui.run_refresh(player, "production_table")
 end
 
 local function handle_solver_change(player, _, event)
-    local factory = util.context.get(player, "Factory")  --[[@as Factory]]
+    local factory = lib.context.get(player, "Factory")  --[[@as Factory]]
     local new_solver = (event.element.switch_state == "left") and "traditional" or "matrix"
 
     if new_solver == "matrix" then
@@ -108,26 +108,26 @@ local function handle_solver_change(player, _, event)
 
     main_dialog.toggle_districts_view(player, true)
     solver.update(player)
-    util.gui.run_refresh(player, "production")
+    lib.gui.run_refresh(player, "production")
 end
 
 local function repair_factory(player, _, _)
     -- This function can only run is a factory is selected and invalid
-    util.context.get(player, "Factory"):repair(player)
+    lib.context.get(player, "Factory"):repair(player)
 
     main_dialog.toggle_districts_view(player, true)
     solver.update(player)
-    util.gui.run_refresh(player, "all")  -- needs the full refresh to reset factory list buttons
+    lib.gui.run_refresh(player, "all")  -- needs the full refresh to reset factory list buttons
 end
 
 local function paste_line(player, _, _)
-    local floor = util.context.get(player, "Floor")  --[[@as Floor]]
+    local floor = lib.context.get(player, "Floor")  --[[@as Floor]]
     local dummy_line = Line.initDummy()
-    util.clipboard.dummy_paste(player, dummy_line, floor)
+    lib.clipboard.dummy_paste(player, dummy_line, floor)
 end
 
 local function switch_matrix_item(player, tags, _)
-    local factory = util.context.get(player, "Factory")  --[[@as Factory]]
+    local factory = lib.context.get(player, "Factory")  --[[@as Factory]]
 
     if tags.status == "unrestricted" then
         for index, item in pairs(factory.matrix_free_items) do
@@ -142,15 +142,15 @@ local function switch_matrix_item(player, tags, _)
     end
 
     solver.update(player)
-    util.gui.run_refresh(player, "production")
+    lib.gui.run_refresh(player, "production")
 end
 
 
 local function refresh_production_box(player)
-    local ui_state = util.globals.ui_state(player)
-    local preferences = util.globals.preferences(player)
-    local factory = util.context.get(player, "Factory")  --[[@as Factory?]]
-    local floor = util.context.get(player, "Floor")  --[[@as Floor?]]
+    local ui_state = lib.globals.ui_state(player)
+    local preferences = lib.globals.preferences(player)
+    local factory = lib.context.get(player, "Factory")  --[[@as Factory?]]
+    local floor = lib.context.get(player, "Floor")  --[[@as Floor?]]
 
     if ui_state.main_elements.main_frame == nil then return end
     local production_box_elements = ui_state.main_elements.production_box
@@ -202,7 +202,7 @@ local function refresh_production_box(player)
     production_box_elements.repair_flow.visible = invalid_factory_selected
 
     if invalid_factory_selected then
-        local last_modset = util.porter.format_modset_diff(factory.last_valid_modset)
+        local last_modset = lib.porter.format_modset_diff(factory.last_valid_modset)
         production_box_elements.diff_label.tooltip = last_modset
     end
 
@@ -215,7 +215,7 @@ local function refresh_production_box(player)
 end
 
 local function build_production_box(player)
-    local main_elements = util.globals.main_elements(player)
+    local main_elements = lib.globals.main_elements(player)
     main_elements.production_box = {}
 
     local parent_flow = main_elements.flows.right_vertical
@@ -363,7 +363,7 @@ listeners.gui = {
         {
             name = "open_utility_dialog",
             handler = (function(player, _, _)
-                util.gui.open_dialog(player, {dialog="utility"})
+                lib.gui.open_dialog(player, {dialog="utility"})
             end)
         },
         {

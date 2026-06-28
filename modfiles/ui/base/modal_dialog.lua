@@ -100,7 +100,7 @@ local function create_base_dialog(player, dialog_settings, modal_data)
     -- Auxiliary flow
     modal_elements.auxiliary_flow = frame_modal_dialog.add{type="flow", direction="vertical"}
 
-    local dialog_max_height = (util.globals.ui_state(player).main_dialog_dimensions.height) * 0.96
+    local dialog_max_height = (lib.globals.ui_state(player).main_dialog_dimensions.height) * 0.96
     modal_data.dialog_maximal_height = dialog_max_height
     frame_modal_dialog.style.maximal_height = dialog_max_height
 
@@ -153,7 +153,7 @@ end
 function modal_dialog.enter(player, metadata, dialog_open, early_abort)
     if early_abort ~= nil and early_abort(player, metadata.modal_data or {}) then return end
 
-    local ui_state = util.globals.ui_state(player)
+    local ui_state = lib.globals.ui_state(player)
     ui_state.modal_data = metadata.modal_data or {}
     ui_state.modal_data.modal_elements = {}
     ui_state.modal_data.confirmed_dialog = false
@@ -178,7 +178,7 @@ end
 
 -- Handles the closing process of a modal dialog, reopening the main dialog thereafter
 function modal_dialog.exit(player, action, skip_opened, dialog_close)
-    local ui_state = util.globals.ui_state(player)  -- dialog guaranteed to be open
+    local ui_state = lib.globals.ui_state(player)  -- dialog guaranteed to be open
 
     local modal_elements = ui_state.modal_data.modal_elements
     local submit_button = modal_elements.dialog_submit_button
@@ -191,7 +191,7 @@ function modal_dialog.exit(player, action, skip_opened, dialog_close)
 
     -- Unregister the delayed search handler if present
     local search_tick = ui_state.modal_data.next_search_tick
-    if search_tick ~= nil then util.nth_tick.cancel(search_tick) end
+    if search_tick ~= nil then lib.nth_tick.cancel(search_tick) end
 
     ui_state.modal_dialog_type = nil
     ui_state.modal_data = nil
@@ -204,7 +204,7 @@ end
 
 
 function modal_dialog.open_context_menu(player, tags, handler, actions, location)
-    local ui_state = util.globals.ui_state(player)
+    local ui_state = lib.globals.ui_state(player)
     local frame_modal_dialog = player.gui.screen.add{type="frame", direction="vertical",
         tags={mod="fp", on_gui_closed="close_context_menu"}, style="fp_naked_frame"}
     frame_modal_dialog.style.padding = 0  -- make sure the visible part starts right on the cursor
@@ -214,10 +214,10 @@ function modal_dialog.open_context_menu(player, tags, handler, actions, location
     button_flow.style.vertical_spacing = 0
 
     local action_counter = 0
-    local active_limitations = util.actions.current_limitations(player)
+    local active_limitations = lib.actions.current_limitations(player)
 
     for _, action in pairs(actions) do
-        if util.actions.allowed(action.limitations, active_limitations) then
+        if lib.actions.allowed(action.limitations, active_limitations) then
             local caption = {"fp.tt_title", {"fp.action_" .. action.name}}
             local button = button_flow.add{type="button", style="list_box_item", mouse_button_filter={"left"},
                 tags={mod="fp", on_gui_click="choose_context_action", tags=tags, handler=handler, action=action.name}}
@@ -250,7 +250,7 @@ function modal_dialog.open_context_menu(player, tags, handler, actions, location
 end
 
 function modal_dialog.close_context_menu(player)
-    local ui_state = util.globals.ui_state(player)
+    local ui_state = lib.globals.ui_state(player)
     if not ui_state.context_menu then return end
 
     ui_state.context_menu.destroy()
@@ -265,7 +265,7 @@ end
 
 
 function modal_dialog.set_searchfield_state(player)
-    local player_table = util.globals.player_table(player)
+    local player_table = lib.globals.player_table(player)
     if not player_table.ui_state.modal_dialog_type then return end
     local searchfield = player_table.ui_state.modal_data.modal_elements.search_textfield
     if not searchfield then return end
@@ -276,7 +276,7 @@ function modal_dialog.set_searchfield_state(player)
 end
 
 function modal_dialog.run_search(player)
-    local modal_data = util.globals.modal_data(player)
+    local modal_data = lib.globals.modal_data(player)
     if not modal_data or not modal_data.modal_elements then return end
 
     local searchfield = modal_data.modal_elements.search_textfield
@@ -298,7 +298,7 @@ end
 
 
 function modal_dialog.enter_selection_mode(player, selector_name)
-    local ui_state = util.globals.ui_state(player)
+    local ui_state = lib.globals.ui_state(player)
 
     player.clear_cursor()
     player.cursor_stack.set_stack(selector_name)
@@ -316,7 +316,7 @@ function modal_dialog.enter_selection_mode(player, selector_name)
 end
 
 function modal_dialog.leave_selection_mode(player)
-    local ui_state = util.globals.ui_state(player)
+    local ui_state = lib.globals.ui_state(player)
 
     if player.cursor_stack.valid_for_read and
             player.cursor_stack.name == ui_state.active_selector then
@@ -347,14 +347,14 @@ listeners.gui = {
         {
             name = "re-layer_interface_dimmer",
             handler = (function(player, _, _)
-                util.globals.modal_elements(player).modal_frame.bring_to_front()
+                lib.globals.modal_elements(player).modal_frame.bring_to_front()
             end)
         },
         {
             name = "re-center_modal_dialog",
             handler = (function(player, _, event)
                 if event.button == defines.mouse_button_type.middle then
-                    local modal_elements = util.globals.modal_elements(player)
+                    local modal_elements = lib.globals.modal_elements(player)
                     modal_elements.modal_frame.force_auto_center()
                 end
             end)
@@ -362,7 +362,7 @@ listeners.gui = {
         {
             name = "exit_modal_dialog",
             handler = (function(player, tags, _)
-                util.gui.close_dialog(player, tags.action)
+                lib.gui.close_dialog(player, tags.action)
             end)
         },
         {
@@ -375,13 +375,13 @@ listeners.gui = {
         {
             name = "focus_modal_searchfield",
             handler = (function(player, _, _)
-                util.gui.select_all(util.globals.modal_elements(player).search_textfield)
+                lib.gui.select_all(lib.globals.modal_elements(player).search_textfield)
             end)
         },
         {
             name = "modal_dialog_toggle_reset",
             handler = (function(player, _, _)
-                local modal_elements = util.globals.modal_elements(player)
+                local modal_elements = lib.globals.modal_elements(player)
                 modal_elements.toggle_reset.visible = false
                 modal_elements.confirm_reset.visible = true
             end)
@@ -389,7 +389,7 @@ listeners.gui = {
         {
             name = "modal_dialog_confirm_reset",
             handler = (function(player, _, _)
-                local modal_data = util.globals.modal_data(player)  --[[@as table]]
+                local modal_data = lib.globals.modal_data(player)  --[[@as table]]
                 modal_data.modal_elements.toggle_reset.visible = true
                 modal_data.modal_elements.confirm_reset.visible = false
                 GLOBAL_HANDLERS[modal_data.reset_handler_name](player)
@@ -401,15 +401,15 @@ listeners.gui = {
             name = "modal_searchfield",
             timeout = MAGIC_NUMBERS.modal_search_rate_limit,
             handler = (function(player, _, event)
-                local modal_data = util.globals.modal_data(player)  --[[@as table]]
+                local modal_data = lib.globals.modal_data(player)  --[[@as table]]
                 local search_tick = modal_data.search_tick
-                if search_tick ~= nil then util.nth_tick.cancel(search_tick) end
+                if search_tick ~= nil then lib.nth_tick.cancel(search_tick) end
 
                 modal_dialog.run_search(player)
 
                 -- Set up delayed search update to circumvent issues caused by rate limiting
                 local desired_tick = game.tick + MAGIC_NUMBERS.modal_search_rate_limit
-                modal_data.next_search_tick = util.nth_tick.register(desired_tick,
+                modal_data.next_search_tick = lib.nth_tick.register(desired_tick,
                     "run_delayed_modal_search", {player_index=player.index})
             end)
         }
@@ -418,13 +418,13 @@ listeners.gui = {
         {
             name = "close_modal_dialog",
             handler = (function(player, _, event)
-                local ui_state = util.globals.ui_state(player)
+                local ui_state = lib.globals.ui_state(player)
 
                 if ui_state.active_selector ~= nil then
                     modal_dialog.leave_selection_mode(player)
                 elseif ui_state.context_menu == nil then  -- don't close if opening context menu
                     -- Here, we need to distinguish between submitting a dialog with E or ESC
-                    util.gui.close_dialog(player, (ui_state.modal_data.confirmed_dialog) and "submit" or "cancel")
+                    lib.gui.close_dialog(player, (ui_state.modal_data.confirmed_dialog) and "submit" or "cancel")
                     -- If the dialog was not closed, it means submission was disabled, and we need to re-set .opened
                     if event.element.valid then player.opened = event.element end
                 end
@@ -442,23 +442,23 @@ listeners.gui = {
 
 listeners.player = {
     fp_confirm_dialog = (function(player, _)
-        if util.globals.ui_state(player).active_selector == nil then
-            util.gui.close_dialog(player, "submit")
+        if lib.globals.ui_state(player).active_selector == nil then
+            lib.gui.close_dialog(player, "submit")
         end
     end),
 
     fp_confirm_gui = (function(player, _)
         -- Note that a GUI was closed by confirming, so it'll try submitting on_gui_closed
-        local modal_data = util.globals.modal_data(player)
+        local modal_data = lib.globals.modal_data(player)
         if modal_data ~= nil then modal_data.confirmed_dialog = true end
     end),
 
     fp_focus_searchfield = (function(player, _)
-        local ui_state = util.globals.ui_state(player)
+        local ui_state = lib.globals.ui_state(player)
 
         if ui_state.modal_dialog_type ~= nil then
             local textfield_search = ui_state.modal_data.modal_elements.search_textfield
-            if textfield_search then util.gui.select_all(textfield_search) end
+            if textfield_search then lib.gui.select_all(textfield_search) end
         end
     end)
 }

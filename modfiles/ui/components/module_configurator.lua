@@ -42,7 +42,7 @@ local function add_module_frame(parent_flow, module, module_filters, empty_slots
 
     local textfield = frame_module.add{type="textfield", name="fp_textfield_module_amount", enabled=numeric_enabled,
         text=tostring(slider_value), tags={mod="fp", on_gui_text_changed="module_amount_text", module_id=module_id}}
-    util.gui.setup_numeric_textfield(textfield, false, false)
+    lib.gui.setup_numeric_textfield(textfield, false, false)
     textfield.style.width = 40
 end
 
@@ -64,12 +64,12 @@ end
 
 
 local function handle_module_selection(player, tags, event)
-    local module_set = util.globals.modal_data(player).module_set
+    local module_set = lib.globals.modal_data(player).module_set
     local new_module = event.element.elem_value
 
     local function check_existing(module)
         if module_set:find({proto=module.proto, quality_proto=module.quality_proto}) then
-            util.cursor.create_flying_text(player, {"fp.configurator_duplicate_module"})
+            lib.cursor.create_flying_text(player, {"fp.configurator_duplicate_module"})
             return true
         end
     end
@@ -98,7 +98,7 @@ local function handle_module_selection(player, tags, event)
 end
 
 local function handle_module_slider_change(player, tags, event)
-    local module_set = util.globals.modal_data(player).module_set
+    local module_set = lib.globals.modal_data(player).module_set
     local new_slider_value = event.element.slider_value
 
     local module = OBJECT_INDEX[tags.module_id]  --[[@as Module]]
@@ -108,7 +108,7 @@ local function handle_module_slider_change(player, tags, event)
 end
 
 local function handle_module_textfield_change(player, tags, event)
-    local module_set = util.globals.modal_data(player).module_set
+    local module_set = lib.globals.modal_data(player).module_set
     local new_textfield_value = tonumber(event.element.text)
     local module_slider = event.element.parent["fp_slider_module_amount"]
 
@@ -145,7 +145,7 @@ function module_configurator.refresh_effects_flow(modal_data)
 end
 
 function module_configurator.refresh_modules_flow(player, update_only)
-    local modal_data = util.globals.modal_data(player)  --[[@as table]]
+    local modal_data = lib.globals.modal_data(player)  --[[@as table]]
     local modules_flow = modal_data.modal_elements.modules_flow
 
     local module_filters = modal_data.module_set:compile_filter()

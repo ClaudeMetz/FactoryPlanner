@@ -51,8 +51,8 @@ end
 ---@param factory Factory
 function District:remove(factory)
     -- Make sure the nth_tick handlers are cleaned up
-    if factory.tick_of_deletion then util.nth_tick.cancel(factory.tick_of_deletion) end
-    if factory.tick_of_solver_update then util.nth_tick.cancel(factory.tick_of_solver_update) end
+    if factory.tick_of_deletion then lib.nth_tick.cancel(factory.tick_of_deletion) end
+    if factory.tick_of_solver_update then lib.nth_tick.cancel(factory.tick_of_solver_update) end
 
     factory.parent = nil
     self:_remove(factory)

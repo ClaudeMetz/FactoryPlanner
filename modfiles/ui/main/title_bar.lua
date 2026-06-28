@@ -1,20 +1,20 @@
 -- ** LOCAL UTIL **
 local function toggle_paused_state(player, _, _)
     if not game.is_multiplayer() then
-        local preferences = util.globals.preferences(player)
+        local preferences = lib.globals.preferences(player)
         preferences.pause_on_interface = not preferences.pause_on_interface
 
-        local main_elements = util.globals.main_elements(player)
+        local main_elements = lib.globals.main_elements(player)
         main_dialog.set_pause_state(player, main_elements.main_frame)
     end
 end
 
 
 local function refresh_title_bar(player)
-    local ui_state = util.globals.ui_state(player)
+    local ui_state = lib.globals.ui_state(player)
     if ui_state.main_elements.main_frame == nil then return end
 
-    local factory = util.context.get(player, "Factory")   --[[@as Factory?]]
+    local factory = lib.context.get(player, "Factory")   --[[@as Factory?]]
     local title_bar_elements = ui_state.main_elements.title_bar
 
     title_bar_elements.compact_button.enabled = factory ~= nil and factory.valid
@@ -23,7 +23,7 @@ end
 
 
 local function determine_left_handle_width(player)
-    local ui_state = util.globals.ui_state(player)
+    local ui_state = lib.globals.ui_state(player)
     local half_total_width = ui_state.main_dialog_dimensions.width / 2
 
     local half_label_width = MAGIC_NUMBERS.titlebar_label_width / 2
@@ -34,7 +34,7 @@ local function determine_left_handle_width(player)
 end
 
 local function build_title_bar(player)
-    local main_elements = util.globals.main_elements(player)
+    local main_elements = lib.globals.main_elements(player)
     main_elements.title_bar = {}
 
     local parent_flow = main_elements.flows.top_horizontal
@@ -47,7 +47,7 @@ local function build_title_bar(player)
         sprite="fp_pin", mouse_button_filter={"left"}}
     main_elements.title_bar["compact_button"] = button_compact
 
-    local preferences = util.globals.preferences(player)
+    local preferences = lib.globals.preferences(player)
     local button_pause = flow_title_bar.add{type="sprite-button", sprite="fp_play", tooltip={"fp.pause_on_interface"},
         tags={mod="fp", on_gui_click="toggle_pause_game"}, auto_toggle=true, style="fp_button_frame",
         toggled=(not preferences.pause_on_interface), mouse_button_filter={"left"}}
@@ -98,14 +98,14 @@ listeners.gui = {
         {
             name = "switch_to_compact_view",
             handler = (function(player, _, _)
-                local floor = util.context.get(player, "Floor")
+                local floor = lib.context.get(player, "Floor")
                 if floor and floor.level > 1 and floor:count() == 1 then
-                    util.context.ascend_floors(player, "up")
+                    lib.context.ascend_floors(player, "up")
                 end
                 main_dialog.toggle_districts_view(player, true)
 
                 main_dialog.toggle(player)
-                util.globals.ui_state(player).compact_view = true
+                lib.globals.ui_state(player).compact_view = true
 
                 compact_dialog.toggle(player)
             end)
@@ -123,7 +123,7 @@ listeners.gui = {
         {
             name = "title_bar_open_preferences",
             handler = (function(player, _, _)
-                util.gui.open_dialog(player, {dialog="preferences"})
+                lib.gui.open_dialog(player, {dialog="preferences"})
             end)
         }
     }

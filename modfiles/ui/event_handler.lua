@@ -51,8 +51,8 @@ special_gui_handlers.on_gui_confirmed = (function(_, player, action_name)
     if action_name then return true end  -- run the standard handler if one is found
 
     -- Otherwise, close the currently open modal dialog if possible
-    if util.globals.ui_state(player).modal_dialog_type ~= nil then
-        util.gui.close_dialog(player, "submit")
+    if lib.globals.ui_state(player).modal_dialog_type ~= nil then
+        lib.gui.close_dialog(player, "submit")
     end
     return false
 end)
@@ -85,7 +85,7 @@ for _, listener in pairs(event_listeners) do
                     local action_details = {
                         name = action_name,
                         limitations = modifier_action.limitations or {},
-                        shortcut_string = util.actions.shortcut_string(modifier_action.shortcut),
+                        shortcut_string = lib.actions.shortcut_string(modifier_action.shortcut),
                         show = modifier_action.show
                     }
                     table.insert(action_table.actions, action_details)
@@ -94,7 +94,7 @@ for _, listener in pairs(event_listeners) do
                         action_table.shortcuts[modifier_action.shortcut] = action_details
                     end
                 end
-                action_table.tooltip = util.actions.generate_tooltip(action_table.actions)
+                action_table.tooltip = lib.actions.generate_tooltip(action_table.actions)
             end
 
             if MODIFIER_ACTIONS[action.name] then error("Duplicate action: " .. action.name) end
@@ -150,7 +150,7 @@ local function handle_gui_event(event)
     local action_table = MODIFIER_ACTIONS[action_name] or {}
 
     -- Check if rate limiting allows this action to proceed
-    if util.actions.rate_limited(player, event.tick, action_name, action_table.timeout) then return end
+    if lib.actions.rate_limited(player, event.tick, action_name, action_table.timeout) then return end
 
     -- Special modifier handling for on_gui_click if configured
     if event_name == "on_gui_click" and action_table.actions then
@@ -163,8 +163,8 @@ local function handle_gui_event(event)
             local modifier_action = action_table.shortcuts[click]
             if not modifier_action then return end  -- meaning the used modifiers do not have an associated action
 
-            local active_limitations = util.actions.current_limitations(player)
-            if util.actions.allowed(modifier_action.limitations, active_limitations) then
+            local active_limitations = lib.actions.current_limitations(player)
+            if lib.actions.allowed(modifier_action.limitations, active_limitations) then
                 action_table.handler(player, tags, modifier_action.name)
             end
         end
@@ -173,7 +173,7 @@ local function handle_gui_event(event)
     end
 
     -- Only refresh messages if the event wasn't a hover event
-    if event_name ~= "on_gui_hover" and event_name ~= "on_gui_leave" then util.messages.refresh(player) end
+    if event_name ~= "on_gui_hover" and event_name ~= "on_gui_leave" then lib.messages.refresh(player) end
 end
 
 for event_id, _ in pairs(gui_identifier_map) do script.on_event(event_id, handle_gui_event) end
@@ -195,7 +195,7 @@ local player_identifier_map = {
     [defines.events.on_player_joined_game] = "on_player_joined_game",
     [defines.events.on_player_locale_changed] = "on_player_locale_changed",
     [defines.events.on_string_translated] = "on_string_translated",
-    [util.translator.on_player_dictionaries_ready] = "on_player_dictionaries_ready",
+    [lib.translator.on_player_dictionaries_ready] = "on_player_dictionaries_ready",
 
     -- Keyboard shortcuts
     ["fp_toggle_interface"] = "fp_toggle_interface",
@@ -257,7 +257,7 @@ local function handle_player_event(event)
     if event.input_name then modal_dialog.close_context_menu(player) end
 
     -- Check if the action is allowed to be carried out by rate limiting
-    if util.actions.rate_limited(player, event.tick, event_name, event_handlers.timeout) then return end
+    if lib.actions.rate_limited(player, event.tick, event_name, event_handlers.timeout) then return end
 
     -- If a special handler is set, it needs to return true before proceeding with the registered handlers
     if event_handlers.special_handler and event_handlers.special_handler(event) == false then return end
@@ -268,7 +268,7 @@ local function handle_player_event(event)
     end
 
     -- Only refresh messages if this event was a keyboard shortcut
-    if event.input_name then util.messages.refresh(player) end
+    if event.input_name then lib.messages.refresh(player) end
 end
 
 for event_id, _ in pairs(player_identifier_map) do script.on_event(event_id, handle_player_event) end
@@ -332,7 +332,7 @@ end
 
 -- Make modal dialog actions available as global functions
 GLOBAL_HANDLERS["open_modal_dialog"] = (function(player, metadata)
-    local modal_dialog_type = util.globals.ui_state(player).modal_dialog_type
+    local modal_dialog_type = lib.globals.ui_state(player).modal_dialog_type
     if modal_dialog_type ~= nil then return end
 
     local listener = dialog_event_cache[metadata.dialog]
@@ -346,7 +346,7 @@ GLOBAL_HANDLERS["open_modal_dialog"] = (function(player, metadata)
 end)
 
 GLOBAL_HANDLERS["close_modal_dialog"] = (function(player, action, skip_opened)
-    local modal_dialog_type = util.globals.ui_state(player).modal_dialog_type
+    local modal_dialog_type = lib.globals.ui_state(player).modal_dialog_type
     if modal_dialog_type == nil then return end
 
     local listener = dialog_event_cache[modal_dialog_type]

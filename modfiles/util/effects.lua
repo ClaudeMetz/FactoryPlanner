@@ -4,7 +4,7 @@ _effects.blank = {speed = 0, productivity = 0, quality = 0, consumption = 0, pol
 
 ---@alias EffectValue integer
 ---@alias ModuleEffectName "speed" | "productivity" | "quality" | "consumption" | "pollution"
----@alias IntegerModuleEffects { [ModuleEffectName]: EffectValue }
+---@alias IntegerModuleEffects table<ModuleEffectName, EffectValue>
 
 local is_effect_positive = {speed=true, productivity=true, quality=true,
                             consumption=false, pollution=false}
@@ -38,7 +38,7 @@ end
 ---@param effect_tables IntegerModuleEffects[]
 ---@return IntegerModuleEffects
 function _effects.merge(effect_tables)
-    local effects = util.flib.shallow_copy(util.effects.blank)
+    local effects = lib.flib.shallow_copy(lib.effects.blank)
     for _, effect_table in pairs(effect_tables) do
         for name, effect in pairs(effect_table) do
             effects[name] = effects[name] + effect  -- doesn't create decimals
@@ -50,9 +50,11 @@ end
 
 ---@param effect EffectValue
 ---@param bounds EffectValueRange
+---@return EffectValue
+---@return string?
 function _effects.limit_value(effect, bounds)
-    local low_bound = bounds.low * MAGIC_NUMBERS.effect_precision
-    local high_bound = bounds.high * MAGIC_NUMBERS.effect_precision
+    local low_bound = (bounds.low * MAGIC_NUMBERS.effect_precision)  --[[@as EffectValue]]
+    local high_bound = (bounds.high * MAGIC_NUMBERS.effect_precision)  --[[@as EffectValue]]
 
     if effect < low_bound then
         return low_bound, "[img=fp_limited_down]"
@@ -66,7 +68,7 @@ end
 ---@param effects IntegerModuleEffects
 ---@param effect_receiver FormattedEffectReceiver
 ---@return IntegerModuleEffects
----@return { ModuleEffectName: string }
+---@return table<ModuleEffectName, string>
 function _effects.limit(effects, effect_receiver)
     local indications = {}
 
@@ -82,7 +84,6 @@ end
 
 ---@param value EffectValue
 ---@param color string
----@param effect_name ModuleEffectName
 ---@return LocalisedString
 local function format_effect(value, color)
     if value == nil then return "" end
@@ -95,7 +96,7 @@ local function format_effect(value, color)
 end
 
 ---@class FormatModuleEffectsOptions
----@field indications { ModuleEffectName: string }?
+---@field indications table<ModuleEffectName, string>?
 ---@field machine_effects IntegerModuleEffects?
 ---@field recipe_effects IntegerModuleEffects?
 
@@ -110,7 +111,7 @@ function _effects.format(module_effects, options)
     options.recipe_effects = options.recipe_effects or {}
 
     local tooltip_lines = {""}
-    for effect_name, _ in pairs(util.effects.blank) do
+    for effect_name, _ in pairs(lib.effects.blank) do
         local module_effect = module_effects[effect_name]
         local machine_effect = options.machine_effects[effect_name]
         local recipe_effect = options.recipe_effects[effect_name]

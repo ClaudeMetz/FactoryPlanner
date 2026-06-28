@@ -30,10 +30,10 @@ MAGIC_NUMBERS = {
 }
 
 -- Handlers saved in a central location for access via name
-MODIFIER_ACTIONS = {}  ---@type ActionTable
-GLOBAL_HANDLERS = {}  ---@type { [string]: function }
+MODIFIER_ACTIONS = {}  ---@type table<string, ActionTable>
+GLOBAL_HANDLERS = {}  ---@type table<string, function>
 
-util = require("util.util")
+lib = require('util.lib')
 llog = require("util.llog")
 
 require("ui.event_handler")
@@ -49,8 +49,8 @@ require("ui.event_handler")
 ---@alias PlayerIndex uint
 ---@alias Tick uint
 ---@alias VersionString string
----@alias ModToVersion { [string]: VersionString }
----@alias AllowedEffects { [string]: boolean }
+---@alias ModToVersion table<string, VersionString>
+---@alias AllowedEffects table<string, boolean>
 ---@alias ItemType string
 ---@alias ItemName string
 ---@alias ExportString string

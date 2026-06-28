@@ -36,6 +36,7 @@ local migration_masterlist = {
     [24] = {version="2.0.45", migration=require("backend.migrations.migration_2_0_45")},
     [25] = {version="2.1.1", migration=require("backend.migrations.migration_2_1_1")},
     [26] = {version="2.1.2", migration=require("backend.migrations.migration_2_1_2")},
+    [27] = {version="2.1.4", migration=require("backend.migrations.migration_2_1_4")},
 }
 
 
@@ -86,7 +87,7 @@ end
 ---@param migrations Migration[]
 function migrator.migrate_player_tables(migrations)
     for _, player in pairs(game.players) do
-        local player_table = util.globals.player_table(player)
+        local player_table = lib.globals.player_table(player)
         apply_migrations(migrations, "player_table", player_table, player)
     end
 end

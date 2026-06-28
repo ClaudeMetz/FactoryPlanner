@@ -8,9 +8,9 @@ local function style_textfield(textfield, style)
 end
 
 local function run_calculation(player)
-    local calculator_elements = util.globals.ui_state(player).calculator_elements
+    local calculator_elements = lib.globals.ui_state(player).calculator_elements
     local textfield = calculator_elements.textfield
-    local expression = tostring(util.gui.parse_expression_field(textfield, false))
+    local expression = tostring(lib.gui.parse_expression_field(textfield, false))
 
     if expression == "nil" then
         style_textfield(textfield, "invalid_value_textfield")
@@ -39,7 +39,7 @@ local function run_calculation(player)
 end
 
 local function handle_button_click(player, tags, _)
-    local textfield = util.globals.ui_state(player).calculator_elements.textfield
+    local textfield = lib.globals.ui_state(player).calculator_elements.textfield
     local action = tags.action
 
     if action == "=" then
@@ -138,7 +138,7 @@ local function build_calculator_dialog(player, elements)
 end
 
 local function toggle_calculator_dialog(player)
-    local ui_state = util.globals.ui_state(player)
+    local ui_state = lib.globals.ui_state(player)
     local dialog = ui_state.calculator_elements.frame
 
     if not dialog or not dialog.valid then
@@ -173,7 +173,7 @@ listeners.gui = {
         {
             name = "toggle_calculator_history",
             handler = (function(player, _, _)
-                local ui_state = util.globals.ui_state(player)
+                local ui_state = lib.globals.ui_state(player)
                 local history_frame = ui_state.calculator_elements.history_frame
                 history_frame.visible = not history_frame.visible
             end)
@@ -181,7 +181,7 @@ listeners.gui = {
         {
             name = "focus_textfield",
             handler = (function(player, _, _)
-                local calculator_elements = util.globals.ui_state(player).calculator_elements
+                local calculator_elements = lib.globals.ui_state(player).calculator_elements
                 calculator_elements.textfield.select_all()
             end)
         },
@@ -192,7 +192,7 @@ listeners.gui = {
         {
             name = "copy_calculator_result",
             handler = (function(player, tags, _)
-                local calculator_elements = util.globals.ui_state(player).calculator_elements
+                local calculator_elements = lib.globals.ui_state(player).calculator_elements
                 calculator_elements.textfield.text = calculator_elements.textfield.text .. tags.result
                 calculator_elements.textfield.focus()
             end)

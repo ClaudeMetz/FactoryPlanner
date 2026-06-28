@@ -50,7 +50,7 @@ end
 
 ---@alias NeighbourDirection "next" | "previous"
 
----@alias ObjectFilter {id: integer, archived: boolean}
+---@alias ObjectFilter {id: integer, archived: boolean, valid: boolean, proto: FPPrototype, quality_proto: FPQualityPrototype}
 local filter_options = {"id", "archived", "valid", "proto", "quality_proto"}
 
 ---@param object Object

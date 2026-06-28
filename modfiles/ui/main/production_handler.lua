@@ -19,7 +19,7 @@ local function handle_line_move_click(player, tags, event)
     line.parent:shift(line, tags.direction, spots_to_shift)
 
     solver.update(player)
-    util.gui.run_refresh(player, "production")
+    lib.gui.run_refresh(player, "production")
 end
 
 
@@ -30,14 +30,14 @@ local function handle_line_recipe_click(player, tags, action)
 
     if action == "open_subfloor" then
         if relevant_line.recipe.production_type == "consume" then
-            util.messages.raise(player, "error", {"fp.error_no_subfloor_on_byproduct_recipes"}, 1)
+            lib.messages.raise(player, "error", {"fp.error_no_subfloor_on_byproduct_recipes"}, 1)
             return
         end
 
         local new_context = line
         if line.class == "Line" then
-            if util.context.get(player, "Factory").archived then
-                util.messages.raise(player, "error", {"fp.error_no_new_subfloors_in_archive"}, 1)
+            if lib.context.get(player, "Factory").archived then
+                lib.messages.raise(player, "error", {"fp.error_no_new_subfloors_in_archive"}, 1)
                 return
             end
 
@@ -50,35 +50,35 @@ local function handle_line_recipe_click(player, tags, action)
             solver.update(player)
         end
 
-        util.context.set(player, new_context)
-        util.gui.run_refresh(player, "production")
+        lib.context.set(player, new_context)
+        lib.gui.run_refresh(player, "production")
 
     elseif action == "copy" then
-        util.clipboard.copy(player, line)  -- use actual line
+        lib.clipboard.copy(player, line)  -- use actual line
 
     elseif action == "paste" then
-        util.clipboard.paste(player, line)  -- use actual line
+        lib.clipboard.paste(player, line)  -- use actual line
 
     elseif action == "toggle" then
         relevant_line.active = not relevant_line.active
         solver.update(player)
-        util.gui.run_refresh(player, "production")
+        lib.gui.run_refresh(player, "production")
 
     elseif action == "delete" then
         local floor = line.parent
         floor:remove(line, true)
 
-        local selected_floor = util.context.get(player, "Floor")
+        local selected_floor = lib.context.get(player, "Floor")
         if floor.level > selected_floor.level and floor:count() == 1 then
             floor.parent:replace(floor, floor.first)
         end
 
         solver.update(player)
-        util.gui.run_refresh(player, "production")
+        lib.gui.run_refresh(player, "production")
 
     elseif action == "factoriopedia" then
         local proto = relevant_line.recipe.proto
-        player.open_factoriopedia_gui(util.get_factoriopedia_proto("recipe", proto.name, proto))
+        player.open_factoriopedia_gui(lib.get_factoriopedia_proto("recipe", proto.name, proto))
     end
 end
 
@@ -87,19 +87,19 @@ local function handle_floor_recipe_click(player, tags, action)
     local line = OBJECT_INDEX[tags.line_id]
 
     if action == "copy" then
-        util.clipboard.copy(player, line)
+        lib.clipboard.copy(player, line)
 
     elseif action == "paste" then
-        util.clipboard.paste(player, line)
+        lib.clipboard.paste(player, line)
 
     elseif action == "toggle" then
         line.active = not line.active
         solver.update(player)
-        util.gui.run_refresh(player, "production")
+        lib.gui.run_refresh(player, "production")
 
     elseif action == "factoriopedia" then
         local proto = line.recipe.proto
-        player.open_factoriopedia_gui(util.get_factoriopedia_proto("recipe", proto.name, proto))
+        player.open_factoriopedia_gui(lib.get_factoriopedia_proto("recipe", proto.name, proto))
     end
 end
 
@@ -108,17 +108,17 @@ local function handle_machine_click(player, tags, action)
     local line = machine.parent
 
     if action == "add_to_cursor" then
-        local success = util.cursor.set_entity(player, line, machine)
+        local success = lib.cursor.set_entity(player, line, machine)
         if success then main_dialog.toggle(player) end
 
     elseif action == "edit" then
-        util.gui.open_dialog(player, {dialog="machine", modal_data={machine_id=machine.id}})
+        lib.gui.open_dialog(player, {dialog="machine", modal_data={machine_id=machine.id}})
 
     elseif action == "copy" then
-        util.clipboard.copy(player, machine)
+        lib.clipboard.copy(player, machine)
 
     elseif action == "paste" then
-        util.clipboard.paste(player, machine)
+        lib.clipboard.paste(player, machine)
 
     elseif action == "factoriopedia" then
         player.open_factoriopedia_gui(prototypes["entity"][machine.proto.name])
@@ -129,12 +129,12 @@ local function handle_module_add(player, tags, event)
     local object = OBJECT_INDEX[tags.object_id]
 
     if event.shift then  -- paste
-        util.clipboard.paste(player, object)
+        lib.clipboard.paste(player, object)
     else
         if object.class == "Machine" then
-            util.gui.open_dialog(player, {dialog="machine", modal_data={machine_id=object.id}})
+            lib.gui.open_dialog(player, {dialog="machine", modal_data={machine_id=object.id}})
         else  -- "Beacon"
-            util.gui.open_dialog(player, {dialog="beacon", modal_data={line_id=object.parent.id}})
+            lib.gui.open_dialog(player, {dialog="beacon", modal_data={line_id=object.parent.id}})
         end
     end
 end
@@ -145,22 +145,22 @@ local function handle_beacon_click(player, tags, action)
     local line = beacon.parent
 
     if action == "add_to_cursor" then
-        local success = util.cursor.set_entity(player, line, beacon)
+        local success = lib.cursor.set_entity(player, line, beacon)
         if success then main_dialog.toggle(player) end
 
     elseif action == "edit" then
-        util.gui.open_dialog(player, {dialog="beacon", modal_data={line_id=line.id}})
+        lib.gui.open_dialog(player, {dialog="beacon", modal_data={line_id=line.id}})
 
     elseif action == "copy" then
-        util.clipboard.copy(player, beacon)
+        lib.clipboard.copy(player, beacon)
 
     elseif action == "paste" then
-        util.clipboard.paste(player, beacon)
+        lib.clipboard.paste(player, beacon)
 
     elseif action == "delete" then
         line:set_beacon(nil)
         solver.update(player)
-        util.gui.run_refresh(player, "production")
+        lib.gui.run_refresh(player, "production")
 
     elseif action == "factoriopedia" then
         player.open_factoriopedia_gui(prototypes["entity"][beacon.proto.name])
@@ -172,9 +172,9 @@ local function handle_beacon_add(player, tags, event)
 
     if event.shift then  -- paste
         local dummy_beacon = Beacon.initDummy(line)
-        util.clipboard.paste(player, dummy_beacon)
+        lib.clipboard.paste(player, dummy_beacon)
     else
-        util.gui.open_dialog(player, {dialog="beacon", modal_data={line_id=line.id}})
+        lib.gui.open_dialog(player, {dialog="beacon", modal_data={line_id=line.id}})
     end
 end
 
@@ -185,16 +185,16 @@ local function handle_module_click(player, tags, action)
     if action == "edit" then
         local line = module.parent.parent.parent
         if module.parent.parent.class == "Machine" then
-            util.gui.open_dialog(player, {dialog="machine", modal_data={machine_id=line.machine.id}})
+            lib.gui.open_dialog(player, {dialog="machine", modal_data={machine_id=line.machine.id}})
         else
-            util.gui.open_dialog(player, {dialog="beacon", modal_data={line_id=line.id}})
+            lib.gui.open_dialog(player, {dialog="beacon", modal_data={line_id=line.id}})
         end
 
     elseif action == "copy" then
-        util.clipboard.copy(player, module)
+        lib.clipboard.copy(player, module)
 
     elseif action == "paste" then
-        util.clipboard.paste(player, module)
+        lib.clipboard.paste(player, module)
 
     elseif action == "delete" then
         local module_set = module.parent
@@ -206,7 +206,7 @@ local function handle_module_click(player, tags, action)
 
         module_set:normalize({effects=true})
         solver.update(player)
-        util.gui.run_refresh(player, "production")
+        lib.gui.run_refresh(player, "production")
 
     elseif action == "factoriopedia" then
         player.open_factoriopedia_gui(prototypes["item"][module.proto.name])
@@ -220,10 +220,10 @@ local function handle_item_click(player, tags, action)
 
     if action == "prioritize" then
         if line.class ~= "Line" then
-            util.cursor.create_flying_text(player, {"fp.can_only_edit_line_items"})
+            lib.cursor.create_flying_text(player, {"fp.can_only_edit_line_items"})
             return
         elseif #line.products < 2 then
-            util.messages.raise(player, "warning", {"fp.warning_no_prioritizing_single_product"}, 1)
+            lib.messages.raise(player, "warning", {"fp.warning_no_prioritizing_single_product"}, 1)
             return
         end
 
@@ -231,7 +231,7 @@ local function handle_item_click(player, tags, action)
         line.recipe.priority_product = (line.recipe.priority_product ~= item.proto) and item.proto or nil
 
         solver.update(player)
-        util.gui.run_refresh(player, "production")
+        lib.gui.run_refresh(player, "production")
 
     elseif action == "add_recipe_to_end" or action == "add_recipe_below" then
         local production_type = (tags.item_category == "byproduct") and "consume" or "produce"
@@ -245,23 +245,23 @@ local function handle_item_click(player, tags, action)
             recipe_id = line.recipe.id
         end
 
-        util.gui.open_dialog(player, {dialog="recipe", modal_data={recipe_id=recipe_id,
+        lib.gui.open_dialog(player, {dialog="recipe", modal_data={recipe_id=recipe_id,
             add_after_line_id=add_after_line_id, production_type=production_type,
             category_id=proto.category_id, product_id=proto.id}})
 
     elseif action == "edit_temperature" then
         if item.proto.type ~= "fluid" then
-            util.cursor.create_flying_text(player, {"fp.can_only_edit_fluids"})
+            lib.cursor.create_flying_text(player, {"fp.can_only_edit_fluids"})
             return
         elseif line.class ~= "Line" then
-            util.cursor.create_flying_text(player, {"fp.can_only_edit_line_items"})
+            lib.cursor.create_flying_text(player, {"fp.can_only_edit_line_items"})
             return
         elseif #line.recipe.temperature_data[item.proto.name].applicable_values == 1 then
-            util.cursor.create_flying_text(player, {"fp.can_only_edit_multiple_choices"})
+            lib.cursor.create_flying_text(player, {"fp.can_only_edit_multiple_choices"})
             return
         end
 
-        util.gui.open_dialog(player, {dialog="item", modal_data={recipe_id=line.recipe.id,
+        lib.gui.open_dialog(player, {dialog="item", modal_data={recipe_id=line.recipe.id,
             category_id=item.proto.category_id, name=item.proto.name}})
 
     elseif action == "copy" then
@@ -272,7 +272,7 @@ local function handle_item_click(player, tags, action)
         end
 
         local copyable_item = {class="SimpleItem", proto=proto, amount=item.amount}
-        util.clipboard.copy(player, copyable_item)
+        lib.clipboard.copy(player, copyable_item)
 
     elseif action == "paste" then
         if line.class ~= "Line" then return end
@@ -301,10 +301,10 @@ local function handle_item_click(player, tags, action)
             end,
             class = "Item"
         }
-        util.clipboard.paste(player, target)
+        lib.clipboard.paste(player, target)
 
     elseif action == "add_to_cursor" then
-        util.cursor.handle_item_click(player, item.proto, item.amount)
+        lib.cursor.handle_item_click(player, item.proto, item.amount)
 
     elseif action == "factoriopedia" then
         local name = item.proto.name
@@ -326,30 +326,30 @@ local function handle_fuel_click(player, tags, action)
             -- If a no-temperature fluid is passed, it'll show all compatible temperatures/recipes
         end
 
-        util.gui.open_dialog(player, {dialog="recipe", modal_data={fuel_id=fuel.id,
+        lib.gui.open_dialog(player, {dialog="recipe", modal_data={fuel_id=fuel.id,
             add_after_line_id=add_after_line_id, production_type="produce",
             category_id=proto.category_id, product_id=proto.id}})
 
     elseif action == "edit_temperature" then
         if fuel.proto.type ~= "fluid" then
-            util.cursor.create_flying_text(player, {"fp.can_only_edit_fluids"})
+            lib.cursor.create_flying_text(player, {"fp.can_only_edit_fluids"})
             return
         end
 
-        util.gui.open_dialog(player, {dialog="item", modal_data={fuel_id=fuel.id,
+        lib.gui.open_dialog(player, {dialog="item", modal_data={fuel_id=fuel.id,
             category_id=fuel.proto.category_id, name=fuel.proto.name}})
 
     elseif action == "edit_fuel" then
-        util.gui.open_dialog(player, {dialog="machine", modal_data={machine_id=line.machine.id}})
+        lib.gui.open_dialog(player, {dialog="machine", modal_data={machine_id=line.machine.id}})
 
     elseif action == "copy" then
-        util.clipboard.copy(player, fuel)
+        lib.clipboard.copy(player, fuel)
 
     elseif action == "paste" then
-        util.clipboard.paste(player, fuel)
+        lib.clipboard.paste(player, fuel)
 
     elseif action == "add_to_cursor" then
-        util.cursor.handle_item_click(player, fuel.proto, fuel.amount)
+        lib.cursor.handle_item_click(player, fuel.proto, fuel.amount)
 
     elseif action == "factoriopedia" then
         player.open_factoriopedia_gui(prototypes[fuel.proto.type][fuel.proto.name])
@@ -529,7 +529,7 @@ listeners.gui = {
                 relevant_line.percentage = tonumber(event.element.text) or 100
 
                 -- Re-run solve only after a delay so it doesn't become out of sync
-                local factory = util.context.get(player, "Factory")
+                local factory = lib.context.get(player, "Factory")
                 factory:schedule_solver_update(game.tick + 300, player)
             end)
         },
@@ -547,7 +547,7 @@ listeners.gui = {
             name = "set_line_percentage",
             handler = (function(player, _, _)
                 solver.update(player)
-                util.gui.run_refresh(player, "production")
+                lib.gui.run_refresh(player, "production")
             end)
         }
     }

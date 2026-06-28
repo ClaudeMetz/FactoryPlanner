@@ -1,4 +1,7 @@
 -- 2.0 ranslator module from flib, the 2.1 one requires providing requests in root scope, which I can't
+---@diagnostic disable
+
+if helpers.stage ~= "runtime" then return {} end
 
 --[[
 MIT License

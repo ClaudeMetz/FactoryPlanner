@@ -1,9 +1,9 @@
 -- ** LOCAL UTIL **
 local function refresh_district_info(player)
-    local ui_state = util.globals.ui_state(player)
+    local ui_state = lib.globals.ui_state(player)
     if ui_state.main_elements.main_frame == nil then return end
 
-    local district = util.context.get(player, "District")  --[[@as District]]
+    local district = lib.context.get(player, "District")  --[[@as District]]
     local district_info_elements = ui_state.main_elements.district_info
 
     district_info_elements.name_label.caption = district.name
@@ -17,7 +17,7 @@ local function refresh_district_info(player)
 end
 
 local function build_district_info(player)
-    local main_elements = util.globals.main_elements(player)
+    local main_elements = lib.globals.main_elements(player)
     main_elements.district_info = {}
 
     local parent_flow = main_elements.flows.left_vertical
@@ -60,7 +60,7 @@ listeners.gui = {
             name = "toggle_districts_view",
             handler = (function(player, _, _)
                 main_dialog.toggle_districts_view(player)
-                util.gui.run_refresh(player, "factory")
+                lib.gui.run_refresh(player, "factory")
             end)
         }
     }
@@ -86,7 +86,7 @@ listeners.game = {
                     or effect.type == "change-recipe-productivity" then
                 local offset = 0
                 for _, player in pairs(game.players) do
-                    local realm = util.globals.player_table(player).realm
+                    local realm = lib.globals.player_table(player).realm
                     realm:schedule_solver_updates(game.tick + offset, player)
                     offset = offset + 2
                 end

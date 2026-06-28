@@ -2,12 +2,12 @@ local _actions = {}
 
 ---@alias ActionLimitations { archive_open: boolean?, matrix_active: boolean? }
 ---@alias ActiveLimitations { archive_open: boolean, matrix_active: boolean }
----@alias ActionList { [string]: string }
+---@alias ActionList table<string, string>
 
 ---@param player LuaPlayer
 ---@return ActiveLimitations
 function _actions.current_limitations(player)
-    local factory = util.context.get(player, "Factory")  --[[@as Factory?]]
+    local factory = lib.context.get(player, "Factory")  --[[@as Factory?]]
     return {
         archive_open = (factory ~= nil) and factory.archived or false,
         matrix_active = (factory ~= nil) and factory.matrix_solver_active or false
@@ -28,8 +28,13 @@ end
 
 -- Returns whether rate limiting is active for the given action, stopping it from proceeding
 -- This is essentially to prevent duplicate commands in quick succession, enabled by lag
+---@param player LuaPlayer
+---@param tick Tick
+---@param action_name string
+---@param timeout integer
+---@return boolean
 function _actions.rate_limited(player, tick, action_name, timeout)
-    local ui_state = util.globals.ui_state(player)
+    local ui_state = lib.globals.ui_state(player)
 
     -- If this action has no timeout, reset the last action and allow it
     if timeout == nil or game.tick_paused then
@@ -56,8 +61,8 @@ end
 ---@return LocalisedString?
 function _actions.shortcut_string(shortcut)
     if not shortcut then return nil end
-    local split_modifiers, modifier_string = util.split_string(shortcut, "-"), {""}
-    for _, modifier in pairs(util.flib.slice(split_modifiers, 1, -1)) do
+    local split_modifiers, modifier_string = lib.split_string(shortcut, "-"), {""}
+    for _, modifier in pairs(lib.flib.slice(split_modifiers, 1, -1)) do
         table.insert(modifier_string, {"", {"fp.action_" .. modifier}, " + "})
     end
     table.insert(modifier_string, {"fp.action_" .. split_modifiers[#split_modifiers]})

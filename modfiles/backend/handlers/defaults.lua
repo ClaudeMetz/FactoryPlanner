@@ -31,7 +31,7 @@ defaults = {}
 ---@param category (integer | string)?
 ---@return DefaultPrototype
 function defaults.get(player, data_type, category)
-    local default = util.globals.preferences(player).default_prototypes[data_type]
+    local default = lib.globals.preferences(player).default_prototypes[data_type]
     local category_table = prototyper.util.find(data_type, nil, category)
     return (category_table == nil) and default or default[category_table.id]
 end

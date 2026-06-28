@@ -1,8 +1,8 @@
-local Product = require("backend.data.Product")
+local TLProduct = require("backend.data.TLProduct")
 
 -- ** LOCAL UTIL **
 local function build_item_box(player, category, column_count)
-    local item_boxes_elements = util.globals.main_elements(player).item_boxes
+    local item_boxes_elements = lib.globals.main_elements(player).item_boxes
 
     local window_frame = item_boxes_elements.horizontal_flow.add{type="frame", direction="vertical",
         style="inside_shallow_frame"}
@@ -36,7 +36,7 @@ local function build_item_box(player, category, column_count)
 end
 
 local function refresh_item_box(player, factory, show_floor_items, item_category, tooltips)
-    local item_boxes_elements = util.globals.main_elements(player).item_boxes
+    local item_boxes_elements = lib.globals.main_elements(player).item_boxes
 
     local table_items = item_boxes_elements[item_category .. "_item_table"]
     table_items.clear()
@@ -46,7 +46,7 @@ local function refresh_item_box(player, factory, show_floor_items, item_category
     if not valid_factory then return 0 end
 
     local table_item_count = 0
-    local floor = (show_floor_items) and util.context.get(player, "Floor") or factory.top_floor
+    local floor = (show_floor_items) and lib.context.get(player, "Floor") or factory.top_floor
 
     if item_category == "product" and (not show_floor_items or floor.level == 1) then
         for product in factory:iterator() do
@@ -57,14 +57,14 @@ local function refresh_item_box(player, factory, show_floor_items, item_category
             local required_amount = product:get_required_amount()
 
             if product.proto.type == "entity" and product.proto.special then
-                number_tooltip = util.format.special_tooltip(product.proto.name, required_amount)
+                number_tooltip = lib.format.special_tooltip(product.proto.name, required_amount)
             else
                 amount, number_tooltip = item_views.process_item(player, product, required_amount, nil)
                 if amount == -1 then goto skip_product end  -- an amount of -1 means it was below the margin of error
             end
 
             --local satisfaction_line, percentage_string = nil, nil
-            local satisfaction_line, percentage_string = util.gui.calculate_satisfaction(
+            local satisfaction_line, percentage_string = lib.gui.calculate_satisfaction(
                 product.amount, required_amount)
 
             if percentage_string == "0" then style = "fflib_slot_button_red"
@@ -98,7 +98,7 @@ local function refresh_item_box(player, factory, show_floor_items, item_category
 
             if item.proto.type == "entity" and item.proto.special then
                 action = "act_on_floor_special"
-                number_tooltip = util.format.special_tooltip(item.proto.name, item.amount)
+                number_tooltip = lib.format.special_tooltip(item.proto.name, item.amount)
             else
                 amount, number_tooltip = item_views.process_item(player, item, nil, nil)
                 if amount == -1 then goto skip_item end  -- an amount of -1 means it was below the margin of error
@@ -125,63 +125,63 @@ end
 
 local function handle_item_add(player, tags, event)
     if event.shift then  -- paste
-        local factory = util.context.get(player, "Factory")  --[[@as Factory]]
-        local dummy_product = Product.initDummy()
-        util.clipboard.dummy_paste(player, dummy_product, factory)
+        local factory = lib.context.get(player, "Factory")  --[[@as Factory]]
+        local dummy_product = TLProduct.initDummy()
+        lib.clipboard.dummy_paste(player, dummy_product, factory)
     else
-        util.gui.open_dialog(player, {dialog="picker", modal_data={item_id=nil, item_category=tags.item_category}})
+        lib.gui.open_dialog(player, {dialog="picker", modal_data={item_id=nil, item_category=tags.item_category}})
     end
 end
 
 local function handle_item_button_click(player, tags, action)
-    local show_floor_items = util.globals.preferences(player).show_floor_items
+    local show_floor_items = lib.globals.preferences(player).show_floor_items
 
     local item = nil
     if tags.item_id then
-        item = OBJECT_INDEX[tags.item_id] --[[@as Product]]
+        item = OBJECT_INDEX[tags.item_id] --[[@as TLProduct]]
     else
         -- Need to get items from the right floor depending on display settings
-        local floor = (show_floor_items) and util.context.get(player, "Floor")
-            or util.context.get(player, "Factory").top_floor
-        item = floor[tags.item_category .. "s"][tags.item_index] --[[@as Product]]
+        local floor = (show_floor_items) and lib.context.get(player, "Floor")
+            or lib.context.get(player, "Factory").top_floor
+        item = floor[tags.item_category .. "s"][tags.item_index] --[[@as TLProduct]]
     end
 
     if action == "add_recipe" then
-        local floor = util.context.get(player, "Floor")  --[[@as Floor]]
+        local floor = lib.context.get(player, "Floor")  --[[@as Floor]]
         if floor.level > 1 and not show_floor_items then
             local message = {"fp.error_no_main_recipe_on_subfloor"}
-            util.messages.raise(player, "error", message, 1)
+            lib.messages.raise(player, "error", message, 1)
         else
             local production_type = (tags.item_category == "byproduct") and "consume" or "produce"
-            util.gui.open_dialog(player, {dialog="recipe", modal_data={production_type=production_type,
+            lib.gui.open_dialog(player, {dialog="recipe", modal_data={production_type=production_type,
                 category_id=item.proto.category_id, product_id=item.proto.id}})
         end
 
     elseif action == "edit" then
-        util.gui.open_dialog(player, {dialog="picker",
+        lib.gui.open_dialog(player, {dialog="picker",
             modal_data={item_id=item.id, item_category=tags.item_category}})
 
     elseif action == "move_left" or action == "move_right" then
         local direction = (action == "move_left") and "previous" or "next"
         item.parent:shift(item, direction, 1)
-        util.gui.run_refresh(player, "item_boxes")
+        lib.gui.run_refresh(player, "item_boxes")
 
     elseif action == "copy" then
         local copyable_item = {class="SimpleItem", proto=item.proto, amount=item.amount}
-        util.clipboard.copy(player, copyable_item)
+        lib.clipboard.copy(player, copyable_item)
 
     elseif action == "paste" then
-        util.clipboard.paste(player, item)
+        lib.clipboard.paste(player, item)
 
     elseif action == "delete" then
-        util.context.get(player, "Factory"):remove(item)
+        lib.context.get(player, "Factory"):remove(item)
         solver.update(player)
-        util.gui.run_refresh(player, "all")  -- make sure product icons are updated
+        lib.gui.run_refresh(player, "all")  -- make sure product icons are updated
 
     elseif action == "add_to_cursor" then
-        local amount = (item.class == "Product") and item:get_required_amount() or item.amount
+        local amount = (item.class == "TLProduct") and item:get_required_amount() or item.amount
         if not item.proto.simplified then
-            util.cursor.handle_item_click(player, item.proto --[[@as FPItemPrototype]], amount)
+            lib.cursor.handle_item_click(player, item.proto --[[@as FPItemPrototype]], amount)
         end
 
     elseif action == "factoriopedia" then
@@ -192,9 +192,9 @@ end
 
 
 local function put_ingredients_into_cursor(player, _, _)
-    local preferences = util.globals.preferences(player)
-    local relevant_floor = (preferences.show_floor_items) and util.context.get(player, "Floor")
-        or util.context.get(player, "Factory").top_floor  --[[@as Floor]]
+    local preferences = lib.globals.preferences(player)
+    local relevant_floor = (preferences.show_floor_items) and lib.context.get(player, "Floor")
+        or lib.context.get(player, "Factory").top_floor  --[[@as Floor]]
 
     local ingredient_filters = {}
     for _, ingredient in pairs(relevant_floor.ingredients) do
@@ -209,14 +209,14 @@ local function put_ingredients_into_cursor(player, _, _)
             })
         end
     end
-    util.cursor.set_item_combinator(player, ingredient_filters)
+    lib.cursor.set_item_combinator(player, ingredient_filters)
 
     main_dialog.toggle(player)
 end
 
 
 local function refresh_item_boxes(player)
-    local player_table = util.globals.player_table(player)
+    local player_table = lib.globals.player_table(player)
 
     local main_elements = player_table.ui_state.main_elements
     if main_elements.main_frame == nil then return end
@@ -225,7 +225,7 @@ local function refresh_item_boxes(player)
     main_elements.item_boxes.horizontal_flow.visible = visible
     if not visible then return end
 
-    local factory = util.context.get(player, "Factory")  --[[@as Factory?]]
+    local factory = lib.context.get(player, "Factory")  --[[@as Factory?]]
     local show_floor_items = player_table.preferences.show_floor_items
 
     local tooltips = player_table.ui_state.tooltips
@@ -250,7 +250,7 @@ local function refresh_item_boxes(player)
 end
 
 local function build_item_boxes(player)
-    local main_elements = util.globals.main_elements(player)
+    local main_elements = lib.globals.main_elements(player)
     main_elements.item_boxes = {}
 
     local parent_flow = main_elements.flows.right_vertical
@@ -258,7 +258,7 @@ local function build_item_boxes(player)
     flow_horizontal.style.horizontal_spacing = MAGIC_NUMBERS.frame_spacing
     main_elements.item_boxes["horizontal_flow"] = flow_horizontal
 
-    local products_per_row = util.globals.preferences(player).products_per_row
+    local products_per_row = lib.globals.preferences(player).products_per_row
     build_item_box(player, "product", products_per_row)
     build_item_box(player, "byproduct", products_per_row)
     build_item_box(player, "ingredient", products_per_row * 2)

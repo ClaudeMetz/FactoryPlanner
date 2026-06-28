@@ -1,4 +1,5 @@
 -- Raiguard does not keep the flib API stable, so I copy the stuff I need here
+---@diagnostic disable
 
 --[[
 MIT License

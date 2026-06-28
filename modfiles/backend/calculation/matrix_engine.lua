@@ -1,3 +1,5 @@
+---@diagnostic disable
+
 --[[
 Author: Scott Sullivan 2/23/2020
 github: scottmsul
@@ -55,14 +57,14 @@ function matrix_engine.get_item_key(item_type_name, item_name)
 end
 
 function matrix_engine.get_item(item_key)
-    local split_str = util.split_string(item_key, "_")
+    local split_str = lib.split_string(item_key, "_")
     local item_type_id, item_id = split_str[1], split_str[2]
     return prototyper.util.find("items", item_id, item_type_id)
 end
 
 -- this is really only used for debugging
 function matrix_engine.get_item_name(item_key)
-    local split_str = util.split_string(item_key, "_")
+    local split_str = lib.split_string(item_key, "_")
     local item_type_id, item_id = split_str[1], split_str[2]
     local item_info = prototyper.util.find("items", item_id, item_type_id)
     return item_info.type .. "_" .. item_info.name
@@ -80,7 +82,7 @@ end
 function matrix_engine.print_columns(columns)
     local s = 'COLUMNS\n'
     for i, k in ipairs(columns.values) do
-        local col_split_str = util.split_string(k, "_")
+        local col_split_str = lib.split_string(k, "_")
         if col_split_str[1]=="line" then
             s = s..'COL '..i..': '..k..'\n'
         else
@@ -229,7 +231,7 @@ function matrix_engine.get_linear_dependence_data(factory_data, matrix_metadata)
 
     local linearly_dependent_cols = matrix_engine.run_matrix_solver(factory_data, true)
     for col_name, _ in pairs(linearly_dependent_cols) do
-        local col_split_str = util.split_string(col_name, "_")
+        local col_split_str = lib.split_string(col_name, "_")
         if col_split_str[1] == "recipe" then
             local recipe_key = col_split_str[2]
             linearly_dependent_recipes[recipe_key] = true
@@ -341,7 +343,7 @@ function matrix_engine.run_matrix_solver(factory_data, check_linear_dependence)
         local linearly_dependent_variables = {}
         for col, _ in pairs(linearly_dependent_cols) do
             local col_name = columns.values[col]
-            local col_split_str = util.split_string(col_name, "_")
+            local col_split_str = lib.split_string(col_name, "_")
             if col_split_str[1] == "line" then
                 local floor = factory_data.top_floor
                 for i=2, #col_split_str-1 do
@@ -573,7 +575,7 @@ function matrix_engine.get_matrix(factory_data, rows, columns)
     -- loop over columns since it's easier to look up items for lines/free vars than vice-versa
     for col_num=1, #columns.values do
         local col_str = columns.values[col_num]
-        local col_split_str = util.split_string(col_str, "_")
+        local col_split_str = lib.split_string(col_str, "_")
         local col_type = col_split_str[1]
         -- note this string "item" is an internal matrix-solver convention and is unrelated to item types
         if col_type == "item" then
@@ -688,7 +690,7 @@ function matrix_engine.get_line_aggregate(line_data, player_index, floor_id, mac
     end
 
     for _, product in pairs(line_data.recipe_proto.products) do
-        local prodded_amount = solver_util.determine_prodded_amount(product, total_effects)
+        local prodded_amount = solver.util.determine_prodded_amount(product, total_effects)
         add_product(product, prodded_amount * total_crafts)
     end
 
@@ -702,14 +704,14 @@ function matrix_engine.get_line_aggregate(line_data, player_index, floor_id, mac
 
     -- Determine energy consumption (including potential fuel needs) and emissions
     local fuel_proto = line_data.fuel_proto
-    local energy_consumption, emissions = solver_util.determine_energy_consumption_and_emissions(
+    local energy_consumption, emissions = solver.util.determine_energy_consumption_and_emissions(
         machine_proto, line_data.recipe_proto, fuel_proto, machine_amount, line_data.energy_usage,
         total_effects, line_data.pollutant_type)
 
     local fuel, fuel_amount = nil, nil
     if machine_proto.energy_type == "burner" then
         local burner = machine_proto.burner
-        fuel_amount = solver_util.determine_fuel_amount(energy_consumption, burner, fuel_proto.fuel_value)
+        fuel_amount = solver.util.determine_fuel_amount(energy_consumption, burner, fuel_proto.fuel_value)
 
         fuel = {type=fuel_proto.type, name=line_data.fuel_name, amount=fuel_amount}
         structures.class.add(line_aggregate.Ingredient, fuel)

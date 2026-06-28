@@ -6,7 +6,7 @@ return {
     testUtilFormatNumber = {
         check = function()
             local function run(number, precision, expected, label)
-                local result = util.format.number(number, precision)
+                local result = lib.format.number(number, precision)
                 if result ~= expected then
                     error(string.format("FAIL [%s]: number(%g, %d) -> expected %q, got %q",
                         label, number, precision, expected, result))
@@ -47,7 +47,7 @@ return {
     testUtilFormatSIValue = {
         check = function()
             local function run(value, unit, precision, expected_num, expected_prefix, label)
-                local result = util.format.SI_value(value, unit, precision)
+                local result = lib.format.SI_value(value, unit, precision)
                 local num_str, prefix = result[2], result[3]
                 local prefix_key = (type(prefix) == "table") and prefix[1] or prefix
 
@@ -90,7 +90,7 @@ return {
     testUtilFormatButtonNumber = {
         check = function()
             local function run(input, expected, label)
-                local result = util.format.button_number(input)
+                local result = lib.format.button_number(input)
                 local success = math.abs(result - expected) <= 1e-9 * math.max(1, math.abs(expected))
                 if not success then
                     error(string.format("FAIL [%s]: %.10g -> expected %.10g, got %.10g",

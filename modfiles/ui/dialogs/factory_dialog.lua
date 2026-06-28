@@ -21,7 +21,7 @@ local function open_factory_dialog(player, modal_data)
 
         local district_names, this_district_index = {}, nil
         modal_data.district_index = {}  -- used to find the factory later
-        for district in util.globals.player_table(player).realm:iterator() do
+        for district in lib.globals.player_table(player).realm:iterator() do
             table.insert(district_names, district:tostring())
             table.insert(modal_data.district_index, district.id)  -- will match dropdown index
             if district.id == modal_data.factory.parent.id then this_district_index = #district_names end
@@ -35,7 +35,7 @@ local function open_factory_dialog(player, modal_data)
 end
 
 local function close_factory_dialog(player, action)
-    local modal_data = util.globals.modal_data(player)
+    local modal_data = lib.globals.modal_data(player)
 
     if action == "submit" then
         local name_textfield = modal_data.modal_elements.factory_name
@@ -52,17 +52,17 @@ local function close_factory_dialog(player, action)
             local selected_district = OBJECT_INDEX[modal_data.district_index[selected_index]]  --[[@as District]]
 
             if current_district.id ~= selected_district.id then
-                local adjacent_factory = util.context.remove(player, factory)
+                local adjacent_factory = lib.context.remove(player, factory)
 
                 current_district:remove(factory)
                 selected_district:insert(factory)
 
-                util.context.set(player, adjacent_factory or current_district)
+                lib.context.set(player, adjacent_factory or current_district)
                 solver.update(player, factory)  -- surface conditions change things
             end
         end
 
-        util.gui.run_refresh(player, "all")
+        lib.gui.run_refresh(player, "all")
 
     elseif action == "delete" then
         factory_list.delete_factory(player)  -- handles archiving if necessary
@@ -78,7 +78,7 @@ listeners.gui = {
         {
             name = "factory_name",
             handler = (function(player, _, _)
-                util.gui.close_dialog(player, "submit")
+                lib.gui.close_dialog(player, "submit")
             end)
         }
     }

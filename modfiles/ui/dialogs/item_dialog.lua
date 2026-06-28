@@ -1,6 +1,6 @@
 -- ** LOCAL UTIL **
 local function refresh_defaults_table(player)
-    local modal_data = util.globals.modal_data(player)
+    local modal_data = lib.globals.modal_data(player)
     local defaults_table = modal_data.modal_elements["defaults_table"]
 
 
@@ -63,7 +63,7 @@ end
 
 
 local function select_temperature(player, temperature)
-    local modal_data = util.globals.modal_data(player)
+    local modal_data = lib.globals.modal_data(player)
     local table_temperatures = modal_data.modal_elements.temperatures_table
 
     for _, button in pairs(table_temperatures.children) do
@@ -73,7 +73,7 @@ local function select_temperature(player, temperature)
 end
 
 local function handle_default_temperature_move(player, tags, _)
-    local modal_data = util.globals.modal_data(player)
+    local modal_data = lib.globals.modal_data(player)
 
     if tags.direction == "left" then
         table.insert(modal_data.defaults, tags.temperature)
@@ -134,13 +134,13 @@ local function open_item_dialog(player, modal_data)
     modal_data.modal_elements["defaults_table"] = table_defaults
     flow_defaults.add{type="empty-widget", style="fflib_horizontal_pusher"}
 
-    modal_data.defaults = util.globals.preferences(player).default_temperatures[modal_data.name]
+    modal_data.defaults = lib.globals.preferences(player).default_temperatures[modal_data.name]
     refresh_defaults_table(player)
 end
 
 local function close_item_dialog(player, action)
     if action == "submit" then
-        local modal_data = util.globals.modal_data(player)
+        local modal_data = lib.globals.modal_data(player)
         local table_temperatures = modal_data.modal_elements.temperatures_table
 
         local object = OBJECT_INDEX[modal_data.recipe_id or modal_data.fuel_id]
@@ -160,7 +160,7 @@ local function close_item_dialog(player, action)
         end
 
         solver.update(player)
-        util.gui.run_refresh(player, "production")
+        lib.gui.run_refresh(player, "production")
     end
 end
 

@@ -14,7 +14,7 @@ function _format.number(number, precision)
     end
     if number < 1 then
         -- log10 gives -(leading zero count), reducing sig figs to keep display width consistent with numbers >= 1
-        precision = precision + math.floor(math.log10(number))
+        precision = precision + math.floor(math.log(number, 10))
     end
     return ("%." .. precision .. "g"):format(number)
 end
@@ -36,14 +36,14 @@ function _format.SI_value(value, unit, precision)
 
     local scale_counter = 0
     if value > 0 then
-        scale_counter = math.max(0, math.floor(math.log10(value) / 3))  -- /3 because SI prefixes are powers of 1000
+        scale_counter = math.max(0, math.floor(math.log(value, 10) / 3))  -- /3 because SI prefixes are powers of 1000
         -- Values that round to 1000 would produce scientific notation in %g
         if value / (1000 ^ scale_counter) > 999 then scale_counter = scale_counter + 1 end
     end
 
     value = value / (1000 ^ scale_counter)
     local prefix = scale_counter == 0 and "" or {"fp.prefix_" .. prefixes[scale_counter + 1]}
-    return {"", sign .. util.format.number(value, precision) .. " ", prefix, units[unit]}
+    return {"", sign .. lib.format.number(value, precision) .. " ", prefix, units[unit]}
 end
 
 
@@ -51,10 +51,10 @@ end
 ---@param amount number
 ---@return LocalisedString tooltip_line
 function _format.special_tooltip(name, amount)
-    if util.is_special_power_item(name) then
-        return util.format.SI_value(amount, "W", MAGIC_NUMBERS.formatting_precision)
+    if lib.is_special_power_item(name) then
+        return lib.format.SI_value(amount, "W", MAGIC_NUMBERS.formatting_precision)
     else  -- any of the emission types
-        return util.format.SI_value(amount, "E/m", MAGIC_NUMBERS.formatting_precision)
+        return lib.format.SI_value(amount, "E/m", MAGIC_NUMBERS.formatting_precision)
     end
 end
 
@@ -72,10 +72,12 @@ end
 --
 -- The 1e-9 epsilon prevents float representation noise (e.g. 2.3 stored as 2.2999...99) from
 -- spuriously bumping a clean value up to the next display increment.
+---@param value number
+---@return number
 function _format.button_number(value)
     if value <= 0 then return value end
 
-    local tier = math.max(0, math.floor(math.log10(value) / 3))
+    local tier = math.max(0, math.floor(math.log(value, 10) / 3))
     local scale = 10 ^ (3 * tier)
     local scaled = value / scale
     local threshold = (tier == 0) and 100 or 10
@@ -86,7 +88,7 @@ end
 
 ---@param amount number
 ---@param ceil_number boolean
----@return number button_number
+---@return number? button_number
 ---@return LocalisedString tooltip_line
 function _format.machine_amount(amount, ceil_number)
     if amount == 0 then return nil, {""} end
@@ -95,7 +97,7 @@ function _format.machine_amount(amount, ceil_number)
     -- If the formatting returns 0, it is a very small number, so show it as 0.001
     if ceil_number then button_number = math.ceil(button_number) end
 
-    local tooltip_number = util.format.number(amount, MAGIC_NUMBERS.formatting_precision)
+    local tooltip_number = lib.format.number(amount, MAGIC_NUMBERS.formatting_precision)
     local plural_parameter = (tooltip_number == "1") and 1 or 2
     local tooltip_line = {"", "\n", tooltip_number, " ", {"fp.pl_machine", plural_parameter}}
 

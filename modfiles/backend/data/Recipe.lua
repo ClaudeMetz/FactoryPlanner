@@ -1,6 +1,6 @@
 local Object = require("backend.data.Object")
 
----@alias ProductionType "produce" | "consume"
+---@alias RecipeProductionType "produce" | "consume"
 
 ---@class SurfaceCompatibility
 ---@field recipe boolean
@@ -11,7 +11,7 @@ local Object = require("backend.data.Object")
 ---@field class "Recipe"
 ---@field parent Line
 ---@field proto FPRecipePrototype | FPPackedPrototype
----@field production_type ProductionType
+---@field production_type RecipeProductionType
 ---@field priority_product (FPItemPrototype | FPPackedPrototype)?
 ---@field temperatures { [string]: float }
 ---@field temperature_data { [string]: TemperatureData }
@@ -21,7 +21,7 @@ Recipe.__index = Recipe
 script.register_metatable("Recipe", Recipe)
 
 ---@param proto FPRecipePrototype | FPPackedPrototype
----@param production_type ProductionType
+---@param production_type RecipeProductionType
 ---@param parent Line
 ---@return Recipe
 local function init(proto, production_type, parent)
@@ -78,7 +78,7 @@ function Recipe:build_temperatures_data()
 
     for _, ingredient in pairs(self.proto.ingredients) do
         if ingredient.type == "fluid" then
-            self.temperature_data[ingredient.name] = util.temperature.generate_data(ingredient)
+            self.temperature_data[ingredient.name] = lib.temperature.generate_data(ingredient)
         end
     end
 end
@@ -89,7 +89,7 @@ function Recipe:apply_temperature_defaults(player)
     for _, ingredient in pairs(self.proto.ingredients) do
         if ingredient.type == "fluid" then
             local applicable_values = self.temperature_data[ingredient.name].applicable_values
-            self.temperatures[ingredient.name] = util.temperature.determine_applicable_default(
+            self.temperatures[ingredient.name] = lib.temperature.determine_applicable_default(
                 player, ingredient, applicable_values)
         end
     end
@@ -102,7 +102,7 @@ function Recipe:is_temperature_configured(ingredient)
     return (ingredient.type ~= "fluid" or self.temperatures[ingredient.name] ~= nil)
 end
 
----@param ingredient Ingredient | FPItemPrototype
+---@param ingredient Ingredient | FPItemPrototype | SimpleItem
 ---@return string
 function Recipe:get_name_with_temperature(ingredient)
     if ingredient.type ~= "fluid" then
@@ -149,7 +149,7 @@ end
 ---@class PackedRecipe: PackedObject
 ---@field class "Recipe"
 ---@field proto FPPackedPrototype
----@field production_type ProductionType
+---@field production_type RecipeProductionType
 ---@field priority_product FPPackedPrototype?
 ---@field temperatures { [string]: float }
 

@@ -1,3 +1,5 @@
+if helpers.stage ~= "runtime" then return {} end
+
 local migrator = require("backend.migrations.migrator")
 local Factory = require("backend.data.Factory")
 
@@ -24,7 +26,7 @@ function _porter.generate_export_string(factories)
         table.insert(export_table.factories, factory:pack(false))
     end
 
-    return util.pack_export_string(export_table)  --[[@as ExportString]]
+    return lib.pack_export_string(export_table)  --[[@as ExportString]]
 end
 
 -- Converts the given factory exchange string into a temporary Factory
@@ -35,7 +37,7 @@ function _porter.process_export_string(export_string)
     local export_table = nil  ---@type AnyBasic?
 
     if not pcall(function()
-        export_table = util.unpack_export_string(export_string)
+        export_table = lib.unpack_export_string(export_string)
         assert(type(export_table) == "table")
     end) then return nil, "decoding_failure" end
     ---@cast export_table ExportTable
@@ -62,7 +64,7 @@ function _porter.process_export_string(export_string)
     return import_table, nil
 end
 
----@alias UpdatedMods { [string]: { old: VersionString, current: VersionString } }
+---@alias UpdatedMods table<string, { old: VersionString, current: VersionString }>
 
 -- Creates a nice tooltip laying out which mods were added, removed and updated since the factory became invalid
 ---@param old_modset ModToVersion
@@ -95,44 +97,44 @@ function _porter.format_modset_diff(old_modset)
     local current_table, next_index = tooltip, 3
 
     if next(changes.added) then
-        current_table, next_index = util.build_localised_string(
+        current_table, next_index = lib.build_localised_string(
             {"fp.factory_mod_added"}, current_table, next_index)
         for name, version in pairs(changes.added) do
-            current_table, next_index = util.build_localised_string(
+            current_table, next_index = lib.build_localised_string(
                 {"fp.factory_mod_and_version", name, version}, current_table, next_index)
         end
     end
 
     if next(changes.removed) then
-        current_table, next_index = util.build_localised_string(
+        current_table, next_index = lib.build_localised_string(
             {"fp.factory_mod_removed"}, current_table, next_index)
         for name, version in pairs(changes.removed) do
-            current_table, next_index = util.build_localised_string(
+            current_table, next_index = lib.build_localised_string(
                 {"fp.factory_mod_and_version", name, version}, current_table, next_index)
         end
     end
 
     if next(changes.updated) then
-        current_table, next_index = util.build_localised_string(
+        current_table, next_index = lib.build_localised_string(
             {"fp.factory_mod_updated"}, current_table, next_index)
         for name, versions in pairs(changes.updated) do
-            current_table, next_index = util.build_localised_string(
+            current_table, next_index = lib.build_localised_string(
                 {"fp.factory_mod_and_versions", name, versions.old, versions.current}, current_table, next_index)
         end
     end
 
     -- Return an empty string if no changes were found, ie. the tooltip is still only the header
-    return (table_size(tooltip) == 2) and "" or tooltip
+    return (table_size(tooltip --[[@as table]]) == 2) and "" or tooltip
 end
 
 -- Adds given export_string-factories to the current factory
 ---@param player LuaPlayer
 ---@param export_string ExportString
 function _porter.add_factories(player, export_string)
-    local import_table, _ = util.porter.process_export_string(export_string)  ---@cast import_table -nil
+    local import_table, _ = lib.porter.process_export_string(export_string)  ---@cast import_table -nil
     -- No error handling here, as the export_string for this will always be known to work
 
-    local district = util.context.get(player, "District")  --[[@as District]]
+    local district = lib.context.get(player, "District")  --[[@as District]]
     local first_factory = nil
 
     for _, factory in pairs(import_table.factories) do
@@ -141,8 +143,9 @@ function _porter.add_factories(player, export_string)
         solver.update(player, factory)
         first_factory = first_factory or factory
     end
+    ---@cast first_factory Factory
 
-    util.context.set(player, first_factory)
+    lib.context.set(player, first_factory)
 end
 
 return _porter

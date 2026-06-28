@@ -190,7 +190,7 @@ end
 
 ---@return IntegerModuleEffects
 function ModuleSet:get_effects()
-    local effects = util.flib.shallow_copy(util.effects.blank)
+    local effects = lib.flib.shallow_copy(lib.effects.blank)
     for module in self:iterator() do
         for name, effect in pairs(module.total_effects) do
             effects[name] = effects[name] + effect  -- doesn't create decimals

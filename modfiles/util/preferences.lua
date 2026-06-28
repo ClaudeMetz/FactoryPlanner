@@ -48,6 +48,8 @@ function _preferences.reload(player_table)
     local player_preferences = player_table.preferences or {}
     local updated_prefs = {}
 
+    ---@param name string
+    ---@param default any
     local function reload(name, default)
         -- Needs to be longform-if because true is a valid default
         if player_preferences[name] == nil then
@@ -89,7 +91,7 @@ function _preferences.reload(player_table)
 
     updated_prefs.default_prototypes = defaults.refresh_preferences(player_preferences.default_prototypes)
 
-    reload("default_temperatures", util.temperature.get_fallback())
+    reload("default_temperatures", lib.temperature.get_fallback())
 
     player_table.preferences = updated_prefs
 end
@@ -100,6 +102,7 @@ end
 _preferences.current_version = 1
 
 ---@class PreferencesExportTable
+---@field version integer
 ---@field timescale Timescale
 ---@field pause_on_interface boolean
 ---@field compact_ingredients boolean
@@ -124,7 +127,7 @@ _preferences.current_version = 1
 ---@param player LuaPlayer
 ---@return ExportString
 function _preferences.export(player)
-    local prefs = util.globals.preferences(player)
+    local prefs = lib.globals.preferences(player)
 
     local export_table = {
         version = _preferences.current_version,
@@ -151,9 +154,12 @@ function _preferences.export(player)
         belts_or_lanes = prefs.belts_or_lanes
     }
 
-    return util.pack_export_string(export_table)  --[[@as ExportString]]
+    return lib.pack_export_string(export_table)
 end
 
+---@param value integer
+---@param options integer[]
+---@return boolean
 local function verify_range(value, options)
     if type(value) ~= "number" or value % 1 ~= 0 then return false end
     for _, option in pairs(options) do
@@ -166,13 +172,13 @@ end
 ---@param export_string ExportString
 ---@return string?
 function _preferences.import(player, export_string)
-    local export_table = nil  ---@type AnyBasic?
+    local export_table = nil
 
     if not pcall(function()
-        export_table = util.unpack_export_string(export_string)
+        export_table = lib.unpack_export_string(export_string)
         assert(type(export_table) == "table")
     end) then return "decoding_failure" end
-    ---@cast export_table ExportTable
+    ---@cast export_table PreferencesExportTable
 
     if export_table.version ~= _preferences.current_version then return "version_mismatch" end
 
@@ -201,7 +207,7 @@ function _preferences.import(player, export_string)
     end) then return "unpacking_failure" end
 
     -- All good, overwrite preferences
-    local prefs = util.globals.preferences(player)
+    local prefs = lib.globals.preferences(player)
     export_table.version = nil
     for name, value in pairs(export_table) do
         prefs[name] = value
