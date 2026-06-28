@@ -10,9 +10,9 @@ local _util = {}
 ---@field name string
 ---@field type string
 ---@field amount number
+---@field proddable_amount number
 ---@field temperature float?
 ---@field base_name string?
----@field proddable_amount number?
 
 ---@param product Product
 ---@return FormattedProduct

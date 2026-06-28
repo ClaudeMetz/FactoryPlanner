@@ -79,7 +79,7 @@ function Recipe:is_temperature_configured(ingredient)
     return (ingredient.type ~= "fluid" or self.temperatures[ingredient.name] ~= nil)
 end
 
----@param ingredient Ingredient | FPItemPrototype
+---@param ingredient Ingredient | FPItemPrototype | SimpleItem
 ---@return string
 function Recipe:get_name_with_temperature(ingredient)
     if ingredient.type ~= "fluid" then

@@ -7,6 +7,9 @@ solver = {
 }
 
 -- ** LOCAL UTIL **
+---@param player LuaPlayer
+---@param floor Floor
+---@param line LineObject
 local function set_blank_line(player, floor, line)
     local blank_class = structures.class.init()
     solver.set_line_result {
@@ -22,6 +25,8 @@ local function set_blank_line(player, floor, line)
     }
 end
 
+---@param player LuaPlayer
+---@param floor Floor
 local function set_blank_floor(player, floor)
     for line in floor:iterator() do
         if line.class == "Floor" then
@@ -33,6 +38,8 @@ local function set_blank_floor(player, floor)
     end
 end
 
+---@param player LuaPlayer
+---@param factory Factory
 local function set_blank_factory(player, factory)
     local blank_class = structures.class.init()
 
@@ -49,6 +56,8 @@ local function set_blank_factory(player, factory)
 end
 
 
+---@param factory Factory
+---@return SolverItem[]
 local function factory_products(factory)
     local products = {}
     for product in factory:iterator() do
@@ -62,9 +71,11 @@ local function factory_products(factory)
     return products
 end
 
+---@param line Line
+---@return SolverItem[]?
 local function line_ingredients(line)
     local ingredients = {}
-    for _, ingredient in pairs(line.recipe.proto.ingredients) do
+    for _, ingredient in pairs(line.recipe.proto--[[@as FPRecipePrototype]].ingredients) do
         -- If any relevant ingredient has no temperature set, this line is invalid
         if not line.recipe:is_temperature_configured(ingredient) then return nil end
 
@@ -78,25 +89,62 @@ local function line_ingredients(line)
     return ingredients
 end
 
+---@class FloorData
+---@field id ObjectID
+---@field products FormattedProduct[] | SolverItem[]
+---@field lines (LineData | SubfloorLineData)[]
 
--- Generates structured data of the given floor for calculation
+---@class SubfloorLineData
+---@field id ObjectID
+---@field recipe_proto FPRecipePrototype
+---@field subfloor FloorData?
+
+---@class LineData
+---@field id ObjectID
+---@field recipe_proto FPRecipePrototype
+---@field recipe_energy double
+---@field ingredients SolverItem[]
+---@field percentage number
+---@field production_type RecipeProductionType
+---@field priority_product_proto FPItemPrototype
+---@field machine_proto FPMachinePrototype
+---@field machine_limit MachineLimit
+---@field machine_speed double
+---@field energy_usage double
+---@field resource_drain_rate double
+---@field pollutant_type string?
+---@field entities_require_heating boolean
+---@field total_effects IntegerModuleEffects
+---@field beacon_consumption double
+---@field fuel_proto FPFuelPrototype?
+---@field fuel_name string?
+
+---@alias MachineLimit {limit: number?, force_limit: boolean}
+
+--- Generates structured data of the given floor for calculation
+---@param player LuaPlayer
+---@param factory Factory
+---@param floor Floor
+---@param calculate_emissions boolean
+---@return FloorData
 local function generate_floor_data(player, factory, floor, calculate_emissions)
     local floor_data = {
         id = floor.id,
         products = (floor.level == 1) and factory_products(factory)
-            or floor.first.recipe.proto.products,
+            or floor.first--[[@as Line]].recipe.proto--[[@as FPRecipePrototype]].products,
         lines = {}
-    }
+    }  ---@type FloorData
 
     for line in floor:iterator() do
         local line_data = { id = line.id }
 
-        if line.class == "Floor" then
-            line_data.recipe_proto = line.first.recipe.proto
+        if line.class == "Floor" then  ---@cast line Floor
+            line_data.recipe_proto = line.first--[[@as Line]].recipe.proto
             line_data.subfloor = generate_floor_data(player, factory, line, calculate_emissions)
             table.insert(floor_data.lines, line_data)
-        else
+        else  ---@cast line Line
             local relevant_line = (line.parent.level > 1) and line.parent.first or nil  --[[@as Line]]
+            local recipe_proto = line.recipe.proto  --[[@as FPRecipePrototype]]
             local ingredients = line_ingredients(line)  -- builds in chosen temperatures
             local fuel = line.machine.fuel
 
@@ -109,8 +157,8 @@ local function generate_floor_data(player, factory, floor, calculate_emissions)
                 set_blank_line(player, floor, line)  -- useless lines don't need to run through the solver
             else
                 local machine = line.machine
-                line_data.recipe_proto = line.recipe.proto
-                line_data.recipe_energy = line.recipe.proto.energy
+                line_data.recipe_proto = recipe_proto
+                line_data.recipe_energy = recipe_proto.energy
                 line_data.ingredients = ingredients
                 line_data.percentage = line.percentage  -- non-zero
                 line_data.production_type = line.recipe.production_type
@@ -125,15 +173,15 @@ local function generate_floor_data(player, factory, floor, calculate_emissions)
 
                 -- Boiler recipe energy
                 if machine.proto.prototype_category == "boiler" then
-                    local goal_temperature = line.recipe.proto.products[1].temperature
-                    local fluid_name = line.recipe.proto.ingredients[1].name
+                    local goal_temperature = recipe_proto.products[1]--[[@cast -nil]].temperature  --[[@as float]]
+                    local fluid_name = recipe_proto.ingredients[1]--[[@cast -nil]].name
                     local heat_capacity = prototypes.fluid[fluid_name].heat_capacity
-                    local input_temperature = ingredients[1].temperature
+                    local input_temperature = ingredients[1]--[[@cast -nil]].temperature  --[[@as float]]
                     line_data.recipe_energy = (goal_temperature - input_temperature) * heat_capacity
                 end
 
                 -- Effects - update line with recipe effects here if applicable
-                line.recipe:update_effects(player.force, factory)
+                line.recipe:update_effects(player.force--[[@as LuaForce]], factory)
                 line_data.total_effects = line.total_effects
 
                 -- Beacon total - can be calculated here, which is faster and simpler
@@ -141,8 +189,8 @@ local function generate_floor_data(player, factory, floor, calculate_emissions)
                     line_data.beacon_consumption = line.beacon:get_total_consumption()
                 end
 
-                if fuel then
-                    line_data.fuel_proto = machine.fuel.proto
+                if fuel ~= nil then
+                    line_data.fuel_proto = fuel.proto
                     line_data.fuel_name = fuel:get_name_with_temperature()
                 end
 
@@ -161,6 +209,11 @@ end
 ---@field amount number
 ---@field satisfied_amount number?
 
+---@alias SolverItemCategory "products" | "byproducts" | "ingredients"
+
+---@param a SimpleItem
+---@param b SimpleItem
+---@return boolean
 local function item_comparator(a, b)
     local a_type, b_type = a.proto.type, b.proto.type
     if a_type < b_type then return false
@@ -170,6 +223,9 @@ local function item_comparator(a, b)
     return false
 end
 
+---@param object LineObject
+---@param item_category SolverItemCategory
+---@param item_results SolverClass
 local function update_object_items(object, item_category, item_results)
     local item_list = {}
 
@@ -178,7 +234,7 @@ local function update_object_items(object, item_category, item_results)
 
         -- Floor items keep their temperature, since they can't be configured from there
         if object.class ~= "Floor" and item_category == "ingredients" and item_proto.base_name then
-            item_proto = prototyper.util.find("items", item_proto.base_name, "fluid")
+            item_proto = prototyper.util.find("items", item_proto.base_name, "fluid")  --[[@as FPItemPrototype]]
         end
 
         if object.class ~= "Floor" or item_proto.type ~= "entity" or item_proto.special then
@@ -190,6 +246,9 @@ local function update_object_items(object, item_category, item_results)
     object[item_category] = item_list
 end
 
+---@param line Line
+---@param item_category SolverItemCategory
+---@param items FormattedProduct[] | Ingredient[]
 local function set_zeroed_items(line, item_category, items)
     local item_list = {}
 
@@ -202,10 +261,14 @@ local function set_zeroed_items(line, item_category, items)
 end
 
 
--- Goes through every line and setting their satisfied_amounts appropriately
+--- Goes through every line and setting their satisfied_amounts appropriately
+---@param floor Floor
+---@param product_class SolverClass?
 local function update_ingredient_satisfaction(floor, product_class)
     product_class = product_class or structures.class.init()
 
+    ---@param ingredient SimpleItem | Fuel
+    ---@param name string
     local function determine_satisfaction(ingredient, name)
         local product_amount = product_class[ingredient.proto.type][name]
 
@@ -235,7 +298,7 @@ local function update_ingredient_satisfaction(floor, product_class)
         for _, ingredient in pairs(line.ingredients) do
             if ingredient.proto.type ~= "entity" or ingredient.proto.special then
                 local name = ingredient.proto.name
-                if line.class ~= "Floor" then name = line:get_name_with_temperature(ingredient) end
+                if line.class ~= "Floor" then name = line.recipe:get_name_with_temperature(ingredient) end
                 determine_satisfaction(ingredient, name)
             end
         end
@@ -251,7 +314,9 @@ end
 
 
 -- ** TOP LEVEL **
--- Updates the whole factory calculations from top to bottom
+--- Updates the whole factory calculations from top to bottom
+---@param player LuaPlayer
+---@param factory Factory
 function solver.update(player, factory)
     factory = factory or lib.context.get(player, "Factory")
     if factory and factory.valid then
@@ -274,6 +339,7 @@ function solver.update(player, factory)
 
             if matrix_metadata.num_rows ~= 0 then  -- don't run calculations if the factory has no lines
                 local linear_dependence_data = matrix_engine.get_linear_dependence_data(factory_data, matrix_metadata)
+                ---@diagnostic disable-next-line: undefined-field
                 if matrix_metadata.num_rows == matrix_metadata.num_cols
                         and #linear_dependence_data.linearly_dependent_recipes == 0 then
                     matrix_engine.run_matrix_solver(factory_data, false)
@@ -291,7 +357,7 @@ function solver.update(player, factory)
     end
 end
 
--- Updates the given factory's ingredient satisfactions
+---@param factory Factory
 function solver.determine_ingredient_satisfaction(factory)
     if not factory.valid then return end
     update_ingredient_satisfaction(factory.top_floor, nil)
@@ -299,7 +365,16 @@ end
 
 
 -- ** INTERFACE **
--- Returns a table containing all the data needed to run the calculations for the given factory
+---@class FactoryData
+---@field player_index uint32
+---@field factory_id ObjectID
+---@field top_floor FloorData
+---@field matrix_free_items FPItemPrototype[]?
+
+--- Returns a table containing all the data needed to run the calculations for the given factory
+---@param player LuaPlayer
+---@param factory Factory
+---@return FactoryData
 function solver.generate_factory_data(player, factory)
     local calculate_emissions = lib.globals.preferences(player).calculate_emissions
     local factory_data = {
@@ -312,7 +387,16 @@ function solver.generate_factory_data(player, factory)
     return factory_data
 end
 
--- Updates the active factories top-level data with the given result
+---@class FactoryResult
+---@field player_index uint32
+---@field factory_id ObjectID
+---@field matrix_free_items FPItemPrototype[]?
+---@field Product SolverClass
+---@field Byproduct SolverClass
+---@field Ingredient SolverClass
+
+--- Updates the active factories top-level data with the given result
+---@param result FactoryResult
 function solver.set_factory_result(result)
     local factory = OBJECT_INDEX[result.factory_id]  --[[@as Factory]]
 
@@ -335,21 +419,33 @@ function solver.set_factory_result(result)
     end
 end
 
--- Updates the given line of the given floor of the active factory
+---@class LineResult
+---@field player_index uint32
+---@field floor_id ObjectID
+---@field line_id ObjectID
+---@field machine_amount number
+---@field production_ratio number?
+---@field Product SolverClass
+---@field Byproduct SolverClass
+---@field Ingredient SolverClass
+---@field fuel_amount number?
+
+--- Updates the given line of the given floor of the active factory
+---@param result LineResult
 function solver.set_line_result(result)
     local line = OBJECT_INDEX[result.line_id]  --[[@as LineObject]]
 
-    if line.class == "Floor" then
-        line.machine_amount = result.machine_amount
-    else
+    if line.class == "Floor" then  ---@cast line Floor
+        line.machine_amount = result.machine_amount  --[[@as integer]]
+    else  ---@cast line Line
         line.machine.amount = result.machine_amount
         if line.machine.fuel ~= nil then line.machine.fuel.amount = result.fuel_amount end
 
         line.production_ratio = result.production_ratio
     end
 
-    if line.production_ratio == 0 then
-        local recipe_proto = line.recipe.proto
+    if line.production_ratio == 0 then  ---@cast line Line
+        local recipe_proto = line.recipe.proto  --[[@as FPRecipePrototype]]
         set_zeroed_items(line, "products", recipe_proto.products)
         line.byproducts = {}
         set_zeroed_items(line, "ingredients", recipe_proto.ingredients)
@@ -362,7 +458,10 @@ end
 
 
 -- ** UTIL **
--- Calculates the product amount after applying productivity bonuses
+--- Calculates the product amount after applying productivity bonuses
+---@param item FormattedProduct
+---@param total_effects IntegerModuleEffects
+---@return number
 function solver.util.determine_prodded_amount(item, total_effects)
     if total_effects.productivity <= 0 then return item.amount end  -- no negative productivity
 
@@ -372,7 +471,15 @@ function solver.util.determine_prodded_amount(item, total_effects)
     return item.amount + (item.proddable_amount * (total_effects.productivity / MAGIC_NUMBERS.effect_precision))
 end
 
--- Determines the amount of energy needed for a machine and the emissions that produces
+--- Determines the amount of energy needed for a machine and the emissions that produces
+---@param machine_proto FPMachinePrototype
+---@param recipe_proto FPRecipePrototype
+---@param fuel_proto FPFuelPrototype?
+---@param machine_amount number
+---@param energy_usage number
+---@param total_effects IntegerModuleEffects
+---@param pollutant_type string?
+---@return number, number
 function solver.util.determine_energy_consumption_and_emissions(machine_proto, recipe_proto,
         fuel_proto, machine_amount, energy_usage, total_effects, pollutant_type)
     local consumption_multiplier = 1 + (total_effects.consumption / MAGIC_NUMBERS.effect_precision)
@@ -393,7 +500,11 @@ function solver.util.determine_energy_consumption_and_emissions(machine_proto, r
     return total_consumption, total_emissions
 end
 
--- Determines the amount of fuel needed in the given context
+--- Determines the amount of fuel needed in the given context
+---@param energy_consumption number
+---@param burner MachineBurner
+---@param fuel_value float
+---@return number
 function solver.util.determine_fuel_amount(energy_consumption, burner, fuel_value)
     return (energy_consumption / burner.effectivity) / fuel_value
 end
@@ -404,7 +515,7 @@ local listeners = {}
 
 listeners.global = {
     update_solver = (function(metadata)
-        local player = game.get_player(metadata.player_index)
+        local player = game.get_player(metadata.player_index)  --[[@as LuaPlayer]]
         local factory = OBJECT_INDEX[metadata.factory_id]
         solver.update(player, factory)
     end)

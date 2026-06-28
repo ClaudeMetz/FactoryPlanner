@@ -1,3 +1,5 @@
+---@diagnostic disable
+
 --[[
 Author: Scott Sullivan 2/23/2020
 github: scottmsul

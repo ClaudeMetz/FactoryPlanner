@@ -3,14 +3,23 @@ local structures = require("backend.calculation.structures")
 -- Contains the 'meat and potatoes' calculation model that struggles with some more complex setups
 local sequential_engine = {}
 
+---@class SolverItemWithConstant: SolverItem
+---@field constant boolean?
+
 -- ** LOCAL UTIL **
+---@param line_data LineData
+---@param aggregate SolverAggregate
+---@param looped_fuel number?
 local function update_line(line_data, aggregate, looped_fuel)
     local recipe_proto = line_data.recipe_proto
     local machine_proto = line_data.machine_proto
     local total_effects = line_data.total_effects
 
-    local relevant_products, byproducts, ingredients = {}, {}, line_data.ingredients
-    local self_feeding, original_aggregate, fuel_byproduct = false, nil, nil
+    local relevant_products, byproducts = {}, {}
+    local ingredients = line_data.ingredients  --[[@as SolverItemWithConstant[] ]]
+    local self_feeding = false
+    local fuel_byproduct = nil  ---@type FormattedProduct?
+    local original_aggregate = nil  ---@type SolverAggregate?
     local fuel_proto = line_data.fuel_proto
 
     -- Determine relevant products
@@ -32,7 +41,9 @@ local function update_line(line_data, aggregate, looped_fuel)
         end
     end
 
-    -- Determines the production ratio that would be needed to fully satisfy the given product
+    --- Determines the production ratio that would be needed to fully satisfy the given product
+    ---@param relevant_product FormattedProduct
+    ---@return number
     local function determine_production_ratio(relevant_product)
         local demand = aggregate.Ingredient[relevant_product.type][relevant_product.name]
         local prodded_amount = solver.util.determine_prodded_amount(relevant_product, total_effects)
@@ -40,11 +51,11 @@ local function update_line(line_data, aggregate, looped_fuel)
     end
 
     -- Determine production ratio
-    local production_ratio = 0
+    local production_ratio = 0  ---@type number
 
     local relevant_product_count = #relevant_products
     if relevant_product_count == 1 then
-        local relevant_product = relevant_products[1]
+        local relevant_product = relevant_products[1]  --[[@as FormattedProduct]]
         production_ratio = determine_production_ratio(relevant_product)
 
     elseif relevant_product_count >= 2 then
@@ -81,7 +92,9 @@ local function update_line(line_data, aggregate, looped_fuel)
     aggregate.machine_amount = aggregate.machine_amount + math.ceil(machine_amount - MAGIC_NUMBERS.margin_of_error)
 
 
-    -- Determines the amount of the given item, considering productivity
+    --- Determines the amount of the given item, considering productivity
+    ---@param item FormattedProduct
+    ---@return number
     local function determine_amount_with_productivity(item)
         local prodded_amount = solver.util.determine_prodded_amount(item, total_effects)
         return prodded_amount * production_ratio
@@ -93,7 +106,10 @@ local function update_line(line_data, aggregate, looped_fuel)
 
     local fuel_amount = nil
     if machine_proto.energy_type == "burner" then
-        local fuel_name = line_data.fuel_name
+        ---@cast fuel_proto -nil
+        ---@cast machine_proto.burner -nil
+
+        local fuel_name = line_data.fuel_name  --[[@as string]]
         fuel_amount = solver.util.determine_fuel_amount(energy_consumption,
             machine_proto.burner, fuel_proto.fuel_value)
 
@@ -114,7 +130,7 @@ local function update_line(line_data, aggregate, looped_fuel)
                     return
                 end
             else  -- means the fuel is a byproduct only, which shouldn't affect production
-                local byproduct_amount = determine_amount_with_productivity(fuel_byproduct)
+                local byproduct_amount = determine_amount_with_productivity(fuel_byproduct--[[@cast -nil]])
                 local used_amount = math.min(fuel_amount, byproduct_amount)
 
                 local fuel_item = {type=fuel_proto.type, name=fuel_name, amount=used_amount}
@@ -125,7 +141,7 @@ local function update_line(line_data, aggregate, looped_fuel)
 
         -- Removed looped fuel from main aggregate as its used right away
         local corrected_amount = fuel_amount - (looped_fuel or 0)
-        local fuel_item = {type=fuel_proto.type, name=fuel_name, amount=corrected_amount}
+        local fuel_item = {type=fuel_proto.type, name=fuel_name, amount=corrected_amount}  ---@type SolverItem
         structures.class.add(aggregate.Ingredient, fuel_item)  -- add to floor
         -- Fuel itself is set via a special amount variable on the line itself
 
@@ -226,7 +242,7 @@ local function update_line(line_data, aggregate, looped_fuel)
         structures.class.add(Ingredient, ingredient, ingredient_amount)
 
         -- Reduce line-byproducts and -ingredients so only the net amounts remain
-        local byproduct_amount = Byproduct[ingredient.type][ingredient.name]
+        local byproduct_amount = Byproduct[ingredient.type][ingredient.name]  --[[@as number?]]
         if byproduct_amount ~= nil then
             structures.class.subtract(Byproduct, ingredient, ingredient_amount)
             structures.class.subtract(Ingredient, ingredient, byproduct_amount)
@@ -250,6 +266,8 @@ local function update_line(line_data, aggregate, looped_fuel)
 end
 
 
+---@param floor_data FloorData
+---@param aggregate SolverAggregate
 local function update_floor(floor_data, aggregate)
     local desired_products = structures.class.list(aggregate.Ingredient)
 
@@ -259,7 +277,7 @@ local function update_floor(floor_data, aggregate)
             -- Determine the products that are relevant for this subfloor
             local subfloor_aggregate = structures.aggregate.init(aggregate.player_index, subfloor.id)
            for _, product in pairs(line_data.recipe_proto.products) do
-                local ingredient_amount = aggregate.Ingredient[product.type][product.name]
+                local ingredient_amount = aggregate.Ingredient[product.type][product.name]  ---@type number?
                 if ingredient_amount then
                     structures.class.add(subfloor_aggregate.Ingredient, product, ingredient_amount)
                 end
@@ -293,7 +311,7 @@ local function update_floor(floor_data, aggregate)
             }
         else
             -- Update aggregate according to the current line, which also adjusts the respective line object
-            update_line(line_data, aggregate, nil)  -- updates aggregate
+            update_line(line_data--[[@as LineData]], aggregate, nil)  -- updates aggregate
         end
     end
 
@@ -307,6 +325,7 @@ end
 
 
 -- ** TOP LEVEL **
+---@param factory_data FactoryData
 function sequential_engine.update_factory(factory_data)
     -- Initialize aggregate with the top level items
     local aggregate = structures.aggregate.init(factory_data.player_index, 1)
@@ -318,7 +337,7 @@ function sequential_engine.update_factory(factory_data)
 
     -- Remove any top level items that are still ingredients, meaning unproduced
     for _, product in pairs(factory_data.top_floor.products) do
-        local ingredient_amount = aggregate.Ingredient[product.type][product.name] or 0
+        local ingredient_amount = aggregate.Ingredient[product.type][product.name] or 0  ---@type number
         structures.class.subtract(aggregate.Ingredient, product, ingredient_amount)
     end
 
