@@ -316,7 +316,7 @@ end
 -- ** TOP LEVEL **
 --- Updates the whole factory calculations from top to bottom
 ---@param player LuaPlayer
----@param factory Factory
+---@param factory Factory?
 function solver.update(player, factory)
     factory = factory or lib.context.get(player, "Factory")
     if factory and factory.valid then

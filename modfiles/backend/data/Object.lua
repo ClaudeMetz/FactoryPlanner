@@ -269,7 +269,9 @@ end
 ---@param unpacker fun(item: PackedObject): Object
 ---@return Object? first_object
 function Object.unpack(packed_objects, unpacker, parent)
-    local first_object, latest_object = nil, nil
+    local first_object = nil ---@type Object?
+    local latest_object = nil ---@type Object?
+
     for _, packed_object in pairs(packed_objects) do
         local object = unpacker(packed_object)
         object.parent = parent

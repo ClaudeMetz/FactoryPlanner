@@ -75,31 +75,37 @@ end
 function Module:paste(object)
     if object.class == "Module" then
         ---@cast object Module
-        if not self.proto.simplified and self.parent:check_compatibility(object.proto --[[@as FPModulePrototype]]) then
-            if self.proto == object.proto and self.quality_proto == object.quality_proto then
-                local available_slots = self.parent.module_limit - self.parent.module_count + self.amount
-                self:set_amount(math.min(object.amount, available_slots))
-
-                self.parent:normalize({effects=true})
-                return true, nil
-            else
-                local existing_module = self.parent:find({proto=object.proto, quality_proto=object.quality_proto})
-                local parent = self.parent  -- retain here because it can be changed below
-
-                if existing_module then
-                    local added_amount = math.min(object.amount, self.amount)
-                    existing_module:set_amount(existing_module.amount + added_amount)
-                    parent:remove(self)
-                else
-                    object:set_amount(math.min(object.amount, self.amount))
-                    parent:replace(self, object)
-                end
-
-                parent:normalize({sort=true, effects=true})
-                return true, nil
-            end
-        else
+        if self.proto.simplified or
+           self.quality_proto.simplified or
+           object.proto.simplified or
+           not self.parent:check_compatibility(object.proto --[[@as FPModulePrototype]]) then
             return false, "incompatible"
+        end
+
+        if self.proto == object.proto and self.quality_proto == object.quality_proto then
+            local available_slots = self.parent.module_limit - self.parent.module_count + self.amount
+            self:set_amount(math.min(object.amount, available_slots))
+
+            self.parent:normalize({effects=true})
+            return true, nil
+        else
+            local existing_module = self.parent:find({
+                proto=object.proto --[[@as FPModulePrototype]],
+                quality_proto=object.quality_proto --[[@as FPQualityPrototype]]
+            })
+            local parent = self.parent  -- retain here because it can be changed below
+
+            if existing_module then
+                local added_amount = math.min(object.amount, self.amount)
+                existing_module:set_amount(existing_module.amount + added_amount)
+                parent:remove(self)
+            else
+                object:set_amount(math.min(object.amount, self.amount))
+                parent:replace(self, object)
+            end
+
+            parent:normalize({sort=true, effects=true})
+            return true, nil
         end
     else
         return false, "incompatible_class"

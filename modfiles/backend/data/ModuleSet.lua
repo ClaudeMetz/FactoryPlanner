@@ -273,14 +273,20 @@ end
 ---@return boolean success
 ---@return string? error
 function ModuleSet:paste(module)
-    if module.proto.simplified or not self:check_compatibility(module.proto --[[@as FPModulePrototype]]) then
+    if module.proto.simplified or
+       module.quality_proto.simplified or
+       not self:check_compatibility(module.proto --[[@as FPModulePrototype]])
+    then
         return false, "incompatible"
     elseif self.empty_slots == 0 then
         return false, "no_empty_slots"
     end
 
     local desired_amount = math.min(module.amount, self.empty_slots)
-    local existing_module = self:find({proto=module.proto, quality_proto=module.quality_proto})
+    local existing_module = self:find({
+        proto=module.proto--[[@as FPModulePrototype]],
+        quality_proto=module.quality_proto --[[@as FPQualityPrototype]]
+    })
     if existing_module then
         existing_module:set_amount(existing_module.amount + desired_amount)
     else

@@ -90,6 +90,7 @@ function TLProduct:paste(object)
         end
 
         if proto == nil or proto.simplified then return false, "incompatible" end
+        ---@cast proto FPItemPrototype
 
         -- Avoid duplicate items, but allow pasting over the same item proto
         local existing_item = self.parent:find({proto=proto})
