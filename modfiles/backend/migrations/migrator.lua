@@ -3,8 +3,8 @@
 
 local migrator = {}
 
----@alias MigrationMasterList { [integer]: { version: VersionString, migration: Migration } }
----@alias Migration { global: function, player_table: function, packed_factory: function? }
+---@alias MigrationMasterList table<integer, { version: VersionString, migration: Migration }>
+---@alias Migration { global: function?, player_table: function?, packed_factory: function? }
 ---@alias MigrationObject PlayerTable | Factory | PackedFactory
 
 -- Returns a table containing all existing migrations in order
@@ -97,7 +97,6 @@ end
 ---@param export_table ExportTable
 function migrator.migrate_export_table(export_table)
     local export_version = export_table.export_modset["factoryplanner"]
-    export_table.factories = export_table.factories or export_table.subfactories  -- migration
     local migrations = migrator.determine_migrations(export_version)  ---@cast migrations -nil
 
     for _, packed_factory in pairs(export_table.factories) do

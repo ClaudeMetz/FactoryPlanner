@@ -1,15 +1,21 @@
 integrator = {}
 
 ---@class IntegrationsTable
----@field overwrite_recipe_picker { [string]: boolean }
----@field recycling_recipes { patterns: string[], names: string[] }
+---@field overwrite_recipe_picker table<string, boolean>
+---@field recycling_recipes table<string, true>
+---@field compacting_recipes table<string, true>
 
 -- ** LOCAL UTIL **
+---@param name string
+---@return table
 local function get_integration_table(name)
     storage.integrations[name] = storage.integrations[name] or {}
     return storage.integrations[name]
 end
 
+---@param table Any?
+---@param name string
+---@return AnyBasic?
 local function get_table_value(table, name)
     if table ~= nil and type(table) == "table" then return table[name] end
 end
@@ -17,15 +23,16 @@ end
 
 -- ** RUNTIME INTEGRATIONS **
 
+---@param dataset Any?
 local function overwrite_recipe_picker(dataset)
     local version = get_table_value(dataset, "version")
     local recipes = get_table_value(dataset, "recipes")
 
     if version == 1 and type(recipes) == "table" then
-        local overwrite_recipe_picker = get_integration_table("overwrite_recipe_picker")
+        local storage_table = get_integration_table("overwrite_recipe_picker")
 
         for recipe_name, value in pairs(recipes) do
-            overwrite_recipe_picker[recipe_name] = value  -- nil equals removal
+            storage_table[recipe_name] = value  -- nil equals removal
         end
     end
 end
@@ -38,8 +45,10 @@ remote.add_interface("fp-integration", {
 
 -- ** STATIC INTEGRATIONS **
 
+---@alias Interfaces table<string, table<string, true>>
+
 -- Pull-based system, where FP pulls in the integration data it needs at specific times
-local interfaces = nil  -- local variable not used across scopes
+local interfaces = nil  ---@type Interfaces? local variable not used across scopes
 
 local function seek_provided_interfaces()
     interfaces = {}
@@ -48,13 +57,15 @@ local function seek_provided_interfaces()
     for mod, _ in pairs(script.active_mods) do
         local interface = "fp-integration-" .. mod
         local functions = interface_list[interface]
-        if functions then interfaces[interface] = functions end
+        if functions then interfaces[interface] = functions--[[@as table<string, true>]] end
     end
 end
 
 
 local handlers = {}  -- handlers for every kind of integration
 
+---@param dataset Any
+---@param storage_table table
 function handlers.recycling_recipes(dataset, storage_table)
     local version = get_table_value(dataset, "version")
     local recipes = get_table_value(dataset, "recipes")
@@ -66,6 +77,8 @@ function handlers.recycling_recipes(dataset, storage_table)
     end
 end
 
+---@param dataset Any
+---@param storage_table table
 function handlers.compacting_recipes(dataset, storage_table)
     local version = get_table_value(dataset, "version")
     local recipes = get_table_value(dataset, "recipes")
@@ -77,15 +90,16 @@ function handlers.compacting_recipes(dataset, storage_table)
     end
 end
 
-
+---@param name string
 function integrator.collect(name)
     if interfaces == nil then seek_provided_interfaces() end
+    ---@cast interfaces Interfaces
 
     local storage_table = get_integration_table(name)
     for interface, functions in pairs(interfaces) do
         if functions[name] then
             local dataset = remote.call(interface, name)
-            handlers[name](dataset, storage_table)
+            handlers[name]--[[@cast -nil]](dataset, storage_table)
         end
     end
 end

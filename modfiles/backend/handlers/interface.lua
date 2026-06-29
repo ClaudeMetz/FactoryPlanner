@@ -1,6 +1,12 @@
 interface = {}
 
+---@class PackedSimpleItem
+---@field class "SimpleItem"
+---@field proto FPPackedPrototype
+
 -- Helper functions to pack up Floor or Line products, byproducts and ingredients
+---@param items SimpleItem[]
+---@return FPPackedPrototype[]
 function interface.pack_items(items)
     local packed_items = {}
 
@@ -16,6 +22,8 @@ end
 
 
 -- ** MAIN **
+---@param player_index PlayerIndex
+---@return PackedFactory?
 local function export_current_factory(player_index)
     local player = game.get_player(player_index)
     if not player then return nil end
@@ -23,12 +31,14 @@ local function export_current_factory(player_index)
     local player_table = lib.globals.player_table(player)
     if not player_table then return nil end
 
-    local current_factory = lib.context.get(player, "Factory")
+    local current_factory = lib.context.get(player, "Factory")  --[[@as Factory]]
     if not current_factory then return nil end
 
     return current_factory:pack(true)
 end
 
+---@param player_index PlayerIndex
+---@return table?
 local function export_preferences(player_index)
     local player = game.get_player(player_index)
     if not player then return nil end
@@ -39,6 +49,9 @@ local function export_preferences(player_index)
     return lib.unpack_export_string(lib.preferences.export(player))
 end
 
+---@param player_index PlayerIndex
+---@param export_table table
+---@return string | true | nil
 local function import_preferences(player_index, export_table)
     local player = game.get_player(player_index)
     if not player then return nil end

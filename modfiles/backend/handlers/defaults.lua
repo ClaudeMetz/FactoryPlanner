@@ -22,7 +22,7 @@ defaults = {}
 ---@field quality string
 ---@field amount integer
 
----@alias PrototypeDefaultWithCategory { [integer]: DefaultPrototype }
+---@alias PrototypeDefaultWithCategory table<integer, DefaultPrototype>
 ---@alias AnyPrototypeDefault DefaultPrototype | PrototypeDefaultWithCategory
 
 -- Returns the default prototype for the given type, incorporating the category, if given
@@ -33,7 +33,11 @@ defaults = {}
 function defaults.get(player, data_type, category)
     local default = lib.globals.preferences(player).default_prototypes[data_type]
     local category_table = prototyper.util.find(data_type, nil, category)
-    return (category_table == nil) and default or default[category_table.id]
+    if category_table == nil then
+        return default --[[@as DefaultPrototype]]
+    else
+        return default[category_table.id]
+    end
 end
 
 -- Sets the default for the given type, incorporating the category if given
@@ -93,8 +97,8 @@ function defaults.equals_default(player, data_type, object, category)
     local default = defaults.get(player, data_type, category)
     local same_proto = (default.proto.name == object.proto.name)
     local same_quality, same_modules = true, true
-    if object.quality_proto then same_quality = (default.quality.id == object.quality_proto.id) end
-    if object.module_set then same_modules = object.module_set:equals_default(default.modules) end
+    if object.quality_proto then same_quality = (default.quality--[[@cast -nil]].id == object.quality_proto.id) end
+    if object.module_set then same_modules = object.module_set:equals_default(default.modules--[[@cast -nil]]) end
     return same_proto and same_quality and same_modules
 end
 
@@ -154,14 +158,14 @@ local function migrate_prototype_default(data_type, fallback, default, category)
     if not equivalent_proto then return fallback end  -- full reset if prototype went missing
 
     local migrated_default = {
-        proto = equivalent_proto,
+        proto = equivalent_proto  --[[@as AnyFPPrototype]],
         quality = nil,  -- only migrated if relevant for this data_type
         modules = nil,  -- only migrated to anything if previously present
         beacon_amount = default.beacon_amount or fallback.beacon_amount  -- could be nil
     }
 
     if prototypes_with_quality[data_type] then
-        local equivalent_quality = prototyper.util.find("qualities", default.quality.name, nil)
+        local equivalent_quality = prototyper.util.find("qualities", default.quality--[[@cast -nil]].name, nil)
         migrated_default.quality = equivalent_quality or fallback.quality
     end
 
@@ -201,9 +205,11 @@ function defaults.migrate(player_table)
         if default == nil then goto skip end
 
         if not has_categories then
+            ---@cast fallback DefaultPrototype
+            ---@cast default DefaultPrototype
             preference_defaults[data_type] = migrate_prototype_default(data_type, fallback, default, nil)
         else
-            local default_map = {}
+            local default_map = {}  ---@type table<string, DefaultPrototype>
             for _, default_data in pairs(default) do
                 local category_name = default_data.proto[category_designations[data_type]]  ---@type string
                 default_map[category_name] = default_data
@@ -212,8 +218,9 @@ function defaults.migrate(player_table)
             local new_defaults = {}
             for _, category in pairs(storage.prototypes[data_type]) do
                 local previous_default = default_map[category.name]
-                new_defaults[category.id] = (not previous_default) and fallback[category.id]
-                    or migrate_prototype_default(data_type, fallback[category.id], previous_default, category.name)
+                local fallback_proto = fallback[category.id]  --[[@as DefaultPrototype]]
+                new_defaults[category.id] = (not previous_default) and fallback_proto
+                    or migrate_prototype_default(data_type, fallback_proto, previous_default, category.name)
             end
             preference_defaults[data_type] = new_defaults
         end
@@ -230,7 +237,7 @@ function defaults.refresh_preferences(previous)
     for name, _ in pairs(category_designations) do
         preference_defaults[name] = previous and previous[name] or defaults.get_fallback(name)
     end
-    return preference_defaults
+    return preference_defaults  --[[@as DefaultPrototypesTable]]
 end
 
 
@@ -245,7 +252,7 @@ function defaults.generate_tooltip(player, data_type, category)
 
     local name_line = {"", "[img=" .. default.proto.sprite .. "] ", default.proto.localised_name}
     local proto_line = (not quality or not quality.always_show) and {"fp.tt_title", name_line}
-        or {"fp.tt_title_with_note", name_line, quality.rich_text}
+        or {"fp.tt_title_with_note", name_line, quality--[[@cast -nil]].rich_text}
     table.insert(tooltip, proto_line)
     if default.beacon_amount then table.insert(tooltip, " x" .. default.beacon_amount) end
 
@@ -264,9 +271,10 @@ end
 
 ---@param player LuaPlayer
 ---@param data_type DataType
----@param category (integer | string)?
----@return DefaultPrototype
+---@param category_id (integer | string)?
+---@return {name: string, quality: string?}
 function defaults.get_as_elem_value(player, data_type, category_id)
     local default = defaults.get(player, data_type, category_id)
-    return {name=default.proto.name, quality=default.quality.name}
+    local quality_name = (default.quality) and default.quality.name or nil
+    return {name=default.proto.name, quality=quality_name}
 end
