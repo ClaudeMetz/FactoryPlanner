@@ -126,7 +126,7 @@ end
 local function handle_item_add(player, tags, event)
     if event.shift then  -- paste
         local factory = lib.context.get(player, "Factory")  --[[@as Factory]]
-        local dummy_product = TLProduct.initDummy()
+        local dummy_product = TLProduct.init()
         lib.clipboard.dummy_paste(player, dummy_product, factory)
     else
         lib.gui.open_dialog(player, {dialog="picker", modal_data={item_id=nil, item_category=tags.item_category}})

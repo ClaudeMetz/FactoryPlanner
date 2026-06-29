@@ -14,36 +14,23 @@ local TLProduct = Object.methods()
 TLProduct.__index = TLProduct
 script.register_metatable("TLProduct", TLProduct)
 
----@param proto FPItemPrototype | FPPackedPrototype
+---@param proto (FPItemPrototype | FPPackedPrototype)?
 ---@return TLProduct
 local function init(proto)
+    local this_proto = proto or {
+        name="",
+        category="item",
+        data_type="items",
+        simplified=true
+    }
     local object = Object.init({
-        proto = proto,
+        proto = this_proto,
         defined_by = "amount",
         required_amount = 0,  -- always per second
         belt_proto = nil,
 
         amount = 0  -- the amount satisfied by the solver
     }, "TLProduct", TLProduct)  --[[@as TLProduct]]
-    return object
-end
-
-
----@return TLProduct
-local function initDummy()
-    local object = Object.init({
-        proto = {
-            name="",
-            category="item",
-            data_type="items",
-            simplified=true
-        }, --[[@as FPPackedPrototype]]
-        defined_by = "amount",
-        required_amount = 0,
-        belt_proto = nil,
-        amount = 0,
-        dummy = true
-    }, "TLProduct", TLProduct) --[[@as TLProduct]]
     return object
 end
 
@@ -164,4 +151,4 @@ function TLProduct:repair(player)
     return false
 end
 
-return {init = init, initDummy = initDummy, unpack = unpack}
+return {init = init, unpack = unpack}

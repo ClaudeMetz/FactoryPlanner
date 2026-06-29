@@ -32,22 +32,6 @@ local function init(parent)
 end
 
 
----@param parent ModuledObject?
----@return ModuleSet
-local function initDummy(parent)
-    local object = Object.init({
-        first = nil,
-
-        module_count = 0,
-        module_limit = 0,
-        empty_slots = 0,
-
-        parent = parent
-    }, "ModuleSet", ModuleSet)  --[[@as ModuleSet]]
-    return object
-end
-
-
 function ModuleSet:index()
     OBJECT_INDEX[self.id] = self
     for module in self:iterator() do module:index() end
@@ -349,4 +333,4 @@ function ModuleSet:repair(player)
     return self.valid
 end
 
-return {init = init, initDummy = initDummy, unpack = unpack}
+return {init = init, unpack = unpack}

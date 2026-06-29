@@ -20,14 +20,21 @@ local Recipe = Object.methods()
 Recipe.__index = Recipe
 script.register_metatable("Recipe", Recipe)
 
----@param proto FPRecipePrototype | FPPackedPrototype
----@param production_type RecipeProductionType
 ---@param parent Line
+---@param proto (FPRecipePrototype | FPPackedPrototype)?
+---@param production_type RecipeProductionType?
 ---@return Recipe
-local function init(proto, production_type, parent)
+local function init(parent, proto, production_type)
+    local this_proto = proto or {
+            name="",
+            category="recipe",
+            data_type="recipes",
+            simplified=true
+        }
+    local this_production_type = production_type or "produce"
     local object = Object.init({
-        proto = proto,
-        production_type = production_type,
+        proto = this_proto,
+        production_type = this_production_type,
         priority_product = nil,
         temperatures = {},
 
@@ -37,32 +44,9 @@ local function init(proto, production_type, parent)
         parent = parent
     }, "Recipe", Recipe)  --[[@as Recipe]]
 
-    if not proto.simplified then
+    if not this_proto.simplified then
         object:build_temperatures_data()
     end
-
-    return object
-end
-
-
----@param parent Line?
----@return Recipe
-local function initDummy(parent)
-    local object = Object.init({
-        proto = {
-            name="",
-            category="recipe",
-            data_type="recipes",
-            simplified=true
-        }, --[[@as FPPackedPrototype]]
-        production_type = "produce",
-        priority_product = nil,
-        temperatures = {},
-
-        temperature_data = nil,
-
-        parent = parent
-    }, "Recipe", Recipe) --[[@as Recipe]]
 
     return object
 end
@@ -169,7 +153,7 @@ end
 ---@return Recipe Recipe
 local function unpack(packed_self, parent)
     -- Prototypes are unpacked at validate
-    local unpacked_self = init(packed_self.proto, packed_self.production_type, parent)
+    local unpacked_self = init(parent, packed_self.proto, packed_self.production_type)
     unpacked_self.priority_product = packed_self.priority_product
 
     -- Will be automatically unpacked by the validation process
@@ -232,4 +216,4 @@ function Recipe:repair(player)
     return self.valid
 end
 
-return {init = init, initDummy=initDummy, unpack = unpack}
+return {init = init, unpack = unpack}

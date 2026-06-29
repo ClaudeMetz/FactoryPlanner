@@ -18,12 +18,18 @@ local Machine = Object.methods()
 Machine.__index = Machine
 script.register_metatable("Machine", Machine)
 
----@param proto FPMachinePrototype | FPPackedPrototype
 ---@param parent Line
+---@param proto (FPMachinePrototype | FPPackedPrototype)?
 ---@return Machine
-local function init(proto, parent)
+local function init(parent, proto)
+    local this_proto = proto or {
+        name = "",
+        category = "machine",
+        data_type = "machines",
+        simplified = true
+    }
     local object = Object.init({
-        proto = proto,
+        proto = this_proto,
         quality_proto = defaults.get_fallback("qualities").proto,
         limit = nil,
         force_limit = true,  -- ignored if limit is not set
@@ -38,34 +44,6 @@ local function init(proto, parent)
     }, "Machine", Machine)  --[[@as Machine]]
 
     object.module_set = ModuleSet.init(object)
-    return object
-end
-
-
----@param parent Line?
----@return Machine
-local function initDummy(parent)
-    local object = Object.init({
-        proto = {
-            name = "",
-            category = "machine",
-            data_type = "machines",
-            simplified = true
-        }, --[[@as FPPackedPrototype]]
-        quality_proto = defaults.get_fallback("qualities").proto,
-        limit = nil,
-        force_limit = true,
-        fuel = nil,
-        module_set = nil,
-
-        amount = 0,
-        total_effects = nil,
-        effects_tooltip = "",
-
-        parent = parent,
-        dummy = true
-    }, "Machine", Machine)  --[[@as Machine]]
-    object.module_set = ModuleSet.initDummy(object)
     return object
 end
 
@@ -98,7 +76,7 @@ function Machine:normalize_fuel(player)
 
     if self.fuel == nil then  -- add a fuel for this machine if it doesn't have one here
         local default_fuel_proto = defaults.get(player, "fuels", burner.combined_category).proto --[[@as FPFuelPrototype]]
-        self.fuel = Fuel.init(default_fuel_proto, self)  -- builds temperature_data implicitly
+        self.fuel = Fuel.init(self, default_fuel_proto)  -- builds temperature_data implicitly
         self.fuel:apply_temperature_default(player)
     else  -- make sure the fuel is of the right combined category
         if burner.combined_category ~= self.fuel.proto.category then
@@ -291,7 +269,7 @@ end
 ---@return Machine machine
 local function unpack(packed_self, parent)
     -- Prototypes are unpacked at validate
-    local unpacked_self = init(packed_self.proto, parent)
+    local unpacked_self = init(parent, packed_self.proto)
     unpacked_self.quality_proto = packed_self.quality_proto
 
     unpacked_self.limit = packed_self.limit
@@ -348,8 +326,15 @@ function Machine:validate()
 
     if self.valid then  -- only makes sense if the machine is valid
         if self.proto.burner and not self.fuel then
-            -- If this machine changed to require fuel, add this dummy
-            self.fuel = Fuel.initDummy(self.proto.burner.combined_category, self)
+            -- If this machine changed to require fuel, add an unspecified fuel of the corresponding category.
+            -- It will be assigned a valid fuel ingredient in the validate below
+            local fuel_proto = {
+                name = "",
+                category = self.proto.burner.combined_category,
+                data_type = "fuels",
+                simplified = true
+            }
+            self.fuel = Fuel.init(self, fuel_proto)
         end
         if self.fuel then self.valid = self.fuel:validate() and self.valid end
     end
@@ -390,4 +375,4 @@ function Machine:repair(player)
     return self.valid
 end
 
-return {init = init, initDummy=initDummy, unpack = unpack}
+return {init = init, unpack = unpack}

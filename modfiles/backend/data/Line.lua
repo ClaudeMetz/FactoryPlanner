@@ -26,8 +26,8 @@ local Line = Object.methods()
 Line.__index = Line
 script.register_metatable("Line", Line)
 
----@param recipe_proto FPRecipePrototype
----@param production_type RecipeProductionType
+---@param recipe_proto FPRecipePrototype?
+---@param production_type RecipeProductionType?
 ---@return Line
 local function init(recipe_proto, production_type)
     local object = Object.init({
@@ -49,34 +49,9 @@ local function init(recipe_proto, production_type)
         production_ratio = 0
     }, "Line", Line)  --[[@as Line]]
 
-    object.recipe = Recipe.init(recipe_proto, production_type, object)
-
-    return object
-end
-
-
----@return Line
-local function initDummy()
-    local object = Object.init({
-        recipe = nil, -- initialized below
-        done = false,
-        active = false,
-        percentage = 100,
-        machine = nil,
-        beacon = nil,
-        comment = "",
-
-        total_effects = nil,
-        effects_tooltip = "",
-        surface_compatibility = nil, -- determined on demand
-
-        products = {},
-        byproducts = {},
-        ingredients = {},
-        production_ratio = 0
-    }, "Line", Line) --[[@as Line]]
-
-    recipe = Recipe.initDummy(object)
+    if recipe_proto then
+        object.recipe = Recipe.init(object, recipe_proto, production_type)
+    end
 
     return object
 end
@@ -108,7 +83,7 @@ end
 ---@param proto FPMachinePrototype
 function Line:change_machine_to_proto(player, proto)
     if not self.machine then
-        self.machine = Machine.init(proto, self)
+        self.machine = Machine.init(self, proto)
         self.machine:summarize_effects()
     else
         self.machine.proto = proto
@@ -205,7 +180,7 @@ function Line:setup_beacon(player)
     local beacon_defaults = defaults.get(player, "beacons", nil)
     if beacon_defaults.modules and beacon_defaults.beacon_amount ~= 0 then
         local proto = beacon_defaults.proto  --[[@as FPBeaconPrototype]]
-        local blank_beacon = Beacon.init(proto, self)
+        local blank_beacon = Beacon.init(self, proto)
         self:set_beacon(blank_beacon)
         blank_beacon:reset(player)
     end
@@ -344,7 +319,7 @@ end
 ---@param packed_self PackedLine
 ---@return Line line
 local function unpack(packed_self)
-    local unpacked_self = initDummy()  -- initialize empty, overwrite after
+    local unpacked_self = init()  -- initialize empty, overwrite after
     unpacked_self.recipe = Recipe.unpack(packed_self.recipe, unpacked_self)  --[[@as Recipe]]
     unpacked_self.done = packed_self.done
     unpacked_self.active = packed_self.active
@@ -391,4 +366,4 @@ function Line:repair(player)
     return self.valid
 end
 
-return {init = init, initDummy = initDummy, unpack = unpack}
+return {init = init, unpack = unpack}
