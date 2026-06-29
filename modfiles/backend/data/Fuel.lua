@@ -12,12 +12,18 @@ local Fuel = Object.methods()
 Fuel.__index = Fuel
 script.register_metatable("Fuel", Fuel)
 
----@param proto FPFuelPrototype | FPPackedPrototype
 ---@param parent Machine
+---@param proto (FPFuelPrototype | FPPackedPrototype)?
 ---@return Fuel
-local function init(proto, parent)
+local function init(parent, proto)
+    local this_proto = proto or {
+        name = "",
+        category = "fuel",
+        data_type = "fuels",
+        simplified = true
+    }
     local object = Object.init({
-        proto = proto,
+        proto = this_proto,
         temperature = nil,
 
         temperature_data = nil,
@@ -25,37 +31,14 @@ local function init(proto, parent)
         amount = 0,
         satisfied_amount = 0,
 
-        parent = parent
+        parent = parent -- could be nil
     }, "Fuel", Fuel)  --[[@as Fuel]]
 
-    if proto.simplified ~= true then object:build_temperature_data() end
+    if not this_proto.simplified then object:build_temperature_data() end
 
     return object
 end
 
----@param category string?
----@param parent Machine?
----@return Fuel
-local function initDummy(category, parent)
-    local object = Object.init({
-        proto = {
-            name = "",
-            category = (category ~= nil) and category or "fuel",
-            data_type = "fuels",
-            simplified = true
-        }, --[[@as FPPackedPrototype]]
-
-        temperature = nil,
-        temperature_data = nil,
-
-        amount = 0,
-        satisfied_amount = 0,
-
-        parent = parent,
-        dummy = true
-    }, "Fuel", Fuel) --[[@as Fuel]]
-    return object
-end
 
 function Fuel:index()
     OBJECT_INDEX[self.id] = self
@@ -138,7 +121,7 @@ end
 ---@return Fuel machine
 local function unpack(packed_self, parent)
     -- Prototypes are unpacked at validate
-    local unpacked_self = init(packed_self.proto, parent)
+    local unpacked_self = init(parent, packed_self.proto)
 
     unpacked_self.temperature = packed_self.temperature  -- will be migrated through validation
     unpacked_self.amount = (packed_self.amount ~= nil) and packed_self.amount or 0  -- only used for paste
@@ -207,4 +190,4 @@ function Fuel:repair(player)
     return false  -- the parent machine will try to replace it with another fuel of the same category
 end
 
-return {init = init, initDummy=initDummy, unpack = unpack}
+return {init = init, unpack = unpack}

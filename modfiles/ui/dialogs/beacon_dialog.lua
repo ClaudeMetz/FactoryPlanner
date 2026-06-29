@@ -204,7 +204,7 @@ local function open_beacon_dialog(player, modal_data)
         modal_data.object = line.beacon
     else
         local default_beacon = defaults.get(player, "beacons")
-        modal_data.object = Beacon.init(default_beacon.proto --[[@as FPBeaconPrototype]], line)
+        modal_data.object = Beacon.init(line, default_beacon.proto --[[@as FPBeaconPrototype]])
         modal_data.object.quality_proto = default_beacon.quality
         modal_data.object.amount = default_beacon.beacon_amount or 0
         if modal_data.object:is_mono_beacon() then modal_data.object.amount = 1 end

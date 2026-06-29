@@ -14,36 +14,23 @@ local Product = Object.methods()
 Product.__index = Product
 script.register_metatable("Product", Product)
 
----@param proto FPItemPrototype | FPPackedPrototype
+---@param proto (FPItemPrototype | FPPackedPrototype)?
 ---@return Product
 local function init(proto)
+    local this_proto = proto or {
+        name="",
+        category="item",
+        data_type="items",
+        simplified=true
+    }
     local object = Object.init({
-        proto = proto,
+        proto = this_proto,
         defined_by = "amount",
         required_amount = 0,  -- always per second
         belt_proto = nil,
 
         amount = 0  -- the amount satisfied by the solver
     }, "Product", Product)  --[[@as Product]]
-    return object
-end
-
-
----@return Product
-local function initDummy()
-    local object = Object.init({
-        proto = {
-            name="",
-            category="item",
-            data_type="items",
-            simplified=true
-        }, --[[@as FPPackedPrototype]]
-        defined_by = "amount",
-        required_amount = 0,
-        belt_proto = nil,
-        amount = 0,
-        dummy = true
-    }, "Product", Product) --[[@as Product]]
     return object
 end
 
@@ -160,4 +147,4 @@ function Product:repair(player)
     return false
 end
 
-return {init = init, initDummy = initDummy, unpack = unpack}
+return {init = init, unpack = unpack}

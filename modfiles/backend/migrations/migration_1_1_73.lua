@@ -95,11 +95,11 @@ function migration.player_table(player_table)
                         new_line.active = line.active
                         new_line.percentage = line.percentage
 
-                        local new_machine = Machine.init(line.machine.proto, new_line)
+                        local new_machine = Machine.init(new_line, line.machine.proto)
                         new_machine.limit = line.machine.limit
                         new_machine.force_limit = line.machine.force_limit
                         if line.machine.fuel then
-                            new_machine.fuel = Fuel.init(line.machine.fuel.proto, new_machine)
+                            new_machine.fuel = Fuel.init(new_machine, line.machine.fuel.proto)
                         end
                         local new_module_set = ModuleSet.init(new_machine)
                         for _, module in pairs(line.machine.module_set.modules.datasets) do
@@ -110,7 +110,7 @@ function migration.player_table(player_table)
                         new_line.machine = new_machine
 
                         if line.beacon then
-                            local new_beacon = Beacon.init(line.beacon.proto, new_line)
+                            local new_beacon = Beacon.init(new_liner, line.beacon.proto)
                             new_beacon.amount = line.beacon.amount
                             new_beacon.total_amount = line.beacon.total_amount
                             local new_module_set = ModuleSet.init(new_beacon)
