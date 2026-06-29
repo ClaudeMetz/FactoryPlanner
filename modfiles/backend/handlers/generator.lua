@@ -1254,7 +1254,7 @@ end
 ---@class FPModulePrototype: FPPrototypeWithCategory
 ---@field data_type "modules"
 ---@field category string
----@field tier uint
+---@field tier uint32
 ---@field effects IntegerModuleEffects
 ---@field quality_multipliers { [ModuleEffectName]: float }
 
@@ -1486,7 +1486,7 @@ end
 ---@field data_type "qualities"
 ---@field rich_text LocalisedString
 ---@field always_show boolean
----@field level uint
+---@field level uint32
 ---@field default_multiplier double
 ---@field beacon_power_usage_multiplier double
 ---@field mining_drill_resource_drain_multiplier double

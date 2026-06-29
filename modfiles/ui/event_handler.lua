@@ -60,9 +60,9 @@ end)
 
 ---@class ActionTable
 ---@field handler function
----@field timeout Tick
+---@field timeout MapTick
 ---@field actions ActionDetails
----@field shortcuts { string: ActionDetails }
+---@field shortcuts table<string, ActionDetails>
 ---@field tooltip LocalisedString
 
 ---@class ActionDetails
@@ -109,14 +109,22 @@ local mouse_click_map = {
     [defines.mouse_button_type.right] = "right",
     [defines.mouse_button_type.middle] = "middle"
 }
+
+---@param event EventData.on_gui_click
+---@return string
 local function convert_click_to_string(event)
-    local modifier_click = mouse_click_map[event.button]
+    local modifier_click = mouse_click_map[event.button]  --[[@type string]]
     if event.shift then modifier_click = "shift-" .. modifier_click end
     if event.alt then modifier_click = "alt-" .. modifier_click end
     if event.control then modifier_click = "control-" .. modifier_click end
     return modifier_click
 end
 
+---@class GUIEventData: EventData
+---@field player_index PlayerIndex
+---@field element LuaGuiElement?
+
+---@param event GUIEventData
 local function handle_gui_event(event)
     if not event.element then return end
 
@@ -137,8 +145,8 @@ local function handle_gui_event(event)
     if tags.mod ~= "fp" then return end
 
     -- The event table actually contains its identifier, not its name
-    local event_name = gui_identifier_map[event.name]
-    local action_name = tags[event_name]  -- could be nil
+    local event_name = gui_identifier_map[event.name]  --[[@as string]]
+    local action_name = tags[event_name]  --[[@as string?]]
 
     -- If a special handler is set, it needs to return true before proceeding with the registered handlers
     local special_handler = special_gui_handlers[event_name]
@@ -154,11 +162,12 @@ local function handle_gui_event(event)
 
     -- Special modifier handling for on_gui_click if configured
     if event_name == "on_gui_click" and action_table.actions then
-        local click = convert_click_to_string(event)
+        local click_event = event  --[[@as EventData.on_gui_click]]
+        local click = convert_click_to_string(click_event)
 
         if click == "right" then
             modal_dialog.open_context_menu(player, tags, action_name,
-                action_table.actions, event.cursor_display_location)
+                action_table.actions, click_event.cursor_display_location)
         else
             local modifier_action = action_table.shortcuts[click]
             if not modifier_action then return end  -- meaning the used modifiers do not have an associated action
@@ -243,8 +252,13 @@ for _, listener in pairs(event_listeners) do
     end
 end
 
+---@class PlayerEventData: EventData
+---@field player_index PlayerIndex
+---@field input_name string?
+
+---@param event PlayerEventData
 local function handle_player_event(event)
-    local event_name = event.input_name or event.name -- also handles keyboard shortcuts
+    local event_name = event.input_name or event.name
     local string_name = player_identifier_map[event_name] or event_name
     local event_handlers = player_event_cache[string_name]
     if not event_handlers then return end  -- make sure the given event is even handled
@@ -296,6 +310,7 @@ for _, listener in pairs(event_listeners) do
     end
 end
 
+---@param event EventData
 local function handle_game_event(event)
     local event_name = game_identifier_map[event.name]
     local event_handlers = game_event_cache[event_name]
@@ -310,8 +325,15 @@ for event_id, _ in pairs(game_identifier_map) do script.on_event(event_id, handl
 
 
 -- ** DIALOG EVENTS **
+---@class ModalDialogEvent
+---@field dialog string
+---@field metadata fun(modal_data: ModalData): ModalDialogSettings
+---@field early_abort_check fun(player: LuaPlayer, modal_data: ModalData): boolean
+---@field open fun(player: LuaPlayer, modal_data: ModalData): nil
+---@field close fun(player: LuaPlayer, modal_data: ModalData): nil
+
 -- These custom events handle opening and closing modal dialogs
-local dialog_event_cache = {}
+local dialog_event_cache = {}  ---@type table<string, ModalDialogEvent>
 -- Compile the list of dialog actions
 for _, listener in pairs(event_listeners) do
     if listener.dialog then
@@ -319,6 +341,8 @@ for _, listener in pairs(event_listeners) do
     end
 end
 
+---@param base any
+---@param overrides any
 local function apply_metadata_overrides(base, overrides)
     for k, v in pairs(overrides) do
         local base_v = base[k]

@@ -14,7 +14,7 @@ function _actions.current_limitations(player)
     }
 end
 
----@param action_limitations ActionLimitations[]
+---@param action_limitations ActionLimitations
 ---@param active_limitations ActiveLimitations
 ---@return boolean
 function _actions.allowed(action_limitations, active_limitations)
@@ -29,8 +29,8 @@ end
 -- Returns whether rate limiting is active for the given action, stopping it from proceeding
 -- This is essentially to prevent duplicate commands in quick succession, enabled by lag
 ---@param player LuaPlayer
----@param tick Tick
----@param action_name string
+---@param tick MapTick
+---@param action_name string | defines.events
 ---@param timeout integer
 ---@return boolean
 function _actions.rate_limited(player, tick, action_name, timeout)

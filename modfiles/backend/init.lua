@@ -20,15 +20,15 @@ local dev_export_string = "eNrdVkuPnDAM/i85DyMew/PYQ0+tVKnHaoRCMLNRE8KGsO1oxH+vA
 ---@field last_selected_picker_group integer?
 ---@field tooltips table
 ---@field modal_dialog_type ModalDialogType?
----@field modal_data table?
+---@field modal_data ModalData?
 ---@field context_menu LuaGuiElement?
 ---@field active_selector string?
 ---@field compact_view boolean
 ---@field districts_view boolean
 
 ---@class LastAction
----@field action_name string
----@field tick Tick
+---@field action_name string | defines.events
+---@field tick MapTick
 
 ---@param player_table PlayerTable
 local function reset_ui_state(player_table)
@@ -60,12 +60,12 @@ end
 ---@field ui_state UIStateTable
 ---@field realm Realm
 ---@field context ContextTable
----@field translation_tables { [string]: TranslatedDictionary }?
+---@field translation_tables table<string, flib.TranslatedDictionary>?
 ---@field clipboard ClipboardEntry?
 
 ---@param player LuaPlayer
 local function player_init(player)
-    storage.players[player.index] = {}  --[[@as table]]
+    storage.players[player.index] = {}  ---@diagnostic disable-line: missing-fields
     local player_table = storage.players[player.index]
 
     player_table.realm = Realm.init()
@@ -84,7 +84,7 @@ local function player_init(player)
     if DEVELOPER_MODE then
         lib.porter.add_factories(player, dev_export_string)
 
-        player.force.research_all_technologies()
+        player.force--[[@as LuaForce]].research_all_technologies()
         player.clear_recipe_notifications()
         player.cheat_mode = true
     end
@@ -117,6 +117,7 @@ local function generate_object_index()
     end
 end
 
+---@param fake_load boolean?
 local function run_on_load(fake_load)
     if not fake_load then
         if script.active_mods["factoryplanner"] ~= storage.installed_mods["factoryplanner"] then
@@ -133,11 +134,11 @@ end
 
 
 ---@class GlobalTable
----@field players { [PlayerIndex]: PlayerTable }
+---@field players table<PlayerIndex, PlayerTable>
 ---@field prototypes PrototypeLists
 ---@field integrations IntegrationsTable
 ---@field next_object_ID integer
----@field nth_tick_events { [Tick]: NthTickEvent }
+---@field nth_tick_events table<MapTick, NthTickEvent>
 ---@field installed_mods ModToVersion
 storage = {}  -- just for the type checker, doesn't do anything
 
@@ -153,13 +154,16 @@ local function global_init()
     storage.next_object_ID = 1  -- Counter used for assigning incrementing IDs to all objects
     storage.nth_tick_events = {}  -- Save metadata about currently registered on_nth_tick events
 
-    storage.prototypes = {}  -- Table containing all relevant prototypes indexed by ID
-    storage.integrations = {}  -- Table containing all integration data collected from other mods
+    -- Table containing all relevant prototypes indexed by ID
+    storage.prototypes = {}  ---@diagnostic disable-line: missing-fields
+    -- Table containing all integration data collected from other mods
+    storage.integrations = {}  ---@diagnostic disable-line: missing-fields
     prototyper.build()  -- Generate all relevant prototypes and save them in storage
     run_on_load(true)  -- Run loader which creates useful indexes of prototype data
     generate_object_index()  -- This just initializes the OBJECT_INDEX variable
 
-    storage.installed_mods = script.active_mods  -- Retain current modset to detect mod changes for invalid factories
+    -- Retain current modset to detect mod changes for invalid factories
+    storage.installed_mods = script.active_mods  --[[@as ModToVersion]]
 
     lib.translator.on_init()  -- Initialize flib's translation module
     prototyper.util.build_translation_dictionaries()
@@ -180,8 +184,8 @@ local function handle_configuration_change()
         return
     end
 
-    storage.prototypes = {}
-    storage.integrations = {}
+    storage.prototypes = {}  ---@diagnostic disable-line: missing-fields
+    storage.integrations = {}  ---@diagnostic disable-line: missing-fields
     prototyper.build()
     run_on_load(true)
 
@@ -204,7 +208,7 @@ local function handle_configuration_change()
         end
     end
 
-    storage.installed_mods = script.active_mods
+    storage.installed_mods = script.active_mods  --[[@as ModToVersion]]
 
     lib.translator.on_configuration_changed()
     prototyper.util.build_translation_dictionaries()
@@ -255,7 +259,7 @@ listeners.player = {
 listeners.game = {
     on_player_created = (function(event)
         local player = game.get_player(event.player_index)
-        player_init(player)
+        player_init(player--[[@cast -nil]])
     end),
     on_player_removed = (function(event)
         storage.players[event.player_index] = nil
