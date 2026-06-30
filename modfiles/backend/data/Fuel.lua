@@ -18,7 +18,7 @@ script.register_metatable("Fuel", Fuel)
 local function init(parent, proto)
     local this_proto = proto or {
         name = "",
-        category = "fuel",
+        category = "",
         data_type = "fuels",
         simplified = true
     }
@@ -31,7 +31,7 @@ local function init(parent, proto)
         amount = 0,
         satisfied_amount = 0,
 
-        parent = parent -- could be nil
+        parent = parent  -- could be nil
     }, "Fuel", Fuel)  --[[@as Fuel]]
 
     if not this_proto.simplified then object:build_temperature_data() end
@@ -72,7 +72,7 @@ function Fuel:build_temperature_data()
     self.temperature_data = nil
 
     if self.proto.type == "fluid" then
-        self.temperature_data = lib.temperature.generate_data(self.proto --[[@as Ingredient.fluid]])
+        self.temperature_data = lib.temperature.generate_data(self.proto--[[@as Ingredient.fluid]])
     end
 end
 
@@ -81,7 +81,7 @@ end
 function Fuel:apply_temperature_default(player)
     if self.proto.type == "fluid" then
         self.temperature = lib.temperature.determine_applicable_default(
-            player, self.proto --[[@as Ingredient.fluid]], self.temperature_data.applicable_values)
+            player, self.proto--[[@as Ingredient.fluid]], self.temperature_data.applicable_values)
     end
 end
 
@@ -89,7 +89,7 @@ end
 ---@param object CopyableObject
 ---@return boolean success
 ---@return string? error
-function Fuel:paste(object, player)
+function Fuel:paste(object)
     if object.class == "Fuel" then
         local burner = self.parent.proto.burner
 
@@ -140,7 +140,7 @@ local function unpack(packed_self, parent)
     local unpacked_self = init(parent, packed_self.proto)
 
     unpacked_self.temperature = packed_self.temperature  -- will be migrated through validation
-    unpacked_self.amount = (packed_self.amount ~= nil) and packed_self.amount or 0  -- only used for paste
+    unpacked_self.amount = packed_self.amount or 0  -- only used for paste
 
     return unpacked_self
 end
@@ -148,51 +148,37 @@ end
 
 ---@return boolean valid
 function Fuel:validate()
-    self.proto = prototyper.util.validate_prototype_object(self.proto, "combined_category") --[[@as FPFuelPrototype | FPPackedPrototype]]
+    self.proto = prototyper.util.validate_prototype_object(self.proto, "combined_category")
+    self.valid = (not self.proto.simplified)
 
-    -- Assume valid until proven otherwise
-    self.valid = true
+    if self.valid then
+        local burner = self.parent.proto.burner
+        -- Machine being simplified or not having a burner anymore invalidates the fuel
+        self.valid = (burner ~= nil and not burner.simplified) and self.valid
 
-    -- Fuel being simplified is invalid
-    if self.proto.simplified then
-        self.valid = false
-        return self.valid
-    end
-
-    -- Machine being simplified or not having a burner anymore invalidates the fuel
-    local burner = self.parent.proto.burner
-    if burner == nil or burner.simplified == true then
-        self.valid=false
-        return self.valid
-    end
-
-    if burner.combined_category ~= self.proto.combined_category then
-        if burner.categories[self.proto.category] then
-            -- Fix the fuel if the combined category changed but it still has a compatible category
-            local proto = prototyper.util.find("fuels", self.proto.name, burner.combined_category) --[[@as FPFuelPrototype?]]
-
-            if proto ~= nil then
-                self.proto = proto
+        if self.valid and burner.combined_category ~= self.proto.combined_category then
+            if burner.categories[self.proto.category] then
+                -- Fix the fuel if the combined category changed but it still has a compatible category
+                self.proto = prototyper.util.find("fuels", self.proto.name, burner.combined_category)
             else
                 self.valid = false
-                return self.valid
             end
-        else
-            self.valid = false
-            return self.valid
         end
     end
 
     -- An invalid temperature shouldn't invalidate the fuel
-    local previous_temperature = self.temperature
-    self.temperature = nil
-    self:build_temperature_data()
+    if self.valid then
+        local previous_temperature = self.temperature
+        self.temperature = nil
 
-    if self.proto.type == "fluid" and previous_temperature ~= nil then
-        for _, temperature in pairs(self.temperature_data.applicable_values) do
-            if temperature == previous_temperature then
-                self.temperature = previous_temperature
-                break
+        self:build_temperature_data()
+
+        if self.proto.type == "fluid" and previous_temperature ~= nil then
+            for _, temperature in pairs(self.temperature_data.applicable_values) do
+                if temperature == previous_temperature then
+                    self.temperature = previous_temperature
+                    break
+                end
             end
         end
     end

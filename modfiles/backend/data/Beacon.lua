@@ -20,10 +20,9 @@ script.register_metatable("Beacon", Beacon)
 ---@return Beacon
 local function init(parent, proto)
     local this_proto = proto or {
-        name="",
-        category="beacon",
-        data_type="beacons",
-        simplified=true
+        name = "",
+        data_type = "beacons",
+        simplified = true
     }
     local object = Object.init({
         proto = this_proto,
@@ -101,7 +100,7 @@ end
 ---@return boolean
 function Beacon:allows_module(proto)
     return not self.proto.simplified and
-           lib.effects.is_compatible(self.proto --[[@as FPBeaconPrototype]], proto) and
+           lib.effects.is_compatible(self.proto--[[@as FPBeaconPrototype]], proto) and
            self.parent.machine:allows_module(proto)
 end
 
@@ -204,10 +203,10 @@ end
 
 ---@return boolean valid
 function Beacon:validate()
-    self.proto = prototyper.util.validate_prototype_object(self.proto, nil) --[[@as FPBeaconPrototype | FPPackedPrototype]]
+    self.proto = prototyper.util.validate_prototype_object(self.proto, nil)  --[[@as FPBeaconPrototype | FPPackedPrototype]]
     self.valid = (not self.proto.simplified)
 
-    self.quality_proto = prototyper.util.validate_prototype_object(self.quality_proto, nil) --[[@as FPQualityPrototype | FPPackedPrototype]]
+    self.quality_proto = prototyper.util.validate_prototype_object(self.quality_proto, nil)  --[[@as FPQualityPrototype | FPPackedPrototype]]
     self.valid = (not self.quality_proto.simplified) and self.valid
 
     -- Can't be valid with an invalid parent
@@ -234,7 +233,7 @@ function Beacon:repair(player)
     end
 
     if self.valid and self.quality_proto.simplified then
-        self.quality_proto = defaults.get_fallback("qualities").proto --[[@as FPQualityPrototype]]
+        self.quality_proto = defaults.get_fallback("qualities").proto  --[[@as FPQualityPrototype]]
     end
 
     if self.valid then

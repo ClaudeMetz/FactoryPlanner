@@ -717,7 +717,6 @@ end
 ---@field effectivity double
 ---@field categories { [string]: boolean }
 ---@field combined_category string
----@field simplified boolean?
 ---@field produces_spent_fluid boolean?
 ---@field spent_fluid SpentFluidSpecification?
 
@@ -986,25 +985,24 @@ end
 
 ---@class FPFuelPrototype: FPPrototypeWithCategory
 ---@field data_type "fuels"
----@field type "item" | "fluid"
----@field category string
 ---@field combined_category string
 ---@field elem_type ElemType
 ---@field fuel_value float
----@field stack_size uint?
----@field weight double?
 ---@field emissions_multiplier double
----@field burnt_result string?
----@field spent_fluid SpentFluidSpecification?
 
 ---@class FPItemFuelPrototype: FPFuelPrototype
 ---@field type "item"
+---@field category string
+---@field burnt_result string?
+---@field stack_size uint?
+---@field weight double?
 
 ---@class FPFluidFuelPrototype: FPFuelPrototype
 ---@field type "fluid"
 ---@field category "fluid-fuel"
 ---@field minimum_temperature float?
 ---@field maximum_temperature float?
+---@field spent_fluid SpentFluidSpecification?
 
 ---@return NamedPrototypesWithCategory<FPFuelPrototype>
 function generator.fuels.generate()
@@ -1029,14 +1027,11 @@ function generator.fuels.generate()
                 category = proto.fuel_category,
                 combined_category = nil,  -- set below
                 fuel_value = proto.fuel_value,
-                minimum_temperature = nil,  -- fluid-only
-                maximum_temperature = nil,  -- fluid-only
+                emissions_multiplier = proto.fuel_emissions_multiplier,
                 stack_size = proto.stack_size,
                 weight = proto.weight,
-                emissions_multiplier = proto.fuel_emissions_multiplier,
-                burnt_result = (proto.burnt_result) and proto.burnt_result.name or nil,
+                burnt_result = (proto.burnt_result) and proto.burnt_result.name or nil
                 -- burnt_result item not explicitly added as FPItemPrototype, relies on mod to use it elsewhere
-                spent_fluid = nil  -- fluid-only
             }
             fuel_categories[fuel.category] = fuel_categories[fuel.category] or {}
             table.insert(fuel_categories[fuel.category], fuel)
@@ -1057,12 +1052,9 @@ function generator.fuels.generate()
                 category = "fluid-fuel",
                 combined_category = nil,  -- set below
                 fuel_value = proto.fuel_value,
+                emissions_multiplier = proto.emissions_multiplier,
                 minimum_temperature = nil,  -- unbounded for now
                 maximum_temperature = nil,  -- unbounded for now
-                stack_size = nil,  -- item-only
-                weight = nil,  -- item-only
-                emissions_multiplier = proto.emissions_multiplier,
-                burnt_result = nil,  -- item-only
                 spent_fluid = proto.spent_fluid  -- can be nil
                 -- spent_fluid not explicitly added as FPItemPrototype, relies on mod to use it elsewhere
             }

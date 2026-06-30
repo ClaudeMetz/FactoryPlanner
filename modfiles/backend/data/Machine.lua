@@ -24,7 +24,7 @@ script.register_metatable("Machine", Machine)
 local function init(parent, proto)
     local this_proto = proto or {
         name = "",
-        category = "machine",
+        category = "",
         data_type = "machines",
         simplified = true
     }
@@ -67,23 +67,17 @@ function Machine:normalize_fuel(player)
     -- no need to continue if this machine doesn't have a burner
 
     local burner = self.proto.burner
-
-    --- Sanity Check
-    if burner == nil then self.fuel = nil return end
-
     -- Check if fuel has a valid category for this machine, replace otherwise
     if self.fuel and not burner.categories[self.fuel.proto.category] then self.fuel = nil end
 
     if self.fuel == nil then  -- add a fuel for this machine if it doesn't have one here
-        local default_fuel_proto = defaults.get(player, "fuels", burner.combined_category).proto --[[@as FPFuelPrototype]]
+        local default_fuel_proto = defaults.get(player, "fuels", burner.combined_category).proto  --[[@as FPFuelPrototype]]
         self.fuel = Fuel.init(self, default_fuel_proto)  -- builds temperature_data implicitly
         self.fuel:apply_temperature_default(player)
     else  -- make sure the fuel is of the right combined category
         if burner.combined_category ~= self.fuel.proto.category then
-            local proto = prototyper.util.find("fuels", self.fuel.proto.name, burner.combined_category) --[[@as FPFuelPrototype?]]
-            if proto ~= nil then
-                self.fuel:set_proto(proto, player)
-            end
+            local proto = prototyper.util.find("fuels", self.fuel.proto.name, burner.combined_category)  --[[@as FPFuelPrototype]]
+            self.fuel:set_proto(proto, player)
         end
     end
 end
@@ -176,12 +170,10 @@ end
 function Machine:compile_fuel_filter()
     local compatible_fuels = {}
 
-    local fuel_category = prototyper.util.find("fuels", nil, self.proto.burner.combined_category) --[[@as NamedCategory?]]
+    local fuel_category = prototyper.util.find("fuels", nil, self.proto.burner.combined_category) --[[@as NamedCategory]]
 
-    if fuel_category ~= nil then
-        for _, fuel_proto in pairs(fuel_category.members) do
-            table.insert(compatible_fuels, fuel_proto.name)
-        end
+    for _, fuel_proto in pairs(fuel_category.members) do
+        table.insert(compatible_fuels, fuel_proto.name)
     end
 
     return {{filter="name", name=compatible_fuels}}
@@ -208,7 +200,7 @@ end
 ---@return string? error
 function Machine:paste(object, player)
     if object.class == "Machine" then
-        local corresponding_proto = prototyper.util.find("machines", object.proto.name, self.proto.combined_category) --[[@as FPMachinePrototype?]]
+        local corresponding_proto = prototyper.util.find("machines", object.proto.name, self.proto.combined_category)   --[[@as FPMachinePrototype?]]
 
         if corresponding_proto == nil or not self.parent:is_machine_compatible(corresponding_proto) then
             return false, "incompatible"
@@ -286,7 +278,7 @@ function Machine:clone()
 
     -- Copy these over so we don't need to run the solver
     clone.amount = self.amount
-
+    clone.recipe_effects = self.recipe_effects
     if self.fuel then
         clone.fuel.amount = self.fuel.amount
         clone.fuel.satisfied_amount = self.fuel.satisfied_amount
@@ -301,19 +293,19 @@ end
 function Machine:validate()
     local recipe_category = self.parent.recipe.proto.combined_category
     if recipe_category ~= self.proto.combined_category then
-        local corresponding_proto = prototyper.util.find("machines", self.proto.name, recipe_category) --[[@as FPMachinePrototype?]]
+        local corresponding_proto = prototyper.util.find("machines", self.proto.name, recipe_category)  --[[@as FPMachinePrototype?]]
         if corresponding_proto then  -- check if the machine just moved categories
             self.proto = corresponding_proto -- this is okay in this specific context
         else  -- otherwise, this machine is invalid
-            self.proto = prototyper.util.simplify_prototype(self.proto, "combined_category") --[[@as FPPackedPrototype]]
+            self.proto = prototyper.util.simplify_prototype(self.proto, "combined_category")  --[[@as FPPackedPrototype]]
             self.valid = false
         end
     else
-        self.proto = prototyper.util.validate_prototype_object(self.proto, "combined_category") --[[@as FPMachinePrototype | FPPackedPrototype]]
+        self.proto = prototyper.util.validate_prototype_object(self.proto, "combined_category")  --[[@as FPMachinePrototype | FPPackedPrototype]]
         self.valid = (not self.proto.simplified)
     end
 
-    self.quality_proto = prototyper.util.validate_prototype_object(self.quality_proto, nil) --[[@as FPQualityPrototype | FPPackedPrototype]]
+    self.quality_proto = prototyper.util.validate_prototype_object(self.quality_proto, nil)  --[[@as FPQualityPrototype | FPPackedPrototype]]
     self.valid = (not self.quality_proto.simplified) and self.valid
 
     -- Can't be valid with an invalid parent
@@ -321,12 +313,12 @@ function Machine:validate()
 
     -- Only need to check compatibility when the above is valid, else it'll be replaced anyways
     if self.valid and not self.proto.simplified then
-        self.valid = self.parent:is_machine_compatible(self.proto --[[@as FPMachinePrototype]]) and self.valid
+        self.valid = self.parent:is_machine_compatible(self.proto--[[@as FPMachinePrototype]]) and self.valid
     end
 
     if self.valid then  -- only makes sense if the machine is valid
         if self.proto.burner and not self.fuel then
-            -- If this machine changed to require fuel, add an unspecified fuel of the corresponding category.
+            -- If this machine changed to require fuel, add an unspecified fuel of the corresponding category
             -- It will be assigned a valid fuel ingredient in the validate below
             local fuel_proto = {
                 name = "",
@@ -350,7 +342,7 @@ function Machine:repair(player)
     self.valid = true
 
     -- Simplified or incompatible machine can potentially be replaced with a different one
-    if self.proto.simplified or not self.parent:is_machine_compatible(self.proto --[[@as FPMachinePrototype]]) then
+    if self.proto.simplified or not self.parent:is_machine_compatible(self.proto--[[@as FPMachinePrototype]]) then
         -- Changing to the default machine also fixes the category not matching the recipe
         if not self.parent:change_machine_to_default(player) then
             self.valid = false  -- this situation can't be repaired
@@ -358,7 +350,7 @@ function Machine:repair(player)
     end
 
     if self.valid and self.quality_proto.simplified then
-        self.quality_proto = defaults.get_fallback("qualities").proto --[[@as FPQualityPrototype]]
+        self.quality_proto = defaults.get_fallback("qualities").proto  --[[@as FPQualityPrototype]]
     end
 
     if self.valid and self.fuel and not self.fuel.valid then

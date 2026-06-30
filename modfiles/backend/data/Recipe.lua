@@ -26,15 +26,13 @@ script.register_metatable("Recipe", Recipe)
 ---@return Recipe
 local function init(parent, proto, production_type)
     local this_proto = proto or {
-            name="",
-            category="recipe",
-            data_type="recipes",
-            simplified=true
-        }
-    local this_production_type = production_type or "produce"
+        name = "",
+        data_type = "recipes",
+        simplified = true
+    }
     local object = Object.init({
         proto = this_proto,
-        production_type = this_production_type,
+        production_type = production_type or "produce",
         priority_product = nil,
         temperatures = {},
 
@@ -123,8 +121,6 @@ function Recipe:update_effects(force, factory)
     elseif self.proto.productivity_recipe ~= nil then name = self.proto.productivity_recipe
     else return end  -- no recipe effects for custom recipes
 
-    if not name then return end
-
     self.effects = {productivity = factory:get_productivity_bonus(force, name)}
     self.parent.machine:summarize_effects()  -- update machine to update its tooltip
 end
@@ -165,11 +161,11 @@ end
 
 ---@return boolean valid
 function Recipe:validate()
-    self.proto = prototyper.util.validate_prototype_object(self.proto, nil) --[[@as FPRecipePrototype | FPPackedPrototype]]
+    self.proto = prototyper.util.validate_prototype_object(self.proto, nil)  --[[@as FPRecipePrototype | FPPackedPrototype]]
     self.valid = (not self.proto.simplified)
 
     if self.valid and self.priority_product then
-        self.priority_product = prototyper.util.validate_prototype_object(self.priority_product, "type") --[[@as FPItemPrototype | FPPackedPrototype]]
+        self.priority_product = prototyper.util.validate_prototype_object(self.priority_product, "type")  --[[@as FPItemPrototype | FPPackedPrototype]]
         self.valid = (not self.priority_product.simplified) and self.valid
     end
 

@@ -204,7 +204,7 @@ function prototyper.util.validate_prototype_object(prototype, category_designati
         ---@cast prototype AnyFPPrototype
         local category = prototype[category_designation]  ---@type string
         local new_proto = prototyper.util.find(prototype.data_type, prototype.name, category)
-        updated_proto = new_proto or prototyper.util.simplify_prototype(prototype, category_designation) --[[@as AnyPrototype]]
+        updated_proto = new_proto or prototyper.util.simplify_prototype(prototype, category_designation)  --[[@as AnyPrototype]]
     end
 
     return updated_proto

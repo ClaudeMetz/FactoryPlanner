@@ -138,12 +138,12 @@ local function handle_item_button_click(player, tags, action)
 
     local item = nil
     if tags.item_id then
-        item = OBJECT_INDEX[tags.item_id] --[[@as TLProduct]]
+        item = OBJECT_INDEX[tags.item_id]  --[[@as TLProduct]]
     else
         -- Need to get items from the right floor depending on display settings
         local floor = (show_floor_items) and lib.context.get(player, "Floor")
             or lib.context.get(player, "Factory").top_floor
-        item = floor[tags.item_category .. "s"][tags.item_index] --[[@as TLProduct]]
+        item = floor[tags.item_category .. "s"][tags.item_index]  --[[@as TLProduct]]
     end
 
     if action == "add_recipe" then
@@ -180,9 +180,7 @@ local function handle_item_button_click(player, tags, action)
 
     elseif action == "add_to_cursor" then
         local amount = (item.class == "TLProduct") and item:get_required_amount() or item.amount
-        if not item.proto.simplified then
-            lib.cursor.handle_item_click(player, item.proto --[[@as FPItemPrototype]], amount)
-        end
+        lib.cursor.handle_item_click(player, item.proto--[[@as FPItemPrototype]], amount)
 
     elseif action == "factoriopedia" then
         local name = (item.proto.temperature) and item.proto.base_name or item.proto.name

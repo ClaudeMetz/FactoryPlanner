@@ -75,9 +75,7 @@ end
 function Module:paste(object)
     if object.class == "Module" then
         ---@cast object Module
-        if self.proto.simplified or
-           self.quality_proto.simplified or
-           object.proto.simplified or
+        if self.proto.simplified or self.quality_proto.simplified or object.proto.simplified or
            not self.parent:check_compatibility(object.proto --[[@as FPModulePrototype]]) then
             return false, "incompatible"
         end
@@ -90,8 +88,8 @@ function Module:paste(object)
             return true, nil
         else
             local existing_module = self.parent:find({
-                proto=object.proto --[[@as FPModulePrototype]],
-                quality_proto=object.quality_proto --[[@as FPQualityPrototype]]
+                proto = object.proto  --[[@as FPModulePrototype]],
+                quality_proto = object.quality_proto  --[[@as FPQualityPrototype]]
             })
             local parent = self.parent  -- retain here because it can be changed below
 
@@ -144,17 +142,17 @@ end
 
 ---@return boolean valid
 function Module:validate()
-    self.proto = prototyper.util.validate_prototype_object(self.proto, "category") --[[@as FPModulePrototype | FPPackedPrototype]]
+    self.proto = prototyper.util.validate_prototype_object(self.proto, "category")  --[[@as FPModulePrototype | FPPackedPrototype]]
     self.valid = (not self.proto.simplified)
 
-    self.quality_proto = prototyper.util.validate_prototype_object(self.quality_proto, nil) --[[@as FPQualityPrototype | FPPackedPrototype]]
+    self.quality_proto = prototyper.util.validate_prototype_object(self.quality_proto, nil)  --[[@as FPQualityPrototype | FPPackedPrototype]]
     self.valid = (not self.quality_proto.simplified) and self.valid
 
     -- Can't be valid with an invalid parent
     self.valid = self.parent.parent.valid and self.parent.valid and self.valid
 
     -- Check whether the module is still compatible with its machine or beacon
-    if self.valid then self.valid = self.parent:check_compatibility(self.proto --[[@as FPModulePrototype]]) end
+    if self.valid then self.valid = self.parent:check_compatibility(self.proto--[[@as FPModulePrototype]]) end
 
     if self.valid then self:summarize_effects() end
 
@@ -166,12 +164,12 @@ end
 function Module:repair(player)
     self.valid = true
 
-    if self.proto.simplified or not self.parent:check_compatibility(self.proto --[[@as FPModulePrototype]]) then
+    if self.proto.simplified or not self.parent:check_compatibility(self.proto--[[@as FPModulePrototype]]) then
         self.valid = false  -- the module can not be salvaged in this case and will be removed
     end
 
     if self.valid and self.quality_proto.simplified then
-        self.quality_proto = defaults.get_fallback("qualities").proto --[[@as FPQualityPrototype]]
+        self.quality_proto = defaults.get_fallback("qualities").proto  --[[@as FPQualityPrototype]]
     end
 
     if self.valid then self:summarize_effects() end
