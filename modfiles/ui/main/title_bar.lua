@@ -70,9 +70,6 @@ local function build_title_bar(player)
     flow_title_bar.add{type="button", caption={"fp.preferences"}, style="fp_button_frame_tool",
         tags={mod="fp", on_gui_click="title_bar_open_preferences"}, mouse_button_filter={"left"}}
 
-    local separation = flow_title_bar.add{type="line", direction="vertical"}
-    separation.style.height = MAGIC_NUMBERS.title_bar_height - 4
-
     local button_close = flow_title_bar.add{type="sprite-button", tags={mod="fp", on_gui_click="exit_main_dialog"},
         sprite="utility/close", tooltip={"fp.close_interface"}, style="fp_button_frame",
         mouse_button_filter={"left"}}

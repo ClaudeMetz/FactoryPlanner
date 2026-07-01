@@ -25,7 +25,7 @@ MAGIC_NUMBERS = {
     groups_per_row = 6,  -- Number of groups in a row in the item picker
     blueprint_limit = 12,  -- Maxmimum number of blueprints allowed per factory
     module_dialog_element_width = 440,  -- Width of machine and beacon dialog elements
-    titlebar_label_width = 124,  -- Width of the 'Factory Planner' titlebar label
+    titlebar_label_width = 130,  -- Width of the 'Factory Planner' titlebar label
     context_menu_width = 310  -- total width of the context menu
 }
 
