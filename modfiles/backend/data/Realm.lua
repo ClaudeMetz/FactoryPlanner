@@ -75,7 +75,7 @@ function Realm:count(filter, pivot, direction)
 end
 
 
----@param starting_tick Tick
+---@param starting_tick MapTick
 ---@param player LuaPlayer
 function Realm:schedule_solver_updates(starting_tick, player)
     local running_tick = starting_tick

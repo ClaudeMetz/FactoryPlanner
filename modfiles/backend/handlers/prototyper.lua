@@ -14,7 +14,7 @@ prototyper = {
 
 -- Load order is important here: recipes->items->machines->fuels->modules->beacons->...
 -- The boolean indicates whether this prototype has categories or not
----@type { [DataType]: boolean }
+---@type table<DataType, boolean>
 prototyper.data_types = {recipes = false, items = true, machines = true, fuels = true,
                          belts = false, pumps = false, silos = false, wagons = true, modules = true,
                          beacons = false, locations = false, qualities = false}
@@ -22,7 +22,7 @@ prototyper.data_types = {recipes = false, items = true, machines = true, fuels =
 ---@alias DataType "recipes" | "items" | "machines" | "fuels" | "belts" | "pumps" | "silos" | "wagons" | "modules" | "beacons" | "locations" | "qualities"
 
 ---@alias NamedPrototypes<T> { [string]: T }
----@alias NamedPrototypesWithCategory<T> { [string]: { name: string, members: { [string]: T } } } }
+---@alias NamedPrototypesWithCategory<T> { [string]: { name: string, members: { [string]: T } } }
 ---@alias NamedCategory { name: string, members: { [string]: table } }
 ---@alias AnyNamedPrototypes<T> NamedPrototypes<T> | NamedPrototypesWithCategory<T>
 

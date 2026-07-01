@@ -2,7 +2,7 @@ local _nth_tick = {}
 
 ---@alias NthTickEvent { handler_name: string, metadata: table }
 
----@param tick Tick
+---@param tick MapTick
 local function register_nth_tick_handler(tick)
     script.on_nth_tick(tick, function(nth_tick_data)
         if nth_tick_data.tick == 0 then return end
@@ -14,10 +14,10 @@ local function register_nth_tick_handler(tick)
 end
 
 
----@param desired_tick Tick
+---@param desired_tick MapTick
 ---@param handler_name string
 ---@param metadata table
----@return Tick
+---@return MapTick
 function _nth_tick.register(desired_tick, handler_name, metadata)
     local actual_tick = desired_tick
     -- Search until the next free nth_tick is found
@@ -31,7 +31,7 @@ function _nth_tick.register(desired_tick, handler_name, metadata)
     return actual_tick  -- let caller know which tick they actually got
 end
 
----@param tick Tick
+---@param tick MapTick
 function _nth_tick.cancel(tick)
     script.on_nth_tick(tick, nil)
     storage.nth_tick_events[tick] = nil

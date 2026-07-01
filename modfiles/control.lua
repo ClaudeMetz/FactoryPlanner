@@ -38,16 +38,7 @@ llog = require("util.llog")
 
 require("ui.event_handler")
 
-
----@class Event
----@field name defines.events
----@field tick Tick
-
----@class GuiEvent : Event
----@field player_index PlayerIndex
-
----@alias PlayerIndex uint
----@alias Tick uint
+---@alias PlayerIndex uint32
 ---@alias VersionString string
 ---@alias ModToVersion table<string, VersionString>
 ---@alias AllowedEffects table<string, boolean>

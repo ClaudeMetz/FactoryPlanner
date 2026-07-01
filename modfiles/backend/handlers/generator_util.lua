@@ -2,8 +2,8 @@ local _util = {}
 
 -- ** LOCAL UTIL **
 ---@alias RecipeItem FormattedProduct | Ingredient
----@alias IndexedItemList { [ItemType]: { [ItemName]: { index: number, item: RecipeItem } } }
----@alias ItemList { [ItemType]: { [ItemName]: RecipeItem } }
+---@alias IndexedItemList table<ItemType, table<ItemName, { index: number, item: RecipeItem }>>
+---@alias ItemList table<ItemType, table<ItemName, RecipeItem>>
 ---@alias ItemTypeCounts { items: number, fluids: number }
 
 ---@class FormattedProduct
@@ -17,7 +17,7 @@ local _util = {}
 ---@param product Product
 ---@return FormattedProduct
 local function generate_formatted_product(product)
-    local base_amount, proddable_amount = 0, 0
+    local base_amount, proddable_amount = 0, 0  ---@type number, number
     local catalyst_amount = product.ignored_by_productivity or 0
 
     if product.amount_min ~= nil and product.amount_max ~= nil then
@@ -33,7 +33,7 @@ local function generate_formatted_product(product)
         -- If the catalyst is at least the minimum amount, the prod part must be multiplied by
         -- the probability that it rolls at least the catalyst amount
         if cat_min == 0 then proddable_amount = proddable_amount * (cat_max + 1) / (max - min + 1) end
-    else
+    else  ---@cast product.amount -nil
         base_amount = product.amount + (product.extra_count_fraction or 0)
         proddable_amount = math.max(base_amount - catalyst_amount, 0)
     end
@@ -70,7 +70,7 @@ local function combine_identical_products(item_list)
         local touched_item = touched_items[item.type][item.name]
         if touched_item ~= nil then
             touched_item.amount = touched_item.amount + item.amount
-            if touched_item.proddable_amount then
+            if touched_item.proddable_amount then  ---@cast item FormattedProduct
                 touched_item.proddable_amount = touched_item.proddable_amount + item.proddable_amount
             end
 
@@ -127,9 +127,7 @@ function _util.format_recipe(recipe_proto, products, main_product, ingredients)
             base_ingredient.maximum_temperature = max_temp
         end
     end
-
     local indexed_ingredients = create_type_indexed_list(ingredients)
-    recipe_proto.type_counts.ingredients = determine_item_type_counts(indexed_ingredients)
 
 
     local formatted_products = {}  ---@type FormattedProduct[]
@@ -147,13 +145,12 @@ function _util.format_recipe(recipe_proto, products, main_product, ingredients)
             end
         end
     end
-
     combine_identical_products(formatted_products)
     local indexed_products = create_type_indexed_list(formatted_products)
-    recipe_proto.type_counts.products = determine_item_type_counts(indexed_products)
 
 
     -- Reduce item amounts for items that are both an ingredient and a product
+    recipe_proto.catalysts = {products={}, ingredients={}}
     for _, items_of_type in pairs(indexed_ingredients) do
         for _, ingredient in pairs(items_of_type) do
             local peer_product = indexed_products[ingredient.item.type][ingredient.item.name]
@@ -164,24 +161,24 @@ function _util.format_recipe(recipe_proto, products, main_product, ingredients)
                 if difference < 0 then
                     local item = lib.flib.shallow_copy(ingredient.item)
                     item.amount = peer_product.item.amount + difference
-                    recipe_proto.catalysts.ingredients[item.name] = item
+                    table.insert(recipe_proto.catalysts.ingredients,  item)
 
-                    ingredients[ingredient.index].amount = nil
-                    formatted_products[peer_product.index].amount = -difference
+                    ingredients[ingredient.index]--[[@cast -nil]].amount = nil
+                    formatted_products[peer_product.index]--[[@cast -nil]].amount = -difference
                 elseif difference > 0 then
                     local item = lib.flib.shallow_copy(peer_product.item)
                     item.amount = ingredient.item.amount - difference
-                    recipe_proto.catalysts.products[item.name] = item
+                    table.insert(recipe_proto.catalysts.products, item)
 
-                    ingredients[ingredient.index].amount = difference
-                    formatted_products[peer_product.index].amount = nil
+                    ingredients[ingredient.index]--[[@cast -nil]].amount = difference
+                    formatted_products[peer_product.index]--[[@cast -nil]].amount = nil
                 else
                     -- Nilled-out items are just shown as ingredient catalysts
                     local item = lib.flib.shallow_copy(ingredient.item)
-                    recipe_proto.catalysts.ingredients[item.name] = item
+                    table.insert(recipe_proto.catalysts.ingredients, item)
 
-                    ingredients[ingredient.index].amount = nil
-                    formatted_products[peer_product.index].amount = nil
+                    ingredients[ingredient.index]--[[@cast -nil]].amount = nil
+                    formatted_products[peer_product.index]--[[@cast -nil]].amount = nil
                 end
             end
         end
@@ -194,30 +191,45 @@ function _util.format_recipe(recipe_proto, products, main_product, ingredients)
         end
     end
 
+
+    recipe_proto.type_counts = {
+        products = determine_item_type_counts(indexed_products),
+        ingredients = determine_item_type_counts(indexed_ingredients)
+    }
+
     recipe_proto.ingredients = ingredients
     recipe_proto.products = formatted_products
 end
 
 
 ---@param normal_quality_value number
----@return number base_value
+---@return number? base_value
 function _util.get_base_value(normal_quality_value)
     if normal_quality_value == nil then return nil end
     return normal_quality_value / prototypes.quality["normal"].default_multiplier
 end
 
+-- Items are still name-keyed at this point in generation, before the final conversion to
+-- id-keyed storage, so storage.prototypes.items can't be used with its regular (post-conversion) type here
+---@param item_type "item" | "fluid"
+---@return { [string]: FPItemPrototype } members
+function _util.get_item_members(item_type)
+    local named_items = storage.prototypes.items  ---@type NamedPrototypesWithCategory<FPItemPrototype>
+    return named_items[item_type].members
+end
+
 -- Finds a sprite for the given entity prototype
 ---@param proto LuaEntityPrototype
----@return SpritePath | nil
+---@return SpritePath?
 function _util.determine_entity_sprite(proto)
-    local entity_sprite = "entity/" .. proto.name  ---@type SpritePath
+    local entity_sprite = "entity/" .. proto.name
     if helpers.is_valid_sprite_path(entity_sprite) then
         return entity_sprite
     end
 
     local items_to_place_this = proto.items_to_place_this
     if items_to_place_this and next(items_to_place_this) then
-        local item_sprite = "item/" .. items_to_place_this[1].name  ---@type SpritePath
+        local item_sprite = "item/" .. items_to_place_this[1]--[[@cast -nil]].name
         if helpers.is_valid_sprite_path(item_sprite) then
             return item_sprite
         end
@@ -236,46 +248,46 @@ end
 ---@return number launch_time
 ---@return number energy_usage
 function _util.determine_launch_data(silo_proto)
-    local power = silo_proto.active_energy_usage
-    local rocket_proto = silo_proto.rocket_entity_prototype
+    local power = silo_proto.active_energy_usage  --[[@as double]]
+    local rocket_proto = silo_proto.rocket_entity_prototype  --[[@as LuaEntityPrototype]]
 
     -- These values are not accessible in the API
     local frame_count, inverse_speed = 32, 1 / 0.3
-    local arm_move_offset = rocket_proto.rising_speed * frame_count * inverse_speed
+    local arm_move_offset = rocket_proto.rising_speed--[[@cast -nil]] * frame_count * inverse_speed
     local rocket_flight_threshold = 0.1  -- hardcoded in the game files
 
     -- Cycle starts here
-    local launch_ticks, energy_usage = 0, 0
+    local launch_ticks, energy_usage = 0, 0  ---@type number, number
 
     local doors_opened = 1
     launch_ticks = launch_ticks + doors_opened
 
-    local rocket_rising_threshold = 1 - silo_proto.rocket_quick_relaunch_start_offset - arm_move_offset
-    local rocket_rising = rocket_rising_threshold / rocket_proto.rising_speed
+    local rocket_rising_threshold = 1 - silo_proto.rocket_quick_relaunch_start_offset--[[@as double]] - arm_move_offset
+    local rocket_rising = rocket_rising_threshold / rocket_proto.rising_speed--[[@as double]]
     launch_ticks = launch_ticks + rocket_rising
     energy_usage = energy_usage + (rocket_rising * power)
 
-    local arms_advance = arm_move_offset / rocket_proto.rising_speed
+    local arms_advance = arm_move_offset / rocket_proto.rising_speed--[[@as double]]
     launch_ticks = launch_ticks + arms_advance
     energy_usage = energy_usage + (arms_advance * power)
 
     local launch_starting = 1
     launch_ticks = launch_ticks + launch_starting
 
-    local launch_started = silo_proto.launch_wait_time
+    local launch_started = silo_proto.launch_wait_time  --[[@as uint8]]
     launch_ticks = launch_ticks + launch_started
 
-    local engine_starting = 1 / rocket_proto.engine_starting_speed
+    local engine_starting = 1 / rocket_proto.engine_starting_speed--[[@as double]]
     launch_ticks = launch_ticks + engine_starting
     energy_usage = energy_usage + (engine_starting * power)
 
-    local arms_retract = arm_move_offset / rocket_proto.rising_speed
+    local arms_retract = arm_move_offset / rocket_proto.rising_speed--[[@as double]]
     launch_ticks = launch_ticks + arms_retract
     energy_usage = energy_usage + (arms_retract * power)
 
     -- I'm not exactly sure why this behaves as the game code does, *but it do*
-    local rocket_flying = math.log(1 + rocket_flight_threshold * rocket_proto.flying_acceleration
-        / rocket_proto.flying_speed) / math.log(1 + rocket_proto.flying_acceleration)
+    local rocket_flying = math.log(1 + rocket_flight_threshold * rocket_proto.flying_acceleration--[[@as double]]
+        / rocket_proto.flying_speed--[[@as double]]) / math.log(1 + rocket_proto.flying_acceleration--[[@as double]])
     launch_ticks = launch_ticks + rocket_flying - arms_retract
 
     return (launch_ticks / 60), (energy_usage / launch_ticks)
@@ -294,7 +306,7 @@ function _util.formatted_effects(effects)
         effects[name] = value * MAGIC_NUMBERS.effect_precision
     end
 
-    return effects
+    return effects  --[[@as IntegerModuleEffects]]
 end
 
 ---@param proto LuaEntityPrototype
@@ -316,16 +328,17 @@ function _util.is_any_effect_viable(proto)
 end
 
 ---@class FormattedEffectReceiver
----@field base_effect ModuleEffects
+---@field base_effect IntegerModuleEffects
 ---@field uses_module_effects boolean
 ---@field uses_beacon_effects boolean
 ---@field uses_surface_effects boolean
----@field limits { [ModuleEffectName]: EffectValueRange }
+---@field limits table<ModuleEffectName, EffectValueRange>
 
----@param proto LuaEntityPrototype
+---@param proto LuaEntityPrototype?
 ---@return FormattedEffectReceiver effect_receiver
 function _util.format_effect_receiver(proto)
-    local effect_receiver = proto.effect_receiver
+    local effect_receiver = (proto) and proto.effect_receiver or nil
+
     if effect_receiver == nil then
         effect_receiver = {
             base_effect = {},
@@ -340,28 +353,29 @@ function _util.format_effect_receiver(proto)
         }
     else
         local base_effect = effect_receiver.base_effect  -- can be nil
-        effect_receiver.base_effect = _util.formatted_effects(base_effect)
+        effect_receiver.base_effect = _util.formatted_effects(base_effect)  --[[@as ModuleEffects]]
     end
 
-    local module_limit = proto.module_inventory_size
+    local module_limit = (proto) and proto.module_inventory_size or 0
     if module_limit == nil or module_limit == 0 then
         effect_receiver.uses_module_effects = false
         -- Beacons can still be used even if the machine can't have modules
     end
 
-    if not _util.is_any_effect_viable(proto) then
+    if not proto or not _util.is_any_effect_viable(proto) then
         effect_receiver.uses_module_effects = false
         effect_receiver.uses_beacon_effects = false
     end
 
     -- Adjust limits format to be more convenient
-    effect_receiver.limits = {}
+    local formatted = effect_receiver --[[@as FormattedEffectReceiver]]
+    formatted.limits = {}
     for name, _ in pairs(lib.effects.blank) do
-        effect_receiver.limits[name] = effect_receiver[name .. "_limits"]
+        formatted.limits[name] = effect_receiver[name .. "_limits"]
         effect_receiver[name .. "_limits"] = nil
     end
 
-    return effect_receiver
+    return formatted
 end
 
 
@@ -370,7 +384,8 @@ end
 ---@return LuaFluidBoxPrototype? input
 ---@return LuaFluidBoxPrototype? output
 function _util.get_boiler_data(proto)
-    local input, output = nil, nil  -- need to find these manually
+    local input, output  ---@type LuaFluidBoxPrototype, LuaFluidBoxPrototype
+    -- Need to find the right fluidboxes by iterating manually
     for _, fluid_box in pairs(proto.fluidbox_prototypes) do
         if fluid_box.production_type == "input-output" or fluid_box.production_type == "input" then
             input = fluid_box
@@ -379,7 +394,7 @@ function _util.get_boiler_data(proto)
         end
     end
 
-    if input == nil then return nil, nil, nil end
+    if input == nil then return nil, nil, nil end  -- input needs to exist
 
     local category = "boiler"
     if proto.boiler_mode == "output-to-separate-pipe" then
@@ -397,8 +412,8 @@ end
 
 
 ---@param proto FPRecipePrototype | MachineBurner
----@param combined_list { string: string[] }
----@param used_categories { string: [FPMachinePrototype | FPFuelPrototype] }
+---@param combined_list table<string, string[]>
+---@param used_categories table<string, (FPMachinePrototype | FPFuelPrototype)[]>
 function _util.format_category_data(proto, combined_list, used_categories)
     local list = {}
 
@@ -416,8 +431,8 @@ function _util.format_category_data(proto, combined_list, used_categories)
     combined_list[proto.combined_category] = list
 end
 
----@param combined_list { string: string[] }
----@param used_categories { string: [FPMachinePrototype | FPFuelPrototype] }
+---@param combined_list table<string, string[]>
+---@param used_categories table<string, (FPMachinePrototype | FPFuelPrototype)[]>
 ---@param final_list NamedPrototypesWithCategory<FPMachinePrototype | FPFuelPrototype>
 ---@param insert_function function
 function _util.fill_categories(combined_list, used_categories, final_list, insert_function)
@@ -472,13 +487,13 @@ end
 ---@field valid boolean
 
 -- Generates a table imitating LuaGroup to avoid lua-cpp bridging
----@param group LuaGroup
+---@param group LuaGroup | ItemGroup
 ---@return ItemGroup group_table
 function _util.generate_group_table(group)
     return {name=group.name, localised_name=group.localised_name, order=group.order, valid=true}
 end
 
----@param proto FPItemPrototype | FPRecipePrototype
+---@param proto CustomItemDetails | FPRecipePrototype
 function _util.add_default_groups(proto)
     proto.group = _util.generate_group_table(prototypes.item_group["other"])
     proto.subgroup = _util.generate_group_table(prototypes.item_subgroup["other"])

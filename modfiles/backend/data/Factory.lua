@@ -183,7 +183,7 @@ function Factory:update_product_definitions(new_defined_by)
 end
 
 
----@param desired_tick Tick
+---@param desired_tick MapTick
 ---@param player LuaPlayer
 function Factory:schedule_solver_update(desired_tick, player)
     -- Get rid of any previously scheduled refreshes

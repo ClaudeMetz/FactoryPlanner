@@ -133,7 +133,7 @@ local function update_line(line_data, aggregate, looped_fuel)
                 local byproduct_amount = determine_amount_with_productivity(fuel_byproduct--[[@cast -nil]])
                 local used_amount = math.min(fuel_amount, byproduct_amount)
 
-                local fuel_item = {type=fuel_proto.type, name=fuel_name, amount=used_amount}
+                local fuel_item = {type=fuel_proto.type, name=fuel_name, amount=used_amount}  ---@type SolverItem
                 structures.class.subtract(aggregate.Byproduct, fuel_item)  -- subtract from floor
                 looped_fuel = used_amount
             end

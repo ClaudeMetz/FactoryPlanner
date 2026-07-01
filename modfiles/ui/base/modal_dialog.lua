@@ -2,6 +2,18 @@ modal_dialog = {}
 
 ---@alias ModalDialogType string
 
+---@alias ModalData table
+
+---@class ModalDialogSettings
+---@field caption LocalisedString?
+---@field search_handler_name string?
+---@field reset_handler_name string?
+---@field subheader_text LocalisedString?
+---@field disable_scroll_pane boolean?
+---@field secondary_frame boolean?
+---@field show_submit_button boolean?
+---@field show_delete_button boolean?
+
 -- ** LOCAL UTIL **
 local function create_base_dialog(player, dialog_settings, modal_data)
     local modal_elements = modal_data.modal_elements
@@ -12,7 +24,7 @@ local function create_base_dialog(player, dialog_settings, modal_data)
     modal_elements.modal_frame = frame_modal_dialog
 
     -- Title bar
-    if dialog_settings.caption ~= nil then
+    if dialog_settings.caption then
         local flow_title_bar = frame_modal_dialog.add{type="flow", direction="horizontal", style="frame_header_flow",
             tags={mod="fp", on_gui_click="re-center_modal_dialog"}}
         flow_title_bar.drag_target = frame_modal_dialog
