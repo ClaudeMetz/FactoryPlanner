@@ -4,7 +4,7 @@ local Object = require("backend.data.Object")
 
 ---@class TLProduct: Object, ObjectMethods
 ---@field class "TLProduct"
----@field parent Factory
+---@field parent Factory?
 ---@field proto FPItemPrototype | FPPackedPrototype
 ---@field defined_by ProductDefinedBy
 ---@field required_amount number
@@ -15,8 +15,9 @@ TLProduct.__index = TLProduct
 script.register_metatable("TLProduct", TLProduct)
 
 ---@param proto (FPItemPrototype | FPPackedPrototype)?
+---@param amount number?
 ---@return TLProduct
-local function init(proto)
+local function init(proto, amount)
     local this_proto = proto or {
         name = "",
         category = "",
@@ -29,7 +30,9 @@ local function init(proto)
         required_amount = 0,  -- always per second
         belt_proto = nil,
 
-        amount = 0  -- the amount satisfied by the solver
+        amount = 0,  -- the amount satisfied by the solver
+
+        parent = nil
     }, "TLProduct", TLProduct)  --[[@as TLProduct]]
     return object
 end
@@ -68,17 +71,18 @@ end
 ---@return boolean success
 ---@return string? error
 function TLProduct:paste(object)
-    -- TLProduct objects are converted to SimpleItems when copied, so they can't appear here
-    if object.class == "SimpleItem" or object.class == "Fuel" then
-        local proto  ---@type FPItemPrototype | FPPackedPrototype
+    if object.class == "TLProduct" or object.class == "Fuel" then
+        ---@cast object -(Beacon | Floor | Line | Machine | Module)
+        local proto = object.proto  --[[@as FPItemPrototype | FPPackedPrototype]]
         if object.class == "Fuel" then  -- need an Item prototype here, not Fuel
-            proto = prototyper.util.find("items", object:get_name_with_temperature(), object.proto.type) --[[@as FPItemPrototype]]
-        else
-            proto = object.proto  --[[@as FPItemPrototype | FPPackedPrototype]]
+            proto = prototyper.util.find("items", object:get_name_with_temperature(), proto.type) --[[@as FPItemPrototype]]
         end
 
         if proto.simplified then return false, "incompatible" end
         ---@cast proto -FPPackedPrototype
+
+        -- Do not allow pasting on line ingredients
+        if not self.parent then return false, "incompatible" end
 
         -- Avoid duplicate items, but allow pasting over the same item proto
         local existing_item = self.parent:find({proto=proto})
@@ -86,8 +90,7 @@ function TLProduct:paste(object)
             return false, "already_exists"
         end
 
-        local product = init(proto)  -- defined_by = "amount"
-        product.required_amount = object.amount
+        local product = init(proto, object.required_amount)
         self.parent:replace(self, product)
 
         return true, nil
@@ -103,6 +106,7 @@ end
 ---@field defined_by ProductDefinedBy
 ---@field required_amount number
 ---@field belt_proto FPPackedPrototype?
+---@field amount number?
 
 ---@param full boolean
 ---@return PackedProduct packed_self

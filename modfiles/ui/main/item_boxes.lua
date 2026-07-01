@@ -35,6 +35,9 @@ local function build_item_box(player, category, column_count)
     item_boxes_elements[category .. "_item_table"] = table_items
 end
 
+---@param player LuaPlayer
+---@param factory Factory
+---@param show_floor_items boolean
 local function refresh_item_box(player, factory, show_floor_items, item_category, tooltips)
     local item_boxes_elements = lib.globals.main_elements(player).item_boxes
 
@@ -138,12 +141,21 @@ local function handle_item_button_click(player, tags, action)
 
     local item = nil
     if tags.item_id then
-        item = OBJECT_INDEX[tags.item_id]  --[[@as TLProduct]]
+        item = OBJECT_INDEX[tags.item_id]  --[[@as TLProduct | SimpleItem]]
     else
         -- Need to get items from the right floor depending on display settings
         local floor = (show_floor_items) and lib.context.get(player, "Floor")
             or lib.context.get(player, "Factory").top_floor
-        item = floor[tags.item_category .. "s"][tags.item_index]  --[[@as TLProduct]]
+        item = floor[tags.item_category .. "s"][tags.item_index]  --[[@as SimpleItem]]
+    end
+
+    -- Cast SimpleItem to TLProduct for copy/paste
+    local product  ---@type TLProduct
+    if item.class == "SimpleItem" then
+        product = TLProduct.init(item.proto, item.amount)
+    else
+        ---@cast item -SimpleItem
+        product = item
     end
 
     if action == "add_recipe" then
@@ -167,11 +179,10 @@ local function handle_item_button_click(player, tags, action)
         lib.gui.run_refresh(player, "item_boxes")
 
     elseif action == "copy" then
-        local copyable_item = {class="SimpleItem", proto=item.proto, amount=item.amount}
-        lib.clipboard.copy(player, copyable_item)
+        lib.clipboard.copy(player, product)
 
     elseif action == "paste" then
-        lib.clipboard.paste(player, item)
+        lib.clipboard.paste(player, product)
 
     elseif action == "delete" then
         lib.context.get(player, "Factory"):remove(item)
@@ -212,7 +223,7 @@ local function put_ingredients_into_cursor(player, _, _)
     main_dialog.toggle(player)
 end
 
-
+---@param player LuaPlayer
 local function refresh_item_boxes(player)
     local player_table = lib.globals.player_table(player)
 
@@ -223,7 +234,7 @@ local function refresh_item_boxes(player)
     main_elements.item_boxes.horizontal_flow.visible = visible
     if not visible then return end
 
-    local factory = lib.context.get(player, "Factory")  --[[@as Factory?]]
+    local factory = lib.context.get(player, "Factory")  --[[@as Factory]]
     local show_floor_items = player_table.preferences.show_floor_items
 
     local tooltips = player_table.ui_state.tooltips

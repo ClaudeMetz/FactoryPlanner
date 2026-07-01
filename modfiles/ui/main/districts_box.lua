@@ -29,7 +29,7 @@ end
 
 
 local function handle_item_button_click(player, tags, action)
-    local item = OBJECT_INDEX[tags.item_id]
+    local item = OBJECT_INDEX[tags.item_id]  --[[@as DistrictItem]]
 
     if action == "create_factory" then  -- only on net ingredients
         if item.proto.ingredient_only then
@@ -47,9 +47,8 @@ local function handle_item_button_click(player, tags, action)
         main_dialog.toggle_districts_view(player, true)
         lib.gui.run_refresh(player, "all")
 
-    elseif action == "copy" then  -- copy as SimpleItems makes most sense
-        local copyable_item = {class="SimpleItem", proto=item.proto, amount=item.abs_diff}
-        lib.clipboard.copy(player, copyable_item)
+    elseif action == "copy" then
+        lib.clipboard.copy(player, TLProduct.init(item.proto, item.abs_diff))
 
     elseif action == "add_to_cursor" then
         lib.cursor.handle_item_click(player, item.proto, item.abs_diff)

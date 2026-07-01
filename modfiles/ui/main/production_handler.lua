@@ -1,5 +1,6 @@
 local Floor = require("backend.data.Floor")
 local Beacon = require("backend.data.Beacon")
+local TLProduct = require("backend.data.TLProduct")
 
 -- ** LOCAL UTIL **
 local function handle_line_move_click(player, tags, event)
@@ -215,8 +216,8 @@ end
 
 
 local function handle_item_click(player, tags, action)
-    local line = OBJECT_INDEX[tags.line_id]
-    local item = line[tags.item_category .. "s"][tags.item_index]
+    local line = OBJECT_INDEX[tags.line_id]  --[[@as Line]]
+    local item = line[tags.item_category .. "s"][tags.item_index]  --[[@as TLProduct | SimpleItem]]
 
     if action == "prioritize" then
         if line.class ~= "Line" then
@@ -265,43 +266,17 @@ local function handle_item_click(player, tags, action)
             category_id=item.proto.category_id, name=item.proto.name}})
 
     elseif action == "copy" then
-        local proto = item.proto
+        local proto = item.proto  --[[@as FPItemPrototype]]
         if item.proto.type == "fluid" and line.class == "Line" then
-            local item_name = line.recipe:get_name_with_temperature(item.proto)
-            proto = prototyper.util.find("items", item_name, "fluid")
+            local item_name = line.recipe:get_name_with_temperature(proto)
+            proto = prototyper.util.find("items", item_name, "fluid")  --[[@as FPItemPrototype]]
         end
 
-        local copyable_item = {class="SimpleItem", proto=proto, amount=item.amount}
-        lib.clipboard.copy(player, copyable_item)
+        lib.clipboard.copy(player, TLProduct.init(proto, item.amount))
 
     elseif action == "paste" then
         if line.class ~= "Line" then return end
-
-        -- Custom wrapper to paste onto since SimpleItem is not a real object
-        local target = {
-            paste = function(self, object)
-                if object.class == "SimpleItem" or object.class == "Fuel" then
-                    if object.proto.type ~= "fluid" or item.proto.type ~= "fluid" then
-                        return false, "incompatible"
-                    end
-
-                    -- SimpleItems will always be a fluid with temperature
-                    if object.class == "SimpleItem" then
-                        if object.proto.base_name ~= item.proto.name then return false, "incompatible" end
-                        line.recipe.temperatures[item.proto.name] = object.proto.temperature
-                    else  -- "Fuel"
-                        if object.proto.name ~= item.proto.name then return false, "incompatible" end
-                        line.recipe.temperatures[item.proto.name] = object.temperature
-                    end
-
-                    return true, nil
-                else
-                    return false, "incompatible_class"
-                end
-            end,
-            class = "Item"
-        }
-        lib.clipboard.paste(player, target)
+        lib.clipboard.paste(player, TLProduct.init())
 
     elseif action == "add_to_cursor" then
         lib.cursor.handle_item_click(player, item.proto, item.amount)

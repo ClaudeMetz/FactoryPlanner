@@ -12,13 +12,14 @@ local unpackers = {
 
 local _clipboard = {}
 
----@alias CopyableObject Floor | Line | Machine | Beacon | Module | Fuel | SimpleItem
----@alias CopyableObjectClass "Floor" | "Line" | "Machine" | "Beacon" | "Module" | "Fuel" | "SimpleItem"
+---@alias CopyableObject Floor | Line | Machine | Beacon | Module | Fuel | TLProduct
+---@alias CopyableObjectClass "Floor" | "Line" | "Machine" | "Beacon" | "Module" | "Fuel" | "TLProduct"
+---@alias CopyablePackedObject PackedFloor | PackedLine | PackedMachine | PackedBeacon | PackedModule | PackedFuel | PackedProduct
 ---@alias CopyableObjectParent Factory | Floor | Line | ModuleSet | Machine
 
 ---@class ClipboardEntry
 ---@field class CopyableObjectClass
----@field packed_object PackedObject
+---@field packed_object CopyablePackedObject
 ---@field parent CopyableObjectParent?
 
 -- Copies the given object into the player's clipboard as a packed object
@@ -28,7 +29,7 @@ function _clipboard.copy(player, object)
     local player_table = lib.globals.player_table(player)
     player_table.clipboard = {
         class = object.class,
-        packed_object = (object.pack ~= nil) and object:pack(true) or object,
+        packed_object = object:pack(true),
         parent = object.parent  -- just used for unpacking, will remain a reference even if deleted elsewhere
     }
 
@@ -45,14 +46,8 @@ function _clipboard.paste(player, target)
     if clip == nil then
         lib.cursor.create_flying_text(player, {"fp.clipboard_empty"})
     else
-        local clone
-        if clip.parent then  -- only real objects have parents
-            clone = unpackers[clip.class](clip.packed_object, clip.parent)  --[[@as CopyableObject]]
-            ---@cast clone -SimpleItem
-            clone:validate()
-        else
-            clone = lib.flib.shallow_copy(clip.packed_object)  --[[@as SimpleItem]]
-        end
+        local clone = unpackers[clip.class](clip.packed_object, clip.parent)  --[[@as CopyableObject]]
+        clone:validate()
         local success, error = target:paste(clone, player)
 
         if success then  -- objects in the clipboard are always valid since it resets on_config_changed
