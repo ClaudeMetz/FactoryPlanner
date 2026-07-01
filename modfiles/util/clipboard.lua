@@ -26,6 +26,13 @@ local _clipboard = {}
 ---@param player LuaPlayer
 ---@param object CopyableObject
 function _clipboard.copy(player, object)
+    -- Only copy fluids with set temperatures
+    if (object.class == "TLProduct" or object.class == "Fuel") and object.proto.type == "fluid" and not object.proto.temperature then
+        log("\n\n.object = " .. serpent.block(object))
+        lib.messages.raise(player, "error", {"fp.error_copy_temperature_not_configured", {"fluid-name." .. object.proto.name, 1}}, 1)
+        return
+    end
+
     local player_table = lib.globals.player_table(player)
     player_table.clipboard = {
         class = object.class,
