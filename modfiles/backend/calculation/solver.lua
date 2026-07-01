@@ -116,7 +116,7 @@ end
 ---@field entities_require_heating boolean
 ---@field total_effects IntegerModuleEffects
 ---@field beacon_consumption double
----@field fuel_proto FPFuelPrototype?
+---@field fuel_proto AnyFPFuelPrototype?
 ---@field fuel_name string?
 
 ---@alias MachineLimit {limit: number?, force_limit: boolean}
@@ -474,7 +474,7 @@ end
 --- Determines the amount of energy needed for a machine and the emissions that produces
 ---@param machine_proto FPMachinePrototype
 ---@param recipe_proto FPRecipePrototype
----@param fuel_proto FPFuelPrototype?
+---@param fuel_proto AnyFPFuelPrototype?
 ---@param machine_amount number
 ---@param energy_usage number
 ---@param total_effects IntegerModuleEffects
