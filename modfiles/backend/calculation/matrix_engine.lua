@@ -631,13 +631,15 @@ function matrix_engine.get_matrix(factory_data, rows, columns)
     local free_variables = {}
     for col = 1, #columns.values do
         local num_non_zero = 0
+        local row_containing_free_variable = 0
         for row = 1, #rows.values do
             if matrix[row][col] ~= 0 then
                 num_non_zero = num_non_zero + 1
+                row_containing_free_variable = row
             end
         end
         if num_non_zero == 1 then
-            free_variables[col] = row
+            free_variables[col] = row_containing_free_variable
         end
     end
 
