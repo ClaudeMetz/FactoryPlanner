@@ -46,7 +46,7 @@ end
 
 -- User-facing function, handles multiple tables at being passed at once
 ---@param ... AnyBasic
-function llog(...)
+local function llog(...)
     local info = debug.getinfo(2, "Sl")  ---@cast info -nil
     local out = "\n" .. info.short_src .. ":" .. info.currentline .. ":"
 
@@ -63,3 +63,5 @@ function llog(...)
 
     log(out)
 end
+
+return llog
