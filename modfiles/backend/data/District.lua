@@ -10,8 +10,6 @@ local DistrictItemSet = require("backend.data.DistrictItemSet")
 ---@field location_proto FPLocationPrototype
 ---@field item_set DistrictItemSet
 ---@field first Factory?
----@field power number
----@field emissions number
 ---@field needs_refresh boolean
 ---@field collapsed boolean
 local District = Object.methods()
@@ -26,9 +24,6 @@ local function init(name)
         location_proto = defaults.get_fallback("locations").proto,
         item_set = DistrictItemSet.init(),
         first = nil,
-
-        power = 0,
-        emissions = 0,
 
         needs_refresh = false,
         collapsed = false
@@ -50,14 +45,18 @@ end
 function District:insert(factory, relative_object, direction)
     factory.parent = self
     self:_insert(factory, relative_object, direction)
+    self.needs_refresh = true
 end
 
 ---@param factory Factory
 function District:remove(factory)
     -- Make sure the nth_tick handlers are cleaned up
-    if factory.tick_of_deletion then util.nth_tick.cancel(factory.tick_of_deletion) end
+    if factory.tick_of_deletion then lib.nth_tick.cancel(factory.tick_of_deletion) end
+    if factory.tick_of_solver_update then lib.nth_tick.cancel(factory.tick_of_solver_update) end
+
     factory.parent = nil
     self:_remove(factory)
+    self.needs_refresh = true
 end
 
 ---@param factory Factory
@@ -94,20 +93,19 @@ function District:count(filter, pivot, direction)
     return self:_count(filter, pivot, direction)
 end
 
+---@return LocalisedString caption
+function District:tostring()
+    return "[img=" .. self.location_proto.sprite .. "] " .. self.name
+end
 
--- Updates the power, emissions and items of this District if requested
+
+-- Updates the items of this District if requested
 function District:refresh()
     if not self.needs_refresh then return end
     self.needs_refresh = false
-
-    self.power = 0
-    self.emissions = 0
     self.item_set:clear()
 
     for factory in self:iterator({archived=false, valid=true}) do
-        self.power = self.power + factory.top_floor.power
-        self.emissions = self.emissions + factory.top_floor.emissions
-
         self.item_set:add_items(factory:as_list(), "production")
         self.item_set:add_items(factory.top_floor.byproducts, "production")
         self.item_set:add_items(factory.top_floor.ingredients, "consumption")
@@ -115,6 +113,19 @@ function District:refresh()
 
     self.item_set:diff()
     self.item_set:sort()
+end
+
+
+---@param starting_tick MapTick
+---@param player LuaPlayer
+---@return MapTick last_scheduled_tick
+function District:schedule_solver_updates(starting_tick, player)
+    local running_tick = starting_tick
+    for factory in self:iterator({valid=true}) do
+        factory:schedule_solver_update(running_tick, player)
+        running_tick = running_tick + MAGIC_NUMBERS.factory_solver_update_delay
+    end
+    return running_tick
 end
 
 
@@ -128,7 +139,7 @@ function District:validate()
         self.location_proto = defaults.get_fallback("locations").proto
     end
 
-    -- The item set doesn't need validationa as it is automaticaly redone by :refresh()
+    -- The item set doesn't need validation as it is automaticaly redone by :refresh()
 
     return self.valid  -- always true
 end

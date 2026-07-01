@@ -1,6 +1,6 @@
 local Object = require("backend.data.Object")
 local Floor = require("backend.data.Floor")
-local Product = require("backend.data.Product")
+local TLProduct = require("backend.data.TLProduct")
 
 ---@class Factory: Object, ObjectMethods
 ---@field class "Factory"
@@ -9,29 +9,33 @@ local Product = require("backend.data.Product")
 ---@field previous Factory?
 ---@field archived boolean
 ---@field name string
+---@field matrix_solver_active boolean
 ---@field matrix_free_items FPItemPrototype[]?
 ---@field blueprints string[]
 ---@field notes string
----@field productivity_boni { string: ModuleEffectValue }
----@field first Product?
+---@field productivity_boni { string: EffectValue }
+---@field first TLProduct?
 ---@field top_floor Floor
 ---@field linearly_dependant boolean?
 ---@field tick_of_deletion uint?
+---@field tick_of_solver_update uint?
 ---@field last_valid_modset ModToVersion?
 local Factory = Object.methods()
 Factory.__index = Factory
 script.register_metatable("Factory", Factory)
 
 ---@param name string
+---@param matrix_solver_active boolean
 ---@return Factory
-local function init(name)
+local function init(name, matrix_solver_active)
     local object = Object.init({
         archived = false,
         --owner = nil,
         --shared = false,
 
         name = name,
-        matrix_free_items = nil,
+        matrix_solver_active = matrix_solver_active,
+        matrix_free_items = {},
         blueprints = {},
         notes = "",
         productivity_boni = {},
@@ -40,6 +44,7 @@ local function init(name)
 
         linearly_dependant = false,
         tick_of_deletion = nil,
+        tick_of_solver_update = nil,
         last_valid_modset = nil
     }, "Factory", Factory)  --[[@as Factory]]
     object.top_floor.parent = object
@@ -54,28 +59,28 @@ function Factory:index()
 end
 
 
----@param product Product
----@param relative_object Product?
+---@param product TLProduct
+---@param relative_object TLProduct?
 ---@param direction NeighbourDirection?
 function Factory:insert(product, relative_object, direction)
     product.parent = self
     self:_insert(product, relative_object, direction)
 end
 
----@param product Product
+---@param product TLProduct
 function Factory:remove(product)
     product.parent = nil
     self:_remove(product)
 end
 
----@param product Product
----@param new_product Product
+---@param product TLProduct
+---@param new_product TLProduct
 function Factory:replace(product, new_product)
     new_product.parent = self
     self:_replace(product, new_product)
 end
 
----@param product Product
+---@param product TLProduct
 ---@param direction NeighbourDirection
 ---@param spots integer?
 function Factory:shift(product, direction, spots)
@@ -84,37 +89,37 @@ end
 
 
 ---@param filter ObjectFilter
----@param pivot Product?
+---@param pivot TLProduct?
 ---@param direction NeighbourDirection?
----@return Product? product
+---@return TLProduct? product
 function Factory:find(filter, pivot, direction)
-    return self:_find(filter, pivot, direction)  --[[@as Product?]]
+    return self:_find(filter, pivot, direction)  --[[@as TLProduct?]]
 end
 
----@return Product?
+---@return TLProduct?
 function Factory:find_last()
-    return self:_find_last()  --[[@as Product?]]
+    return self:_find_last()  --[[@as TLProduct?]]
 end
 
 
 ---@param filter ObjectFilter?
----@param pivot Product?
+---@param pivot TLProduct?
 ---@param direction NeighbourDirection?
----@return fun(): Product?
+---@return fun(): TLProduct?
 function Factory:iterator(filter, pivot, direction)
     return self:_iterator(filter, pivot, direction)
 end
 
 ---@param filter ObjectFilter?
----@param pivot Product?
+---@param pivot TLProduct?
 ---@param direction NeighbourDirection?
----@return Product[]
+---@return TLProduct[]
 function Factory:as_list(filter, pivot, direction)
     return self:_as_list(filter, pivot, direction)
 end
 
 ---@param filter ObjectFilter?
----@param pivot Product?
+---@param pivot TLProduct?
 ---@param direction NeighbourDirection?
 ---@return number count
 function Factory:count(filter, pivot, direction)
@@ -161,11 +166,11 @@ end
 
 ---@param force LuaForce
 ---@param recipe_name string
----@return ModuleEffectValue productivity_bonus
+---@return EffectValue productivity_bonus
 function Factory:get_productivity_bonus(force, recipe_name)
     local custom_bonus = self.productivity_boni[recipe_name]
     if custom_bonus then return custom_bonus
-    else return util.get_recipe_productivity(force, recipe_name) end
+    else return lib.get_recipe_productivity(force, recipe_name) end
 end
 
 
@@ -178,27 +183,45 @@ function Factory:update_product_definitions(new_defined_by)
 end
 
 
+---@param desired_tick MapTick
+---@param player LuaPlayer
+function Factory:schedule_solver_update(desired_tick, player)
+    -- Get rid of any previously scheduled refreshes
+    if self.tick_of_solver_update then
+        lib.nth_tick.cancel(self.tick_of_solver_update)
+        self.tick_of_solver_update = nil
+    end
+
+    local actual_tick = lib.nth_tick.register(desired_tick, "update_solver",
+        {player_index=player.index, factory_id=self.id})
+    self.tick_of_solver_update = actual_tick
+end
+
+
 ---@class PackedFactory: PackedObject
 ---@field class "Factory"
 ---@field name string
+---@field matrix_solver_active boolean
 ---@field matrix_free_items FPPackedPrototype[]?
 ---@field blueprints string[]
 ---@field notes string
----@field productivity_boni { string: ModuleEffectValue }
+---@field productivity_boni { string: EffectValue }
 ---@field products PackedProduct[]?
 ---@field top_floor PackedFloor
 
+---@param full boolean
 ---@return PackedFactory packed_self
-function Factory:pack()
+function Factory:pack(full)
     return {
         class = self.class,
         name = self.name,
+        matrix_solver_active = self.matrix_solver_active,
         matrix_free_items = prototyper.util.simplify_prototypes(self.matrix_free_items, "type"),
         blueprints = self.blueprints,
         notes = self.notes,
         productivity_boni = self.productivity_boni,
-        products = self:_pack(),
-        top_floor = self.top_floor:pack()
+        products = self:_pack(full),
+        top_floor = self.top_floor:pack(full)
     }
 end
 
@@ -207,13 +230,14 @@ end
 local function unpack(packed_self)
     local unpacked_self = init(packed_self.name)
 
-    -- Product prototypes will be automatically unpacked by the validation process
-    unpacked_self.matrix_free_items = packed_self.matrix_free_items
+    -- TLProduct prototypes will be automatically unpacked by the validation process
+    unpacked_self.matrix_solver_active = packed_self.matrix_solver_active
+    unpacked_self.matrix_free_items = packed_self.matrix_free_items or {}
     unpacked_self.blueprints = packed_self.blueprints
     unpacked_self.notes = packed_self.notes
     unpacked_self.productivity_boni = packed_self.productivity_boni
 
-    unpacked_self.first = Object.unpack(packed_self.products, Product.unpack, unpacked_self)  --[[@as Product]]
+    unpacked_self.first = Object.unpack(packed_self.products, TLProduct.unpack, unpacked_self)  --[[@as TLProduct]]
 
     unpacked_self.top_floor = Floor.unpack(packed_self.top_floor)
     unpacked_self.top_floor.parent = unpacked_self

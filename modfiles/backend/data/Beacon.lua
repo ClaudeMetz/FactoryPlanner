@@ -9,7 +9,7 @@ local ModuleSet = require("backend.data.ModuleSet")
 ---@field amount integer
 ---@field total_amount number?
 ---@field module_set ModuleSet
----@field total_effects ModuleEffects
+---@field total_effects IntegerModuleEffects
 ---@field effects_tooltip LocalisedString
 local Beacon = Object.methods()
 Beacon.__index = Beacon
@@ -48,6 +48,11 @@ function Beacon:elem_value()
 end
 
 
+---@return boolean
+function Beacon:is_mono_beacon()
+    return (#self.proto.profile == 2 and self.proto.profile[2] == 0)
+end
+
 ---@return double profile_multiplier
 function Beacon:profile_multiplier()
     if self.amount == 0 then
@@ -59,27 +64,56 @@ function Beacon:profile_multiplier()
     end
 end
 
+---@return double effectivity
+function Beacon:overall_effectivity()
+    local profile_mulitplier = self:profile_multiplier()
+    local effectivity_bonus = self.proto.distribution_effectivity_bonus_per_quality_level * self.quality_proto.level
+    return self.amount * profile_mulitplier * (self.proto.effectivity + effectivity_bonus)
+end
 
 function Beacon:summarize_effects()
-    local profile_mulitplier = self:profile_multiplier()
-    local effectivity = self.proto.effectivity + (self.quality_proto.level * self.proto.quality_bonus)
-    local effect_multiplier = self.amount * profile_mulitplier * effectivity
-
+    local effect_multiplier = self:overall_effectivity()
     local effects = self.module_set:get_effects()
+
     for name, effect in pairs(effects) do
-        effects[name] = effect * effect_multiplier
+        local e = effect * effect_multiplier  -- needs truncating towards zero
+        effects[name] = (e < 0) and math.ceil(e - 1e-4) or math.floor(e + 1e-4)
     end
 
     self.total_effects = effects
-    self.effects_tooltip = util.effects.format(effects)
+    self.effects_tooltip = lib.effects.format(effects)
 
     self.parent:summarize_effects()
 end
 
----@return boolean uses_effects
+---@return boolean
 function Beacon:uses_effects()
-    -- This method is here for ModuleSet to use generically
     return self.parent:uses_beacon_effects()
+end
+
+---@param proto FPModulePrototype
+---@return boolean
+function Beacon:allows_module(proto)
+    return lib.effects.is_compatible(self.proto, proto) and
+           self.parent.machine:allows_module(proto)
+end
+
+
+---@return double
+function Beacon:get_total_consumption()
+    return self.total_amount * self.proto.energy_usage * 60
+        * self.quality_proto.beacon_power_usage_multiplier
+end
+
+---@return uint16
+function Beacon:get_module_limit()
+    local limit = self.proto.module_limit
+
+    if not self.proto.quality_affects_module_slots then
+        return limit
+    else
+        return limit + self.quality_proto.beacon_module_slots_bonus
+    end
 end
 
 
@@ -108,7 +142,7 @@ function Beacon:paste(object)
         else
             return true, nil
         end
-    elseif object.class == "Module" and self.module_set ~= nil then
+    elseif object.class == "Module" and self.module_set ~= nil and not self.proto.simplified then
         -- Only allow modules to be pasted if this is a non-fake beacon
        return self.module_set:paste(object)
     else
@@ -125,15 +159,16 @@ end
 ---@field total_amount number?
 ---@field module_set PackedModuleSet
 
+---@param full boolean
 ---@return PackedBeacon packed_self
-function Beacon:pack()
+function Beacon:pack(full)
     return {
         class = self.class,
         proto = prototyper.util.simplify_prototype(self.proto, nil),
         quality_proto = prototyper.util.simplify_prototype(self.quality_proto, nil),
         amount = self.amount,
         total_amount = self.total_amount,
-        module_set = self.module_set:pack()
+        module_set = self.module_set:pack(full)
     }
 end
 
@@ -166,8 +201,15 @@ function Beacon:validate()
     self.quality_proto = prototyper.util.validate_prototype_object(self.quality_proto, nil)
     self.valid = (not self.quality_proto.simplified) and self.valid
 
-    self.valid = self.parent:uses_beacon_effects() and self.valid
-    self.valid = self.module_set:validate() and self.valid
+    -- Can't be valid with an invalid parent
+    self.valid = self.parent.valid and self.valid
+
+    if self.valid then
+        self.valid = self.parent:uses_beacon_effects() and self.valid
+        self.valid = self.module_set:validate() and self.valid
+    end
+
+    if self.valid and self:is_mono_beacon() then self.amount = 1 end
 
     return self.valid
 end
@@ -190,6 +232,8 @@ function Beacon:repair(player)
         self.module_set:repair(player)  -- always becomes valid
         if self.module_set.module_count == 0 then self.valid = false end
     end
+
+    if self.valid and self:is_mono_beacon() then self.amount = 1 end
 
     return self.valid
 end

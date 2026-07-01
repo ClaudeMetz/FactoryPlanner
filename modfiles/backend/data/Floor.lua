@@ -14,9 +14,7 @@ local Line = require("backend.data.Line")
 ---@field products SimpleItem[]
 ---@field byproducts SimpleItem[]
 ---@field ingredients SimpleItem[]
----@field power number
----@field emissions number
----@field machine_count integer
+---@field machine_amount integer
 local Floor = Object.methods()
 Floor.__index = Floor
 script.register_metatable("Floor", Floor)
@@ -31,9 +29,7 @@ local function init(level)
         products = {},
         byproducts = {},
         ingredients = {},
-        power = 0,
-        emissions = 0,
-        machine_count = 0
+        machine_amount = 0
     }, "Floor", Floor)  --[[@as Floor]]
     return object
 end
@@ -143,12 +139,12 @@ function Floor:get_component_data(skip_done, component_table)
 
         elseif not skip_done or not line.done then
             local machine = line.machine
-            local ceil_machine_count = math.ceil(machine.amount - 0.001)
-            add_machine(machine, ceil_machine_count)
+            local ceil_machine_amount = math.ceil(machine.amount - MAGIC_NUMBERS.margin_of_error)
+            add_machine(machine, ceil_machine_amount)
 
             local beacon = line.beacon
             if beacon and beacon.total_amount then
-                local ceil_total_amount = math.ceil(beacon.total_amount - 0.001)
+                local ceil_total_amount = math.ceil(beacon.total_amount - MAGIC_NUMBERS.margin_of_error)
                 add_machine(beacon, ceil_total_amount)
             end
         end
@@ -165,7 +161,7 @@ function Floor:check_product_compatibility(object)
 
     local relevant_line = (object.class == "Floor") and object.first or object
     -- The triple loop is crappy, but it's the simplest way to check
-    for _, product in pairs(relevant_line.recipe_proto.products) do
+    for _, product in pairs(relevant_line.recipe.proto.products) do
         for line in self:iterator() do
             for _, ingredient in pairs(line.ingredients) do
                 if ingredient.proto.type == product.type and ingredient.proto.name == product.name then
@@ -212,12 +208,17 @@ end
 ---@field level integer
 ---@field lines PackedLineObject[]?
 
+---@param full boolean
 ---@return PackedFloor packed_self
-function Floor:pack()
+function Floor:pack(full)
     return {
         class = self.class,
         level = self.level,
-        lines = self:_pack()
+        lines = self:_pack(full),
+
+        products = (full) and interface.pack_items(self.products) or nil,
+        byproducts = (full) and interface.pack_items(self.byproducts) or nil,
+        ingredients = (full) and interface.pack_items(self.ingredients) or nil,
     }
 end
 

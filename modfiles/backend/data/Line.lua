@@ -1,76 +1,55 @@
 local Object = require("backend.data.Object")
+local Recipe = require("backend.data.Recipe")
 local Machine = require("backend.data.Machine")
 local Beacon = require("backend.data.Beacon")
-
----@alias ProductionType "produce" | "consume"
-
----@class SurfaceCompatibility
----@field recipe boolean
----@field machine boolean
----@field overall boolean
 
 ---@class Line: Object, ObjectMethods
 ---@field class "Line"
 ---@field parent Floor
 ---@field next LineObject?
 ---@field previous LineObject?
----@field recipe_proto FPRecipePrototype | FPPackedPrototype
----@field production_type ProductionType
+---@field recipe Recipe
 ---@field done boolean
 ---@field active boolean
 ---@field percentage number
 ---@field machine Machine
 ---@field beacon Beacon?
----@field priority_product (FPItemPrototype | FPPackedPrototype)?
----@field temperatures { [string]: float }
 ---@field comment string
----@field surface_compatibility SurfaceCompatibility?
----@field total_effects ModuleEffects
+---@field total_effects IntegerModuleEffects
 ---@field effects_tooltip LocalisedString
----@field temperature_data { [string]: TemperatureData }
+---@field surface_compatibility SurfaceCompatibility?
 ---@field products SimpleItem[]
 ---@field byproducts SimpleItem[]
 ---@field ingredients SimpleItem[]
----@field power number
----@field emissions number
 ---@field production_ratio number?
 local Line = Object.methods()
 Line.__index = Line
 script.register_metatable("Line", Line)
 
 ---@param recipe_proto FPRecipePrototype?
----@param production_type ProductionType
+---@param production_type RecipeProductionType
 ---@return Line
 local function init(recipe_proto, production_type)
     local object = Object.init({
-        recipe_proto = recipe_proto,
-        production_type = production_type,
+        recipe = nil,  -- initialized below
         done = false,
         active = true,
         percentage = 100,
         machine = nil,
         beacon = nil,
-        priority_product = nil,
-        temperatures = nil,
         comment = "",
 
-        surface_compatibility = nil,  -- determined on demand
         total_effects = nil,
         effects_tooltip = "",
-        temperature_data = nil,
+        surface_compatibility = nil,  -- determined on demand
 
         products = {},
         byproducts = {},
         ingredients = {},
-        power = 0,
-        emissions = 0,
         production_ratio = 0
     }, "Line", Line)  --[[@as Line]]
 
-    -- Initialize data related to fluid ingredients temperatures
-    if recipe_proto and recipe_proto.simplified ~= true then
-        object:build_temperatures_data({})
-    end
+    object.recipe = Recipe.init(recipe_proto, production_type, object)
 
     return object
 end
@@ -78,6 +57,7 @@ end
 
 function Line:index()
     OBJECT_INDEX[self.id] = self
+    self.recipe:index()
     self.machine:index()
     if self.beacon then self.beacon:index() end
 end
@@ -87,7 +67,7 @@ end
 ---@param machine_proto FPMachinePrototype
 ---@return boolean applicable
 function Line:is_machine_compatible(machine_proto)
-    local type_counts = self.recipe_proto.type_counts
+    local type_counts = self.recipe.proto.type_counts
     local valid_ingredient_count = (machine_proto.ingredient_limit >= type_counts.ingredients.items)
     local valid_product_count = (machine_proto.product_limit >= type_counts.products.items)
     local valid_input_channels = (machine_proto.fluid_channels.input >= type_counts.ingredients.fluids)
@@ -155,7 +135,7 @@ end
 ---@return boolean success
 function Line:change_machine_to_default(player)
     -- All categories are guaranteed to have at least one machine, so this is never nil
-    local machine_default = defaults.get(player, "machines", self.recipe_proto.category)
+    local machine_default = defaults.get(player, "machines", self.recipe.proto.combined_category)
     local default_proto = machine_default.proto  --[[@as FPMachinePrototype]]
 
     local success = false
@@ -182,6 +162,9 @@ function Line:set_beacon(beacon)
     if beacon ~= nil then
         self.beacon.parent = self
 
+        -- Reset amount since the user can't change it in the dialog
+        if self.beacon:is_mono_beacon() then self.beacon.amount = 1 end
+
         beacon.module_set:normalize({compatibility=true, effects=true})
         -- Normalization already summarizes beacon's effects
     else
@@ -199,22 +182,25 @@ function Line:setup_beacon(player)
     end
 end
 
-
----@return boolean uses_effects
-function Line:uses_beacon_effects(player)
-    local effect_receiver = self.machine.proto.effect_receiver  --[[@as EffectReceiver]]
-    if effect_receiver == nil then return false end
-    return effect_receiver.uses_beacon_effects
+---@return boolean
+function Line:uses_beacon_effects()
+    return self.machine.proto.effect_receiver.uses_beacon_effects
 end
 
 
 function Line:summarize_effects()
     local beacon_effects = (self.beacon) and self.beacon.total_effects or nil
-    local merged_effects = util.effects.merge({self.machine.total_effects, beacon_effects})
-    local limited_effects, indications = util.effects.limit(merged_effects, self.recipe_proto.maximum_productivity)
+    local merged_effects = lib.effects.merge({self.machine.total_effects, beacon_effects})
+    local limited_effects, indications = lib.effects.limit(merged_effects, self.machine.proto.effect_receiver)
 
-    self.total_effects = limited_effects
-    self.effects_tooltip = util.effects.format(limited_effects, {indications=indications})
+    local limited_effects_plus = lib.effects.merge({limited_effects, self.recipe.effects})
+    -- These bounds are applied after normal limits and recipe effects
+    local bounds = {low = 0, high = self.recipe.proto.maximum_productivity}
+    limited_effects_plus["productivity"], indications["productivity"] =
+        lib.effects.limit_value(limited_effects_plus["productivity"], bounds)
+
+    self.total_effects = limited_effects_plus
+    self.effects_tooltip = lib.effects.format(limited_effects_plus, {indications=indications})
 end
 
 
@@ -222,7 +208,7 @@ end
 function Line:compile_machine_filter()
     local compatible_machines = {}
 
-    local machine_category = prototyper.util.find("machines", nil, self.machine.proto.category)
+    local machine_category = prototyper.util.find("machines", nil, self.machine.proto.combined_category)
     for _, machine_proto in pairs(machine_category.members) do
         if self:is_machine_compatible(machine_proto) then
             table.insert(compatible_machines, machine_proto.name)
@@ -230,6 +216,19 @@ function Line:compile_machine_filter()
     end
 
     return {{filter="name", name=compatible_machines}}
+end
+
+
+---@return boolean
+function Line:is_temperature_fully_configured()
+    for _, ingredient in pairs(self.recipe.proto.ingredients) do
+        if not self.recipe:is_temperature_configured(ingredient) then return false end
+    end
+
+    local fuel = self.machine.fuel
+    if fuel and fuel:is_temperature_configured() then return false end
+
+    return true
 end
 
 
@@ -255,31 +254,12 @@ function Line:get_surface_compatibility()
         while object.class ~= "District" do object = object.parent  --[[@as District]] end
         local properties = object.location_proto.surface_properties
 
-        local recipe = check_compatibility(properties, self.recipe_proto.surface_conditions)
+        local recipe = check_compatibility(properties, self.recipe.proto.surface_conditions)
         local machine = check_compatibility(properties, self.machine.proto.surface_conditions)
         self.surface_compatibility = {recipe=recipe, machine=machine, overall=(recipe and machine)}
     end
     return self.surface_compatibility
 end
-
-
--- Builds temperature data caches, and optionally migrates previous temperatures
----@param previous_temperatures { [string]: float }
-function Line:build_temperatures_data(previous_temperatures)
-    self.temperatures = {}
-    self.temperature_data = {}
-
-    for _, ingredient in pairs(self.recipe_proto.ingredients) do
-        if ingredient.type == "fluid" then
-            local previous = previous_temperatures[ingredient.name]
-            local temperature, data = util.temperature.generate_data(ingredient, previous)
-
-            self.temperatures[ingredient.name] = temperature
-            self.temperature_data[ingredient.name] = data
-        end
-    end
-end
-
 
 
 ---@param object CopyableObject
@@ -302,45 +282,43 @@ end
 
 ---@class PackedLine: PackedObject
 ---@field class "Line"
----@field recipe_proto FPPackedPrototype
----@field production_type ProductionType
+---@field recipe PackedRecipe
 ---@field done boolean
 ---@field active boolean
 ---@field percentage number
 ---@field machine PackedMachine
 ---@field beacon PackedBeacon?
----@field priority_product FPPackedPrototype?
 ---@field comment string
 
+---@param full boolean
 ---@return PackedLine packed_self
-function Line:pack()
+function Line:pack(full)
     return {
         class = self.class,
-        recipe_proto = prototyper.util.simplify_prototype(self.recipe_proto, nil),
-        production_type = self.production_type,
+        recipe = self.recipe:pack(full),
         done = self.done,
         active = self.active,
         percentage = self.percentage,
-        machine = self.machine:pack(),
-        beacon = self.beacon and self.beacon:pack(),
-        priority_product = prototyper.util.simplify_prototype(self.priority_product, "type"),
-        temperatures = self.temperatures,
-        comment = self.comment
+        machine = self.machine:pack(full),
+        beacon = self.beacon and self.beacon:pack(full),
+        comment = self.comment,
+
+        products = (full) and interface.pack_items(self.products) or nil,
+        byproducts = (full) and interface.pack_items(self.byproducts) or nil,
+        ingredients = (full) and interface.pack_items(self.ingredients) or nil,
     }
 end
 
 ---@param packed_self PackedLine
 ---@return Line line
 local function unpack(packed_self)
-    local unpacked_self = init(packed_self.recipe_proto, packed_self.production_type)
+    local unpacked_self = init(nil, nil)  -- initialize empty, overwrite after
+    unpacked_self.recipe = Recipe.unpack(packed_self.recipe, unpacked_self)  --[[@as Recipe]]
     unpacked_self.done = packed_self.done
     unpacked_self.active = packed_self.active
     unpacked_self.percentage = packed_self.percentage
     unpacked_self.machine = Machine.unpack(packed_self.machine, unpacked_self)  --[[@as Machine]]
     unpacked_self.beacon = packed_self.beacon and Beacon.unpack(packed_self.beacon, unpacked_self)  --[[@as Beacon]]
-    -- The prototype will be automatically unpacked by the validation process
-    unpacked_self.priority_product = packed_self.priority_product
-    unpacked_self.temperatures = packed_self.temperatures  -- will be migrated through validation
     unpacked_self.comment = packed_self.comment
 
     return unpacked_self
@@ -349,20 +327,11 @@ end
 
 ---@return boolean valid
 function Line:validate()
-    self.recipe_proto = prototyper.util.validate_prototype_object(self.recipe_proto, nil)
-    self.valid = (not self.recipe_proto.simplified)
+    self.valid = self.recipe:validate()
 
-    if self.valid then self.valid = self.machine:validate() and self.valid end
+    if self.recipe.valid then self.valid = self.machine:validate() and self.valid end
 
-    if self.valid and self.beacon then self.valid = self.beacon:validate() and self.valid end
-
-    if self.valid and self.priority_product then
-        self.priority_product = prototyper.util.validate_prototype_object(self.priority_product, "type")
-        self.valid = (not self.priority_product.simplified) and self.valid
-    end
-
-    -- Updates temperature data caches and migrates previous temperature choices
-    if self.valid then self:build_temperatures_data(self.temperatures or {}) end
+    if self.recipe.valid and self.beacon then self.valid = self.beacon:validate() and self.valid end
 
     self.surface_compatibility = nil  -- reset cached value
 
@@ -374,8 +343,8 @@ end
 function Line:repair(player)
     self.valid = true
 
-    if self.recipe_proto.simplified then
-        self.valid = false  -- this situation can't be repaired
+    if not self.recipe.valid then
+        self.valid = self.recipe:repair(player)
     end
 
     if self.valid and not self.machine.valid then
@@ -385,10 +354,6 @@ function Line:repair(player)
     if self.valid and self.beacon and not self.beacon.valid then
         -- Repairing a beacon always either fixes or gets it removed, so no influence on validity
         if not self.beacon:repair(player) then self.beacon = nil end
-    end
-
-    if self.valid and self.priority_product and self.priority_product.simplified then
-        self.priority_product = nil
     end
 
     return self.valid

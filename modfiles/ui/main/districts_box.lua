@@ -1,6 +1,8 @@
+local TLProduct = require("backend.data.TLProduct")
+
 -- ** LOCAL UTIL **
 local function save_district_name(player, tags, _)
-    local main_elements = util.globals.main_elements(player)
+    local main_elements = lib.globals.main_elements(player)
     local district_elements = main_elements.districts_box[tags.district_id]
 
     local district = OBJECT_INDEX[tags.district_id]  --[[@as District]]
@@ -10,7 +12,7 @@ local function save_district_name(player, tags, _)
     district_elements.edit_flow.visible = false
     district_elements.name_flow.visible = true
 
-    util.raise.refresh(player, "district_info")
+    lib.gui.run_refresh(player, "district_info")
 end
 
 local function change_district_location(player, tags, event)
@@ -22,19 +24,35 @@ local function change_district_location(player, tags, event)
         factory.top_floor:reset_surface_compatibility()
         solver.update(player, factory)
     end
-    util.raise.refresh(player, "all")
+    lib.gui.run_refresh(player, "all")
 end
 
 
 local function handle_item_button_click(player, tags, action)
     local item = OBJECT_INDEX[tags.item_id]
 
-    if action == "copy" then  -- copy as SimpleItems makes most sense
+    if action == "create_factory" then  -- only on net ingredients
+        if item.proto.ingredient_only then
+            lib.cursor.create_flying_text(player, {"fp.item_has_no_recipes"})
+            return
+        end
+
+        local factory = factory_list.add_factory(player, nil, item.proto)
+
+        local top_level_item = TLProduct.init(item.proto)
+        top_level_item.required_amount = item.abs_diff
+        factory:insert(top_level_item)
+        solver.update(player, factory)
+
+        main_dialog.toggle_districts_view(player, true)
+        lib.gui.run_refresh(player, "all")
+
+    elseif action == "copy" then  -- copy as SimpleItems makes most sense
         local copyable_item = {class="SimpleItem", proto=item.proto, amount=item.abs_diff}
-        util.clipboard.copy(player, copyable_item)
+        lib.clipboard.copy(player, copyable_item)
 
     elseif action == "add_to_cursor" then
-        util.cursor.handle_item_click(player, item.proto, item.abs_diff)
+        lib.cursor.handle_item_click(player, item.proto, item.abs_diff)
 
     elseif action == "factoriopedia" then
         local name = (item.proto.temperature) and item.proto.base_name or item.proto.name
@@ -47,7 +65,7 @@ local function build_items_flow(player, parent, district)
     local items_flow = parent.add{type="flow", direction="horizontal"}
     items_flow.style.padding = {6, 12, 12, 12}
 
-    local preferences = util.globals.preferences(player)
+    local preferences = lib.globals.preferences(player)
     local column_count = (preferences.products_per_row * 4) / 2
 
     local function build_item_flow(category)
@@ -62,40 +80,55 @@ local function build_items_flow(player, parent, district)
         return table_items
     end
 
-    items_flow.add{type="empty-widget", style="flib_horizontal_pusher"}
+    items_flow.add{type="empty-widget", style="fflib_horizontal_pusher"}
     local prod_table = build_item_flow("product")
-    items_flow.add{type="empty-widget", style="flib_horizontal_pusher"}
-    items_flow.add{type="empty-widget", style="flib_horizontal_pusher"}
+    items_flow.add{type="empty-widget", style="fflib_horizontal_pusher"}
+    items_flow.add{type="empty-widget", style="fflib_horizontal_pusher"}
     local ingr_table = build_item_flow("ingredient")
-    items_flow.add{type="empty-widget", style="flib_horizontal_pusher"}
+    items_flow.add{type="empty-widget", style="fflib_horizontal_pusher"}
 
-    local action_tooltip = MODIFIER_ACTIONS["act_on_district_item"].tooltip
-    local tooltips = util.globals.ui_state(player).tooltips
-
+    local tooltips = lib.globals.ui_state(player).tooltips
     local color_map = {
-        production = {half="flib_slot_button_cyan", full="flib_slot_button_blue"},
-        consumption = {half="flib_slot_button_yellow", full="flib_slot_button_red"}
+        production = {half="fflib_slot_button_cyan", full="fflib_slot_button_blue"},
+        consumption = {half="fflib_slot_button_yellow", full="fflib_slot_button_red"}
     }
 
     for item in district.item_set:iterator() do
-        local diff_string, amount_tooltip = item_views.process_item(player, item, item.abs_diff, nil)
-
+        local relevant_table = (item.overall == "production") and prod_table or ingr_table
         local total_amount = item[item.overall].amount
-        local total_string, total_tooltip = item_views.process_item(player, item, total_amount, nil)
 
-        local title_line = {"fp.tt_title", item.proto.localised_name}
-        local diff_line = {"fp.item_amount_" .. item.overall, amount_tooltip}
-        local total_line = {"fp.item_amount_total", total_tooltip}
-        local tooltip = {"", title_line, diff_line, total_line, "\n", action_tooltip}
+        local action_line = nil
+        local tags = {mod="fp", item_id=item.id, on_gui_hover="set_tooltip", context="districts_box"}
+        local diff_number, amount_tooltip = nil, nil
+        local total_tooltip = nil
+
+        if item.proto.type == "entity" and item.proto.special then
+            if item.overall == "consumption" then
+                tags.on_gui_click = "act_on_district_special_ingredient"
+                action_line = {"", "\n", MODIFIER_ACTIONS["act_on_district_special_ingredient"].tooltip}
+            end
+
+            amount_tooltip = lib.format.special_tooltip(item.proto.name, item.abs_diff)
+            total_tooltip = lib.format.special_tooltip(item.proto.name, total_amount)
+        else
+            local action = (item.overall == "production") and "act_on_district_product" or "act_on_district_ingredient"
+            tags.on_gui_click = action
+            action_line = {"", "\n", MODIFIER_ACTIONS[action].tooltip}
+
+            diff_number, amount_tooltip = item_views.process_item(player, item, item.abs_diff, nil)
+            _, total_tooltip = item_views.process_item(player, item, total_amount, nil)
+        end
 
         local colors = color_map[item.overall]
         local style = (item.abs_diff ~= total_amount) and colors.half or colors.full
 
-        local relevant_table = (item.overall == "production") and prod_table or ingr_table
-        local button = relevant_table.add{type="sprite-button", number=diff_string, style=style,
-            sprite=item.proto.sprite, tags={mod="fp", on_gui_click="act_on_district_item",
-            item_id=item.id, on_gui_hover="set_tooltip", context="districts_box"},
-            raise_hover_events=true, mouse_button_filter={"left-and-right"}}
+        local title_line = {"fp.tt_title", item.proto.localised_name}
+        local diff_line = {"fp.item_amount_" .. item.overall, amount_tooltip}
+        local total_line = {"fp.item_amount_total", total_tooltip}
+        local tooltip = {"", title_line, diff_line, total_line, action_line}
+
+        local button = relevant_table.add{type="sprite-button", number=diff_number, style=style,
+            sprite=item.proto.sprite, tags=tags, raise_hover_events=true, mouse_button_filter={"left-and-right"}}
         tooltips.districts_box[button.index] = tooltip
     end
 
@@ -107,7 +140,7 @@ end
 local function build_district_frame(player, district, location_items)
     district:refresh()  -- refreshes its data if necessary
 
-    local elements = util.globals.main_elements(player).districts_box
+    local elements = lib.globals.main_elements(player).districts_box
     elements[district.id] = {}
 
     local window_frame = elements.main_flow.add{type="frame", direction="vertical", style="inside_shallow_frame"}
@@ -133,7 +166,7 @@ local function build_district_frame(player, district, location_items)
     create_move_button(move_flow, "previous")
     create_move_button(move_flow, "next")
 
-    local selected = util.context.get(player, "District").id == district.id
+    local selected = lib.context.get(player, "District").id == district.id
     local selection_caption = (selected) and {"fp.u_selected"} or {"fp.u_select"}
     local select_button = subheader.add{type="button", caption=selection_caption, style="list_box_item",
         tags={mod="fp", on_gui_click="select_district", district_id=district.id},
@@ -176,16 +209,8 @@ local function build_district_frame(player, district, location_items)
             tags={mod="fp", on_gui_selection_state_changed="change_district_location", district_id=district.id}}
     end
 
-    -- Power & Pollution
-    local label_power = subheader.add{type="label", caption=util.format.SI_value(district.power, "W", 3),
-        style="bold_label", tooltip={"", {"fp.u_power"}, ": ", util.format.SI_value(district.power, "W", 5)}}
-    label_power.style.left_margin = 24
-    subheader.add{type="label", caption="|"}
-    subheader.add{type="label", caption=util.format.SI_value(district.emissions, "E/m", 3), style="bold_label",
-        tooltip=util.gui.format_emissions(district.emissions, district)}
-
     -- Item toggle
-    subheader.add{type="empty-widget", style="flib_horizontal_pusher"}
+    subheader.add{type="empty-widget", style="fflib_horizontal_pusher"}
     local sprite = (district.collapsed) and "fp_expand" or "fp_collapse"
     local items_toggle = subheader.add{type="sprite-button", sprite=sprite,
         tags={mod="fp", on_gui_click="toggle_district_items", district_id=district.id},
@@ -198,7 +223,7 @@ local function build_district_frame(player, district, location_items)
     elements[district.id]["delete_toggle"] = delete_toggle
     local delete_confirm = subheader.add{type="sprite-button", sprite="utility/check_mark",
         tags={mod="fp", on_gui_click="delete_district_confirm", district_id=district.id},
-        style="flib_tool_button_light_green", visible=false, mouse_button_filter={"left"}}
+        style="fflib_tool_button_light_green", visible=false, mouse_button_filter={"left"}}
     delete_confirm.style.padding = 0
     elements[district.id]["delete_confirm"] = delete_confirm
 
@@ -208,7 +233,7 @@ local function build_district_frame(player, district, location_items)
 end
 
 local function refresh_districts_box(player)
-    local player_table = util.globals.player_table(player)
+    local player_table = lib.globals.player_table(player)
 
     local main_elements = player_table.ui_state.main_elements
     if main_elements.main_frame == nil then return end
@@ -224,18 +249,18 @@ local function refresh_districts_box(player)
         table.insert(location_items, {"", "[img=" .. proto.sprite .. "] ", proto.localised_name})
     end
 
-    util.globals.ui_state(player).tooltips.districts_box = {}
+    lib.globals.ui_state(player).tooltips.districts_box = {}
     for district in player_table.realm:iterator() do
         build_district_frame(player, district, location_items)
     end
 end
 
 local function build_districts_box(player)
-    local main_elements = util.globals.main_elements(player)
+    local main_elements = lib.globals.main_elements(player)
     main_elements.districts_box = {}
 
     local parent_flow = main_elements.flows.right_vertical
-    local scroll_pane = parent_flow.add{type="scroll-pane", style="flib_naked_scroll_pane_no_padding"}
+    local scroll_pane = parent_flow.add{type="scroll-pane", style="fflib_naked_scroll_pane_no_padding"}
     scroll_pane.style.top_margin = -2
     scroll_pane.style.extra_right_margin_when_activated = -12
     local flow_vertical = scroll_pane.add{type="flow", direction="vertical"}
@@ -258,22 +283,22 @@ listeners.gui = {
                 local spots_to_shift = (event.control) and 5 or ((not event.shift) and 1 or nil)
                 district.parent:shift(district, tags.direction, spots_to_shift)
 
-                util.raise.refresh(player, "districts_box")
+                lib.gui.run_refresh(player, "districts_box")
             end)
         },
         {
             name = "select_district",
             handler = (function(player, tags, _)
                 local selected_district = OBJECT_INDEX[tags.district_id]  --[[@as District]]
-                util.context.set(player, selected_district)
+                lib.context.set(player, selected_district)
                 main_dialog.toggle_districts_view(player)
-                util.raise.refresh(player, "all")
+                lib.gui.run_refresh(player, "all")
             end)
         },
         {
             name = "edit_district_name",
             handler = (function(player, tags, _)
-                local main_elements = util.globals.main_elements(player)
+                local main_elements = lib.globals.main_elements(player)
                 local district_elements = main_elements.districts_box[tags.district_id]
                 district_elements.name_flow.visible = false
                 district_elements.edit_flow.visible = true
@@ -289,7 +314,7 @@ listeners.gui = {
                 local district = OBJECT_INDEX[tags.district_id]  --[[@as District]]
                 district.collapsed = not district.collapsed
 
-                util.raise.refresh(player, "districts_box")
+                lib.gui.run_refresh(player, "districts_box")
             end)
         },
         {
@@ -297,7 +322,7 @@ listeners.gui = {
             handler = (function(player, tags, _)
                 local district = OBJECT_INDEX[tags.district_id]  --[[@as District]]
 
-                local main_elements = util.globals.main_elements(player)
+                local main_elements = lib.globals.main_elements(player)
                 local district_elements = main_elements.districts_box[tags.district_id]
                 district_elements.delete_toggle.visible = false
                 district_elements.delete_confirm.visible = true
@@ -308,21 +333,21 @@ listeners.gui = {
             handler = (function(player, tags, _)
                 local district = OBJECT_INDEX[tags.district_id]  --[[@as District]]
 
-                local main_elements = util.globals.main_elements(player)
+                local main_elements = lib.globals.main_elements(player)
                 local district_elements = main_elements.districts_box[tags.district_id]
                 district_elements.delete_toggle.visible = true
                 district_elements.delete_confirm.visible = false
 
                 -- Removal will always find an alterantive because there always exists at least one District
-                local adjacent_district = util.context.remove(player, district)  --[[@as District]]
+                local adjacent_district = lib.context.remove(player, district)  --[[@as District]]
                 district.parent:remove(district)
 
-                util.context.set(player, adjacent_district)
-                util.raise.refresh(player, "all")
+                lib.context.set(player, adjacent_district)
+                lib.gui.run_refresh(player, "all")
             end)
         },
         {
-            name = "act_on_district_item",
+            name = "act_on_district_product",
             actions_table = {
                 copy = {shortcut="shift-right"},
                 add_to_cursor = {shortcut="alt-right"},
@@ -330,6 +355,23 @@ listeners.gui = {
             },
             handler = handle_item_button_click
         },
+        {
+            name = "act_on_district_ingredient",
+            actions_table = {
+                create_factory = {shortcut="left", show=true},
+                copy = {shortcut="shift-right"},
+                add_to_cursor = {shortcut="alt-right"},
+                factoriopedia = {shortcut="alt-left"}
+            },
+            handler = handle_item_button_click
+        },
+        {
+            name = "act_on_district_special_ingredient",
+            actions_table = {
+                create_factory = {shortcut="left", show=true}
+            },
+            handler = handle_item_button_click
+        }
     },
     on_gui_confirmed = {
         {
@@ -345,14 +387,14 @@ listeners.gui = {
     },
 }
 
-listeners.misc = {
+listeners.player = {
     build_gui_element = (function(player, event)
         if event.trigger == "main_dialog" then
             build_districts_box(player)
         end
     end),
     refresh_gui_element = (function(player, event)
-        local triggers = {districts_box=true, production=true, factory=true, all=true}
+        local triggers = {districts_box=true, factory=true, all=true}
         if triggers[event.trigger] then refresh_districts_box(player) end
     end)
 }

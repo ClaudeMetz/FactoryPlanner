@@ -5,21 +5,29 @@ local function style_textfield(textfield, style)
     textfield.style.margin = {0, 8, 12, 8}
     textfield.style.horizontal_align = "right"
     textfield.style.font = "default-large-semibold"
-    textfield:focus()
 end
 
 local function run_calculation(player)
-    local calculator_elements = util.globals.ui_state(player).calculator_elements
+    local calculator_elements = lib.globals.ui_state(player).calculator_elements
     local textfield = calculator_elements.textfield
-    local expression = tostring(util.gui.parse_expression_field(textfield))
+    local expression = tostring(lib.gui.parse_expression_field(textfield, false))
 
     if expression == "nil" then
         style_textfield(textfield, "invalid_value_textfield")
     else
         if expression ~= textfield.text then  -- avoid x = x label
             local history_frame = calculator_elements.history_frame
+            local entry_flow = history_frame.add{type="flow", direction="horizontal", index=1}
+            entry_flow.style.vertical_align = "center"
+            local copy_button = entry_flow.add{type="sprite-button", sprite="utility/copy", style="tool_button",
+                tags={mod="fp", on_gui_click="copy_calculator_result", result=expression},
+                tooltip={"fp.calculator_copy_tt"}, mouse_button_filter={"left"}}
+            copy_button.style.size = 16
+            copy_button.style.padding = -1
+            copy_button.style.right_margin = 4
+
             local caption = textfield.text .. " = [font=default-semibold]" .. expression .. "[/font]"
-            history_frame.add{type="label", caption=caption, index=1}
+            entry_flow.add{type="label", caption=caption}
 
             local children = history_frame.children
             if #children > 15 then children[#children].destroy() end
@@ -31,7 +39,7 @@ local function run_calculation(player)
 end
 
 local function handle_button_click(player, tags, _)
-    local textfield = util.globals.ui_state(player).calculator_elements.textfield
+    local textfield = lib.globals.ui_state(player).calculator_elements.textfield
     local action = tags.action
 
     if action == "=" then
@@ -80,7 +88,7 @@ local function build_calculator_dialog(player, elements)
     local flow_title = frame.add{type="flow", direction="horizontal", style="frame_header_flow"}
     flow_title.drag_target = frame
     flow_title.add{type="label", caption={"fp.calculator"}, style="fp_label_frame_title", ignored_by_interaction=true}
-    flow_title.add{type="empty-widget", style="flib_titlebar_drag_handle", ignored_by_interaction=true}
+    flow_title.add{type="empty-widget", style="fflib_titlebar_drag_handle", ignored_by_interaction=true}
 
     flow_title.add{type="sprite-button", sprite="fp_history", tooltip={"fp.toggle_history_tt"}, style="fp_button_frame",
         tags={mod="fp", on_gui_click="toggle_calculator_history"}, auto_toggle=true, mouse_button_filter={"left"}}
@@ -130,7 +138,7 @@ local function build_calculator_dialog(player, elements)
 end
 
 local function toggle_calculator_dialog(player)
-    local ui_state = util.globals.ui_state(player)
+    local ui_state = lib.globals.ui_state(player)
     local dialog = ui_state.calculator_elements.frame
 
     if not dialog or not dialog.valid then
@@ -138,9 +146,14 @@ local function toggle_calculator_dialog(player)
         ui_state.calculator_elements.frame = dialog
     end  ---@cast dialog -nil
 
-    dialog.bring_to_front()
     dialog.visible = not dialog.visible
     -- No player.opened so it can be concurrent
+
+    if dialog.visible then
+        dialog.bring_to_front()
+        ui_state.calculator_elements.textfield.select_all()
+        ui_state.calculator_elements.textfield.focus()
+    end
 end
 
 
@@ -160,7 +173,7 @@ listeners.gui = {
         {
             name = "toggle_calculator_history",
             handler = (function(player, _, _)
-                local ui_state = util.globals.ui_state(player)
+                local ui_state = lib.globals.ui_state(player)
                 local history_frame = ui_state.calculator_elements.history_frame
                 history_frame.visible = not history_frame.visible
             end)
@@ -168,13 +181,21 @@ listeners.gui = {
         {
             name = "focus_textfield",
             handler = (function(player, _, _)
-                local calculator_elements = util.globals.ui_state(player).calculator_elements
+                local calculator_elements = lib.globals.ui_state(player).calculator_elements
                 calculator_elements.textfield.select_all()
             end)
         },
         {
             name = "calculator_button",
             handler = handle_button_click
+        },
+        {
+            name = "copy_calculator_result",
+            handler = (function(player, tags, _)
+                local calculator_elements = lib.globals.ui_state(player).calculator_elements
+                calculator_elements.textfield.text = calculator_elements.textfield.text .. tags.result
+                calculator_elements.textfield.focus()
+            end)
         }
     },
     on_gui_confirmed = {
@@ -185,7 +206,7 @@ listeners.gui = {
     }
 }
 
-listeners.misc = {
+listeners.player = {
     fp_toggle_calculator = toggle_calculator_dialog
 }
 

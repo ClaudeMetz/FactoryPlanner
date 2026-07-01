@@ -1,4 +1,4 @@
-local generator_util = {}
+local _util = {}
 
 -- ** LOCAL UTIL **
 ---@alias RecipeItem FormattedProduct | Ingredient
@@ -10,9 +10,9 @@ local generator_util = {}
 ---@field name string
 ---@field type string
 ---@field amount number
+---@field proddable_amount number
 ---@field temperature float?
 ---@field base_name string?
----@field proddable_amount number?
 
 ---@param product Product
 ---@return FormattedProduct
@@ -38,7 +38,11 @@ local function generate_formatted_product(product)
         proddable_amount = math.max(base_amount - catalyst_amount, 0)
     end
 
-    local probability = (product.probability or 1)
+    -- These need defaults for products that are manually defined by FP
+    local shared_probability = product.shared_probability or {min = 0, max = 1}
+    local independent_probability = product.independent_probability or 1
+    local probability = independent_probability * (shared_probability.max - shared_probability.min)
+
     local formatted_product = {
         name = product.name,
         type = product.type,
@@ -84,7 +88,7 @@ local function create_type_indexed_list(item_list)
     local indexed_list = {item = {}, fluid = {}, entity = {}}  ---@type IndexedItemList
 
     for index, item in pairs(item_list) do
-        indexed_list[item.type][item.name] = {index = index, item = ftable.shallow_copy(item)}
+        indexed_list[item.type][item.name] = {index = index, item = lib.flib.shallow_copy(item)}
     end
 
     return indexed_list
@@ -106,7 +110,7 @@ end
 ---@param products Product[]
 ---@param main_product Product?
 ---@param ingredients Ingredient[]
-function generator_util.format_recipe(recipe_proto, products, main_product, ingredients)
+function _util.format_recipe(recipe_proto, products, main_product, ingredients)
     local temperature_limit = 3.4e+38
 
     for _, base_ingredient in pairs(ingredients) do
@@ -130,18 +134,16 @@ function generator_util.format_recipe(recipe_proto, products, main_product, ingr
 
     local formatted_products = {}  ---@type FormattedProduct[]
     for _, base_product in pairs(products) do
-        if base_product.type ~= "research-progress" then
-            local formatted_product = generate_formatted_product(base_product)
+        local formatted_product = generate_formatted_product(base_product)
 
-            if formatted_product.amount > 0 then
-                table.insert(formatted_products, formatted_product)
+        if formatted_product.amount > 0 then
+            table.insert(formatted_products, formatted_product)
 
-                -- Update the main product as well, if present
-                if main_product ~= nil
-                        and formatted_product.type == main_product.type
-                        and formatted_product.name == main_product.name then
-                    recipe_proto.main_product = formatted_product
-                end
+            -- Update the main product as well, if present
+            if main_product ~= nil
+                    and formatted_product.type == main_product.type
+                    and formatted_product.name == main_product.name then
+                recipe_proto.main_product = formatted_product
             end
         end
     end
@@ -160,14 +162,14 @@ function generator_util.format_recipe(recipe_proto, products, main_product, ingr
                 local difference = ingredient.item.amount - peer_product.item.amount
 
                 if difference < 0 then
-                    local item = ftable.shallow_copy(ingredient.item)
+                    local item = lib.flib.shallow_copy(ingredient.item)
                     item.amount = peer_product.item.amount + difference
                     recipe_proto.catalysts.ingredients[item.name] = item
 
                     ingredients[ingredient.index].amount = nil
                     formatted_products[peer_product.index].amount = -difference
                 elseif difference > 0 then
-                    local item = ftable.shallow_copy(peer_product.item)
+                    local item = lib.flib.shallow_copy(peer_product.item)
                     item.amount = ingredient.item.amount - difference
                     recipe_proto.catalysts.products[item.name] = item
 
@@ -175,7 +177,7 @@ function generator_util.format_recipe(recipe_proto, products, main_product, ingr
                     formatted_products[peer_product.index].amount = nil
                 else
                     -- Nilled-out items are just shown as ingredient catalysts
-                    local item = ftable.shallow_copy(ingredient.item)
+                    local item = lib.flib.shallow_copy(ingredient.item)
                     recipe_proto.catalysts.ingredients[item.name] = item
 
                     ingredients[ingredient.index].amount = nil
@@ -197,131 +199,17 @@ function generator_util.format_recipe(recipe_proto, products, main_product, ingr
 end
 
 
--- Active mods table needed for the funtions below
-local active_mods = script.active_mods
-
--- Determines whether this recipe is a recycling one or not
-local recycling_recipe_mods = {
-    ["base"] = {".*%-recycling$"},
-    --[[ ["IndustrialRevolution"] = {"^scrap%-.*"},
-    ["space-exploration"] = {"^se%-recycle%-.*"},
-    ["angelspetrochem"] = {"^converter%-.*"},
-    ["reverse-factory"] = {"^rf%-.*"},
-    ["ZRecycling"] = {"^dry411srev%-.*"} ]]
-}
-
-local active_recycling_recipe_mods = {}  ---@type string[]
-for modname, patterns in pairs(recycling_recipe_mods) do
-    for _, pattern in pairs(patterns) do
-        if active_mods[modname] then
-            table.insert(active_recycling_recipe_mods, pattern)
-        end
-    end
+---@param normal_quality_value number
+---@return number base_value
+function _util.get_base_value(normal_quality_value)
+    if normal_quality_value == nil then return nil end
+    return normal_quality_value / prototypes.quality["normal"].default_multiplier
 end
-
----@param proto LuaRecipePrototype
----@return boolean
-function generator_util.is_recycling_recipe(proto)
-    for _, pattern in pairs(active_recycling_recipe_mods) do
-        if string.match(proto.name, pattern) and proto.hidden then return true end
-    end
-    return false
-end
-
-
--- Determines whether the given recipe is a barreling or stacking one
-local compacting_recipe_mods = {
-    ["base"] = {patterns = {"^fill%-.*", "^empty%-.*"}, item = "barrel"},
-    ["pycoalprocessing"] = {patterns = {"^fill%-.*%-canister$", "^empty%-.*%-canister$"}}
-    --[[ ["deadlock-beltboxes-loaders"] = {"^deadlock%-stacks%-.*", "^deadlock%-packrecipe%-.*",
-                                      "^deadlock%-unpackrecipe%-.*"},
-    ["DeadlockCrating"] = {"^deadlock%-packrecipe%-.*", "^deadlock%-unpackrecipe%-.*"},
-    ["IntermodalContainers"] = {"^ic%-load%-.*", "^ic%-unload%-.*"},
-    ["space-exploration"] = {"^se%-delivery%-cannon%-pack%-.*"},
-    ["Satisfactorio"] = {"^packaged%-.*", "^unpack%-.*"} ]]
-}
-
----@param proto LuaRecipePrototype
----@return boolean
-function generator_util.is_compacting_recipe(proto)
-    for mod, filter_data in pairs(compacting_recipe_mods) do
-        if active_mods[mod] then
-            for _, pattern in pairs(filter_data.patterns) do
-                if string.match(proto.name, pattern) then
-                    if not filter_data.item then
-                        return true
-                    else
-                        for _, product in pairs(proto.products) do
-                            if product.name == filter_data.item then return true end
-                        end
-                        for _, ingredient in pairs(proto.ingredients) do
-                            if ingredient.name == filter_data.item then return true end
-                        end
-                    end
-                end
-            end
-        end
-    end
-    return false
-end
-
-
--- Determines whether this recipe is irrelevant or not and should thus be excluded
-local irrelevant_recipe_categories = {
-    ["Transport_Drones_Meglinge_Fork"] = {"transport-drone-request", "transport-fluid-request"},
-    --[[ ["Mining_Drones"] = {"mining-depot"},
-    ["Deep_Storage_Unit"] = {"deep-storage-item", "deep-storage-fluid",
-                             "deep-storage-item-big", "deep-storage-fluid-big",
-                             "deep-storage-item-mk2/3", "deep-storage-fluid-mk2/3"},
-    ["Satisfactorio"] = {"craft-bench", "equipment", "awesome-shop",
-                             "resource-scanner", "object-scanner", "building",
-                             "hub-progressing", "space-elevator", "mam"} ]]
-}
-
-local irrelevant_recipe_categories_lookup = {}  ---@type { [string] : true }
-for mod, categories in pairs(irrelevant_recipe_categories) do
-    for _, category in pairs(categories) do
-        if active_mods[mod] then
-            irrelevant_recipe_categories_lookup[category] = true
-        end
-    end
-end
-
----@param recipe LuaRecipePrototype
----@return boolean
-function generator_util.is_irrelevant_recipe(recipe)
-    return irrelevant_recipe_categories_lookup[recipe.category]
-end
-
-
--- Determines whether this machine is irrelevant or not and should thus be excluded
-local irrelevant_machine_mods = {
-    --[[ ["GhostOnWater"] = {"waterGhost%-.*"} ]]
-}
-
-local irrelevant_machines_lookup = {}  ---@type string[]
-for modname, patterns in pairs(irrelevant_machine_mods) do
-    for _, pattern in pairs(patterns) do
-        if active_mods[modname] then
-            table.insert(irrelevant_machines_lookup, pattern)
-        end
-    end
-end
-
----@param proto LuaEntityPrototype
----@return boolean
-function generator_util.is_irrelevant_machine(proto)
-    for _, pattern in pairs(irrelevant_machines_lookup) do
-        if string.match(proto.name, pattern) then return true end
-    end
-    return false
-end
-
 
 -- Finds a sprite for the given entity prototype
 ---@param proto LuaEntityPrototype
 ---@return SpritePath | nil
-function generator_util.determine_entity_sprite(proto)
+function _util.determine_entity_sprite(proto)
     local entity_sprite = "entity/" .. proto.name  ---@type SpritePath
     if helpers.is_valid_sprite_path(entity_sprite) then
         return entity_sprite
@@ -338,112 +226,238 @@ function generator_util.determine_entity_sprite(proto)
     return nil
 end
 
--- This is wrong now that silos can have two rockets in progress at once
---[[
--- Determines how long a rocket takes to launch for the given rocket silo prototype
--- These stages mirror the in-game progression and timing exactly. Most steps take an additional tick (+1)
--- due to how the game code is written. If one stage is completed, you can only progress to the next one
--- in the next tick. No stages can be skipped, meaning a minimal sequence time is around 10 ticks long.
+
+-- Determines the tick count and energy consumption of launching a rocket for the given silo
+-- This does not take into account the full launch cycle, but instead calculates the fastest
+-- possible one, using the quick follow-up rocket mechanic, as that's the limiting case.
+-- The tick results are seemingly off by a handful of ticks, but it's close enough.
+-- Power consumption results might be low by 10% or so from light empirical testing.
 ---@param silo_proto LuaEntityPrototype
----@return number? launch_sequence_time
-function generator_util.determine_launch_sequence_time(silo_proto)
+---@return number launch_time
+---@return number energy_usage
+function _util.determine_launch_data(silo_proto)
+    local power = silo_proto.active_energy_usage
     local rocket_proto = silo_proto.rocket_entity_prototype
-    if not rocket_proto then return nil end  -- meaning this isn't a rocket silo proto
 
-    local rocket_flight_threshold = 0.5  -- hardcoded in the game files
-    local launch_steps = {
-        lights_blinking_open = (1 / silo_proto.light_blinking_speed) + 1,
-        doors_opening = (1 / silo_proto.door_opening_speed) + 1,
-        doors_opened = silo_proto.rocket_rising_delay + 1,
-        rocket_rising = (1 / rocket_proto.rising_speed) + 1,
-        rocket_ready = 14,  -- estimate for satellite insertion delay
-        launch_started = silo_proto.launch_wait_time + 1,
-        engine_starting = (1 / rocket_proto.engine_starting_speed) + 1,
-        -- This calculates a fractional amount of ticks. Also, math.log(x) calculates the natural logarithm
-        rocket_flying = math.log(1 + rocket_flight_threshold * rocket_proto.flying_acceleration
-            / rocket_proto.flying_speed) / math.log(1 + rocket_proto.flying_acceleration),
-        lights_blinking_close = (1 / silo_proto.light_blinking_speed) + 1,
-        doors_closing = (1 / silo_proto.door_opening_speed) + 1
-    }
+    -- These values are not accessible in the API
+    local frame_count, inverse_speed = 32, 1 / 0.3
+    local arm_move_offset = rocket_proto.rising_speed * frame_count * inverse_speed
+    local rocket_flight_threshold = 0.1  -- hardcoded in the game files
 
-    local total_ticks = 0
-    for _, ticks_taken in pairs(launch_steps) do
-        total_ticks = total_ticks + ticks_taken
-    end
+    -- Cycle starts here
+    local launch_ticks, energy_usage = 0, 0
 
-    return (total_ticks / 60)  -- retured value is in seconds
-end ]]
+    local doors_opened = 1
+    launch_ticks = launch_ticks + doors_opened
 
+    local rocket_rising_threshold = 1 - silo_proto.rocket_quick_relaunch_start_offset - arm_move_offset
+    local rocket_rising = rocket_rising_threshold / rocket_proto.rising_speed
+    launch_ticks = launch_ticks + rocket_rising
+    energy_usage = energy_usage + (rocket_rising * power)
 
----@param proto FPMachinePrototype
-function generator_util.check_machine_effects(proto)
-    local any_positives = false
-    for _, effect in pairs(proto.allowed_effects) do
-        if effect == true then any_positives = true; break end
-    end
+    local arms_advance = arm_move_offset / rocket_proto.rising_speed
+    launch_ticks = launch_ticks + arms_advance
+    energy_usage = energy_usage + (arms_advance * power)
 
-    if proto.module_limit == 0 or not any_positives then
-        proto.effect_receiver.uses_module_effects = false
-    end
-    if proto.module_limit == 0 then
-        proto.effect_receiver.uses_beacon_effects = false
-    end
+    local launch_starting = 1
+    launch_ticks = launch_ticks + launch_starting
+
+    local launch_started = silo_proto.launch_wait_time
+    launch_ticks = launch_ticks + launch_started
+
+    local engine_starting = 1 / rocket_proto.engine_starting_speed
+    launch_ticks = launch_ticks + engine_starting
+    energy_usage = energy_usage + (engine_starting * power)
+
+    local arms_retract = arm_move_offset / rocket_proto.rising_speed
+    launch_ticks = launch_ticks + arms_retract
+    energy_usage = energy_usage + (arms_retract * power)
+
+    -- I'm not exactly sure why this behaves as the game code does, *but it do*
+    local rocket_flying = math.log(1 + rocket_flight_threshold * rocket_proto.flying_acceleration
+        / rocket_proto.flying_speed) / math.log(1 + rocket_proto.flying_acceleration)
+    launch_ticks = launch_ticks + rocket_flying - arms_retract
+
+    return (launch_ticks / 60), (energy_usage / launch_ticks)
 end
 
----@param effects ModuleEffects
----@return ModuleEffects
-function generator_util.formatted_effects(effects)
-    effects = effects or {}
-    if effects["quality"] then  -- fix base game weirdness
-        effects["quality"] = effects["quality"] / 10
+
+---@param effects ModuleEffects?
+---@return IntegerModuleEffects
+function _util.formatted_effects(effects)
+    if effects == nil then return {} end
+
+    -- This turns effects into an integer, multiplying by effect_precision for 0.01% precision
+    -- The values need to then be divided by effect_precision and floored for calculation
+    for name, value in pairs(effects) do
+        -- The API provides effects as values with only two decimals already
+        effects[name] = value * MAGIC_NUMBERS.effect_precision
     end
+
     return effects
 end
 
---- Needs to be weird because ordering of non-integer keys depends on insertion order
----@param proto FPMachinePrototype
-function generator_util.sort_machine_burner_categories(proto)
-    if not proto.burner then return end
-
-    local category_list = {}
-    for category, _ in pairs(proto.burner.categories) do
-        table.insert(category_list, category)
+---@param proto LuaEntityPrototype
+---@return boolean
+function _util.is_any_effect_viable(proto)
+    local allowed_categories = proto.allowed_module_categories
+    if allowed_categories ~= nil and table_size(allowed_categories) == 0 then
+        return false
     end
-    table.sort(category_list)
 
-    local category_index = {}
-    for _, category in ipairs(category_list) do
-        category_index[category] = true
+    local allowed_effects = proto.allowed_effects
+    if allowed_effects == nil then return false end
+
+    for _, effect in pairs(allowed_effects or {}) do
+        if effect == true then return true end
     end
-    proto.burner.categories = category_index
+
+    return false
+end
+
+---@class FormattedEffectReceiver
+---@field base_effect ModuleEffects
+---@field uses_module_effects boolean
+---@field uses_beacon_effects boolean
+---@field uses_surface_effects boolean
+---@field limits { [ModuleEffectName]: EffectValueRange }
+
+---@param proto LuaEntityPrototype
+---@return FormattedEffectReceiver effect_receiver
+function _util.format_effect_receiver(proto)
+    local effect_receiver = proto.effect_receiver
+    if effect_receiver == nil then
+        effect_receiver = {
+            base_effect = {},
+            uses_module_effects = false,
+            uses_beacon_effects = false,
+            uses_surface_effects = false,
+            consumption_limits = {low = -0.8, high = 1000},
+            speed_limits = {low = -0.8, high = 1000},
+            productivity_limits = {low = -0.8, high = 1000},
+            pollution_limits = {low = -0.8, high = 1000},
+            quality_limits = {low = 0, high = 1000}
+        }
+    else
+        local base_effect = effect_receiver.base_effect  -- can be nil
+        effect_receiver.base_effect = _util.formatted_effects(base_effect)
+    end
+
+    local module_limit = proto.module_inventory_size
+    if module_limit == nil or module_limit == 0 then
+        effect_receiver.uses_module_effects = false
+        -- Beacons can still be used even if the machine can't have modules
+    end
+
+    if not _util.is_any_effect_viable(proto) then
+        effect_receiver.uses_module_effects = false
+        effect_receiver.uses_beacon_effects = false
+    end
+
+    -- Adjust limits format to be more convenient
+    effect_receiver.limits = {}
+    for name, _ in pairs(lib.effects.blank) do
+        effect_receiver.limits[name] = effect_receiver[name .. "_limits"]
+        effect_receiver[name .. "_limits"] = nil
+    end
+
+    return effect_receiver
+end
+
+
+---@param proto LuaEntityPrototype
+---@return string? category
+---@return LuaFluidBoxPrototype? input
+---@return LuaFluidBoxPrototype? output
+function _util.get_boiler_data(proto)
+    local input, output = nil, nil  -- need to find these manually
+    for _, fluid_box in pairs(proto.fluidbox_prototypes) do
+        if fluid_box.production_type == "input-output" or fluid_box.production_type == "input" then
+            input = fluid_box
+        elseif fluid_box.production_type == "output" then
+            output = fluid_box
+        end
+    end
+
+    if input == nil then return nil, nil, nil end
+
+    local category = "boiler"
+    if proto.boiler_mode == "output-to-separate-pipe" then
+        category = category .. "-target-" .. proto.target_temperature
+    end
+    if output.filter ~= nil then
+        category = category .. "-output-" .. output.filter.name
+    end
+    if input.filter ~= nil then
+        category = category .. "-filter-" .. input.filter.name
+    end
+
+    return category, input, output
+end
+
+
+---@param proto FPRecipePrototype | MachineBurner
+---@param combined_list { string: string[] }
+---@param used_categories { string: [FPMachinePrototype | FPFuelPrototype] }
+function _util.format_category_data(proto, combined_list, used_categories)
+    local list = {}
+
+    for category, _ in pairs(proto.categories) do
+        if used_categories[category] then
+            table.insert(list, category)
+        else  -- remove categories that don't have any valid uses
+            proto.categories[category] = nil
+        end
+    end
+
+    table.sort(list)  -- canonicalize the category order
+    proto.combined_category = table.concat(list, "|")
+
+    combined_list[proto.combined_category] = list
+end
+
+---@param combined_list { string: string[] }
+---@param used_categories { string: [FPMachinePrototype | FPFuelPrototype] }
+---@param final_list NamedPrototypesWithCategory<FPMachinePrototype | FPFuelPrototype>
+---@param insert_function function
+function _util.fill_categories(combined_list, used_categories, final_list, insert_function)
+    for combined_category, list in pairs(combined_list) do
+        for _, category in pairs(list) do
+            for _, proto in pairs(used_categories[category]) do
+                local copy = lib.flib.deep_copy(proto)
+                copy.combined_category = combined_category
+                insert_function(final_list, copy, combined_category)
+            end
+        end
+    end
 end
 
 
 -- Adds the tooltip for the given recipe
 ---@param recipe FPRecipePrototype
 ---@return LocalisedString
-function generator_util.recipe_tooltip(recipe)
+function _util.recipe_tooltip(recipe)
     local tooltip = {"", {"fp.recipe_title", recipe.sprite, recipe.localised_name}}  ---@type LocalisedString
     local current_table, next_index = tooltip, 3
 
     if recipe.energy ~= nil then
         local energy_line = {"fp.recipe_crafting_time", recipe.energy}
-        current_table, next_index = util.build_localised_string(energy_line, current_table, next_index)
+        current_table, next_index = lib.build_localised_string(energy_line, current_table, next_index)
     end
 
     local item_protos = storage.prototypes.items
     for _, item_type in ipairs{"ingredients", "products"} do
         local locale_key = (item_type == "ingredients") and "fp.pu_ingredient" or "fp.pu_product"
         local header_line = {"fp.recipe_header", {locale_key, 2}}
-        current_table, next_index = util.build_localised_string(header_line, current_table, next_index)
+        current_table, next_index = lib.build_localised_string(header_line, current_table, next_index)
         if not next(recipe[item_type]) then
-            current_table, next_index = util.build_localised_string({"fp.recipe_none"}, current_table, next_index)
+            current_table, next_index = lib.build_localised_string({"fp.recipe_none"}, current_table, next_index)
         else
             local items = recipe[item_type]
             for _, item in ipairs(items) do
                 local proto = item_protos[item.type].members[item.name]
                 local item_line = {"fp.recipe_item", proto.sprite, item.amount, proto.localised_name}
-                current_table, next_index = util.build_localised_string(item_line, current_table, next_index)
+                current_table, next_index = lib.build_localised_string(item_line, current_table, next_index)
             end
         end
     end
@@ -460,22 +474,22 @@ end
 -- Generates a table imitating LuaGroup to avoid lua-cpp bridging
 ---@param group LuaGroup
 ---@return ItemGroup group_table
-function generator_util.generate_group_table(group)
+function _util.generate_group_table(group)
     return {name=group.name, localised_name=group.localised_name, order=group.order, valid=true}
 end
 
 ---@param proto FPItemPrototype | FPRecipePrototype
-function generator_util.add_default_groups(proto)
-    proto.group = generator_util.generate_group_table(prototypes.item_group["other"])
-    proto.subgroup = generator_util.generate_group_table(prototypes.item_subgroup["other"])
+function _util.add_default_groups(proto)
+    proto.group = _util.generate_group_table(prototypes.item_group["other"])
+    proto.subgroup = _util.generate_group_table(prototypes.item_subgroup["other"])
 end
 
 
 ---@param text LocalisedString
 ---@param color Color
 ---@return LocalisedString
-function generator_util.colored_rich_text(text, color)
+function _util.colored_rich_text(text, color)
     return {"", "[color=", color.r, ",", color.g, ",", color.b, "]", text, "[/color]"}
 end
 
-return generator_util
+return _util

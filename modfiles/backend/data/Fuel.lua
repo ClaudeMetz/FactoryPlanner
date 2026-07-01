@@ -28,8 +28,7 @@ local function init(proto, parent)
         parent = parent
     }, "Fuel", Fuel)  --[[@as Fuel]]
 
-    -- Initialize data related to fuel temperature if applicable
-    if proto.simplified ~= true then object:build_temperatures_data() end
+    if proto.simplified ~= true then object:build_temperature_data() end
 
     return object
 end
@@ -40,18 +39,43 @@ function Fuel:index()
 end
 
 
--- Builds temperature data cache, and optionally migrates previous temperature
-function Fuel:build_temperatures_data()
-    local previous = self.temperature
+---@param proto FPFuelPrototype
+---@param player LuaPlayer
+function Fuel:set_proto(proto, player)
+    self.proto = proto
+    self:build_temperature_data()
+    self:apply_temperature_default(player)
+end
 
-    self.temperature = nil
+
+---@return boolean
+function Fuel:is_temperature_configured()
+    return (self.proto.type ~= "fluid" or self.temperature ~= nil)
+end
+
+---@return string
+function Fuel:get_name_with_temperature()
+    if self.proto.type ~= "fluid" or self.temperature == nil then
+        return self.proto.name
+    else
+        return self.proto.name .. "-" .. self.temperature
+    end
+end
+
+function Fuel:build_temperature_data()
     self.temperature_data = nil
 
     if self.proto.type == "fluid" then
-        local temperature, data = util.temperature.generate_data(self.proto, previous)
+        self.temperature_data = lib.temperature.generate_data(self.proto)
+    end
+end
 
-        self.temperature = temperature
-        self.temperature_data = data
+--- There might be no valid default to apply
+---@param player LuaPlayer
+function Fuel:apply_temperature_default(player)
+    if self.proto.type == "fluid" then
+        self.temperature = lib.temperature.determine_applicable_default(
+            player, self.proto, self.temperature_data.applicable_values)
     end
 end
 
@@ -59,14 +83,15 @@ end
 ---@param object CopyableObject
 ---@return boolean success
 ---@return string? error
-function Fuel:paste(object)
+function Fuel:paste(object, player)
     if object.class == "Fuel" then
         local burner = self.parent.proto.burner  -- will exist if there is fuel to paste on
         -- Check invididual categories so you can paste between combined_categories
         for category_name, _ in pairs(burner.categories) do
             if object.proto.category == category_name then
                 self.proto = object.proto
-                self:build_temperatures_data()
+                self.temperature = object.temperature
+                self:build_temperature_data()
                 return true, nil
             end
         end
@@ -80,13 +105,17 @@ end
 ---@class PackedFuel: PackedObject
 ---@field class "Fuel"
 ---@field proto FPFuelPrototype
+---@field temperature float?
 
+---@param full boolean
 ---@return PackedFuel packed_self
-function Fuel:pack()
+function Fuel:pack(full)
     return {
         class = self.class,
         proto = prototyper.util.simplify_prototype(self.proto, "combined_category"),
-        temperature = self.temperature
+        temperature = self.temperature,
+
+        amount = (full) and self.amount or nil
     }
 end
 
@@ -96,6 +125,7 @@ end
 local function unpack(packed_self, parent)
     local unpacked_self = init(packed_self.proto, parent)
     unpacked_self.temperature = packed_self.temperature  -- will be migrated through validation
+    unpacked_self.amount = packed_self.amount  -- only used for paste
 
     return unpacked_self
 end
@@ -107,17 +137,36 @@ function Fuel:validate()
     self.valid = (not self.proto.simplified)
 
     if self.valid then
-        local burner = (not self.parent.proto.simplified) and self.parent.proto.burner or nil
+        local burner = self.parent.proto.burner
+        -- Machine being simplified or not having a burner anymore invalidates the fuel
+        self.valid = (burner ~= nil and not burner.simplified) and self.valid
 
-        -- Machine is simplified, doesn't have a burner anymore, or has a different category, is all bad
-        if not burner or burner.combined_category ~= self.proto.combined_category then
-            self.proto = prototyper.util.simplify_prototype(self.proto, "combined_category")
-            self.valid = false
+        if self.valid and burner.combined_category ~= self.proto.combined_category then
+            if burner.categories[self.proto.category] then
+                -- Fix the fuel if the combined category changed but it still has a compatible category
+                self.proto = prototyper.util.find("fuels", self.proto.name, burner.combined_category)
+            else
+                self.valid = false
+            end
         end
     end
 
-    -- Updates temperature data cache and migrates previous temperature choice
-    if self.valid then self:build_temperatures_data(self.temperature) end
+    -- An invalid temperature shouldn't invalidate the fuel
+    if self.valid then
+        local previous_temperature = self.temperature
+        self.temperature = nil
+
+        self:build_temperature_data()
+
+        if self.proto.type == "fluid" and previous_temperature ~= nil then
+            for _, temperature in pairs(self.temperature_data.applicable_values) do
+                if temperature == previous_temperature then
+                    self.temperature = previous_temperature
+                    break
+                end
+            end
+        end
+    end
 
     return self.valid
 end

@@ -16,6 +16,12 @@ If you want to contribute to Factory Planner, please join the [Discord](https://
 
 Localisation of Factory Planner is handled entirely through a [separate project](https://github.com/ClaudeMetz/FactoryPlannerLocale) on Github. If you're interested in helping out, feel free take a look. There are further explanations on the project's page. If you have any technical questions, please open an issue on that repo.
 
+## Interfaces
+
+Factory Planner aims to be compatible with all other mods, even if they use custom scripts to implement functionality. To that end, it offers some interfaces through which another mod can influence how Factory Planner operates. Details can be found in the [compatibility interface docs](compatibility-interface.md). Note that this compatibility interface is currently very limited, but I'm open to expanding it to fit your use case. Just open a Github issue presenting it and we'll go from there.
+
+Additionally, Factory Planner offers a remote interface to interact with its stored data, such as planned factories or preferences. Details can be found in the [data interface docs](data-interface.md). If there is anything you'd like to be able to poke at, please open a Github issue to let me know.
+
 ## License
 
 This mod is licensed under [MIT](https://en.wikipedia.org/wiki/Public_domain), with the exception of the localisation, which is in the [public domain](https://github.com/ClaudeMetz/FactoryPlannerLocale?tab=Unlicense-1-ov-file).

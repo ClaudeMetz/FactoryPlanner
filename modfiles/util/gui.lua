@@ -14,7 +14,7 @@ local _gui = { switch = {}, mod = {} }
 ---@param label_first boolean?
 ---@return LuaGuiElement created_switch
 function _gui.switch.add_on_off(parent_flow, action, additional_tags, state, caption, tooltip, label_first)
-    if type(state) == "boolean" then state = util.gui.switch.convert_to_state(state) end
+    if type(state) == "boolean" then state = lib.gui.switch.convert_to_state(state) end
 
     local flow = parent_flow.add{type="flow", direction="horizontal"}
     flow.style.vertical_align = "center"
@@ -50,11 +50,12 @@ function _gui.switch.convert_to_state(boolean)
 end
 
 
+---@param player LuaPlayer
 local function check_empty_flow(player)
     local button_flow = mod_gui.get_button_flow(player)
     -- parent.parent is to check that I'm not deleting a top level element. Now, I have no idea how that
     -- could ever be a top level element, but oh well, can't know everything now can we?
-    if #button_flow.children_names == 0 and button_flow.parent.parent then
+    if #button_flow.children_names == 0 and button_flow.parent and button_flow.parent.parent then
         button_flow.parent.destroy()
     end
 end
@@ -70,7 +71,7 @@ end
 -- Toggles the visibility of the toggle-main-dialog-button
 ---@param player LuaPlayer
 function _gui.toggle_mod_gui(player)
-    local enable = util.globals.preferences(player).show_gui_button
+    local enable = lib.globals.preferences(player).show_gui_button
 
     local frame_flow = mod_gui.get_button_flow(player)
     local mod_gui_button = frame_flow["fp_button_toggle_interface"]
@@ -90,16 +91,47 @@ function _gui.toggle_mod_gui(player)
 end
 
 
--- Properly centers the given frame (need width/height parameters cause no API-read exists)
 ---@param player LuaPlayer
----@param frame LuaGuiElement
----@param dimensions DisplayResolution
-function _gui.properly_center_frame(player, frame, dimensions)
-    local resolution, scale = player.display_resolution, player.display_scale
-    local x_offset = ((resolution.width - (dimensions.width * scale)) / 2)
-    local y_offset = ((resolution.height - (dimensions.height * scale)) / 2)
-    frame.location = {x_offset, y_offset}
+---@param metadata table
+function _gui.open_dialog(player, metadata)
+    GLOBAL_HANDLERS["open_modal_dialog"](player, metadata)
 end
+
+---@param player LuaPlayer
+---@param action "submit" | "cancel" | "delete"
+---@param skip_opened boolean?
+function _gui.close_dialog(player, action, skip_opened)
+    GLOBAL_HANDLERS["close_modal_dialog"](player, action, skip_opened)
+end
+
+---@param player LuaPlayer
+---@param trigger "main_dialog" | "compact_factory"
+---@param parent LuaGuiElement?
+function _gui.run_build(player, trigger, parent)
+    local event_data = {
+        name = "build_gui_element",
+        tick = game.tick,
+        player_index = player.index,
+        trigger = trigger,
+        parent = parent
+    }
+    GLOBAL_HANDLERS["run_gui_build"](event_data)
+end
+
+--- "factory" includes districts_box, production_bar, item_boxes, production_box, production_table
+--- "production" includes item_boxes, production_box, production_table
+---@param player LuaPlayer
+---@param trigger "all" | "factory" | "production" | "title_bar" | "district_info" | "factory_list" | "districts_box" | "production_bar" | "item_boxes" | "production_box" | "production_table" | "compact_factory" | "paste_button"
+function _gui.run_refresh(player, trigger)
+    local event_data = {
+        name = "refresh_gui_element",
+        tick = game.tick,
+        player_index = player.index,
+        trigger = trigger
+    }
+    GLOBAL_HANDLERS["run_gui_refresh"](event_data)
+end
+
 
 ---@param player LuaPlayer
 ---@return DisplayResolution
@@ -138,42 +170,47 @@ function _gui.reset_player(player)
 end
 
 
----@param emissions number
----@param district District
----@return LocalisedString tooltip
-function _gui.format_emissions(emissions, district)
-    if emissions == 0 then
-        return {"fp.emissions_none"}
-    else
-        local pollutant = {"airborne-pollutant-name." .. district.location_proto.pollutant_type}
-        local emission = util.format.SI_value(emissions, "E/m", 3)
-        return {"fp.emissions_line", pollutant, emission}
-    end
+---@param satisfied_amount number
+---@param actual_amount number
+---@return LocalisedString satisfaction_line
+---@return string percentage_string
+function _gui.calculate_satisfaction(satisfied_amount, actual_amount)
+    local satisfied_percentage = (satisfied_amount / actual_amount) * 100
+    local percentage_string = lib.format.number(satisfied_percentage, 3)
+    local satisfaction_line = {"", "\n", {"fp.bold_label", (percentage_string .. "%")}, " ", {"fp.satisfied"}}
+    return satisfaction_line, percentage_string
 end
 
 
 local expression_variables = {k=1000, K=1000, m=1000000, M=1000000, g=1000000000, G=1000000000}
 
 ---@param textfield LuaGuiElement
+---@param positive boolean
 ---@return number? expression
-function _gui.parse_expression_field(textfield)
+function _gui.parse_expression_field(textfield, positive)
     local expression = nil
     pcall(function() expression = helpers.evaluate_expression(textfield.text, expression_variables) end)
-    return expression
+    ---@cast expression double?
+
+    if expression == nil then return nil
+    elseif positive and expression <= 0 then return nil
+    else return expression end
 end
 
 ---@param textfield LuaGuiElement
-function _gui.update_expression_field(textfield)
-    local expression = _gui.parse_expression_field(textfield)
-
-    textfield.style = (textfield.text ~= "" and expression == nil) and "invalid_value_textfield" or "textbox"
-    textfield.style.width = textfield.tags.width  --[[@as number]]  -- this is stupid but styles work out that way
+---@param valid boolean
+function _gui.update_expression_field(textfield, valid)
+    textfield.style = (textfield.text ~= "" and not valid) and "invalid_value_textfield" or "textbox"
+    -- This is stupid but styles work out that way
+    textfield.style--[[@as LuaStyle]].width = textfield.tags.width  --[[@as int32]]
 end
 
 ---@param textfield LuaGuiElement
+---@param positive boolean
 ---@return boolean confirmed
-function _gui.confirm_expression_field(textfield)
-    local expression = _gui.parse_expression_field(textfield)
+function _gui.confirm_expression_field(textfield, positive)
+    local expression = _gui.parse_expression_field(textfield, positive)
+
     if expression then
         local exp = tostring(expression)
         if exp == textfield.text then
@@ -186,15 +223,14 @@ function _gui.confirm_expression_field(textfield)
 end
 
 
-function _gui.add_quality_dropdown(parent_flow, selected_index, tags)
-    local items = {}
-    for _, quality in pairs(storage.prototypes.qualities) do
-        local label = {"", "[quality=" .. quality.name .. "] ", quality.localised_name}
-        table.insert(items, label)
+---@param data_type DataType
+---@return PrototypeFilter elem_filter
+function _gui.compile_elem_filter(data_type)
+    local names = {}
+    for _, proto in pairs(storage.prototypes[data_type]) do
+        table.insert(names, proto.name)
     end
-
-    parent_flow.add{type="drop-down", items=items, selected_index=selected_index,
-        style="fp_drop-down_slim", tags=tags}
+    return {{filter="name", name=names}}
 end
 
 return _gui

@@ -2,14 +2,12 @@
 ---@param table_to_print AnyBasic
 ---@return string
 local function _llog(table_to_print)
-    local excludes = LLOG_EXCLUDES or {}  -- Optional custom excludes defined by the parent mod
-
     if type(table_to_print) ~= "table" then return (tostring(table_to_print)) end
 
     local tab_width, super_space = 2, ""
     for _=0, tab_width-1, 1 do super_space = super_space .. " " end
 
-    ---@param table_part { [AnyBasic]: AnyBasic }
+    ---@param table_part table<AnyBasic, AnyBasic>
     ---@param depth number
     ---@return string
     local function format(table_part, depth)
@@ -20,18 +18,14 @@ local function _llog(table_to_print)
         local super_spacing = spacing .. super_space  ---@type string
 
         local out, first_element = "{", true
-        local preceding_name = 0
+        local preceding_name = 0  ---@type AnyBasic
 
         for name, value in pairs(table_part) do
             local element = tostring(value)
             if type(value) == "string" then
                 element = "'" .. element .. "'"
             elseif type(value) == "table" then
-                if excludes[name] ~= nil then
-                    element = value.name or "EXCLUDE"
-                else
-                    element = format(value, depth+tab_width)
-                end
+                element = format(value, depth+tab_width)
             end
 
             local comma = (first_element) and "" or ","
@@ -39,7 +33,7 @@ local function _llog(table_to_print)
 
             -- Print string and discontinuous numerical keys only
             local key = (type(name) == "number" and preceding_name+1 == name) and "" or (name .. " = ")
-            preceding_name = name  --[[@as number]]
+            preceding_name = name
 
             out = out .. comma .. "\n" .. super_spacing .. key .. element
         end
@@ -53,7 +47,7 @@ end
 -- User-facing function, handles multiple tables at being passed at once
 ---@param ... AnyBasic
 local function llog(...)
-    local info = debug.getinfo(2, "Sl")
+    local info = debug.getinfo(2, "Sl")  ---@cast info -nil
     local out = "\n" .. info.short_src .. ":" .. info.currentline .. ":"
 
     local arg_nr = table_size({...})

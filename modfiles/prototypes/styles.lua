@@ -74,6 +74,13 @@ styles["fp_frame_semitransparent"] = {
     }
 }
 
+styles["fp_flow_temperature_defaults"] = {
+    type = "horizontal_flow_style",
+    vertical_align = "center",
+    horizontal_spacing = 4,
+    width = 125
+}
+
 styles["fp_table_production"] = {
     type = "table_style",
     odd_row_graphical_set = {
@@ -162,10 +169,18 @@ styles["fp_sprite-button_move"] = {
     invert_colors_of_picture_when_hovered_or_toggled = true
 }
 
+styles["fp_sprite-button_move_small"] = {
+    type = "button_style",
+    parent = "fp_sprite-button_move",
+    size = {20, 18},
+    padding = 0
+}
+
 -- Need to copy this style to get rid of the stupid built-in tooltip
 styles["fp_button_green"] = {
     type = "button_style",
     parent = "button",
+    minimal_width = 0,
     default_graphical_set = {
         base = {position = {68, 17}, corner_size = 8},
         shadow = default_dirt
@@ -188,16 +203,16 @@ styles["fp_button_green"] = {
 
 -- Generate smaller versions of flib's slot buttons (size 36)
 for _, color in pairs{"default", "grey", "red", "orange", "yellow", "green", "cyan", "blue", "purple", "pink"} do
-    styles["flib_slot_button_" .. color .. "_small"] = {
+    styles["fflib_slot_button_" .. color .. "_small"] = {
         type = "button_style",
-        parent = "flib_slot_button_" .. color,
+        parent = "fflib_slot_button_" .. color,
         size = 36
     }
 end
 
-styles["flib_slot_button_disabled"] = {
+styles["fflib_slot_button_disabled"] = {
     type = "button_style",
-    parent = "flib_slot_button_default",
+    parent = "fflib_slot_button_default",
     default_graphical_set = {},
     hovered_graphical_set = {},
     clicked_graphical_set = {},
@@ -205,21 +220,21 @@ styles["flib_slot_button_disabled"] = {
     padding = 4
 }
 
-styles["flib_slot_button_disabled_small"] = {
+styles["fflib_slot_button_disabled_small"] = {
     type = "button_style",
-    parent = "flib_slot_button_disabled",
+    parent = "fflib_slot_button_disabled",
     size = 36
 }
 
-styles["flib_slot_button_grayscale_small"] = {
+styles["fflib_slot_button_grayscale_small"] = {
     type = "button_style",
-    parent = "flib_slot_button_default_small",
+    parent = "fflib_slot_button_default_small",
     draw_grayscale_picture = true
 }
 
-styles["flib_slot_button_disabled_grayscale_small"] = {
+styles["fflib_slot_button_disabled_grayscale_small"] = {
     type = "button_style",
-    parent = "flib_slot_button_disabled_small",
+    parent = "fflib_slot_button_disabled_small",
     draw_grayscale_picture = true
 }
 

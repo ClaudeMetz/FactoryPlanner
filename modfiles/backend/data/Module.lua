@@ -6,7 +6,7 @@ local Object = require("backend.data.Object")
 ---@field proto FPModulePrototype | FPPackedPrototype
 ---@field quality_proto FPQualityPrototype
 ---@field amount integer
----@field total_effects ModuleEffects
+---@field total_effects IntegerModuleEffects
 ---@field effects_tooltip LocalisedString
 local Module = Object.methods()
 Module.__index = Module
@@ -48,16 +48,23 @@ function Module:set_amount(new_amount)
     self:summarize_effects()
 end
 
+
 function Module:summarize_effects()
-    local effects = ftable.shallow_copy(BLANK_EFFECTS)
+    local effects = lib.flib.shallow_copy(lib.effects.blank)
+
     for name, effect in pairs(self.proto.effects) do
-        local is_positive = util.effects.is_positive(name, effect)
-        local multiplier = (is_positive) and self.quality_proto.multiplier or 1
-        effects[name] = effect * self.amount * multiplier
+        local module_multiplier = self.proto.quality_multipliers[name]
+        if module_multiplier ~= 0 then
+            local quality_multiplier = self.quality_proto.module_multipliers[name]
+            effect = effect * (1 + module_multiplier * (quality_multiplier - 1))
+        end
+
+        effect = (effect < 0) and math.ceil(effect - 1e-4) or math.floor(effect + 1e-4)  -- truncate towards zero
+        effects[name] = effect * self.amount  -- doesn't create decimals
     end
 
     self.total_effects = effects
-    self.effects_tooltip = util.effects.format(effects)
+    self.effects_tooltip = lib.effects.format(effects)
 end
 
 
@@ -69,7 +76,8 @@ function Module:paste(object)
         ---@cast object Module
         if self.parent:check_compatibility(object.proto) then
             if self.proto == object.proto and self.quality_proto == object.quality_proto then
-                self:set_amount(math.min(object.amount, self.parent.module_limit))
+                local available_slots = self.parent.module_limit - self.parent.module_count + self.amount
+                self:set_amount(math.min(object.amount, available_slots))
 
                 self.parent:normalize({effects=true})
                 return true, nil
@@ -78,7 +86,8 @@ function Module:paste(object)
                 local parent = self.parent  -- retain here because it can be changed below
 
                 if existing_module then
-                    existing_module:set_amount(existing_module.amount + object.amount)
+                    local added_amount = math.min(object.amount, self.amount)
+                    existing_module:set_amount(existing_module.amount + added_amount)
                     parent:remove(self)
                 else
                     object:set_amount(math.min(object.amount, self.amount))
@@ -103,8 +112,9 @@ end
 ---@field quality_proto FPQualityPrototype
 ---@field amount integer
 
+---@param full boolean
 ---@return PackedModule packed_self
-function Module:pack()
+function Module:pack(full)
     return {
         class = self.class,
         proto = prototyper.util.simplify_prototype(self.proto, "category"),
@@ -133,7 +143,7 @@ function Module:validate()
     self.valid = (not self.quality_proto.simplified) and self.valid
 
     -- Can't be valid with an invalid parent
-    self.valid = self.parent.valid and self.valid
+    self.valid = self.parent.parent.valid and self.parent.valid and self.valid
 
     -- Check whether the module is still compatible with its machine or beacon
     if self.valid then self.valid = self.parent:check_compatibility(self.proto) end
@@ -146,15 +156,19 @@ end
 ---@param player LuaPlayer
 ---@return boolean success
 function Module:repair(player)
+    self.valid = true
+
     if self.proto.simplified or not self.parent:check_compatibility(self.proto) then
-        return false  -- the module can not be salvaged in this case and will be removed
-    else  -- otherwise, the quality just needs to be reset
+        self.valid = false  -- the module can not be salvaged in this case and will be removed
+    end
+
+    if self.valid and self.quality_proto.simplified then
         self.quality_proto = defaults.get_fallback("qualities").proto
     end
 
-    self.valid = true  -- if it gets to here, the module was successfully repaired
-    self:summarize_effects()
-    return true
+    if self.valid then self:summarize_effects() end
+
+    return self.valid
 end
 
 

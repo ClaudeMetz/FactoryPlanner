@@ -1,3 +1,5 @@
+---@diagnostic disable
+
 --[[
 Author: Scott Sullivan 2/23/2020
 github: scottmsul
@@ -55,14 +57,14 @@ function matrix_engine.get_item_key(item_type_name, item_name)
 end
 
 function matrix_engine.get_item(item_key)
-    local split_str = util.split_string(item_key, "_")
+    local split_str = lib.split_string(item_key, "_")
     local item_type_id, item_id = split_str[1], split_str[2]
     return prototyper.util.find("items", item_id, item_type_id)
 end
 
 -- this is really only used for debugging
 function matrix_engine.get_item_name(item_key)
-    local split_str = util.split_string(item_key, "_")
+    local split_str = lib.split_string(item_key, "_")
     local item_type_id, item_id = split_str[1], split_str[2]
     local item_info = prototyper.util.find("items", item_id, item_type_id)
     return item_info.type .. "_" .. item_info.name
@@ -80,7 +82,7 @@ end
 function matrix_engine.print_columns(columns)
     local s = 'COLUMNS\n'
     for i, k in ipairs(columns.values) do
-        local col_split_str = util.split_string(k, "_")
+        local col_split_str = lib.split_string(k, "_")
         if col_split_str[1]=="line" then
             s = s..'COL '..i..': '..k..'\n'
         else
@@ -176,19 +178,17 @@ function matrix_engine.get_matrix_solver_metadata(factory_data)
     local produced_outputs = matrix_engine.set_diff(factory_metadata.desired_outputs, unproduced_outputs)
     local free_variables = matrix_engine.union_sets(raw_inputs, byproducts, unproduced_outputs)
     local intermediate_items = matrix_engine.set_diff(all_items, free_variables)
-    if factory_data.matrix_free_items == nil then
-        eliminated_items = intermediate_items
-    else
-        -- by default when a factory is updated, add any new variables to eliminated and let the user select free.
-        local free_items_list = factory_data.matrix_free_items
-        for _, free_item in ipairs(free_items_list) do
-            local identifier = free_item.category_id.."_"..free_item.id
-            free_items[identifier] = true
-        end
-        -- make sure that any items that no longer exist are removed
-        free_items = matrix_engine.intersect_sets(free_items, intermediate_items)
-        eliminated_items = matrix_engine.set_diff(intermediate_items, free_items)
+
+    -- by default when a factory is updated, add any new variables to eliminated and let the user select free.
+    local free_items_list = factory_data.matrix_free_items
+    for _, free_item in ipairs(free_items_list) do
+        local identifier = free_item.category_id.."_"..free_item.id
+        free_items[identifier] = true
     end
+    -- make sure that any items that no longer exist are removed
+    free_items = matrix_engine.intersect_sets(free_items, intermediate_items)
+    eliminated_items = matrix_engine.set_diff(intermediate_items, free_items)
+
     local num_rows = matrix_engine.num_elements(raw_inputs, byproducts, eliminated_items, free_items)
     local num_cols = matrix_engine.num_elements(recipes, raw_inputs, byproducts, free_items)
     local result = {
@@ -239,7 +239,7 @@ function matrix_engine.get_linear_dependence_data(factory_data, matrix_metadata)
         end
 
     for col_name, _ in pairs(linearly_dependent_cols) do
-        local col_split_str = util.split_string(col_name, "_")
+        local col_split_str = lib.split_string(col_name, "_")
         if col_split_str[1] == "recipe" then
             local recipe_key = col_split_str[2]
             linearly_dependent_recipes[recipe_key] = true
@@ -329,11 +329,12 @@ function matrix_engine.get_matrix_data(factory_data)
     local matrix = matrix_engine.get_matrix(factory_data, rows, columns)
 
     return {
-        matrix = matrix,
+        matrix = matrix.matrix,
         rows = rows,
         columns = columns,
         free_variables = free_variables,
         matrix_free_items = matrix_free_items,
+        free_variable_scale_factors = matrix.free_variable_scale_factors
     }
 end
 
@@ -345,6 +346,7 @@ function matrix_engine.run_matrix_solver(factory_data, check_linear_dependence)
     local columns = matrix_data.columns
     local free_variables = matrix_data.free_variables
     local matrix_free_items = matrix_data.matrix_free_items
+    local free_variable_scale_factors = matrix_data.free_variable_scale_factors
 
     matrix_engine.to_reduced_row_echelon_form(matrix)
     if check_linear_dependence then
@@ -352,7 +354,7 @@ function matrix_engine.run_matrix_solver(factory_data, check_linear_dependence)
         local linearly_dependent_variables = {}
         for col, _ in pairs(linearly_dependent_cols) do
             local col_name = columns.values[col]
-            local col_split_str = util.split_string(col_name, "_")
+            local col_split_str = lib.split_string(col_name, "_")
             if col_split_str[1] == "line" then
                 local floor = factory_data.top_floor
                 for i=2, #col_split_str-1 do
@@ -370,6 +372,11 @@ function matrix_engine.run_matrix_solver(factory_data, check_linear_dependence)
         return linearly_dependent_variables
     end
 
+    -- rescale ouput column based on free variable scale factors
+    for idx, scale_factor in pairs(free_variable_scale_factors) do
+        matrix[idx][#columns.values+1] = matrix[idx][#columns.values+1] * scale_factor
+    end
+
     local function set_line_results(prefix, floor)
         local floor_aggregate = structures.aggregate.init(factory_data.player_index, floor.id)
         for i, line in ipairs(floor.lines) do
@@ -378,24 +385,18 @@ function matrix_engine.run_matrix_solver(factory_data, check_linear_dependence)
             if line.subfloor == nil then
                 local col_num = columns.map[line_key]
                  -- want the j-th entry in the last column (output of row-reduction)
-                local machine_count = matrix[col_num][#columns.values+1]
-                if machine_count < 0 then
-                    machine_count = 0
-                end
+                local machine_amount = matrix[col_num][#columns.values+1]
+                if machine_amount < 0 then machine_amount = 0 end
                 line_aggregate = matrix_engine.get_line_aggregate(line, factory_data.player_index, floor.id,
-                    machine_count, factory_metadata, free_variables)
+                    machine_amount, factory_metadata, free_variables)
             else
                 line_aggregate = set_line_results(prefix.."_"..i, line.subfloor)
                 matrix_engine.consolidate(line_aggregate)
             end
 
             -- Lines with subfloors show actual number of machines to build, so each counts are rounded up when summed
-            floor_aggregate.machine_count = floor_aggregate.machine_count +
-                math.ceil(line_aggregate.machine_count - 0.001)
-
-            -- add line_aggregate to floor_aggregate first to track fuel as ingredient higher up
-            floor_aggregate.energy_consumption = floor_aggregate.energy_consumption + line_aggregate.energy_consumption
-            floor_aggregate.emissions = floor_aggregate.emissions + line_aggregate.emissions
+            floor_aggregate.machine_amount = floor_aggregate.machine_amount +
+                math.ceil(line_aggregate.machine_amount - MAGIC_NUMBERS.margin_of_error)
 
             for _, class in pairs{"Product", "Byproduct", "Ingredient"} do
                 for _, item in pairs(structures.class.list(line_aggregate[class])) do
@@ -412,15 +413,14 @@ function matrix_engine.run_matrix_solver(factory_data, check_linear_dependence)
             matrix_engine.consolidate(line_aggregate)
 
             -- Set machine count back to nothing if the recipe doesn't require energy
-            local machine_count = (line.recipe_proto.energy == 0) and 0 or line_aggregate.machine_count
+            local machine_amount = (line_aggregate.machine_amount < MAGIC_NUMBERS.margin_of_error)
+                and 0 or line_aggregate.machine_amount
 
             solver.set_line_result {
                 player_index = factory_data.player_index,
                 floor_id = floor.id,
                 line_id = line.id,
-                machine_count = machine_count,
-                energy_consumption = line_aggregate.energy_consumption,
-                emissions = line_aggregate.emissions,
+                machine_amount = machine_amount,
                 production_ratio = line_aggregate.production_ratio,
                 Product = line_aggregate.Product,
                 Byproduct = line_aggregate.Byproduct,
@@ -474,8 +474,6 @@ function matrix_engine.run_matrix_solver(factory_data, check_linear_dependence)
     solver.set_factory_result {
         player_index = factory_data.player_index,
         factory_id = factory_data.factory_id,
-        energy_consumption = top_floor_aggregate.energy_consumption,
-        emissions = top_floor_aggregate.emissions,
         Product = main_aggregate.Product,
         Byproduct = main_aggregate.Byproduct,
         Ingredient = main_aggregate.Ingredient,
@@ -588,8 +586,9 @@ function matrix_engine.get_matrix(factory_data, rows, columns)
     -- loop over columns since it's easier to look up items for lines/free vars than vice-versa
     for col_num=1, #columns.values do
         local col_str = columns.values[col_num]
-        local col_split_str = util.split_string(col_str, "_")
+        local col_split_str = lib.split_string(col_str, "_")
         local col_type = col_split_str[1]
+        -- note this string "item" is an internal matrix-solver convention and is unrelated to item types
         if col_type == "item" then
             local item_id = col_split_str[2].."_"..col_split_str[3]
             local row_num = rows.map[item_id]
@@ -637,75 +636,151 @@ function matrix_engine.get_matrix(factory_data, rows, columns)
         end
     end
 
-    return matrix
-end
-
-function matrix_engine.get_line_aggregate(line_data, player_index, floor_id, machine_count, factory_metadata, free_variables)
-    local line_aggregate = structures.aggregate.init(player_index, floor_id)
-    line_aggregate.machine_count = machine_count
-    -- the index in the factory_data.top_floor.lines table can be different from the line_id!
-    local recipe_proto = line_data.recipe_proto
-    local total_effects = line_data.total_effects
-    local machine_speed = line_data.machine_speed
-    local speed_multiplier = 1 + total_effects.speed
-    local energy = recipe_proto.energy
-    -- hacky workaround for recipes with zero energy - this really messes up the matrix
-    if energy==0 then energy=0.000001 end
-    local time_per_craft = energy / (machine_speed * speed_multiplier)
-    local total_crafts = machine_count * (1 / time_per_craft)
-    line_aggregate.production_ratio = total_crafts
-
-    for _, product in pairs(recipe_proto.products) do
-        local prodded_amount = solver_util.determine_prodded_amount(product, total_effects,
-            recipe_proto.maximum_productivity)
-        local item_key = matrix_engine.get_item_key(product.type, product.name)
-        if factory_metadata ~= nil and (factory_metadata.byproducts[item_key] or free_variables["item_"..item_key]) then
-           structures.class.add(line_aggregate.Byproduct, product, prodded_amount * total_crafts)
-        else
-            structures.class.add(line_aggregate.Product, product, prodded_amount * total_crafts)
+    -- we rescale free items such that "1" is equal to the max value of its unit in any other equations
+    -- required to help mitigate issues with large units such as energy which can be greater than 10^9 in certain recipes
+    -- also rescale the matrix such that the max value is 1 in any row, which helps for the transpose solve
+    local free_variables = {}
+    for col = 1, #columns.values do
+        local num_non_zero = 0
+        for row = 1, #rows.values do
+            if matrix[row][col] ~= 0 then
+                num_non_zero = num_non_zero + 1
+            end
+        end
+        if num_non_zero == 1 then
+            free_variables[col] = row
         end
     end
 
+    local free_variable_scale_factors = {}
+    for row = 1, #rows.values do
+        local max_row_value = 0
+        for col = 1, #columns.values+1 do
+            if (free_variables[col] == nil) and (math.abs(matrix[row][col]) > max_row_value) then
+                max_row_value = math.abs(matrix[row][col])
+            end
+        end
+        if max_row_value > 0 then
+            for col = 1, #columns.values+1 do
+                if (free_variables[col] == nil) then
+                    matrix[row][col] = matrix[row][col] / max_row_value
+                elseif (free_variables[col] == row) then
+                    free_variable_scale_factors[col] = max_row_value
+                end
+            end
+        end
+    end
+
+    return {
+        matrix = matrix,
+        free_variable_scale_factors = free_variable_scale_factors
+    }
+end
+
+function matrix_engine.get_line_aggregate(line_data, player_index, floor_id, machine_amount, factory_metadata, free_variables)
+    local line_aggregate = structures.aggregate.init(player_index, floor_id)
+    line_aggregate.machine_amount = machine_amount
+    -- the index in the factory_data.top_floor.lines table can be different from the line_id!
+    local total_effects = line_data.total_effects
+    local machine_proto = line_data.machine_proto
+    local speed_multiplier = 1 + (total_effects.speed / MAGIC_NUMBERS.effect_precision)
+    local energy = line_data.recipe_energy
+    -- hacky workaround for recipes with zero energy - this really messes up the matrix
+    if energy==0 then energy=0.000001 end
+    local time_per_craft = energy / (line_data.machine_speed * speed_multiplier)
+    local total_crafts = machine_amount * (1 / time_per_craft)
+    line_aggregate.production_ratio = total_crafts
+
+    local function add_product(product, amount)
+        local item_key = matrix_engine.get_item_key(product.type, product.name)
+        if factory_metadata ~= nil and (factory_metadata.byproducts[item_key] or free_variables["item_"..item_key]) then
+           structures.class.add(line_aggregate.Byproduct, product, amount)
+        else
+            structures.class.add(line_aggregate.Product, product, amount)
+        end
+    end
+
+    for _, product in pairs(line_data.recipe_proto.products) do
+        local prodded_amount = solver.util.determine_prodded_amount(product, total_effects)
+        add_product(product, prodded_amount * total_crafts)
+    end
+
     for _, ingredient in pairs(line_data.ingredients) do
-        structures.class.add(line_aggregate.Ingredient, ingredient,
-            ingredient.amount * total_crafts * line_data.resource_drain_rate)
+        local ingredient_amount = (ingredient.amount * total_crafts)
+        if ingredient.type ~= "fluid" then  -- doesn't apply to mining fluids
+            ingredient_amount = ingredient_amount * line_data.resource_drain_rate
+        end
+        structures.class.add(line_aggregate.Ingredient, ingredient, ingredient_amount)
     end
 
     -- Determine energy consumption (including potential fuel needs) and emissions
     local fuel_proto = line_data.fuel_proto
-    local energy_consumption, emissions = solver_util.determine_energy_consumption_and_emissions(
-        line_data.machine_proto, line_data.recipe_proto, fuel_proto, machine_count,
-        line_data.total_effects, line_data.pollutant_type)
+    local energy_consumption, emissions = solver.util.determine_energy_consumption_and_emissions(
+        machine_proto, line_data.recipe_proto, fuel_proto, machine_amount, line_data.energy_usage,
+        total_effects, line_data.pollutant_type)
 
     local fuel, fuel_amount = nil, nil
-    if fuel_proto ~= nil then  -- Seeing a fuel_proto here means it needs to be re-calculated
-        fuel_amount = solver_util.determine_fuel_amount(energy_consumption, line_data.machine_proto.burner,
-            fuel_proto.fuel_value)
+    if machine_proto.energy_type == "burner" then
+        local burner = machine_proto.burner
+        fuel_amount = solver.util.determine_fuel_amount(energy_consumption, burner, fuel_proto.fuel_value)
 
-        fuel = {type=line_data.fuel_item.type, name=line_data.fuel_item.name, amount=fuel_amount}
-        structures.class.add(line_aggregate.Ingredient, fuel, fuel_amount)
+        fuel = {type=fuel_proto.type, name=line_data.fuel_name, amount=fuel_amount}
+        structures.class.add(line_aggregate.Ingredient, fuel)
 
         if fuel_proto.burnt_result then
-            local burnt = {type="item", name=fuel_proto.burnt_result, amount=fuel_amount}
-            local burnt_key = matrix_engine.get_item_key(burnt.type, burnt.name)
-            if factory_metadata ~= nil and (factory_metadata.byproducts[burnt_key] or free_variables["item_"..burnt_key]) then
-            structures.class.add(line_aggregate.Byproduct, burnt, fuel_amount)
-            else
-                structures.class.add(line_aggregate.Product, burnt, fuel_amount)
+            add_product({
+                type="item",
+                name=fuel_proto.burnt_result,
+                amount=fuel_amount
+            })
+        end
+
+        if burner.produces_spent_fluid then
+            local spent_fluid = burner.spent_fluid or fuel_proto.spent_fluid
+            if spent_fluid then
+                add_product({
+                    type="fluid",
+                    name=spent_fluid.name .. "-" .. spent_fluid.temperature,
+                    amount=fuel_amount * spent_fluid.amount
+                })
             end
         end
 
         energy_consumption = 0  -- set electrical consumption to 0 when fuel is used
 
-    elseif line_data.machine_proto.energy_type == "void" then
+    elseif machine_proto.energy_type == "heat" then
+        local heat_item = {type="entity", name="custom-heat-power", amount=energy_consumption}
+        structures.class.add(line_aggregate.Ingredient, heat_item)
+
+        energy_consumption = 0  -- set electrical consumption to 0 when heat is used
+
+    elseif machine_proto.energy_type == "void" then
         energy_consumption = 0  -- set electrical consumption to 0 while still polluting
     end
 
-    -- Include beacon energy consumption
     energy_consumption = energy_consumption + (line_data.beacon_consumption or 0)
 
-    line_aggregate.energy_consumption = energy_consumption
-    line_aggregate.emissions = emissions
+    if energy_consumption > 0 then
+        local electric_item = {type="entity", name="custom-electric-power", amount=energy_consumption}
+        structures.class.add(line_aggregate.Ingredient, electric_item)
+    end
+
+    if line_data.entities_require_heating and machine_proto.heating_energy > 0 then
+        local heating_energy = machine_proto.heating_energy * machine_amount
+        local heating_item = {type="entity", name="custom-heating-power", amount=heating_energy}
+        structures.class.add(line_aggregate.Ingredient, heating_item)
+    end
+
+    if emissions ~= 0 then  -- emissions are either produced or consumed
+        local emission_name = "custom-" .. line_data.pollutant_type
+        local emission_item = {type="entity", name=emission_name, amount=math.abs(emissions)}
+
+        if emissions > 0 then
+            add_product(emission_item)
+        elseif emissions < 0 then
+            structures.class.add(line_aggregate.Ingredient, emission_item)
+        end
+    end
 
     -- needed for interface.set_line_result
     line_aggregate.fuel = fuel
@@ -771,7 +846,7 @@ function matrix_engine.to_reduced_row_echelon_form(m)
             end
         end
     end
-    local tolerance = 1e-10 * max_value
+    local tolerance = 1e-12 * max_value
 
     local pivot_row = 1
 

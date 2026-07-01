@@ -6,16 +6,15 @@ local loader = {}
 ---@alias ItemID integer
 ---@alias RecipeID integer
 
----@alias TemperatureMap { [string]: FPItemPrototype[] }
-
----@alias ModuleMap { [string]: FPModulePrototype }
+---@alias TemperatureMap table<string, FPItemPrototype[]>
+---@alias ModuleMap table<string, FPModulePrototype>
 
 -- ** LOCAL UTIL **
 -- Returns a list of recipe groups in their proper order
 ---@return ItemGroup[]
 local function ordered_recipe_groups()
     -- Make a dict with all recipe groups
-    local group_dict = {}  ---@type { [string]: ItemGroup }
+    local group_dict = {}  ---@type table<string, ItemGroup>
     for _, recipe in pairs(storage.prototypes.recipes) do
         if group_dict[recipe.group.name] == nil then
             group_dict[recipe.group.name] = recipe.group
@@ -46,12 +45,15 @@ end
 ---@param item_type "products" | "ingredients"
 ---@return RecipeMap
 local function recipe_map_from(item_type)
-    local map = {}  ---@type RecipeMap
+    -- There is always only 3 categories (item, fluid, entity)
+    local map = {[1] = {}, [2] = {}, [3] = {}}  ---@type RecipeMap
 
+    ---@param item_proto FPItemPrototype
+    ---@param recipe_id RecipeID
     local function add(item_proto, recipe_id)
-        map[item_proto.category_id] = map[item_proto.category_id] or {}
-        map[item_proto.category_id][item_proto.id] = map[item_proto.category_id][item_proto.id] or {}
-        map[item_proto.category_id][item_proto.id][recipe_id] = true
+        local category = map[item_proto.category_id]
+        category[item_proto.id] = category[item_proto.id] or {}
+        category[item_proto.id][recipe_id] = true
     end
 
     for _, recipe in pairs(storage.prototypes.recipes) do
@@ -66,8 +68,8 @@ local function recipe_map_from(item_type)
                     end
                 end
             else
-                local item_proto = prototyper.util.find("items", item.name, item.type)  ---@cast item_proto -nil
-                add(item_proto, recipe.id)
+                local item_proto = prototyper.util.find("items", item.name, item.type)
+                add(item_proto--[[@as FPItemPrototype]], recipe.id)
             end
         end
     end
@@ -82,7 +84,8 @@ local function sorted_items()
     local items = {}
 
     for _, type in pairs{"item", "fluid", "entity"} do
-        for _, item in pairs(prototyper.util.find("items", nil, type).members) do
+        local category = prototyper.util.find("items", nil, type)  --[[@as NamedCategory]]
+        for _, item in pairs(category.members--[[@cast -nil]]) do
             table.insert(items, item)
         end
     end
@@ -97,7 +100,9 @@ local function sorted_items()
         elseif a.subgroup.order < b.subgroup.order then return true
         elseif a.subgroup.order > b.subgroup.order then return false
         elseif a.order < b.order then return true
-        elseif a.order > b.order then return false end
+        elseif a.order > b.order then return false
+        elseif (a.temperature or 0) < (b.temperature or 0) then return true
+        elseif (a.temperature or 0) > (b.temperature or 0) then return false end
         return false
     end
 
@@ -135,27 +140,28 @@ local function temperature_map()
 end
 
 
----@alias MappedPrototypes<T> { [string]: T }
----@alias MappedPrototypesWithCategory<T> { [string]: { id: integer, name: string, members: { [string]: T } } }
----@alias MappedCategory { id: integer, name: string, members: { [string]: table } }
+---@alias MappedPrototypes<T> table<string, T>
+---@alias MappedPrototypesWithCategory<T> table<string, { id: integer, name: string, members: table<string, T> }>
+---@alias MappedCategory { id: integer, name: string, members: table<string, T> }
 
----@class PrototypeMaps: { [DataType]: table }
----@field machines MappedPrototypesWithCategory<FPMachinePrototype>
+---@class PrototypeMaps: table<DataType, table>
 ---@field recipes MappedPrototypes<FPRecipePrototype>
 ---@field items MappedPrototypesWithCategory<FPItemPrototype>
+---@field machines MappedPrototypesWithCategory<FPMachinePrototype>
 ---@field fuels MappedPrototypesWithCategory<FPFuelPrototype>
 ---@field belts MappedPrototypes<FPBeltPrototype>
 ---@field pumps MappedPrototypes<FPPumpPrototype>
+---@field silos MappedPrototypes<FPSiloPrototype>
 ---@field wagons MappedPrototypesWithCategory<FPWagonPrototype>
 ---@field modules MappedPrototypesWithCategory<FPModulePrototype>
 ---@field beacons MappedPrototypes<FPBeaconPrototype>
 ---@field locations MappedPrototypes<FPLocationPrototype>
 ---@field qualities MappedPrototypes<FPQualityPrototype>
 
----@param data_types { [DataType]: boolean }
+---@param data_types table<DataType, boolean>
 ---@return PrototypeMaps
 local function prototype_maps(data_types)
-    local maps = {}  ---@type PrototypeMaps
+    local maps = {}  ---@type table<DataType, table>
 
     for data_type, has_categories in pairs(data_types) do
         local map = {}
@@ -186,7 +192,7 @@ local function prototype_maps(data_types)
         maps[data_type] = map
     end
 
-    return maps
+    return maps --[[@as PrototypeMaps]]
 end
 
 
@@ -205,43 +211,20 @@ local function module_name_map()
 end
 
 
----@return { [string]: boolean }
+---@return table<string, boolean>
 local function generate_productivity_recipes()
     local productivity_recipes = {}
-    for _, technology in pairs(prototypes.technology) do
-        for _, effect in pairs(technology.effects or {}) do
-            if effect.type == "mining-drill-productivity-bonus" then
-                productivity_recipes["custom-mining"] = true
-            elseif effect.type == "change-recipe-productivity" then
-                if PROTOTYPE_MAPS.recipes[effect.recipe] then
-                    productivity_recipes[effect.recipe] = true
-                end
-            end
+    for _, recipe in pairs(storage.prototypes.recipes) do
+        if recipe.productivity_recipe then
+            productivity_recipes[recipe.productivity_recipe] = true
         end
     end
     return productivity_recipes
 end
 
 
-local function generate_object_index()
-    OBJECT_INDEX = {}  ---@type { [integer]: Object}
-    for _, player_table in pairs(storage.players) do
-        if not player_table.realm then return end  -- migration issue mitigation
-        player_table.realm:index()  -- recursively indexes all objects
-    end
-end
-
-
 -- ** TOP LEVEL **
----@param skip_check boolean Whether the mod version check is skipped
-function loader.run(skip_check)
-    if not skip_check and script.active_mods["factoryplanner"] ~= storage.installed_mods["factoryplanner"] then
-        return  -- if the mod version changed, the loader will be re-run after migration anyways
-    end
-
-    util.nth_tick.register_all()
-    generate_object_index()
-
+function loader.run()
     PROTOTYPE_MAPS = prototype_maps(prototyper.data_types)
     MODULE_NAME_MAP = module_name_map()
 
@@ -257,7 +240,6 @@ function loader.run(skip_check)
     PRODUCTIVITY_RECIPES = generate_productivity_recipes()
 
     MULTIPLE_PLANETS = #storage.prototypes.locations > 1
-    MULTIPLE_QUALITIES = #storage.prototypes.qualities > 1
 end
 
 return loader

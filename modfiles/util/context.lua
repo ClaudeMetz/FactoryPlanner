@@ -6,11 +6,11 @@ local _context = {}
 
 ---@class ContextCache
 ---@field district ObjectID? DistrictID
----@field factories { [ObjectID]: ContextFactories } DistrictID ->
+---@field factories table<ObjectID, ContextFactories> DistrictID -> ContextFactories
 
 ---@class ContextFactories
 ---@field factory ObjectID? FactoryID
----@field floors { [ObjectID]: ObjectID } FactoryID -> FloorID
+---@field floors table<ObjectID, ObjectID> FactoryID -> FloorID
 
 ---@alias ContextObject (District | Factory | Floor)
 
@@ -26,34 +26,35 @@ function _context.init(player_table)
 end
 
 
+--- Gets the given object type by going up the hierarchy from the current context
 ---@param player LuaPlayer
 ---@param class string
 ---@return ContextObject?
---- Gets the given object type by going up the hierarchy from the current context
 function _context.get(player, class)
-    local player_table = util.globals.player_table(player)
-    local object = OBJECT_INDEX[player_table.context.object_id]
+    local object_id = lib.globals.player_table(player).context.object_id
+    if object_id == nil then return nil end
+    local object = OBJECT_INDEX[object_id]  ---@type ContextObject?
 
-    repeat
+    while object ~= nil do
         if object.class == class then
-            return object --[[@as ContextObject]]
+            return object
         end
-        object = object.parent
-    until object == nil
+        object = object.parent --[[@as ContextObject?]]
+    end
 
     return nil
 end
 
+--- Restores the appropriate floor from context cache depending on the given object
+--- This covers the happy path, extra care needs to be taken when objects were removed
 ---@param player LuaPlayer
 ---@param object ContextObject
 ---@param force_district boolean?
---- Restores the appropriate floor from context cache depending on the given object
---- This covers the happy path, extra care needs to be taken when objects were removed
 function _context.set(player, object, force_district)
-    local context = util.globals.player_table(player).context
+    local context = lib.globals.player_table(player).context
     local cache = context.cache
 
-    if object.class == "District" then
+    if object.class == "District" then  ---@cast object District
         -- Update cache
         cache.district = object.id
 
@@ -66,7 +67,7 @@ function _context.set(player, object, force_district)
         else context.object_id = object.id; return end
     end
 
-    if object.class == "Factory" then
+    if object.class == "Factory" then  ---@cast object Factory
         -- Update cache
         local factory_cache = cache.factories[object.parent.id]
         if not factory_cache then
@@ -85,7 +86,7 @@ function _context.set(player, object, force_district)
         else object = OBJECT_INDEX[object.top_floor.id] end  -- always exists
     end
 
-    if object.class == "Floor" then
+    if object.class == "Floor" then  ---@cast object Floor
         -- Needs to be done first so .get() can work
         context.object_id = object.id
 
@@ -98,12 +99,12 @@ function _context.set(player, object, force_district)
     end
 end
 
----@param player LuaPlayer
----@param object (District | Factory)
----@return ContextObject? replacement
 --- Cleans up after the given object was removed and tries to find a replacement
+---@param player LuaPlayer
+---@param object District | Factory
+---@return ContextObject? replacement
 function _context.remove(player, object)
-    local cache = util.globals.player_table(player).context.cache
+    local cache = lib.globals.player_table(player).context.cache
 
     -- Clean up the cache from the removed object
     if object.class == "District" then
@@ -116,10 +117,13 @@ function _context.remove(player, object)
     end
 
     -- Try finding an adjacent object to return
-    local filter = (object.class == "Factory") and { archived = object.archived } or {}
+    local filter = (object.class == "Factory") and
+        { archived = object.archived } or {}  ---@type ObjectFilter
 
+    ---@diagnostic disable-next-line: param-type-mismatch
     local previous = object.parent:find(filter, object["previous"], "previous")
     if previous then return previous end
+    ---@diagnostic disable-next-line: param-type-mismatch
     local next = object.parent:find(filter, object["next"], "next")
     if next then return next end
 
@@ -140,13 +144,13 @@ function _context.ascend_floors(player, destination)
     if destination == "up" and floor.level > 1 then
         selected_floor = floor.parent
     elseif destination == "top" then
-        local top_floor = _context.get(player, "Factory").top_floor
+        local top_floor = _context.get(player, "Factory")--[[@cast -nil]].top_floor
         if top_floor ~= floor then selected_floor = top_floor end
     end
 
     if selected_floor ~= nil then
         -- Reset the subfloor we moved from if it doesn't have any additional recipes
-        if floor:count() == 1 then floor.parent:replace(floor, floor.first) end
+        if floor:count() == 1 then floor.parent:replace(floor, floor.first--[[@cast -nil]]) end
 
         _context.set(player, selected_floor)
         return true
@@ -156,10 +160,10 @@ function _context.ascend_floors(player, destination)
 end
 
 
----@param player LuaPlayer
 --- Clean up cache after a config change that potentially deleted objects
+---@param player LuaPlayer
 function _context.validate(player)
-    local player_table = util.globals.player_table(player)
+    local player_table = lib.globals.player_table(player)
     local context = player_table.context
     local cache = context.cache
 

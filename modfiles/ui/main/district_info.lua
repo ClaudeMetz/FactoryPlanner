@@ -1,9 +1,9 @@
 -- ** LOCAL UTIL **
 local function refresh_district_info(player)
-    local ui_state = util.globals.ui_state(player)
+    local ui_state = lib.globals.ui_state(player)
     if ui_state.main_elements.main_frame == nil then return end
 
-    local district = util.context.get(player, "District")  --[[@as District]]
+    local district = lib.context.get(player, "District")  --[[@as District]]
     local district_info_elements = ui_state.main_elements.district_info
 
     district_info_elements.name_label.caption = district.name
@@ -17,7 +17,7 @@ local function refresh_district_info(player)
 end
 
 local function build_district_info(player)
-    local main_elements = util.globals.main_elements(player)
+    local main_elements = lib.globals.main_elements(player)
     main_elements.district_info = {}
 
     local parent_flow = main_elements.flows.left_vertical
@@ -40,7 +40,7 @@ local function build_district_info(player)
         main_elements.district_info["location_sprite"] = button_sprite
     end
 
-    flow_horizontal.add{type="empty-widget", style="flib_horizontal_pusher"}
+    flow_horizontal.add{type="empty-widget", style="fflib_horizontal_pusher"}
     local button_districts = flow_horizontal.add{type="sprite-button", sprite="fp_panel",
         tooltip={"fp.view_districts"}, tags={mod="fp", on_gui_click="toggle_districts_view"},
         style="tool_button", auto_toggle=true, mouse_button_filter={"left"}}
@@ -60,13 +60,13 @@ listeners.gui = {
             name = "toggle_districts_view",
             handler = (function(player, _, _)
                 main_dialog.toggle_districts_view(player)
-                util.raise.refresh(player, "production")
+                lib.gui.run_refresh(player, "factory")
             end)
         }
     }
 }
 
-listeners.misc = {
+listeners.player = {
     build_gui_element = (function(player, event)
         if event.trigger == "main_dialog" then
             build_district_info(player)
@@ -75,6 +75,24 @@ listeners.misc = {
     refresh_gui_element = (function(player, event)
         local triggers = {district_info=true, all=true}
         if triggers[event.trigger] then refresh_district_info(player) end
+    end)
+}
+
+listeners.game = {
+    on_research_finished = (function(event)
+        if game.tick == 0 then return end  -- no shenanigans during setup
+        for _, effect in pairs(event.research.prototype.effects) do
+            if effect.type == "mining-drill-productivity-bonus"
+                    or effect.type == "change-recipe-productivity" then
+                local offset = 0
+                for _, player in pairs(game.players) do
+                    local realm = lib.globals.player_table(player).realm
+                    realm:schedule_solver_updates(game.tick + offset, player)
+                    offset = offset + 2
+                end
+                break
+            end
+        end
     end)
 }
 

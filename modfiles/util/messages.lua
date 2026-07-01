@@ -12,7 +12,7 @@ local _messages = {}
 ---@param message LocalisedString
 ---@param lifetime integer
 function _messages.raise(player, category, message, lifetime)
-    local messages = util.globals.ui_state(player).messages
+    local messages = lib.globals.ui_state(player).messages
     table.insert(messages, {category=category, text=message, lifetime=lifetime})
 end
 
@@ -21,7 +21,7 @@ function _messages.refresh(player)
     -- Only refresh messages if the user is actually looking at them
     if not main_dialog.is_in_focus(player) then return end
 
-    local ui_state = util.globals.ui_state(player)
+    local ui_state = lib.globals.ui_state(player)
     local message_frame = ui_state.main_elements["messages_frame"]
     if not message_frame or not message_frame.valid then return end
 

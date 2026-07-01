@@ -1,76 +1,107 @@
 local _effects = {}
 
----@param effect_tables ModuleEffects[]
----@return ModuleEffects
+_effects.blank = {speed = 0, productivity = 0, quality = 0, consumption = 0, pollution = 0}
+
+---@alias EffectValue integer
+---@alias ModuleEffectName "speed" | "productivity" | "quality" | "consumption" | "pollution"
+---@alias IntegerModuleEffects table<ModuleEffectName, EffectValue>
+
+local is_effect_positive = {speed=true, productivity=true, quality=true,
+                            consumption=false, pollution=false}
+
+---@param proto FPMachinePrototype | FPBeaconPrototype | FPRecipePrototype
+---@param module FPModulePrototype
+---@return boolean
+function _effects.is_compatible(proto, module)
+    local allowed_categories = proto.allowed_module_categories
+    -- No allowed categories means everything is compatible
+    if allowed_categories ~= nil and not allowed_categories[module.category] then
+        return false
+    end
+
+    local allowed_effects = proto.allowed_effects
+    -- No allowed effects means nothing is compatible
+    if allowed_effects == nil then return false end
+    for name, value in pairs(module.effects) do
+        -- Effects only need to be in the allowed list if they are considered positive
+        -- Effects are considered positive if their effect is actually in the
+        -- 'desirable' direction, ie. positive speed, or negative pollution
+        if not allowed_effects[name] and (value > 0) == is_effect_positive[name] then
+            return false
+        end
+    end
+
+    return true
+end
+
+
+---@param effect_tables IntegerModuleEffects[]
+---@return IntegerModuleEffects
 function _effects.merge(effect_tables)
-    local effects = ftable.shallow_copy(BLANK_EFFECTS)
+    local effects = lib.flib.shallow_copy(lib.effects.blank)
     for _, effect_table in pairs(effect_tables) do
         for name, effect in pairs(effect_table) do
-            effects[name] = effects[name] + effect
+            effects[name] = effects[name] + effect  -- doesn't create decimals
         end
     end
     return effects
 end
 
 
-local is_effect_positive = {speed=true, productivity=true, quality=true,
-                            consumption=false, pollution=false}
+---@param effect EffectValue
+---@param bounds EffectValueRange
+---@return EffectValue
+---@return string?
+function _effects.limit_value(effect, bounds)
+    local low_bound = (bounds.low * MAGIC_NUMBERS.effect_precision)  --[[@as EffectValue]]
+    local high_bound = (bounds.high * MAGIC_NUMBERS.effect_precision)  --[[@as EffectValue]]
 
----@param name string
----@param value ModuleEffectValue
----@return boolean is_positive_effect
-function _effects.is_positive(name, value)
-    -- Effects are considered positive if their effect is actually in the 'desirable'
-    -- direction, ie. positive speed, or negative pollution
-    return (value > 0) == is_effect_positive[name]
+    if effect < low_bound then
+        return low_bound, "[img=fp_limited_down]"
+    elseif effect > high_bound then
+        return high_bound, "[img=fp_limited_up]"
+    else
+        return effect, nil
+    end
 end
 
-
-local upper_bound = 327.67
-
----@param effects ModuleEffects
----@param max_prod double
----@return ModuleEffects
----@return { ModuleEffectName: string }
-function _effects.limit(effects, max_prod)
+---@param effects IntegerModuleEffects
+---@param effect_receiver FormattedEffectReceiver
+---@return IntegerModuleEffects
+---@return table<ModuleEffectName, string>
+function _effects.limit(effects, effect_receiver)
     local indications = {}
-    local bounds = {
-        speed = {lower = -0.8, upper = upper_bound},
-        productivity = {lower = 0, upper = max_prod or upper_bound},
-        quality = {lower = 0, upper = upper_bound/10},
-        consumption = {lower = -0.8, upper = upper_bound},
-        pollution = {lower = -0.8, upper = upper_bound}
-    }
 
     -- Bound effects and note the indication if relevant
     for name, effect in pairs(effects) do
-        if effect < bounds[name].lower then
-            effects[name] = bounds[name].lower
-            indications[name] = "[img=fp_limited_down]"
-        elseif effect > bounds[name].upper then
-            effects[name] = bounds[name].upper
-            indications[name] = "[img=fp_limited_up]"
-        end
+        local bounds = effect_receiver.limits[name]
+        effects[name], indications[name] = _effects.limit_value(effect, bounds)
     end
 
     return effects, indications
 end
 
 
----@class FormatModuleEffectsOptions
----@field indications { ModuleEffectName: string }?
----@field machine_effects ModuleEffects?
----@field recipe_effects ModuleEffects?
-
+---@param value EffectValue
+---@param color string
+---@return LocalisedString
 local function format_effect(value, color)
     if value == nil then return "" end
-    -- Force display of either a '+' or '-', also round the result
-    local display_value = ("%+d"):format(math.floor((value * 100) + 0.5))
-    return {"fp.effect_value", color, display_value}
+    local epsilon = (value < 0) and -1e-4 or 1e-4
+    -- Turn value into percentage, and divide out precision multiplier
+    local percentage = value * 100 / MAGIC_NUMBERS.effect_precision + epsilon
+    -- Show leading sign, two decimals, and remove trailing zeros
+    local effect = ("%+.2f"):format(percentage):gsub("%.?0+$", "")
+    return {"fp.effect_value", color, effect}
 end
 
+---@class FormatModuleEffectsOptions
+---@field indications table<ModuleEffectName, string>?
+---@field machine_effects IntegerModuleEffects?
+---@field recipe_effects IntegerModuleEffects?
+
 -- Formats the given effects for use in a tooltip
----@param module_effects ModuleEffects
+---@param module_effects IntegerModuleEffects
 ---@param options FormatModuleEffectsOptions?
 ---@return LocalisedString
 function _effects.format(module_effects, options)
@@ -80,7 +111,7 @@ function _effects.format(module_effects, options)
     options.recipe_effects = options.recipe_effects or {}
 
     local tooltip_lines = {""}
-    for effect_name, _ in pairs(BLANK_EFFECTS) do
+    for effect_name, _ in pairs(lib.effects.blank) do
         local module_effect = module_effects[effect_name]
         local machine_effect = options.machine_effects[effect_name]
         local recipe_effect = options.recipe_effects[effect_name]
