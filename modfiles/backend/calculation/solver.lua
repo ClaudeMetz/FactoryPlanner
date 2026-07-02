@@ -328,28 +328,27 @@ function solver.update(player, factory)
 
         local factory_data = solver.generate_factory_data(player, factory)
 
-        if factory.matrix_solver_active then
+        if factory.matrix_solver_active then  ---@cast factory.matrix_free_items -nil
             local matrix_metadata = matrix_engine.get_matrix_solver_metadata(factory_data)
 
             if matrix_metadata.num_rows ~= 0 then  -- don't run calculations if the factory has no lines
                 local linear_dependence_data = matrix_engine.get_linear_dependence_data(factory_data, matrix_metadata)
 
-                -- in the case of linearly dependent free items, we remove it automatically if there's only one option.
-                -- otherwise we present the user with a choice to remove problematic free items in the production box.
-                local num_ld_free_items = 0
-                local last_ld_free_item = nil
+                -- In the case of linearly dependent free items, we remove it automatically if there's only one option.
+                -- Otherwise we present the user with a choice to remove problematic free items in the production box.
+                local num_ld_free_items, last_ld_free_item = 0, nil
                 for _, ld_free_item in pairs(linear_dependence_data.linearly_dependent_free_items) do
                     num_ld_free_items = num_ld_free_items + 1
                     last_ld_free_item = ld_free_item
                 end
-                if num_ld_free_items == 1 then
+                if num_ld_free_items == 1 then  ---@cast last_ld_free_item FPItemPrototype
                     for index, item in pairs(factory.matrix_free_items) do
                         if item.type == last_ld_free_item.type and item.name == last_ld_free_item.name then
                             table.remove(factory.matrix_free_items, index)
                             break
                         end
                     end
-                    -- redo all these since we've changed the factory
+                    -- Redo all these since we've changed the factory
                     factory_data = solver.generate_factory_data(player, factory)
                     matrix_metadata = matrix_engine.get_matrix_solver_metadata(factory_data)
                     linear_dependence_data = matrix_engine.get_linear_dependence_data(factory_data, matrix_metadata)

@@ -25,8 +25,7 @@ local function refresh_solver_frame(player)
 
     local function build_unrestricted_item_button_flow(flow, status, color, items)
         for _, proto in pairs(items) do
-            local tooltip = {"fp.turn_" .. status, proto.localised_name}
-            flow.add{type="sprite-button", sprite=proto.sprite, tooltip=tooltip,
+            flow.add{type="sprite-button", sprite=proto.sprite, tooltip={"fp.turn_" .. status, proto.localised_name},
                 tags={mod="fp", on_gui_click="switch_matrix_item", status=status, type=proto.type, name=proto.name},
                 style="fflib_slot_button_" .. color .. "_small", mouse_button_filter={"left"}}
         end
@@ -44,9 +43,11 @@ local function refresh_solver_frame(player)
         main_elements.solver_frame.visible = true
 
         local num_needed_restricted_items = #linear_dependence_data.linearly_dependent_free_items
+        local num_items_to_remove = num_needed_restricted_items - num_needed_free_items
 
         local caption = {"fp.error_message", {"fp.info_label", {"fp.remove_unrestricted_items"}}}
-        local tooltip = {"fp.remove_unrestricted_items_tt"}
+        local tooltip = {"fp.remove_unrestricted_items_tt", num_items_to_remove,
+                {"fp.pl_item", num_items_to_remove}}
         solver_flow.add{type="label", caption=caption, tooltip=tooltip, style="bold_label"}
 
         local flow_unrestricted = solver_flow.add{type="flow", direction="horizontal"}
