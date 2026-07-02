@@ -12,7 +12,7 @@ local Fuel = Object.methods()
 Fuel.__index = Fuel
 script.register_metatable("Fuel", Fuel)
 
----@param parent Machine
+---@param parent Machine?
 ---@param proto (FPFuelPrototype | FPPackedPrototype)?
 ---@return Fuel
 local function init(parent, proto)
@@ -90,19 +90,32 @@ end
 ---@return boolean success
 ---@return string? error
 function Fuel:paste(object)
+    local burner = self.parent.proto.burner
+
+    -- Sanity check. Should exist if fuel can be pasted
+    if burner == nil then
+        return false, "incompatible"
+    end
+
+    local fuel = nil
     if object.class == "Fuel" then
-        local burner = self.parent.proto.burner
-
-        -- Sanity check. Should exist if fuel can be pasted
-        if burner == nil then
-            return false, "incompatible"
+        fuel = object
+    elseif object.class == "SimpleItem" then
+        -- Try to convert SimpleItem to Fuel
+        local proto = prototyper.util.find("fuels", object.proto.base_name or object.proto.name, burner.combined_category)  --[[@as FPFuelPrototype?]]
+        if proto then
+            fuel = init(nil, proto)
+            fuel:build_temperature_data()
+            fuel.temperature = object.proto.temperature
         end
+    end
 
+    if fuel then
         -- Check invididual categories so you can paste between combined_categories
         for category_name, _ in pairs(burner.categories) do
-            if object.proto.category == category_name then
-                self.proto = object.proto
-                self.temperature = object.temperature
+            if fuel.proto.category == category_name then
+                self.proto = fuel.proto
+                self.temperature = fuel.temperature
                 self:build_temperature_data()
                 return true, nil
             end
