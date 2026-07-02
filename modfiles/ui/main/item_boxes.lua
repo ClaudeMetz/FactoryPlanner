@@ -141,7 +141,7 @@ local function handle_item_button_click(player, tags, action)
 
     local item = nil
     if tags.item_id then
-        item = OBJECT_INDEX[tags.item_id]  --[[@as TLProduct | SimpleItem]]
+        item = OBJECT_INDEX[tags.item_id]  --[[@as TLProduct]]
     else
         -- Need to get items from the right floor depending on display settings
         local floor = (show_floor_items) and lib.context.get(player, "Floor")
@@ -234,7 +234,7 @@ local function refresh_item_boxes(player)
     main_elements.item_boxes.horizontal_flow.visible = visible
     if not visible then return end
 
-    local factory = lib.context.get(player, "Factory")  --[[@as Factory]]
+    local factory = lib.context.get(player, "Factory")  --[[@as Factory?]]
     local show_floor_items = player_table.preferences.show_floor_items
 
     local tooltips = player_table.ui_state.tooltips
