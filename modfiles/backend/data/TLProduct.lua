@@ -80,6 +80,11 @@ function TLProduct:paste(object)
         if proto.simplified then return false, "incompatible" end
         ---@cast proto -FPPackedPrototype
 
+        -- Only allow pasting fluids with set temperatures
+        if object.proto.type == "fluid" and not (object.temperature or object.proto.temperature) then
+            return false, "temperature_not_set"
+        end
+
         -- Avoid duplicate items, but allow pasting over the same item proto
         local existing_item = self.parent:find({proto=proto})
         if existing_item and not (self.proto.name == proto.name) then
