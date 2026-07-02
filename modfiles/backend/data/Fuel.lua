@@ -108,6 +108,9 @@ function Fuel:paste(object)
             fuel:build_temperature_data()
             fuel.temperature = object.proto.temperature
         end
+    else
+        -- Only allow pasting items and fuels
+        return false, "incompatible_class"
     end
 
     if fuel then
@@ -120,10 +123,9 @@ function Fuel:paste(object)
                 return true, nil
             end
         end
-        return false, "incompatible"
-    else
-        return false, "incompatible_class"
     end
+
+    return false, "incompatible"
 end
 
 
