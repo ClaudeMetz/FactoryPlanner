@@ -27,7 +27,7 @@ local function init(proto, amount)
     local object = Object.init({
         proto = this_proto,
         defined_by = "amount",
-        required_amount = 0,  -- always per second
+        required_amount = amount or 0,  -- always per second
         belt_proto = nil,
 
         amount = 0,  -- the amount satisfied by the solver
