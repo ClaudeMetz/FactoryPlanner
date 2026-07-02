@@ -100,9 +100,9 @@ local function update_line(line_data, aggregate, looped_fuel)
         return prodded_amount * production_ratio
     end
 
-    -- Determine energy consumption (including potential fuel needs) and emissions
-    local energy_consumption, emissions = solver.util.determine_energy_consumption_and_emissions(machine_proto,
-        recipe_proto, fuel_proto, machine_amount, line_data.energy_usage, total_effects, line_data.pollutant_type)
+    -- Determine power (including potential fuel needs) and emissions
+    local power, emissions = solver.util.determine_power_and_emissions(machine_proto, recipe_proto, fuel_proto,
+        machine_amount, line_data.energy_usage, total_effects, line_data.pollutant_type)
 
     local fuel_amount = nil
     if machine_proto.energy_type == "burner" then
@@ -110,8 +110,7 @@ local function update_line(line_data, aggregate, looped_fuel)
         ---@cast machine_proto.burner -nil
 
         local fuel_name = line_data.fuel_name  --[[@as string]]
-        fuel_amount = solver.util.determine_fuel_amount(energy_consumption,
-            machine_proto.burner, fuel_proto.fuel_value)
+        fuel_amount = solver.util.determine_fuel_amount(power, machine_proto.burner, fuel_proto.fuel_value)
 
         -- Handle recipes producing their own machine's fuel
         if self_feeding and production_ratio > 0 then
@@ -166,22 +165,22 @@ local function update_line(line_data, aggregate, looped_fuel)
             end
         end
 
-        energy_consumption = 0  -- set electrical consumption to 0 when fuel is used
+        power = 0  -- set power to 0 when fuel is used
 
     elseif machine_proto.energy_type == "heat" then
-        local heat_item = {type="entity", name="custom-heat-power", amount=energy_consumption, constant=true}
+        local heat_item = {type="entity", name="custom-heat-power", amount=power, constant=true}
         table.insert(ingredients, heat_item)
 
-        energy_consumption = 0  -- set electrical consumption to 0 when heat is used
+        power = 0  -- set power to 0 when heat is used
 
     elseif machine_proto.energy_type == "void" then
-        energy_consumption = 0  -- set electrical consumption to 0 while still polluting
+        power = 0  -- set power to 0 while still polluting
     end
 
-    energy_consumption = energy_consumption + (line_data.beacon_consumption or 0)
+    power = power + (line_data.beacon_power or 0)
 
-    if energy_consumption > 0 then
-        local electric_item = {type="entity", name="custom-electric-power", amount=energy_consumption, constant=true}
+    if power > 0 then
+        local electric_item = {type="entity", name="custom-electric-power", amount=power, constant=true}
         table.insert(ingredients, electric_item)
     end
 

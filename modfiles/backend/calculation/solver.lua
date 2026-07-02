@@ -115,7 +115,7 @@ end
 ---@field pollutant_type string?
 ---@field entities_require_heating boolean
 ---@field total_effects IntegerModuleEffects
----@field beacon_consumption double
+---@field beacon_power double
 ---@field fuel_proto AnyFPFuelPrototype?
 ---@field fuel_name string?
 
@@ -186,7 +186,7 @@ local function generate_floor_data(player, factory, floor, calculate_emissions)
 
                 -- Beacon total - can be calculated here, which is faster and simpler
                 if line.beacon ~= nil and line.beacon.total_amount ~= nil then
-                    line_data.beacon_consumption = line.beacon:get_total_consumption()
+                    line_data.beacon_power = line.beacon:get_total_power()
                 end
 
                 if fuel ~= nil then
@@ -495,33 +495,33 @@ end
 ---@param total_effects IntegerModuleEffects
 ---@param pollutant_type string?
 ---@return number, number
-function solver.util.determine_energy_consumption_and_emissions(machine_proto, recipe_proto,
+function solver.util.determine_power_and_emissions(machine_proto, recipe_proto,
         fuel_proto, machine_amount, energy_usage, total_effects, pollutant_type)
     local consumption_multiplier = 1 + (total_effects.consumption / MAGIC_NUMBERS.effect_precision)
-    local energy_consumption = machine_amount * (energy_usage * 60) * consumption_multiplier
+    local power = machine_amount * (energy_usage * 60) * consumption_multiplier
     local drain = math.ceil(machine_amount - MAGIC_NUMBERS.margin_of_error) * (machine_proto.energy_drain * 60)
-    local total_consumption = energy_consumption + drain
+    local total_power = power + drain
 
-    if pollutant_type == nil then return total_consumption, 0 end
+    if pollutant_type == nil then return total_power, 0 end
 
     local fuel_multiplier = (fuel_proto ~= nil) and fuel_proto.emissions_multiplier or 1
     local pollution_multiplier = 1 + (total_effects.pollution / MAGIC_NUMBERS.effect_precision)
     local total_multiplier = fuel_multiplier * pollution_multiplier * recipe_proto.emissions_multiplier
 
-    local emissions_per_joule = energy_consumption * (machine_proto.emissions_per_joule[pollutant_type] or 0)
+    local emissions_per_joule = power * (machine_proto.emissions_per_joule[pollutant_type] or 0)
     local emissions_per_second = machine_amount * (machine_proto.emissions_per_second[pollutant_type] or 0)
     local total_emissions = (emissions_per_joule + emissions_per_second) * total_multiplier * 60
 
-    return total_consumption, total_emissions
+    return total_power, total_emissions
 end
 
 --- Determines the amount of fuel needed in the given context
----@param energy_consumption number
+---@param power number
 ---@param burner MachineBurner
 ---@param fuel_value float
 ---@return number
-function solver.util.determine_fuel_amount(energy_consumption, burner, fuel_value)
-    return (energy_consumption / burner.effectivity) / fuel_value
+function solver.util.determine_fuel_amount(power, burner, fuel_value)
+    return (power / burner.effectivity) / fuel_value
 end
 
 

@@ -715,16 +715,15 @@ function matrix_engine.get_line_aggregate(line_data, player_index, floor_id, mac
         structures.class.add(line_aggregate.Ingredient, ingredient, ingredient_amount)
     end
 
-    -- Determine energy consumption (including potential fuel needs) and emissions
+    -- Determine power (including potential fuel needs) and emissions
     local fuel_proto = line_data.fuel_proto
-    local energy_consumption, emissions = solver.util.determine_energy_consumption_and_emissions(
-        machine_proto, line_data.recipe_proto, fuel_proto, machine_amount, line_data.energy_usage,
-        total_effects, line_data.pollutant_type)
+    local power, emissions = solver.util.determine_power_and_emissions( machine_proto, line_data.recipe_proto,
+        fuel_proto, machine_amount, line_data.energy_usage, total_effects, line_data.pollutant_type)
 
     local fuel, fuel_amount = nil, nil
     if machine_proto.energy_type == "burner" then
         local burner = machine_proto.burner
-        fuel_amount = solver.util.determine_fuel_amount(energy_consumption, burner, fuel_proto.fuel_value)
+        fuel_amount = solver.util.determine_fuel_amount(power, burner, fuel_proto.fuel_value)
 
         fuel = {type=fuel_proto.type, name=line_data.fuel_name, amount=fuel_amount}
         structures.class.add(line_aggregate.Ingredient, fuel)
@@ -748,22 +747,22 @@ function matrix_engine.get_line_aggregate(line_data, player_index, floor_id, mac
             end
         end
 
-        energy_consumption = 0  -- set electrical consumption to 0 when fuel is used
+        power = 0  -- set power to 0 when fuel is used
 
     elseif machine_proto.energy_type == "heat" then
-        local heat_item = {type="entity", name="custom-heat-power", amount=energy_consumption}
+        local heat_item = {type="entity", name="custom-heat-power", amount=power}
         structures.class.add(line_aggregate.Ingredient, heat_item)
 
-        energy_consumption = 0  -- set electrical consumption to 0 when heat is used
+        power = 0  -- set power to 0 when heat is used
 
     elseif machine_proto.energy_type == "void" then
-        energy_consumption = 0  -- set electrical consumption to 0 while still polluting
+        power = 0  -- set power to 0 while still polluting
     end
 
-    energy_consumption = energy_consumption + (line_data.beacon_consumption or 0)
+    power = power + (line_data.beacon_power or 0)
 
-    if energy_consumption > 0 then
-        local electric_item = {type="entity", name="custom-electric-power", amount=energy_consumption}
+    if power > 0 then
+        local electric_item = {type="entity", name="custom-electric-power", amount=power}
         structures.class.add(line_aggregate.Ingredient, electric_item)
     end
 

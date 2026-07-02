@@ -106,7 +106,7 @@ end
 
 
 ---@return double
-function Beacon:get_total_consumption()
+function Beacon:get_total_power()
     return self.total_amount * self.proto.energy_usage * 60
         * self.quality_proto.beacon_power_usage_multiplier
 end
