@@ -154,7 +154,7 @@ end
 
 ---@class FPPackedPrototype
 ---@field name string
----@field category string
+---@field category string?
 ---@field data_type DataType
 ---@field simplified boolean
 
