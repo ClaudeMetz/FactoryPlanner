@@ -5,7 +5,7 @@ local ModuleSet = require("backend.data.ModuleSet")
 ---@field class "Beacon"
 ---@field parent Line
 ---@field proto FPBeaconPrototype | FPPackedPrototype
----@field quality_proto FPQualityPrototype
+---@field quality_proto FPQualityPrototype | FPPackedPrototype
 ---@field amount integer
 ---@field total_amount number?
 ---@field module_set ModuleSet
@@ -15,12 +15,17 @@ local Beacon = Object.methods()
 Beacon.__index = Beacon
 script.register_metatable("Beacon", Beacon)
 
----@param proto FPBeaconPrototype
 ---@param parent Line
+---@param proto (FPBeaconPrototype | FPPackedPrototype)?
 ---@return Beacon
-local function init(proto, parent)
+local function init(parent, proto)
+    local this_proto = proto or {
+        name = "",
+        data_type = "beacons",
+        simplified = true
+    }
     local object = Object.init({
-        proto = proto,
+        proto = this_proto,
         quality_proto = defaults.get_fallback("qualities").proto,
         amount = 0,
         total_amount = nil,
@@ -94,7 +99,8 @@ end
 ---@param proto FPModulePrototype
 ---@return boolean
 function Beacon:allows_module(proto)
-    return lib.effects.is_compatible(self.proto, proto) and
+    return not self.proto.simplified and
+           lib.effects.is_compatible(self.proto--[[@as FPBeaconPrototype]], proto) and
            self.parent.machine:allows_module(proto)
 end
 
@@ -153,8 +159,8 @@ end
 
 ---@class PackedBeacon: PackedObject
 ---@field class "Beacon"
----@field proto FPBeaconPrototype
----@field quality_proto FPQualityPrototype
+---@field proto FPPackedPrototype
+---@field quality_proto FPPackedPrototype
 ---@field amount number
 ---@field total_amount number?
 ---@field module_set PackedModuleSet
@@ -176,8 +182,10 @@ end
 ---@param parent Line
 ---@return Beacon machine
 local function unpack(packed_self, parent)
-    local unpacked_self = init(packed_self.proto, parent)
+    -- Prototypes are unpacked at validate
+    local unpacked_self = init(parent, packed_self.proto)
     unpacked_self.quality_proto = packed_self.quality_proto
+
     unpacked_self.amount = packed_self.amount
     unpacked_self.total_amount = packed_self.total_amount
     unpacked_self.module_set = ModuleSet.unpack(packed_self.module_set, unpacked_self)
@@ -187,7 +195,7 @@ end
 
 ---@return Beacon clone
 function Beacon:clone()
-    local clone = unpack(self:pack(), self.parent)
+    local clone = unpack(self:pack(false), self.parent)
     clone:validate()
     return clone
 end
@@ -195,10 +203,10 @@ end
 
 ---@return boolean valid
 function Beacon:validate()
-    self.proto = prototyper.util.validate_prototype_object(self.proto, nil)
+    self.proto = prototyper.util.validate_prototype_object(self.proto, nil)  --[[@as FPBeaconPrototype | FPPackedPrototype]]
     self.valid = (not self.proto.simplified)
 
-    self.quality_proto = prototyper.util.validate_prototype_object(self.quality_proto, nil)
+    self.quality_proto = prototyper.util.validate_prototype_object(self.quality_proto, nil)  --[[@as FPQualityPrototype | FPPackedPrototype]]
     self.valid = (not self.quality_proto.simplified) and self.valid
 
     -- Can't be valid with an invalid parent
@@ -225,7 +233,7 @@ function Beacon:repair(player)
     end
 
     if self.valid and self.quality_proto.simplified then
-        self.quality_proto = defaults.get_fallback("qualities").proto
+        self.quality_proto = defaults.get_fallback("qualities").proto  --[[@as FPQualityPrototype]]
     end
 
     if self.valid then

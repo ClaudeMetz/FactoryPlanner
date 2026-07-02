@@ -123,7 +123,7 @@ end
 function ModuleSet:verify_compatibility()
     local modules_to_remove = {}
     for module in self:iterator() do
-        if not self:check_compatibility(module.proto) then
+        if not self:check_compatibility(module.proto--[[@as FPModulePrototype]]) then
             table.insert(modules_to_remove, module)
         end
     end
@@ -257,14 +257,17 @@ end
 ---@return boolean success
 ---@return string? error
 function ModuleSet:paste(module)
-    if not self:check_compatibility(module.proto) then
+    if module.proto.simplified or not self:check_compatibility(module.proto--[[@as FPModulePrototype]]) then
         return false, "incompatible"
     elseif self.empty_slots == 0 then
         return false, "no_empty_slots"
     end
 
     local desired_amount = math.min(module.amount, self.empty_slots)
-    local existing_module = self:find({proto=module.proto, quality_proto=module.quality_proto})
+    local existing_module = self:find({
+        proto = module.proto,  --[[@as FPModulePrototype]]
+        quality_proto = module.quality_proto  --[[@as FPQualityPrototype]]
+    })
     if existing_module then
         existing_module:set_amount(existing_module.amount + desired_amount)
     else

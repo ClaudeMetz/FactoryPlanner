@@ -7,6 +7,7 @@
 ---@field parent Object?
 ---@field next Object?
 ---@field previous Object?
+---@field dummy boolean? used by clipboard
 
 ---@class ObjectMethods
 local methods = {}
@@ -253,11 +254,12 @@ end
 ---@field class string
 
 ---@protected
+---@param full boolean
 ---@return PackedObject[] packed_objects
-function methods:_pack()
+function methods:_pack(full)
     local packed_objects = {}
     for object in self:_iterator() do
-        table.insert(packed_objects, object:pack())
+        table.insert(packed_objects, object:pack(full))
     end
     return packed_objects
 end
@@ -267,7 +269,9 @@ end
 ---@param unpacker fun(item: PackedObject): Object
 ---@return Object? first_object
 function Object.unpack(packed_objects, unpacker, parent)
-    local first_object, latest_object = nil, nil
+    local first_object = nil ---@type Object?
+    local latest_object = nil ---@type Object?
+
     for _, packed_object in pairs(packed_objects) do
         local object = unpacker(packed_object)
         object.parent = parent

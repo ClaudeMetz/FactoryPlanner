@@ -27,7 +27,7 @@ Line.__index = Line
 script.register_metatable("Line", Line)
 
 ---@param recipe_proto FPRecipePrototype?
----@param production_type RecipeProductionType
+---@param production_type RecipeProductionType?
 ---@return Line
 local function init(recipe_proto, production_type)
     local object = Object.init({
@@ -49,7 +49,9 @@ local function init(recipe_proto, production_type)
         production_ratio = 0
     }, "Line", Line)  --[[@as Line]]
 
-    object.recipe = Recipe.init(recipe_proto, production_type, object)
+    if recipe_proto then
+        object.recipe = Recipe.init(object, recipe_proto, production_type)
+    end
 
     return object
 end
@@ -81,7 +83,7 @@ end
 ---@param proto FPMachinePrototype
 function Line:change_machine_to_proto(player, proto)
     if not self.machine then
-        self.machine = Machine.init(proto, self)
+        self.machine = Machine.init(self, proto)
         self.machine:summarize_effects()
     else
         self.machine.proto = proto
@@ -106,6 +108,7 @@ function Line:change_machine_by_action(player, action, current_proto)
     local category_id = current_machine_proto.category_id
 
     local function try_machine(new_machine_id)
+        -- Assume a match while inside the upgrade/downgrade loop
         current_machine_proto = prototyper.util.find("machines", new_machine_id, category_id) --[[@as FPMachinePrototype]]
 
         if self:is_machine_compatible(current_machine_proto) then
@@ -176,7 +179,8 @@ end
 function Line:setup_beacon(player)
     local beacon_defaults = defaults.get(player, "beacons", nil)
     if beacon_defaults.modules and beacon_defaults.beacon_amount ~= 0 then
-        local blank_beacon = Beacon.init(beacon_defaults.proto, self)
+        local proto = beacon_defaults.proto  --[[@as FPBeaconPrototype]]
+        local blank_beacon = Beacon.init(self, proto)
         self:set_beacon(blank_beacon)
         blank_beacon:reset(player)
     end
@@ -208,7 +212,8 @@ end
 function Line:compile_machine_filter()
     local compatible_machines = {}
 
-    local machine_category = prototyper.util.find("machines", nil, self.machine.proto.combined_category)
+    local machine_category = prototyper.util.find("machines", nil, self.machine.proto.combined_category)  --[[@as NamedCategory]]
+
     for _, machine_proto in pairs(machine_category.members) do
         if self:is_machine_compatible(machine_proto) then
             table.insert(compatible_machines, machine_proto.name)
@@ -312,7 +317,7 @@ end
 ---@param packed_self PackedLine
 ---@return Line line
 local function unpack(packed_self)
-    local unpacked_self = init(nil, nil)  -- initialize empty, overwrite after
+    local unpacked_self = init()  -- initialize empty, overwrite after
     unpacked_self.recipe = Recipe.unpack(packed_self.recipe, unpacked_self)  --[[@as Recipe]]
     unpacked_self.done = packed_self.done
     unpacked_self.active = packed_self.active

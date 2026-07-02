@@ -228,10 +228,9 @@ end
 ---@param packed_self PackedFactory
 ---@return Factory factory
 local function unpack(packed_self)
-    local unpacked_self = init(packed_self.name)
+    local unpacked_self = init(packed_self.name, packed_self.matrix_solver_active)
 
     -- TLProduct prototypes will be automatically unpacked by the validation process
-    unpacked_self.matrix_solver_active = packed_self.matrix_solver_active
     unpacked_self.matrix_free_items = packed_self.matrix_free_items or {}
     unpacked_self.blueprints = packed_self.blueprints
     unpacked_self.notes = packed_self.notes
@@ -247,7 +246,7 @@ end
 
 ---@return Factory clone
 function Factory:clone()
-    local clone = unpack(self:pack())
+    local clone = unpack(self:pack(false))
     clone:validate()
     return clone
 end

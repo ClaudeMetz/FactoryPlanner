@@ -12,12 +12,18 @@ local Fuel = Object.methods()
 Fuel.__index = Fuel
 script.register_metatable("Fuel", Fuel)
 
----@param proto FPFuelPrototype
 ---@param parent Machine
+---@param proto (FPFuelPrototype | FPPackedPrototype)?
 ---@return Fuel
-local function init(proto, parent)
+local function init(parent, proto)
+    local this_proto = proto or {
+        name = "",
+        category = "",
+        data_type = "fuels",
+        simplified = true
+    }
     local object = Object.init({
-        proto = proto,
+        proto = this_proto,
         temperature = nil,
 
         temperature_data = nil,
@@ -25,10 +31,10 @@ local function init(proto, parent)
         amount = 0,
         satisfied_amount = 0,
 
-        parent = parent
+        parent = parent  -- could be nil
     }, "Fuel", Fuel)  --[[@as Fuel]]
 
-    if proto.simplified ~= true then object:build_temperature_data() end
+    if not this_proto.simplified then object:build_temperature_data() end
 
     return object
 end
@@ -66,7 +72,7 @@ function Fuel:build_temperature_data()
     self.temperature_data = nil
 
     if self.proto.type == "fluid" then
-        self.temperature_data = lib.temperature.generate_data(self.proto)
+        self.temperature_data = lib.temperature.generate_data(self.proto--[[@as Ingredient.fluid]])
     end
 end
 
@@ -75,7 +81,7 @@ end
 function Fuel:apply_temperature_default(player)
     if self.proto.type == "fluid" then
         self.temperature = lib.temperature.determine_applicable_default(
-            player, self.proto, self.temperature_data.applicable_values)
+            player, self.proto--[[@as Ingredient.fluid]], self.temperature_data.applicable_values)
     end
 end
 
@@ -83,9 +89,15 @@ end
 ---@param object CopyableObject
 ---@return boolean success
 ---@return string? error
-function Fuel:paste(object, player)
+function Fuel:paste(object)
     if object.class == "Fuel" then
-        local burner = self.parent.proto.burner  -- will exist if there is fuel to paste on
+        local burner = self.parent.proto.burner
+
+        -- Sanity check. Should exist if fuel can be pasted
+        if burner == nil then
+            return false, "incompatible"
+        end
+
         -- Check invididual categories so you can paste between combined_categories
         for category_name, _ in pairs(burner.categories) do
             if object.proto.category == category_name then
@@ -104,8 +116,9 @@ end
 
 ---@class PackedFuel: PackedObject
 ---@field class "Fuel"
----@field proto FPFuelPrototype
+---@field proto FPPackedPrototype
 ---@field temperature float?
+---@field amount float?
 
 ---@param full boolean
 ---@return PackedFuel packed_self
@@ -123,9 +136,11 @@ end
 ---@param parent Machine
 ---@return Fuel machine
 local function unpack(packed_self, parent)
-    local unpacked_self = init(packed_self.proto, parent)
+    -- Prototypes are unpacked at validate
+    local unpacked_self = init(parent, packed_self.proto)
+
     unpacked_self.temperature = packed_self.temperature  -- will be migrated through validation
-    unpacked_self.amount = packed_self.amount  -- only used for paste
+    unpacked_self.amount = packed_self.amount or 0  -- only used for paste
 
     return unpacked_self
 end

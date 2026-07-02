@@ -7,7 +7,7 @@ local DistrictItemSet = require("backend.data.DistrictItemSet")
 ---@field next District?
 ---@field previous District?
 ---@field name string
----@field location_proto FPLocationPrototype
+---@field location_proto FPLocationPrototype | FPPackedPrototype
 ---@field item_set DistrictItemSet
 ---@field first Factory?
 ---@field needs_refresh boolean
@@ -134,9 +134,9 @@ function District:validate()
     self:_validate()  -- invalid factories don't make the district invalid
 
     -- Invalid locations are just replaced with valid ones to make the district valid
-    self.location_proto = prototyper.util.validate_prototype_object(self.location_proto, nil)
+    self.location_proto = prototyper.util.validate_prototype_object(self.location_proto, nil)  --[[@as FPLocationPrototype | FPPackedPrototype]]
     if self.location_proto.simplified then
-        self.location_proto = defaults.get_fallback("locations").proto
+        self.location_proto = defaults.get_fallback("locations").proto  --[[@as FPLocationPrototype]]
     end
 
     -- The item set doesn't need validation as it is automaticaly redone by :refresh()

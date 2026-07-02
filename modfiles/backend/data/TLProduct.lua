@@ -8,17 +8,23 @@ local Object = require("backend.data.Object")
 ---@field proto FPItemPrototype | FPPackedPrototype
 ---@field defined_by ProductDefinedBy
 ---@field required_amount number
----@field belt_proto FPBeltPrototype | FPPackedPrototype
+---@field belt_proto (FPBeltPrototype | FPPackedPrototype)?
 ---@field amount number
 local TLProduct = Object.methods()
 TLProduct.__index = TLProduct
 script.register_metatable("TLProduct", TLProduct)
 
----@param proto FPItemPrototype
+---@param proto (FPItemPrototype | FPPackedPrototype)?
 ---@return TLProduct
 local function init(proto)
+    local this_proto = proto or {
+        name = "",
+        category = "",
+        data_type = "items",
+        simplified = true
+    }
     local object = Object.init({
-        proto = proto,
+        proto = this_proto,
         defined_by = "amount",
         required_amount = 0,  -- always per second
         belt_proto = nil,
@@ -64,10 +70,15 @@ end
 function TLProduct:paste(object)
     -- TLProduct objects are converted to SimpleItems when copied, so they can't appear here
     if object.class == "SimpleItem" or object.class == "Fuel" then
-        local proto = object.proto
+        local proto  ---@type FPItemPrototype | FPPackedPrototype
         if object.class == "Fuel" then  -- need an Item prototype here, not Fuel
-            proto = prototyper.util.find("items", object:get_name_with_temperature(), proto.type)
+            proto = prototyper.util.find("items", object:get_name_with_temperature(), object.proto.type) --[[@as FPItemPrototype]]
+        else
+            proto = object.proto  --[[@as FPItemPrototype | FPPackedPrototype]]
         end
+
+        if proto.simplified then return false, "incompatible" end
+        ---@cast proto -FPPackedPrototype
 
         -- Avoid duplicate items, but allow pasting over the same item proto
         local existing_item = self.parent:find({proto=proto})
@@ -110,6 +121,7 @@ end
 ---@param packed_self PackedProduct
 ---@return TLProduct product
 local function unpack(packed_self)
+    -- Prototypes are unpacked at validate
     local unpacked_self = init(packed_self.proto)
 
     unpacked_self.defined_by = packed_self.defined_by
@@ -124,10 +136,10 @@ end
 function TLProduct:validate()
     self.valid = true
 
-    self.proto = prototyper.util.validate_prototype_object(self.proto, "type")
+    self.proto = prototyper.util.validate_prototype_object(self.proto, "type")  --[[@as FPItemPrototype | FPPackedPrototype]]
     self.valid = (not self.proto.simplified) and self.valid
 
-    self.belt_proto = (self.belt_proto) and prototyper.util.validate_prototype_object(self.belt_proto, nil)
+    self.belt_proto = (self.belt_proto) and prototyper.util.validate_prototype_object(self.belt_proto, nil)  --[[@as FPBeltPrototype | FPPackedPrototype]]
     if self.belt_proto then self.valid = (not self.belt_proto.simplified) and self.valid end
 
     return self.valid

@@ -19,7 +19,7 @@ function migration.player_table(player_table)
                         -- Use simplified proto to avoid fluid temperature data build
                         local recipe_proto = {name = line.recipe_proto.name, category = nil,
                             data_type = "recipes", simplified = true}
-                        line.recipe = Recipe.init(recipe_proto, line.production_type, line)
+                        line.recipe = Recipe.init(line, recipe_proto, line.production_type)
                         line.recipe.priority_product = line.priority_product
                         line.recipe.temperatures = line.temperatures or {}
 

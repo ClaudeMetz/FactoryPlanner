@@ -20,14 +20,19 @@ local Recipe = Object.methods()
 Recipe.__index = Recipe
 script.register_metatable("Recipe", Recipe)
 
----@param proto FPRecipePrototype?
----@param production_type RecipeProductionType
 ---@param parent Line
+---@param proto (FPRecipePrototype | FPPackedPrototype)?
+---@param production_type RecipeProductionType?
 ---@return Recipe
-local function init(proto, production_type, parent)
+local function init(parent, proto, production_type)
+    local this_proto = proto or {
+        name = "",
+        data_type = "recipes",
+        simplified = true
+    }
     local object = Object.init({
-        proto = proto,
-        production_type = production_type,
+        proto = this_proto,
+        production_type = production_type or "produce",
         priority_product = nil,
         temperatures = {},
 
@@ -37,7 +42,7 @@ local function init(proto, production_type, parent)
         parent = parent
     }, "Recipe", Recipe)  --[[@as Recipe]]
 
-    if proto and proto.simplified ~= true then
+    if not this_proto.simplified then
         object:build_temperatures_data()
     end
 
@@ -143,10 +148,11 @@ end
 ---@param packed_self PackedRecipe
 ---@return Recipe Recipe
 local function unpack(packed_self, parent)
-    local unpacked_self = init(packed_self.proto, packed_self.production_type, parent)
-
-    -- These will be automatically unpacked by the validation process
+    -- Prototypes are unpacked at validate
+    local unpacked_self = init(parent, packed_self.proto, packed_self.production_type)
     unpacked_self.priority_product = packed_self.priority_product
+
+    -- Will be automatically unpacked by the validation process
     unpacked_self.temperatures = packed_self.temperatures
 
     return unpacked_self
@@ -155,11 +161,11 @@ end
 
 ---@return boolean valid
 function Recipe:validate()
-    self.proto = prototyper.util.validate_prototype_object(self.proto, nil)
+    self.proto = prototyper.util.validate_prototype_object(self.proto, nil)  --[[@as FPRecipePrototype | FPPackedPrototype]]
     self.valid = (not self.proto.simplified)
 
     if self.valid and self.priority_product then
-        self.priority_product = prototyper.util.validate_prototype_object(self.priority_product, "type")
+        self.priority_product = prototyper.util.validate_prototype_object(self.priority_product, "type")  --[[@as FPItemPrototype | FPPackedPrototype]]
         self.valid = (not self.priority_product.simplified) and self.valid
     end
 

@@ -168,10 +168,10 @@ local function handle_beacon_click(player, tags, action)
 end
 
 local function handle_beacon_add(player, tags, event)
-    local line = OBJECT_INDEX[tags.line_id]
+    local line = OBJECT_INDEX[tags.line_id]  --[[@as Line]]
 
     if event.shift then  -- paste
-        local dummy_beacon = Beacon.init({simplified=true}, line)
+        local dummy_beacon = Beacon.init(line)
         lib.clipboard.paste(player, dummy_beacon)
     else
         lib.gui.open_dialog(player, {dialog="beacon", modal_data={line_id=line.id}})
