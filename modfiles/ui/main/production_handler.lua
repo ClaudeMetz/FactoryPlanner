@@ -217,7 +217,7 @@ end
 ---@param tags table
 ---@param action string
 local function handle_item_click(player, tags, action)
-    local line = OBJECT_INDEX[tags.line_id]  --[[@as Line]]
+    local line = OBJECT_INDEX[tags.line_id]  --[[@as Line | Floor]]
     local item = line[tags.item_category .. "s"][tags.item_index]
 
     if action == "prioritize" then
