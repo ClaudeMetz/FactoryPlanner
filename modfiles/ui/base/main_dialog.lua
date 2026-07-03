@@ -272,12 +272,14 @@ listeners.player = {
 listeners.game = {
     on_singleplayer_init = (function(_)
         for _, player in pairs(game.players) do
+            lib.context.validate(player)  -- for robustness
             main_dialog.rebuild(player, false)
         end
     end),
 
     on_multiplayer_init = (function(_)
         for _, player in pairs(game.players) do
+            lib.context.validate(player)  -- for robustness
             main_dialog.rebuild(player, false)
         end
     end)

@@ -7,7 +7,6 @@
 ---@field parent Object?
 ---@field next Object?
 ---@field previous Object?
----@field dummy boolean? used by clipboard
 
 ---@class ObjectMethods
 local methods = {}
