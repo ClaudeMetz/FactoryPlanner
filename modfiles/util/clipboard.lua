@@ -57,7 +57,7 @@ function _clipboard.paste(player, target, tags)
 
         tags = tags or {}
         tags.player = player
-        local success, error = target:paste(clone, tags)
+        local success, error, target_class = target:paste(clone, tags)
 
         if success then  -- objects in the clipboard are always valid since it resets on_config_changed
             lib.cursor.create_flying_text(player, {"fp.pasted_from_clipboard", {"fp.pu_" .. clip.class:lower(), 1}})
@@ -65,7 +65,7 @@ function _clipboard.paste(player, target, tags)
             solver.update(player)
             lib.gui.run_refresh(player, "production")
         else
-            local object_lower, target_lower = {"fp.pl_" .. clip.class:lower(), 1}, {"fp.pl_" .. target.class:lower(), 1}
+            local object_lower, target_lower = {"fp.pl_" .. clip.class:lower(), 1}, {"fp.pl_" .. (target_class or target.class):lower(), 1}
             if error == "incompatible_class" then
                 lib.cursor.create_flying_text(player, {"fp.clipboard_incompatible_class", object_lower, target_lower})
             elseif error == "incompatible" then
