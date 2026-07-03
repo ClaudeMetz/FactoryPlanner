@@ -268,9 +268,10 @@ end
 
 
 ---@param object CopyableObject
+---@param tags table
 ---@return boolean success
 ---@return string? error
-function Line:paste(object)
+function Line:paste(object, tags)
     if object.class == "Line" or object.class == "Floor" then
         ---@cast object LineObject
         if not self.parent:check_product_compatibility(object) then
@@ -278,6 +279,33 @@ function Line:paste(object)
         end
 
         self.parent:replace(self, object)
+        return true, nil
+    elseif object.class == "SimpleItem" or object.class =="Fuel" then
+        -- The target has to be an ingredient on the line
+        if tags.item_category ~= "ingredient" or tags.item_index == nil then
+            return false, "incompatible_class"
+        end
+
+        local item = self[tags.item_category .. "s"][tags.item_index]  --[[@as SimpleItem]]
+
+        -- Only allow pasting fluid temperature settings
+        if object.proto.type ~= "fluid" or item.proto.type ~= "fluid" then
+            return false, "incompatible"
+        end
+
+        -- SimpleItems will always be a fluid with temperature
+        if object.class == "SimpleItem" then
+            if object.proto.base_name ~= item.proto.name then return false, "incompatible" end
+            if not self.recipe:set_temperature(item.proto, object.proto.temperature) then
+                return false, "incompatible"
+            end
+        else  -- "Fuel"
+            if object.proto.name ~= item.proto.name then return false, "incompatible" end
+            if not self.recipe:set_temperature(item.proto, object.temperature) then
+                return false, "incompatible"
+            end
+        end
+
         return true, nil
     else
         return false, "incompatible_class"

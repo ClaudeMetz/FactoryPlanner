@@ -213,9 +213,11 @@ local function handle_module_click(player, tags, action)
     end
 end
 
-
+---@param player LuaPlayer
+---@param tags table
+---@param action string
 local function handle_item_click(player, tags, action)
-    local line = OBJECT_INDEX[tags.line_id]
+    local line = OBJECT_INDEX[tags.line_id]  --[[@as Line]]
     local item = line[tags.item_category .. "s"][tags.item_index]
 
     if action == "prioritize" then
@@ -276,32 +278,7 @@ local function handle_item_click(player, tags, action)
 
     elseif action == "paste" then
         if line.class ~= "Line" then return end
-
-        -- Custom wrapper to paste onto since SimpleItem is not a real object
-        local target = {
-            paste = function(self, object)
-                if object.class == "SimpleItem" or object.class == "Fuel" then
-                    if object.proto.type ~= "fluid" or item.proto.type ~= "fluid" then
-                        return false, "incompatible"
-                    end
-
-                    -- SimpleItems will always be a fluid with temperature
-                    if object.class == "SimpleItem" then
-                        if object.proto.base_name ~= item.proto.name then return false, "incompatible" end
-                        line.recipe.temperatures[item.proto.name] = object.proto.temperature
-                    else  -- "Fuel"
-                        if object.proto.name ~= item.proto.name then return false, "incompatible" end
-                        line.recipe.temperatures[item.proto.name] = object.temperature
-                    end
-
-                    return true, nil
-                else
-                    return false, "incompatible_class"
-                end
-            end,
-            class = "Item"
-        }
-        lib.clipboard.paste(player, target)
+        lib.clipboard.paste(player, line, tags)
 
     elseif action == "add_to_cursor" then
         lib.cursor.handle_item_click(player, item.proto, item.amount)

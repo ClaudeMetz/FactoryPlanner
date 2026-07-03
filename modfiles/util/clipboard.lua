@@ -39,7 +39,8 @@ end
 -- Tries pasting the player's clipboard content onto the given target
 ---@param player LuaPlayer
 ---@param target CopyableObject
-function _clipboard.paste(player, target)
+---@param tags table?
+function _clipboard.paste(player, target, tags)
     local clip = lib.globals.player_table(player).clipboard
 
     if clip == nil then
@@ -53,7 +54,10 @@ function _clipboard.paste(player, target)
         else
             clone = lib.flib.shallow_copy(clip.packed_object)  --[[@as SimpleItem]]
         end
-        local success, error = target:paste(clone, player)
+
+        tags = tags or {}
+        tags.player = player
+        local success, error = target:paste(clone, tags)
 
         if success then  -- objects in the clipboard are always valid since it resets on_config_changed
             lib.cursor.create_flying_text(player, {"fp.pasted_from_clipboard", {"fp.pu_" .. clip.class:lower(), 1}})
