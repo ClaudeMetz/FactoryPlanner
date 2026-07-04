@@ -216,7 +216,8 @@ function Factory:pack(full)
         class = self.class,
         name = self.name,
         matrix_solver_active = self.matrix_solver_active,
-        matrix_free_items = prototyper.util.simplify_prototypes(self.matrix_free_items, "type"),
+        matrix_free_items = (self.matrix_free_items) and
+            prototyper.util.simplify_prototypes(self.matrix_free_items, "type") or nil,
         blueprints = self.blueprints,
         notes = self.notes,
         productivity_boni = self.productivity_boni,

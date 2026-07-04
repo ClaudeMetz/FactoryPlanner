@@ -87,9 +87,10 @@ function Realm:schedule_solver_updates(starting_tick, player)
 end
 
 
---- The realm can't be invalid, this just cleanly validates Districts
+---@return boolean valid
 function Realm:validate()
     self:_validate()
+    return true  -- Realm can't be invalid
 end
 
 return {init = init}

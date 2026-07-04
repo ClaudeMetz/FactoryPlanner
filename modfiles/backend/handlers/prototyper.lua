@@ -161,21 +161,18 @@ end
 ---@alias CategoryDesignation ("category" | "type" | "combined_category")
 
 -- Returns a new table that only contains the given prototypes' identifiers
----@param prototype AnyPrototype?
+---@param prototype AnyPrototype
 ---@param category_designation CategoryDesignation?
----@return FPPackedPrototype?
+---@return FPPackedPrototype
 function prototyper.util.simplify_prototype(prototype, category_designation)
-    if not prototype then return nil end
     return {name = prototype.name, category = prototype[category_designation],
         data_type = prototype.data_type, simplified = true}
 end
 
----@param prototypes FPPrototype[]
+---@param prototypes AnyPrototype[]
 ---@param category_designation CategoryDesignation?
----@return FPPackedPrototype[]?
+---@return FPPackedPrototype[]
 function prototyper.util.simplify_prototypes(prototypes, category_designation)
-    if not prototypes then return nil end
-
     local simplified_prototypes = {}
     for index, proto in pairs(prototypes) do
         simplified_prototypes[index] = prototyper.util.simplify_prototype(proto, category_designation)

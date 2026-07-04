@@ -142,7 +142,8 @@ function Recipe:pack(full)
         class = self.class,
         proto = prototyper.util.simplify_prototype(self.proto, nil),
         production_type = self.production_type,
-        priority_product = prototyper.util.simplify_prototype(self.priority_product, "type"),
+        priority_product = (self.priority_product) and
+            prototyper.util.simplify_prototype(self.priority_product, "type") or nil,
         temperatures = self.temperatures
     }
 end
@@ -168,9 +169,11 @@ function Recipe:validate()
     self.valid = (not self.proto.simplified)
 
     if self.valid and self.priority_product then
-        self.priority_product = prototyper.util.validate_prototype_object(self.priority_product, "type")  --[[@as FPItemPrototype | FPPackedPrototype]]
-        self.valid = (not self.priority_product.simplified) and self.valid
     end
+
+    self.priority_product = (self.priority_product) and
+        prototyper.util.validate_prototype_object(self.priority_product, "type") or nil
+    if self.priority_product then self.valid = (not self.priority_product.simplified) and self.valid end
 
     -- An invalid temperature shouldn't invalidate the recipe
     if self.valid then  ---@cast self.proto FPRecipePrototype

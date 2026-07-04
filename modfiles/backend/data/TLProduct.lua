@@ -113,7 +113,7 @@ function TLProduct:pack(full)
         proto = prototyper.util.simplify_prototype(self.proto, "type"),
         defined_by = self.defined_by,
         required_amount = self.required_amount,
-        belt_proto = (self.belt_proto) and prototyper.util.simplify_prototype(self.belt_proto, nil),
+        belt_proto = (self.belt_proto) and prototyper.util.simplify_prototype(self.belt_proto, nil) or nil,
 
         amount = (full) and self.amount or nil
     }
@@ -135,12 +135,10 @@ end
 
 ---@return boolean valid
 function TLProduct:validate()
-    self.valid = true
-
     self.proto = prototyper.util.validate_prototype_object(self.proto, "type")  --[[@as FPItemPrototype | FPPackedPrototype]]
-    self.valid = (not self.proto.simplified) and self.valid
+    self.valid = (not self.proto.simplified)
 
-    self.belt_proto = (self.belt_proto) and prototyper.util.validate_prototype_object(self.belt_proto, nil)  --[[@as FPBeltPrototype | FPPackedPrototype]]
+    self.belt_proto = (self.belt_proto) and prototyper.util.validate_prototype_object(self.belt_proto, nil) or nil
     if self.belt_proto then self.valid = (not self.belt_proto.simplified) and self.valid end
 
     return self.valid
