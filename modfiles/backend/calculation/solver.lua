@@ -318,7 +318,7 @@ end
 ---@param player LuaPlayer
 ---@param factory Factory?
 function solver.update(player, factory)
-    factory = factory or lib.context.get(player, "Factory")
+    factory = factory or lib.context.get(player, "Factory")  --[[@as Factory]]
     if factory and factory.valid then
         -- Cancel any pending update as it'll be running right now
         if factory.tick_of_solver_update then

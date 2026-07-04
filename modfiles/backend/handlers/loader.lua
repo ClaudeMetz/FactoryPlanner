@@ -1,7 +1,7 @@
 -- The loader contains the code that runs on_load, pre-caching some data structures that are needed later
 local loader = {}
 
----@alias RecipeMap { [ItemCategoryID]: { [ItemID]: { [RecipeID]: true } } }
+---@alias RecipeMap table<ItemCategoryID, table<ItemID, table<RecipeID, true>>>
 ---@alias ItemCategoryID integer
 ---@alias ItemID integer
 ---@alias RecipeID integer
@@ -84,7 +84,7 @@ local function sorted_items()
     local items = {}
 
     for _, type in pairs{"item", "fluid", "entity"} do
-        local category = prototyper.util.find("items", nil, type)  --[[@as NamedCategory]]
+        local category = prototyper.util.find("items", nil, type)  --[[@as NamedCategory<FPItemPrototype>]]
         for _, item in pairs(category.members--[[@cast -nil]]) do
             table.insert(items, item)
         end
@@ -141,10 +141,10 @@ end
 
 
 ---@alias MappedPrototypes<T> table<string, T>
----@alias MappedPrototypesWithCategory<T> table<string, { id: integer, name: string, members: table<string, T> }>
----@alias MappedCategory { id: integer, name: string, members: table<string, T> }
+---@alias MappedPrototypesWithCategory<T> table<string, MappedCategory<T>>
+---@alias MappedCategory<T> { id: integer, name: string, members: MappedPrototypes<T> }
 
----@class PrototypeMaps: table<DataType, table>
+---@class PrototypeMaps
 ---@field recipes MappedPrototypes<FPRecipePrototype>
 ---@field items MappedPrototypesWithCategory<FPItemPrototype>
 ---@field machines MappedPrototypesWithCategory<FPMachinePrototype>

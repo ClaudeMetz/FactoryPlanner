@@ -21,17 +21,17 @@ prototyper.data_types = {recipes = false, items = true, machines = true, fuels =
 
 ---@alias DataType "recipes" | "items" | "machines" | "fuels" | "belts" | "pumps" | "silos" | "wagons" | "modules" | "beacons" | "locations" | "qualities"
 
----@alias NamedPrototypes<T> { [string]: T }
----@alias NamedPrototypesWithCategory<T> { [string]: { name: string, members: { [string]: T } } }
----@alias NamedCategory { name: string, members: { [string]: table } }
----@alias AnyNamedPrototypes<T> NamedPrototypes<T> | NamedPrototypesWithCategory<T>
+---@alias NamedPrototypes<T> table<string, T>
+---@alias NamedPrototypesWithCategory<T> table<string, NamedCategory<T>>
+---@alias NamedCategory<T> { name: string, members: NamedPrototypes<T> }
+---@alias AnyNamedPrototypes NamedPrototypes<FPPrototype> | NamedPrototypesWithCategory<FPPrototype>
 
----@alias IndexedPrototypes<T> { [integer]: T }
----@alias IndexedPrototypesWithCategory<T> { [integer]: { id: integer, name: string, members: { [integer]: T } } }
----@alias IndexedCategory { id: integer, name: string, data_type: DataType, category_id: integer?, members: { [integer]: table } }
----@alias AnyIndexedPrototypes<T> IndexedPrototypes<T> | IndexedPrototypesWithCategory<T>
+---@alias IndexedPrototypes<T> table<integer, T>
+---@alias IndexedPrototypesWithCategory<T> table<integer, IndexedCategory<T>>
+---@alias IndexedCategory<T> { id: integer, name: string, data_type: DataType, category_id: integer?, members: IndexedPrototypes<T> }
+---@alias AnyIndexedPrototypes IndexedPrototypes<FPPrototype> | IndexedPrototypesWithCategory<FPPrototype>
 
----@class PrototypeLists: { [DataType]: table }
+---@class PrototypeLists
 ---@field recipes IndexedPrototypes<FPRecipePrototype>
 ---@field items IndexedPrototypesWithCategory<FPItemPrototype>
 ---@field machines IndexedPrototypesWithCategory<FPMachinePrototype>
@@ -55,12 +55,12 @@ prototyper.data_types = {recipes = false, items = true, machines = true, fuels =
 local function convert_and_sort(data_type, prototype_sorting_function)
     local final_list = {}
 
-    ---@param list AnyNamedPrototypes[]
+    ---@param list AnyNamedPrototypes
     ---@param sorting_function SortingFunction?
     ---@param category_id integer?
     ---@return AnyIndexedPrototypes
     local function apply(list, sorting_function, category_id)
-        local new_list = {}  ---@type (IndexedPrototypes | IndexedCategory)[]
+        local new_list = {}  ---@type (FPPrototype | IndexedCategory<FPPrototype>)[]
 
         for _, member in pairs(list) do table.insert(new_list, member) end
         if sorting_function then table.sort(new_list, sorting_function) end
@@ -71,11 +71,11 @@ local function convert_and_sort(data_type, prototype_sorting_function)
             member.data_type = data_type
         end
 
-        return new_list
+        return new_list --[[@as AnyIndexedPrototypes]]
     end
 
-    ---@param a NamedCategory
-    ---@param b NamedCategory
+    ---@param a NamedCategory<FPPrototype>
+    ---@param b NamedCategory<FPPrototype>
     ---@return boolean
     local function category_sorting_function(a, b)
         if a.name < b.name then return true
@@ -84,13 +84,14 @@ local function convert_and_sort(data_type, prototype_sorting_function)
     end
 
     if prototyper.data_types[data_type] == false then
-        final_list = apply(storage.prototypes[data_type], prototype_sorting_function, nil)
+        final_list = apply(storage.prototypes[data_type]--[[@as NamedPrototypes<FPPrototype>]], prototype_sorting_function, nil)
         ---@cast final_list IndexedPrototypes<FPPrototype>
     else
-        final_list = apply(storage.prototypes[data_type], category_sorting_function, nil)
+        final_list = apply(storage.prototypes[data_type]--[[@as NamedPrototypesWithCategory<FPPrototype>]], category_sorting_function, nil)
         ---@cast final_list IndexedPrototypesWithCategory<FPPrototypeWithCategory>
         for id, category in pairs(final_list) do
-            category.members = apply(category.members, prototype_sorting_function, id)
+            local members = category.members  ---@cast members NamedPrototypes<FPPrototype>
+            category.members = apply(members, prototype_sorting_function, id)
         end
     end
 
@@ -103,13 +104,12 @@ function prototyper.build()
     integrator.collect("compacting_recipes")
 
     for data_type, _ in pairs(prototyper.data_types) do
-        ---@type AnyNamedPrototypes
-        storage.prototypes[data_type] = generator[data_type].generate()
+        storage.prototypes[data_type] = generator[data_type].generate()  --[[@as AnyIndexedPrototypes]]
     end
 
     -- Second pass to do some things that can't be done in the first pass due to the strict sequencing
     for data_type, _ in pairs(prototyper.data_types) do
-        local second_pass = generator[data_type].second_pass  ---@type fun(prototypes: NamedPrototypes)
+        local second_pass = generator[data_type].second_pass --[[@as fun(prototypes: NamedPrototypes<FPPrototype>)?]]
         if second_pass ~= nil then second_pass(storage.prototypes[data_type]) end
     end
 
@@ -125,7 +125,7 @@ end
 ---@param data_type DataType
 ---@param prototype (integer | string)?
 ---@param category (integer | string)?
----@return (AnyFPPrototype | NamedCategory)?
+---@return (AnyFPPrototype | NamedCategory<FPPrototype>)?
 function prototyper.util.find(data_type, prototype, category)
     local prototypes, prototype_map = storage.prototypes[data_type], PROTOTYPE_MAPS[data_type]
 
@@ -136,16 +136,16 @@ function prototyper.util.find(data_type, prototype, category)
 
     else  -- category and prototype provided
         local category_map = (type(category) == "string") and prototype_map or prototypes
-        local category_table = category_map[category]  ---@type MappedCategory
+        local category_table = category_map[category]  ---@type MappedCategory<FPPrototype>
         if category_table == nil then return nil end
 
         if type(prototype) == type(category) then
             return category_table.members[prototype]  -- can be nil
         else  -- If types don't match, we need to use the opposite map for the category
             if type(prototype) == "string" then
-                return prototype_map[category_table.name].members[prototype]  -- can be nil
+                return prototype_map[category_table.name].members--[[@cast -nil]][prototype]  -- can be nil
             else
-                return prototypes[category_table.id].members[prototype]  -- can be nil
+                return prototypes[category_table.id].members--[[@cast -nil]][prototype]  -- can be nil
             end
         end
     end
@@ -197,13 +197,13 @@ function prototyper.util.validate_prototype_object(prototype, category_designati
     if prototype.simplified then  -- try to unsimplify, otherwise it stays that way
         ---@cast prototype FPPackedPrototype
         if not category_designation or prototype.category then  -- failsafe
-            local new_proto = prototyper.util.find(prototype.data_type, prototype.name, prototype.category)
+            local new_proto = prototyper.util.find(prototype.data_type, prototype.name, prototype.category) --[[@as AnyFPPrototype?]]
             if new_proto then updated_proto = new_proto end
         end
     else
         ---@cast prototype AnyFPPrototype
         local category = prototype[category_designation]  ---@type string
-        local new_proto = prototyper.util.find(prototype.data_type, prototype.name, category)
+        local new_proto = prototyper.util.find(prototype.data_type, prototype.name, category) --[[@as AnyFPPrototype?]]
         updated_proto = new_proto or prototyper.util.simplify_prototype(prototype, category_designation)  --[[@as AnyPrototype]]
     end
 

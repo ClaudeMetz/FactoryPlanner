@@ -212,7 +212,7 @@ end
 function Line:compile_machine_filter()
     local compatible_machines = {}
 
-    local machine_category = prototyper.util.find("machines", nil, self.machine.proto.combined_category)  --[[@as NamedCategory]]
+    local machine_category = prototyper.util.find("machines", nil, self.machine.proto.combined_category)  --[[@as NamedCategory<FPMachinePrototype>]]
 
     for _, machine_proto in pairs(machine_category.members) do
         if self:is_machine_compatible(machine_proto) then

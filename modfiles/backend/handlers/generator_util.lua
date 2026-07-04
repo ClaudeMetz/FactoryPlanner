@@ -212,9 +212,9 @@ end
 -- Items are still name-keyed at this point in generation, before the final conversion to
 -- id-keyed storage, so storage.prototypes.items can't be used with its regular (post-conversion) type here
 ---@param item_type "item" | "fluid"
----@return { [string]: FPItemPrototype } members
+---@return table<string, FPItemPrototype> members
 function _util.get_item_members(item_type)
-    local named_items = storage.prototypes.items  ---@type NamedPrototypesWithCategory<FPItemPrototype>
+    local named_items = storage.prototypes.items  ---@as NamedPrototypesWithCategory<FPItemPrototype>
     return named_items[item_type].members
 end
 

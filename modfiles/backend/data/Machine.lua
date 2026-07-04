@@ -170,7 +170,7 @@ end
 function Machine:compile_fuel_filter()
     local compatible_fuels = {}
 
-    local fuel_category = prototyper.util.find("fuels", nil, self.proto.burner.combined_category) --[[@as NamedCategory]]
+    local fuel_category = prototyper.util.find("fuels", nil, self.proto.burner.combined_category) --[[@as NamedCategory<FPFuelPrototype>]]
 
     for _, fuel_proto in pairs(fuel_category.members) do
         table.insert(compatible_fuels, fuel_proto.name)
