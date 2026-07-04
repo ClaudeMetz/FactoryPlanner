@@ -4,7 +4,7 @@ local DistrictItem = require("backend.data.DistrictItem")
 ---@class DistrictItemSet: Object, ObjectMethods
 ---@field class "DistrictItemSet"
 ---@field first DistrictItem?
----@field map { [FPItemPrototype]: DistrictItem }
+---@field map table<FPItemPrototype, DistrictItem>
 local DistrictItemSet = Object.methods()
 DistrictItemSet.__index = DistrictItemSet
 script.register_metatable("DistrictItemSet", DistrictItemSet)
@@ -25,7 +25,7 @@ function DistrictItemSet:index()
 end
 
 
----@param items SimpleItem[]
+---@param items SimpleItem[] | TLProduct[]
 ---@param mode DistrictItemMode
 function DistrictItemSet:add_items(items, mode)
     for _, item in pairs(items) do
@@ -60,6 +60,9 @@ end
 
 
 -- Sorts (awkwardly) based on type first ("item" before "fluid") and then amount
+---@param a DistrictItem
+---@param b DistrictItem
+---@return boolean
 local function item_comparator(a, b)
     local a_type, b_type = a.proto.type, b.proto.type
     if a_type < b_type then return true

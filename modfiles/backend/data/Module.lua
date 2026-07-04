@@ -51,16 +51,21 @@ end
 
 
 function Module:summarize_effects()
+    ---@cast self.proto FPModulePrototype
+    ---@cast self.quality_proto FPQualityPrototype
+
     local effects = lib.flib.shallow_copy(lib.effects.blank)
 
     for name, effect in pairs(self.proto.effects) do
+        local base_effect = effect  ---@type number
         local module_multiplier = self.proto.quality_multipliers[name]
         if module_multiplier ~= 0 then
             local quality_multiplier = self.quality_proto.module_multipliers[name]
-            effect = effect * (1 + module_multiplier * (quality_multiplier - 1))
+            base_effect = effect * (1 + module_multiplier * (quality_multiplier - 1))
         end
 
-        effect = (effect < 0) and math.ceil(effect - 1e-4) or math.floor(effect + 1e-4)  -- truncate towards zero
+        effect = (base_effect < 0) and math.ceil(base_effect - 1e-4)
+            or math.floor(base_effect + 1e-4)  -- truncate towards zero
         effects[name] = effect * self.amount  -- doesn't create decimals
     end
 
@@ -88,9 +93,9 @@ function Module:paste(object)
             return true, nil
         else
             local existing_module = self.parent:find({
-                proto = object.proto  --[[@as FPModulePrototype]],
-                quality_proto = object.quality_proto  --[[@as FPQualityPrototype]]
-            })
+                proto = object.proto--[[@as FPModulePrototype]],
+                quality_proto = object.quality_proto--[[@as FPQualityPrototype]]
+            }--[[@as ObjectFilter]])
             local parent = self.parent  -- retain here because it can be changed below
 
             if existing_module then
@@ -129,6 +134,7 @@ function Module:pack(full)
 end
 
 ---@param packed_self PackedModule
+---@param parent ModuleSet
 ---@return Module module
 local function unpack(packed_self, parent)
     -- Prototypes are unpacked at validate

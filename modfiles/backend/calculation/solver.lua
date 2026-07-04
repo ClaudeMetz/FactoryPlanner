@@ -49,7 +49,7 @@ local function set_blank_factory(player, factory)
         Product = blank_class,
         Byproduct = blank_class,
         Ingredient = blank_class,
-        matrix_free_items = factory.matrix_free_items
+        matrix_free_items = factory.matrix_free_items  ---@as FPItemPrototype[]
     }
 
     set_blank_floor(player, factory.top_floor)
@@ -328,7 +328,7 @@ function solver.update(player, factory)
 
         local factory_data = solver.generate_factory_data(player, factory)
 
-        if factory.matrix_solver_active then  ---@cast factory.matrix_free_items -nil
+        if factory.matrix_solver_active then
             local matrix_metadata = matrix_engine.get_matrix_solver_metadata(factory_data)
 
             if matrix_metadata.num_rows ~= 0 then  -- don't run calculations if the factory has no lines
@@ -384,7 +384,7 @@ end
 ---@field player_index uint32
 ---@field factory_id ObjectID
 ---@field top_floor FloorData
----@field matrix_free_items FPItemPrototype[]?
+---@field matrix_free_items FPItemPrototype[]
 
 --- Returns a table containing all the data needed to run the calculations for the given factory
 ---@param player LuaPlayer
@@ -396,7 +396,7 @@ function solver.generate_factory_data(player, factory)
         player_index = player.index,
         factory_id = factory.id,
         top_floor = generate_floor_data(player, factory, factory.top_floor, calculate_emissions),
-        matrix_free_items = factory.matrix_free_items
+        matrix_free_items = factory.matrix_free_items  ---@as FPItemPrototype[]
     }
 
     return factory_data

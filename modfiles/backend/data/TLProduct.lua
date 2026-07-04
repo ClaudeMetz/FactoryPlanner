@@ -46,6 +46,7 @@ function TLProduct:get_required_amount()
     if self.defined_by == "amount" then
         return self.required_amount
     else   -- defined_by == "belts" | "lanes"
+        ---@cast self.belt_proto FPBeltPrototype
         local multiplier = (self.defined_by == "belts") and 1 or 0.5
         return self.required_amount * (self.belt_proto.throughput * multiplier)
     end
@@ -81,12 +82,12 @@ function TLProduct:paste(object)
         ---@cast proto -FPPackedPrototype
 
         -- Avoid duplicate items, but allow pasting over the same item proto
-        local existing_item = self.parent:find({proto=proto})
+        local existing_item = self.parent:find({proto=proto}--[[@as ObjectFilter]])
         if existing_item and not (self.proto.name == proto.name) then
             return false, "already_exists"
         end
 
-        local product = init(proto)  -- defined_by = "amount"
+        local product = init(proto--[[@as FPItemPrototype]])  -- defined_by = "amount"
         product.required_amount = object.amount
         self.parent:replace(self, product)
 

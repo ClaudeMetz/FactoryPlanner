@@ -13,8 +13,8 @@ local Object = require("backend.data.Object")
 ---@field proto FPRecipePrototype | FPPackedPrototype
 ---@field production_type RecipeProductionType
 ---@field priority_product (FPItemPrototype | FPPackedPrototype)?
----@field temperatures { [string]: float }
----@field temperature_data { [string]: TemperatureData }
+---@field temperatures table<string, float>
+---@field temperature_data table<string, TemperatureData>
 ---@field effects IntegerModuleEffects?
 local Recipe = Object.methods()
 Recipe.__index = Recipe
@@ -56,6 +56,7 @@ end
 
 
 function Recipe:build_temperatures_data()
+    ---@cast self.proto FPRecipePrototype
     self.temperature_data = {}
 
     for _, ingredient in pairs(self.proto.ingredients) do
@@ -68,6 +69,7 @@ end
 --- There might be no valid default to apply
 ---@param player LuaPlayer
 function Recipe:apply_temperature_defaults(player)
+    ---@cast self.proto FPRecipePrototype
     for _, ingredient in pairs(self.proto.ingredients) do
         if ingredient.type == "fluid" then
             local applicable_values = self.temperature_data[ingredient.name].applicable_values
@@ -88,13 +90,13 @@ end
 ---@return string
 function Recipe:get_name_with_temperature(ingredient)
     if ingredient.type ~= "fluid" then
-        return ingredient.name
+        return ingredient.name  ---@as string
     else
         local temperature = self.temperatures[ingredient.name]
         if temperature ~= nil then
             return ingredient.name .. "-" .. temperature
         else
-            return ingredient.name
+            return ingredient.name  ---@as string
         end
     end
 end
@@ -121,7 +123,7 @@ function Recipe:update_effects(force, factory)
     elseif self.proto.productivity_recipe ~= nil then name = self.proto.productivity_recipe
     else return end  -- no recipe effects for custom recipes
 
-    self.effects = {productivity = factory:get_productivity_bonus(force, name)}
+    self.effects = {productivity = factory:get_productivity_bonus(force, name--[[@cast -nil]])}
     self.parent.machine:summarize_effects()  -- update machine to update its tooltip
 end
 
@@ -131,7 +133,7 @@ end
 ---@field proto FPPackedPrototype
 ---@field production_type RecipeProductionType
 ---@field priority_product FPPackedPrototype?
----@field temperatures { [string]: float }
+---@field temperatures table<string, float>
 
 ---@param full boolean
 ---@return PackedRecipe packed_self
@@ -146,6 +148,7 @@ function Recipe:pack(full)
 end
 
 ---@param packed_self PackedRecipe
+---@param parent Line
 ---@return Recipe Recipe
 local function unpack(packed_self, parent)
     -- Prototypes are unpacked at validate
@@ -170,7 +173,7 @@ function Recipe:validate()
     end
 
     -- An invalid temperature shouldn't invalidate the recipe
-    if self.valid then
+    if self.valid then  ---@cast self.proto FPRecipePrototype
         local previous_temperatures = self.temperatures
         self.temperatures = {}
 

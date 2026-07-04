@@ -57,9 +57,9 @@ local function determine_column_counts(floor, available_columns)
     local column_counts = {ingredient = 1, product = 1, byproduct = 0}  -- ordered by priority
     available_columns = available_columns - 2  -- two buttons are already assigned
 
-    local previous_height, increment = math.huge, 1
+    local previous_height, increment = 2^53, 1
     while available_columns > 0 do
-        local table_heights, minimal_height = {}, math.huge
+        local table_heights, minimal_height = {}, 2^53
 
         for column, count in pairs(column_counts) do
             local potential_column_counts = lib.flib.shallow_copy(column_counts)

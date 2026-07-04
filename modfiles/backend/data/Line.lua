@@ -69,7 +69,9 @@ end
 ---@param machine_proto FPMachinePrototype
 ---@return boolean applicable
 function Line:is_machine_compatible(machine_proto)
+    ---@cast self.recipe.proto FPRecipePrototype
     local type_counts = self.recipe.proto.type_counts
+
     local valid_ingredient_count = (machine_proto.ingredient_limit >= type_counts.ingredients.items)
     local valid_product_count = (machine_proto.product_limit >= type_counts.products.items)
     local valid_input_channels = (machine_proto.fluid_channels.input >= type_counts.ingredients.fluids)
@@ -104,9 +106,11 @@ end
 ---@param current_proto FPMachinePrototype?
 ---@return boolean success
 function Line:change_machine_by_action(player, action, current_proto)
-    local current_machine_proto = current_proto or self.machine.proto
+    local current_machine_proto = current_proto or self.machine.proto  ---@as FPMachinePrototype
     local category_id = current_machine_proto.category_id
 
+    ---@param new_machine_id integer
+    ---@return boolean success
     local function try_machine(new_machine_id)
         -- Assume a match while inside the upgrade/downgrade loop
         current_machine_proto = prototyper.util.find("machines", new_machine_id, category_id) --[[@as FPMachinePrototype]]
@@ -119,7 +123,7 @@ function Line:change_machine_by_action(player, action, current_proto)
     end
 
     if action == "upgrade" then
-        local max_machine_id = #prototyper.util.find("machines", nil, category_id).members
+        local max_machine_id = #prototyper.util.find("machines", nil, category_id)--[[@cast -nil]].members
         while current_machine_proto.id < max_machine_id do
             if try_machine(current_machine_proto.id + 1) then return true end
         end
@@ -163,10 +167,10 @@ function Line:set_beacon(beacon)
     self.beacon = beacon  -- can be nil
 
     if beacon ~= nil then
-        self.beacon.parent = self
+        beacon.parent = self
 
         -- Reset amount since the user can't change it in the dialog
-        if self.beacon:is_mono_beacon() then self.beacon.amount = 1 end
+        if beacon:is_mono_beacon() then beacon.amount = 1 end
 
         beacon.module_set:normalize({compatibility=true, effects=true})
         -- Normalization already summarizes beacon's effects
@@ -188,11 +192,15 @@ end
 
 ---@return boolean
 function Line:uses_beacon_effects()
+    ---@cast self.machine.proto FPMachinePrototype
     return self.machine.proto.effect_receiver.uses_beacon_effects
 end
 
 
 function Line:summarize_effects()
+    ---@cast self.machine.proto FPMachinePrototype
+    ---@cast self.recipe.proto FPRecipePrototype
+
     local beacon_effects = (self.beacon) and self.beacon.total_effects or nil
     local merged_effects = lib.effects.merge({self.machine.total_effects, beacon_effects})
     local limited_effects, indications = lib.effects.limit(merged_effects, self.machine.proto.effect_receiver)
@@ -226,6 +234,8 @@ end
 
 ---@return boolean
 function Line:is_temperature_fully_configured()
+    ---@cast self.recipe.proto FPRecipePrototype
+
     for _, ingredient in pairs(self.recipe.proto.ingredients) do
         if not self.recipe:is_temperature_configured(ingredient) then return false end
     end
@@ -256,9 +266,10 @@ function Line:get_surface_compatibility()
     -- Determine and save compatibility on the fly when requested
     if self.surface_compatibility == nil then
         local object = self.parent  --[[@as Object]]  -- find the District this is in
-        while object.class ~= "District" do object = object.parent  --[[@as District]] end
-        local properties = object.location_proto.surface_properties
+        while object.class ~= "District" do object = object.parent--[[@as District]] end
+        ---@cast object District
 
+        local properties = object.location_proto.surface_properties
         local recipe = check_compatibility(properties, self.recipe.proto.surface_conditions)
         local machine = check_compatibility(properties, self.machine.proto.surface_conditions)
         self.surface_compatibility = {recipe=recipe, machine=machine, overall=(recipe and machine)}
@@ -272,12 +283,11 @@ end
 ---@return string? error
 function Line:paste(object)
     if object.class == "Line" or object.class == "Floor" then
-        ---@cast object LineObject
-        if not self.parent:check_product_compatibility(object) then
+        if not self.parent:check_product_compatibility(object--[[@as LineObject]]) then
             return false, "recipe_irrelevant"  -- found no use for the recipe's products
         end
 
-        self.parent:replace(self, object)
+        self.parent:replace(self, object--[[@as LineObject]])
         return true, nil
     else
         return false, "incompatible_class"

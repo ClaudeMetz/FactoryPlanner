@@ -66,7 +66,7 @@ function Machine:normalize_fuel(player)
     if self.proto.energy_type ~= "burner" then self.fuel = nil; return end
     -- no need to continue if this machine doesn't have a burner
 
-    local burner = self.proto.burner
+    local burner = self.proto.burner  ---@as MachineBurner
     -- Check if fuel has a valid category for this machine, replace otherwise
     if self.fuel and not burner.categories[self.fuel.proto.category] then self.fuel = nil end
 
@@ -84,6 +84,7 @@ end
 
 
 function Machine:summarize_effects()
+    ---@cast self.proto FPMachinePrototype
     local module_effects = self.module_set:get_effects()
     local machine_effects = self.proto.effect_receiver.base_effect
 
@@ -96,6 +97,7 @@ end
 
 ---@return boolean
 function Machine:uses_effects()
+    ---@cast self.proto FPMachinePrototype
     return self.proto.effect_receiver.uses_module_effects
 end
 
@@ -111,6 +113,9 @@ end
 
 ---@return double
 function Machine:get_speed()
+    ---@cast self.proto FPMachinePrototype
+    ---@cast self.quality_proto FPQualityPrototype
+
     local speed = self.proto.speed
     local category = self.proto.prototype_category
 
@@ -125,6 +130,9 @@ end
 
 ---@return double
 function Machine:get_energy_usage()
+    ---@cast self.proto FPMachinePrototype
+    ---@cast self.quality_proto FPQualityPrototype
+
     local energy_usage = self.proto.energy_usage
     local category = self.proto.prototype_category
 
@@ -141,6 +149,9 @@ end
 
 ---@return double
 function Machine:get_resource_drain_rate()
+    ---@cast self.proto FPMachinePrototype
+    ---@cast self.quality_proto FPQualityPrototype
+
     local resource_drain_rate = self.proto.resource_drain_rate or 1
 
     if self.proto.prototype_category == "mining_drill" then
@@ -152,6 +163,9 @@ end
 
 ---@return uint16
 function Machine:get_module_limit()
+    ---@cast self.proto FPMachinePrototype
+    ---@cast self.quality_proto FPQualityPrototype
+
     local limit = self.proto.module_limit
     local category = self.proto.prototype_category
 
@@ -168,11 +182,11 @@ end
 
 
 function Machine:compile_fuel_filter()
+    ---@cast self.proto.burner -nil
+
     local compatible_fuels = {}
-
-    local fuel_category = prototyper.util.find("fuels", nil, self.proto.burner.combined_category) --[[@as NamedCategory<FPFuelPrototype>]]
-
-    for _, fuel_proto in pairs(fuel_category.members) do
+    local fuel_category = prototyper.util.find("fuels", nil, self.proto.burner.combined_category)
+    for _, fuel_proto in pairs(fuel_category--[[@as NamedCategory<FPFuelPrototype>]].members) do
         table.insert(compatible_fuels, fuel_proto.name)
     end
 
@@ -196,10 +210,11 @@ end
 
 
 ---@param object CopyableObject
+---@param player LuaPlayer
 ---@return boolean success
 ---@return string? error
 function Machine:paste(object, player)
-    if object.class == "Machine" then
+    if object.class == "Machine" then  ---@cast object Machine
         local corresponding_proto = prototyper.util.find("machines", object.proto.name, self.proto.combined_category)   --[[@as FPMachinePrototype?]]
 
         if corresponding_proto == nil or not self.parent:is_machine_compatible(corresponding_proto) then
@@ -214,7 +229,7 @@ function Machine:paste(object, player)
 
         if object.fuel then
             self.fuel = object.fuel
-            self.fuel.parent = self
+            self.fuel--[[@cast -nil]].parent = self
         end
 
         self.module_set = object.module_set
@@ -223,7 +238,7 @@ function Machine:paste(object, player)
         self.module_set:normalize({compatibility=true, effects=true})
 
         return true, nil
-    elseif object.class == "Module" then
+    elseif object.class == "Module" then  ---@cast object Module
        return self.module_set:paste(object)
     else
         return false, "incompatible_class"
@@ -278,8 +293,7 @@ function Machine:clone()
 
     -- Copy these over so we don't need to run the solver
     clone.amount = self.amount
-    clone.recipe_effects = self.recipe_effects
-    if self.fuel then
+    if self.fuel then  ---@cast clone.fuel -nil
         clone.fuel.amount = self.fuel.amount
         clone.fuel.satisfied_amount = self.fuel.satisfied_amount
     end
@@ -297,7 +311,7 @@ function Machine:validate()
         if corresponding_proto then  -- check if the machine just moved categories
             self.proto = corresponding_proto -- this is okay in this specific context
         else  -- otherwise, this machine is invalid
-            self.proto = prototyper.util.simplify_prototype(self.proto, "combined_category")  --[[@as FPPackedPrototype]]
+            self.proto = prototyper.util.simplify_prototype(self.proto, "combined_category")
             self.valid = false
         end
     else

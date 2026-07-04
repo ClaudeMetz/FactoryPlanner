@@ -156,6 +156,9 @@ function ModuleSet:trim()
 end
 
 
+---@param a Module
+---@param b Module
+---@return boolean
 local function module_comparator(a, b)
     local a_module, b_module = a.proto.id, b.proto.id  -- IDs are ordered sensibly
     local a_quality, b_quality = a.quality_proto.level, b.quality_proto.level
@@ -265,9 +268,9 @@ function ModuleSet:paste(module)
 
     local desired_amount = math.min(module.amount, self.empty_slots)
     local existing_module = self:find({
-        proto = module.proto,  --[[@as FPModulePrototype]]
-        quality_proto = module.quality_proto  --[[@as FPQualityPrototype]]
-    })
+        proto = module.proto--[[@as FPModulePrototype]],
+        quality_proto = module.quality_proto--[[@as FPQualityPrototype]]
+    }--[[@as ObjectFilter]])
     if existing_module then
         existing_module:set_amount(existing_module.amount + desired_amount)
     else
@@ -282,7 +285,7 @@ end
 
 ---@class PackedModuleSet: PackedObject
 ---@field class "ModuleSet"
----@field modules PackedModule[]?
+---@field modules PackedModule[]
 
 ---@param full boolean
 ---@return PackedModuleSet packed_self
