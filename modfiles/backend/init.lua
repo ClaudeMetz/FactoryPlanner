@@ -16,7 +16,7 @@ local dev_export_string = "eNrdVkuPnDAM/i85DyMew/PYQ0+tVKnHaoRCMLNRE8KGsO1oxH+vA
 ---@field messages PlayerMessage[]
 ---@field main_elements table
 ---@field compact_elements table
----@field calculator_elements table
+---@field calculator_elements table<string, LuaGuiElement>
 ---@field last_selected_picker_group integer?
 ---@field tooltips table
 ---@field modal_dialog_type ModalDialogType?

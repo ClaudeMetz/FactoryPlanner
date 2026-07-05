@@ -31,7 +31,7 @@ end
 ---@param player LuaPlayer
 ---@param tick MapTick
 ---@param action_name string | defines.events
----@param timeout integer
+---@param timeout MapTick?
 ---@return boolean
 function _actions.rate_limited(player, tick, action_name, timeout)
     local ui_state = lib.globals.ui_state(player)
@@ -69,7 +69,7 @@ function _actions.shortcut_string(shortcut)
     return {"fp.action_click", modifier_string}
 end
 
----@param actions ActionDetails[]
+---@param actions GUIActionTable[]
 ---@return LocalisedString
 function _actions.generate_tooltip(actions)
     local tooltip, any_hidden = {""}, false

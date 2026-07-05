@@ -255,7 +255,7 @@ local function add_catalysts(flow, line, category, metadata)
     for _, item in pairs(line.recipe.proto.catalysts[category]) do
         local item_proto = prototyper.util.find("items", item.name, item.type)  --[[@as FPItemPrototype]]
 
-        local amount, number_tooltip = item_views.process_item(metadata.player, {proto=item_proto},
+        local amount, number_tooltip = item_views.process_item(metadata.player, item_proto,
             (item.amount * line.production_ratio), line.machine.amount)
         local title_line = {"fp.tt_title_with_note", item_proto.localised_name, {"fp.catalyst"}}
         local number_line = (number_tooltip) and {"", "\n", number_tooltip} or ""
@@ -294,7 +294,8 @@ function builders.products(line, parent_flow, metadata)
 
             -- items/s/machine does not make sense for lines with subfloors, show items/s instead
             local machine_amount = (line.class ~= "Floor") and line.machine.amount or nil
-            amount, number_tooltip = item_views.process_item(metadata.player, product, nil, machine_amount)
+            amount, number_tooltip = item_views.process_item(metadata.player, product.proto,
+                product.amount, machine_amount)
             if amount == -1 then goto skip_product end  -- an amount of -1 means it was below the margin of error
 
             tags.on_gui_click = "act_on_line_product"
@@ -339,7 +340,8 @@ function builders.byproducts(line, parent_flow, metadata)
 
             -- items/s/machine does not make sense for lines with subfloors, show items/s instead
             local machine_amount = (line.class ~= "Floor") and line.machine.amount or nil
-            amount, number_tooltip = item_views.process_item(metadata.player, byproduct, nil, machine_amount)
+            amount, number_tooltip = item_views.process_item(metadata.player, byproduct.proto,
+                byproduct.amount, machine_amount)
             if amount == -1 then goto skip_byproduct end  -- an amount of -1 means it was below the margin of error
         end
 
@@ -359,7 +361,8 @@ end
 local function add_fuel(line, parent_flow, metadata)
     local fuel = line.machine.fuel
 
-    local amount, number_tooltip = item_views.process_item(metadata.player, fuel, nil, line.machine.amount)
+    local amount, number_tooltip = item_views.process_item(metadata.player, fuel.proto,
+        fuel.amount, line.machine.amount)
     if amount == -1 then return end  -- an amount of -1 means it was below the margin of error
 
     local satisfaction_line = ""  ---@type LocalisedString
@@ -424,7 +427,8 @@ function builders.ingredients(line, parent_flow, metadata)
 
         -- items/s/machine does not make sense for lines with subfloors, show items/s instead
         local machine_amount = (line.class ~= "Floor") and line.machine.amount or nil
-        local amount, number_tooltip = item_views.process_item(metadata.player, ingredient, nil, machine_amount)
+        local amount, number_tooltip = item_views.process_item(metadata.player, ingredient.proto,
+            ingredient.amount, machine_amount)
         if amount == -1 then goto skip_ingredient end  -- an amount of -1 means it was below the margin of error
 
         local style = "fflib_slot_button_green_small"

@@ -115,8 +115,8 @@ local function build_items_flow(player, parent, district)
             tags.on_gui_click = action
             action_line = {"", "\n", MODIFIER_ACTIONS[action].tooltip}
 
-            diff_number, amount_tooltip = item_views.process_item(player, item, item.abs_diff, nil)
-            _, total_tooltip = item_views.process_item(player, item, total_amount, nil)
+            diff_number, amount_tooltip = item_views.process_item(player, item.proto, item.abs_diff, nil)
+            _, total_tooltip = item_views.process_item(player, item.proto, total_amount, nil)
         end
 
         local colors = color_map[item.overall]

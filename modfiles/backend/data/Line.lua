@@ -21,7 +21,7 @@ local Beacon = require("backend.data.Beacon")
 ---@field products SimpleItem[]
 ---@field byproducts SimpleItem[]
 ---@field ingredients SimpleItem[]
----@field production_ratio number?
+---@field production_ratio number
 local Line = Object.methods()
 Line.__index = Line
 script.register_metatable("Line", Line)

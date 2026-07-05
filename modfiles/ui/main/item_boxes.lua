@@ -59,7 +59,7 @@ local function refresh_item_box(player, factory, show_floor_items, item_category
             if product.proto.type == "entity" and product.proto.special then
                 number_tooltip = lib.format.special_tooltip(product.proto.name, required_amount)
             else
-                amount, number_tooltip = item_views.process_item(player, product, required_amount, nil)
+                amount, number_tooltip = item_views.process_item(player, product.proto, required_amount, nil)
                 if amount == -1 then goto skip_product end  -- an amount of -1 means it was below the margin of error
             end
 
@@ -100,7 +100,7 @@ local function refresh_item_box(player, factory, show_floor_items, item_category
                 action = "act_on_floor_special"
                 number_tooltip = lib.format.special_tooltip(item.proto.name, item.amount)
             else
-                amount, number_tooltip = item_views.process_item(player, item, nil, nil)
+                amount, number_tooltip = item_views.process_item(player, item.proto, item.amount, nil)
                 if amount == -1 then goto skip_item end  -- an amount of -1 means it was below the margin of error
             end
 

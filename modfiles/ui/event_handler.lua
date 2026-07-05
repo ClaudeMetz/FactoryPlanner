@@ -12,9 +12,16 @@ local event_listener_names = {
     "ui.main.production_handler"
 }
 
-local event_listeners = {}
+---@class ListenerDefinitions
+---@field gui table<string, GUIEventDefinition[]>?
+---@field player table<string, PlayerEventHandler>?
+---@field game table<string, GameEventHandler>?
+---@field dialog ModalDialogEvent?
+---@field global table<string, fun(...)>?
+
+local event_listeners = {}  ---@type ListenerDefinitions[]
 for _, listener_path in ipairs(event_listener_names) do
-    for _, listener in pairs(require(listener_path)) do
+    for _, listener in pairs(require(listener_path)--[[@as ListenerDefinitions]]) do
         table.insert(event_listeners, listener)
     end
 end
@@ -34,12 +41,12 @@ local gui_identifier_map = {
     [defines.events.on_gui_value_changed] = "on_gui_value_changed",
     [defines.events.on_gui_hover] = "on_gui_hover",
     [defines.events.on_gui_leave] = "on_gui_leave"
-}
+}  ---@type table<defines.events, string>
 
 local gui_timeouts = {
     on_gui_click = 2,
     on_gui_confirmed = 20
-}
+}  ---@type table<string, MapTick>
 
 local special_gui_handlers = {}
 
@@ -57,23 +64,24 @@ special_gui_handlers.on_gui_confirmed = (function(_, player, action_name)
     return false
 end)
 
-
----@class ActionTable
----@field handler function
----@field timeout MapTick
----@field actions ActionDetails
----@field shortcuts table<string, ActionDetails>
----@field tooltip LocalisedString
-
----@class ActionDetails
+---@class GUIEventDefinition
 ---@field name string
----@field limitations ActionLimitations
----@field shortcut_string LocalisedString
----@field show boolean
+---@field handler GUIEventHandler | GUIActionEventHandler
+---@field actions_table table<string, GUIActionDefinition>?
+---@field timeout MapTick?
+
+---@alias GUIEventHandler fun(player: LuaPlayer, tags: Tags, event: EventData)
+---@alias GUIActionEventHandler fun(player: LuaPlayer, tags: Tags, action: string)
+
+---@class GUIActionDefinition
+---@field shortcut string
+---@field limitations ActionLimitations?
+---@field show boolean?
 
 -- Compile and format the list of GUI actions
 for _, listener in pairs(event_listeners) do
-    for event_name, actions in pairs(listener.gui or {}) do
+    if not listener.gui then goto continue end
+    for event_name, actions in pairs(listener.gui) do
         for _, action in pairs(actions) do
             local timeout = action.timeout or gui_timeouts[event_name]  -- can be nil
             local action_table = {handler = action.handler, timeout = timeout}
@@ -101,6 +109,7 @@ for _, listener in pairs(event_listeners) do
             MODIFIER_ACTIONS[action.name] = action_table
         end
     end
+    ::continue::
 end
 
 
@@ -119,6 +128,19 @@ local function convert_click_to_string(event)
     if event.control then modifier_click = "control-" .. modifier_click end
     return modifier_click
 end
+
+---@class GUIEventTable
+---@field handler GUIEventHandler | GUIActionEventHandler
+---@field actions GUIActionTable
+---@field shortcuts table<string, GUIActionTable>
+---@field tooltip LocalisedString
+---@field timeout MapTick
+
+---@class GUIActionTable
+---@field name string
+---@field limitations ActionLimitations
+---@field shortcut_string LocalisedString
+---@field show boolean?
 
 ---@class GUIEventData: EventData
 ---@field player_index PlayerIndex
@@ -220,13 +242,13 @@ local player_identifier_map = {
     ["fp_confirm_gui"] = "fp_confirm_gui",
     ["fp_focus_searchfield"] = "fp_focus_searchfield",
     ["fp_toggle_calculator"] = "fp_toggle_calculator"
-}
+}  ---@type table<(defines.events | string), string>
 
 local player_timeouts = {
+    fp_refresh_production = 20,
     fp_confirm_dialog = 20,
-    fp_confirm_gui = 20,
-    fp_refresh_production = 20
-}
+    fp_confirm_gui = 20
+}  ---@type table<string, MapTick>
 
 local special_player_handlers = {}
 
@@ -235,22 +257,28 @@ special_player_handlers.on_gui_opened = (function(event)
     return (event.gui_type ~= defines.gui_type.custom or not event.element or event.element.tags.mod ~= "fp")
 end)
 
+---@alias PlayerEventHandler fun(player: LuaPlayer, event: PlayerEventData)
 
-local player_event_cache = {}
+local player_event_cache = {}  ---@type table<string, PlayerEventTable>
 -- Compile the list of player handlers
 for _, listener in pairs(event_listeners) do
-    if listener.player then
-        for event_name, handler in pairs(listener.player) do
-            player_event_cache[event_name] = player_event_cache[event_name] or {
-                registered_handlers = {},
-                special_handler = special_player_handlers[event_name],
-                timeout = player_timeouts[event_name]
-            }
+    if not listener.player then goto continue end
+    for event_name, handler in pairs(listener.player) do
+        player_event_cache[event_name] = player_event_cache[event_name] or {
+            registered_handlers = {},
+            special_handler = special_player_handlers[event_name],
+            timeout = player_timeouts[event_name]
+        }
 
-            table.insert(player_event_cache[event_name].registered_handlers, handler)
-        end
+        table.insert(player_event_cache[event_name].registered_handlers, handler)
     end
+    ::continue::
 end
+
+---@class PlayerEventTable
+---@field registered_handlers PlayerEventHandler[]
+---@field special_handler fun(event: PlayerEventData)?
+---@field timeout MapTick?
 
 ---@class PlayerEventData: EventData
 ---@field player_index PlayerIndex
@@ -297,9 +325,11 @@ local game_identifier_map = {
     [defines.events.on_singleplayer_init] = "on_singleplayer_init",
     [defines.events.on_multiplayer_init] = "on_multiplayer_init",
     [defines.events.on_research_finished] = "on_research_finished"
-}
+}  ---@type table<defines.events, string>
 
-local game_event_cache = {}
+---@alias GameEventHandler fun(event: EventData)
+
+local game_event_cache = {}  ---@type table<string, GameEventHandler[]>
 -- Compile the list of game handlers
 for _, listener in pairs(event_listeners) do
     if listener.game then
@@ -329,8 +359,8 @@ for event_id, _ in pairs(game_identifier_map) do script.on_event(event_id, handl
 ---@field dialog string
 ---@field metadata fun(modal_data: ModalData): ModalDialogSettings
 ---@field early_abort_check fun(player: LuaPlayer, modal_data: ModalData): boolean
----@field open fun(player: LuaPlayer, modal_data: ModalData): nil
----@field close fun(player: LuaPlayer, modal_data: ModalData): nil
+---@field open fun(player: LuaPlayer, modal_data: ModalData)
+---@field close fun(player: LuaPlayer, modal_data: ModalData)
 
 -- These custom events handle opening and closing modal dialogs
 local dialog_event_cache = {}  ---@type table<string, ModalDialogEvent>

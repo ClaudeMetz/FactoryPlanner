@@ -96,29 +96,27 @@ end
 
 
 ---@param player LuaPlayer
----@param item SimpleItem
----@param item_amount number?
+---@param proto FPItemPrototype | FPFuelPrototype
+---@param item_amount number
 ---@param machine_amount number?
 ---@return (number | -1) button_number
 ---@return LocalisedString tooltip_line
-function item_views.process_item(player, item, item_amount, machine_amount)
+function item_views.process_item(player, proto, item_amount, machine_amount)
     local views_data = lib.globals.ui_state(player).views_data  ---@cast views_data -nil
 
-    local raw_amount = item_amount or item.amount
-    if raw_amount == nil or (raw_amount ~= 0 and raw_amount < views_data.adjusted_margin_of_error) then
+    if item_amount == nil or (item_amount ~= 0 and item_amount < views_data.adjusted_margin_of_error) then
         return -1, nil
     end
 
-    local proto = item.proto
     if proto.type == "entity" then
-        local amount = (proto.fixed_unit) and raw_amount or raw_amount * views_data.timescale
+        local amount = (proto.fixed_unit) and item_amount or item_amount * views_data.timescale
         local number = lib.format.number(amount, views_data.formatting_precision)
         local unit = proto.fixed_unit or {"fp.per_timescale", {"fp." .. timescale_map[views_data.timescale]}}
         return number, {"", number, " ", unit}
     else
         local view_preferences = lib.globals.preferences(player).item_views
         local selected_view = view_preferences.views[view_preferences.selected_index].name
-        return processors[selected_view](views_data, raw_amount, proto, machine_amount)
+        return processors[selected_view](views_data, item_amount, proto, machine_amount)
     end
 end
 
