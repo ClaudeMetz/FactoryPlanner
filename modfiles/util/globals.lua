@@ -21,7 +21,7 @@ function _globals.modal_data(player) return storage.players[player.index].ui_sta
 function _globals.main_elements(player) return storage.players[player.index].ui_state.main_elements end
 
 ---@param player LuaPlayer
----@return table<string, LuaGuiElement>
+---@return table
 function _globals.modal_elements(player)
     return storage.players[player.index].ui_state.modal_data--[[@cast -nil]].modal_elements
 end

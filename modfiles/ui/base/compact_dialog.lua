@@ -243,14 +243,14 @@ local function add_item_flow(line, relevant_line, item_category, button_color, m
         local tags = {mod="fp", line_id=line.id, item_category=item_category, item_index=index,
             on_gui_hover="hover_compact_item", on_gui_leave="leave_compact_item", context="compact_dialog"}
 
-        if type == "entity" and item.proto.special then
+        if type == "entity" and proto.special then
             number_tooltip = lib.format.special_tooltip(proto.name, item.amount)
             if not relevant_line.done and item_category == "ingredients" then button_color = "cyan" end
             first_special_index = first_special_index or index
         else
             -- items/s/machine does not make sense for lines with subfloors, show items/s instead
             local machine_amount = (line.class == "Line") and line.machine.amount or nil
-            amount, number_tooltip = item_views.process_item(metadata.player, item.proto, item.amount, machine_amount)
+            amount, number_tooltip = item_views.process_item(metadata.player, proto, item.amount, machine_amount)
             if amount == -1 then goto skip_item end  -- an amount of -1 means it was below the margin of error
 
             if type == "entity" then
@@ -414,7 +414,7 @@ local function refresh_compact_header(player, factory)
         end
 
         local style = "fflib_slot_button_default"
-        local number_line = (number_tooltip) and {"", "\n", number_tooltip} or ""
+        local number_line = (number_tooltip) and {"", "\n", number_tooltip} or ""  ---@type LocalisedString
         local tooltip = {"", {"fp.tt_title", ingredient.proto.localised_name}, number_line, action_line}
 
         local button = table_items.add{type="sprite-button", tags=tags, number=amount, tooltip=tooltip,
