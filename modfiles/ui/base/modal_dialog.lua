@@ -21,6 +21,11 @@ modal_dialog = {}
 ---@field show_submit_button boolean?
 ---@field show_delete_button boolean?
 
+---@class ExitModalDialogTags
+---@field action GUICloseAction
+
+---@alias GUICloseAction "submit" | "cancel" | "delete"
+
 -- ** LOCAL UTIL **
 ---@param player LuaPlayer
 ---@param dialog_settings ModalDialogSettings
@@ -134,9 +139,8 @@ local function create_base_dialog(player, dialog_settings, modal_data)
             style="dialog_buttons_horizontal_flow"}
 
         -- Cancel button
-        local button_cancel = button_bar.add{type="button", tags={mod="fp", on_gui_click="exit_modal_dialog",
-            action="cancel"}, style="back_button", caption={"fp.cancel"}, tooltip={"fp.cancel_dialog_tt"},
-            mouse_button_filter={"left"}}
+        local tags = {mod="fp", on_gui_click="exit_modal_dialog", action="cancel"}  ---@type ExitModalDialogTags
+        local button_cancel = button_bar.add{type="button", tags=tags, style="back_button", caption={"fp.cancel"}, tooltip={"fp.cancel_dialog_tt"}, mouse_button_filter={"left"}}
         button_cancel.style.minimal_width = 0
         button_cancel.style.padding = {1, 12, 0, 12}
 
@@ -145,8 +149,9 @@ local function create_base_dialog(player, dialog_settings, modal_data)
             local left_drag_handle = button_bar.add{type="empty-widget", style="fflib_dialog_footer_drag_handle"}
             left_drag_handle.drag_target = frame_modal_dialog
 
-            local button_delete = button_bar.add{type="button", caption={"fp.delete"}, style="red_button",
-                tags={mod="fp", on_gui_click="exit_modal_dialog", action="delete"}, mouse_button_filter={"left"}}
+            local tags = {mod="fp", on_gui_click="exit_modal_dialog", action="delete"}  ---@type ExitModalDialogTags
+            local button_delete = button_bar.add{type="button", tags=tags, caption={"fp.delete"},
+                style="red_button", mouse_button_filter={"left"}}
             button_delete.style.font = "default-dialog-button"
             button_delete.style.height = 32
             button_delete.style.minimal_width = 0
@@ -161,9 +166,9 @@ local function create_base_dialog(player, dialog_settings, modal_data)
         right_drag_handle.drag_target = frame_modal_dialog
 
         -- Submit button
-        local button_submit = button_bar.add{type="button", tags={mod="fp", on_gui_click="exit_modal_dialog",
-            action="submit"}, caption={"fp.submit"}, tooltip={"fp.confirm_dialog_tt"}, style="confirm_button",
-            mouse_button_filter={"left"}}
+        local tags = {mod="fp", on_gui_click="exit_modal_dialog", action="submit"}  ---@type ExitModalDialogTags
+        local button_submit = button_bar.add{type="button", tags=tags, caption={"fp.submit"},
+            tooltip={"fp.confirm_dialog_tt"}, style="confirm_button", mouse_button_filter={"left"}}
         button_submit.style.minimal_width = 0
         button_submit.style.padding = {1, 8, 0, 12}
         modal_elements.dialog_submit_button = button_submit
@@ -176,8 +181,8 @@ end
 -- Opens a barebone modal dialog and calls upon the given function to populate it
 ---@param player LuaPlayer
 ---@param metadata table
----@param dialog_open function
----@param early_abort function
+---@param dialog_open fun(player: LuaPlayer, modal_data: ModalData)
+---@param early_abort? fun(player: LuaPlayer, modal_data: ModalData): boolean
 function modal_dialog.enter(player, metadata, dialog_open, early_abort)
     if early_abort ~= nil and early_abort(player, metadata.modal_data or {}) then return end
 
@@ -206,9 +211,9 @@ end
 
 -- Handles the closing process of a modal dialog, reopening the main dialog thereafter
 ---@param player LuaPlayer
----@param action string
+---@param action GUICloseAction
 ---@param skip_opened boolean
----@param dialog_close function
+---@param dialog_close? fun(player: LuaPlayer, action: GUICloseAction)
 function modal_dialog.exit(player, action, skip_opened, dialog_close)
     local ui_state = lib.globals.ui_state(player)  -- dialog guaranteed to be open
     ---@cast ui_state.modal_data -nil
@@ -237,11 +242,11 @@ end
 
 
 ---@param player LuaPlayer
----@param tags Tags
+---@param menu_tags Tags
 ---@param handler string
 ---@param actions GUIActionTable
 ---@param location GuiLocation
-function modal_dialog.open_context_menu(player, tags, handler, actions, location)
+function modal_dialog.open_context_menu(player, menu_tags, handler, actions, location)
     local ui_state = lib.globals.ui_state(player)
     local frame_modal_dialog = player.gui.screen.add{type="frame", direction="vertical",
         tags={mod="fp", on_gui_closed="close_context_menu"}, style="fp_naked_frame"}
@@ -257,8 +262,14 @@ function modal_dialog.open_context_menu(player, tags, handler, actions, location
     for _, action in pairs(actions) do
         if lib.actions.allowed(action.limitations, active_limitations) then
             local caption = {"fp.tt_title", {"fp.action_" .. action.name}}
-            local button = button_flow.add{type="button", style="list_box_item", mouse_button_filter={"left"},
-                tags={mod="fp", on_gui_click="choose_context_action", tags=tags, handler=handler, action=action.name}}
+            ---@class ChooseContextActionTags
+            ---@field tags Tags
+            ---@field handler string
+            ---@field action string
+            local tags = {mod="fp", on_gui_click="choose_context_action", tags=menu_tags,
+                handler=handler, action=action.name}
+            local button = button_flow.add{type="button", tags=tags, style="list_box_item",
+                mouse_button_filter={"left"}}
             button.style.width = MAGIC_NUMBERS.context_menu_width
 
             local flow = button.add{type="flow", direction="horizontal"}
@@ -390,15 +401,6 @@ function modal_dialog.leave_selection_mode(player)
 
     main_dialog.set_pause_state(player, frame_main_dialog)
 end
-
-
----@class ExitModalDialogTags
----@field action "submit" | "delete" | "cancel"
-
----@class ChooseContextActionTags
----@field tags Tags
----@field handler string
----@field action string
 
 
 -- ** EVENTS **

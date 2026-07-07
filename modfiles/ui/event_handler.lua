@@ -358,9 +358,9 @@ for event_id, _ in pairs(game_identifier_map) do script.on_event(event_id, handl
 ---@class ModalDialogEvent
 ---@field dialog string
 ---@field metadata fun(modal_data: ModalData): ModalDialogSettings
----@field early_abort_check fun(player: LuaPlayer, modal_data: ModalData): boolean
+---@field early_abort_check? fun(player: LuaPlayer, modal_data: ModalData): boolean
 ---@field open fun(player: LuaPlayer, modal_data: ModalData)
----@field close fun(player: LuaPlayer, modal_data: ModalData)
+---@field close? fun(player: LuaPlayer, action: GUICloseAction)
 
 -- These custom events handle opening and closing modal dialogs
 local dialog_event_cache = {}  ---@type table<string, ModalDialogEvent>

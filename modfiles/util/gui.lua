@@ -97,7 +97,7 @@ function _gui.open_dialog(player, metadata)
 end
 
 ---@param player LuaPlayer
----@param action "submit" | "cancel" | "delete"
+---@param action GUICloseAction
 ---@param skip_opened boolean?
 function _gui.close_dialog(player, action, skip_opened)
     GLOBAL_HANDLERS["close_modal_dialog"](player, action, skip_opened)
