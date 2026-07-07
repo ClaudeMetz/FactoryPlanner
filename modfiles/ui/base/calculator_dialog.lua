@@ -223,7 +223,7 @@ listeners.gui = {
             handler = run_calculation
         }
     }
-}
+}  ---@as GUIListenerDefinition
 
 listeners.player = {
     fp_toggle_calculator = toggle_calculator_dialog

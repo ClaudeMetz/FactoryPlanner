@@ -391,7 +391,7 @@ listeners.gui = {
             end
         }
     }
-}
+}  ---@as GUIListenerDefinition
 
 listeners.player = {
     fp_cycle_production_views = function(player, _)

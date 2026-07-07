@@ -328,7 +328,7 @@ listeners.gui = {
             handler = set_defaults
         }
     }
-}
+}  ---@as GUIListenerDefinition
 
 listeners.player = {
     on_player_cursor_stack_changed = function(player, _)

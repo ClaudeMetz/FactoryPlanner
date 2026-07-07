@@ -394,7 +394,7 @@ listeners.gui = {
             handler = refresh_defaults_frame
         }
     }
-}
+}  ---@as GUIListenerDefinition
 
 listeners.dialog = {
     dialog = "machine",

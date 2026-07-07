@@ -231,7 +231,7 @@ listeners.gui = {
             end
         }
     }
-}
+}  ---@as GUIListenerDefinition
 
 listeners.player = {
     -- Makes sure that another GUI can open properly while a modal dialog is open.

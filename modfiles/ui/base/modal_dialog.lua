@@ -510,7 +510,7 @@ listeners.gui = {
             handler = modal_dialog.close_context_menu
         }
     }
-}
+}  ---@as GUIListenerDefinition
 
 listeners.player = {
     fp_confirm_dialog = function(player, _)

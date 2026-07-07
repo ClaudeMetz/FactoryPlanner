@@ -281,6 +281,6 @@ listeners.gui = {
             handler = handle_module_textfield_change
         }
     }
-}
+}  ---@as GUIListenerDefinition
 
 return { listeners }

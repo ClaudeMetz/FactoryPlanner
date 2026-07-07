@@ -831,7 +831,7 @@ factory_listeners.gui = {
             handler = handle_hover_change
         }
     }
-}
+}  ---@as GUIListenerDefinition
 
 factory_listeners.player = {
     fp_up_floor = function(player, _)
@@ -993,7 +993,7 @@ dialog_listeners.gui = {
             end
         }
     }
-}
+}  ---@as GUIListenerDefinition
 
 dialog_listeners.player = {
     on_player_display_resolution_changed = function(player, _)

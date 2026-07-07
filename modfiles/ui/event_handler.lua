@@ -13,11 +13,13 @@ local event_listener_names = {
 }
 
 ---@class ListenerDefinitions
----@field gui table<string, GUIEventDefinition[]>?
+---@field gui GUIListenerDefinition?
 ---@field player table<string, PlayerEventHandler>?
 ---@field game table<string, GameEventHandler>?
 ---@field dialog ModalDialogEvent?
 ---@field global table<string, fun(...)>?
+
+---@alias GUIListenerDefinition table<string, GUIEventDefinition[]>
 
 local event_listeners = {}  ---@type ListenerDefinitions[]
 for _, listener_path in ipairs(event_listener_names) do
