@@ -130,7 +130,7 @@ local function update_line(line_data, aggregate, looped_fuel)
                 end
             else  -- means the fuel is a byproduct only, which shouldn't affect production
                 local byproduct_amount = determine_amount_with_productivity(fuel_byproduct--[[@cast -nil]])
-                local used_amount = math.min(fuel_amount, byproduct_amount)
+                local used_amount = math.min(fuel_amount, byproduct_amount)  ---@as number
 
                 local fuel_item = {type=fuel_proto.type, name=fuel_name, amount=used_amount}  ---@type SolverItem
                 structures.class.subtract(aggregate.Byproduct, fuel_item)  -- subtract from floor
@@ -192,7 +192,8 @@ local function update_line(line_data, aggregate, looped_fuel)
 
     if emissions ~= 0 then  -- emissions are either produced or consumed
         local emission_name = "custom-" .. line_data.pollutant_type
-        local emission_item = {type="entity", name=emission_name, amount=math.abs(emissions), constant=true}
+        local emission_item = {type="entity", name=emission_name,
+            amount=math.abs(emissions)--[[@as number]], constant=true}
         if emissions > 0 then
             local is_product = (aggregate.Ingredient["entity"][emission_name] ~= nil)
             table.insert((is_product) and relevant_products or byproducts, emission_item)

@@ -64,12 +64,12 @@ local function recipe_map_from(item_type)
                 for _, fluid_proto in pairs(TEMPERATURE_MAP[item.name] or {}) do
                     if (not min_temp or min_temp <= fluid_proto.temperature) and
                             (not max_temp or max_temp >= fluid_proto.temperature) then
-                        add(fluid_proto, recipe.id)
+                        add(fluid_proto, recipe.id--[[@as RecipeID]])
                     end
                 end
             else
                 local item_proto = prototyper.util.find("items", item.name, item.type)
-                add(item_proto--[[@as FPItemPrototype]], recipe.id)
+                add(item_proto--[[@as FPItemPrototype]], recipe.id--[[@as RecipeID]])
             end
         end
     end
