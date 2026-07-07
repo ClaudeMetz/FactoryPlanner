@@ -1,6 +1,6 @@
 local Object = require("backend.data.Object")
 
----@alias ProductDefinedBy "amount" | "belts" | "lanes"
+---@alias ProductDefinedBy "amount" | BeltsOrLanes
 
 ---@class TLProduct: Object, ObjectMethods
 ---@field class "TLProduct"

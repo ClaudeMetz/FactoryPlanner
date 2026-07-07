@@ -160,7 +160,7 @@ end
 ---@field timescale Timescale
 ---@field timescale_string LocalisedString
 ---@field adjusted_margin_of_error number
----@field belts_or_lanes "belts" | "lanes"
+---@field belts_or_lanes BeltsOrLanes
 ---@field throughput_multiplier number
 ---@field formatting_precision integer
 ---@field pumping_speed number
