@@ -100,7 +100,7 @@ function Floor:count(filter, pivot, direction)
 end
 
 
----@alias ComponentDataSet { proto: FPPrototype, amount: number }
+---@alias ComponentDataSet { proto: AnyFPPrototype, quality_proto: FPQualityPrototype, amount: integer }
 
 ---@class ComponentData
 ---@field machines table<string, ComponentDataSet>
@@ -116,7 +116,7 @@ function Floor:get_component_data(skip_done, component_table)
     ---@param table table<string,ComponentDataSet>
     ---@param proto FPItemPrototype | FPModulePrototype
     ---@param quality_proto FPQualityPrototype
-    ---@param amount number
+    ---@param amount integer
     local function add_component(table, proto, quality_proto, amount)
         local combined_name = proto.name .. "-" .. quality_proto.name
         local component = table[combined_name]
