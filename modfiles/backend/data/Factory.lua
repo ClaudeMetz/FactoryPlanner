@@ -24,7 +24,7 @@ local Factory = Object.methods()
 Factory.__index = Factory
 script.register_metatable("Factory", Factory)
 
----@param name string
+---@param name string?
 ---@param matrix_solver_active boolean
 ---@return Factory
 local function init(name, matrix_solver_active)
