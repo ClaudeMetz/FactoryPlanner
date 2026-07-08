@@ -26,7 +26,7 @@ local function init(proto)
 
         overall = nil,
         abs_diff = 0
-    }, "DistrictItem", DistrictItem)  --[[@as DistrictItem]]
+    }, "DistrictItem", DistrictItem)  ---@as DistrictItem
     return object
 end
 

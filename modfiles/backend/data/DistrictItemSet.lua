@@ -14,7 +14,7 @@ local function init()
     local object = Object.init({
         first = nil,
         map = {}
-    }, "DistrictItemSet", DistrictItemSet)  --[[@as DistrictItemSet]]
+    }, "DistrictItemSet", DistrictItemSet)  ---@as DistrictItemSet
     return object
 end
 

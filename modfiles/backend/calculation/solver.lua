@@ -143,8 +143,8 @@ local function generate_floor_data(player, factory, floor, calculate_emissions)
             line_data.subfloor = generate_floor_data(player, factory, line, calculate_emissions)
             table.insert(floor_data.lines, line_data)
         else  ---@cast line Line
-            local relevant_line = (line.parent.level > 1) and line.parent.first or nil  --[[@as Line]]
-            local recipe_proto = line.recipe.proto  --[[@as FPRecipePrototype]]
+            local relevant_line = (line.parent.level > 1) and line.parent.first or nil  ---@as Line
+            local recipe_proto = line.recipe.proto  ---@as FPRecipePrototype
             local ingredients = line_ingredients(line)  -- builds in chosen temperatures
             local fuel = line.machine.fuel
 
@@ -173,10 +173,10 @@ local function generate_floor_data(player, factory, floor, calculate_emissions)
 
                 -- Boiler recipe energy
                 if machine.proto.prototype_category == "boiler" then
-                    local goal_temperature = recipe_proto.products[1]--[[@cast -nil]].temperature  --[[@as float]]
+                    local goal_temperature = recipe_proto.products[1]--[[@cast -nil]].temperature  ---@as float
                     local fluid_name = recipe_proto.ingredients[1]--[[@cast -nil]].name
                     local heat_capacity = prototypes.fluid[fluid_name].heat_capacity
-                    local input_temperature = ingredients[1]--[[@cast -nil]].temperature  --[[@as float]]
+                    local input_temperature = ingredients[1]--[[@cast -nil]].temperature  ---@as float
                     line_data.recipe_energy = (goal_temperature - input_temperature) * heat_capacity
                 end
 
@@ -230,11 +230,11 @@ local function update_object_items(object, item_category, item_results)
     local item_list = {}
 
     for _, item_result in pairs(structures.class.list(item_results)) do
-        local item_proto = prototyper.util.find("items", item_result.name, item_result.type)  --[[@as FPItemPrototype]]
+        local item_proto = prototyper.util.find("items", item_result.name, item_result.type)  ---@as FPItemPrototype
 
         -- Floor items keep their temperature, since they can't be configured from there
         if object.class ~= "Floor" and item_category == "ingredients" and item_proto.base_name then
-            item_proto = prototyper.util.find("items", item_proto.base_name, "fluid")  --[[@as FPItemPrototype]]
+            item_proto = prototyper.util.find("items", item_proto.base_name, "fluid")  ---@as FPItemPrototype
         end
 
         if object.class ~= "Floor" or item_proto.type ~= "entity" or item_proto.special then
@@ -318,7 +318,7 @@ end
 ---@param player LuaPlayer
 ---@param factory Factory?
 function solver.update(player, factory)
-    factory = factory or lib.context.get(player, "Factory")  --[[@as Factory]]
+    factory = factory or lib.context.get(player, "Factory")  ---@as Factory
     if factory and factory.valid then
         -- Cancel any pending update as it'll be running right now
         if factory.tick_of_solver_update then
@@ -413,7 +413,7 @@ end
 --- Updates the active factories top-level data with the given result
 ---@param result FactoryResult
 function solver.set_factory_result(result)
-    local factory = OBJECT_INDEX[result.factory_id]  --[[@as Factory]]
+    local factory = OBJECT_INDEX[result.factory_id]  ---@as Factory
 
     if factory.parent then factory.parent.needs_refresh = true end
 
@@ -448,10 +448,10 @@ end
 --- Updates the given line of the given floor of the active factory
 ---@param result LineResult
 function solver.set_line_result(result)
-    local line = OBJECT_INDEX[result.line_id]  --[[@as LineObject]]
+    local line = OBJECT_INDEX[result.line_id]  ---@as LineObject
 
     if line.class == "Floor" then  ---@cast line Floor
-        line.machine_amount = result.machine_amount  --[[@as integer]]
+        line.machine_amount = result.machine_amount  ---@as integer
     else  ---@cast line Line
         line.machine.amount = result.machine_amount
         if line.machine.fuel ~= nil then line.machine.fuel.amount = result.fuel_amount end
@@ -460,7 +460,7 @@ function solver.set_line_result(result)
     end
 
     if line.production_ratio == 0 then  ---@cast line Line
-        local recipe_proto = line.recipe.proto  --[[@as FPRecipePrototype]]
+        local recipe_proto = line.recipe.proto  ---@as FPRecipePrototype
         set_zeroed_items(line, "products", recipe_proto.products)
         line.byproducts = {}
         set_zeroed_items(line, "ingredients", recipe_proto.ingredients)

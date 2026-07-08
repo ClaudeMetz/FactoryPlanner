@@ -118,7 +118,7 @@ function utility_structures.components(player, modal_data)
             if component.amount > 0 then
                 local proto, quality_proto, required_amount = component.proto, component.quality_proto, component.amount
                 ---@type ItemIDAndQualityIDPair
-                local item_id = {name = proto.name--[[@as ItemID]], quality = quality_proto.name}
+                local item_id = {name = proto.name--[[@as string]], quality = quality_proto.name}
                 local amount_in_inventory = (main_inventory) and main_inventory.get_item_count(item_id) or 0
                 local missing_amount = required_amount - amount_in_inventory
 

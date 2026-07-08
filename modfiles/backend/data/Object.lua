@@ -38,7 +38,7 @@ function Object.init(data, class, metatable)
     -- If the index doesn't exist yet, it will be filled in later
     if OBJECT_INDEX then OBJECT_INDEX[object.id] = object end
 
-    return object --[[@as Object]]
+    return object  ---@as Object
 end
 
 ---@return ObjectMethods
@@ -308,7 +308,7 @@ end
 function methods:_repair(player, pivot)
     for object in self:_iterator(nil, pivot) do
         if not object.valid and not object:repair(player) then
-            local parent = object.parent --[[@as Object & ObjectMethods]]
+            local parent = object.parent  ---@as Object & ObjectMethods
             parent:_remove(object)
         end
     end

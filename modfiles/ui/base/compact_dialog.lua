@@ -296,7 +296,7 @@ local function add_item_flow(line, relevant_line, item_category, button_color, m
     if item_category == "products" or item_category == "ingredients" then
         local recipe_proto = line.recipe--[[@cast -nil]].proto  ---@as FPRecipePrototype
         for _, item in pairs(recipe_proto.catalysts[item_category]) do
-            local item_proto = prototyper.util.find("items", item.name, item.type)  --[[@as FPItemPrototype]]
+            local item_proto = prototyper.util.find("items", item.name, item.type)  ---@as FPItemPrototype
 
             local amount, number_tooltip = item_views.process_item(metadata.player, item_proto,
                 (item.amount * line.production_ratio), line.machine.amount)
@@ -364,7 +364,7 @@ local function refresh_compact_header(player, factory)
     local attach_factory_products = player_table.preferences.attach_factory_products
     compact_elements.name_label.caption = factory:tostring(attach_factory_products, true)
 
-    local current_floor = lib.context.get(player, "Floor")  --[[@as Floor]]
+    local current_floor = lib.context.get(player, "Floor")  ---@as Floor
     compact_elements.level_label.caption = {"fp.bold_label", {"", "-   ", {"fp.level"}, " ", current_floor.level}}
     compact_elements.floor_up_button.enabled = (current_floor.level > 1)
     compact_elements.floor_top_button.enabled = (current_floor.level > 1)
@@ -437,7 +437,7 @@ local function refresh_compact_production(player, factory)
     local ui_state = lib.globals.ui_state(player)
     local compact_elements = ui_state.compact_elements
 
-    local floor = lib.context.get(player, "Floor")  --[[@as Floor]]
+    local floor = lib.context.get(player, "Floor")  ---@as Floor
 
     local production_table = compact_elements.production_table
     production_table.clear()
@@ -469,7 +469,7 @@ local function refresh_compact_production(player, factory)
     }
 
     for line in floor:iterator() do -- build the individual lines
-        local relevant_line = (line.class == "Floor") and line.first or line  --[[@as Line]]
+        local relevant_line = (line.class == "Floor") and line.first or line  ---@as Line
         if not relevant_line.active or not relevant_line:get_surface_compatibility().overall
                 or (not factory.matrix_solver_active and relevant_line.recipe.production_type == "consume") then
             goto skip_line
@@ -499,7 +499,7 @@ end
 
 ---@param player LuaPlayer
 local function refresh_compact_factory(player)
-    local factory = lib.context.get(player, "Factory")  --[[@as Factory?]]
+    local factory = lib.context.get(player, "Factory")  ---@as Factory?
     if not factory or not factory.valid then return end
 
     local ui_state = lib.globals.ui_state(player)

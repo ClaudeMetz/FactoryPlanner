@@ -7,7 +7,7 @@ local _actions = {}
 ---@param player LuaPlayer
 ---@return ActiveLimitations
 function _actions.current_limitations(player)
-    local factory = lib.context.get(player, "Factory")  --[[@as Factory?]]
+    local factory = lib.context.get(player, "Factory")  ---@as Factory?
     return {
         archive_open = (factory ~= nil) and factory.archived or false,
         matrix_active = (factory ~= nil) and factory.matrix_solver_active or false

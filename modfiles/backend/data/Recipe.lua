@@ -40,7 +40,7 @@ local function init(parent, proto, production_type)
         effects = nil,
 
         parent = parent
-    }, "Recipe", Recipe)  --[[@as Recipe]]
+    }, "Recipe", Recipe)  ---@as Recipe
 
     if not this_proto.simplified then
         object:build_temperatures_data()
@@ -165,7 +165,7 @@ end
 
 ---@return boolean valid
 function Recipe:validate()
-    self.proto = prototyper.util.validate_prototype_object(self.proto, nil)  --[[@as FPRecipePrototype | FPPackedPrototype]]
+    self.proto = prototyper.util.validate_prototype_object(self.proto, nil)  ---@as FPRecipePrototype | FPPackedPrototype
     self.valid = (not self.proto.simplified)
 
     if self.valid and self.priority_product then

@@ -750,7 +750,7 @@ function generator.machines.generate()
     end
 
     local item_prototypes = generator.util.get_item_members("item")
-    local recipe_prototypes = storage.prototypes.recipes  --[[@as NamedPrototypes<FPRecipePrototype>]]
+    local recipe_prototypes = storage.prototypes.recipes  ---@as NamedPrototypes<FPRecipePrototype>
 
     ---@param category string
     ---@param proto LuaEntityPrototype
@@ -1081,7 +1081,7 @@ function generator.fuels.generate()
     end
 
     local combined_list = {}  -- set of every possible combined_category
-    local machine_prototypes = storage.prototypes.machines  --[[@as NamedPrototypesWithCategory<FPMachinePrototype>]]
+    local machine_prototypes = storage.prototypes.machines  ---@as NamedPrototypesWithCategory<FPMachinePrototype>
 
     -- Create category for each combination of fuels used by machines
     for _, machine_category in pairs(machine_prototypes) do

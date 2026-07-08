@@ -30,7 +30,7 @@ local function init(proto)
         belt_proto = nil,
 
         amount = 0  -- the amount satisfied by the solver
-    }, "TLProduct", TLProduct)  --[[@as TLProduct]]
+    }, "TLProduct", TLProduct)  ---@as TLProduct
     return object
 end
 
@@ -73,9 +73,9 @@ function TLProduct:paste(object)
     if object.class == "SimpleItem" or object.class == "Fuel" then
         local proto  ---@type FPItemPrototype | FPPackedPrototype
         if object.class == "Fuel" then  -- need an Item prototype here, not Fuel
-            proto = prototyper.util.find("items", object:get_name_with_temperature(), object.proto.type) --[[@as FPItemPrototype]]
+            proto = prototyper.util.find("items", object:get_name_with_temperature(), object.proto.type) ---@as FPItemPrototype
         else
-            proto = object.proto  --[[@as FPItemPrototype | FPPackedPrototype]]
+            proto = object.proto  ---@as FPItemPrototype | FPPackedPrototype
         end
 
         if proto.simplified then return false, "incompatible" end
@@ -135,7 +135,7 @@ end
 
 ---@return boolean valid
 function TLProduct:validate()
-    self.proto = prototyper.util.validate_prototype_object(self.proto, "type")  --[[@as FPItemPrototype | FPPackedPrototype]]
+    self.proto = prototyper.util.validate_prototype_object(self.proto, "type")  ---@as FPItemPrototype | FPPackedPrototype
     self.valid = (not self.proto.simplified)
 
     self.belt_proto = (self.belt_proto) and prototyper.util.validate_prototype_object(self.belt_proto, nil) or nil

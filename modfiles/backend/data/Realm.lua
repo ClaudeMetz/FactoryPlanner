@@ -13,7 +13,7 @@ script.register_metatable("Realm", Realm)
 local function init(district)
     local object = Object.init({
         first = nil
-    }, "Realm", Realm)  --[[@as Realm]]
+    }, "Realm", Realm)  ---@as Realm
     object:insert(district or District.init())  -- one always exists
     return object
 end
@@ -54,7 +54,7 @@ end
 ---@param direction NeighbourDirection?
 ---@return District? district
 function Realm:find(filter, pivot, direction)
-    return self:_find(filter, pivot, direction)  --[[@as District?]]
+    return self:_find(filter, pivot, direction)  ---@as District?
 end
 
 

@@ -34,9 +34,9 @@ function defaults.get(player, data_type, category)
     local default = lib.globals.preferences(player).default_prototypes[data_type]
     local category_table = prototyper.util.find(data_type, nil, category)
     if category_table == nil then
-        return default  --[[@as DefaultPrototype]]
+        return default  ---@as DefaultPrototype
     else
-        return default[category_table.id]  --[[@as DefaultPrototype]]
+        return default[category_table.id]  ---@as DefaultPrototype
     end
 end
 
@@ -49,10 +49,10 @@ function defaults.set(player, data_type, data, category)
     local default = defaults.get(player, data_type, category)
 
     if data.prototype then
-        default.proto = prototyper.util.find(data_type, data.prototype, category)  --[[@as AnyFPPrototype]]
+        default.proto = prototyper.util.find(data_type, data.prototype, category)  ---@as AnyFPPrototype
     end
     if data.quality then
-        default.quality = prototyper.util.find("qualities", data.quality, nil)  --[[@as FPQualityPrototype]]
+        default.quality = prototyper.util.find("qualities", data.quality, nil)  ---@as FPQualityPrototype
     end
     if data.modules then
         default.modules = {}
@@ -158,7 +158,7 @@ local function migrate_prototype_default(data_type, fallback, default, category)
     if not equivalent_proto then return fallback end  -- full reset if prototype went missing
 
     local migrated_default = {
-        proto = equivalent_proto  --[[@as AnyFPPrototype]],
+        proto = equivalent_proto--[[@as AnyFPPrototype]],
         quality = nil,  -- only migrated if relevant for this data_type
         modules = nil,  -- only migrated to anything if previously present
         beacon_amount = default.beacon_amount or fallback.beacon_amount  -- could be nil
@@ -218,7 +218,7 @@ function defaults.migrate(player_table)
             local new_defaults = {}
             for _, category in pairs(storage.prototypes[data_type]) do
                 local previous_default = default_map[category.name]
-                local fallback_proto = fallback[category.id]  --[[@as DefaultPrototype]]
+                local fallback_proto = fallback[category.id]  ---@as DefaultPrototype
                 new_defaults[category.id] = (not previous_default) and fallback_proto
                     or migrate_prototype_default(data_type, fallback_proto, previous_default, category.name)
             end
@@ -237,7 +237,7 @@ function defaults.refresh_preferences(previous)
     for name, _ in pairs(category_designations) do
         preference_defaults[name] = previous and previous[name] or defaults.get_fallback(name)
     end
-    return preference_defaults  --[[@as DefaultPrototypesTable]]
+    return preference_defaults  ---@as DefaultPrototypesTable
 end
 
 

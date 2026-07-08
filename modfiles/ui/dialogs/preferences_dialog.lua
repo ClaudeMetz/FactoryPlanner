@@ -29,7 +29,7 @@ local function refresh_defaults_table(player, modal_elements, data_type, categor
     table_prototypes.clear()
 
     local prototypes = storage.prototypes[data_type]
-    if category_id then prototypes = (prototypes[category_id] --[[@as IndexedCategory<FPPrototype>]]).members end
+    if category_id then prototypes = (prototypes[category_id]--[[@as IndexedCategory<FPPrototype>]]).members end
     local default = defaults.get(player, data_type, category_id)
 
     for prototype_id, prototype in ipairs(prototypes) do

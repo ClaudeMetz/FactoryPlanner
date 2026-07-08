@@ -188,7 +188,7 @@ function item_views.rebuild_data(player)
     local preferences = lib.globals.preferences(player)
     local timescale_string = timescale_map[preferences.timescale]
 
-    local belt_proto = defaults.get(player, "belts").proto  --[[@as FPBeltPrototype]]
+    local belt_proto = defaults.get(player, "belts").proto  ---@as FPBeltPrototype
     local belts_or_lanes = preferences.belts_or_lanes
     local throughput_divisor = (belts_or_lanes == "belts") and belt_proto.throughput or (belt_proto.throughput / 2)
 

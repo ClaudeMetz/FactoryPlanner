@@ -30,7 +30,7 @@ local function init(level)
         byproducts = {},
         ingredients = {},
         machine_amount = 0
-    }, "Floor", Floor)  --[[@as Floor]]
+    }, "Floor", Floor)  ---@as Floor
     return object
 end
 
@@ -80,7 +80,7 @@ end
 
 ---@return LineObject?
 function Floor:find_last()
-    return self:_find_last()  --[[@as LineObject?]]
+    return self:_find_last()  ---@as LineObject?
 end
 
 ---@param filter ObjectFilter?
@@ -240,7 +240,7 @@ local function unpack(packed_self)
     local function unpacker(line)
         return (line.class == "Floor") and unpack(line--[[@as PackedFloor]]) or Line.unpack(line--[[@as PackedLine]])
     end
-    unpacked_self.first = Object.unpack(packed_self.lines, unpacker, unpacked_self)  --[[@as LineObject]]
+    unpacked_self.first = Object.unpack(packed_self.lines, unpacker, unpacked_self)  ---@as LineObject
 
     return unpacked_self
 end

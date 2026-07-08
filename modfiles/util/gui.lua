@@ -218,7 +218,7 @@ end
 function _gui.update_expression_field(textfield, valid)
     textfield.style = (textfield.text ~= "" and not valid) and "invalid_value_textfield" or "textbox"
     -- This is stupid but styles work out that way
-    textfield.style--[[@as LuaStyle]].width = textfield.tags.width  --[[@as int32]]
+    textfield.style--[[@as LuaStyle]].width = textfield.tags.width  ---@as int32
 end
 
 ---@param textfield LuaGuiElement

@@ -27,7 +27,7 @@ local function init(parent)
         empty_slots = module_limit,
 
         parent = parent
-    }, "ModuleSet", ModuleSet)  --[[@as ModuleSet]]
+    }, "ModuleSet", ModuleSet)  ---@as ModuleSet
     return object
 end
 
@@ -68,12 +68,12 @@ end
 ---@param direction NeighbourDirection?
 ---@return Module? module
 function ModuleSet:find(filter, pivot, direction)
-    return self:_find(filter, pivot, direction)  --[[@as Module?]]
+    return self:_find(filter, pivot, direction)  ---@as Module?
 end
 
 ---@return Module?
 function ModuleSet:find_last()
-    return self:_find_last()  --[[@as Module?]]
+    return self:_find_last()  ---@as Module?
 end
 
 ---@param filter ObjectFilter?
@@ -302,7 +302,7 @@ end
 local function unpack(packed_self, parent)
     local unpacked_self = init(parent)
 
-    unpacked_self.first = Object.unpack(packed_self.modules, Module.unpack, unpacked_self)  --[[@as Module]]
+    unpacked_self.first = Object.unpack(packed_self.modules, Module.unpack, unpacked_self)  ---@as Module
     unpacked_self:count_modules()
 
     return unpacked_self

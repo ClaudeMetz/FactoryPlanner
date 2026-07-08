@@ -248,8 +248,8 @@ end
 ---@return number launch_time
 ---@return number energy_usage
 function _util.determine_launch_data(silo_proto)
-    local power = silo_proto.active_energy_usage  --[[@as double]]
-    local rocket_proto = silo_proto.rocket_entity_prototype  --[[@as LuaEntityPrototype]]
+    local power = silo_proto.active_energy_usage  ---@as double
+    local rocket_proto = silo_proto.rocket_entity_prototype  ---@as LuaEntityPrototype
 
     -- These values are not accessible in the API
     local frame_count, inverse_speed = 32, 1 / 0.3
@@ -274,7 +274,7 @@ function _util.determine_launch_data(silo_proto)
     local launch_starting = 1
     launch_ticks = launch_ticks + launch_starting
 
-    local launch_started = silo_proto.launch_wait_time  --[[@as uint8]]
+    local launch_started = silo_proto.launch_wait_time  ---@as uint8
     launch_ticks = launch_ticks + launch_started
 
     local engine_starting = 1 / rocket_proto.engine_starting_speed--[[@as double]]
@@ -306,7 +306,7 @@ function _util.formatted_effects(effects)
         effects[name] = value * MAGIC_NUMBERS.effect_precision
     end
 
-    return effects  --[[@as IntegerModuleEffects]]
+    return effects  ---@as IntegerModuleEffects
 end
 
 ---@param proto LuaEntityPrototype
@@ -353,7 +353,7 @@ function _util.format_effect_receiver(proto)
         }
     else
         local base_effect = effect_receiver.base_effect  -- can be nil
-        effect_receiver.base_effect = _util.formatted_effects(base_effect)  --[[@as ModuleEffects]]
+        effect_receiver.base_effect = _util.formatted_effects(base_effect)  ---@as ModuleEffects
     end
 
     local module_limit = (proto) and proto.module_inventory_size or 0
@@ -368,7 +368,7 @@ function _util.format_effect_receiver(proto)
     end
 
     -- Adjust limits format to be more convenient
-    local formatted = effect_receiver --[[@as FormattedEffectReceiver]]
+    local formatted = effect_receiver  ---@as FormattedEffectReceiver
     formatted.limits = {}
     for name, _ in pairs(lib.effects.blank) do
         formatted.limits[name] = effect_receiver[name .. "_limits"]

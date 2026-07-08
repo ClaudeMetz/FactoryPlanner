@@ -49,7 +49,7 @@ end
 
 ---@param metadata InterfaceToggleMetadata
 local function interface_toggle(metadata)
-    local player = game.get_player(metadata.player_index)  --[[@as LuaPlayer]]
+    local player = game.get_player(metadata.player_index)  ---@as LuaPlayer
     local compact_view = lib.globals.ui_state(player).compact_view
     if compact_view then compact_dialog.toggle(player)
     else main_dialog.toggle(player) end

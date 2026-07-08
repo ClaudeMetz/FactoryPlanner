@@ -35,7 +35,7 @@ local function init(parent, proto)
         effects_tooltip = "",
 
         parent = parent
-    }, "Beacon", Beacon)  --[[@as Beacon]]
+    }, "Beacon", Beacon)  ---@as Beacon
     object.module_set = ModuleSet.init(object)
     return object
 end
@@ -135,7 +135,7 @@ end
 function Beacon:reset(player)
     local beacon_default = defaults.get(player, "beacons", nil)
 
-    self.proto = beacon_default.proto  --[[@as FPBeaconPrototype]]
+    self.proto = beacon_default.proto  ---@as FPBeaconPrototype
     self.quality_proto = beacon_default.quality
     if beacon_default.beacon_amount then self.amount = beacon_default.beacon_amount end
 
@@ -213,10 +213,10 @@ end
 
 ---@return boolean valid
 function Beacon:validate()
-    self.proto = prototyper.util.validate_prototype_object(self.proto, nil)  --[[@as FPBeaconPrototype | FPPackedPrototype]]
+    self.proto = prototyper.util.validate_prototype_object(self.proto, nil)  ---@as FPBeaconPrototype | FPPackedPrototype
     self.valid = (not self.proto.simplified)
 
-    self.quality_proto = prototyper.util.validate_prototype_object(self.quality_proto, nil)  --[[@as FPQualityPrototype | FPPackedPrototype]]
+    self.quality_proto = prototyper.util.validate_prototype_object(self.quality_proto, nil)  ---@as FPQualityPrototype | FPPackedPrototype
     self.valid = (not self.quality_proto.simplified) and self.valid
 
     -- Can't be valid with an invalid parent
@@ -243,7 +243,7 @@ function Beacon:repair(player)
     end
 
     if self.valid and self.quality_proto.simplified then
-        self.quality_proto = defaults.get_fallback("qualities").proto  --[[@as FPQualityPrototype]]
+        self.quality_proto = defaults.get_fallback("qualities").proto  ---@as FPQualityPrototype
     end
 
     if self.valid then

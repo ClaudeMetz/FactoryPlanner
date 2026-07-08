@@ -24,7 +24,7 @@ local function init(proto, amount, quality_proto)
 
         total_effects = nil,
         effects_tooltip = ""
-    }, "Module", Module)  --[[@as Module]]
+    }, "Module", Module)  ---@as Module
 
     if not proto.simplified then object:summarize_effects() end
     return object
@@ -81,7 +81,7 @@ function Module:paste(object)
     if object.class == "Module" then
         ---@cast object Module
         if self.proto.simplified or self.quality_proto.simplified or object.proto.simplified or
-           not self.parent:check_compatibility(object.proto --[[@as FPModulePrototype]]) then
+           not self.parent:check_compatibility(object.proto--[[@as FPModulePrototype]]) then
             return false, "incompatible"
         end
 
@@ -148,10 +148,10 @@ end
 
 ---@return boolean valid
 function Module:validate()
-    self.proto = prototyper.util.validate_prototype_object(self.proto, "category")  --[[@as FPModulePrototype | FPPackedPrototype]]
+    self.proto = prototyper.util.validate_prototype_object(self.proto, "category")  ---@as FPModulePrototype | FPPackedPrototype
     self.valid = (not self.proto.simplified)
 
-    self.quality_proto = prototyper.util.validate_prototype_object(self.quality_proto, nil)  --[[@as FPQualityPrototype | FPPackedPrototype]]
+    self.quality_proto = prototyper.util.validate_prototype_object(self.quality_proto, nil)  ---@as FPQualityPrototype | FPPackedPrototype
     self.valid = (not self.quality_proto.simplified) and self.valid
 
     -- Can't be valid with an invalid parent
@@ -175,7 +175,7 @@ function Module:repair(player)
     end
 
     if self.valid and self.quality_proto.simplified then
-        self.quality_proto = defaults.get_fallback("qualities").proto  --[[@as FPQualityPrototype]]
+        self.quality_proto = defaults.get_fallback("qualities").proto  ---@as FPQualityPrototype
     end
 
     if self.valid then self:summarize_effects() end

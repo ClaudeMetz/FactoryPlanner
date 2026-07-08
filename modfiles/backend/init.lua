@@ -165,7 +165,7 @@ local function global_init()
     generate_object_index()  -- This just initializes the OBJECT_INDEX variable
 
     -- Retain current modset to detect mod changes for invalid factories
-    storage.installed_mods = script.active_mods  --[[@as ModToVersion]]
+    storage.installed_mods = script.active_mods  ---@as ModToVersion
 
     lib.translator.on_init()  -- Initialize flib's translation module
     prototyper.util.build_translation_dictionaries()
@@ -210,7 +210,7 @@ local function handle_configuration_change()
         end
     end
 
-    storage.installed_mods = script.active_mods  --[[@as ModToVersion]]
+    storage.installed_mods = script.active_mods  ---@as ModToVersion
 
     lib.translator.on_configuration_changed()
     prototyper.util.build_translation_dictionaries()

@@ -71,7 +71,7 @@ local function convert_and_sort(data_type, prototype_sorting_function)
             member.data_type = data_type
         end
 
-        return new_list --[[@as AnyIndexedPrototypes]]
+        return new_list  ---@as AnyIndexedPrototypes
     end
 
     ---@param a NamedCategory<FPPrototype>
@@ -104,12 +104,12 @@ function prototyper.build()
     integrator.collect("compacting_recipes")
 
     for data_type, _ in pairs(prototyper.data_types) do
-        storage.prototypes[data_type] = generator[data_type].generate()  --[[@as AnyIndexedPrototypes]]
+        storage.prototypes[data_type] = generator[data_type].generate()  ---@as AnyIndexedPrototypes
     end
 
     -- Second pass to do some things that can't be done in the first pass due to the strict sequencing
     for data_type, _ in pairs(prototyper.data_types) do
-        local second_pass = generator[data_type].second_pass --[[@as fun(prototypes: NamedPrototypes<FPPrototype>)?]]
+        local second_pass = generator[data_type].second_pass  ---@as fun(prototypes: NamedPrototypes<FPPrototype>)?
         if second_pass ~= nil then second_pass(storage.prototypes[data_type]) end
     end
 
@@ -194,14 +194,14 @@ function prototyper.util.validate_prototype_object(prototype, category_designati
     if prototype.simplified then  -- try to unsimplify, otherwise it stays that way
         ---@cast prototype FPPackedPrototype
         if not category_designation or prototype.category then  -- failsafe
-            local new_proto = prototyper.util.find(prototype.data_type, prototype.name, prototype.category) --[[@as AnyFPPrototype?]]
+            local new_proto = prototyper.util.find(prototype.data_type, prototype.name, prototype.category)  ---@as AnyFPPrototype?
             if new_proto then updated_proto = new_proto end
         end
     else
         ---@cast prototype AnyFPPrototype
         local category = prototype[category_designation]  ---@type string
-        local new_proto = prototyper.util.find(prototype.data_type, prototype.name, category) --[[@as AnyFPPrototype?]]
-        updated_proto = new_proto or prototyper.util.simplify_prototype(prototype, category_designation)  --[[@as AnyPrototype]]
+        local new_proto = prototyper.util.find(prototype.data_type, prototype.name, category)  ---@as AnyFPPrototype?
+        updated_proto = new_proto or prototyper.util.simplify_prototype(prototype, category_designation)  ---@as AnyPrototype
     end
 
     return updated_proto

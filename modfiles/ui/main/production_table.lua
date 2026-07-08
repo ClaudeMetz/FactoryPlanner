@@ -253,7 +253,7 @@ end
 local function add_catalysts(flow, line, category, metadata)
     if line.class == "Floor" then return end
     for _, item in pairs(line.recipe.proto.catalysts[category]) do
-        local item_proto = prototyper.util.find("items", item.name, item.type)  --[[@as FPItemPrototype]]
+        local item_proto = prototyper.util.find("items", item.name, item.type)  ---@as FPItemPrototype
 
         local amount, number_tooltip = item_views.process_item(metadata.player, item_proto,
             (item.amount * line.production_ratio), line.machine.amount)
@@ -516,8 +516,8 @@ local function refresh_production_table(player)
 
     -- Determine the column_count first, because not all columns are nessecarily shown
     local preferences = lib.globals.preferences(player)
-    local factory = lib.context.get(player, "Factory")  --[[@as Factory]]
-    local floor = lib.context.get(player, "Floor")  --[[@as Floor]]
+    local factory = lib.context.get(player, "Factory")  ---@as Factory
+    local floor = lib.context.get(player, "Floor")  ---@as Floor
 
     local factory_valid = (factory and factory.valid)
     local any_lines_present = (factory_valid) and (floor:count() > 0) or false

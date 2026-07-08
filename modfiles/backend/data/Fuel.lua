@@ -32,7 +32,7 @@ local function init(parent, proto)
         satisfied_amount = 0,
 
         parent = parent  -- could be nil
-    }, "Fuel", Fuel)  --[[@as Fuel]]
+    }, "Fuel", Fuel)  ---@as Fuel
 
     if not this_proto.simplified then object:build_temperature_data() end
 

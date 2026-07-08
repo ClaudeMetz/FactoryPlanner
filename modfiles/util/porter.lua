@@ -26,7 +26,7 @@ function _porter.generate_export_string(factories)
         table.insert(export_table.factories, factory:pack(false))
     end
 
-    return lib.pack_export_string(export_table)  --[[@as ExportString]]
+    return lib.pack_export_string(export_table)  ---@as ExportString
 end
 
 -- Converts the given factory exchange string into a temporary Factory
@@ -124,7 +124,7 @@ function _porter.format_modset_diff(old_modset)
     end
 
     -- Return an empty string if no changes were found, ie. the tooltip is still only the header
-    return (table_size(tooltip --[[@as table]]) == 2) and "" or tooltip
+    return (table_size(tooltip--[[@as table]]) == 2) and "" or tooltip
 end
 
 -- Adds given export_string-factories to the current factory
@@ -134,7 +134,7 @@ function _porter.add_factories(player, export_string)
     local import_table, _ = lib.porter.process_export_string(export_string)  ---@cast import_table -nil
     -- No error handling here, as the export_string for this will always be known to work
 
-    local district = lib.context.get(player, "District")  --[[@as District]]
+    local district = lib.context.get(player, "District")  ---@as District
     local first_factory = nil
 
     for _, factory in pairs(import_table.factories) do

@@ -1,11 +1,7 @@
 -- The loader contains the code that runs on_load, pre-caching some data structures that are needed later
 local loader = {}
 
----@alias RecipeMap table<ItemCategoryID, table<ItemID, table<RecipeID, true>>>
----@alias ItemCategoryID integer
----@alias ItemID integer
----@alias RecipeID integer
-
+---@alias RecipeMap table<integer, table<integer, table<integer, true>>>
 ---@alias TemperatureMap table<string, FPItemPrototype[]>
 ---@alias ModuleMap table<string, FPModulePrototype>
 
@@ -49,7 +45,7 @@ local function recipe_map_from(item_type)
     local map = {[1] = {}, [2] = {}, [3] = {}}  ---@type RecipeMap
 
     ---@param item_proto FPItemPrototype
-    ---@param recipe_id RecipeID
+    ---@param recipe_id integer
     local function add(item_proto, recipe_id)
         local category = map[item_proto.category_id]
         category[item_proto.id] = category[item_proto.id] or {}
@@ -64,12 +60,12 @@ local function recipe_map_from(item_type)
                 for _, fluid_proto in pairs(TEMPERATURE_MAP[item.name] or {}) do
                     if (not min_temp or min_temp <= fluid_proto.temperature) and
                             (not max_temp or max_temp >= fluid_proto.temperature) then
-                        add(fluid_proto, recipe.id--[[@as RecipeID]])
+                        add(fluid_proto, recipe.id)
                     end
                 end
             else
                 local item_proto = prototyper.util.find("items", item.name, item.type)
-                add(item_proto--[[@as FPItemPrototype]], recipe.id--[[@as RecipeID]])
+                add(item_proto--[[@as FPItemPrototype]], recipe.id)
             end
         end
     end
@@ -84,7 +80,7 @@ local function sorted_items()
     local items = {}
 
     for _, type in pairs{"item", "fluid", "entity"} do
-        local category = prototyper.util.find("items", nil, type)  --[[@as NamedCategory<FPItemPrototype>]]
+        local category = prototyper.util.find("items", nil, type)  ---@as NamedCategory<FPItemPrototype>
         for _, item in pairs(category.members--[[@cast -nil]]) do
             table.insert(items, item)
         end
@@ -192,7 +188,7 @@ local function prototype_maps(data_types)
         maps[data_type] = map
     end
 
-    return maps --[[@as PrototypeMaps]]
+    return maps  ---@as PrototypeMaps
 end
 
 

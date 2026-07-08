@@ -41,7 +41,7 @@ local function init(parent, proto)
         effects_tooltip = "",
 
         parent = parent
-    }, "Machine", Machine)  --[[@as Machine]]
+    }, "Machine", Machine)  ---@as Machine
 
     object.module_set = ModuleSet.init(object)
     return object
@@ -71,12 +71,12 @@ function Machine:normalize_fuel(player)
     if self.fuel and not burner.categories[self.fuel.proto.category] then self.fuel = nil end
 
     if self.fuel == nil then  -- add a fuel for this machine if it doesn't have one here
-        local default_fuel_proto = defaults.get(player, "fuels", burner.combined_category).proto  --[[@as FPFuelPrototype]]
+        local default_fuel_proto = defaults.get(player, "fuels", burner.combined_category).proto  ---@as FPFuelPrototype
         self.fuel = Fuel.init(self, default_fuel_proto)  -- builds temperature_data implicitly
         self.fuel:apply_temperature_default(player)
     else  -- make sure the fuel is of the right combined category
         if burner.combined_category ~= self.fuel.proto.category then
-            local proto = prototyper.util.find("fuels", self.fuel.proto.name, burner.combined_category)  --[[@as FPFuelPrototype]]
+            local proto = prototyper.util.find("fuels", self.fuel.proto.name, burner.combined_category)  ---@as FPFuelPrototype
             self.fuel:set_proto(proto, player)
         end
     end
@@ -105,9 +105,9 @@ end
 ---@return boolean
 function Machine:allows_module(proto)
     return not self.proto.simplified and
-           lib.effects.is_compatible(self.proto --[[@as FPMachinePrototype]], proto) and
+           lib.effects.is_compatible(self.proto--[[@as FPMachinePrototype]], proto) and
            not self.parent.recipe.proto.simplified and
-           lib.effects.is_compatible(self.parent.recipe.proto --[[@as FPRecipePrototype]], proto)
+           lib.effects.is_compatible(self.parent.recipe.proto--[[@as FPRecipePrototype]], proto)
 end
 
 
@@ -215,7 +215,7 @@ end
 ---@return string? error
 function Machine:paste(object, player)
     if object.class == "Machine" then  ---@cast object Machine
-        local corresponding_proto = prototyper.util.find("machines", object.proto.name, self.proto.combined_category)   --[[@as FPMachinePrototype?]]
+        local corresponding_proto = prototyper.util.find("machines", object.proto.name, self.proto.combined_category)   ---@as FPMachinePrototype?
 
         if corresponding_proto == nil or not self.parent:is_machine_compatible(corresponding_proto) then
             return false, "incompatible"
@@ -307,7 +307,7 @@ end
 function Machine:validate()
     local recipe_category = self.parent.recipe.proto.combined_category
     if recipe_category ~= self.proto.combined_category then
-        local corresponding_proto = prototyper.util.find("machines", self.proto.name, recipe_category)  --[[@as FPMachinePrototype?]]
+        local corresponding_proto = prototyper.util.find("machines", self.proto.name, recipe_category)  ---@as FPMachinePrototype?
         if corresponding_proto then  -- check if the machine just moved categories
             self.proto = corresponding_proto -- this is okay in this specific context
         else  -- otherwise, this machine is invalid
@@ -315,11 +315,11 @@ function Machine:validate()
             self.valid = false
         end
     else
-        self.proto = prototyper.util.validate_prototype_object(self.proto, "combined_category")  --[[@as FPMachinePrototype | FPPackedPrototype]]
+        self.proto = prototyper.util.validate_prototype_object(self.proto, "combined_category")  ---@as FPMachinePrototype | FPPackedPrototype
         self.valid = (not self.proto.simplified)
     end
 
-    self.quality_proto = prototyper.util.validate_prototype_object(self.quality_proto, nil)  --[[@as FPQualityPrototype | FPPackedPrototype]]
+    self.quality_proto = prototyper.util.validate_prototype_object(self.quality_proto, nil)  ---@as FPQualityPrototype | FPPackedPrototype
     self.valid = (not self.quality_proto.simplified) and self.valid
 
     -- Can't be valid with an invalid parent
@@ -364,7 +364,7 @@ function Machine:repair(player)
     end
 
     if self.valid and self.quality_proto.simplified then
-        self.quality_proto = defaults.get_fallback("qualities").proto  --[[@as FPQualityPrototype]]
+        self.quality_proto = defaults.get_fallback("qualities").proto  ---@as FPQualityPrototype
     end
 
     if self.valid and self.fuel and not self.fuel.valid then

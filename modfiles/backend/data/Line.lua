@@ -47,7 +47,7 @@ local function init(recipe_proto, production_type)
         byproducts = {},
         ingredients = {},
         production_ratio = 0
-    }, "Line", Line)  --[[@as Line]]
+    }, "Line", Line)  ---@as Line
 
     if recipe_proto then
         object.recipe = Recipe.init(object, recipe_proto, production_type)
@@ -113,7 +113,7 @@ function Line:change_machine_by_action(player, action, current_proto)
     ---@return boolean success
     local function try_machine(new_machine_id)
         -- Assume a match while inside the upgrade/downgrade loop
-        current_machine_proto = prototyper.util.find("machines", new_machine_id, category_id) --[[@as FPMachinePrototype]]
+        current_machine_proto = prototyper.util.find("machines", new_machine_id, category_id) ---@as FPMachinePrototype
 
         if self:is_machine_compatible(current_machine_proto) then
             self:change_machine_to_proto(player, current_machine_proto)
@@ -143,7 +143,7 @@ end
 function Line:change_machine_to_default(player)
     -- All categories are guaranteed to have at least one machine, so this is never nil
     local machine_default = defaults.get(player, "machines", self.recipe.proto.combined_category)
-    local default_proto = machine_default.proto  --[[@as FPMachinePrototype]]
+    local default_proto = machine_default.proto  ---@as FPMachinePrototype
 
     local success = false
     -- If the default is applicable, just set it straight away
@@ -183,7 +183,7 @@ end
 function Line:setup_beacon(player)
     local beacon_defaults = defaults.get(player, "beacons", nil)
     if beacon_defaults.modules and beacon_defaults.beacon_amount ~= 0 then
-        local proto = beacon_defaults.proto  --[[@as FPBeaconPrototype]]
+        local proto = beacon_defaults.proto  ---@as FPBeaconPrototype
         local blank_beacon = Beacon.init(self, proto)
         self:set_beacon(blank_beacon)
         blank_beacon:reset(player)
@@ -220,7 +220,7 @@ end
 function Line:compile_machine_filter()
     local compatible_machines = {}
 
-    local machine_category = prototyper.util.find("machines", nil, self.machine.proto.combined_category)  --[[@as NamedCategory<FPMachinePrototype>]]
+    local machine_category = prototyper.util.find("machines", nil, self.machine.proto.combined_category)  ---@as NamedCategory<FPMachinePrototype>
 
     for _, machine_proto in pairs(machine_category.members) do
         if self:is_machine_compatible(machine_proto) then
@@ -265,7 +265,7 @@ end
 function Line:get_surface_compatibility()
     -- Determine and save compatibility on the fly when requested
     if self.surface_compatibility == nil then
-        local object = self.parent  --[[@as Object]]  -- find the District this is in
+        local object = self.parent  ---@as Object  -- find the District this is in
         while object.class ~= "District" do object = object.parent--[[@as District]] end
         ---@cast object District
 
@@ -328,12 +328,12 @@ end
 ---@return Line line
 local function unpack(packed_self)
     local unpacked_self = init()  -- initialize empty, overwrite after
-    unpacked_self.recipe = Recipe.unpack(packed_self.recipe, unpacked_self)  --[[@as Recipe]]
+    unpacked_self.recipe = Recipe.unpack(packed_self.recipe, unpacked_self)  ---@as Recipe
     unpacked_self.done = packed_self.done
     unpacked_self.active = packed_self.active
     unpacked_self.percentage = packed_self.percentage
-    unpacked_self.machine = Machine.unpack(packed_self.machine, unpacked_self)  --[[@as Machine]]
-    unpacked_self.beacon = packed_self.beacon and Beacon.unpack(packed_self.beacon, unpacked_self)  --[[@as Beacon]]
+    unpacked_self.machine = Machine.unpack(packed_self.machine, unpacked_self)  ---@as Machine
+    unpacked_self.beacon = packed_self.beacon and Beacon.unpack(packed_self.beacon, unpacked_self)  ---@as Beacon
     unpacked_self.comment = packed_self.comment
 
     return unpacked_self

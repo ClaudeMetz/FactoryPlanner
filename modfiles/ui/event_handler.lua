@@ -124,7 +124,7 @@ local mouse_click_map = {
 ---@param event EventData.on_gui_click
 ---@return string
 local function convert_click_to_string(event)
-    local modifier_click = mouse_click_map[event.button]  --[[@type string]]
+    local modifier_click = mouse_click_map[event.button]  ---@type string
     if event.shift then modifier_click = "shift-" .. modifier_click end
     if event.alt then modifier_click = "alt-" .. modifier_click end
     if event.control then modifier_click = "control-" .. modifier_click end
@@ -169,8 +169,8 @@ local function handle_gui_event(event)
     if tags.mod ~= "fp" then return end
 
     -- The event table actually contains its identifier, not its name
-    local event_name = gui_identifier_map[event.name]  --[[@as string]]
-    local action_name = tags[event_name]  --[[@as string?]]
+    local event_name = gui_identifier_map[event.name]  ---@as string
+    local action_name = tags[event_name]  ---@as string?
 
     -- If a special handler is set, it needs to return true before proceeding with the registered handlers
     local special_handler = special_gui_handlers[event_name]
@@ -186,7 +186,7 @@ local function handle_gui_event(event)
 
     -- Special modifier handling for on_gui_click if configured
     if event_name == "on_gui_click" and action_table.actions then
-        local click_event = event  --[[@as EventData.on_gui_click]]
+        local click_event = event  ---@as EventData.on_gui_click
         local click = convert_click_to_string(click_event)
 
         if click == "right" then

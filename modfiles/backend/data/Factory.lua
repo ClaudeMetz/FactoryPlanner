@@ -46,7 +46,7 @@ local function init(name, matrix_solver_active)
         tick_of_deletion = nil,
         tick_of_solver_update = nil,
         last_valid_modset = nil
-    }, "Factory", Factory)  --[[@as Factory]]
+    }, "Factory", Factory)  ---@as Factory
     object.top_floor.parent = object
     return object
 end
@@ -93,12 +93,12 @@ end
 ---@param direction NeighbourDirection?
 ---@return TLProduct? product
 function Factory:find(filter, pivot, direction)
-    return self:_find(filter, pivot, direction)  --[[@as TLProduct?]]
+    return self:_find(filter, pivot, direction)  ---@as TLProduct?
 end
 
 ---@return TLProduct?
 function Factory:find_last()
-    return self:_find_last()  --[[@as TLProduct?]]
+    return self:_find_last()  ---@as TLProduct?
 end
 
 
@@ -242,7 +242,7 @@ local function unpack(packed_self)
     unpacked_self.notes = packed_self.notes
     unpacked_self.productivity_boni = packed_self.productivity_boni
 
-    unpacked_self.first = Object.unpack(packed_self.products, TLProduct.unpack, unpacked_self)  --[[@as TLProduct]]
+    unpacked_self.first = Object.unpack(packed_self.products, TLProduct.unpack, unpacked_self)  ---@as TLProduct
 
     unpacked_self.top_floor = Floor.unpack(packed_self.top_floor)
     unpacked_self.top_floor.parent = unpacked_self
