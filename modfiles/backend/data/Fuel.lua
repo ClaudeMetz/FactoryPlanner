@@ -105,7 +105,6 @@ function Fuel:paste(object)
         local proto = prototyper.util.find("fuels", object.proto.base_name or object.proto.name, burner.combined_category)  --[[@as FPFuelPrototype?]]
         if proto then
             fuel = init(nil, proto)
-            fuel:build_temperature_data()
             fuel.temperature = object.proto.temperature
         end
     else
