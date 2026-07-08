@@ -47,9 +47,6 @@ local function shrinkwrap_interface(metadata)
     main_dialog.rebuild(player, false)
 end
 
----@class InterfaceToggleMetadata
----@field player_index PlayerIndex
-
 ---@param metadata InterfaceToggleMetadata
 local function interface_toggle(metadata)
     local player = game.get_player(metadata.player_index)  --[[@as LuaPlayer]]

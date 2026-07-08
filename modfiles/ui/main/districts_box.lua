@@ -291,7 +291,7 @@ listeners.gui = {
             handler = (function(player, tags, _)
                 local selected_district = OBJECT_INDEX[tags.district_id]  --[[@as District]]
                 lib.context.set(player, selected_district)
-                main_dialog.toggle_districts_view(player)
+                main_dialog.toggle_districts_view(player, false)
                 lib.gui.run_refresh(player, "all")
             end)
         },

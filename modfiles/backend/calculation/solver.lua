@@ -526,14 +526,15 @@ end
 
 
 -- ** EVENTS **
-local listeners = {}
+local listeners = {}  ---@type ListenerDefinitions
 
 listeners.global = {
-    update_solver = (function(metadata)
-        local player = game.get_player(metadata.player_index)  --[[@as LuaPlayer]]
+    update_solver = function(metadata)
+        ---@cast metadata UpdateSolverMetadata
+        local player = game.get_player(metadata.player_index)  ---@as LuaPlayer
         local factory = OBJECT_INDEX[metadata.factory_id]
         solver.update(player, factory)
-    end)
+    end
 }
 
 return { listeners }

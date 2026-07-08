@@ -476,8 +476,12 @@ listeners.gui = {
 
                 -- Set up delayed search update to circumvent issues caused by rate limiting
                 local desired_tick = game.tick + MAGIC_NUMBERS.modal_search_rate_limit
+
+                ---@class RunDelayedModalSearchMetadata
+                ---@field player_index PlayerIndex
+                local metadata = {player_index=player.index}
                 modal_data.next_search_tick = lib.nth_tick.register(desired_tick,
-                    "run_delayed_modal_search", {player_index=player.index})
+                    "run_delayed_modal_search", metadata)
             end
         }
     },
@@ -535,13 +539,10 @@ listeners.player = {
     end
 }
 
----@class RunDelayedModalSearchMetadata
----@field player_index PlayerIndex
-
 listeners.global = {
     run_delayed_modal_search = function(metadata)
         ---@cast metadata RunDelayedModalSearchMetadata
-        local player = game.get_player(metadata.player_index)  --[[@as LuaPlayer]]
+        local player = game.get_player(metadata.player_index)  ---@as LuaPlayer
         modal_dialog.run_search(player)
     end
 }

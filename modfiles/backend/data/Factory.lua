@@ -192,8 +192,12 @@ function Factory:schedule_solver_update(desired_tick, player)
         self.tick_of_solver_update = nil
     end
 
-    local actual_tick = lib.nth_tick.register(desired_tick, "update_solver",
-        {player_index=player.index, factory_id=self.id})
+    ---@class UpdateSolverMetadata
+    ---@field player_index PlayerIndex
+    ---@field factory_id ObjectID
+    local metadata = {player_index=player.index, factory_id=self.id}
+
+    local actual_tick = lib.nth_tick.register(desired_tick, "update_solver", metadata)
     self.tick_of_solver_update = actual_tick
 end
 
