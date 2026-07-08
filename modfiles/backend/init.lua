@@ -60,8 +60,10 @@ end
 ---@field ui_state UIStateTable
 ---@field realm Realm
 ---@field context ContextTable
----@field translation_tables table<string, flib.TranslatedDictionary>?
+---@field translation_tables TranslationTables?
 ---@field clipboard ClipboardEntry?
+
+---@alias TranslationTables table<string, flib.TranslatedDictionary>
 
 ---@param player LuaPlayer
 local function player_init(player)
