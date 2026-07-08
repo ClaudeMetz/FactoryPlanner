@@ -76,7 +76,7 @@ end)
 ---@alias GUIActionEventHandler fun(player: LuaPlayer, tags: Tags, action: string)
 
 ---@class GUIActionDefinition
----@field shortcut string
+---@field shortcut string?
 ---@field limitations ActionLimitations?
 ---@field show boolean?
 

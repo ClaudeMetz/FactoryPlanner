@@ -57,7 +57,7 @@ function _actions.rate_limited(player, tick, action_name, timeout)
 end
 
 
----@param shortcut string
+---@param shortcut string?
 ---@return LocalisedString?
 function _actions.shortcut_string(shortcut)
     if not shortcut then return nil end

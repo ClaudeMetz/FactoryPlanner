@@ -1,6 +1,9 @@
 local TLProduct = require("backend.data.TLProduct")
 
 -- ** LOCAL UTIL **
+---@param player LuaPlayer
+---@param category ItemCategory
+---@param column_count integer
 local function build_item_box(player, category, column_count)
     local item_boxes_elements = lib.globals.main_elements(player).item_boxes
 
@@ -35,21 +38,33 @@ local function build_item_box(player, category, column_count)
     item_boxes_elements[category .. "_item_table"] = table_items
 end
 
+---@class HandleItemBoxClickTags
+---@field item_category ItemCategory
+---@field item_id ObjectID
+---@field item_index integer?
+---@field context "item_boxes"
+
+---@param player LuaPlayer
+---@param factory Factory?
+---@param show_floor_items boolean
+---@param item_category ItemCategory
+---@param tooltips table
+---@return integer row_count
 local function refresh_item_box(player, factory, show_floor_items, item_category, tooltips)
-    local item_boxes_elements = lib.globals.main_elements(player).item_boxes
+    local item_boxes_elements = lib.globals.main_elements(player).item_boxes  ---@as table<string, LuaGuiElement>
 
     local table_items = item_boxes_elements[item_category .. "_item_table"]
     table_items.clear()
 
     local valid_factory = (factory ~= nil and factory.valid)
     item_boxes_elements["ingredient_combinator_button"].visible = (valid_factory and item_category == "ingredient")
-    if not valid_factory then return 0 end
+    if not valid_factory then return 0 end  ---@cast factory -nil
 
     local table_item_count = 0
     local floor = (show_floor_items) and lib.context.get(player, "Floor") or factory.top_floor
 
     if item_category == "product" and (not show_floor_items or floor.level == 1) then
-        for product in factory:iterator() do
+        for product in factory:iterator() do  ---@cast product.proto FPItemPrototype
             local action = (product.proto.special) and "act_on_top_level_special_product" or "act_on_top_level_product"
             local style = "fflib_slot_button_default"
 
@@ -74,20 +89,23 @@ local function refresh_item_box(player, factory, show_floor_items, item_category
             local tooltip = {"", {"fp.tt_title", product.proto.localised_name}, "\n", number_tooltip,
                 satisfaction_line, "\n", MODIFIER_ACTIONS[action].tooltip}
 
-            local button = table_items.add{type="sprite-button", number=amount, style=style,
-                tags={mod="fp", on_gui_click=action, item_category=item_category, item_id=product.id,
-                on_gui_hover="set_tooltip", context="item_boxes"}, sprite=product.proto.sprite,
-                mouse_button_filter={"left-and-right"}, raise_hover_events=true}
+            local tags = {mod="fp", on_gui_click=action, item_category=item_category, item_id=product.id,
+                on_gui_hover="set_tooltip", context="item_boxes"}  ---@type HandleItemBoxClickTags
+            local button = table_items.add{type="sprite-button", tags=tags--[[@as Tags]], number=amount, style=style,
+                sprite=product.proto.sprite, mouse_button_filter={"left-and-right"}, raise_hover_events=true}
             tooltips.item_boxes[button.index] = tooltip
             table_item_count = table_item_count + 1
 
             ::skip_product::
         end
 
-        local button = table_items.add{type="sprite-button", sprite="utility/add", enabled=(not factory.archived),
-            tags={mod="fp", on_gui_click="add_top_level_item", item_category=item_category},
-            tooltip={"", {"fp.add"}, " ", {"fp.pl_" .. item_category, 1}, "\n", {"fp.shift_to_paste"}},
-            style="fp_sprite-button_inset", mouse_button_filter={"left"}}
+        local tooltip = {"", {"fp.add"}, " ", {"fp.pl_" .. item_category, 1}, "\n", {"fp.shift_to_paste"}}
+        ---@class AddTopLevelItemTags
+        ---@field item_category ItemCategory
+        local tags = {mod="fp", on_gui_click="add_top_level_item", item_category=item_category}
+        local button = table_items.add{type="sprite-button", tags=tags, sprite="utility/add",
+            enabled=(not factory.archived), tooltip=tooltip, style="fp_sprite-button_inset",
+            mouse_button_filter={"left"}}
         button.style.padding = 4
         button.style.margin = 4
         table_item_count = table_item_count + 1
@@ -108,10 +126,10 @@ local function refresh_item_box(player, factory, show_floor_items, item_category
             local tooltip = {"", {"fp.tt_title", item.proto.localised_name}, "\n", number_tooltip,
                 "\n", MODIFIER_ACTIONS[action].tooltip}
 
-            local button = table_items.add{type="sprite-button", number=amount, style=style, sprite=item.proto.sprite,
-                tags={mod="fp", on_gui_click=action, item_category=item_category, item_id=item.id, item_index=index,
-                on_gui_hover="set_tooltip", context="item_boxes"}, mouse_button_filter={"left-and-right"},
-                raise_hover_events=true}
+            local tags = {mod="fp", on_gui_click=action, item_category=item_category, item_id=item.id, item_index=index,
+                on_gui_hover="set_tooltip", context="item_boxes"}  ---@type HandleItemBoxClickTags
+            local button = table_items.add{type="sprite-button", tags=tags--[[@as Tags]], number=amount, style=style,
+                sprite=item.proto.sprite, mouse_button_filter={"left-and-right"}, raise_hover_events=true}
             tooltips.item_boxes[button.index] = tooltip
             table_item_count = table_item_count + 1
 
@@ -123,9 +141,12 @@ local function refresh_item_box(player, factory, show_floor_items, item_category
 end
 
 
+---@param player LuaPlayer
+---@param tags AddTopLevelItemTags
+---@param event EventData.on_gui_click
 local function handle_item_add(player, tags, event)
     if event.shift then  -- paste
-        local factory = lib.context.get(player, "Factory")  --[[@as Factory]]
+        local factory = lib.context.get(player, "Factory")  ---@as Factory
         local dummy_product = TLProduct.init()
         lib.clipboard.dummy_paste(player, dummy_product, factory)
     else
@@ -133,21 +154,25 @@ local function handle_item_add(player, tags, event)
     end
 end
 
+---@param player LuaPlayer
+---@param tags HandleItemBoxClickTags
+---@param action string
 local function handle_item_button_click(player, tags, action)
     local show_floor_items = lib.globals.preferences(player).show_floor_items
 
-    local item = nil
+    local item
     if tags.item_id then
-        item = OBJECT_INDEX[tags.item_id]  --[[@as TLProduct]]
+        item = OBJECT_INDEX[tags.item_id]  ---@as TLProduct
     else
+        local floor  ---@type Floor
+        if show_floor_items then floor = lib.context.get(player, "Floor")  ---@as Floor
+        else floor = lib.context.get(player, "Factory")--[[@as Factory]].top_floor end
         -- Need to get items from the right floor depending on display settings
-        local floor = (show_floor_items) and lib.context.get(player, "Floor")
-            or lib.context.get(player, "Factory").top_floor
-        item = floor[tags.item_category .. "s"][tags.item_index]  --[[@as TLProduct]]
+        item = floor[tags.item_category .. "s"][tags.item_index]  ---@as TLProduct
     end
 
     if action == "add_recipe" then
-        local floor = lib.context.get(player, "Floor")  --[[@as Floor]]
+        local floor = lib.context.get(player, "Floor")  ---@as Floor
         if floor.level > 1 and not show_floor_items then
             local message = {"fp.error_no_main_recipe_on_subfloor"}
             lib.messages.raise(player, "error", message, 1)
@@ -174,7 +199,7 @@ local function handle_item_button_click(player, tags, action)
         lib.clipboard.paste(player, item)
 
     elseif action == "delete" then
-        lib.context.get(player, "Factory"):remove(item)
+        lib.context.get(player, "Factory")--[[@as Factory]]:remove(item)
         solver.update(player)
         lib.gui.run_refresh(player, "all")  -- make sure product icons are updated
 
@@ -189,10 +214,11 @@ local function handle_item_button_click(player, tags, action)
 end
 
 
+---@param player LuaPlayer
 local function put_ingredients_into_cursor(player, _, _)
     local preferences = lib.globals.preferences(player)
-    local relevant_floor = (preferences.show_floor_items) and lib.context.get(player, "Floor")
-        or lib.context.get(player, "Factory").top_floor  --[[@as Floor]]
+    local relevant_floor = (preferences.show_floor_items) and lib.context.get(player, "Floor")--[[@as Floor]]
+        or lib.context.get(player, "Factory")--[[@as Factory]].top_floor
 
     local ingredient_filters = {}
     for _, ingredient in pairs(relevant_floor.ingredients) do
@@ -213,6 +239,7 @@ local function put_ingredients_into_cursor(player, _, _)
 end
 
 
+---@param player LuaPlayer
 local function refresh_item_boxes(player)
     local player_table = lib.globals.player_table(player)
 
@@ -223,7 +250,7 @@ local function refresh_item_boxes(player)
     main_elements.item_boxes.horizontal_flow.visible = visible
     if not visible then return end
 
-    local factory = lib.context.get(player, "Factory")  --[[@as Factory?]]
+    local factory = lib.context.get(player, "Factory")  ---@as Factory?
     local show_floor_items = player_table.preferences.show_floor_items
 
     local tooltips = player_table.ui_state.tooltips
@@ -247,6 +274,7 @@ local function refresh_item_boxes(player)
     item_boxes_elements.ingredient_item_table.parent.parent.style.minimal_height = item_table_height
 end
 
+---@param player LuaPlayer
 local function build_item_boxes(player)
     local main_elements = lib.globals.main_elements(player)
     main_elements.item_boxes = {}
@@ -266,7 +294,7 @@ end
 
 
 -- ** EVENTS **
-local listeners = {}
+local listeners = {}  ---@type ListenerDefinitions
 
 listeners.gui = {
     on_gui_click = {
@@ -342,18 +370,20 @@ listeners.gui = {
             handler = put_ingredients_into_cursor
         }
     }
-}
+}  ---@as GUIListenerDefinition
 
 listeners.player = {
-    build_gui_element = (function(player, event)
+    build_gui_element = function(player, event)
+        ---@cast event BuildGUIElementEventData
         if event.trigger == "main_dialog" then
             build_item_boxes(player)
         end
-    end),
-    refresh_gui_element = (function(player, event)
+    end,
+    refresh_gui_element = function(player, event)
+        ---@cast event RefreshGUIElementEventData
         local triggers = {item_boxes=true, production=true, factory=true, all=true}
         if triggers[event.trigger] then refresh_item_boxes(player) end
-    end)
+    end
 }
 
 return { listeners }
