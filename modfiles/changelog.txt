@@ -4,7 +4,7 @@ Date: 00. 00. 0000
   Features:
     -
   Changes:
-    -
+    - The matrix solver now allows manual removal of unrestricted items when entering a linear dependence state, instead of resetting them (#586) (Thanks scottmsul!)
   Bugfixes:
     - Fixed a crash caused by an issue with how fuel categories are handled (#764) (Thanks vapopescu!)
     - Fixed an issue with the matrix solver's numerical scaling (#766) (Thanks scottmsul!)

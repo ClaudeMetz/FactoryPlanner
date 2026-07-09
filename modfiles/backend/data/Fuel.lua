@@ -32,7 +32,7 @@ local function init(parent, proto)
         satisfied_amount = 0,
 
         parent = parent  -- could be nil
-    }, "Fuel", Fuel)  --[[@as Fuel]]
+    }, "Fuel", Fuel)  ---@as Fuel
 
     if not this_proto.simplified then object:build_temperature_data() end
 
@@ -56,6 +56,7 @@ end
 
 ---@return boolean
 function Fuel:is_temperature_configured()
+    ---@cast self.proto FPFuelPrototype
     return (self.proto.type ~= "fluid" or self.temperature ~= nil)
 end
 
@@ -91,6 +92,7 @@ end
 ---@return string? error
 function Fuel:paste(object)
     if object.class == "Fuel" then
+        ---@cast object Fuel
         local burner = self.parent.proto.burner
 
         -- Sanity check. Should exist if fuel can be pasted
@@ -151,12 +153,12 @@ function Fuel:validate()
     self.proto = prototyper.util.validate_prototype_object(self.proto, "combined_category")
     self.valid = (not self.proto.simplified)
 
-    if self.valid then
+    if self.valid then  ---@cast self.proto FPFuelPrototype
         local burner = self.parent.proto.burner
         -- Machine being simplified or not having a burner anymore invalidates the fuel
-        self.valid = (burner ~= nil and not burner.simplified) and self.valid
-
-        if self.valid and burner.combined_category ~= self.proto.combined_category then
+        if burner == nil or self.parent.proto.simplified then
+            self.valid = false
+        elseif burner.combined_category ~= self.proto.combined_category then
             if burner.categories[self.proto.category] then
                 -- Fix the fuel if the combined category changed but it still has a compatible category
                 self.proto = prototyper.util.find("fuels", self.proto.name, burner.combined_category)
@@ -167,7 +169,7 @@ function Fuel:validate()
     end
 
     -- An invalid temperature shouldn't invalidate the fuel
-    if self.valid then
+    if self.valid then  ---@cast self.proto FPFuelPrototype
         local previous_temperature = self.temperature
         self.temperature = nil
 

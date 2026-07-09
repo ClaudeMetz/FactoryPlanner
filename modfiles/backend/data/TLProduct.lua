@@ -1,6 +1,6 @@
 local Object = require("backend.data.Object")
 
----@alias ProductDefinedBy "amount" | "belts" | "lanes"
+---@alias ProductDefinedBy "amount" | BeltsOrLanes
 
 ---@class TLProduct: Object, ObjectMethods
 ---@field class "TLProduct"
@@ -30,7 +30,7 @@ local function init(proto)
         belt_proto = nil,
 
         amount = 0  -- the amount satisfied by the solver
-    }, "TLProduct", TLProduct)  --[[@as TLProduct]]
+    }, "TLProduct", TLProduct)  ---@as TLProduct
     return object
 end
 
@@ -46,6 +46,7 @@ function TLProduct:get_required_amount()
     if self.defined_by == "amount" then
         return self.required_amount
     else   -- defined_by == "belts" | "lanes"
+        ---@cast self.belt_proto FPBeltPrototype
         local multiplier = (self.defined_by == "belts") and 1 or 0.5
         return self.required_amount * (self.belt_proto.throughput * multiplier)
     end
@@ -72,9 +73,9 @@ function TLProduct:paste(object)
     if object.class == "SimpleItem" or object.class == "Fuel" then
         local proto  ---@type FPItemPrototype | FPPackedPrototype
         if object.class == "Fuel" then  -- need an Item prototype here, not Fuel
-            proto = prototyper.util.find("items", object:get_name_with_temperature(), object.proto.type) --[[@as FPItemPrototype]]
+            proto = prototyper.util.find("items", object:get_name_with_temperature(), object.proto.type) ---@as FPItemPrototype
         else
-            proto = object.proto  --[[@as FPItemPrototype | FPPackedPrototype]]
+            proto = object.proto  ---@as FPItemPrototype | FPPackedPrototype
         end
 
         if proto.simplified then return false, "incompatible" end
@@ -86,12 +87,12 @@ function TLProduct:paste(object)
         end
 
         -- Avoid duplicate items, but allow pasting over the same item proto
-        local existing_item = self.parent:find({proto=proto})
+        local existing_item = self.parent:find({proto=proto}--[[@as ObjectFilter]])
         if existing_item and not (self.proto.name == proto.name) then
             return false, "already_exists"
         end
 
-        local product = init(proto)  -- defined_by = "amount"
+        local product = init(proto--[[@as FPItemPrototype]])  -- defined_by = "amount"
         product.required_amount = object.amount
         self.parent:replace(self, product)
 
@@ -117,7 +118,7 @@ function TLProduct:pack(full)
         proto = prototyper.util.simplify_prototype(self.proto, "type"),
         defined_by = self.defined_by,
         required_amount = self.required_amount,
-        belt_proto = (self.belt_proto) and prototyper.util.simplify_prototype(self.belt_proto, nil),
+        belt_proto = (self.belt_proto) and prototyper.util.simplify_prototype(self.belt_proto, nil) or nil,
 
         amount = (full) and self.amount or nil
     }
@@ -139,12 +140,10 @@ end
 
 ---@return boolean valid
 function TLProduct:validate()
-    self.valid = true
+    self.proto = prototyper.util.validate_prototype_object(self.proto, "type")  ---@as FPItemPrototype | FPPackedPrototype
+    self.valid = (not self.proto.simplified)
 
-    self.proto = prototyper.util.validate_prototype_object(self.proto, "type")  --[[@as FPItemPrototype | FPPackedPrototype]]
-    self.valid = (not self.proto.simplified) and self.valid
-
-    self.belt_proto = (self.belt_proto) and prototyper.util.validate_prototype_object(self.belt_proto, nil)  --[[@as FPBeltPrototype | FPPackedPrototype]]
+    self.belt_proto = (self.belt_proto) and prototyper.util.validate_prototype_object(self.belt_proto, nil) or nil
     if self.belt_proto then self.valid = (not self.belt_proto.simplified) and self.valid end
 
     return self.valid

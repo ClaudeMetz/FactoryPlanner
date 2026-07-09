@@ -64,7 +64,7 @@ function _cursor.set_entity(player, line, object)
         player.cursor_ghost = {
             name = object.proto.built_by_item.name,
             quality = object.quality_proto.name
-        }  --[[@as ItemIDAndQualityIDPair]]
+        }  ---@as ItemIDAndQualityIDPair
     else  -- if it's more complex, it needs a blueprint
         local blueprint_entity = {
             entity_number = 1,
@@ -135,7 +135,7 @@ local function add_to_item_combinator(player, blueprint_entity, item_proto, amou
 
         for _, filter in pairs(section--[[@cast -nil]].filters--[[@cast -nil]]) do
             if item_proto.type == (filter.type or "item") and item_name == filter.name then
-                filter.count = filter.count + (amount * timescale)  --[[@as int32]]
+                filter.count = filter.count + (amount * timescale)  ---@as int32
                 filter_matched = true
             end
             table.insert(item_signals, filter)
@@ -182,7 +182,7 @@ local function set_filter_on_inserter(player, cursor_entity, item_proto)
     }
 
     if cursor_entity.type == "blueprint" then
-        local blueprint_entity = cursor_entity.entity  --[[@as BlueprintEntity]]
+        local blueprint_entity = cursor_entity.entity  ---@as BlueprintEntity
 
         local filter_count = #blueprint_entity.filters
         if filter_count == entity_proto.filter_count then
@@ -216,10 +216,10 @@ end
 ---@return LuaItemPrototype?
 function _cursor.parse_cursor_item(player)
     if player.is_cursor_empty() then return nil end
-    local cursor = player.cursor_stack  --[[@cast cursor -nil]]
+    local cursor = player.cursor_stack  ---@cast cursor -nil
 
-    local valid_for_read, cursor_ghost = cursor.valid_for_read, player.cursor_ghost  --[[@as ItemIDAndQualityIDPair]]
-    local prototype = (valid_for_read) and cursor.prototype or cursor_ghost.name  --[[@as LuaItemPrototype]]
+    local valid_for_read, cursor_ghost = cursor.valid_for_read, player.cursor_ghost  ---@as ItemIDAndQualityIDPair
+    local prototype = (valid_for_read) and cursor.prototype or cursor_ghost.name  ---@as LuaItemPrototype
 
     return prototype
 end
@@ -235,7 +235,7 @@ local function parse_cursor_entity(player)
     local no_entity = {type="none", entity=nil, quality=nil}
 
     if player.is_cursor_empty() then return no_entity end
-    local cursor = player.cursor_stack  --[[@cast cursor -nil]]
+    local cursor = player.cursor_stack  ---@cast cursor -nil
 
     if cursor.is_blueprint and cursor.is_blueprint_setup() then
         local entities = cursor.get_blueprint_entities()
@@ -244,8 +244,8 @@ local function parse_cursor_entity(player)
                 quality=entities--[[@cast -nil]][1]--[[@cast -nil]].quality}
     else
         local valid_for_read = cursor.valid_for_read
-        local cursor_ghost = player.cursor_ghost  --[[@as ItemIDAndQualityIDPair]]
-        local prototype = (valid_for_read) and cursor.prototype or cursor_ghost.name  --[[@as LuaItemPrototype]]
+        local cursor_ghost = player.cursor_ghost  ---@as ItemIDAndQualityIDPair
+        local prototype = (valid_for_read) and cursor.prototype or cursor_ghost.name  ---@as LuaItemPrototype
 
         local place_result = prototype.place_result
         if not place_result then return no_entity end

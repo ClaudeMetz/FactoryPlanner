@@ -35,7 +35,7 @@ local function init(parent, proto)
         effects_tooltip = "",
 
         parent = parent
-    }, "Beacon", Beacon)  --[[@as Beacon]]
+    }, "Beacon", Beacon)  ---@as Beacon
     object.module_set = ModuleSet.init(object)
     return object
 end
@@ -55,6 +55,7 @@ end
 
 ---@return boolean
 function Beacon:is_mono_beacon()
+    ---@cast self.proto FPBeaconPrototype
     return (#self.proto.profile == 2 and self.proto.profile[2] == 0)
 end
 
@@ -63,14 +64,17 @@ function Beacon:profile_multiplier()
     if self.amount == 0 then
         return 0
     else
+        ---@cast self.proto FPBeaconPrototype
         local profile_count = #self.proto.profile
         local index = (self.amount > profile_count) and profile_count or self.amount
-        return self.proto.profile[index]
+        return self.proto.profile[index]  ---@as double
     end
 end
 
 ---@return double effectivity
 function Beacon:overall_effectivity()
+    ---@cast self.proto FPBeaconPrototype
+    ---@cast self.quality_proto FPQualityPrototype
     local profile_mulitplier = self:profile_multiplier()
     local effectivity_bonus = self.proto.distribution_effectivity_bonus_per_quality_level * self.quality_proto.level
     return self.amount * profile_mulitplier * (self.proto.effectivity + effectivity_bonus)
@@ -106,13 +110,17 @@ end
 
 
 ---@return double
-function Beacon:get_total_consumption()
-    return self.total_amount * self.proto.energy_usage * 60
+function Beacon:get_total_power()
+    ---@cast self.proto FPBeaconPrototype
+    ---@cast self.quality_proto FPQualityPrototype
+    return (self.total_amount or 0) * self.proto.energy_usage * 60
         * self.quality_proto.beacon_power_usage_multiplier
 end
 
 ---@return uint16
 function Beacon:get_module_limit()
+    ---@cast self.proto FPBeaconPrototype
+    ---@cast self.quality_proto FPQualityPrototype
     local limit = self.proto.module_limit
 
     if not self.proto.quality_affects_module_slots then
@@ -127,7 +135,7 @@ end
 function Beacon:reset(player)
     local beacon_default = defaults.get(player, "beacons", nil)
 
-    self.proto = beacon_default.proto  --[[@as FPBeaconPrototype]]
+    self.proto = beacon_default.proto  ---@as FPBeaconPrototype
     self.quality_proto = beacon_default.quality
     if beacon_default.beacon_amount then self.amount = beacon_default.beacon_amount end
 
@@ -141,6 +149,7 @@ end
 ---@return string? error
 function Beacon:paste(object)
     if object.class == "Beacon" then
+        ---@cast object Beacon
         self.parent:set_beacon(object)
         if not object.module_set.first then
             self.parent:set_beacon(nil)
@@ -149,6 +158,7 @@ function Beacon:paste(object)
             return true, nil
         end
     elseif object.class == "Module" and self.module_set ~= nil and not self.proto.simplified then
+        ---@cast object Module
         -- Only allow modules to be pasted if this is a non-fake beacon
        return self.module_set:paste(object)
     else
@@ -161,7 +171,7 @@ end
 ---@field class "Beacon"
 ---@field proto FPPackedPrototype
 ---@field quality_proto FPPackedPrototype
----@field amount number
+---@field amount integer
 ---@field total_amount number?
 ---@field module_set PackedModuleSet
 
@@ -203,10 +213,10 @@ end
 
 ---@return boolean valid
 function Beacon:validate()
-    self.proto = prototyper.util.validate_prototype_object(self.proto, nil)  --[[@as FPBeaconPrototype | FPPackedPrototype]]
+    self.proto = prototyper.util.validate_prototype_object(self.proto, nil)  ---@as FPBeaconPrototype | FPPackedPrototype
     self.valid = (not self.proto.simplified)
 
-    self.quality_proto = prototyper.util.validate_prototype_object(self.quality_proto, nil)  --[[@as FPQualityPrototype | FPPackedPrototype]]
+    self.quality_proto = prototyper.util.validate_prototype_object(self.quality_proto, nil)  ---@as FPQualityPrototype | FPPackedPrototype
     self.valid = (not self.quality_proto.simplified) and self.valid
 
     -- Can't be valid with an invalid parent
@@ -233,7 +243,7 @@ function Beacon:repair(player)
     end
 
     if self.valid and self.quality_proto.simplified then
-        self.quality_proto = defaults.get_fallback("qualities").proto  --[[@as FPQualityPrototype]]
+        self.quality_proto = defaults.get_fallback("qualities").proto  ---@as FPQualityPrototype
     end
 
     if self.valid then

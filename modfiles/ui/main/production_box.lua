@@ -2,19 +2,21 @@ local Line = require("backend.data.Line")
 local matrix_engine = require("backend.calculation.matrix_engine")
 
 -- ** LOCAL UTIL **
+---@param player LuaPlayer
 local function refresh_paste_button(player)
     local main_elements = lib.globals.main_elements(player)
     if not main_elements.production_box then return end
-    local factory = lib.context.get(player, "Factory")  --[[@as Factory?]]
+    local factory = lib.context.get(player, "Factory")  ---@as Factory?
 
     local line_copied = lib.clipboard.check_classes(player, {Floor=true, Line=true})
     main_elements.production_box.paste_button.visible = (factory ~= nil and line_copied) or false
 end
 
+---@param player LuaPlayer
 local function refresh_solver_frame(player)
-    local factory = lib.context.get(player, "Factory")  --[[@as Factory]]
+    local factory = lib.context.get(player, "Factory")  ---@as Factory
     local main_elements = lib.globals.main_elements(player)
-    local solver_flow = main_elements.solver_flow
+    local solver_flow = main_elements.solver_flow  ---@as LuaGuiElement
     solver_flow.clear()
 
     local factory_data = solver.generate_factory_data(player, factory)
@@ -23,7 +25,48 @@ local function refresh_solver_frame(player)
     local linear_dependence_data = matrix_engine.get_linear_dependence_data(factory_data, matrix_metadata)
     local num_needed_free_items = matrix_metadata.num_rows - matrix_metadata.num_cols + #matrix_metadata.free_items
 
-    if next(linear_dependence_data.linearly_dependent_recipes) then
+    ---@param flow LuaGuiElement
+    ---@param status "unrestricted" | "constrained"
+    ---@param color "default" | "green"
+    ---@param items FPItemPrototype[]
+    local function build_unrestricted_item_button_flow(flow, status, color, items)
+        for _, proto in pairs(items) do
+            ---@class SwitchMatrixItemTags
+            ---@field status "unrestricted" | "constrained"
+            ---@field type string
+            ---@field name string
+            flow.add{type="sprite-button", sprite=proto.sprite, tooltip={"fp.turn_" .. status, proto.localised_name},
+                tags={mod="fp", on_gui_click="switch_matrix_item", status=status, type=proto.type, name=proto.name},
+                style="fflib_slot_button_" .. color .. "_small", mouse_button_filter={"left"}}
+        end
+    end
+
+    ---@param item_count integer
+    local function fix_bottom_padding_for_buttons(item_count)
+        -- This is some total bullshit because extra_bottom_padding_when_activated doesn't work
+        local total_width = 180 + (4 * 12) + (item_count * 40)
+        local main_dialog_dimensions = lib.globals.ui_state(player).main_dialog_dimensions
+        local box_width = main_dialog_dimensions--[[@cast -nil]].width - MAGIC_NUMBERS.list_width
+        solver_flow.style.bottom_padding = (total_width > box_width) and 16 or 4
+    end
+
+    if next(linear_dependence_data.linearly_dependent_free_items) then
+        main_elements.solver_frame.visible = true
+
+        local num_needed_restricted_items = #linear_dependence_data.linearly_dependent_free_items
+        local num_items_to_remove = num_needed_restricted_items - num_needed_free_items
+
+        local caption = {"fp.error_message", {"fp.info_label", {"fp.remove_unrestricted_items"}}}
+        local tooltip = {"fp.remove_unrestricted_items_tt", num_items_to_remove,
+                {"fp.pl_item", num_items_to_remove}}
+        solver_flow.add{type="label", caption=caption, tooltip=tooltip, style="bold_label"}
+
+        local flow_unrestricted = solver_flow.add{type="flow", direction="horizontal"}
+        build_unrestricted_item_button_flow(flow_unrestricted, "unrestricted", "default", linear_dependence_data.linearly_dependent_free_items)
+
+        fix_bottom_padding_for_buttons(#matrix_metadata.free_items)
+
+    elseif next(linear_dependence_data.linearly_dependent_recipes) then
         main_elements.solver_frame.visible = true
 
         local caption = {"fp.error_message", {"fp.info_label", {"fp.linearly_dependent_recipes"}}}
@@ -40,16 +83,6 @@ local function refresh_solver_frame(player)
     elseif num_needed_free_items ~= 0 then
         main_elements.solver_frame.visible = true
 
-        local function build_item_flow(flow, status, items)
-            for _, proto in pairs(items) do
-                local tooltip = {"fp.turn_" .. status, proto.localised_name}
-                local color = (status == "unrestricted") and "green" or "default"
-                flow.add{type="sprite-button", sprite=proto.sprite, tooltip=tooltip,
-                    tags={mod="fp", on_gui_click="switch_matrix_item", status=status, type=proto.type, name=proto.name},
-                    style="fflib_slot_button_" .. color .. "_small", mouse_button_filter={"left"}}
-            end
-        end
-
         local needs_choice = (#linear_dependence_data.allowed_free_items > 0)
         local item_count = 0
 
@@ -64,38 +97,39 @@ local function refresh_solver_frame(player)
         end
 
         local flow_unrestricted = solver_flow.add{type="flow", direction="horizontal"}
-        build_item_flow(flow_unrestricted, "unrestricted", matrix_metadata.free_items)
+        build_unrestricted_item_button_flow(flow_unrestricted, "unrestricted", "green", matrix_metadata.free_items)
         item_count = item_count + #matrix_metadata.free_items
 
         if needs_choice then
             local flow_constrained = solver_flow.add{type="flow", direction="horizontal"}
-            build_item_flow(flow_constrained, "constrained", linear_dependence_data.allowed_free_items)
+            build_unrestricted_item_button_flow(flow_constrained, "constrained", "default", linear_dependence_data.allowed_free_items)
             item_count = item_count + #linear_dependence_data.allowed_free_items
         end
 
-        -- This is some total bullshit because extra_bottom_padding_when_activated doesn't work
-        local total_width = 180 + (4 * 12) + (item_count * 40)
-        local interface_width = lib.globals.ui_state(player).main_dialog_dimensions.width
-        local box_width = interface_width - MAGIC_NUMBERS.list_width
-        solver_flow.style.bottom_padding = (total_width > box_width) and 16 or 4
+        fix_bottom_padding_for_buttons(item_count)
     end
 end
 
 
+---@param player LuaPlayer
+---@param destination "up" | "top"
 local function change_floor(player, destination)
     if lib.context.ascend_floors(player, destination) then
         lib.gui.run_refresh(player, "production")
     end
 end
 
+---@param player LuaPlayer
 local function toggle_fold_out_subfloors(player)
     local preferences = lib.globals.preferences(player)
     preferences.fold_out_subfloors = not preferences.fold_out_subfloors
     lib.gui.run_refresh(player, "production_table")
 end
 
+---@param player LuaPlayer
+---@param event EventData.on_gui_switch_state_changed
 local function handle_solver_change(player, _, event)
-    local factory = lib.context.get(player, "Factory")  --[[@as Factory]]
+    local factory = lib.context.get(player, "Factory")  ---@as Factory
     local new_solver = (event.element.switch_state == "left") and "traditional" or "matrix"
 
     if new_solver == "matrix" then
@@ -111,23 +145,27 @@ local function handle_solver_change(player, _, event)
     lib.gui.run_refresh(player, "production")
 end
 
+---@param player LuaPlayer
 local function repair_factory(player, _, _)
     -- This function can only run is a factory is selected and invalid
-    lib.context.get(player, "Factory"):repair(player)
+    lib.context.get(player, "Factory")--[[@as Factory]]:repair(player)
 
     main_dialog.toggle_districts_view(player, true)
     solver.update(player)
     lib.gui.run_refresh(player, "all")  -- needs the full refresh to reset factory list buttons
 end
 
+---@param player LuaPlayer
 local function paste_line(player, _, _)
-    local floor = lib.context.get(player, "Floor")  --[[@as Floor]]
+    local floor = lib.context.get(player, "Floor")  ---@as Floor
     local dummy_line = Line.init()
     lib.clipboard.dummy_paste(player, dummy_line, floor)
 end
 
+---@param player LuaPlayer
+---@param tags SwitchMatrixItemTags
 local function switch_matrix_item(player, tags, _)
-    local factory = lib.context.get(player, "Factory")  --[[@as Factory]]
+    local factory = lib.context.get(player, "Factory")  ---@as Factory
 
     if tags.status == "unrestricted" then
         for index, item in pairs(factory.matrix_free_items) do
@@ -146,11 +184,12 @@ local function switch_matrix_item(player, tags, _)
 end
 
 
+---@param player LuaPlayer
 local function refresh_production_box(player)
     local ui_state = lib.globals.ui_state(player)
     local preferences = lib.globals.preferences(player)
-    local factory = lib.context.get(player, "Factory")  --[[@as Factory?]]
-    local floor = lib.context.get(player, "Floor")  --[[@as Floor?]]
+    local factory = lib.context.get(player, "Factory")  ---@as Factory?
+    local floor = lib.context.get(player, "Floor")  ---@as Floor
 
     if ui_state.main_elements.main_frame == nil then return end
     local production_box_elements = ui_state.main_elements.production_box
@@ -160,7 +199,7 @@ local function refresh_production_box(player)
     if not visible then return end
 
     local factory_valid = factory ~= nil and factory.valid
-    local any_lines_present = factory_valid and not factory.archived and floor:count() > 0
+    local any_lines_present = factory_valid and not factory--[[@cast -nil]].archived and floor:count() > 0
     local current_level = (factory_valid) and floor.level or 1
 
     production_box_elements.level_label.caption = (not factory_valid) and ""
@@ -176,7 +215,7 @@ local function refresh_production_box(player)
     production_box_elements.fold_out_subfloors_button.toggled = preferences.fold_out_subfloors
 
     production_box_elements.solver_flow.visible = factory_valid
-    if factory_valid then
+    if factory_valid then  ---@cast factory -nil
         local switch_state = (factory.matrix_solver_active) and "right" or "left"
         production_box_elements.solver_choice_switch.switch_state = switch_state
         production_box_elements.solver_choice_switch.enabled = (not factory.archived)
@@ -202,18 +241,22 @@ local function refresh_production_box(player)
     production_box_elements.repair_flow.visible = invalid_factory_selected
 
     if invalid_factory_selected then
-        local last_modset = lib.porter.format_modset_diff(factory.last_valid_modset)
+        local last_modset = lib.porter.format_modset_diff(factory--[[@cast -nil]].last_valid_modset)
         production_box_elements.diff_label.tooltip = last_modset
     end
 
     refresh_paste_button(player)
 
     ui_state.main_elements.solver_frame.visible = false
-    if any_lines_present and factory.matrix_solver_active then
+    if any_lines_present and factory--[[@cast -nil]].matrix_solver_active then
         refresh_solver_frame(player)
     end
 end
 
+---@class ChangeFloorTags
+---@field destination "up" | "top"
+
+---@param player LuaPlayer
 local function build_production_box(player)
     local main_elements = lib.globals.main_elements(player)
     main_elements.production_box = {}
@@ -240,15 +283,15 @@ local function build_production_box(player)
     label_level.style.margin = {5, 6, 0, 4}
     main_elements.production_box["level_label"] = label_level
 
-    local button_floor_up = flow_production.add{type="sprite-button", sprite="fp_arrow_line_up",
-        tooltip={"fp.floor_up_tt"}, tags={mod="fp", on_gui_click="change_floor", destination="up"},
-        style="fp_sprite-button_rounded_icon", mouse_button_filter={"left"}}
+    local up_tags = {mod="fp", on_gui_click="change_floor", destination="up"}  ---@type ChangeFloorTags
+    local button_floor_up = flow_production.add{type="sprite-button", tags=up_tags, sprite="fp_arrow_line_up",
+        tooltip={"fp.floor_up_tt"}, style="fp_sprite-button_rounded_icon", mouse_button_filter={"left"}}
     button_floor_up.style.top_margin = 2
     main_elements.production_box["floor_up_button"] = button_floor_up
 
-    local button_floor_top = flow_production.add{type="sprite-button", sprite="fp_arrow_line_bar_up",
-        tooltip={"fp.floor_top_tt"}, tags={mod="fp", on_gui_click="change_floor", destination="top"},
-        style="fp_sprite-button_rounded_icon", mouse_button_filter={"left"}}
+    local top_tags = {mod="fp", on_gui_click="change_floor", destination="top"}  ---@type ChangeFloorTags
+    local button_floor_top = flow_production.add{type="sprite-button", tags=top_tags, sprite="fp_arrow_line_bar_up",
+        tooltip={"fp.floor_top_tt"}, style="fp_sprite-button_rounded_icon", mouse_button_filter={"left"}}
     button_floor_top.style.padding = {3, 2, 1, 2}
     button_floor_top.style.top_margin = 2
     main_elements.production_box["floor_top_button"] = button_floor_top
@@ -346,15 +389,16 @@ end
 
 
 -- ** EVENTS **
-local listeners = {}
+local listeners = {}  ---@type ListenerDefinitions
 
 listeners.gui = {
     on_gui_click = {
         {
             name = "change_floor",
-            handler = (function(player, tags, _)
+            handler = function(player, tags, _)
+                ---@cast tags ChangeFloorTags
                 change_floor(player, tags.destination)
-            end)
+            end
         },
         {
             name = "toggle_fold_out_subfloors",
@@ -362,9 +406,9 @@ listeners.gui = {
         },
         {
             name = "open_utility_dialog",
-            handler = (function(player, _, _)
+            handler = function(player, _, _)
                 lib.gui.open_dialog(player, {dialog="utility"})
-            end)
+            end
         },
         {
             name = "repair_factory",
@@ -386,29 +430,31 @@ listeners.gui = {
             handler = handle_solver_change
         }
     }
-}
+}  ---@as GUIListenerDefinition
 
 listeners.player = {
-    fp_up_floor = (function(player, _, _)
+    fp_up_floor = function(player, _)
         if main_dialog.is_in_focus(player) then change_floor(player, "up") end
-    end),
-    fp_top_floor = (function(player, _, _)
+    end,
+    fp_top_floor = function(player, _)
         if main_dialog.is_in_focus(player) then change_floor(player, "top") end
-    end),
-    fp_toggle_fold_out_subfloors = (function(player, _, _)
+    end,
+    fp_toggle_fold_out_subfloors = function(player, _)
         if main_dialog.is_in_focus(player) then toggle_fold_out_subfloors(player) end
-    end),
+    end,
 
-    build_gui_element = (function(player, event)
+    build_gui_element = function(player, event)
+        ---@cast event BuildGUIElementEventData
         if event.trigger == "main_dialog" then
             build_production_box(player)
         end
-    end),
-    refresh_gui_element = (function(player, event)
+    end,
+    refresh_gui_element = function(player, event)
+        ---@cast event RefreshGUIElementEventData
         local triggers = {production_box=true, production=true, factory=true, all=true}
         if triggers[event.trigger] then refresh_production_box(player)
         elseif event.trigger == "paste_button" then refresh_paste_button(player) end
-    end)
+    end
 }
 
 return { listeners }

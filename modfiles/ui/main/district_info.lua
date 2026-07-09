@@ -1,9 +1,10 @@
 -- ** LOCAL UTIL **
+---@param player LuaPlayer
 local function refresh_district_info(player)
     local ui_state = lib.globals.ui_state(player)
     if ui_state.main_elements.main_frame == nil then return end
 
-    local district = lib.context.get(player, "District")  --[[@as District]]
+    local district = lib.context.get(player, "District")  ---@as District
     local district_info_elements = ui_state.main_elements.district_info
 
     district_info_elements.name_label.caption = district.name
@@ -16,6 +17,7 @@ local function refresh_district_info(player)
     district_info_elements.districts_button.toggled = ui_state.districts_view
 end
 
+---@param player LuaPlayer
 local function build_district_info(player)
     local main_elements = lib.globals.main_elements(player)
     main_elements.district_info = {}
@@ -52,34 +54,37 @@ end
 
 
 -- ** EVENTS **
-local listeners = {}
+local listeners = {}  ---@type ListenerDefinitions
 
 listeners.gui = {
     on_gui_click = {
         {
             name = "toggle_districts_view",
-            handler = (function(player, _, _)
-                main_dialog.toggle_districts_view(player)
+            handler = function(player, _, _)
+                main_dialog.toggle_districts_view(player, false)
                 lib.gui.run_refresh(player, "factory")
-            end)
+            end
         }
     }
-}
+}  ---@as GUIListenerDefinition
 
 listeners.player = {
-    build_gui_element = (function(player, event)
+    build_gui_element = function(player, event)
+        ---@cast event BuildGUIElementEventData
         if event.trigger == "main_dialog" then
             build_district_info(player)
         end
-    end),
-    refresh_gui_element = (function(player, event)
+    end,
+    refresh_gui_element = function(player, event)
+        ---@cast event RefreshGUIElementEventData
         local triggers = {district_info=true, all=true}
         if triggers[event.trigger] then refresh_district_info(player) end
-    end)
+    end
 }
 
 listeners.game = {
-    on_research_finished = (function(event)
+    on_research_finished = function(event)
+        ---@cast event EventData.on_research_finished
         if game.tick == 0 then return end  -- no shenanigans during setup
         for _, effect in pairs(event.research.prototype.effects) do
             if effect.type == "mining-drill-productivity-bonus"
@@ -93,7 +98,7 @@ listeners.game = {
                 break
             end
         end
-    end)
+    end
 }
 
 return { listeners }

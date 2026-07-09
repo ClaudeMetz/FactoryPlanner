@@ -16,7 +16,7 @@ local function update_line(line_data, aggregate, looped_fuel)
     local total_effects = line_data.total_effects
 
     local relevant_products, byproducts = {}, {}
-    local ingredients = line_data.ingredients  --[[@as SolverItemWithConstant[] ]]
+    local ingredients = line_data.ingredients  ---@as SolverItemWithConstant[]
     local self_feeding = false
     local fuel_byproduct = nil  ---@type FormattedProduct?
     local original_aggregate = nil  ---@type SolverAggregate?
@@ -55,7 +55,7 @@ local function update_line(line_data, aggregate, looped_fuel)
 
     local relevant_product_count = #relevant_products
     if relevant_product_count == 1 then
-        local relevant_product = relevant_products[1]  --[[@as FormattedProduct]]
+        local relevant_product = relevant_products[1]  ---@as FormattedProduct
         production_ratio = determine_production_ratio(relevant_product)
 
     elseif relevant_product_count >= 2 then
@@ -100,18 +100,17 @@ local function update_line(line_data, aggregate, looped_fuel)
         return prodded_amount * production_ratio
     end
 
-    -- Determine energy consumption (including potential fuel needs) and emissions
-    local energy_consumption, emissions = solver.util.determine_energy_consumption_and_emissions(machine_proto,
-        recipe_proto, fuel_proto, machine_amount, line_data.energy_usage, total_effects, line_data.pollutant_type)
+    -- Determine power (including potential fuel needs) and emissions
+    local power, emissions = solver.util.determine_power_and_emissions(machine_proto, recipe_proto, fuel_proto,
+        machine_amount, line_data.energy_usage, total_effects, line_data.pollutant_type)
 
     local fuel_amount = nil
     if machine_proto.energy_type == "burner" then
         ---@cast fuel_proto -nil
         ---@cast machine_proto.burner -nil
 
-        local fuel_name = line_data.fuel_name  --[[@as string]]
-        fuel_amount = solver.util.determine_fuel_amount(energy_consumption,
-            machine_proto.burner, fuel_proto.fuel_value)
+        local fuel_name = line_data.fuel_name  ---@as string
+        fuel_amount = solver.util.determine_fuel_amount(power, machine_proto.burner, fuel_proto.fuel_value)
 
         -- Handle recipes producing their own machine's fuel
         if self_feeding and production_ratio > 0 then
@@ -131,7 +130,7 @@ local function update_line(line_data, aggregate, looped_fuel)
                 end
             else  -- means the fuel is a byproduct only, which shouldn't affect production
                 local byproduct_amount = determine_amount_with_productivity(fuel_byproduct--[[@cast -nil]])
-                local used_amount = math.min(fuel_amount, byproduct_amount)
+                local used_amount = math.min(fuel_amount, byproduct_amount)  ---@as number
 
                 local fuel_item = {type=fuel_proto.type, name=fuel_name, amount=used_amount}  ---@type SolverItem
                 structures.class.subtract(aggregate.Byproduct, fuel_item)  -- subtract from floor
@@ -166,22 +165,22 @@ local function update_line(line_data, aggregate, looped_fuel)
             end
         end
 
-        energy_consumption = 0  -- set electrical consumption to 0 when fuel is used
+        power = 0  -- set power to 0 when fuel is used
 
     elseif machine_proto.energy_type == "heat" then
-        local heat_item = {type="entity", name="custom-heat-power", amount=energy_consumption, constant=true}
+        local heat_item = {type="entity", name="custom-heat-power", amount=power, constant=true}
         table.insert(ingredients, heat_item)
 
-        energy_consumption = 0  -- set electrical consumption to 0 when heat is used
+        power = 0  -- set power to 0 when heat is used
 
     elseif machine_proto.energy_type == "void" then
-        energy_consumption = 0  -- set electrical consumption to 0 while still polluting
+        power = 0  -- set power to 0 while still polluting
     end
 
-    energy_consumption = energy_consumption + (line_data.beacon_consumption or 0)
+    power = power + (line_data.beacon_power or 0)
 
-    if energy_consumption > 0 then
-        local electric_item = {type="entity", name="custom-electric-power", amount=energy_consumption, constant=true}
+    if power > 0 then
+        local electric_item = {type="entity", name="custom-electric-power", amount=power, constant=true}
         table.insert(ingredients, electric_item)
     end
 
@@ -193,7 +192,8 @@ local function update_line(line_data, aggregate, looped_fuel)
 
     if emissions ~= 0 then  -- emissions are either produced or consumed
         local emission_name = "custom-" .. line_data.pollutant_type
-        local emission_item = {type="entity", name=emission_name, amount=math.abs(emissions), constant=true}
+        local emission_item = {type="entity", name=emission_name,
+            amount=math.abs(emissions)--[[@as number]], constant=true}
         if emissions > 0 then
             local is_product = (aggregate.Ingredient["entity"][emission_name] ~= nil)
             table.insert((is_product) and relevant_products or byproducts, emission_item)
@@ -242,7 +242,7 @@ local function update_line(line_data, aggregate, looped_fuel)
         structures.class.add(Ingredient, ingredient, ingredient_amount)
 
         -- Reduce line-byproducts and -ingredients so only the net amounts remain
-        local byproduct_amount = Byproduct[ingredient.type][ingredient.name]  --[[@as number?]]
+        local byproduct_amount = Byproduct[ingredient.type][ingredient.name]  ---@as number?
         if byproduct_amount ~= nil then
             structures.class.subtract(Byproduct, ingredient, ingredient_amount)
             structures.class.subtract(Ingredient, ingredient, byproduct_amount)
