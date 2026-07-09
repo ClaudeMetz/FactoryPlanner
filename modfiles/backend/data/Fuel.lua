@@ -100,8 +100,10 @@ function Fuel:paste(object)
 
     local fuel = nil
     if object.class == "Fuel" then
+        ---@cast object Fuel
         fuel = object
     elseif object.class == "SimpleItem" then
+        ---@cast object SimpleItem
         -- Try to convert SimpleItem to Fuel
         local proto = prototyper.util.find("fuels", object.proto.base_name or object.proto.name, burner.combined_category)  ---@as FPFuelPrototype?
         if proto then
