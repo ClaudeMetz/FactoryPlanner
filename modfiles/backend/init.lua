@@ -16,7 +16,7 @@ local dev_export_string = "eNrdVkuPnDAM/i85DyMew/PYQ0+tVKnHaoRCMLNRE8KGsO1oxH+vA
 ---@field messages PlayerMessage[]
 ---@field main_elements table
 ---@field compact_elements table
----@field calculator_elements table
+---@field calculator_elements table<string, LuaGuiElement>
 ---@field last_selected_picker_group integer?
 ---@field tooltips table
 ---@field modal_dialog_type ModalDialogType?
@@ -60,8 +60,10 @@ end
 ---@field ui_state UIStateTable
 ---@field realm Realm
 ---@field context ContextTable
----@field translation_tables table<string, flib.TranslatedDictionary>?
+---@field translation_tables TranslationTables?
 ---@field clipboard ClipboardEntry?
+
+---@alias TranslationTables table<string, flib.TranslatedDictionary>
 
 ---@param player LuaPlayer
 local function player_init(player)
@@ -163,7 +165,7 @@ local function global_init()
     generate_object_index()  -- This just initializes the OBJECT_INDEX variable
 
     -- Retain current modset to detect mod changes for invalid factories
-    storage.installed_mods = script.active_mods  --[[@as ModToVersion]]
+    storage.installed_mods = script.active_mods  ---@as ModToVersion
 
     lib.translator.on_init()  -- Initialize flib's translation module
     prototyper.util.build_translation_dictionaries()
@@ -208,7 +210,7 @@ local function handle_configuration_change()
         end
     end
 
-    storage.installed_mods = script.active_mods  --[[@as ModToVersion]]
+    storage.installed_mods = script.active_mods  ---@as ModToVersion
 
     lib.translator.on_configuration_changed()
     prototyper.util.build_translation_dictionaries()

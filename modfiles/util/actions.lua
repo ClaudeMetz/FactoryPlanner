@@ -7,7 +7,7 @@ local _actions = {}
 ---@param player LuaPlayer
 ---@return ActiveLimitations
 function _actions.current_limitations(player)
-    local factory = lib.context.get(player, "Factory")  --[[@as Factory?]]
+    local factory = lib.context.get(player, "Factory")  ---@as Factory?
     return {
         archive_open = (factory ~= nil) and factory.archived or false,
         matrix_active = (factory ~= nil) and factory.matrix_solver_active or false
@@ -31,7 +31,7 @@ end
 ---@param player LuaPlayer
 ---@param tick MapTick
 ---@param action_name string | defines.events
----@param timeout integer
+---@param timeout MapTick?
 ---@return boolean
 function _actions.rate_limited(player, tick, action_name, timeout)
     local ui_state = lib.globals.ui_state(player)
@@ -57,7 +57,7 @@ function _actions.rate_limited(player, tick, action_name, timeout)
 end
 
 
----@param shortcut string
+---@param shortcut string?
 ---@return LocalisedString?
 function _actions.shortcut_string(shortcut)
     if not shortcut then return nil end
@@ -69,7 +69,7 @@ function _actions.shortcut_string(shortcut)
     return {"fp.action_click", modifier_string}
 end
 
----@param actions ActionDetails[]
+---@param actions GUIActionTable[]
 ---@return LocalisedString
 function _actions.generate_tooltip(actions)
     local tooltip, any_hidden = {""}, false

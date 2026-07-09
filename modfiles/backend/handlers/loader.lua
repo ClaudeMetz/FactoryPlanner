@@ -1,11 +1,7 @@
 -- The loader contains the code that runs on_load, pre-caching some data structures that are needed later
 local loader = {}
 
----@alias RecipeMap { [ItemCategoryID]: { [ItemID]: { [RecipeID]: true } } }
----@alias ItemCategoryID integer
----@alias ItemID integer
----@alias RecipeID integer
-
+---@alias RecipeMap table<integer, table<integer, table<integer, true>>>
 ---@alias TemperatureMap table<string, FPItemPrototype[]>
 ---@alias ModuleMap table<string, FPModulePrototype>
 
@@ -49,7 +45,7 @@ local function recipe_map_from(item_type)
     local map = {[1] = {}, [2] = {}, [3] = {}}  ---@type RecipeMap
 
     ---@param item_proto FPItemPrototype
-    ---@param recipe_id RecipeID
+    ---@param recipe_id integer
     local function add(item_proto, recipe_id)
         local category = map[item_proto.category_id]
         category[item_proto.id] = category[item_proto.id] or {}
@@ -84,7 +80,7 @@ local function sorted_items()
     local items = {}
 
     for _, type in pairs{"item", "fluid", "entity"} do
-        local category = prototyper.util.find("items", nil, type)  --[[@as NamedCategory]]
+        local category = prototyper.util.find("items", nil, type)  ---@as NamedCategory<FPItemPrototype>
         for _, item in pairs(category.members--[[@cast -nil]]) do
             table.insert(items, item)
         end
@@ -141,10 +137,10 @@ end
 
 
 ---@alias MappedPrototypes<T> table<string, T>
----@alias MappedPrototypesWithCategory<T> table<string, { id: integer, name: string, members: table<string, T> }>
----@alias MappedCategory { id: integer, name: string, members: table<string, T> }
+---@alias MappedPrototypesWithCategory<T> table<string, MappedCategory<T>>
+---@alias MappedCategory<T> { id: integer, name: string, members: MappedPrototypes<T> }
 
----@class PrototypeMaps: table<DataType, table>
+---@class PrototypeMaps
 ---@field recipes MappedPrototypes<FPRecipePrototype>
 ---@field items MappedPrototypesWithCategory<FPItemPrototype>
 ---@field machines MappedPrototypesWithCategory<FPMachinePrototype>
@@ -192,7 +188,7 @@ local function prototype_maps(data_types)
         maps[data_type] = map
     end
 
-    return maps --[[@as PrototypeMaps]]
+    return maps  ---@as PrototypeMaps
 end
 
 

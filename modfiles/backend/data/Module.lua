@@ -24,7 +24,7 @@ local function init(proto, amount, quality_proto)
 
         total_effects = nil,
         effects_tooltip = ""
-    }, "Module", Module)  --[[@as Module]]
+    }, "Module", Module)  ---@as Module
 
     if not proto.simplified then object:summarize_effects() end
     return object
@@ -51,16 +51,21 @@ end
 
 
 function Module:summarize_effects()
+    ---@cast self.proto FPModulePrototype
+    ---@cast self.quality_proto FPQualityPrototype
+
     local effects = lib.flib.shallow_copy(lib.effects.blank)
 
     for name, effect in pairs(self.proto.effects) do
+        local base_effect = effect  ---@type number
         local module_multiplier = self.proto.quality_multipliers[name]
         if module_multiplier ~= 0 then
             local quality_multiplier = self.quality_proto.module_multipliers[name]
-            effect = effect * (1 + module_multiplier * (quality_multiplier - 1))
+            base_effect = effect * (1 + module_multiplier * (quality_multiplier - 1))
         end
 
-        effect = (effect < 0) and math.ceil(effect - 1e-4) or math.floor(effect + 1e-4)  -- truncate towards zero
+        effect = (base_effect < 0) and math.ceil(base_effect - 1e-4)
+            or math.floor(base_effect + 1e-4)  -- truncate towards zero
         effects[name] = effect * self.amount  -- doesn't create decimals
     end
 
@@ -76,7 +81,7 @@ function Module:paste(object)
     if object.class == "Module" then
         ---@cast object Module
         if self.proto.simplified or self.quality_proto.simplified or object.proto.simplified or
-           not self.parent:check_compatibility(object.proto --[[@as FPModulePrototype]]) then
+           not self.parent:check_compatibility(object.proto--[[@as FPModulePrototype]]) then
             return false, "incompatible"
         end
 
@@ -88,9 +93,9 @@ function Module:paste(object)
             return true, nil
         else
             local existing_module = self.parent:find({
-                proto = object.proto  --[[@as FPModulePrototype]],
-                quality_proto = object.quality_proto  --[[@as FPQualityPrototype]]
-            })
+                proto = object.proto--[[@as FPModulePrototype]],
+                quality_proto = object.quality_proto--[[@as FPQualityPrototype]]
+            }--[[@as ObjectFilter]])
             local parent = self.parent  -- retain here because it can be changed below
 
             if existing_module then
@@ -129,6 +134,7 @@ function Module:pack(full)
 end
 
 ---@param packed_self PackedModule
+---@param parent ModuleSet
 ---@return Module module
 local function unpack(packed_self, parent)
     -- Prototypes are unpacked at validate
@@ -142,10 +148,10 @@ end
 
 ---@return boolean valid
 function Module:validate()
-    self.proto = prototyper.util.validate_prototype_object(self.proto, "category")  --[[@as FPModulePrototype | FPPackedPrototype]]
+    self.proto = prototyper.util.validate_prototype_object(self.proto, "category")  ---@as FPModulePrototype | FPPackedPrototype
     self.valid = (not self.proto.simplified)
 
-    self.quality_proto = prototyper.util.validate_prototype_object(self.quality_proto, nil)  --[[@as FPQualityPrototype | FPPackedPrototype]]
+    self.quality_proto = prototyper.util.validate_prototype_object(self.quality_proto, nil)  ---@as FPQualityPrototype | FPPackedPrototype
     self.valid = (not self.quality_proto.simplified) and self.valid
 
     -- Can't be valid with an invalid parent
@@ -169,7 +175,7 @@ function Module:repair(player)
     end
 
     if self.valid and self.quality_proto.simplified then
-        self.quality_proto = defaults.get_fallback("qualities").proto  --[[@as FPQualityPrototype]]
+        self.quality_proto = defaults.get_fallback("qualities").proto  ---@as FPQualityPrototype
     end
 
     if self.valid then self:summarize_effects() end

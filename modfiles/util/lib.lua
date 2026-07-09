@@ -35,13 +35,13 @@ end
 ---@param export_table table
 ---@return ExportString export_string
 function _lib.pack_export_string(export_table)
-    return helpers.encode_string(helpers.table_to_json(export_table)) --[[@as ExportString]]
+    return helpers.encode_string(helpers.table_to_json(export_table)) ---@as ExportString
 end
 
 ---@param export_string ExportString
 ---@return table export_table
 function _lib.unpack_export_string(export_string)
-    return helpers.json_to_table(helpers.decode_string(export_string) --[[@as string]]) --[[@as table]]
+    return helpers.json_to_table(helpers.decode_string(export_string)--[[@as string]]) ---@as table
 end
 
 

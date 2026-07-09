@@ -2,7 +2,6 @@ local mod_gui = require("mod-gui")
 
 local _gui = { switch = {}, mod = {} }
 
-
 -- Adds an on/off-switch including a label with tooltip to the given flow
 -- Automatically converts boolean state to the appropriate switch_state
 ---@param parent_flow LuaGuiElement
@@ -98,14 +97,23 @@ function _gui.open_dialog(player, metadata)
 end
 
 ---@param player LuaPlayer
----@param action "submit" | "cancel" | "delete"
+---@param action GUICloseAction
 ---@param skip_opened boolean?
 function _gui.close_dialog(player, action, skip_opened)
     GLOBAL_HANDLERS["close_modal_dialog"](player, action, skip_opened)
 end
 
+---@class BuildGUIElementEventData
+---@field name "build_gui_element"
+---@field tick MapTick
+---@field player_index PlayerIndex
+---@field trigger BuildGUITrigger
+---@field parent LuaGuiElement?
+
+---@alias BuildGUITrigger "main_dialog" | "compact_factory"
+
 ---@param player LuaPlayer
----@param trigger "main_dialog" | "compact_factory"
+---@param trigger BuildGUITrigger
 ---@param parent LuaGuiElement?
 function _gui.run_build(player, trigger, parent)
     local event_data = {
@@ -114,21 +122,29 @@ function _gui.run_build(player, trigger, parent)
         player_index = player.index,
         trigger = trigger,
         parent = parent
-    }
+    }  ---@type BuildGUIElementEventData
     GLOBAL_HANDLERS["run_gui_build"](event_data)
 end
+
+---@class RefreshGUIElementEventData
+---@field name "refresh_gui_element"
+---@field tick MapTick
+---@field player_index PlayerIndex
+---@field trigger RefreshGUITrigger
+
+---@alias RefreshGUITrigger "all" | "factory" | "production" | "title_bar" | "district_info" | "factory_list" | "districts_box" | "production_bar" | "item_boxes" | "production_box" | "production_table" | "compact_factory" | "paste_button"
 
 --- "factory" includes districts_box, production_bar, item_boxes, production_box, production_table
 --- "production" includes item_boxes, production_box, production_table
 ---@param player LuaPlayer
----@param trigger "all" | "factory" | "production" | "title_bar" | "district_info" | "factory_list" | "districts_box" | "production_bar" | "item_boxes" | "production_box" | "production_table" | "compact_factory" | "paste_button"
+---@param trigger RefreshGUITrigger
 function _gui.run_refresh(player, trigger)
     local event_data = {
         name = "refresh_gui_element",
         tick = game.tick,
         player_index = player.index,
         trigger = trigger
-    }
+    }  ---@type RefreshGUIElementEventData
     GLOBAL_HANDLERS["run_gui_refresh"](event_data)
 end
 
@@ -202,7 +218,7 @@ end
 function _gui.update_expression_field(textfield, valid)
     textfield.style = (textfield.text ~= "" and not valid) and "invalid_value_textfield" or "textbox"
     -- This is stupid but styles work out that way
-    textfield.style--[[@as LuaStyle]].width = textfield.tags.width  --[[@as int32]]
+    textfield.style--[[@as LuaStyle]].width = textfield.tags.width  ---@as int32
 end
 
 ---@param textfield LuaGuiElement

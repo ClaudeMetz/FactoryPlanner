@@ -48,11 +48,11 @@ function _clipboard.paste(player, target, tags)
     else
         local clone
         if clip.parent then  -- only real objects have parents
-            clone = unpackers[clip.class](clip.packed_object, clip.parent)  --[[@as CopyableObject]]
+            clone = unpackers[clip.class](clip.packed_object, clip.parent)  ---@as CopyableObject
             ---@cast clone -SimpleItem
             clone:validate()
         else
-            clone = lib.flib.shallow_copy(clip.packed_object)  --[[@as SimpleItem]]
+            clone = lib.flib.shallow_copy(clip.packed_object)  ---@as SimpleItem
         end
 
         tags = tags or {}

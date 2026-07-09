@@ -1,12 +1,13 @@
 local Factory = require("backend.data.Factory")
 
 -- Delete factory for good and refresh interface if necessary
+---@param metadata DeleteFactoryForGoodMetadata
 local function delete_factory_for_good(metadata)
     local player = game.get_player(metadata.player_index)  ---@cast player -nil
-    local factory = OBJECT_INDEX[metadata.factory_id]  --[[@as Factory]]
+    local factory = OBJECT_INDEX[metadata.factory_id]  ---@as Factory
     local adjacent_factory = lib.context.remove(player, factory)
 
-    local selected_factory = lib.context.get(player, "Factory")  --[[@as Factory?]]
+    local selected_factory = lib.context.get(player, "Factory")  ---@as Factory?
     if selected_factory and selected_factory.id == factory.id then
         lib.context.set(player, adjacent_factory or factory.parent)
     end
@@ -22,10 +23,13 @@ local function delete_factory_for_good(metadata)
 end
 
 
+---@param player LuaPlayer
+---@param to_archive boolean
 local function change_factory_archived(player, to_archive)
-    local factory = lib.context.get(player, "Factory")  --[[@as Factory]]
+    local factory = lib.context.get(player, "Factory")  ---@as Factory
 
-    if to_archive or factory.parent:count({archived=true}) > 1 then
+    local filter = {archived=true}  ---@type ObjectFilter
+    if to_archive or factory.parent:count(filter) > 1 then
         local adjacent_factory = lib.context.remove(player, factory)
         lib.context.set(player, adjacent_factory or factory.parent, true)
     end  -- if it's pulling the last factory from the archive, keep the context on it
@@ -43,6 +47,8 @@ local function change_factory_archived(player, to_archive)
     lib.gui.run_refresh(player, "all")
 end
 
+---@param player LuaPlayer
+---@param event EventData.on_gui_click
 local function add_factory(player, _, event)
     local skip_factory_naming = lib.globals.preferences(player).skip_factory_naming
 
@@ -55,12 +61,14 @@ local function add_factory(player, _, event)
     end
 end
 
+---@param player LuaPlayer
+---@param event EventData.on_gui_click
 local function duplicate_factory(player, _, event)
     -- Move out of empty floors to avoid orphaned subfloors in the clone
-    local current_floor = lib.context.get(player, "Floor")  --[[@as Floor]]
+    local current_floor = lib.context.get(player, "Floor")  ---@as Floor
     if current_floor:count() == 1 then lib.context.ascend_floors(player, "up") end
 
-    local factory = lib.context.get(player, "Factory")  --[[@as Factory]]
+    local factory = lib.context.get(player, "Factory")  ---@as Factory
     local clone = factory:clone()
     clone.archived = false  -- always clone as unarchived
     local pivot = (event.shift and not factory.archived) and factory or nil
@@ -73,16 +81,22 @@ local function duplicate_factory(player, _, event)
 end
 
 
+---@param player LuaPlayer
+---@param tags MoveFactoryTags
+---@param event EventData.on_gui_click
 local function handle_move_factory_click(player, tags, event)
-    local factory = OBJECT_INDEX[tags.factory_id]  --[[@as Factory]]
+    local factory = OBJECT_INDEX[tags.factory_id]  ---@as Factory
     local spots_to_shift = (event.control) and 5 or ((not event.shift) and 1 or nil)
     factory.parent:shift(factory, tags.direction, spots_to_shift)
 
     lib.gui.run_refresh(player, "factory_list")
 end
 
+---@param player LuaPlayer
+---@param tags ActOnFactoryTags
+---@param action string
 local function handle_factory_click(player, tags, action)
-    local selected_factory = OBJECT_INDEX[tags.factory_id]  --[[@as Factory]]
+    local selected_factory = OBJECT_INDEX[tags.factory_id]  ---@as Factory
 
     if action == "select" then
         main_dialog.toggle_districts_view(player, true)
@@ -102,6 +116,7 @@ local function handle_factory_click(player, tags, action)
 end
 
 
+---@param player LuaPlayer
 local function refresh_factory_list(player)
     local player_table = lib.globals.player_table(player)
     local tooltips = player_table.ui_state.tooltips
@@ -110,7 +125,7 @@ local function refresh_factory_list(player)
     local main_elements = player_table.ui_state.main_elements
     if main_elements.main_frame == nil then return end
 
-    local selected_factory = lib.context.get(player, "Factory")  --[[@as Factory?]]
+    local selected_factory = lib.context.get(player, "Factory")  ---@as Factory?
     local archived = (selected_factory) and selected_factory.archived or false
 
     local factory_list_elements = main_elements.factory_list
@@ -120,9 +135,12 @@ local function refresh_factory_list(player)
     if selected_factory ~= nil then  -- only need to run this if any factory exists
         local search_term = helpers.multilingual_to_lower(main_elements.factory_list["search_textfield"].text)
         local attach_factory_products = player_table.preferences.attach_factory_products
-        local filter = {archived = archived}
+        local filter = {archived = archived}  ---@type ObjectFilter
         local move_button_width = 20
 
+        ---@param flow LuaGuiElement
+        ---@param direction "previous" | "next"
+        ---@param factory Factory
         local function create_move_button(flow, direction, factory)
             local enabled = (search_term == "" and factory.parent:find(filter, factory[direction], direction) ~= nil)
             local endpoint = (direction == "next") and {"fp.bottom"} or {"fp.top"}
@@ -130,9 +148,14 @@ local function refresh_factory_list(player)
             local move_tooltip = (enabled) and {"", {"fp.move_object", {"fp.pl_factory", 1}, {"fp." .. up_down}},
                 {"fp.move_object_instructions", endpoint}} or ""
 
-            local move_button = flow.add{type="sprite-button", enabled=enabled, sprite="fp_arrow_" .. up_down,
-                tags={mod="fp", on_gui_click="move_factory", direction=direction, factory_id=factory.id,
-                on_gui_hover="set_tooltip", context="factory_list"}, mouse_button_filter={"left"},
+            ---@class MoveFactoryTags
+            ---@field direction "previous" | "next"
+            ---@field factory_id ObjectID
+            ---@field context "factory_list"
+            local tags = {mod="fp", on_gui_click="move_factory", direction=direction, factory_id=factory.id,
+                on_gui_hover="set_tooltip", context="factory_list"}
+            local move_button = flow.add{type="sprite-button", tags=tags, enabled=enabled,
+                sprite="fp_arrow_" .. up_down, mouse_button_filter={"left"},
                 raise_hover_events=true, style="fp_sprite-button_move"}
             move_button.style.size = {move_button_width, 12}
             move_button.style.padding = -2
@@ -156,10 +179,13 @@ local function refresh_factory_list(player)
                 create_move_button(move_flow, "previous", factory)
                 create_move_button(move_flow, "next", factory)
 
-                local factory_button = button_flow.add{type="button", caption=caption, toggled=selected,
-                    tags={mod="fp", on_gui_click="act_on_factory", factory_id=factory.id, on_gui_hover="set_tooltip",
-                    context="factory_list"}, style="list_box_item", mouse_button_filter={"left-and-right"},
-                    raise_hover_events=true}
+                ---@class ActOnFactoryTags
+                ---@field factory_id ObjectID
+                ---@field context "factory_list"
+                local tags = {mod="fp", on_gui_click="act_on_factory", factory_id=factory.id,
+                    on_gui_hover="set_tooltip", context="factory_list"}
+                local factory_button = button_flow.add{type="button", tags=tags, caption=caption, toggled=selected,
+                    style="list_box_item", mouse_button_filter={"left-and-right"}, raise_hover_events=true}
                 factory_button.style.padding = {0, 12, 0, 4}
                 factory_button.style.width = MAGIC_NUMBERS.list_width - move_button_width
                 tooltips.factory_list[factory_button.index] = tooltip
@@ -169,8 +195,9 @@ local function refresh_factory_list(player)
 
     -- Set all the button states and styles appropriately
     local factory_exists = (selected_factory ~= nil)
-    local district = lib.context.get(player, "District")  --[[@as District]]
-    local archived_factory_count = district:count({archived=true})
+    local district = lib.context.get(player, "District")  ---@as District
+    local filter = {archived=true}  ---@type ObjectFilter
+    local archived_factory_count = district:count(filter)
 
     factory_list_elements.toggle_archive_button.enabled = (archived_factory_count > 0)
     factory_list_elements.toggle_archive_button.style = (archived)
@@ -208,6 +235,7 @@ local function refresh_factory_list(player)
         and {"fp.action_delete_factory"} or {"fp.action_trash_factory", delay_in_minutes}
 end
 
+---@param player LuaPlayer
 local function build_factory_list(player)
     local main_elements = lib.globals.main_elements(player)
     main_elements.factory_list = {}
@@ -290,6 +318,10 @@ end
 factory_list = {}  -- try to move elsewhere or smth to get rid of global variable
 
 -- Utility function to centralize factory creation behavior
+---@param player LuaPlayer
+---@param name string?
+---@param item_proto FPItemPrototype?
+---@return Factory
 function factory_list.add_factory(player, name, item_proto)
     local player_table = lib.globals.player_table(player)
     local preferences = player_table.preferences
@@ -303,7 +335,7 @@ function factory_list.add_factory(player, name, item_proto)
 
     local factory = Factory.init(name, preferences.prefer_matrix_solver)
 
-    local district = lib.context.get(player, "District")  --[[@as District]]
+    local district = lib.context.get(player, "District")  ---@as District
     district:insert(factory)
     lib.context.set(player, factory)
 
@@ -311,8 +343,9 @@ function factory_list.add_factory(player, name, item_proto)
 end
 
 -- Utility function to centralize factory deletion behavior
+---@param player LuaPlayer
 function factory_list.delete_factory(player)
-    local factory = lib.context.get(player, "Factory")  --[[@as Factory]]
+    local factory = lib.context.get(player, "Factory")  ---@as Factory
     if not factory then return end  -- latency protection
 
     if factory.archived then
@@ -324,8 +357,13 @@ function factory_list.delete_factory(player)
         lib.gui.run_refresh(player, "all")
     else
         local desired_tick_of_deletion = game.tick + MAGIC_NUMBERS.factory_deletion_delay
+
+        ---@class DeleteFactoryForGoodMetadata
+        ---@field player_index PlayerIndex
+        ---@field factory_id ObjectID
+        local metadata = {player_index=player.index, factory_id=factory.id}
         local actual_tick_of_deletion = lib.nth_tick.register(desired_tick_of_deletion,
-            "delete_factory_for_good", {player_index=player.index, factory_id=factory.id})
+            "delete_factory_for_good", metadata)
         factory.tick_of_deletion = actual_tick_of_deletion
 
         change_factory_archived(player, true)
@@ -333,36 +371,38 @@ function factory_list.delete_factory(player)
 end
 
 
-local listeners = {}
+-- ** EVENTS **
+local listeners = {}  ---@type ListenerDefinitions
 
 listeners.gui = {
     on_gui_click = {
         {
             name = "toggle_archive",
-            handler = (function(player, _, _)
-                local factory = lib.context.get(player, "Factory")  --[[@as Factory]]
+            handler = function(player, _, _)
+                local factory = lib.context.get(player, "Factory")  ---@as Factory
                 local archive_open = (factory) and factory.archived or false
                 local district = (factory) and factory.parent or lib.context.get(player, "District")
-                local new_factory = district:find({archived=not archive_open})  --[[@as Factory]]
+                local filter = {archived=not archive_open}  ---@type ObjectFilter
+                local new_factory = district:find(filter)
 
                 main_dialog.toggle_districts_view(player, true)
                 lib.context.set(player, new_factory or district, true)
                 lib.gui.run_refresh(player, "all")
-            end)
+            end
         },
         {
             name = "archive_factory",
             timeout = 10,
-            handler = (function(player, _, _)
-                local factory = lib.context.get(player, "Factory")  --[[@as Factory]]
+            handler = function(player, _, _)
+                local factory = lib.context.get(player, "Factory")  ---@as Factory
                 change_factory_archived(player, (not factory.archived))
-            end)
+            end
         },
         {  -- import/export buttons
             name = "factory_list_open_dialog",
-            handler = (function(player, tags, _)
+            handler = function(player, tags, _)
                 lib.gui.open_dialog(player, {dialog=tags.type})
-            end)
+            end
         },
         {
             name = "add_factory",
@@ -370,10 +410,10 @@ listeners.gui = {
         },
         {
             name = "edit_factory",
-            handler = (function(player, _, _)
-                local factory = lib.context.get(player, "Factory")  --[[@as Factory]]
+            handler = function(player, _, _)
+                local factory = lib.context.get(player, "Factory")  ---@as Factory
                 lib.gui.open_dialog(player, {dialog="factory", modal_data={factory_id=factory.id}})
-            end)
+            end
         },
         {
             name = "duplicate_factory",
@@ -404,19 +444,21 @@ listeners.gui = {
             name = "factory_searchfield",
             handler = refresh_factory_list
         }
-    },
-}
+    }
+}  ---@as GUIListenerDefinition
 
 listeners.player = {
-    build_gui_element = (function(player, event)
+    build_gui_element = function(player, event)
+        ---@cast event BuildGUIElementEventData
         if event.trigger == "main_dialog" then
             build_factory_list(player)
         end
-    end),
-    refresh_gui_element = (function(player, event)
+    end,
+    refresh_gui_element = function(player, event)
+        ---@cast event RefreshGUIElementEventData
         local triggers = {factory_list=true, all=true}
         if triggers[event.trigger] then refresh_factory_list(player) end
-    end)
+    end
 }
 
 listeners.global = {

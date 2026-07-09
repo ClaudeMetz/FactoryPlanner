@@ -16,7 +16,7 @@ local function update_line(line_data, aggregate, looped_fuel)
     local total_effects = line_data.total_effects
 
     local relevant_products, byproducts = {}, {}
-    local ingredients = line_data.ingredients  --[[@as SolverItemWithConstant[] ]]
+    local ingredients = line_data.ingredients  ---@as SolverItemWithConstant[]
     local self_feeding = false
     local fuel_byproduct = nil  ---@type FormattedProduct?
     local original_aggregate = nil  ---@type SolverAggregate?
@@ -55,7 +55,7 @@ local function update_line(line_data, aggregate, looped_fuel)
 
     local relevant_product_count = #relevant_products
     if relevant_product_count == 1 then
-        local relevant_product = relevant_products[1]  --[[@as FormattedProduct]]
+        local relevant_product = relevant_products[1]  ---@as FormattedProduct
         production_ratio = determine_production_ratio(relevant_product)
 
     elseif relevant_product_count >= 2 then
@@ -109,7 +109,7 @@ local function update_line(line_data, aggregate, looped_fuel)
         ---@cast fuel_proto -nil
         ---@cast machine_proto.burner -nil
 
-        local fuel_name = line_data.fuel_name  --[[@as string]]
+        local fuel_name = line_data.fuel_name  ---@as string
         fuel_amount = solver.util.determine_fuel_amount(power, machine_proto.burner, fuel_proto.fuel_value)
 
         -- Handle recipes producing their own machine's fuel
@@ -130,7 +130,7 @@ local function update_line(line_data, aggregate, looped_fuel)
                 end
             else  -- means the fuel is a byproduct only, which shouldn't affect production
                 local byproduct_amount = determine_amount_with_productivity(fuel_byproduct--[[@cast -nil]])
-                local used_amount = math.min(fuel_amount, byproduct_amount)
+                local used_amount = math.min(fuel_amount, byproduct_amount)  ---@as number
 
                 local fuel_item = {type=fuel_proto.type, name=fuel_name, amount=used_amount}  ---@type SolverItem
                 structures.class.subtract(aggregate.Byproduct, fuel_item)  -- subtract from floor
@@ -192,7 +192,8 @@ local function update_line(line_data, aggregate, looped_fuel)
 
     if emissions ~= 0 then  -- emissions are either produced or consumed
         local emission_name = "custom-" .. line_data.pollutant_type
-        local emission_item = {type="entity", name=emission_name, amount=math.abs(emissions), constant=true}
+        local emission_item = {type="entity", name=emission_name,
+            amount=math.abs(emissions)--[[@as number]], constant=true}
         if emissions > 0 then
             local is_product = (aggregate.Ingredient["entity"][emission_name] ~= nil)
             table.insert((is_product) and relevant_products or byproducts, emission_item)
@@ -241,7 +242,7 @@ local function update_line(line_data, aggregate, looped_fuel)
         structures.class.add(Ingredient, ingredient, ingredient_amount)
 
         -- Reduce line-byproducts and -ingredients so only the net amounts remain
-        local byproduct_amount = Byproduct[ingredient.type][ingredient.name]  --[[@as number?]]
+        local byproduct_amount = Byproduct[ingredient.type][ingredient.name]  ---@as number?
         if byproduct_amount ~= nil then
             structures.class.subtract(Byproduct, ingredient, ingredient_amount)
             structures.class.subtract(Ingredient, ingredient, byproduct_amount)
