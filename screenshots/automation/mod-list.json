@@ -1,31 +1,28 @@
-
 {
-  "mods": 
-  [
-    
+  "mods": [
     {
       "name": "base",
       "enabled": true
     },
-    
     {
-      "name": "elevated-rails",
+      "name": "factoryplanner",
       "enabled": true
     },
-    
     {
-      "name": "quality",
+      "name": "flib",
       "enabled": true
     },
-    
     {
-      "name": "recycler",
-      "enabled": true
+      "name": "debugadapter",
+      "enabled": false
     },
-    
     {
-      "name": "space-age",
-      "enabled": true
+      "name": "coverage",
+      "enabled": false
+    },
+    {
+      "name": "profiler",
+      "enabled": false
     }
   ]
 }
