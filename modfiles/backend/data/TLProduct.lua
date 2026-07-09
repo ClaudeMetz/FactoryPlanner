@@ -82,7 +82,8 @@ function TLProduct:paste(object)
         ---@cast proto -FPPackedPrototype
 
         -- Only allow pasting fluids with set temperatures
-        if object.proto.type == "fluid" and not (object.temperature or object.proto.temperature) then
+        local temperature = object.temperature or object.proto--[[@as FPItemPrototype]].temperature or nil
+        if object.proto.type == "fluid" and not temperature then
             return false, "temperature_not_set"
         end
 
