@@ -36,10 +36,13 @@ function _clipboard.copy(player, object)
     lib.gui.run_refresh(player, "paste_button")
 end
 
+---@class ClipboardTags
+---@field player LuaPlayer
+
 -- Tries pasting the player's clipboard content onto the given target
 ---@param player LuaPlayer
 ---@param target CopyableObject
----@param tags table?
+---@param tags ClipboardTags?
 function _clipboard.paste(player, target, tags)
     local clip = lib.globals.player_table(player).clipboard
 

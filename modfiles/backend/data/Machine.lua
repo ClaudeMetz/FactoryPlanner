@@ -210,12 +210,12 @@ end
 
 
 ---@param object CopyableObject
----@param tags table
+---@param tags ClipboardTags
 ---@return boolean success
 ---@return string? error
 function Machine:paste(object, tags)
-    if object.class == "Machine" then
-        local corresponding_proto = prototyper.util.find("machines", object.proto.name, self.proto.combined_category)   ---@as FPMachinePrototype?
+    if object.class == "Machine" and object.proto then
+        local corresponding_proto = prototyper.util.find("machines", object.proto.name, self.proto.combined_category)  ---@as FPMachinePrototype?
 
         if corresponding_proto == nil or not self.parent:is_machine_compatible(corresponding_proto) then
             return false, "incompatible"
@@ -232,11 +232,14 @@ function Machine:paste(object, tags)
             self.fuel--[[@cast -nil]].parent = self
         end
 
-        self.module_set = object.module_set
-        self.module_set.parent = self
-        -- Need to verify compatibility because it depends on the recipe too
-        self.module_set:normalize({compatibility=true, effects=true})
-
+        if object.module_set then
+            ---@cast object.module_set -nil
+            self.module_set = object.module_set
+            self.module_set.parent = self
+            -- Need to verify compatibility because it depends on the recipe too
+            self.module_set:normalize({compatibility=true, effects=true})
+        end
+        
         return true, nil
     elseif object.class == "Module" then  ---@cast object Module
        return self.module_set:paste(object)

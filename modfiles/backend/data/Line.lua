@@ -279,7 +279,7 @@ end
 
 
 ---@param object CopyableObject
----@param tags table
+---@param tags ActOnLineItem
 ---@return boolean success
 ---@return string? error
 ---@return string? target_class
@@ -290,7 +290,7 @@ function Line:paste(object, tags)
         target = self[tags.item_category .. "s"][tags.item_index]
     end
 
-    if target.class == "Line" and object.class == "Line" or object.class == "Floor" then
+    if target.class == "Line" and (object.class == "Line" or object.class == "Floor") then
         ---@cast object LineObject
         if not self.parent:check_product_compatibility(object--[[@as LineObject]]) then
             return false, "recipe_irrelevant"  -- found no use for the recipe's products
@@ -298,9 +298,9 @@ function Line:paste(object, tags)
 
         self.parent:replace(self, object--[[@as LineObject]])
         return true, nil
-    elseif target.class == "SimpleItem" and object.class == "SimpleItem" or object.class =="Fuel" then
+    elseif target.class == "SimpleItem" and (object.class == "SimpleItem" or object.class =="Fuel") then
 
-        local item = self[tags.item_category .. "s"][tags.item_index]  --[[@as SimpleItem]]
+        local item = self[tags.item_category .. "s"][tags.item_index]  ---@as SimpleItem]]
 
         -- Only allow pasting fluid temperature settings
         if object.proto.type ~= "fluid" or item.proto.type ~= "fluid" then

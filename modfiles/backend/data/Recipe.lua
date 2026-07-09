@@ -113,9 +113,10 @@ end
 
 
 ---@param ingredient Ingredient | FPItemPrototype
----@param temperature number
+---@param temperature float?
 ---@return boolean success
 function Recipe:set_temperature(ingredient, temperature)
+    if temperature == nil then return false end
     if ingredient.type == "fluid" and self.temperatures[ingredient.name] then
         -- Check that the temperature to be set is a valid temperature
         for _, value in pairs(self.temperature_data[ingredient.name].applicable_values) do
