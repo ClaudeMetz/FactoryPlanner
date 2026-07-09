@@ -169,11 +169,14 @@ function Floor:check_product_compatibility(object)
     if self.level == 1 then return true end
 
     local relevant_line = (object.class == "Floor") and object.first or object
+    ---@cast relevant_line.recipe -nil
 
     -- The triple loop is crappy, but it's the simplest way to check
     if relevant_line.recipe.production_type == "produce" then
+        ---@cast relevant_line.recipe.proto.products -nil
         for _, product in pairs(relevant_line.recipe.proto.products) do
             for line in self:iterator() do
+                ---@cast line.recipe -nil
                 -- Check if pasted line produces an ingredient on a line on this floor
                 for _, ingredient in pairs(line.ingredients) do
                     if ingredient.proto.type == product.type
@@ -198,6 +201,7 @@ function Floor:check_product_compatibility(object)
 
     -- Check if the pasted line consumes any byproduct of a line on this floor
     if relevant_line.recipe.production_type == "consume" then
+        ---@cast relevant_line.recipe.proto.ingredients -nil
         for _, ingredient in pairs(relevant_line.recipe.proto.ingredients) do
             for line in self:iterator() do
                 for _, byproduct in pairs(line.byproducts) do
