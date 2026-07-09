@@ -39,7 +39,7 @@ function _context.get(player, class)
         if object.class == class then
             return object
         end
-        object = object.parent --[[@as ContextObject?]]
+        object = object.parent  ---@as ContextObject?
     end
 
     return nil
@@ -92,7 +92,7 @@ function _context.set(player, object, force_district)
 
         -- Update cache
         -- Uses .get() method to move up through eventual subfloors
-        local factory = _context.get(player, "Factory")  --[[@as Factory]]
+        local factory = _context.get(player, "Factory")  ---@as Factory
         local floors_cache = cache.factories[factory.parent.id].floors
         -- The above cache is guaranteed to exist to be able to get here
         floors_cache[factory.id] = object.id
@@ -137,7 +137,7 @@ end
 ---@param destination FloorDestination
 ---@return boolean success
 function _context.ascend_floors(player, destination)
-    local floor = _context.get(player, "Floor")  --[[@as Floor?]]
+    local floor = _context.get(player, "Floor")  ---@as Floor?
     if floor == nil then return false end
 
     local selected_floor = nil

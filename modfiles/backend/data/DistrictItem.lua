@@ -10,6 +10,8 @@ local Object = require("backend.data.Object")
 ---@field proto FPItemPrototype
 ---@field production DistrictItemData
 ---@field consumption DistrictItemData
+---@field overall DistrictItemMode
+---@field abs_diff number
 local DistrictItem = Object.methods()
 DistrictItem.__index = DistrictItem
 script.register_metatable("DistrictItem", DistrictItem)
@@ -24,7 +26,7 @@ local function init(proto)
 
         overall = nil,
         abs_diff = 0
-    }, "DistrictItem", DistrictItem)  --[[@as DistrictItem]]
+    }, "DistrictItem", DistrictItem)  ---@as DistrictItem
     return object
 end
 

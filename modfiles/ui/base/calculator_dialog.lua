@@ -1,13 +1,19 @@
 -- This isn't a standard dialog so it can be opened independently of others
 
+---@param textfield LuaGuiElement
+---@param style string
 local function style_textfield(textfield, style)
     textfield.style = style
-    textfield.style.margin = {0, 8, 12, 8}
-    textfield.style.horizontal_align = "right"
-    textfield.style.font = "default-large-semibold"
+    textfield.style--[[@as LuaStyle]].margin = {0, 8, 12, 8}
+    textfield.style--[[@as LuaStyle]].horizontal_align = "right"
+    textfield.style--[[@as LuaStyle]].font = "default-large-semibold"
 end
 
-local function run_calculation(player)
+---@class CopyCalculatorResultTags: Tags
+---@field result string
+
+---@param player LuaPlayer
+local function run_calculation(player, _, _)
     local calculator_elements = lib.globals.ui_state(player).calculator_elements
     local textfield = calculator_elements.textfield
     local expression = tostring(lib.gui.parse_expression_field(textfield, false))
@@ -19,9 +25,11 @@ local function run_calculation(player)
             local history_frame = calculator_elements.history_frame
             local entry_flow = history_frame.add{type="flow", direction="horizontal", index=1}
             entry_flow.style.vertical_align = "center"
-            local copy_button = entry_flow.add{type="sprite-button", sprite="utility/copy", style="tool_button",
-                tags={mod="fp", on_gui_click="copy_calculator_result", result=expression},
-                tooltip={"fp.calculator_copy_tt"}, mouse_button_filter={"left"}}
+
+            ---@type CopyCalculatorResultTags
+            local tags = {mod="fp", on_gui_click="copy_calculator_result", result=expression}
+            local copy_button = entry_flow.add{type="sprite-button", tags=tags, sprite="utility/copy",
+                style="tool_button", tooltip={"fp.calculator_copy_tt"}, mouse_button_filter={"left"}}
             copy_button.style.size = 16
             copy_button.style.padding = -1
             copy_button.style.right_margin = 4
@@ -38,6 +46,8 @@ local function run_calculation(player)
     end
 end
 
+---@param player LuaPlayer
+---@param tags CalculatorButtonTags
 local function handle_button_click(player, tags, _)
     local textfield = lib.globals.ui_state(player).calculator_elements.textfield
     local action = tags.action
@@ -80,6 +90,12 @@ local alternate_colors = {
     [")"] = {0.7, 0.7, 0.7}
 }
 
+---@class CalculatorButtonTags: Tags
+---@field action string
+
+---@param player LuaPlayer
+---@param elements table<string, LuaGuiElement>
+---@return LuaGuiElement
 local function build_calculator_dialog(player, elements)
     -- Not visible by default so it can be toggled right after
     local frame = player.gui.screen.add{type="frame", visible=false, direction="vertical"}
@@ -118,10 +134,11 @@ local function build_calculator_dialog(player, elements)
     for _, button_row in pairs(button_layout) do
         for _, action in pairs(button_row) do
             local label = alternate_labels[action] or action
-            local button = button_table.add{type="button", caption=label, style="side_menu_button",
-                tags={mod="fp", on_gui_click="calculator_button", action=action}}
+            local tags = {mod="fp", on_gui_click="calculator_button", action=action}  ---@type CalculatorButtonTags
+            local button = button_table.add{type="button", tags=tags, caption=label, style="side_menu_button"}
             button.style.size = 56
             button.style.font = "default-large-semibold"
+            ---@diagnostic disable-next-line: assign-type-mismatch
             button.style.font_color = alternate_colors[action] or {1, 1, 1}
         end
     end
@@ -137,7 +154,8 @@ local function build_calculator_dialog(player, elements)
     return frame
 end
 
-local function toggle_calculator_dialog(player)
+---@param player LuaPlayer
+local function toggle_calculator_dialog(player, _, _)
     local ui_state = lib.globals.ui_state(player)
     local dialog = ui_state.calculator_elements.frame
 
@@ -158,11 +176,11 @@ end
 
 
 -- ** EVENTS **
-local listeners = {}
+local listeners = {}  ---@type ListenerDefinitions
 
 listeners.gui = {
     on_gui_click = {
-        {  -- central place to catch calculator buttons
+        {
             name = "open_calculator_dialog",
             handler = toggle_calculator_dialog
         },
@@ -172,18 +190,18 @@ listeners.gui = {
         },
         {
             name = "toggle_calculator_history",
-            handler = (function(player, _, _)
+            handler = function(player, _, _)
                 local ui_state = lib.globals.ui_state(player)
                 local history_frame = ui_state.calculator_elements.history_frame
                 history_frame.visible = not history_frame.visible
-            end)
+            end
         },
         {
             name = "focus_textfield",
-            handler = (function(player, _, _)
+            handler = function(player, _, _)
                 local calculator_elements = lib.globals.ui_state(player).calculator_elements
                 calculator_elements.textfield.select_all()
-            end)
+            end
         },
         {
             name = "calculator_button",
@@ -191,11 +209,12 @@ listeners.gui = {
         },
         {
             name = "copy_calculator_result",
-            handler = (function(player, tags, _)
+            handler = function(player, tags, _)
+                ---@cast tags CopyCalculatorResultTags
                 local calculator_elements = lib.globals.ui_state(player).calculator_elements
                 calculator_elements.textfield.text = calculator_elements.textfield.text .. tags.result
                 calculator_elements.textfield.focus()
-            end)
+            end
         }
     },
     on_gui_confirmed = {
@@ -204,7 +223,7 @@ listeners.gui = {
             handler = run_calculation
         }
     }
-}
+}  ---@as GUIListenerDefinition
 
 listeners.player = {
     fp_toggle_calculator = toggle_calculator_dialog

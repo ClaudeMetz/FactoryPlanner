@@ -5,6 +5,7 @@ _preferences.factory_list_rows_options = {20, 22, 24, 26, 28, 30, 32}
 _preferences.compact_width_percentages = {8, 10, 12, 14, 16, 18, 20, 22, 24, 26, 28, 30, 32, 34, 36}
 
 ---@alias Timescale 1 | 60
+---@alias BeltsOrLanes "belts" | "lanes"
 
 ---@class PreferencesTable
 ---@field timescale Timescale
@@ -29,7 +30,7 @@ _preferences.compact_width_percentages = {8, 10, 12, 14, 16, 18, 20, 22, 24, 26,
 ---@field percentage_column boolean
 ---@field line_comment_column boolean
 ---@field item_views ItemViewPreferences
----@field belts_or_lanes "belts" | "lanes"
+---@field belts_or_lanes BeltsOrLanes
 ---@field default_prototypes DefaultPrototypesTable
 ---@field default_temperatures TemperatureDefaultMap
 
@@ -122,7 +123,7 @@ _preferences.current_version = 1
 ---@field done_column boolean
 ---@field percentage_column boolean
 ---@field line_comment_column boolean
----@field belts_or_lanes "belts" | "lanes"
+---@field belts_or_lanes BeltsOrLanes
 
 ---@param player LuaPlayer
 ---@return ExportString

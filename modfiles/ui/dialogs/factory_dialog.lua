@@ -1,7 +1,14 @@
+---@class FactoryDialogModalData: ModalData
+---@field factory_id ObjectID
+---@field factory Factory?
+---@field district_index ObjectID[]
+
 -- ** LOCAL UTIL **
+---@param player LuaPlayer
+---@param modal_data FactoryDialogModalData
 local function open_factory_dialog(player, modal_data)
     local id = modal_data.factory_id
-    modal_data.factory = (id ~= nil) and OBJECT_INDEX[id] or nil
+    modal_data.factory = (id ~= nil) and OBJECT_INDEX[id] or nil  ---@type Factory?
 
     local content_frame = modal_data.modal_elements.content_frame
     local table_content = content_frame.add{type="table", column_count=2}
@@ -34,8 +41,10 @@ local function open_factory_dialog(player, modal_data)
     end
 end
 
+---@param player LuaPlayer
+---@param action GUICloseAction
 local function close_factory_dialog(player, action)
-    local modal_data = lib.globals.modal_data(player)
+    local modal_data = lib.globals.modal_data(player)  ---@as FactoryDialogModalData
 
     if action == "submit" then
         local name_textfield = modal_data.modal_elements.factory_name
@@ -49,7 +58,8 @@ local function close_factory_dialog(player, action)
 
             local current_district = factory.parent
             local selected_index = modal_data.modal_elements.district_dropdown.selected_index
-            local selected_district = OBJECT_INDEX[modal_data.district_index[selected_index]]  --[[@as District]]
+            local selected_id = modal_data.district_index[selected_index]  ---@as ObjectID
+            local selected_district = OBJECT_INDEX[selected_id]  ---@as District
 
             if current_district.id ~= selected_district.id then
                 local adjacent_factory = lib.context.remove(player, factory)
@@ -71,30 +81,31 @@ end
 
 
 -- ** EVENTS **
-local listeners = {}
+local listeners = {}  ---@type ListenerDefinitions
 
 listeners.gui = {
     on_gui_confirmed = {
         {
             name = "factory_name",
-            handler = (function(player, _, _)
+            handler = function(player, _, _)
                 lib.gui.close_dialog(player, "submit")
-            end)
+            end
         }
     }
-}
+}  ---@as GUIListenerDefinition
 
 listeners.dialog = {
     dialog = "factory",
-    metadata = (function(modal_data)
+    metadata = function(modal_data)
+        ---@cast modal_data FactoryDialogModalData
         local action = (modal_data.factory_id) and {"fp.edit"} or {"fp.add"}
         return {
             caption = {"", action, " ", {"fp.pl_factory", 1}},
             subheader_text = {"fp.factory_dialog_description"},
             show_submit_button = true,
             show_delete_button = (modal_data.factory_id ~= nil)
-        }
-    end),
+        }  ---@as ModalDialogSettings
+    end,
     open = open_factory_dialog,
     close = close_factory_dialog
 }

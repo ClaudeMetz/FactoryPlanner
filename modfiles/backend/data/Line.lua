@@ -21,7 +21,7 @@ local Beacon = require("backend.data.Beacon")
 ---@field products SimpleItem[]
 ---@field byproducts SimpleItem[]
 ---@field ingredients SimpleItem[]
----@field production_ratio number?
+---@field production_ratio number
 local Line = Object.methods()
 Line.__index = Line
 script.register_metatable("Line", Line)
@@ -47,7 +47,7 @@ local function init(recipe_proto, production_type)
         byproducts = {},
         ingredients = {},
         production_ratio = 0
-    }, "Line", Line)  --[[@as Line]]
+    }, "Line", Line)  ---@as Line
 
     if recipe_proto then
         object.recipe = Recipe.init(object, recipe_proto, production_type)
@@ -69,7 +69,9 @@ end
 ---@param machine_proto FPMachinePrototype
 ---@return boolean applicable
 function Line:is_machine_compatible(machine_proto)
+    ---@cast self.recipe.proto FPRecipePrototype
     local type_counts = self.recipe.proto.type_counts
+
     local valid_ingredient_count = (machine_proto.ingredient_limit >= type_counts.ingredients.items)
     local valid_product_count = (machine_proto.product_limit >= type_counts.products.items)
     local valid_input_channels = (machine_proto.fluid_channels.input >= type_counts.ingredients.fluids)
@@ -104,12 +106,14 @@ end
 ---@param current_proto FPMachinePrototype?
 ---@return boolean success
 function Line:change_machine_by_action(player, action, current_proto)
-    local current_machine_proto = current_proto or self.machine.proto
+    local current_machine_proto = current_proto or self.machine.proto  ---@as FPMachinePrototype
     local category_id = current_machine_proto.category_id
 
+    ---@param new_machine_id integer
+    ---@return boolean success
     local function try_machine(new_machine_id)
         -- Assume a match while inside the upgrade/downgrade loop
-        current_machine_proto = prototyper.util.find("machines", new_machine_id, category_id) --[[@as FPMachinePrototype]]
+        current_machine_proto = prototyper.util.find("machines", new_machine_id, category_id) ---@as FPMachinePrototype
 
         if self:is_machine_compatible(current_machine_proto) then
             self:change_machine_to_proto(player, current_machine_proto)
@@ -119,7 +123,7 @@ function Line:change_machine_by_action(player, action, current_proto)
     end
 
     if action == "upgrade" then
-        local max_machine_id = #prototyper.util.find("machines", nil, category_id).members
+        local max_machine_id = #prototyper.util.find("machines", nil, category_id)--[[@cast -nil]].members
         while current_machine_proto.id < max_machine_id do
             if try_machine(current_machine_proto.id + 1) then return true end
         end
@@ -139,7 +143,7 @@ end
 function Line:change_machine_to_default(player)
     -- All categories are guaranteed to have at least one machine, so this is never nil
     local machine_default = defaults.get(player, "machines", self.recipe.proto.combined_category)
-    local default_proto = machine_default.proto  --[[@as FPMachinePrototype]]
+    local default_proto = machine_default.proto  ---@as FPMachinePrototype
 
     local success = false
     -- If the default is applicable, just set it straight away
@@ -163,10 +167,10 @@ function Line:set_beacon(beacon)
     self.beacon = beacon  -- can be nil
 
     if beacon ~= nil then
-        self.beacon.parent = self
+        beacon.parent = self
 
         -- Reset amount since the user can't change it in the dialog
-        if self.beacon:is_mono_beacon() then self.beacon.amount = 1 end
+        if beacon:is_mono_beacon() then beacon.amount = 1 end
 
         beacon.module_set:normalize({compatibility=true, effects=true})
         -- Normalization already summarizes beacon's effects
@@ -179,7 +183,7 @@ end
 function Line:setup_beacon(player)
     local beacon_defaults = defaults.get(player, "beacons", nil)
     if beacon_defaults.modules and beacon_defaults.beacon_amount ~= 0 then
-        local proto = beacon_defaults.proto  --[[@as FPBeaconPrototype]]
+        local proto = beacon_defaults.proto  ---@as FPBeaconPrototype
         local blank_beacon = Beacon.init(self, proto)
         self:set_beacon(blank_beacon)
         blank_beacon:reset(player)
@@ -188,11 +192,15 @@ end
 
 ---@return boolean
 function Line:uses_beacon_effects()
+    ---@cast self.machine.proto FPMachinePrototype
     return self.machine.proto.effect_receiver.uses_beacon_effects
 end
 
 
 function Line:summarize_effects()
+    ---@cast self.machine.proto FPMachinePrototype
+    ---@cast self.recipe.proto FPRecipePrototype
+
     local beacon_effects = (self.beacon) and self.beacon.total_effects or nil
     local merged_effects = lib.effects.merge({self.machine.total_effects, beacon_effects})
     local limited_effects, indications = lib.effects.limit(merged_effects, self.machine.proto.effect_receiver)
@@ -212,7 +220,7 @@ end
 function Line:compile_machine_filter()
     local compatible_machines = {}
 
-    local machine_category = prototyper.util.find("machines", nil, self.machine.proto.combined_category)  --[[@as NamedCategory]]
+    local machine_category = prototyper.util.find("machines", nil, self.machine.proto.combined_category)  ---@as NamedCategory<FPMachinePrototype>
 
     for _, machine_proto in pairs(machine_category.members) do
         if self:is_machine_compatible(machine_proto) then
@@ -226,6 +234,8 @@ end
 
 ---@return boolean
 function Line:is_temperature_fully_configured()
+    ---@cast self.recipe.proto FPRecipePrototype
+
     for _, ingredient in pairs(self.recipe.proto.ingredients) do
         if not self.recipe:is_temperature_configured(ingredient) then return false end
     end
@@ -255,10 +265,11 @@ end
 function Line:get_surface_compatibility()
     -- Determine and save compatibility on the fly when requested
     if self.surface_compatibility == nil then
-        local object = self.parent  --[[@as Object]]  -- find the District this is in
-        while object.class ~= "District" do object = object.parent  --[[@as District]] end
-        local properties = object.location_proto.surface_properties
+        local object = self.parent  ---@as Object  -- find the District this is in
+        while object.class ~= "District" do object = object.parent--[[@as District]] end
+        ---@cast object District
 
+        local properties = object.location_proto.surface_properties
         local recipe = check_compatibility(properties, self.recipe.proto.surface_conditions)
         local machine = check_compatibility(properties, self.machine.proto.surface_conditions)
         self.surface_compatibility = {recipe=recipe, machine=machine, overall=(recipe and machine)}
@@ -272,12 +283,11 @@ end
 ---@return string? error
 function Line:paste(object)
     if object.class == "Line" or object.class == "Floor" then
-        ---@cast object LineObject
-        if not self.parent:check_product_compatibility(object) then
+        if not self.parent:check_product_compatibility(object--[[@as LineObject]]) then
             return false, "recipe_irrelevant"  -- found no use for the recipe's products
         end
 
-        self.parent:replace(self, object)
+        self.parent:replace(self, object--[[@as LineObject]])
         return true, nil
     else
         return false, "incompatible_class"
@@ -318,12 +328,12 @@ end
 ---@return Line line
 local function unpack(packed_self)
     local unpacked_self = init()  -- initialize empty, overwrite after
-    unpacked_self.recipe = Recipe.unpack(packed_self.recipe, unpacked_self)  --[[@as Recipe]]
+    unpacked_self.recipe = Recipe.unpack(packed_self.recipe, unpacked_self)  ---@as Recipe
     unpacked_self.done = packed_self.done
     unpacked_self.active = packed_self.active
     unpacked_self.percentage = packed_self.percentage
-    unpacked_self.machine = Machine.unpack(packed_self.machine, unpacked_self)  --[[@as Machine]]
-    unpacked_self.beacon = packed_self.beacon and Beacon.unpack(packed_self.beacon, unpacked_self)  --[[@as Beacon]]
+    unpacked_self.machine = Machine.unpack(packed_self.machine, unpacked_self)  ---@as Machine
+    unpacked_self.beacon = packed_self.beacon and Beacon.unpack(packed_self.beacon, unpacked_self)  ---@as Beacon
     unpacked_self.comment = packed_self.comment
 
     return unpacked_self

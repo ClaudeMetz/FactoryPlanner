@@ -53,8 +53,8 @@ end
 ---@return EffectValue
 ---@return string?
 function _effects.limit_value(effect, bounds)
-    local low_bound = (bounds.low * MAGIC_NUMBERS.effect_precision)  --[[@as EffectValue]]
-    local high_bound = (bounds.high * MAGIC_NUMBERS.effect_precision)  --[[@as EffectValue]]
+    local low_bound = (bounds.low * MAGIC_NUMBERS.effect_precision)  ---@as EffectValue
+    local high_bound = (bounds.high * MAGIC_NUMBERS.effect_precision)  ---@as EffectValue
 
     if effect < low_bound then
         return low_bound, "[img=fp_limited_down]"

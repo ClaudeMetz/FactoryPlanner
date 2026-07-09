@@ -7,6 +7,9 @@
 ---@field parent Object?
 ---@field next Object?
 ---@field previous Object?
+---@field pack fun(self, full: boolean): PackedObject
+---@field validate fun(self): boolean
+---@field repair fun(self, player: LuaPlayer): boolean
 
 ---@class ObjectMethods
 local methods = {}
@@ -34,7 +37,7 @@ function Object.init(data, class, metatable)
     -- If the index doesn't exist yet, it will be filled in later
     if OBJECT_INDEX then OBJECT_INDEX[object.id] = object end
 
-    return object
+    return object  ---@as Object
 end
 
 ---@return ObjectMethods
@@ -43,7 +46,7 @@ function Object.methods()
     for k, v in pairs(methods) do
         output[k] = v
     end
-    return output
+    return output  ---@as ObjectMethods
 end
 
 
@@ -137,13 +140,13 @@ end
 ---@param spots integer?
 ---@param filter ObjectFilter?
 function methods:_shift(object, direction, spots, filter)
-    spots = spots or math.huge  -- no spots means shift to end
+    spots = spots or 2^53  -- no spots means shift to end
     local spots_moved = 0
 
     local next_object = object
     while spots_moved < spots and next_object[direction] ~= nil do
         next_object = next_object[direction]
-        local matched = match(next_object, filter)
+        local matched = match(next_object--[[@cast -nil]], filter)
         if matched then spots_moved = spots_moved + 1 end
     end
 
@@ -227,7 +230,7 @@ end
 ---@protected
 ---@param comparator function
 function methods:_sort(comparator)
-    local next_object = self.first
+    local next_object = self.first  ---@type Object?
     self.first = nil  -- clear to re-insert into below
 
     while next_object ~= nil do
@@ -235,7 +238,7 @@ function methods:_sort(comparator)
         next_object = next_object.next
 
         local inserted = false
-        for object in self:iterator() do
+        for object in self:_iterator() do
             if comparator(object, current_object) then
                 self:_insert(current_object, object, "previous")
                 inserted = true
@@ -263,9 +266,9 @@ function methods:_pack(full)
     return packed_objects
 end
 
----@protected
 ---@param packed_objects PackedObject[]
 ---@param unpacker fun(item: PackedObject): Object
+---@param parent Object?
 ---@return Object? first_object
 function Object.unpack(packed_objects, unpacker, parent)
     local first_object = nil ---@type Object?
@@ -278,7 +281,7 @@ function Object.unpack(packed_objects, unpacker, parent)
         if not first_object then
             first_object = object
         else
-            latest_object.next = object
+            latest_object--[[@cast -nil]].next = object
             object.previous = latest_object
         end
         latest_object = object
@@ -304,7 +307,8 @@ end
 function methods:_repair(player, pivot)
     for object in self:_iterator(nil, pivot) do
         if not object.valid and not object:repair(player) then
-            object.parent:_remove(object)
+            local parent = object.parent  ---@as Object & ObjectMethods
+            parent:_remove(object)
         end
     end
 end

@@ -31,7 +31,7 @@ local function export_current_factory(player_index)
     local player_table = lib.globals.player_table(player)
     if not player_table then return nil end
 
-    local current_factory = lib.context.get(player, "Factory")  --[[@as Factory]]
+    local current_factory = lib.context.get(player, "Factory")  ---@as Factory
     if not current_factory then return nil end
 
     return current_factory:pack(true)
