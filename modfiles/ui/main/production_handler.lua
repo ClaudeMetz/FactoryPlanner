@@ -2,6 +2,9 @@ local Floor = require("backend.data.Floor")
 local Beacon = require("backend.data.Beacon")
 
 -- ** LOCAL UTIL **
+---@param player LuaPlayer
+---@param tags MoveLineTags
+---@param event EventData.on_gui_click
 local function handle_line_move_click(player, tags, event)
     local line = OBJECT_INDEX[tags.line_id]  ---@type Line
     local floor = line.parent
@@ -10,13 +13,14 @@ local function handle_line_move_click(player, tags, event)
     if floor.level > 1 and tags.direction == "previous" then
         local spots_to_top = 0
         for previous_line in floor:iterator(nil, line.previous, "previous") do
-            if previous_line.id ~= floor.first.id then
+            if previous_line.id ~= floor.first--[[@cast -nil]].id then
                 spots_to_top = spots_to_top + 1
             end
         end
-        spots_to_shift = (spots_to_shift == nil) and spots_to_top or math.min(spots_to_shift, spots_to_top)
+        spots_to_shift = (spots_to_shift == nil) and spots_to_top
+            or math.min(spots_to_shift--[[@cast -nil]], spots_to_top)
     end
-    line.parent:shift(line, tags.direction, spots_to_shift)
+    floor:shift(line, tags.direction, spots_to_shift)
 
     solver.update(player)
     lib.gui.run_refresh(player, "production")
@@ -24,8 +28,11 @@ end
 
 
 -- Handles any line recipe, with or without subfloor
+---@param player LuaPlayer
+---@param tags ActOnLineObjectRecipe
+---@param action string
 local function handle_line_recipe_click(player, tags, action)
-    local line = OBJECT_INDEX[tags.line_id]
+    local line = OBJECT_INDEX[tags.line_id]  ---@as Line
     local relevant_line = (line.class == "Floor") and line.first or line
 
     if action == "open_subfloor" then
@@ -34,9 +41,9 @@ local function handle_line_recipe_click(player, tags, action)
             return
         end
 
-        local new_context = line
+        local new_context = line  ---@as LineObject
         if line.class == "Line" then
-            if lib.context.get(player, "Factory").archived then
+            if lib.context.get(player, "Factory")--[[@as Factory]].archived then
                 lib.messages.raise(player, "error", {"fp.error_no_new_subfloors_in_archive"}, 1)
                 return
             end
@@ -50,7 +57,7 @@ local function handle_line_recipe_click(player, tags, action)
             solver.update(player)
         end
 
-        lib.context.set(player, new_context)
+        lib.context.set(player, new_context--[[@as ContextObject]])
         lib.gui.run_refresh(player, "production")
 
     elseif action == "copy" then
@@ -68,23 +75,26 @@ local function handle_line_recipe_click(player, tags, action)
         local floor = line.parent
         floor:remove(line, true)
 
-        local selected_floor = lib.context.get(player, "Floor")
+        local selected_floor = lib.context.get(player, "Floor")  ---@as Floor
         if floor.level > selected_floor.level and floor:count() == 1 then
-            floor.parent:replace(floor, floor.first)
+            floor.parent:replace(floor, floor.first--[[@cast -nil]])
         end
 
         solver.update(player)
         lib.gui.run_refresh(player, "production")
 
     elseif action == "factoriopedia" then
-        local proto = relevant_line.recipe.proto
+        local proto = relevant_line.recipe.proto  ---@as FPRecipePrototype
         player.open_factoriopedia_gui(lib.get_factoriopedia_proto("recipe", proto.name, proto))
     end
 end
 
 -- Handles the defining recipe of a floor (ie. first one of a subfloor)
+---@param player LuaPlayer
+---@param tags ActOnLineObjectRecipe
+---@param action string
 local function handle_floor_recipe_click(player, tags, action)
-    local line = OBJECT_INDEX[tags.line_id]
+    local line = OBJECT_INDEX[tags.line_id]  ---@as Line
 
     if action == "copy" then
         lib.clipboard.copy(player, line)
@@ -98,13 +108,16 @@ local function handle_floor_recipe_click(player, tags, action)
         lib.gui.run_refresh(player, "production")
 
     elseif action == "factoriopedia" then
-        local proto = line.recipe.proto
+        local proto = line.recipe.proto  ---@as FPRecipePrototype
         player.open_factoriopedia_gui(lib.get_factoriopedia_proto("recipe", proto.name, proto))
     end
 end
 
+---@param player LuaPlayer
+---@param tags ActOnLineMachineTags
+---@param action string
 local function handle_machine_click(player, tags, action)
-    local machine = OBJECT_INDEX[tags.machine_id]
+    local machine = OBJECT_INDEX[tags.machine_id]  ---@as Machine
     local line = machine.parent
 
     if action == "add_to_cursor" then
@@ -125,8 +138,11 @@ local function handle_machine_click(player, tags, action)
     end
 end
 
+---@param player LuaPlayer
+---@param tags AddModuleTags
+---@param event EventData.on_gui_click
 local function handle_module_add(player, tags, event)
-    local object = OBJECT_INDEX[tags.object_id]
+    local object = OBJECT_INDEX[tags.object_id]  ---@as Machine | Beacon
 
     if event.shift then  -- paste
         lib.clipboard.paste(player, object)
@@ -139,9 +155,11 @@ local function handle_module_add(player, tags, event)
     end
 end
 
-
+---@param player LuaPlayer
+---@param tags ActOnLineBeaconTags
+---@param action string
 local function handle_beacon_click(player, tags, action)
-    local beacon = OBJECT_INDEX[tags.beacon_id]
+    local beacon = OBJECT_INDEX[tags.beacon_id]  ---@as Beacon
     local line = beacon.parent
 
     if action == "add_to_cursor" then
@@ -167,8 +185,11 @@ local function handle_beacon_click(player, tags, action)
     end
 end
 
+---@param player LuaPlayer
+---@param tags AddLineBeaconTags
+---@param event EventData.on_gui_click
 local function handle_beacon_add(player, tags, event)
-    local line = OBJECT_INDEX[tags.line_id]  --[[@as Line]]
+    local line = OBJECT_INDEX[tags.line_id]  ---@as Line
 
     if event.shift then  -- paste
         local dummy_beacon = Beacon.init(line)
@@ -178,9 +199,11 @@ local function handle_beacon_add(player, tags, event)
     end
 end
 
-
+---@param player LuaPlayer
+---@param tags ActOnLineModuleTags
+---@param action string
 local function handle_module_click(player, tags, action)
-    local module = OBJECT_INDEX[tags.module_id]
+    local module = OBJECT_INDEX[tags.module_id]  ---@as Module
 
     if action == "edit" then
         local line = module.parent.parent.parent
@@ -213,9 +236,11 @@ local function handle_module_click(player, tags, action)
     end
 end
 
-
+---@param player LuaPlayer
+---@param tags ActOnLineItem
+---@param action string
 local function handle_item_click(player, tags, action)
-    local line = OBJECT_INDEX[tags.line_id]
+    local line = OBJECT_INDEX[tags.line_id]  ---@as LineObject
     local item = line[tags.item_category .. "s"][tags.item_index]
 
     if action == "prioritize" then
@@ -225,7 +250,7 @@ local function handle_item_click(player, tags, action)
         elseif #line.products < 2 then
             lib.messages.raise(player, "warning", {"fp.warning_no_prioritizing_single_product"}, 1)
             return
-        end
+        end  ---@cast line Line
 
         -- Remove the priority_product if the already selected one is clicked
         line.recipe.priority_product = (line.recipe.priority_product ~= item.proto) and item.proto or nil
@@ -256,7 +281,8 @@ local function handle_item_click(player, tags, action)
         elseif line.class ~= "Line" then
             lib.cursor.create_flying_text(player, {"fp.can_only_edit_line_items"})
             return
-        elseif #line.recipe.temperature_data[item.proto.name].applicable_values == 1 then
+        end  ---@cast line Line
+        if #line.recipe.temperature_data[item.proto.name].applicable_values == 1 then
             lib.cursor.create_flying_text(player, {"fp.can_only_edit_multiple_choices"})
             return
         end
@@ -267,7 +293,7 @@ local function handle_item_click(player, tags, action)
     elseif action == "copy" then
         local proto = item.proto
         if item.proto.type == "fluid" and line.class == "Line" then
-            local item_name = line.recipe:get_name_with_temperature(item.proto)
+            local item_name = line--[[@as Line]].recipe:get_name_with_temperature(item.proto)
             proto = prototyper.util.find("items", item_name, "fluid")
         end
 
@@ -313,8 +339,11 @@ local function handle_item_click(player, tags, action)
     end
 end
 
+---@param player LuaPlayer
+---@param tags ActOnLineFuelTags
+---@param action string
 local function handle_fuel_click(player, tags, action)
-    local fuel = OBJECT_INDEX[tags.fuel_id]
+    local fuel = OBJECT_INDEX[tags.fuel_id]  ---@as Fuel
     local line = fuel.parent.parent
 
     if action == "add_recipe_to_end" or action == "add_recipe_below" then
@@ -324,7 +353,7 @@ local function handle_fuel_click(player, tags, action)
         if fuel.proto.type == "fluid" then
             proto = prototyper.util.find("items", fuel:get_name_with_temperature(), "fluid")
             -- If a no-temperature fluid is passed, it'll show all compatible temperatures/recipes
-        end
+        end  ---@cast proto FPItemPrototype
 
         lib.gui.open_dialog(player, {dialog="recipe", modal_data={fuel_id=fuel.id,
             add_after_line_id=add_after_line_id, production_type="produce",
@@ -349,7 +378,7 @@ local function handle_fuel_click(player, tags, action)
         lib.clipboard.paste(player, fuel)
 
     elseif action == "add_to_cursor" then
-        lib.cursor.handle_item_click(player, fuel.proto, fuel.amount)
+        lib.cursor.handle_item_click(player, fuel.proto--[[@as FPFuelPrototype]], fuel.amount)
 
     elseif action == "factoriopedia" then
         player.open_factoriopedia_gui(prototypes[fuel.proto.type][fuel.proto.name])
@@ -358,7 +387,7 @@ end
 
 
 -- ** EVENTS **
-local listeners = {}
+local listeners = {}  ---@type ListenerDefinitions
 
 listeners.gui = {
     on_gui_click = {
@@ -438,10 +467,11 @@ listeners.gui = {
                 add_to_cursor = {shortcut="alt-right"},
                 factoriopedia = {shortcut="alt-left"}
             },
-            handler = (function(player, tags, action)
+            handler = function(player, tags, action)
+                ---@cast tags ActOnLineItem
                 tags.item_category = "product"
-                handle_item_click(player, tags, action)
-            end)
+                handle_item_click(player, tags, action--[[@as string]])
+            end
         },
         {
             name = "act_on_line_byproduct",
@@ -452,10 +482,11 @@ listeners.gui = {
                 add_to_cursor = {shortcut="alt-right"},
                 factoriopedia = {shortcut="alt-left"}
             },
-            handler = (function(player, tags, action)
+            handler = function(player, tags, action)
+                ---@cast tags ActOnLineItem
                 tags.item_category = "byproduct"
-                handle_item_click(player, tags, action)
-            end)
+                handle_item_click(player, tags, action--[[@as string]])
+            end
         },
         {
             name = "act_on_line_special_byproduct",
@@ -463,10 +494,11 @@ listeners.gui = {
                 add_recipe_to_end = {shortcut="left", limitations={archive_open=false, matrix_active=true}, show=true},
                 add_recipe_below = {limitations={archive_open=false, matrix_active=true}}
             },
-            handler = (function(player, tags, action)
+            handler = function(player, tags, action)
+                ---@cast tags ActOnLineItem
                 tags.item_category = "byproduct"
-                handle_item_click(player, tags, action)
-            end)
+                handle_item_click(player, tags, action--[[@as string]])
+            end
         },
         {
             name = "act_on_line_ingredient",
@@ -479,10 +511,11 @@ listeners.gui = {
                 add_to_cursor = {shortcut="alt-right"},
                 factoriopedia = {shortcut="alt-left"}
             },
-            handler = (function(player, tags, action)
+            handler = function(player, tags, action)
+                ---@cast tags ActOnLineItem
                 tags.item_category = "ingredient"
-                handle_item_click(player, tags, action)
-            end)
+                handle_item_click(player, tags, action--[[@as string]])
+            end
         },
         {
             name = "act_on_line_fuel",
@@ -504,53 +537,59 @@ listeners.gui = {
                 add_recipe_to_end = {shortcut="left", limitations={archive_open=false}, show=true},
                 add_recipe_below = {limitations={archive_open=false}}
             },
-            handler = (function(player, tags, action)
+            handler = function(player, tags, action)
+                ---@cast tags ActOnLineItem
                 tags.item_category = "ingredient"
-                handle_item_click(player, tags, action)
-            end)
+                handle_item_click(player, tags, action--[[@as string]])
+            end
         }
     },
     on_gui_checked_state_changed = {
         {
             name = "checkmark_line",
-            handler = (function(_, tags, _)
-                local line = OBJECT_INDEX[tags.line_id]
+            handler = function(_, tags, _)
+                ---@cast tags CheckmarkLineTags
+                local line = OBJECT_INDEX[tags.line_id]  ---@as Line
                 local relevant_line = (line.class == "Floor") and line.first or line
                 relevant_line.done = not relevant_line.done
-            end)
+            end
         }
     },
     on_gui_text_changed = {
         {
             name = "change_line_percentage",
-            handler = (function(player, tags, event)
-                local line = OBJECT_INDEX[tags.line_id]
+            handler = function(player, tags, event)
+                ---@cast tags ChangeLinePercentageTags
+                ---@cast event EventData.on_gui_text_changed
+                local line = OBJECT_INDEX[tags.line_id]  ---@as Line
                 local relevant_line = (line.class == "Floor") and line.first or line
                 relevant_line.percentage = tonumber(event.element.text) or 100
 
                 -- Re-run solve only after a delay so it doesn't become out of sync
-                local factory = lib.context.get(player, "Factory")
+                local factory = lib.context.get(player, "Factory")  ---@as Factory
                 factory:schedule_solver_update(game.tick + 300, player)
-            end)
+            end
         },
         {
             name = "line_comment",
-            handler = (function(_, tags, event)
-                local line = OBJECT_INDEX[tags.line_id]
+            handler = function(_, tags, event)
+                ---@cast tags LineCommentTags
+                ---@cast event EventData.on_gui_text_changed
+                local line = OBJECT_INDEX[tags.line_id]  ---@as Line
                 local relevant_line = (line.class == "Floor") and line.first or line
                 relevant_line.comment = event.element.text
-            end)
+            end
         }
     },
     on_gui_confirmed = {
         {
             name = "set_line_percentage",
-            handler = (function(player, _, _)
+            handler = function(player, _, _)
                 solver.update(player)
                 lib.gui.run_refresh(player, "production")
-            end)
+            end
         }
     }
-}
+}  ---@as GUIListenerDefinition
 
 return { listeners }

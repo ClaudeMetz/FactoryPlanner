@@ -30,7 +30,7 @@ local function init(level)
         byproducts = {},
         ingredients = {},
         machine_amount = 0
-    }, "Floor", Floor)  --[[@as Floor]]
+    }, "Floor", Floor)  ---@as Floor
     return object
 end
 
@@ -55,11 +55,11 @@ function Floor:remove(line, preserve)
     line.parent = nil
     self:_remove(line)
 
-    if preserve then return end
+    if preserve or self.level == 1 then return end
+    ---@cast self.first -nil
+
     -- Convert floor to line in parent if only defining line remains
-    if self.level > 1 and self.first.next == nil then
-        self.parent:replace(self, self.first)
-    end
+    if self.first.next == nil then self.parent:replace(self, self.first) end
 end
 
 ---@param line LineObject
@@ -80,7 +80,7 @@ end
 
 ---@return LineObject?
 function Floor:find_last()
-    return self:_find_last()  --[[@as LineObject?]]
+    return self:_find_last()  ---@as LineObject?
 end
 
 ---@param filter ObjectFilter?
@@ -100,11 +100,11 @@ function Floor:count(filter, pivot, direction)
 end
 
 
----@alias ComponentDataSet { proto: FPPrototype, amount: number }
+---@alias ComponentDataSet { proto: AnyFPPrototype, quality_proto: FPQualityPrototype, amount: integer }
 
 ---@class ComponentData
----@field machines { [string]: ComponentDataSet }
----@field modules { [string]: ComponentDataSet }
+---@field machines table<string, ComponentDataSet>
+---@field modules table<string, ComponentDataSet>
 
 -- Returns the machines and modules needed to actually build this floor
 ---@param skip_done boolean
@@ -113,6 +113,10 @@ end
 function Floor:get_component_data(skip_done, component_table)
     local components = component_table or {machines={}, modules={}}
 
+    ---@param table table<string,ComponentDataSet>
+    ---@param proto FPItemPrototype | FPModulePrototype
+    ---@param quality_proto FPQualityPrototype
+    ---@param amount integer
     local function add_component(table, proto, quality_proto, amount)
         local combined_name = proto.name .. "-" .. quality_proto.name
         local component = table[combined_name]
@@ -123,12 +127,17 @@ function Floor:get_component_data(skip_done, component_table)
         end
     end
 
+    ---@param object Machine | Beacon
+    ---@param amount integer
     local function add_machine(object, amount)
         if object.proto.built_by_item then
+            ---@cast object.quality_proto FPQualityPrototype
             add_component(components.machines, object.proto.built_by_item, object.quality_proto, amount)
         end
 
         for module in object.module_set:iterator() do
+            ---@cast module.proto FPModulePrototype
+            ---@cast module.quality_proto FPQualityPrototype
             add_component(components.modules, module.proto, module.quality_proto, amount * module.amount)
         end
     end
@@ -159,9 +168,9 @@ end
 function Floor:check_product_compatibility(object)
     if self.level == 1 then return true end
 
-    local relevant_line = (object.class == "Floor") and object.first or object
+    local relevant_line = (object.class == "Floor") and object.first or object  ---@cast relevant_line Line
     -- The triple loop is crappy, but it's the simplest way to check
-    for _, product in pairs(relevant_line.recipe.proto.products) do
+    for _, product in pairs(relevant_line.recipe.proto--[[@as FPRecipePrototype]].products) do
         for line in self:iterator() do
             for _, ingredient in pairs(line.ingredients) do
                 if ingredient.proto.type == product.type and ingredient.proto.name == product.name then
@@ -188,12 +197,11 @@ end
 ---@return string? error
 function Floor:paste(object)
     if object.class == "Line" or object.class == "Floor" then
-        ---@cast object LineObject
-        if not self:check_product_compatibility(object) then
+        if not self:check_product_compatibility(object--[[@as LineObject]]) then
             return false, "recipe_irrelevant"  -- found no use for the recipe's products
         end
 
-        self.parent:replace(self, object)
+        self.parent:replace(self, object--[[@as LineObject]])
         return true, nil
     else
         return false, "incompatible_class"
@@ -206,7 +214,7 @@ end
 ---@class PackedFloor: PackedObject
 ---@field class "Floor"
 ---@field level integer
----@field lines PackedLineObject[]?
+---@field lines PackedLineObject[]
 
 ---@param full boolean
 ---@return PackedFloor packed_self
@@ -227,8 +235,12 @@ end
 local function unpack(packed_self)
     local unpacked_self = init(packed_self.level)
 
-    local function unpacker(line) return (line.class == "Floor") and unpack(line) or Line.unpack(line) end
-    unpacked_self.first = Object.unpack(packed_self.lines, unpacker, unpacked_self)  --[[@as LineObject]]
+    ---@param line PackedLineObject
+    ---@return LineObject line
+    local function unpacker(line)
+        return (line.class == "Floor") and unpack(line--[[@as PackedFloor]]) or Line.unpack(line--[[@as PackedLine]])
+    end
+    unpacked_self.first = Object.unpack(packed_self.lines, unpacker, unpacked_self)  ---@as LineObject
 
     return unpacked_self
 end

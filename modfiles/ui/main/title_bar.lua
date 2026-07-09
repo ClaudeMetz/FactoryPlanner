@@ -1,4 +1,5 @@
 -- ** LOCAL UTIL **
+---@param player LuaPlayer
 local function toggle_paused_state(player, _, _)
     if not game.is_multiplayer() then
         local preferences = lib.globals.preferences(player)
@@ -10,11 +11,12 @@ local function toggle_paused_state(player, _, _)
 end
 
 
+---@param player LuaPlayer
 local function refresh_title_bar(player)
     local ui_state = lib.globals.ui_state(player)
     if ui_state.main_elements.main_frame == nil then return end
 
-    local factory = lib.context.get(player, "Factory")   --[[@as Factory?]]
+    local factory = lib.context.get(player, "Factory")   ---@as Factory?
     local title_bar_elements = ui_state.main_elements.title_bar
 
     title_bar_elements.compact_button.enabled = factory ~= nil and factory.valid
@@ -22,9 +24,11 @@ local function refresh_title_bar(player)
 end
 
 
+---@param player LuaPlayer
+---@return number
 local function determine_left_handle_width(player)
     local ui_state = lib.globals.ui_state(player)
-    local half_total_width = ui_state.main_dialog_dimensions.width / 2
+    local half_total_width = ui_state.main_dialog_dimensions--[[@cast -nil]].width / 2
 
     local half_label_width = MAGIC_NUMBERS.titlebar_label_width / 2
     local left_margins = 3 * 8 + 2 * 4  -- horizontal spacing + drag handle margin
@@ -33,6 +37,7 @@ local function determine_left_handle_width(player)
     return half_total_width - half_label_width - left_margins - left_buttons_width
 end
 
+---@param player LuaPlayer
 local function build_title_bar(player)
     local main_elements = lib.globals.main_elements(player)
     main_elements.title_bar = {}
@@ -80,21 +85,22 @@ end
 
 
 -- ** EVENTS **
-local listeners = {}
+local listeners = {}  ---@type ListenerDefinitions
 
 listeners.gui = {
     on_gui_click = {
         {
             name = "re-center_main_dialog",
-            handler = (function(player, _, event)
+            handler = function(player, _, event)
+                ---@cast event EventData.on_gui_click
                 if event.button == defines.mouse_button_type.middle then
                     main_dialog.center(player)
                 end
-            end)
+            end
         },
         {
             name = "switch_to_compact_view",
-            handler = (function(player, _, _)
+            handler = function(player, _, _)
                 local floor = lib.context.get(player, "Floor")
                 if floor and floor.level > 1 and floor:count() == 1 then
                     lib.context.ascend_floors(player, "up")
@@ -105,13 +111,13 @@ listeners.gui = {
                 lib.globals.ui_state(player).compact_view = true
 
                 compact_dialog.toggle(player)
-            end)
+            end
         },
         {
             name = "exit_main_dialog",
-            handler = (function(player, _, _)
+            handler = function(player, _, _)
                 main_dialog.toggle(player)
-            end)
+            end
         },
         {
             name = "toggle_pause_game",
@@ -119,27 +125,29 @@ listeners.gui = {
         },
         {
             name = "title_bar_open_preferences",
-            handler = (function(player, _, _)
+            handler = function(player, _, _)
                 lib.gui.open_dialog(player, {dialog="preferences"})
-            end)
+            end
         }
     }
-}
+}  ---@as GUIListenerDefinition
 
 listeners.player = {
-    fp_toggle_pause = (function(player, _)
+    fp_toggle_pause = function(player, _)
         if main_dialog.is_in_focus(player) then toggle_paused_state(player) end
-    end),
+    end,
 
-    build_gui_element = (function(player, event)
+    build_gui_element = function(player, event)
+        ---@cast event BuildGUIElementEventData
         if event.trigger == "main_dialog" then
             build_title_bar(player)
         end
-    end),
-    refresh_gui_element = (function(player, event)
+    end,
+    refresh_gui_element = function(player, event)
+        ---@cast event RefreshGUIElementEventData
         local triggers = {title_bar=true, all=true}
         if triggers[event.trigger] then refresh_title_bar(player) end
-    end)
+    end
 }
 
 return { listeners }

@@ -1,7 +1,23 @@
 local TLProduct = require("backend.data.TLProduct")
 
+---@alias ItemCategory "product" | "byproduct" | "ingredient"
+
+---@class PickerDialogModalData: ModalData
+---@field item_id ObjectID?
+---@field item_category ItemCategory
+---@field create_factory boolean?
+---@field item TLProduct?
+---@field timescale Timescale
+---@field belts_or_lanes BeltsOrLanes
+---@field amount_defined_by ProductDefinedBy
+---@field item_proto FPItemPrototype?
+---@field belt_proto FPBeltPrototype?
+---@field selected_group_id integer?
+
 -- This dialog works as the product picker currently, but could also work as an ingredient picker down the line
 -- ** ITEM PICKER **
+---@param modal_data PickerDialogModalData
+---@param new_group_id integer
 local function select_item_group(modal_data, new_group_id)
     modal_data.selected_group_id = new_group_id
 
@@ -12,8 +28,10 @@ local function select_item_group(modal_data, new_group_id)
     end
 end
 
+---@param player LuaPlayer
+---@param search_term string
 local function search_picker_items(player, search_term)
-    local modal_data = lib.globals.modal_data(player)
+    local modal_data = lib.globals.modal_data(player)  ---@as PickerDialogModalData
     local modal_elements = modal_data.modal_elements
 
     -- Groups are indexed continuously, so using ipairs here is fine
@@ -47,10 +65,12 @@ local function search_picker_items(player, search_term)
     end
 end
 
+---@param parent_flow LuaGuiElement
+---@param player LuaPlayer
 local function add_item_picker(parent_flow, player)
     local player_table = lib.globals.player_table(player)
-    local ui_state = player_table.ui_state
-    local modal_elements = ui_state.modal_data.modal_elements
+    local modal_data = player_table.ui_state.modal_data  ---@as PickerDialogModalData
+    local modal_elements = modal_data.modal_elements
     local translations = player_table.translation_tables
 
     local label_warning = parent_flow.add{type="label", caption={"fp.error_message", {"fp.no_item_found"}}}
@@ -73,8 +93,8 @@ local function add_item_picker(parent_flow, player)
     modal_elements.groups = {}
 
     local existing_products = {}
-    if not ui_state.modal_data.create_factory then  -- check if this is for a new factory or not
-        local factory = lib.context.get(player, "Factory")  --[[@as Factory]]
+    if not modal_data.create_factory then  -- check if this is for a new factory or not
+        local factory = lib.context.get(player, "Factory")  ---@as Factory
         for product in factory:iterator() do
             existing_products[product.proto.name] = true
         end
@@ -87,17 +107,20 @@ local function add_item_picker(parent_flow, player)
         if not item_proto.hidden and not item_proto.ingredient_only then
             local group_name = item_proto.group.name
             local group_id = group_id_cache[group_name]
-            local flow_subgroups, subgroup_tables = nil, nil
+            local flow_subgroups  ---@type LuaGuiElement
+            local subgroup_tables  ---@type table<string, table<SubgroupKey, LuaGuiElement>>
 
             if group_id == nil then
                 local cache_count = table_size(group_id_cache) + 1
                 group_id_cache[group_name] = cache_count
                 group_id = cache_count
 
-                local button_group = table_item_groups.add{type="sprite-button", sprite=("item-group/" .. group_name),
-                    tags={mod="fp", on_gui_click="select_picker_item_group", group_id=group_id},
-                    style="fp_sprite-button_group_tab", tooltip=item_proto.group.localised_name,
-                    mouse_button_filter={"left"}}
+                ---@class SelectPickerItemGroupTags
+                ---@field group_id integer
+                local tags = {mod="fp", on_gui_click="select_picker_item_group", group_id=group_id}
+                local button_group = table_item_groups.add{type="sprite-button", tags=tags,
+                    sprite=("item-group/" .. group_name), style="fp_sprite-button_group_tab",
+                    tooltip=item_proto.group.localised_name, mouse_button_filter={"left"}}
 
                 -- This only exists when button_group also exists
                 local scroll_pane_subgroups = frame_filters.add{type="scroll-pane", style="shallow_scroll_pane"}
@@ -129,6 +152,7 @@ local function add_item_picker(parent_flow, player)
                 flow_subgroups = group_flow_cache[group_id]
                 subgroup_tables = modal_elements.groups[group_id].subgroup_tables
             end
+            ---@cast flow_subgroups -nil
 
             local subgroup_name = item_proto.subgroup.name
             local table_subgroup = subgroup_table_cache[subgroup_name]
@@ -158,15 +182,22 @@ local function add_item_picker(parent_flow, player)
             local name = (item_proto.temperature) and item_proto.base_name or item_name
             local elem_tooltip = (item_proto.type ~= "entity") and {type=item_proto.type, name=name} or nil
 
-            local button_item = table_subgroup.add{type="sprite-button", sprite=item_proto.sprite, style=button_style,
-                tags={mod="fp", on_gui_click="select_picker_item", item_id=item_proto.id,
-                category_id=item_proto.category_id, enabled=(existing_product == nil)},
-                tooltip=item_proto.tooltip, elem_tooltip=elem_tooltip, mouse_button_filter={"left"}}
+            ---@class SelectPickerItemTags
+            ---@field item_id integer
+            ---@field category_id integer
+            ---@field enabled boolean
+            local tags = {mod="fp", on_gui_click="select_picker_item", item_id=item_proto.id,
+                category_id=item_proto.category_id, enabled=(existing_product == nil)}
+            local button_item = table_subgroup.add{type="sprite-button", tags=tags, sprite=item_proto.sprite,
+                style=button_style, tooltip=item_proto.tooltip, elem_tooltip=elem_tooltip, mouse_button_filter={"left"}}
 
             -- Figure out the translated name here so search doesn't have to repeat the work for every character
             local translated_name = (translations) and translations[item_proto.type][item_name] or nil
             translated_name = (translated_name) and helpers.multilingual_to_lower(translated_name) or item_name
-            subgroup_table[{name=item_name, translated_name=translated_name}] = button_item
+
+            ---@class SubgroupKey
+            local subgroup_key = {name=item_name, translated_name=translated_name}
+            subgroup_table[subgroup_key] = button_item
         end
     end
 
@@ -176,15 +207,16 @@ local function add_item_picker(parent_flow, player)
     frame_filters.style.natural_height = max_item_rows * 40 + (2*12)
 
     -- Select the previously selected item group if possible
-    local group_to_select, previous_selection = 1, ui_state.last_selected_picker_group
+    local group_to_select, previous_selection = 1, player_table.ui_state.last_selected_picker_group
     if previous_selection ~= nil and modal_elements.groups[previous_selection] ~= nil then
         group_to_select = previous_selection
     end
-    select_item_group(ui_state.modal_data, group_to_select)
+    select_item_group(modal_data, group_to_select)
 end
 
 
 -- ** PICKER DIALOG **
+---@param modal_data PickerDialogModalData
 local function set_appropriate_focus(modal_data)
     if modal_data.amount_defined_by == "amount" then
         lib.gui.select_all(modal_data.modal_elements["item_amount_textfield"])
@@ -194,6 +226,7 @@ local function set_appropriate_focus(modal_data)
 end
 
 -- Is only called when defined_by ~= "amount"
+---@param modal_data PickerDialogModalData
 local function sync_amounts(modal_data)
     local modal_elements = modal_data.modal_elements
 
@@ -201,13 +234,15 @@ local function sync_amounts(modal_data)
     if belt_amount == nil then
         modal_elements.item_amount_textfield.text = ""
     else
-        local belt_proto = modal_data.belt_proto
-        local throughput = belt_proto.throughput * ((modal_data.lob == "belts") and 1 or 0.5)
+        local belt_proto = modal_data.belt_proto  ---@cast belt_proto -nil
+        local throughput = belt_proto.throughput * ((modal_data.belts_or_lanes == "belts") and 1 or 0.5)
         local item_amount = belt_amount * throughput * modal_data.timescale
         modal_elements.item_amount_textfield.text = lib.format.number(item_amount, 6)
     end
 end
 
+---@param modal_data PickerDialogModalData
+---@param belt_proto FPBeltPrototype?
 local function set_belt_proto(modal_data, belt_proto)
     modal_data.belt_proto = belt_proto
 
@@ -222,11 +257,11 @@ local function set_belt_proto(modal_data, belt_proto)
     else
         -- Might double set the choice button, but it doesn't matter
         modal_elements.belt_choice_button.elem_value = belt_proto.name
-        modal_data.amount_defined_by = modal_data.lob
+        modal_data.amount_defined_by = modal_data.belts_or_lanes
 
         local item_amount = lib.gui.parse_expression_field(modal_elements.item_amount_textfield, true)
         if item_amount ~= nil then
-            local throughput = belt_proto.throughput * ((modal_data.lob == "belts") and 1 or 0.5)
+            local throughput = belt_proto.throughput * ((modal_data.belts_or_lanes == "belts") and 1 or 0.5)
             local belt_amount = item_amount / throughput / modal_data.timescale
             modal_elements.belt_amount_textfield.text = lib.format.number(belt_amount, 6)
         end
@@ -234,6 +269,8 @@ local function set_belt_proto(modal_data, belt_proto)
     end
 end
 
+---@param modal_data PickerDialogModalData
+---@param item_proto FPItemPrototype?
 local function set_item_proto(modal_data, item_proto)
     local modal_elements = modal_data.modal_elements
     modal_data.item_proto = item_proto
@@ -252,6 +289,7 @@ local function set_item_proto(modal_data, item_proto)
     if not is_item then set_belt_proto(modal_data, nil) end
 end
 
+---@param modal_elements table
 local function update_dialog_submit_button(modal_elements)
     local item_choice_button = modal_elements.item_choice_button
     local item_amount = lib.gui.parse_expression_field(modal_elements.item_amount_textfield, true)
@@ -268,6 +306,10 @@ local function update_dialog_submit_button(modal_elements)
 end
 
 
+---@param parent_flow LuaGuiElement
+---@param modal_data PickerDialogModalData
+---@param item_category ItemCategory
+---@param item TLProduct?
 local function add_item_pane(parent_flow, modal_data, item_category, item)
     local function create_flow()
         local flow = parent_flow.add{type="flow", direction="horizontal"}
@@ -312,7 +354,8 @@ local function add_item_pane(parent_flow, modal_data, item_category, item)
 
 
     local flow_belts = create_flow()
-    local label = flow_belts.add{type="label", caption={"fp.amount_by", {"fp.pl_" .. modal_data.lob:sub(1, -2), 2}}}
+    local belts_or_lanes = {"fp.pl_" .. modal_data.belts_or_lanes:sub(1, -2), 2}
+    local label = flow_belts.add{type="label", caption={"fp.amount_by", belts_or_lanes}}
     label.style.right_margin = 6
 
     local belt_amount = (item and defined_by ~= "amount") and tostring(item.required_amount) or ""
@@ -332,10 +375,10 @@ local function add_item_pane(parent_flow, modal_data, item_category, item)
 
 
     local item_proto = (item) and item.proto or nil
-    set_item_proto(modal_data, item_proto)
+    set_item_proto(modal_data, item_proto--[[@as FPItemPrototype?]])
 
-    local belt_proto = (defined_by ~= "amount") and item.belt_proto or nil
-    set_belt_proto(modal_data, belt_proto)
+    local belt_proto = (item and defined_by ~= "amount") and item.belt_proto or nil
+    set_belt_proto(modal_data, belt_proto--[[@as FPBeltPrototype?]])
 
     if (item) then set_appropriate_focus(modal_data)
     else modal_elements.search_textfield.focus() end
@@ -343,9 +386,11 @@ local function add_item_pane(parent_flow, modal_data, item_category, item)
 end
 
 
+---@param player LuaPlayer
+---@param tags SelectPickerItemTags
 local function handle_item_pick(player, tags, _)
-    local modal_data = lib.globals.modal_data(player)
-    local item_proto = prototyper.util.find("items", tags.item_id, tags.category_id)
+    local modal_data = lib.globals.modal_data(player)  ---@as PickerDialogModalData
+    local item_proto = prototyper.util.find("items", tags.item_id, tags.category_id)  ---@as FPItemPrototype
 
     if not tags.enabled then
         lib.cursor.create_flying_text(player, {"fp.picker_already_selected", item_proto.localised_name})
@@ -358,11 +403,13 @@ local function handle_item_pick(player, tags, _)
     update_dialog_submit_button(modal_data.modal_elements)
 end
 
+---@param player LuaPlayer
+---@param event EventData.on_gui_elem_changed
 local function handle_belt_pick(player, _, event)
-    local belt_name = event.element.elem_value
-    local belt_proto = prototyper.util.find("belts", belt_name, nil)
+    local belt_name = event.element.elem_value  ---@as string
+    local belt_proto = prototyper.util.find("belts", belt_name, nil)  ---@as FPBeltPrototype
 
-    local modal_data = lib.globals.modal_data(player)
+    local modal_data = lib.globals.modal_data(player)  ---@as PickerDialogModalData
     set_belt_proto(modal_data, belt_proto)  -- syncs amounts itself
 
     set_appropriate_focus(modal_data)
@@ -370,12 +417,14 @@ local function handle_belt_pick(player, _, event)
 end
 
 
+---@param player LuaPlayer
+---@param modal_data PickerDialogModalData
 local function open_picker_dialog(player, modal_data)
     local preferences = lib.globals.preferences(player)
 
     if modal_data.item_id then modal_data.item = OBJECT_INDEX[modal_data.item_id] end
     modal_data.timescale = preferences.timescale
-    modal_data.lob = preferences.belts_or_lanes
+    modal_data.belts_or_lanes = preferences.belts_or_lanes
 
     local content_frame = modal_data.modal_elements.content_frame
     content_frame.style.minimal_width = 325
@@ -391,11 +440,12 @@ local function open_picker_dialog(player, modal_data)
     end
 end
 
+---@param player LuaPlayer
+---@param action GUICloseAction
 local function close_picker_dialog(player, action)
-    local player_table = lib.globals.player_table(player)
-    local ui_state = player_table.ui_state
-    local modal_data = ui_state.modal_data  --[[@as table]]
-    local factory = lib.context.get(player, "Factory")  --[[@as Factory]]
+    local ui_state = lib.globals.ui_state(player)
+    local modal_data = ui_state.modal_data  ---@as PickerDialogModalData
+    local factory = lib.context.get(player, "Factory")  ---@as Factory
 
     if action == "submit" then
         local defined_by = modal_data.amount_defined_by
@@ -431,7 +481,7 @@ local function close_picker_dialog(player, action)
         main_dialog.toggle_districts_view(player, true)
         lib.gui.run_refresh(player, "production")
 
-    elseif action == "delete" then
+    elseif action == "delete" then  ---@cast modal_data.item -nil
         factory:remove(modal_data.item)
         solver.update(player, factory)
         lib.gui.run_refresh(player, "factory_list")  -- for product icons
@@ -444,33 +494,36 @@ end
 
 
 -- ** EVENTS **
-local listeners = {}
+local listeners = {}  ---@type ListenerDefinitions
 
 listeners.gui = {
     on_gui_click = {
         {
             name = "picker_item_choice",
-            handler = (function(player, _, _)
+            handler = function(player, _, _)
                 local cursor_item = lib.cursor.parse_cursor_item(player)
                 if cursor_item == nil then return end
 
-                local item_proto = prototyper.util.find("items", cursor_item.name, "item")
+                local item_proto = prototyper.util.find("items", cursor_item.name, "item")  ---@as FPItemPrototype?
                 if item_proto == nil or item_proto.hidden or item_proto.ingredient_only then
-                    lib.cursor.create_flying_text(player, {"fp.picker_invalid_product", item_proto.localised_name})
+                    local name = (item_proto) and item_proto.localised_name or {"fp.this"}
+                    lib.cursor.create_flying_text(player, {"fp.picker_invalid_product", name})
                 else
-                    local factory = lib.context.get(player, "Factory")  --[[@as Factory]]
-                    local enabled = (factory:find({proto=item_proto}) == nil)
+                    local factory = lib.context.get(player, "Factory")  ---@as Factory
+                    local filter = {proto = item_proto}  ---@as ObjectFilter
+                    local enabled = (factory:find(filter) == nil)
                     local tags = {item_id=item_proto.id, category_id=item_proto.category_id, enabled=enabled}
-                    handle_item_pick(player, tags)
+                    handle_item_pick(player, tags--[[@as SelectPickerItemTags]])
                 end
-            end)
+            end
         },
         {
             name = "select_picker_item_group",
-            handler = (function(player, tags, _)
-                local modal_data = lib.globals.modal_data(player)
+            handler = function(player, tags, _)
+                ---@cast tags SelectPickerItemGroupTags
+                local modal_data = lib.globals.modal_data(player)  ---@as PickerDialogModalData
                 select_item_group(modal_data, tags.group_id)
-            end)
+            end
         },
         {
             name = "select_picker_item",
@@ -486,39 +539,43 @@ listeners.gui = {
     on_gui_text_changed = {
         {
             name = "picker_item_amount",
-            handler = (function(player, _, event)
+            handler = function(player, _, event)
+                ---@cast event EventData.on_gui_text_changed
                 local item_amount = lib.gui.parse_expression_field(event.element, true)
                 lib.gui.update_expression_field(event.element, item_amount ~= nil)
 
                 update_dialog_submit_button(lib.globals.modal_elements(player))
-            end)
+            end
         },
         {
             name = "picker_belt_amount",
-            handler = (function(player, _, event)
+            handler = function(player, _, event)
+                ---@cast event EventData.on_gui_text_changed
                 local belt_amount = lib.gui.parse_expression_field(event.element, true)
                 lib.gui.update_expression_field(event.element, belt_amount ~= nil)
 
-                local modal_data = lib.globals.modal_data(player)
+                local modal_data = lib.globals.modal_data(player)  ---@as PickerDialogModalData
                 sync_amounts(modal_data)  -- defined_by ~= "amount"
                 update_dialog_submit_button(modal_data.modal_elements)
-            end)
+            end
         }
     },
     on_gui_confirmed = {
         {
             name = "picker_amount",
-            handler = (function(player, _, event)
+            handler = function(player, _, event)
+                ---@cast event EventData.on_gui_confirmed
                 local confirmed = lib.gui.confirm_expression_field(event.element, true)
                 if confirmed then lib.gui.close_dialog(player, "submit") end
-            end)
+            end
         }
     }
-}
+}  ---@as GUIListenerDefinition
 
 listeners.dialog = {
     dialog = "picker",
-    metadata = (function(modal_data)
+    metadata = function(modal_data)
+        ---@cast modal_data PickerDialogModalData
         local action = (modal_data.item_id) and {"fp.edit"} or {"fp.add"}
         return {
             caption = {"", action, " ", {"fp.pl_" .. modal_data.item_category, 1}},
@@ -526,8 +583,8 @@ listeners.dialog = {
             disable_scroll_pane = true,
             show_submit_button = true,
             show_delete_button = (modal_data.item_id ~= nil)
-        }
-    end),
+        }  ---@as ModalDialogSettings
+    end,
     open = open_picker_dialog,
     close = close_picker_dialog
 }

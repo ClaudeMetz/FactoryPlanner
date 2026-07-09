@@ -98,7 +98,7 @@ function generator.recipes.generate()
             custom = true,
             enabled_from_the_start = true,
             hidden = false,
-            maximum_productivity = math.huge  --[[@as EffectValue]],
+            maximum_productivity = 2^53,
             emissions_multiplier = 1
         }  ---@type FPRecipePrototype
         generator.util.add_default_groups(recipe)
@@ -750,7 +750,7 @@ function generator.machines.generate()
     end
 
     local item_prototypes = generator.util.get_item_members("item")
-    local recipe_prototypes = storage.prototypes.recipes
+    local recipe_prototypes = storage.prototypes.recipes  ---@as NamedPrototypes<FPRecipePrototype>
 
     ---@param category string
     ---@param proto LuaEntityPrototype
@@ -999,6 +999,8 @@ end
 
 ---@class FPFuelPrototype: FPPrototypeWithCategory
 ---@field data_type "fuels"
+---@field type "item" | "fluid"
+---@field category string
 ---@field combined_category string
 ---@field elem_type ElemType
 ---@field fuel_value float
@@ -1006,7 +1008,6 @@ end
 
 ---@class FPItemFuelPrototype: FPFuelPrototype
 ---@field type "item"
----@field category string
 ---@field burnt_result string?
 ---@field stack_size uint?
 ---@field weight double?
@@ -1080,7 +1081,7 @@ function generator.fuels.generate()
     end
 
     local combined_list = {}  -- set of every possible combined_category
-    local machine_prototypes = storage.prototypes.machines
+    local machine_prototypes = storage.prototypes.machines  ---@as NamedPrototypesWithCategory<FPMachinePrototype>
 
     -- Create category for each combination of fuels used by machines
     for _, machine_category in pairs(machine_prototypes) do
