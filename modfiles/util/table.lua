@@ -1,22 +1,15 @@
-local math = {
-    list = {},
-    table = {}
-}
+local table = {}
 
 
----@alias Set<K: any> {K: true}
----@alias NumericList<K: any> {K: number}
-
-
---- Inserts a `value` into the `list` at a given `key`.
---- If the given `key` already contains a value, the two are added together.
----@param list NumericList<any>
+--- Inserts a `value` at the end of the `table` with a given `key`.
+--- If `key` already contains a value, the two are added together.
+---@param table table<any, number>
 ---@param key any
 ---@param value number
 ---@return number value  The new `value` stored at `key`
-function math.list.add(list, key, value)
-    list[key] = list[key] ~= nil and list[key] + value or value
-    return list[key]
+function table.add(table, key, value)
+    table[key] = table[key] ~= nil and table[key] + value or value
+    return table[key]
 end
 
 
@@ -27,11 +20,11 @@ end
 ---@param left_table table<any, any>
 ---@param right_table table<any, any>
 ---@return table<any, any> result_table
-function math.table.join(left_table, right_table)
+function table.join(left_table, right_table)
     local result_table = {}
     for k, v in pairs(left_table) do result_table[k] = v end
     for k, v in pairs(right_table) do result_table[k] = v end
     return result_table
 end
 
-return math
+return table

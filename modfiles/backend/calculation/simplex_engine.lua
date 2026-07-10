@@ -3,9 +3,9 @@ local simplex_engine = {}
 
 
 ---@alias PrototypeName string
----@alias ItemSet Set<PrototypeName>
----@alias SimplexItemList NumericList<PrototypeName>
----@alias SimplexFloorResultTable table<ObjectID, SimplexFloorResult>
+---@alias ItemSet {PrototypeName: true}
+---@alias SimplexItemList {PrototypeName: number}
+---@alias SimplexFloorResultTable {ObjectID: SimplexFloorResult}
 ---@alias SimplexSolverState "solved" | "unbounded" | "no-solution"
 
 ---@class SimplexLineData
@@ -50,7 +50,8 @@ function simplex_engine.solve_floor(player, factory, floor, target_items)
     local line_data_table = {}
 
     -- Check early exit conditions
-    if not floor.first or floor.first.valid or not floor.first.active or not floor.first:get_surface_compatibility() then
+    if not floor.first or (floor.level > 1 and
+            (floor.first.valid or not floor.first.active or not floor.first:get_surface_compatibility())) then
         return nil
     end
 
@@ -61,7 +62,7 @@ function simplex_engine.solve_floor(player, factory, floor, target_items)
         if line_object.class == "Floor" then
             local subfloor_result_map = simplex_engine.solve_floor(player, factory, line_object)
             if subfloor_result_map then
-                result_table = lib.math.table.join(result_table, subfloor_result_map)
+                result_table = lib.table.join(result_table, subfloor_result_map)
                 data = simplex_engine.get_line_data_from_floor(line_object, subfloor_result_map)
             end
         elseif line_object.class == "Line" then
@@ -73,7 +74,7 @@ function simplex_engine.solve_floor(player, factory, floor, target_items)
 
     log("\n.line_data = " .. serpent.block(line_data_table, {sortkeys = false}))
 
-    result_table = lib.math.table.join({[floor.id] = result}, result_table)
+    result_table = lib.table.join({[floor.id] = result}, result_table)
     return result_table
 end
 
@@ -160,7 +161,7 @@ function simplex_engine.get_line_data(player, factory, line)
     if line.recipe.proto.products then
         for _, item in pairs(line.recipe.proto.products) do
             local amount = total_crafts * solver.util.determine_prodded_amount(item, effects)
-            lib.math.list.add(items, item.name, amount)
+            lib.table.add(items, item.name, amount)
         end
     end
 
@@ -168,12 +169,12 @@ function simplex_engine.get_line_data(player, factory, line)
     if line.recipe.proto.catalysts then
         for _, item in pairs(line.recipe.proto.catalysts.products) do
             local amount = total_crafts * solver.util.determine_prodded_amount(item, effects)
-            lib.math.list.add(items, item.name, amount)
+            lib.table.add(items, item.name, amount)
         end
         for _, item in pairs(line.recipe.proto.catalysts.ingredients) do
             local name = line.recipe:get_name_with_temperature(item)
             local amount = total_crafts * item.amount * line.machine:get_resource_drain_rate()
-            lib.math.list.add(items, name, -amount)
+            lib.table.add(items, name, -amount)
         end
     end
 
@@ -182,7 +183,7 @@ function simplex_engine.get_line_data(player, factory, line)
         for _, item in pairs(line.recipe.proto.ingredients) do
             local name = line.recipe:get_name_with_temperature(item)
             local amount = total_crafts * item.amount * line.machine:get_resource_drain_rate()
-            lib.math.list.add(items, name, -amount)
+            lib.table.add(items, name, -amount)
         end
     end
 
@@ -194,24 +195,24 @@ function simplex_engine.get_line_data(player, factory, line)
     fuel_proto, 1, energy_usage, effects, pollutant_type)
 
     if pollutant_type and emissions then
-        lib.math.list.add(items, pollutant_type, -emissions)
+        lib.table.add(items, pollutant_type, -emissions)
     end
 
     -- Get fuel/heat
     if line.machine.proto.energy_type == "burner" and fuel_proto then
         ---@cast line.machine.proto.burner -nil
         local amount = solver.util.determine_fuel_amount(power, line.machine.proto.burner, fuel_proto.fuel_value)
-        lib.math.list.add(items, fuel_proto.name, -amount)
+        lib.table.add(items, fuel_proto.name, -amount)
     elseif line.machine.proto.energy_type == "electric" then
-        lib.math.list.add(items, "custom-electric-power", -power)
+        lib.table.add(items, "custom-electric-power", -power)
     elseif line.machine.proto.energy_type == "heat" then
-        lib.math.list.add(items, "custom-heat-power", -power)
+        lib.table.add(items, "custom-heat-power", -power)
     end
 
     -- Get beacon power
     local beacon_power = line.beacon and line.beacon:get_total_power() or 0
     if beacon_power > 0 then
-        lib.math.list.add(items, "custom-electric-power", -beacon_power)
+        lib.table.add(items, "custom-electric-power", -beacon_power)
     end
 
     return {
