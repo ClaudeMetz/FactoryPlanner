@@ -174,11 +174,7 @@ local function generate_floor_data(player, factory, floor)
 
                 -- Boiler recipe energy
                 if machine.proto.prototype_category == "boiler" then
-                    local goal_temperature = recipe_proto.products[1]--[[@cast -nil]].temperature  ---@as float
-                    local fluid_name = recipe_proto.ingredients[1]--[[@cast -nil]].name
-                    local heat_capacity = prototypes.fluid[fluid_name].heat_capacity
-                    local input_temperature = ingredients[1]--[[@cast -nil]].temperature  ---@as float
-                    line_data.recipe_energy = (goal_temperature - input_temperature) * heat_capacity
+                    line_data.recipe_energy = solver.util.determine_boiler_energy(line.recipe)
                 end
 
                 -- Effects - update line with recipe effects here if applicable
@@ -331,7 +327,7 @@ function solver.update(player, factory)
 
         if factory.matrix_solver_active then
             if lib.globals.preferences(player).use_simplex_solver then
-                simplex_engine.solve(factory)
+                simplex_engine.solve(player, factory)
             else
                 local matrix_metadata = matrix_engine.get_matrix_solver_metadata(factory_data)
 
@@ -526,6 +522,18 @@ end
 ---@return number
 function solver.util.determine_fuel_amount(power, burner, fuel_value)
     return (power / burner.effectivity) / fuel_value
+end
+
+
+---@param recipe Recipe
+function solver.util.determine_boiler_energy(recipe)
+    ---@cast recipe.proto -FPPackedPrototype
+    local product = recipe.proto.products[1]  ---@as FormattedProduct
+    local ingredient = recipe.proto.ingredients[1]  ---@as Ingredient
+    local goal_temperature = product.temperature or 0
+    local heat_capacity = prototypes.fluid[ingredient.name].heat_capacity
+    local input_temperature = recipe:get_temperature(ingredient) or 0
+    return (goal_temperature - input_temperature) * heat_capacity
 end
 
 
