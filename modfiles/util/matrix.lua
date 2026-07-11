@@ -37,8 +37,12 @@ function _matrix.pivot(matrix, row, column)
     if row > #matrix or not matrix[row] then return end
     if column > #matrix[row] then return end
     _matrix.row_mult(matrix, row, 1 / matrix[row][column]--[[@as number]])
+    matrix[row][column] = 1  --improve precision
     for i = 1, #matrix do
-        _matrix.row_subtract(matrix, i, column, matrix[i][column]--[[@as number]])
+        if i ~= row then
+            _matrix.row_subtract(matrix, i, row, matrix[i][column]--[[@as number]])
+            matrix[i][column] = 0  --improve precision
+        end
     end
 end
 

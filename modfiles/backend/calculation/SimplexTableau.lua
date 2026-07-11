@@ -66,9 +66,9 @@ end
 --- Adds a slack variable to the inequality constraint of the given item
 ---@param key PrototypeName
 ---@param direction ItemDirection
----@param score number?
-function SimplexTableau:add_item_variable(key, direction, score)
-    score = score or 0
+---@param objective number?
+function SimplexTableau:add_item_variable(key, direction, objective)
+    objective = objective or 0
     local item_row_key = "item_" .. key
     local item_col_key = "item_" .. direction .. "_" .. key
 
@@ -84,7 +84,7 @@ function SimplexTableau:add_item_variable(key, direction, score)
     if not self._matrix[row_index] then return end
 
     -- Fill the table values
-    local col_index = self:_add_column(item_col_key, score)
+    local col_index = self:_add_column(item_col_key, objective)
     self._matrix[row_index][col_index] = sign
 end
 
@@ -94,9 +94,9 @@ end
 ---@param direction ItemDirection
 ---@param limit number
 ---@param type InequalityType
----@param score number?
-function SimplexTableau:add_item_constraint(key, direction, type, limit, score)
-    score = score or 0
+---@param objective number?
+function SimplexTableau:add_item_constraint(key, direction, type, limit, objective)
+    objective = objective or 0
     local item_col_key = "item_" .. direction .. "_" .. key
 
     -- Check that the item variable is present in the tableau
@@ -110,9 +110,9 @@ function SimplexTableau:add_item_constraint(key, direction, type, limit, score)
     self._matrix[row_index]--[[@cast -nil]][item_col_index] = 1
     self._matrix[row_index]--[[@cast -nil]][1] = limit
 
-    -- Update the item variable score
+    -- Update the item variable objective
     local x = self._matrix[1]--[[@cast -nil]][item_col_index] or 0
-    self._matrix[1]--[[@cast -nil]][item_col_index] = x - score  -- score coefficient is opposite
+    self._matrix[1]--[[@cast -nil]][item_col_index] = x - objective  -- objective coefficient is opposite
 
     -- We are done for equality constraints
     if type == "==" then return end
@@ -126,8 +126,7 @@ function SimplexTableau:add_item_constraint(key, direction, type, limit, score)
 end
 
 
----@param vv_score number virtual variable score (actually cost, since it should be negative)
-function SimplexTableau:solve(vv_score)
+function SimplexTableau:solve()
     -- Only allow non-negative limits (should never happen in practice though)
     for i = 2, #self._matrix do
         if self._matrix[i][1] < 0 then lib.matrix.row_mult(self._matrix, i, -1) end
@@ -154,76 +153,117 @@ function SimplexTableau:solve(vv_score)
         end
 
         if is_basic and one_index then
-            for k, v in pairs(self._cols) do
-                if j == v then
-                    basic[one_index] = k
-                    break
-                end
-            end
+            basic[one_index] = lib.table.find(self._cols, j)
         end
     end
 
-    -- Add a virtual variable with a very large cost for each non-basic row
+    -- Save the objective function
+    local original_objective = self._matrix[1]
+    self._matrix[1] = {}
+    for j = 1, #original_objective do self._matrix[1][j] = 0 end
+
+    -- Add a virtual variables with negative cost for each non-basic row
     for i = 2, #self._matrix do
         if not basic[i] then
-            local virtual_key = "y_" .. i
-            local col_index = self:_add_column(virtual_key, vv_score)
+            local virtual_key = "y_" .. #self._matrix[1] + 1
+            local col_index = self:_add_column(virtual_key, -1)
             self._matrix[i][col_index] = 1
             basic[i] = virtual_key
         end
     end
 
-    -- Reduce the score function of the basic variables to 0
-    for i = 2, #self._matrix do
-        local col_index = self._cols[basic[i]] or 0
-        local pivot = self._matrix[1]--[[@cast -nil]][col_index] or 0
-        if pivot ~= 0 then
-            lib.matrix.row_subtract(self._matrix, 1, i, pivot)
+    -- Reduce the objective function of the basic variables to 0
+    local function reduce_objective()
+        for i = 2, #self._matrix do
+            local col_index = self._cols[basic[i]] or 0
+            local objective = self._matrix[1]--[[@cast -nil]][col_index] or 0
+            if objective ~= 0 then
+                lib.matrix.row_subtract(self._matrix, 1, i, objective)
+            end
         end
     end
 
+    ---@param phase 1 | 2
     ---@return boolean done
     ---@return SolverState state
-    local function solve_step()
-        -- Select the variable with the most negative score as input
+    local function solve_step(phase)
+        -- Select the variable with the most negative objective as the entering variable
         local col_index = 0
-        local min = 0.0
-        for i = 2, #self._matrix[1] do
-            if self._matrix[1][i] < min then
-                col_index = i
-                min = self._matrix[1][i]
+        local min = - MAGIC_NUMBERS.double_margin_of_error
+        for j = 2, #self._matrix[1] do
+            if self._matrix[1][j] < min then
+                col_index = j
+                min = self._matrix[1][j]
             end
         end
 
         if col_index == 0 then
-            -- We are done, but check that we actually have a solution
-            ---@TODO
+            -- We are done, but check that we don't have virtual variables in the solution
+            if phase == 1 then
+                for i = 2, #self._matrix do
+                    if basic[i] and string.sub(basic[i], 1, 2) == "y_" then
+                        return true, "no-solution"
+                    end
+                end
+            end
             return true, "solved"
         end
 
-        -- Select the basis with the smallest ratio
+        -- Select the basis with the smallest ratio as the leaving variable
         local row_index = 0
         min = 2.0^1023
         for i = 2, #self._matrix do
             local denominator = self._matrix[i][col_index] or 0
-            local ratio = (denominator > 0 and self._matrix[i][1]) and (self._matrix[i][1] / denominator) or 0
-            if ratio > 0 and ratio < min then
+            local ratio = (denominator > 0 and self._matrix[i][1]) and (self._matrix[i][1] / denominator) or -1
+            if ratio >= 0 and ratio < min then
                 row_index = i
                 min = ratio
             end
+            if ratio == 0 then break end
         end
 
-        if col_index == 0 then return true, "unbounded" end
+        if row_index == 0 then return true, "unbounded" end
+
+        -- Perform a pivot, swaping the basic variable
+        lib.matrix.pivot(self._matrix, row_index, col_index)
+        basic[row_index] = lib.table.find(self._cols, col_index)
 
         return false, "in-progress"
     end
 
-    -- Iterate solving steps
+    -- Phase 1: Eliminate the virtual variables
     local done = false
     local state = "in-progress"  ---@type SolverState
-    -- repeat
-    --     done, state = solve_step()
-    -- until done
+    local max_iterations = 10 * #self._matrix[1]
+    reduce_objective()
+    repeat
+        done, state = solve_step(1)
+        max_iterations = max_iterations - 1
+    until done or max_iterations == 0
+    if state ~= "solved" then return end
+    state = "in-progress"
+
+    -- Remove the virtual variables from the tableau, and restore the objective function
+    local start = #original_objective + 1
+    local finish = #self._matrix[1]
+    self._matrix[1] = original_objective
+    for j = start, finish do
+        for i = 2, #self._matrix do
+            self._matrix[i][j] = nil
+        end
+        self._cols["y_" .. j] = nil
+    end
+
+    -- Phase 2: Find the optimal solution
+    done = false
+    max_iterations = 10 * #self._matrix[1]
+    reduce_objective()
+    repeat
+        done, state = solve_step(2)
+        max_iterations = max_iterations - 1
+    until done or max_iterations == 0
+    if state ~= "solved" then return end
+
 end
 
 
@@ -237,8 +277,8 @@ function SimplexTableau:_add_row(key, limit)
 
     -- Populate the row
     self._matrix[row_index]--[[@cast -nil]][1] = limit or 0
-    for i = 2, #self._matrix[1] do
-        self._matrix[row_index][i] = 0
+    for j = 2, #self._matrix[1] do
+        self._matrix[row_index][j] = 0
     end
 
     return row_index
@@ -247,15 +287,15 @@ end
 
 ---@private
 ---@param key string
----@param score number?
+---@param objective number?
 ---@return integer index
-function SimplexTableau:_add_column(key, score)
-    score = score or 0
+function SimplexTableau:_add_column(key, objective)
+    objective = objective or 0
     local col_index = #self._matrix[1] + 1
     self._cols[key] = col_index
 
     -- Populate the column
-    self._matrix[1]--[[@cast -nil]][col_index] = -score  -- score coefficient is opposite
+    self._matrix[1]--[[@cast -nil]][col_index] = -objective  -- objective coefficient is opposite
     for i = 2, #self._matrix do
         self._matrix[i][col_index] = 0
     end

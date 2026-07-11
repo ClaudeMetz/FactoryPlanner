@@ -21,13 +21,13 @@ local simplex_engine = {}
 
 
 ---@TODO: Move this to a better place. Maybe let the user configure it
--- Negative score represents a cost
-local score_vector = {
+-- The objective function is maximized, so positive values indicate a score,
+-- and negative values indicate a cost
+local objective_vector = {
     target_product = 1000,
     product = 0,
     intermediate = -1,
-    ingredient = 0,
-    virtual_variable = -1e8
+    ingredient = 0
 }
 
 
@@ -121,29 +121,29 @@ function simplex_engine.solve_floor(player, factory, floor, target_products)
 
     -- Add slack variables for products
     for item_key, _ in pairs(products) do
-        tableau:add_item_variable(item_key, "out", score_vector.product)
+        tableau:add_item_variable(item_key, "out", objective_vector.product)
     end
 
     -- Add slack variables for intermediates
     for item_key, _ in pairs(intermediates) do
-        tableau:add_item_variable(item_key, "in", score_vector.intermediate)
-        tableau:add_item_variable(item_key, "out", score_vector.intermediate)
+        tableau:add_item_variable(item_key, "in", objective_vector.intermediate)
+        tableau:add_item_variable(item_key, "out", objective_vector.intermediate)
     end
 
     -- Add slack variables for ingredients
     for item_key, _ in pairs(ingredients) do
-        tableau:add_item_variable(item_key, "in", score_vector.ingredient)
+        tableau:add_item_variable(item_key, "in", objective_vector.ingredient)
     end
 
     -- Add additional constraints to target products, so we get a bounded solution
     for item_key, amount in pairs(target_products) do
-        tableau:add_item_constraint(item_key, "out", "<=", amount, score_vector.target_product)
+        tableau:add_item_constraint(item_key, "out", "<=", amount, objective_vector.target_product)
     end
 
     ---@TODO: Can add more constraints on the top level, like ingredient limits and machine limits
 
     -- Solve the tableau
-    tableau:solve(score_vector.virtual_variable)
+    tableau:solve()
 
     log("\n.tableau = " .. serpent.block(tableau, {sortkeys = false}))  ---@TODO: remove
 
