@@ -24,10 +24,11 @@ local simplex_engine = {}
 ---@TODO: Move this to a better place. Maybe let the user configure it
 -- Negative score represents a cost
 local score_vector = {
-    target_product = 1e10,
+    target_product = 1000,
     product = 0,
     intermediate = -1,
-    ingredient = 0
+    ingredient = 0,
+    virtual_variable = -1e8
 }
 
 
@@ -121,28 +122,28 @@ function simplex_engine.solve_floor(player, factory, floor, target_products)
 
     -- Add slack variables for products
     for item_key, _ in pairs(products) do
-        tableau:add_item_variable(item_key, 1, score_vector.product)
+        tableau:add_item_variable(item_key, ">=", score_vector.product)
     end
 
     -- Add slack variables for intermediates
     ---@TODO: Find a way to let the user select whether an intermediate should be imported or exported
     --- For now, treat it as an ingredient (import if not enough)
     for item_key, _ in pairs(intermediates) do
-        tableau:add_item_variable(item_key, -1, score_vector.intermediate)
+        tableau:add_item_variable(item_key, "<=", score_vector.intermediate)
     end
 
     -- Add slack variables for ingredients
     for item_key, _ in pairs(ingredients) do
-        tableau:add_item_variable(item_key, -1, score_vector.ingredient)
+        tableau:add_item_variable(item_key, "<=", score_vector.ingredient)
     end
 
     -- Add additional constraints to target products, so we get a bounded solution
     for item_key, amount in pairs(target_products) do
-        tableau:add_item_constraint(item_key, amount, -1, score_vector.target_product)
+        tableau:add_item_constraint(item_key, amount, "<=", score_vector.target_product)
     end
 
     -- Solve the tableau
-    tableau:solve()
+    tableau:solve(score_vector.virtual_variable)
 
     log("\n.tableau = " .. serpent.block(tableau, {sortkeys = false}))  ---@TODO: remove
 

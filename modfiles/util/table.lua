@@ -13,7 +13,7 @@ function table.add(table, key, value)
 end
 
 
---- Joins two tables together in a new result table.
+--- Joins two tables together in a new result table (`L ∪ R`).
 --- The contents of `left_table` are inserted first.
 --- If the `right_table` contains a key that is already in the `left_table`,
 --- then the value in the `right_table` will be present in the result.
@@ -28,7 +28,7 @@ function table.union(left_table, right_table)
 end
 
 
---- Subtracts the `right_table` from the `left_table` table in a new result table.
+--- Subtracts the `right_table` from the `left_table` table in a new result table (`L ∖ R`).
 --- The result will contain the contents of the `left_table`,
 --- excluding the keys that are also present in the `right_table`.
 ---@param left_table table
@@ -45,7 +45,7 @@ function table.difference(left_table, right_table)
 end
 
 
---- Returns the intersection of two tables.
+--- Returns the intersection of two tables (`L ∩ R`).
 --- The result will contain the contents of the `left_table`,
 --- whose keys are also present in the `right_table`.
 ---@param left_table table
