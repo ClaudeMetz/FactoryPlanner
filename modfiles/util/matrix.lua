@@ -1,8 +1,17 @@
 local matrix = {}
 
 
---- Subtracts `m[j]` from `m[i]` after scaling with `k`
---- (`m[i] = m[i] - k * m[j]`)
+--- Multiplies `m[i]` with a scaling factor `k` (`m[i] = k * m[i]`)
+---@param m number[][]
+---@param i integer
+---@param k number
+function matrix.row_mult(m, i, k)
+    if not m[i] then return end
+    for n = 1, #m[i] do m[i][n] = k * m[i][n] end
+end
+
+
+--- Subtracts `m[j]` from `m[i]` after scaling with `k` (`m[i] = m[i] - k * m[j]`)
 ---@param m number[][]
 ---@param i integer
 ---@param j integer

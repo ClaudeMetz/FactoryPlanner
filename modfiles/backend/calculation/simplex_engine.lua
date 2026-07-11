@@ -9,7 +9,6 @@ local simplex_engine = {}
 ---@alias ItemList table<PrototypeName, number>
 ---@alias ItemSet table<PrototypeName, true>
 ---@alias FloorResultTable table<ObjectID, FloorResult>
----@alias SolverState "solved" | "unbounded" | "no-solution"
 
 ---@class LineData
 ---@field line_id ObjectID
@@ -122,25 +121,26 @@ function simplex_engine.solve_floor(player, factory, floor, target_products)
 
     -- Add slack variables for products
     for item_key, _ in pairs(products) do
-        tableau:add_item_variable(item_key, ">=", score_vector.product)
+        tableau:add_item_variable(item_key, "out", score_vector.product)
     end
 
     -- Add slack variables for intermediates
-    ---@TODO: Find a way to let the user select whether an intermediate should be imported or exported
-    --- For now, treat it as an ingredient (import if not enough)
     for item_key, _ in pairs(intermediates) do
-        tableau:add_item_variable(item_key, "<=", score_vector.intermediate)
+        tableau:add_item_variable(item_key, "in", score_vector.intermediate)
+        tableau:add_item_variable(item_key, "out", score_vector.intermediate)
     end
 
     -- Add slack variables for ingredients
     for item_key, _ in pairs(ingredients) do
-        tableau:add_item_variable(item_key, "<=", score_vector.ingredient)
+        tableau:add_item_variable(item_key, "in", score_vector.ingredient)
     end
 
     -- Add additional constraints to target products, so we get a bounded solution
     for item_key, amount in pairs(target_products) do
-        tableau:add_item_constraint(item_key, amount, "<=", score_vector.target_product)
+        tableau:add_item_constraint(item_key, "out", "<=", amount, score_vector.target_product)
     end
+
+    ---@TODO: Can add more constraints on the top level, like ingredient limits and machine limits
 
     -- Solve the tableau
     tableau:solve(score_vector.virtual_variable)
