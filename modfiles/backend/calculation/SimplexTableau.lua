@@ -41,20 +41,29 @@ function SimplexTableau:add_line_variable(line_data)
 
     local col_index = self:_add_column(line_key)
 
-    -- Populate the tableau matrix with the line results
-    for item, value in pairs(line_data.items) do
-        local item_key = "item_" .. item
-        local row_index = 0
+    ---@param items ItemList
+    ---@param sign 1 | -1
+    local function add_rows(items, sign)
+        for item, value in pairs(items) do
+            local item_key = "item_" .. item
+            local row_index = 0
 
-        -- Add the item to the tableau if not already present
-        if not self._rows[item_key] then
-            row_index = self:_add_row(item_key)
-        else
-            row_index = self._rows[item_key]
+            -- Add the item to the tableau if not already present
+            if not self._rows[item_key] then
+                row_index = self:_add_row(item_key)
+            else
+                row_index = self._rows[item_key]
+            end
+
+            local coef = self._matrix[row_index]--[[@cast -nil]][col_index] or 0
+            self._matrix[row_index]--[[@cast -nil]][col_index] = coef + sign * value
         end
-
-        self._matrix[row_index]--[[@cast -nil]][col_index] = value
     end
+
+    -- Populate the tableau matrix with the line results
+    add_rows(line_data.products, 1)
+    add_rows(line_data.ingredients, -1)
+
 end
 
 

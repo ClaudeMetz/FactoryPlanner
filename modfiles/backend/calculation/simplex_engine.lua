@@ -13,7 +13,8 @@ local simplex_engine = {}
 
 ---@class LineData
 ---@field line_id ObjectID
----@field items ItemList
+---@field products ItemList
+---@field ingredients ItemList
 
 ---@class FloorResult
 
@@ -85,12 +86,11 @@ function simplex_engine.solve_floor(player, factory, floor, target_items)
     local ingredients = {}  ---@type ItemSet
 
     for _, line_data in pairs(line_data_table) do
-        for item_key, value in pairs(line_data.items) do
-            if value > 0 then
-                products[item_key] = true
-            else
-                ingredients[item_key] = true
-            end
+        for item_key, _ in pairs(line_data.products) do
+            products[item_key] = true
+        end
+        for item_key, _ in pairs(line_data.ingredients) do
+            ingredients[item_key] = true
         end
     end
 
@@ -207,7 +207,8 @@ end
 ---@param line Line
 ---@return LineData?
 function simplex_engine.get_line_data(player, factory, line)
-    local items = {}  ---@type ItemList
+    local products = {}  ---@type ItemList
+    local ingredients = {}  ---@type ItemList
 
     -- Check early exit conditions
     if not line.valid or not line.active or not line:get_surface_compatibility() then
@@ -233,7 +234,7 @@ function simplex_engine.get_line_data(player, factory, line)
     if line.recipe.proto.products then
         for _, item in pairs(line.recipe.proto.products) do
             local amount = total_crafts * solver.util.determine_prodded_amount(item, effects)
-            lib.table.add(items, item.name, amount)
+            lib.table.add(products, item.name, amount)
         end
     end
 
@@ -241,12 +242,12 @@ function simplex_engine.get_line_data(player, factory, line)
     if line.recipe.proto.catalysts then
         for _, item in pairs(line.recipe.proto.catalysts.products) do
             local amount = total_crafts * solver.util.determine_prodded_amount(item, effects)
-            lib.table.add(items, item.name, amount)
+            lib.table.add(products, item.name, amount)
         end
         for _, item in pairs(line.recipe.proto.catalysts.ingredients) do
             local name = line.recipe:get_name_with_temperature(item)
             local amount = total_crafts * item.amount * line.machine:get_resource_drain_rate()
-            lib.table.add(items, name, -amount)
+            lib.table.add(ingredients, name, amount)
         end
     end
 
@@ -255,7 +256,7 @@ function simplex_engine.get_line_data(player, factory, line)
         for _, item in pairs(line.recipe.proto.ingredients) do
             local name = line.recipe:get_name_with_temperature(item)
             local amount = total_crafts * item.amount * line.machine:get_resource_drain_rate()
-            lib.table.add(items, name, -amount)
+            lib.table.add(ingredients, name, amount)
         end
     end
 
@@ -267,35 +268,36 @@ function simplex_engine.get_line_data(player, factory, line)
     fuel_proto, 1, energy_usage, effects, pollutant_type)
 
     if pollutant_type and emissions then
-        lib.table.add(items, pollutant_type, -emissions)
+        lib.table.add(products, pollutant_type, emissions)
     end
 
     -- Get fuel/power/heat energy requirements
     if line.machine.proto.energy_type == "burner" and fuel_proto then
         ---@cast line.machine.proto.burner -nil
         local amount = solver.util.determine_fuel_amount(power, line.machine.proto.burner, fuel_proto.fuel_value)
-        lib.table.add(items, fuel_proto.name, -amount)
+        lib.table.add(ingredients, fuel_proto.name, amount)
     elseif line.machine.proto.energy_type == "electric" then
-        lib.table.add(items, "custom-electric-power", -power)
+        lib.table.add(ingredients, "custom-electric-power", power)
     elseif line.machine.proto.energy_type == "heat" then
-        lib.table.add(items, "custom-heat-power", -power)
+        lib.table.add(ingredients, "custom-heat-power", power)
     end
 
     -- Get beacon power
     local beacon_power = line.beacon and line.beacon:get_total_power() or 0
     if beacon_power > 0 then
-        lib.table.add(items, "custom-electric-power", -beacon_power)
+        lib.table.add(ingredients, "custom-electric-power", beacon_power)
+    end
+
+    -- Get heat requirements (frozen planets)
+    if factory.parent.location_proto.entities_require_heating and line.machine.proto.heating_energy > 0 then
+        lib.table.add(ingredients, "custom-heat-power", -line.machine.proto.heating_energy)
     end
 
     return {
         line_id = line.id,
-        items = items
+        products = products,
+        ingredients = ingredients,
     }
-
-    -- Get heat requirements (frozen planets)
-    if factory.parent.location_proto.entities_require_heating and line.machine.proto.heating_energy > 0 then
-        lib.table.add(items, "custom-heat-power", -line.machine.proto.heating_energy)
-    end
 end
 
 
