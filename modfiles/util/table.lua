@@ -1,4 +1,4 @@
-local table = {}
+local _table = {}
 
 
 --- Inserts a `value` at the end of the `table` with a given `key`.
@@ -7,9 +7,20 @@ local table = {}
 ---@param key any
 ---@param value number
 ---@return number value The new `value` stored at `key`
-function table.add(table, key, value)
+function _table.add(table, key, value)
     table[key] = table[key] ~= nil and table[key] + value or value
     return table[key]
+end
+
+
+--- Finds the first key in the thabe which has the `value`
+---@param table table
+---@param value any
+---@return any key
+function _table.find(table, value)
+    for k, v in pairs(table) do
+        if value == v then return k end
+    end
 end
 
 
@@ -20,7 +31,7 @@ end
 ---@param left_table table
 ---@param right_table table
 ---@return table result
-function table.union(left_table, right_table)
+function _table.union(left_table, right_table)
     local result = {}
     for k, v in pairs(left_table) do result[k] = v end
     for k, v in pairs(right_table) do result[k] = v end
@@ -34,7 +45,7 @@ end
 ---@param left_table table
 ---@param right_table table
 ---@return table result_table
-function table.difference(left_table, right_table)
+function _table.difference(left_table, right_table)
     local result = {}
     for k, v in pairs(left_table) do
         -- Intentionally exclude both `nil` and `false` (preserve operation truthyness)
@@ -51,7 +62,7 @@ end
 ---@param left_table table
 ---@param right_table table
 ---@return table result_table
-function table.intersection(left_table, right_table)
+function _table.intersection(left_table, right_table)
     local result = {}
     for k, v in pairs(left_table) do
         -- Intentionally exclude both `nil` and `false` (preserve operation truthyness)
@@ -62,4 +73,4 @@ function table.intersection(left_table, right_table)
 end
 
 
-return table
+return _table
