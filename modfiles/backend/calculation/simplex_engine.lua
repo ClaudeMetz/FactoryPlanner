@@ -24,9 +24,10 @@ local simplex_engine = {}
 ---@TODO: Move this to a better place. Maybe let the user configure it
 -- Negative score represents a cost
 local score_vector = {
+    target_product = 1e10,
     product = 0,
     intermediate = -1,
-    ingredient = -1
+    ingredient = 0
 }
 
 
@@ -35,11 +36,11 @@ local score_vector = {
 function simplex_engine.solve(player, factory)
 
     -- Solve floors
-    local target_items = {}  ---@type ItemList
+    local target_products = {}  ---@type ItemList
     for item in factory:iterator() do
-        target_items[item.proto.name] = item.required_amount
+        target_products[item.proto.name] = item.required_amount
     end
-    simplex_engine.solve_floor(player, factory, factory.top_floor, target_items)
+    simplex_engine.solve_floor(player, factory, factory.top_floor, target_products)
 
     -- Update GUI
     simplex_engine.update_factory(factory)
@@ -49,9 +50,9 @@ end
 ---@param player LuaPlayer
 ---@param factory Factory
 ---@param floor Floor
----@param target_items ItemList?
+---@param target_products ItemList?
 ---@return FloorResultTable? result_table Containins the results of this floor and all subfloors, keyed by floor ID
-function simplex_engine.solve_floor(player, factory, floor, target_items)
+function simplex_engine.solve_floor(player, factory, floor, target_products)
     local result = {}  ---@type FloorResult
     local result_table = {}  ---@type FloorResultTable
     local line_data_table = {}  ---@type LineData[]
@@ -102,12 +103,12 @@ function simplex_engine.solve_floor(player, factory, floor, target_items)
     if not next(products) and not next(intermediates) then return nil end
 
     -- If the target items were not specified, add the first product as the target
-    if not target_items then
-        target_items = {}
+    if not target_products then
+        target_products = {}
         local k, _ = next(products)
         if not k then k = next(intermediates) end
         ---@cast k -nil
-        target_items[k] = 1
+        target_products[k] = 1
     end
 
     -- Create the simplex tableau
@@ -120,29 +121,28 @@ function simplex_engine.solve_floor(player, factory, floor, target_items)
 
     -- Add slack variables for products
     for item_key, _ in pairs(products) do
-        -- Target items have equality constraints. They don't need slack
-        if not target_items[item_key] then
-            tableau:add_item_variable(item_key, 1, score_vector.product)
-        end
+        tableau:add_item_variable(item_key, 1, score_vector.product)
     end
 
     -- Add slack variables for intermediates
     ---@TODO: Find a way to let the user select whether an intermediate should be imported or exported
     --- For now, treat it as an ingredient (import if not enough)
     for item_key, _ in pairs(intermediates) do
-        -- Target items have equality constraints. They don't need slack
-        if not target_items[item_key] then
-            tableau:add_item_variable(item_key, -1, score_vector.intermediate)
-        end
+        tableau:add_item_variable(item_key, -1, score_vector.intermediate)
     end
 
     -- Add slack variables for ingredients
     for item_key, _ in pairs(ingredients) do
-        -- Target items have equality constraints. They don't need slack
-        if not target_items[item_key] then
-            tableau:add_item_variable(item_key, -1, score_vector.ingredient)
-        end
+        tableau:add_item_variable(item_key, -1, score_vector.ingredient)
     end
+
+    -- Add additional constraints to target products, so we get a bounded solution
+    for item_key, amount in pairs(target_products) do
+        tableau:add_item_constraint(item_key, amount, -1, score_vector.target_product)
+    end
+
+    -- Solve the tableau
+    tableau:solve()
 
     log("\n.tableau = " .. serpent.block(tableau, {sortkeys = false}))  ---@TODO: remove
 
