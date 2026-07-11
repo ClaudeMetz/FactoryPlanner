@@ -6,25 +6,60 @@ local table = {}
 ---@param table table<any, number>
 ---@param key any
 ---@param value number
----@return number value  The new `value` stored at `key`
+---@return number value The new `value` stored at `key`
 function table.add(table, key, value)
     table[key] = table[key] ~= nil and table[key] + value or value
     return table[key]
 end
 
 
---- Joins 2 tables together.
---- The contents of the `right_table` are inserted at the end of the `left_table`.
+--- Joins two tables together in a new result table.
+--- The contents of `left_table` are inserted first.
 --- If the `right_table` contains a key that is already in the `left_table`,
 --- then the value in the `right_table` will be present in the result.
----@param left_table table<any, any>
----@param right_table table<any, any>
----@return table<any, any> result_table
-function table.join(left_table, right_table)
-    local result_table = {}
-    for k, v in pairs(left_table) do result_table[k] = v end
-    for k, v in pairs(right_table) do result_table[k] = v end
-    return result_table
+---@param left_table table
+---@param right_table table
+---@return table result
+function table.union(left_table, right_table)
+    local result = {}
+    for k, v in pairs(left_table) do result[k] = v end
+    for k, v in pairs(right_table) do result[k] = v end
+    return result
 end
+
+
+--- Subtracts the `right_table` from the `left_table` table in a new result table.
+--- The result will contain the contents of the `left_table`,
+--- excluding the keys that are also present in the `right_table`.
+---@param left_table table
+---@param right_table table
+---@return table result_table
+function table.difference(left_table, right_table)
+    local result = {}
+    for k, v in pairs(left_table) do
+        -- Intentionally exclude both `nil` and `false` (preserve operation truthyness)
+        if not right_table[k] then result[k] = v end
+    end
+
+    return result
+end
+
+
+--- Returns the intersection of two tables.
+--- The result will contain the contents of the `left_table`,
+--- whose keys are also present in the `right_table`.
+---@param left_table table
+---@param right_table table
+---@return table result_table
+function table.intersection(left_table, right_table)
+    local result = {}
+    for k, v in pairs(left_table) do
+        -- Intentionally exclude both `nil` and `false` (preserve operation truthyness)
+        if right_table[k] then result[k] = v end
+    end
+
+    return result
+end
+
 
 return table

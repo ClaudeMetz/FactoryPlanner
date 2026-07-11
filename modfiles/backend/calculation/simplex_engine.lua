@@ -1,23 +1,32 @@
+---@namespace Simplex
+local SimplexTableau = require("backend.calculation.SimplexTableau")
+
 --- Matrix solver based on the simplex method
 local simplex_engine = {}
 
 
 ---@alias PrototypeName string
----@alias ItemSet {PrototypeName: true}
----@alias SimplexItemList {PrototypeName: number}
----@alias SimplexFloorResultTable {ObjectID: SimplexFloorResult}
----@alias SimplexSolverState "solved" | "unbounded" | "no-solution"
+---@alias ItemList table<PrototypeName, number>
+---@alias ItemSet table<PrototypeName, true>
+---@alias FloorResultTable table<ObjectID, FloorResult>
+---@alias SolverState "solved" | "unbounded" | "no-solution"
 
----@class SimplexLineData
+---@class LineData
 ---@field line_id ObjectID
----@field items SimplexItemList
+---@field items ItemList
 
----@class SimplexFloorResult
+---@class FloorResult
 
----@class SimplexLineResult
+---@class LineResult
 
 
-local N = 1e100  -- big number
+---@TODO: Move this to a better place. Maybe let the user configure it
+-- Negative score represents a cost
+local score_vector = {
+    product = 0,
+    intermediate = -1,
+    ingredient = -1
+}
 
 
 ---@param player LuaPlayer
@@ -25,7 +34,7 @@ local N = 1e100  -- big number
 function simplex_engine.solve(player, factory)
 
     -- Solve floors
-    local target_items = {}  ---@type SimplexItemList
+    local target_items = {}  ---@type ItemList
     for item in factory:iterator() do
         target_items[item.proto.name] = item.required_amount
     end
@@ -39,15 +48,12 @@ end
 ---@param player LuaPlayer
 ---@param factory Factory
 ---@param floor Floor
----@param target_items SimplexItemList?
----@return SimplexFloorResultTable? result_table  Containins the results of this floor and all subfloors, keyed by floor ID.
+---@param target_items ItemList?
+---@return FloorResultTable? result_table Containins the results of this floor and all subfloors, keyed by floor ID
 function simplex_engine.solve_floor(player, factory, floor, target_items)
-    local product_set = {}  ---@type ItemSet
-    local intermediate_set = {}  ---@type ItemSet
-    local ingredient_set = {}  ---@type ItemSet
-    local result_table = {}  ---@type SimplexFloorResultTable
-    local result = {}
-    local line_data_table = {}
+    local result = {}  ---@type FloorResult
+    local result_table = {}  ---@type FloorResultTable
+    local line_data_table = {}  ---@type LineData[]
 
     -- Check early exit conditions
     if not floor.first or (floor.level > 1 and
@@ -62,7 +68,7 @@ function simplex_engine.solve_floor(player, factory, floor, target_items)
         if line_object.class == "Floor" then
             local subfloor_result_map = simplex_engine.solve_floor(player, factory, line_object)
             if subfloor_result_map then
-                result_table = lib.table.join(result_table, subfloor_result_map)
+                result_table = lib.table.union(result_table, subfloor_result_map)
                 data = simplex_engine.get_line_data_from_floor(line_object, subfloor_result_map)
             end
         elseif line_object.class == "Line" then
@@ -72,9 +78,75 @@ function simplex_engine.solve_floor(player, factory, floor, target_items)
         if data then table.insert(line_data_table, data) end
     end
 
-    log("\n.line_data = " .. serpent.block(line_data_table, {sortkeys = false}))
+    log("\n.line_data = " .. serpent.block(line_data_table, {sortkeys = false}))  ---@TODO: remove
 
-    result_table = lib.table.join({[floor.id] = result}, result_table)
+    -- Populate the item sets based on the line data
+    local products = {}  ---@type ItemSet
+    local ingredients = {}  ---@type ItemSet
+
+    for _, line_data in pairs(line_data_table) do
+        for item_key, value in pairs(line_data.items) do
+            if value > 0 then
+                products[item_key] = true
+            else
+                ingredients[item_key] = true
+            end
+        end
+    end
+
+    local intermediates = lib.table.intersection(products, ingredients)  ---@type ItemSet
+    products = lib.table.difference(products, intermediates)  ---@as ItemSet
+    ingredients = lib.table.difference(ingredients, intermediates)  ---@as ItemSet
+
+    -- Sanity check: It shouldn't be possible for the floor to only have lines containing ingredients
+    if not next(products) and not next(intermediates) then return nil end
+
+    -- If the target items were not specified, add the first product as the target
+    if not target_items then
+        target_items = {}
+        local k, _ = next(products)
+        if not k then k = next(intermediates) end
+        ---@cast k -nil
+        target_items[k] = 1
+    end
+
+    -- Create the simplex tableau
+    local tableau = SimplexTableau:init()
+
+    -- Add line variables to the tableau
+    for _, line_data in pairs(line_data_table) do
+        tableau:add_line_variable(line_data)
+    end
+
+    -- Add slack variables for products
+    for item_key, _ in pairs(products) do
+        -- Target items have equality constraints. They don't need slack
+        if not target_items[item_key] then
+            tableau:add_item_variable(item_key, 1, score_vector.product)
+        end
+    end
+
+    -- Add slack variables for intermediates
+    ---@TODO: Find a way to let the user select whether an intermediate should be imported or exported
+    --- For now, treat it as an ingredient (import if not enough)
+    for item_key, _ in pairs(intermediates) do
+        -- Target items have equality constraints. They don't need slack
+        if not target_items[item_key] then
+            tableau:add_item_variable(item_key, -1, score_vector.intermediate)
+        end
+    end
+
+    -- Add slack variables for ingredients
+    for item_key, _ in pairs(ingredients) do
+        -- Target items have equality constraints. They don't need slack
+        if not target_items[item_key] then
+            tableau:add_item_variable(item_key, -1, score_vector.ingredient)
+        end
+    end
+
+    log("\n.tableau = " .. serpent.block(tableau, {sortkeys = false}))  ---@TODO: remove
+
+    result_table = lib.table.union({[floor.id] = result}, result_table)
     return result_table
 end
 
@@ -128,14 +200,14 @@ end
 
 --- Applies all effects on the machine of the line and returns how many
 --- products/ingredients are produced/consumed per second by one machine.
---- Positive values represent products, while negative values represent ingredients
+--- Positive values represent products, while negative values represent ingredients.
 --- Emmisions, fuel, power and heat are also included.
 ---@param player LuaPlayer
 ---@param factory Factory
 ---@param line Line
----@return SimplexLineData?
+---@return LineData?
 function simplex_engine.get_line_data(player, factory, line)
-    local items = {}  ---@type SimplexItemList
+    local items = {}  ---@type ItemList
 
     -- Check early exit conditions
     if not line.valid or not line.active or not line:get_surface_compatibility() then
@@ -198,7 +270,7 @@ function simplex_engine.get_line_data(player, factory, line)
         lib.table.add(items, pollutant_type, -emissions)
     end
 
-    -- Get fuel/heat
+    -- Get fuel/power/heat energy requirements
     if line.machine.proto.energy_type == "burner" and fuel_proto then
         ---@cast line.machine.proto.burner -nil
         local amount = solver.util.determine_fuel_amount(power, line.machine.proto.burner, fuel_proto.fuel_value)
@@ -219,13 +291,18 @@ function simplex_engine.get_line_data(player, factory, line)
         line_id = line.id,
         items = items
     }
+
+    -- Get heat requirements (frozen planets)
+    if factory.parent.location_proto.entities_require_heating and line.machine.proto.heating_energy > 0 then
+        lib.table.add(items, "custom-heat-power", -line.machine.proto.heating_energy)
+    end
 end
 
 
 --- Converts the floor into a pseudo-machine based on the solver results
 ---@param floor Floor
----@param result_map SimplexFloorResultTable
----@return SimplexLineData?
+---@param result_map FloorResultTable
+---@return LineData?
 function simplex_engine.get_line_data_from_floor(floor, result_map)
     if not result_map[floor.id] then return nil end
 end
