@@ -341,15 +341,16 @@ function simplex_engine.update_factory(factory, line_data_table, result_table)
                 -- Add to byproducts
                 byproducts[item_key] = amount
                 local item = simplex_engine.string_to_item(item_key, amount)
-                if item then table.insert(factory.top_floor.byproducts, item) end
+                if item and (not item.proto.hidden or item.proto.special) then
+                    table.insert(factory.top_floor.byproducts, item)
+                end
             end
         end
 
         -- Update the ingredients
         for item_key, amount in pairs(result_table[factory.top_floor.id].ingredients) do
-            local proto = simplex_engine.string_to_item(item_key, amount)
-            if proto then
-                local item = simplex_engine.string_to_item(item_key, amount)
+            local item = simplex_engine.string_to_item(item_key, amount)
+            if item and (not item.proto.hidden or item.proto.special) then
                 table.insert(factory.top_floor.ingredients, item)
             end
         end
@@ -391,7 +392,7 @@ function simplex_engine.update_floor(floor, scale_factor, byproducts, line_data_
             -- Update the products and byproducts
             for item_key, amount in pairs(floor_result.products) do
                 local item = simplex_engine.string_to_item(item_key, c * amount)
-                if item then
+                if item and (not item.proto.hidden or (item.proto.special and c > 0)) then
                     if amount == 0 or not byproducts[item_key] then
                         -- Add as product (used within the floor)
                         table.insert(line_object.products, item)
@@ -419,7 +420,7 @@ function simplex_engine.update_floor(floor, scale_factor, byproducts, line_data_
             -- Update the ingredients
             for item_key, amount in pairs(floor_result.ingredients) do
                 local item = simplex_engine.string_to_item(item_key, c * amount, true)
-                if item then
+                if item and (not item.proto.hidden or (item.proto.special and c > 0)) then
                     table.insert(line_object.ingredients, item)
                 end
             end
@@ -462,20 +463,6 @@ function simplex_engine.update_line(line, scale_factor, byproducts, line_data_ta
         line.production_ratio = line.machine.amount > 0 and 1 or 0
     end
 
-    -- Remove special items if the machine is not running
-    if line.production_ratio == 0 then
-        for k, _ in pairs(products) do
-            if string.sub(k, -7, -1) == "_entity" then
-                products[k] = nil
-            end
-        end
-        for k, _ in pairs(ingredients) do
-            if string.sub(k, -7, -1) == "_entity" then
-                ingredients[k] = nil
-            end
-        end
-    end
-
     -- Update the fuel
     if line.machine.fuel then
         local fuel = line.machine.fuel
@@ -496,7 +483,7 @@ function simplex_engine.update_line(line, scale_factor, byproducts, line_data_ta
     for item_key, v in pairs(products) do
         local amount = line.machine.amount * v
         local item = simplex_engine.string_to_item(item_key, amount)
-        if item then
+        if item and (line.production_ratio > 0 or not item.proto.special) then
             if amount == 0 or not byproducts[item_key] then
                 -- Add as product (used within the floor)
                 table.insert(line.products, item)
@@ -524,7 +511,7 @@ function simplex_engine.update_line(line, scale_factor, byproducts, line_data_ta
     for item_key, v in pairs(ingredients) do
         local amount = line.machine.amount * v
         local item = simplex_engine.string_to_item(item_key, amount, true)
-        if item then
+        if item and (line.production_ratio > 0 or not item.proto.special) then
             table.insert(line.ingredients, item)
         end
     end
