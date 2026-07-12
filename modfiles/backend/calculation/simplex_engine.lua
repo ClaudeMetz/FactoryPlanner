@@ -8,16 +8,12 @@ local simplex_engine = {}
 ---@alias PrototypeName string
 ---@alias ItemList table<PrototypeName, number>
 ---@alias ItemSet table<PrototypeName, true>
----@alias FloorResultTable table<ObjectID, FloorResult>
+---@alias LineDataTable table<ObjectID, LineData>
 
 ---@class LineData
 ---@field line_id ObjectID
 ---@field products ItemList
 ---@field ingredients ItemList
-
----@class FloorResult
-
----@class LineResult
 
 
 ---@TODO: Move this to a better place. Maybe let the user configure it
@@ -26,7 +22,8 @@ local simplex_engine = {}
 local objective_vector = {
     target_product = 1000,
     product = 0,
-    intermediate = -1,
+    intermediate_out = -0.001,
+    intermediate_in = -1,
     ingredient = 0
 }
 
@@ -34,53 +31,48 @@ local objective_vector = {
 ---@param player LuaPlayer
 ---@param factory Factory
 function simplex_engine.solve(player, factory)
+    -- Get floor data
+    local line_data_table = simplex_engine.get_floor_data(player, factory, factory.top_floor)
+    if not line_data_table then return end  -- sanity check
 
     -- Solve floors
     local target_products = {}  ---@type ItemList
     for item in factory:iterator() do
         target_products[item.proto.name] = item.required_amount
     end
-    simplex_engine.solve_floor(player, factory, factory.top_floor, target_products)
+    local result_table = simplex_engine.solve_floor( factory.top_floor, line_data_table, target_products)
+    result_table = result_table or {}
 
     -- Update GUI
-    simplex_engine.update_factory(factory)
+    simplex_engine.update_factory(factory, line_data_table, result_table)
 end
 
 
----@param player LuaPlayer
----@param factory Factory
 ---@param floor Floor
+---@param line_data_table LineDataTable
 ---@param target_products ItemList?
 ---@return FloorResultTable? result_table Containins the results of this floor and all subfloors, keyed by floor ID
-function simplex_engine.solve_floor(player, factory, floor, target_products)
-    local result = {}  ---@type FloorResult
+function simplex_engine.solve_floor(floor, line_data_table, target_products)
     local result_table = {}  ---@type FloorResultTable
-    local line_data_table = {}  ---@type LineData[]
+    local relevant_line_data = {}  ---@type LineDataTable
 
-    -- Check early exit conditions
-    if not floor.first or (floor.level > 1 and
-            (floor.first.valid or not floor.first.active or not floor.first:get_surface_compatibility())) then
-        return nil
-    end
-
-    -- Iterate through lines and subfloors collecting line data and floor results
+    -- Recursively solve subfloors and add their results to the line data
     for line_object in floor:iterator() do
-        local data = nil
+        local line_data = nil  ---@type LineData?
 
-        if line_object.class == "Floor" then
-            local subfloor_result_map = simplex_engine.solve_floor(player, factory, line_object)
+        if line_object.class == "Line" then line_data = line_data_table[line_object.id]
+        elseif line_object.class == "Floor" then
+            local subfloor_result_map = simplex_engine.solve_floor(line_object, line_data_table)
             if subfloor_result_map then
                 result_table = lib.table.union(result_table, subfloor_result_map)
-                data = simplex_engine.get_line_data_from_floor(line_object, subfloor_result_map)
+                line_data = simplex_engine.get_line_data_from_floor_results(line_object.id, subfloor_result_map)
             end
-        elseif line_object.class == "Line" then
-            data = simplex_engine.get_line_data(player, factory, line_object)
         end
 
-        if data then table.insert(line_data_table, data) end
+        if line_data then relevant_line_data[line_data.line_id] = line_data end
     end
 
-    log("\n.line_data = " .. serpent.block(line_data_table, {sortkeys = false}))  ---@TODO: remove
+    -- log("\n.relevant_line_data = " .. serpent.block(relevant_line_data, {sortkeys = false}))  ---@TODO: remove
 
     -- Populate the item sets based on the line data
     local products = {}  ---@type ItemSet
@@ -126,8 +118,8 @@ function simplex_engine.solve_floor(player, factory, floor, target_products)
 
     -- Add slack variables for intermediates
     for item_key, _ in pairs(intermediates) do
-        tableau:add_item_variable(item_key, "in", objective_vector.intermediate)
-        tableau:add_item_variable(item_key, "out", objective_vector.intermediate)
+        tableau:add_item_variable(item_key, "in", objective_vector.intermediate_in)
+        tableau:add_item_variable(item_key, "out", objective_vector.intermediate_out)
     end
 
     -- Add slack variables for ingredients
@@ -143,26 +135,31 @@ function simplex_engine.solve_floor(player, factory, floor, target_products)
     ---@TODO: Can add more constraints on the top level, like ingredient limits and machine limits
 
     -- Solve the tableau
-    tableau:solve()
+    local result = tableau:solve(floor.id)
 
-    log("\n.tableau = " .. serpent.block(tableau, {sortkeys = false}))  ---@TODO: remove
+    -- log("\n.tableau = " .. serpent.block(tableau, {sortkeys = false}))  ---@TODO: remove
+    log("\n.result = " .. serpent.block(result, {sortkeys = false}))  ---@TODO: remove
 
-    result_table = lib.table.union({[floor.id] = result}, result_table)
+    if result.state == "solved" then result_table[floor.id] = result end
     return result_table
 end
 
 
 ---@param factory Factory
-function simplex_engine.update_factory(factory)
+---@param line_data_table LineDataTable
+---@param result_table FloorResultTable
+function simplex_engine.update_factory(factory, line_data_table, result_table)
     for item in factory:iterator() do
         item.amount = 0
     end
-    simplex_engine.update_floor(factory.top_floor)
+    simplex_engine.update_floor(factory.top_floor, line_data_table, result_table)
 end
 
 
 ---@param floor Floor
-function simplex_engine.update_floor(floor)
+---@param line_data_table LineDataTable
+---@param result_table FloorResultTable
+function simplex_engine.update_floor(floor, line_data_table, result_table)
     for _, item in pairs(floor.products) do
         item.amount = 0
     end
@@ -174,15 +171,17 @@ function simplex_engine.update_floor(floor)
     end
     for line_object in floor:iterator() do
         if line_object.class == "Floor" then
-            simplex_engine.update_floor(line_object)
+            simplex_engine.update_floor(line_object, line_data_table, result_table)
         elseif line_object.class == "Line" then
-            simplex_engine.update_line(line_object)
+            simplex_engine.update_line(line_object, line_data_table, result_table)
         end
     end
 end
 
 ---@param line Line
-function simplex_engine.update_line(line)
+---@param line_data_table LineDataTable
+---@param result_table FloorResultTable
+function simplex_engine.update_line(line, line_data_table, result_table)
     line.machine.amount = 0
     for _, item in pairs(line.products) do
         item.amount = 0
@@ -196,6 +195,33 @@ function simplex_engine.update_line(line)
     if line.machine.fuel then
         line.machine.fuel.amount = 0
     end
+end
+
+
+-- Iterate through lines and subfloors collecting line data
+---@param player LuaPlayer
+---@param factory Factory
+---@param floor Floor
+---@return LineDataTable?
+function simplex_engine.get_floor_data(player, factory, floor)
+    local result = {}  ---@type LineDataTable
+
+    -- Check early exit conditions
+    if not floor.first or (floor.level > 1 and
+            (floor.first.valid or not floor.first.active or not floor.first:get_surface_compatibility())) then
+        return nil
+    end
+
+    for line_object in floor:iterator() do
+        if line_object.class == "Floor" then
+            local subfloor_result = simplex_engine.get_floor_data(player, factory, line_object)
+            if subfloor_result then result = lib.table.union(result, subfloor_result) end
+        elseif line_object.class == "Line" then
+            local line_data = simplex_engine.get_line_data(player, factory, line_object)
+            if line_data then result[line_data.line_id] = line_data end
+        end
+    end
+    return result
 end
 
 
@@ -303,11 +329,16 @@ end
 
 
 --- Converts the floor into a pseudo-machine based on the solver results
----@param floor Floor
+---@param floor_id ObjectID
 ---@param result_map FloorResultTable
 ---@return LineData?
-function simplex_engine.get_line_data_from_floor(floor, result_map)
-    if not result_map[floor.id] then return nil end
+function simplex_engine.get_line_data_from_floor_results(floor_id, result_map)
+    if not result_map[floor_id] then return nil end
+    return {
+        line_id = floor_id,
+        products = lib.flib.deep_copy(result_map[floor_id].products),
+        ingredients = lib.flib.deep_copy(result_map[floor_id].ingredients)
+    }  ---@type LineData
 end
 
 
