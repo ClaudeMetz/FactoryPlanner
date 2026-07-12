@@ -2,7 +2,7 @@ DEVELOPER_MODE = (debugadapter and debugadapter.tags) and (debugadapter.tags["FP
 
 MAGIC_NUMBERS = {
     margin_of_error = 1e-6,  -- the margin of error for floating point calculations
-    double_margin_of_error = 1e-15,  -- the margin of error for double precision floating point calculations
+    double_margin_of_error = 1e-12,  -- the margin of error for double precision floating point calculations
     factory_deletion_delay = 15 * 60 * 60,  -- ticks to deletion after factory trashing
     factory_solver_update_delay = 10,  -- ticks between factories being re-solved in the background
     modal_search_rate_limit = 10,  -- ticks between modal search runs

@@ -211,7 +211,7 @@ end
 ---@param a SimpleItem
 ---@param b SimpleItem
 ---@return boolean
-local function item_comparator(a, b)
+function solver.item_comparator(a, b)
     local a_type, b_type = a.proto.type, b.proto.type
     if a_type < b_type then return false
     elseif a_type > b_type then return true
@@ -239,7 +239,7 @@ local function update_object_items(object, item_category, item_results)
         end
     end
 
-    table.sort(item_list, item_comparator)
+    table.sort(item_list, solver.item_comparator)
     object[item_category] = item_list
 end
 

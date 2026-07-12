@@ -78,7 +78,7 @@ end
 
 
 --- Adds a slack variable to the inequality constraint of the given item
----@param key PrototypeName
+---@param key PrototypeKey
 ---@param direction ItemDirection
 ---@param objective number?
 function SimplexTableau:add_item_variable(key, direction, objective)
@@ -104,7 +104,7 @@ end
 
 
 --- Adds an additional constraint to a given item
----@param key PrototypeName
+---@param key PrototypeKey
 ---@param direction ItemDirection
 ---@param limit number
 ---@param type InequalityType

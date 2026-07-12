@@ -5,26 +5,30 @@ local SimplexTableau = require("backend.calculation.SimplexTableau")
 local simplex_engine = {}
 
 
----@alias PrototypeName string
----@alias ItemList table<PrototypeName, number>
----@alias ItemSet table<PrototypeName, true>
+---@alias PrototypeKey string  "`<proto.name>`_`<proto.type>`"
+---@alias ItemList table<PrototypeKey, number>
+---@alias ItemSet table<PrototypeKey, true>
 ---@alias LineDataTable table<ObjectID, LineData>
 
 ---@class LineData
 ---@field line_id ObjectID
+---@field active boolean
 ---@field products ItemList
 ---@field ingredients ItemList
+---@field fuel_ratio number?  how much of an ingredient is for fuel (treat as 1 if nil)
 
 
 ---@TODO: Move this to a better place. Maybe let the user configure it
 -- The objective function is maximized, so positive values indicate a score,
 -- and negative values indicate a cost
 local objective_vector = {
-    target_product = 1000,
+    target_product = 1e9,
     product = 0,
-    intermediate_out = -0.001,
-    intermediate_in = -1,
-    ingredient = 0
+    intermediate_out = -1,
+    intermediate_in = -1000,
+    ingredient = 0,
+
+    special_modifier = 1e-9  -- reduce penalty for emissions, power and heat
 }
 
 
@@ -32,13 +36,13 @@ local objective_vector = {
 ---@param factory Factory
 function simplex_engine.solve(player, factory)
     -- Get floor data
-    local line_data_table = simplex_engine.get_floor_data(player, factory, factory.top_floor)
+    local line_data_table = simplex_engine.get_floor_data(player, factory, factory.top_floor, true)
     if not line_data_table then return end  -- sanity check
 
     -- Solve floors
     local target_products = {}  ---@type ItemList
     for item in factory:iterator() do
-        target_products[item.proto.name] = item.required_amount
+        target_products[item.proto.name .. "_" .. item.proto.type] = item.required_amount
     end
     local result_table = simplex_engine.solve_floor( factory.top_floor, line_data_table, target_products)
     result_table = result_table or {}
@@ -69,16 +73,14 @@ function simplex_engine.solve_floor(floor, line_data_table, target_products)
             end
         end
 
-        if line_data then relevant_line_data[line_data.line_id] = line_data end
+        if line_data and line_data.active then relevant_line_data[line_data.line_id] = line_data end
     end
-
-    -- log("\n.relevant_line_data = " .. serpent.block(relevant_line_data, {sortkeys = false}))  ---@TODO: remove
 
     -- Populate the item sets based on the line data
     local products = {}  ---@type ItemSet
     local ingredients = {}  ---@type ItemSet
 
-    for _, line_data in pairs(line_data_table) do
+    for _, line_data in pairs(relevant_line_data) do
         for item_key, _ in pairs(line_data.products) do
             products[item_key] = true
         end
@@ -107,24 +109,27 @@ function simplex_engine.solve_floor(floor, line_data_table, target_products)
     local tableau = SimplexTableau:init()
 
     -- Add line variables to the tableau
-    for _, line_data in pairs(line_data_table) do
+    for _, line_data in pairs(relevant_line_data) do
         tableau:add_line_variable(line_data)
     end
 
     -- Add slack variables for products
     for item_key, _ in pairs(products) do
-        tableau:add_item_variable(item_key, "out", objective_vector.product)
+        local c = string.sub(item_key, -7, -1) == "_entity" and objective_vector.special_modifier or 1
+        tableau:add_item_variable(item_key, "out", c * objective_vector.product)
     end
 
     -- Add slack variables for intermediates
     for item_key, _ in pairs(intermediates) do
-        tableau:add_item_variable(item_key, "in", objective_vector.intermediate_in)
-        tableau:add_item_variable(item_key, "out", objective_vector.intermediate_out)
+        local c = string.sub(item_key, -7, -1) == "_entity" and objective_vector.special_modifier or 1
+        tableau:add_item_variable(item_key, "in", c * objective_vector.intermediate_in)
+        tableau:add_item_variable(item_key, "out", c * objective_vector.intermediate_out)
     end
 
     -- Add slack variables for ingredients
     for item_key, _ in pairs(ingredients) do
-        tableau:add_item_variable(item_key, "in", objective_vector.ingredient)
+        local c = string.sub(item_key, -7, -1) == "_entity" and objective_vector.special_modifier or 1
+        tableau:add_item_variable(item_key, "in", c * objective_vector.ingredient)
     end
 
     -- Add additional constraints to target products, so we get a bounded solution
@@ -137,64 +142,8 @@ function simplex_engine.solve_floor(floor, line_data_table, target_products)
     -- Solve the tableau
     local result = tableau:solve(floor.id)
 
-    -- log("\n.tableau = " .. serpent.block(tableau, {sortkeys = false}))  ---@TODO: remove
-    log("\n.result = " .. serpent.block(result, {sortkeys = false}))  ---@TODO: remove
-
     if result.state == "solved" then result_table[floor.id] = result end
     return result_table
-end
-
-
----@param factory Factory
----@param line_data_table LineDataTable
----@param result_table FloorResultTable
-function simplex_engine.update_factory(factory, line_data_table, result_table)
-    for item in factory:iterator() do
-        item.amount = 0
-    end
-    simplex_engine.update_floor(factory.top_floor, line_data_table, result_table)
-end
-
-
----@param floor Floor
----@param line_data_table LineDataTable
----@param result_table FloorResultTable
-function simplex_engine.update_floor(floor, line_data_table, result_table)
-    for _, item in pairs(floor.products) do
-        item.amount = 0
-    end
-    for _, item in pairs(floor.byproducts) do
-        item.amount = 0
-    end
-    for _, item in pairs(floor.ingredients) do
-        item.amount = 0
-    end
-    for line_object in floor:iterator() do
-        if line_object.class == "Floor" then
-            simplex_engine.update_floor(line_object, line_data_table, result_table)
-        elseif line_object.class == "Line" then
-            simplex_engine.update_line(line_object, line_data_table, result_table)
-        end
-    end
-end
-
----@param line Line
----@param line_data_table LineDataTable
----@param result_table FloorResultTable
-function simplex_engine.update_line(line, line_data_table, result_table)
-    line.machine.amount = 0
-    for _, item in pairs(line.products) do
-        item.amount = 0
-    end
-    for _, item in pairs(line.byproducts) do
-        item.amount = 0
-    end
-    for _, item in pairs(line.ingredients) do
-        item.amount = 0
-    end
-    if line.machine.fuel then
-        line.machine.fuel.amount = 0
-    end
 end
 
 
@@ -202,22 +151,21 @@ end
 ---@param player LuaPlayer
 ---@param factory Factory
 ---@param floor Floor
+---@param enabled boolean
 ---@return LineDataTable?
-function simplex_engine.get_floor_data(player, factory, floor)
+function simplex_engine.get_floor_data(player, factory, floor, enabled)
     local result = {}  ---@type LineDataTable
 
-    -- Check early exit conditions
-    if not floor.first or (floor.level > 1 and
-            (floor.first.valid or not floor.first.active or not floor.first:get_surface_compatibility())) then
-        return nil
-    end
+    -- Check if floor can function
+    local active = enabled and floor.first and (floor.level == 1 or
+            (floor.first.active and floor.first:get_surface_compatibility())) and true or false
 
     for line_object in floor:iterator() do
         if line_object.class == "Floor" then
-            local subfloor_result = simplex_engine.get_floor_data(player, factory, line_object)
+            local subfloor_result = simplex_engine.get_floor_data(player, factory, line_object, active)
             if subfloor_result then result = lib.table.union(result, subfloor_result) end
         elseif line_object.class == "Line" then
-            local line_data = simplex_engine.get_line_data(player, factory, line_object)
+            local line_data = simplex_engine.get_line_data(player, factory, line_object, active)
             if line_data then result[line_data.line_id] = line_data end
         end
     end
@@ -232,15 +180,14 @@ end
 ---@param player LuaPlayer
 ---@param factory Factory
 ---@param line Line
+---@param enabled boolean
 ---@return LineData?
-function simplex_engine.get_line_data(player, factory, line)
+function simplex_engine.get_line_data(player, factory, line, enabled)
     local products = {}  ---@type ItemList
     local ingredients = {}  ---@type ItemList
 
-    -- Check early exit conditions
-    if not line.valid or not line.active or not line:get_surface_compatibility() then
-        return nil
-    end
+    -- Check if line can can function
+    local active = enabled and line.active and line:get_surface_compatibility() and true or false
 
     ---@cast line.machine.proto -FPPackedPrototype
     ---@cast line.recipe.proto -FPPackedPrototype
@@ -261,7 +208,7 @@ function simplex_engine.get_line_data(player, factory, line)
     if line.recipe.proto.products then
         for _, item in pairs(line.recipe.proto.products) do
             local amount = total_crafts * solver.util.determine_prodded_amount(item, effects)
-            lib.table.add(products, item.name, amount)
+            lib.table.add(products, item.name .. "_" .. item.type, amount)
         end
     end
 
@@ -269,12 +216,12 @@ function simplex_engine.get_line_data(player, factory, line)
     if line.recipe.proto.catalysts then
         for _, item in pairs(line.recipe.proto.catalysts.products) do
             local amount = total_crafts * solver.util.determine_prodded_amount(item, effects)
-            lib.table.add(products, item.name, amount)
+            lib.table.add(products, item.name .. "_" .. item.type, amount)
         end
         for _, item in pairs(line.recipe.proto.catalysts.ingredients) do
             local name = line.recipe:get_name_with_temperature(item)
             local amount = total_crafts * item.amount * line.machine:get_resource_drain_rate()
-            lib.table.add(ingredients, name, amount)
+            lib.table.add(ingredients, name .. "_" .. item.type, amount)
         end
     end
 
@@ -283,7 +230,7 @@ function simplex_engine.get_line_data(player, factory, line)
         for _, item in pairs(line.recipe.proto.ingredients) do
             local name = line.recipe:get_name_with_temperature(item)
             local amount = total_crafts * item.amount * line.machine:get_resource_drain_rate()
-            lib.table.add(ingredients, name, amount)
+            lib.table.add(ingredients, name .. "_" .. item.type, amount)
         end
     end
 
@@ -294,36 +241,59 @@ function simplex_engine.get_line_data(player, factory, line)
     local power, emissions = solver.util.determine_power_and_emissions(line.machine.proto, line.recipe.proto,
     fuel_proto, 1, energy_usage, effects, pollutant_type)
 
-    if pollutant_type and emissions then
-        lib.table.add(products, pollutant_type, emissions)
-    end
-
     -- Get fuel/power/heat energy requirements
+    local fuel_amount = 0.0
+    local power_amount = 0.0
+    local heat_amount = 0.0
     if line.machine.proto.energy_type == "burner" and fuel_proto then
         ---@cast line.machine.proto.burner -nil
-        local amount = solver.util.determine_fuel_amount(power, line.machine.proto.burner, fuel_proto.fuel_value)
-        lib.table.add(ingredients, fuel_proto.name, amount)
+        fuel_amount = fuel_amount + solver.util.determine_fuel_amount(power, line.machine.proto.burner, fuel_proto.fuel_value)
     elseif line.machine.proto.energy_type == "electric" then
-        lib.table.add(ingredients, "custom-electric-power", power)
+        power_amount = power_amount + power
     elseif line.machine.proto.energy_type == "heat" then
-        lib.table.add(ingredients, "custom-heat-power", power)
+        heat_amount = heat_amount + power
     end
 
     -- Get beacon power
     local beacon_power = line.beacon and line.beacon:get_total_power() or 0
     if beacon_power > 0 then
-        lib.table.add(ingredients, "custom-electric-power", beacon_power)
+        power_amount = power_amount + beacon_power
     end
 
-    -- Get heat requirements (frozen planets)
+    -- Get heat requirements (frozen surfaces e.g. Aquillo)
     if factory.parent.location_proto.entities_require_heating and line.machine.proto.heating_energy > 0 then
-        lib.table.add(ingredients, "custom-heat-power", -line.machine.proto.heating_energy)
+        heat_amount = heat_amount + line.machine.proto.heating_energy
+    end
+
+    -- Add fuel to the ingredients
+    local fuel_ratio = nil
+    if fuel_amount > 0 and fuel_proto then
+        local fuel_key = fuel_proto.name .. "_" .. fuel_proto.type
+        lib.table.add(ingredients, fuel_key, fuel_amount)
+
+        -- Handle special case where fuel is also an ingredient
+        if fuel_amount ~= ingredients[fuel_key] then
+            fuel_ratio = fuel_amount / ingredients[fuel_key]
+        end
+    end
+
+    -- Add other special categories
+    if power_amount > 0 then lib.table.add(ingredients, "custom-electric-power_entity", power_amount) end
+    if heat_amount > 0 then lib.table.add(ingredients, "custom-heat-power_entity", heat_amount) end
+    if pollutant_type and emissions ~= 0 then
+        if emissions > 0 then
+            lib.table.add(products, "custom-" .. pollutant_type .. "_entity", emissions)
+        else
+            lib.table.add(ingredients, "custom-" .. pollutant_type .. "_entity", -emissions)
+        end
     end
 
     return {
         line_id = line.id,
+        active = active,
         products = products,
         ingredients = ingredients,
+        fuel_ratio = fuel_ratio
     }
 end
 
@@ -336,9 +306,201 @@ function simplex_engine.get_line_data_from_floor_results(floor_id, result_map)
     if not result_map[floor_id] then return nil end
     return {
         line_id = floor_id,
+        active = true,
         products = lib.flib.deep_copy(result_map[floor_id].products),
         ingredients = lib.flib.deep_copy(result_map[floor_id].ingredients)
     }  ---@type LineData
+end
+
+
+---@param factory Factory
+---@param line_data_table LineDataTable
+---@param result_table FloorResultTable
+function simplex_engine.update_factory(factory, line_data_table, result_table)
+    local product_list = {}  ---@type table<PrototypeKey, TLProduct>
+    local byproducts = {}  ---@type ItemList
+
+    -- Reset the satisfied amount
+    for product in factory:iterator() do
+        product_list[product.proto.name .. "_" .. product.proto.type] = product
+        product.amount = 0
+    end
+
+    -- Reset top floor UI
+    factory.top_floor.products = {}
+    factory.top_floor.byproducts = {}
+    factory.top_floor.ingredients = {}
+
+    if result_table[factory.top_floor.id] then
+        -- Update the products
+        for item_key, amount in pairs(result_table[factory.top_floor.id].products) do
+            if product_list[item_key] then
+                -- Update product amount
+                product_list[item_key].amount = amount
+            else
+                -- Add to byproducts
+                byproducts[item_key] = amount
+                local item = simplex_engine.string_to_item(item_key, amount)
+                if item then table.insert(factory.top_floor.byproducts, item) end
+            end
+        end
+
+        -- Update the ingredients
+        for item_key, amount in pairs(result_table[factory.top_floor.id].ingredients) do
+            local proto = simplex_engine.string_to_item(item_key, amount)
+            if proto then
+                local item = simplex_engine.string_to_item(item_key, amount)
+                table.insert(factory.top_floor.ingredients, item)
+            end
+        end
+    end
+
+    -- Sort everything
+    table.sort(factory.top_floor.byproducts, solver.item_comparator)
+    table.sort(factory.top_floor.ingredients, solver.item_comparator)
+
+    simplex_engine.update_floor(factory.top_floor, 1, byproducts, line_data_table, result_table)
+end
+
+
+---@param floor Floor
+---@param scale_factor number
+---@param byproducts ItemList
+---@param line_data_table LineDataTable
+---@param result_table FloorResultTable
+function simplex_engine.update_floor(floor, scale_factor, byproducts, line_data_table, result_table)
+    local result = result_table[floor.id]
+
+    for line_object in floor:iterator() do
+        if line_object.class == "Line" then
+            local line_result = result and result.line_results[line_object.id] or nil
+            simplex_engine.update_line(line_object, scale_factor, byproducts, line_data_table, line_result)
+        elseif line_object.class == "Floor" then
+            simplex_engine.update_floor(line_object, scale_factor, byproducts, line_data_table, result_table)
+        end
+    end
+end
+
+
+---@param line Line
+---@param scale_factor number
+---@param byproducts ItemList
+---@param line_data_table LineDataTable
+---@param line_result LineResult?
+function simplex_engine.update_line(line, scale_factor, byproducts, line_data_table, line_result)
+    -- Reset line UI
+    line.products = {}
+    line.byproducts = {}
+    line.ingredients = {}
+    line.machine.amount = 0
+    line.production_ratio = 0
+    if line.machine.fuel then
+        line.machine.fuel.amount = 0
+    end
+
+    local data = line_data_table[line.id]
+    if not data then return end
+    local products = lib.flib.deep_copy(data.products)
+    local ingredients = lib.flib.deep_copy(data.ingredients)
+
+    -- Update the machine
+    if line_result then
+        line.machine.amount = scale_factor * line_result.machine_amount
+        line.production_ratio = line.machine.amount > 0 and 1 or 0
+    end
+
+    -- Remove special items if the machine is not running
+    if line.production_ratio == 0 then
+        for k, _ in pairs(products) do
+            if string.sub(k, -7, -1) == "_entity" then
+                products[k] = nil
+            end
+        end
+        for k, _ in pairs(ingredients) do
+            if string.sub(k, -7, -1) == "_entity" then
+                ingredients[k] = nil
+            end
+        end
+    end
+
+    -- Update the fuel
+    if line.machine.fuel then
+        local fuel = line.machine.fuel
+        for item_key, amount in pairs(ingredients) do
+            if item_key == fuel.proto.name .. "_" .. fuel.proto.type then
+                if data.fuel_ratio then
+                    fuel.amount = line.machine.amount * amount * data.fuel_ratio
+                    ingredients[item_key] = ingredients[item_key] * (1 - data.fuel_ratio)
+                else
+                    fuel.amount = line.machine.amount * amount
+                    ingredients[item_key] = nil
+                end
+            end
+        end
+    end
+
+    -- Update the products and byproducts
+    for item_key, v in pairs(products) do
+        local amount = line.machine.amount * v
+        local item = simplex_engine.string_to_item(item_key, amount)
+        if item then
+            if amount == 0 or not byproducts[item_key] then
+                -- Add as product (used within the floor)
+                table.insert(line.products, item)
+            else
+                -- Add as byproduct
+                local min_amount = math.min(byproducts[item_key], amount)
+                item.amount = min_amount
+                table.insert(line.byproducts, item)
+
+                -- Calculate item remainder
+                local product_amount = amount - min_amount
+                if product_amount > MAGIC_NUMBERS.double_margin_of_error then
+                    local product_item = simplex_engine.string_to_item(item_key, product_amount)
+                    table.insert(line.products, product_item)
+                end
+
+                -- Calculate byproduct remainder
+                byproducts[item_key] = byproducts[item_key] - min_amount
+                if byproducts[item_key] < MAGIC_NUMBERS.double_margin_of_error then byproducts[item_key] = nil end
+            end
+        end
+    end
+
+    -- Update the ingredients
+    for item_key, v in pairs(ingredients) do
+        local amount = line.machine.amount * v
+        local item = simplex_engine.string_to_item(item_key, amount, true)
+        if item then
+            table.insert(line.ingredients, item)
+        end
+    end
+
+    -- Sort everything
+    table.sort(line.products, solver.item_comparator)
+    table.sort(line.byproducts, solver.item_comparator)
+    table.sort(line.ingredients, solver.item_comparator)
+end
+
+
+---@param key PrototypeKey
+---@param amount number?
+---@param without_temperature boolean?
+---@return SimpleItem?
+function simplex_engine.string_to_item(key, amount, without_temperature)
+    local split = string.find(key, "_", 1, true) or 0
+    local name = string.sub(key, 1, split - 1)
+    local type = split and string.sub(key, split + 1, -1) or nil
+    local proto = prototyper.util.find("items", name, type)  ---@as FPItemPrototype?
+
+    -- Convert to fluid without temperature if requested
+    if proto and type == "fluid" and without_temperature then
+            proto = prototyper.util.find("items", proto.base_name, "fluid")  ---@as FPItemPrototype?
+    end
+
+    if proto then
+        return {class = "SimpleItem", proto = proto, amount = amount or 0}  ---@as SimpleItem
+    end
 end
 
 
