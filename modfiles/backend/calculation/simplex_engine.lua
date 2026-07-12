@@ -369,14 +369,67 @@ end
 ---@param line_data_table LineDataTable
 ---@param result_table FloorResultTable
 function simplex_engine.update_floor(floor, scale_factor, byproducts, line_data_table, result_table)
-    local result = result_table[floor.id]
-
     for line_object in floor:iterator() do
+        local line_result = result_table[floor.id] and result_table[floor.id].line_results[line_object.id]
         if line_object.class == "Line" then
-            local line_result = result and result.line_results[line_object.id] or nil
             simplex_engine.update_line(line_object, scale_factor, byproducts, line_data_table, line_result)
         elseif line_object.class == "Floor" then
-            simplex_engine.update_floor(line_object, scale_factor, byproducts, line_data_table, result_table)
+            local c = line_result and line_result.machine_amount * scale_factor or 0
+            local floor_byproducts = {}  ---@type ItemList
+            local floor_result = result_table[line_object.id] or {
+                floor_id = line_object.id,
+                products = {},
+                ingredients = {},
+                line_results = {}
+            }
+            
+            -- Reset line UI
+            line_object.products = {}
+            line_object.byproducts = {}
+            line_object.ingredients = {}
+
+            -- Update the products and byproducts
+            for item_key, amount in pairs(floor_result.products) do
+                local item = simplex_engine.string_to_item(item_key, c * amount)
+                if item then
+                    if amount == 0 or not byproducts[item_key] then
+                        -- Add as product (used within the floor)
+                        table.insert(line_object.products, item)
+                    else
+                        -- Add as byproduct
+                        local min_amount = math.min(byproducts[item_key], amount)
+                        item.amount = min_amount
+                        table.insert(line_object.byproducts, item)
+                        floor_byproducts[item_key] = min_amount
+
+                        -- Calculate item remainder
+                        local product_amount = amount - min_amount
+                        if product_amount > MAGIC_NUMBERS.double_margin_of_error then
+                            local product_item = simplex_engine.string_to_item(item_key, product_amount)
+                            table.insert(line_object.products, product_item)
+                        end
+
+                        -- Calculate byproduct remainder
+                        byproducts[item_key] = byproducts[item_key] - min_amount
+                        if byproducts[item_key] < MAGIC_NUMBERS.double_margin_of_error then byproducts[item_key] = nil end
+                    end
+                end
+            end
+
+            -- Update the ingredients
+            for item_key, amount in pairs(floor_result.ingredients) do
+                local item = simplex_engine.string_to_item(item_key, c * amount, true)
+                if item then
+                    table.insert(line_object.ingredients, item)
+                end
+            end
+
+            -- Sort everything
+            table.sort(line_object.products, solver.item_comparator)
+            table.sort(line_object.byproducts, solver.item_comparator)
+            table.sort(line_object.ingredients, solver.item_comparator)
+
+            simplex_engine.update_floor(line_object, c, floor_byproducts, line_data_table, result_table)
         end
     end
 end

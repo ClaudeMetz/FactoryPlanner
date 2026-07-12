@@ -497,7 +497,7 @@ end
 local function add_special_ingredient(line, parent_flow, metadata, item, index, number_line)
     local satisfaction_line = ""  ---@type LocalisedString
     if metadata.ingredient_satisfaction and item.amount > 0 then
-        satisfaction_line, _ = lib.gui.calculate_satisfaction(item.satisfied_amount--[[@cast -nil]], item.amount)
+        satisfaction_line, _ = lib.gui.calculate_satisfaction(item.satisfied_amount or 0, item.amount)
     end
 
     local tooltip = {"", {"fp.tt_title", item.proto.localised_name}, number_line, satisfaction_line,
@@ -539,7 +539,7 @@ function builders.ingredients(line, parent_flow, metadata)
             style = "fflib_slot_button_disabled_small"
         elseif metadata.ingredient_satisfaction and ingredient.amount > 0 then
             local sat_line, percentage_string = lib.gui.calculate_satisfaction(
-                ingredient.satisfied_amount--[[@cast -nil]], ingredient.amount)
+                ingredient.satisfied_amount or 0, ingredient.amount)
             satisfaction_line = sat_line
 
             -- We use the formatted percentage here because it smooths out the number to 3 places
