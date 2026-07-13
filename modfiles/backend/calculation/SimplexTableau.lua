@@ -4,13 +4,15 @@
 ---@alias InequalityType "==" | "<=" | ">="
 ---@alias ItemDirection "in" | "out"
 ---@alias SolverState "in-progress" | "solved" | "unbounded" | "no-solution"
+---@alias ConstraintKey string `"item_<proto-key>"` | `"c_<n>"`
+---@alias VariableKey string `"line_<line_id>"` | `"item_in_<proto-key>"` | `"item_out_<proto-key>"` | `"s_<n>"` | `"y_<n>"`
 ---@alias FloorResultTable table<ObjectID, FloorResult>
 ---@alias LineResultTable table<ObjectID, LineResult>
 
 ---@class SimplexTableau
 ---@field _matrix number[][]
----@field _rows table<string, integer> constraints
----@field _cols table<string, integer> variables
+---@field _rows table<ConstraintKey, integer> constraints
+---@field _cols table<VariableKey, integer> variables
 local SimplexTableau = {}
 SimplexTableau.__index = SimplexTableau
 
@@ -158,7 +160,7 @@ function SimplexTableau:solve(floor_id)
     end
 
     -- Find basic variables (column where one row is 1 and the rest are 0)
-    local basic = {}  ---@type string[]
+    local basic = {}  ---@type VariableKey[]
     for j = 2, #self._matrix[1] do
         local one_index = nil  ---@type integer?
         local is_basic = true
@@ -212,8 +214,10 @@ function SimplexTableau:solve(floor_id)
     ---@return SolverState state
     local function solve_step(phase)
         -- Select the variable with the most negative objective as the entering variable
+        -- Add a minimum margin for extra safety
+        -- If there is so little score left to maximize, then the solution is pretty close to optimal anyway
         local col_index = 0
-        local min = 0.0
+        local min = -MAGIC_NUMBERS.margin_of_error
         for j = 2, #self._matrix[1] do
             if self._matrix[1][j] < min then
                 col_index = j

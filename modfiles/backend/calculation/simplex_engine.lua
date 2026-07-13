@@ -66,10 +66,10 @@ function simplex_engine.solve_floor(floor, line_data_table, target_products)
 
         if line_object.class == "Line" then line_data = line_data_table[line_object.id]
         elseif line_object.class == "Floor" then
-            local subfloor_result_map = simplex_engine.solve_floor(line_object, line_data_table)
-            if subfloor_result_map then
-                result_table = lib.table.union(result_table, subfloor_result_map)
-                line_data = simplex_engine.get_line_data_from_floor_results(line_object.id, subfloor_result_map)
+            local subfloor_result_table = simplex_engine.solve_floor(line_object, line_data_table)
+            if subfloor_result_table then
+                result_table = lib.table.union(result_table, subfloor_result_table)
+                line_data = simplex_engine.get_line_data_from_floor_results(line_object.id, subfloor_result_table)
             end
         end
 
@@ -151,25 +151,26 @@ end
 ---@param player LuaPlayer
 ---@param factory Factory
 ---@param floor Floor
----@param enabled boolean
+---@param active boolean
 ---@return LineDataTable?
-function simplex_engine.get_floor_data(player, factory, floor, enabled)
-    local result = {}  ---@type LineDataTable
+function simplex_engine.get_floor_data(player, factory, floor, active)
+    local line_data_table = {}  ---@type LineDataTable
 
     -- Check if floor can function
-    local active = enabled and floor.first and (floor.level == 1 or
+    active = active and floor.first and (floor.level == 1 or
             (floor.first.active and floor.first:get_surface_compatibility())) and true or false
 
     for line_object in floor:iterator() do
         if line_object.class == "Floor" then
-            local subfloor_result = simplex_engine.get_floor_data(player, factory, line_object, active)
-            if subfloor_result then result = lib.table.union(result, subfloor_result) end
+            local subfloor_data = simplex_engine.get_floor_data(player, factory, line_object, active)
+            if subfloor_data then line_data_table = lib.table.union(line_data_table, subfloor_data) end
         elseif line_object.class == "Line" then
             local line_data = simplex_engine.get_line_data(player, factory, line_object, active)
-            if line_data then result[line_data.line_id] = line_data end
+            if line_data then line_data_table[line_data.line_id] = line_data end
         end
     end
-    return result
+
+    return line_data_table
 end
 
 
@@ -180,14 +181,14 @@ end
 ---@param player LuaPlayer
 ---@param factory Factory
 ---@param line Line
----@param enabled boolean
+---@param active boolean
 ---@return LineData?
-function simplex_engine.get_line_data(player, factory, line, enabled)
+function simplex_engine.get_line_data(player, factory, line, active)
     local products = {}  ---@type ItemList
     local ingredients = {}  ---@type ItemList
 
     -- Check if line can can function
-    local active = enabled and line.active and line:get_surface_compatibility() and true or false
+    active = active and line.active and line:get_surface_compatibility() and true or false
 
     ---@cast line.machine.proto -FPPackedPrototype
     ---@cast line.recipe.proto -FPPackedPrototype
@@ -202,7 +203,7 @@ function simplex_engine.get_line_data(player, factory, line, enabled)
     if line.machine.proto.prototype_category == "boiler" then
         energy = solver.util.determine_boiler_energy(line.recipe)
     end
-    local total_crafts = speed_multiplier / energy
+    local total_crafts = active and speed_multiplier / energy or 0
 
     -- Get simple products
     if line.recipe.proto.products then
@@ -267,20 +268,21 @@ function simplex_engine.get_line_data(player, factory, line, enabled)
 
     -- Add fuel to the ingredients
     local fuel_ratio = nil
-    if fuel_amount > 0 and fuel_proto then
+    if fuel_proto then
         local fuel_key = fuel_proto.name .. "_" .. fuel_proto.type
-        lib.table.add(ingredients, fuel_key, fuel_amount)
+        local fuel_as_ingredient = ingredients[fuel_key] or 0
+        lib.table.add(ingredients, fuel_key, active and fuel_amount or 0)
 
         -- Handle special case where fuel is also an ingredient
-        if fuel_amount ~= ingredients[fuel_key] then
-            fuel_ratio = fuel_amount / ingredients[fuel_key]
+        if active and fuel_as_ingredient > 0 then
+            fuel_ratio = fuel_amount / (fuel_amount + fuel_as_ingredient)
         end
     end
 
     -- Add other special categories
-    if power_amount > 0 then lib.table.add(ingredients, "custom-electric-power_entity", power_amount) end
-    if heat_amount > 0 then lib.table.add(ingredients, "custom-heat-power_entity", heat_amount) end
-    if pollutant_type and emissions ~= 0 then
+    if active and power_amount > 0 then lib.table.add(ingredients, "custom-electric-power_entity", power_amount) end
+    if active and heat_amount > 0 then lib.table.add(ingredients, "custom-heat-power_entity", heat_amount) end
+    if active and pollutant_type and emissions ~= 0 then
         if emissions > 0 then
             lib.table.add(products, "custom-" .. pollutant_type .. "_entity", emissions)
         else
