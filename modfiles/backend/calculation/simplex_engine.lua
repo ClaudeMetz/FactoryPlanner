@@ -26,6 +26,7 @@ local simplex_engine = {}
 -- and negative values indicate a cost
 local objective_vector = {
     target_product = 1e9,
+    limited_ingredient = 0,
     product = 0,
     ingredient = 0,
     intermediate_out = -1,
@@ -45,12 +46,18 @@ function simplex_engine.solve(player, factory)
     local line_data_table = simplex_engine.get_floor_data(player, factory, factory.top_floor, true)
     if not line_data_table then return end  -- sanity check
 
-    -- Solve floors
+    -- Get user-defined top-level products
     local target_products = {}  ---@type ItemList
     for item in factory:iterator() do
         target_products[item.proto.name .. "_" .. item.proto.type] = item.required_amount
     end
-    local tableau = simplex_engine.create_tableau( factory.top_floor, line_data_table, target_products)
+
+    -- Get user-defined top-level ingredients
+    local limited_ingredients = {}  ---@type ItemList
+    ---@TODO: implement ingredient limits in GUI
+
+    -- Create the simplex tableau of the factory
+    local tableau = simplex_engine.create_tableau( factory.top_floor, line_data_table, target_products, limited_ingredients)
 
     -- Solve the tableau
     local result = tableau and tableau:solve()
@@ -63,10 +70,11 @@ end
 ---@param floor Floor
 ---@param line_data_table LineDataTable
 ---@param target_products ItemList?
+---@param limited_ingredients ItemList?
 ---@return SimplexTableau? tableau
 ---@return ItemSet? products
 ---@return ItemSet? ingredients
-function simplex_engine.create_tableau(floor, line_data_table, target_products)
+function simplex_engine.create_tableau(floor, line_data_table, target_products, limited_ingredients)
     local relevant_line_data = {}  ---@type LineDataTable
     local tableau_table = {}  ---@type table<ObjectID, SimplexTableau>
 
@@ -130,9 +138,14 @@ function simplex_engine.create_tableau(floor, line_data_table, target_products)
         end
     end
 
-    -- Add additional constraints to target products, so we get a bounded solution
+    -- Add additional constraint to target products, so we get a bounded solution
     for item_key, amount in pairs(target_products or {}) do
         tableau:add_item_constraint(item_key, floor.id, "out", "<=", amount, objective_vector.target_product)
+    end
+
+    -- Add additional constraint for limited ingredients
+    for item_key, amount in pairs(limited_ingredients or {}) do
+        tableau:add_item_constraint(item_key, floor.id, "in", "<=", amount, objective_vector.limited_ingredient)
     end
 
     for line_id, line_data in pairs(relevant_line_data) do
@@ -141,8 +154,6 @@ function simplex_engine.create_tableau(floor, line_data_table, target_products)
             tableau:add_line_constraint(line_id, type, line_data.machine_limit, objective_vector.machine_limit)
         end
     end
-
-    ---@TODO: Add more constraints, like ingredient limits
 
     for subfloor_id, subfloor_tableau in pairs(tableau_table) do
         -- Merge the subfloor tableau into this one
