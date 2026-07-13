@@ -12,6 +12,7 @@ local simplex_engine = {}
 
 ---@class LineData
 ---@field line_id ObjectID
+---@field floor_id ObjectID
 ---@field active boolean
 ---@field products ItemList
 ---@field ingredients ItemList
@@ -69,7 +70,7 @@ function simplex_engine.solve_floor(floor, line_data_table, target_products)
             local subfloor_result_table = simplex_engine.solve_floor(line_object, line_data_table)
             if subfloor_result_table then
                 result_table = lib.table.union(result_table, subfloor_result_table)
-                line_data = simplex_engine.get_line_data_from_floor_results(line_object.id, subfloor_result_table)
+                line_data = simplex_engine.get_line_data_from_floor_results(line_object.id, floor.id, subfloor_result_table)
             end
         end
 
@@ -116,25 +117,25 @@ function simplex_engine.solve_floor(floor, line_data_table, target_products)
     -- Add slack variables for products
     for item_key, _ in pairs(products) do
         local c = string.sub(item_key, -7, -1) == "_entity" and objective_vector.special_modifier or 1
-        tableau:add_item_variable(item_key, "out", c * objective_vector.product)
+        tableau:add_item_variable(item_key, floor.id, "out", c * objective_vector.product)
     end
 
     -- Add slack variables for intermediates
     for item_key, _ in pairs(intermediates) do
         local c = string.sub(item_key, -7, -1) == "_entity" and objective_vector.special_modifier or 1
-        tableau:add_item_variable(item_key, "in", c * objective_vector.intermediate_in)
-        tableau:add_item_variable(item_key, "out", c * objective_vector.intermediate_out)
+        tableau:add_item_variable(item_key, floor.id, "in", c * objective_vector.intermediate_in)
+        tableau:add_item_variable(item_key, floor.id, "out", c * objective_vector.intermediate_out)
     end
 
     -- Add slack variables for ingredients
     for item_key, _ in pairs(ingredients) do
         local c = string.sub(item_key, -7, -1) == "_entity" and objective_vector.special_modifier or 1
-        tableau:add_item_variable(item_key, "in", c * objective_vector.ingredient)
+        tableau:add_item_variable(item_key, floor.id, "in", c * objective_vector.ingredient)
     end
 
     -- Add additional constraints to target products, so we get a bounded solution
     for item_key, amount in pairs(target_products) do
-        tableau:add_item_constraint(item_key, "out", "<=", amount, objective_vector.target_product)
+        tableau:add_item_constraint(item_key, floor.id, "out", "<=", amount, objective_vector.target_product)
     end
 
     ---@TODO: Add more constraints, like ingredient limits and machine limits
@@ -292,6 +293,7 @@ function simplex_engine.get_line_data(player, factory, line, active)
 
     return {
         line_id = line.id,
+        floor_id = line.parent.id,
         active = active,
         products = products,
         ingredients = ingredients,
@@ -302,12 +304,14 @@ end
 
 --- Converts the floor into a pseudo-machine based on the solver results
 ---@param floor_id ObjectID
+---@param parent_floor_id ObjectID
 ---@param result_map FloorResultTable
 ---@return LineData?
-function simplex_engine.get_line_data_from_floor_results(floor_id, result_map)
+function simplex_engine.get_line_data_from_floor_results(floor_id, parent_floor_id, result_map)
     if not result_map[floor_id] then return nil end
     return {
         line_id = floor_id,
+        floor_id = parent_floor_id,
         active = true,
         products = lib.flib.deep_copy(result_map[floor_id].products),
         ingredients = lib.flib.deep_copy(result_map[floor_id].ingredients)

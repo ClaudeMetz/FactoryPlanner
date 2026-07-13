@@ -4,8 +4,8 @@
 ---@alias InequalityType "==" | "<=" | ">="
 ---@alias ItemDirection "in" | "out"
 ---@alias SolverState "in-progress" | "solved" | "unbounded" | "no-solution"
----@alias ConstraintKey string `"item_<proto-key>"` | `"c_<n>"`
----@alias VariableKey string `"line_<line_id>"` | `"item_in_<proto-key>"` | `"item_out_<proto-key>"` | `"s_<n>"` | `"y_<n>"`
+---@alias ConstraintKey "objective" | string `"item_<floor_id>_<proto-key>"` | `"c_<n>"`
+---@alias VariableKey "solution" | string `"line_<line_id>"` | `"item_<floor_id>_<in|out>_<proto-key>"` | `"s_<n>"` | `"y_<n>"`
 ---@alias FloorResultTable table<ObjectID, FloorResult>
 ---@alias LineResultTable table<ObjectID, LineResult>
 
@@ -58,7 +58,7 @@ function SimplexTableau:add_line_variable(line_data)
     ---@param sign 1 | -1
     local function add_rows(items, sign)
         for item, value in pairs(items) do
-            local item_row_key = "item_" .. item
+            local item_row_key = "item_" .. line_data.floor_id .. "_" .. item
             local row_index = 0
 
             -- Add the item to the tableau if not already present
@@ -81,12 +81,13 @@ end
 
 --- Adds a slack variable to the inequality constraint of the given item
 ---@param key PrototypeKey
+---@param floor_id ObjectID
 ---@param direction ItemDirection
 ---@param objective number?
-function SimplexTableau:add_item_variable(key, direction, objective)
+function SimplexTableau:add_item_variable(key, floor_id, direction, objective)
     objective = objective or 0
-    local item_row_key = "item_" .. key
-    local item_col_key = "item_" .. direction .. "_" .. key
+    local item_row_key = "item_" .. floor_id .. "_" .. key
+    local item_col_key = "item_" .. floor_id .. "_".. direction .. "_" .. key
 
     -- This is opposite to recipe where products > 0 and ingredients < 0
     local sign = (direction == "in" and 1) or (direction == "out" and -1) or 0
@@ -107,13 +108,14 @@ end
 
 --- Adds an additional constraint to a given item
 ---@param key PrototypeKey
+---@param floor_id ObjectID
 ---@param direction ItemDirection
 ---@param limit number
 ---@param type InequalityType
 ---@param objective number?
-function SimplexTableau:add_item_constraint(key, direction, type, limit, objective)
+function SimplexTableau:add_item_constraint(key, floor_id, direction, type, limit, objective)
     objective = objective or 0
-    local item_col_key = "item_" .. direction .. "_" .. key
+    local item_col_key = "item_" .. floor_id .. "_".. direction .. "_" .. key
 
     -- Check that the item variable is present in the tableau
     local item_col_index = self._cols[item_col_key] or 0
@@ -201,7 +203,7 @@ function SimplexTableau:solve(floor_id)
     -- Reduce the objective function of the basic variables to 0
     local function reduce_objective()
         for i = 2, #self._matrix do
-            local col_index = self._cols[basic[i]] or 0
+            local col_index = self._cols[basic[i]--[[@cast -nil]]] or 0
             local objective = self._matrix[1]--[[@cast -nil]][col_index] or 0
             if objective ~= 0 then
                 lib.matrix.row_subtract(self._matrix, 1, i, objective)
@@ -307,12 +309,16 @@ function SimplexTableau:solve(floor_id)
                         machine_amount = value
                     }
                 end
-            elseif string.sub(key, 1, 9) == "item_out_" then
-                local item_key = string.sub(key, 10)
-                result.products[item_key] = value
-            elseif string.sub(key, 1, 8) == "item_in_" then
-                local item_key = string.sub(key, 9)
-                result.ingredients[item_key] = value
+            elseif string.sub(key, 1, 5) == "item_" then
+                local sep = string.find(key, "_", 6, true) or -2
+                local _floor_id = tonumber(string.sub(key, 6, sep - 1))
+                if string.sub(key, sep, sep + 4) == "_out_" then
+                    local item_key = string.sub(key, sep + 5)
+                    result.products[item_key] = value
+                elseif string.sub(key, sep, sep + 3) == "_in_" then
+                    local item_key = string.sub(key, sep + 4)
+                    result.ingredients[item_key] = value
+                end
             end
         end
     end
