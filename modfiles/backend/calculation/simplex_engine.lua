@@ -319,6 +319,7 @@ end
 function simplex_engine.update_factory(factory, line_data_table, result_table)
     local product_list = {}  ---@type table<PrototypeKey, TLProduct>
     local top_byproducts = {}  ---@type ItemList
+    local top_ingredients = {}  ---@type ItemList
 
     -- Reset the satisfied amount
     for product in factory:iterator() do
@@ -339,8 +340,8 @@ function simplex_engine.update_factory(factory, line_data_table, result_table)
                 product_list[item_key].amount = amount
             else
                 -- Add to byproducts
-                top_byproducts[item_key] = amount
                 local item = simplex_engine.string_to_item(item_key, amount)
+                top_byproducts[item_key] = amount
                 if item and (not item.proto.hidden or item.proto.special) then
                     table.insert(factory.top_floor.byproducts, item)
                 end
@@ -350,6 +351,7 @@ function simplex_engine.update_factory(factory, line_data_table, result_table)
         -- Update the ingredients
         for item_key, amount in pairs(result_table[factory.top_floor.id].ingredients) do
             local item = simplex_engine.string_to_item(item_key, amount)
+            top_ingredients[item_key] = amount
             if item and (not item.proto.hidden or item.proto.special) then
                 table.insert(factory.top_floor.ingredients, item)
             end
@@ -360,18 +362,17 @@ function simplex_engine.update_factory(factory, line_data_table, result_table)
     table.sort(factory.top_floor.byproducts, solver.item_comparator)
     table.sort(factory.top_floor.ingredients, solver.item_comparator)
 
-    simplex_engine.update_floor(factory.top_floor, 1, top_byproducts, line_data_table, result_table)
+    simplex_engine.update_floor(factory.top_floor, 1, top_byproducts, top_ingredients, line_data_table, result_table)
 end
 
 
 ---@param floor Floor
 ---@param scale_factor number
 ---@param top_byproducts ItemList
+---@param top_ingredients ItemList
 ---@param line_data_table LineDataTable
 ---@param result_table FloorResultTable
-function simplex_engine.update_floor(floor, scale_factor, top_byproducts, line_data_table, result_table)
-    local top_ingredients = result_table[floor.id] and lib.flib.deep_copy(result_table[floor.id].ingredients) or {}
-
+function simplex_engine.update_floor(floor, scale_factor, top_byproducts, top_ingredients, line_data_table, result_table)
     for line_object in floor:iterator() do
         local line_result = result_table[floor.id] and result_table[floor.id].line_results[line_object.id]
         if line_object.class == "Line" then
@@ -379,6 +380,7 @@ function simplex_engine.update_floor(floor, scale_factor, top_byproducts, line_d
         elseif line_object.class == "Floor" then
             local c = line_result and line_result.machine_amount * scale_factor or 0
             local floor_byproducts = {}  ---@type ItemList
+            local floor_ingredients = {}  ---@type ItemList
             local floor_result = result_table[line_object.id] or {
                 floor_id = line_object.id,
                 products = {},
@@ -426,6 +428,7 @@ function simplex_engine.update_floor(floor, scale_factor, top_byproducts, line_d
                 local item = simplex_engine.string_to_item(item_key, amount, true)
                 if item and (not item.proto.hidden or (item.proto.special and c > 0)) then
                     table.insert(line_object.ingredients, item)
+                    floor_ingredients[item_key] = amount
 
                     -- Update ingredient satisfaction
                     if not top_ingredients[item_key] then
@@ -446,7 +449,7 @@ function simplex_engine.update_floor(floor, scale_factor, top_byproducts, line_d
             table.sort(line_object.byproducts, solver.item_comparator)
             table.sort(line_object.ingredients, solver.item_comparator)
 
-            simplex_engine.update_floor(line_object, c, floor_byproducts, line_data_table, result_table)
+            simplex_engine.update_floor(line_object, c, floor_byproducts, floor_ingredients, line_data_table, result_table)
         end
     end
 end
