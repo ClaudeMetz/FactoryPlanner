@@ -21,7 +21,7 @@ function _matrix.row_subtract(matrix, x, y, scalar)
     if scalar == 0 then return end
     local cols = math.min(#matrix[x], #matrix[y])
     for j = 1, cols do
-        matrix[x][j] = matrix[x][j]--[[@as number]] - scalar * matrix[y][j]--[[@as number]]
+        matrix[x][j] = lib.math.safe_sub(matrix[x][j]--[[@as number]], scalar * matrix[y][j]--[[@as number]])
     end
 end
 
@@ -41,7 +41,6 @@ function _matrix.pivot(matrix, row, column)
     for i = 1, #matrix do
         if i ~= row then
             _matrix.row_subtract(matrix, i, row, matrix[i][column]--[[@as number]])
-            matrix[i][column] = 0  --improve precision
         end
     end
 end

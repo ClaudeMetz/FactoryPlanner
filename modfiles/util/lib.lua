@@ -16,7 +16,8 @@ local _lib = {
     temperature = require("util.temperature"),
     preferences = require("util.preferences"),
     table = require("util.table"),
-    matrix = require("util.matrix")
+    matrix = require("util.matrix"),
+    math = require("util.math")
 }
 
 

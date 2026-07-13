@@ -137,7 +137,7 @@ function simplex_engine.solve_floor(floor, line_data_table, target_products)
         tableau:add_item_constraint(item_key, "out", "<=", amount, objective_vector.target_product)
     end
 
-    ---@TODO: Can add more constraints on the top level, like ingredient limits and machine limits
+    ---@TODO: Add more constraints, like ingredient limits and machine limits
 
     -- Solve the tableau
     local result = tableau:solve(floor.id)
@@ -407,15 +407,15 @@ function simplex_engine.update_floor(floor, scale_factor, top_byproducts, line_d
                         floor_byproducts[item_key] = min_amount
 
                         -- Calculate item remainder
-                        local product_amount = amount - min_amount
-                        if product_amount > MAGIC_NUMBERS.double_margin_of_error then
+                        local product_amount = lib.math.safe_sub(amount, min_amount)
+                        if product_amount > 0 then
                             local product_item = simplex_engine.string_to_item(item_key, product_amount)
                             table.insert(line_object.products, product_item)
                         end
 
                         -- Calculate byproduct remainder
-                        top_byproducts[item_key] = top_byproducts[item_key] - min_amount
-                        if top_byproducts[item_key] < MAGIC_NUMBERS.double_margin_of_error then top_byproducts[item_key] = nil end
+                        top_byproducts[item_key] = lib.math.safe_sub(top_byproducts[item_key], min_amount)
+                        if top_byproducts[item_key] == 0 then top_byproducts[item_key] = nil end
                     end
                 end
             end
@@ -432,12 +432,11 @@ function simplex_engine.update_floor(floor, scale_factor, top_byproducts, line_d
                         item.satisfied_amount = amount
                     else
                         local min_amount = math.min(top_ingredients[item_key], amount)
-                        item.satisfied_amount = amount - min_amount
-                        if item.satisfied_amount < MAGIC_NUMBERS.double_margin_of_error then item.satisfied_amount = 0 end
+                        item.satisfied_amount = lib.math.safe_sub(amount, min_amount)
 
                         -- Calculate top ingredient remainder
-                        top_ingredients[item_key] = top_ingredients[item_key] - min_amount
-                        if top_ingredients[item_key] < MAGIC_NUMBERS.double_margin_of_error then top_ingredients[item_key] = nil end
+                        top_ingredients[item_key] = lib.math.safe_sub(top_ingredients[item_key], min_amount)
+                        if top_ingredients[item_key] == 0 then top_ingredients[item_key] = nil end
                     end
                 end
             end
@@ -512,15 +511,15 @@ function simplex_engine.update_line(line, scale_factor, top_byproducts, top_ingr
                 table.insert(line.byproducts, item)
 
                 -- Calculate item remainder
-                local product_amount = amount - min_amount
-                if product_amount > MAGIC_NUMBERS.double_margin_of_error then
+                local product_amount = lib.math.safe_sub(amount, min_amount)
+                if product_amount > 0 then
                     local product_item = simplex_engine.string_to_item(item_key, product_amount)
                     table.insert(line.products, product_item)
                 end
 
                 -- Calculate byproduct remainder
-                top_byproducts[item_key] = top_byproducts[item_key] - min_amount
-                if top_byproducts[item_key] < MAGIC_NUMBERS.double_margin_of_error then top_byproducts[item_key] = nil end
+                top_byproducts[item_key] = lib.math.safe_sub(top_byproducts[item_key], min_amount)
+                if top_byproducts[item_key] == 0 then top_byproducts[item_key] = nil end
             end
         end
     end
@@ -537,12 +536,11 @@ function simplex_engine.update_line(line, scale_factor, top_byproducts, top_ingr
                 item.satisfied_amount = amount
             else
                 local min_amount = math.min(top_ingredients[item_key], amount)
-                item.satisfied_amount = amount - min_amount
-                if item.satisfied_amount < MAGIC_NUMBERS.double_margin_of_error then item.satisfied_amount = 0 end
+                item.satisfied_amount = lib.math.safe_sub(amount, min_amount)
 
                 -- Calculate top ingredient remainder
-                top_ingredients[item_key] = top_ingredients[item_key] - min_amount
-                if top_ingredients[item_key] < MAGIC_NUMBERS.double_margin_of_error then top_ingredients[item_key] = nil end
+                top_ingredients[item_key] = lib.math.safe_sub(top_ingredients[item_key], min_amount)
+                if top_ingredients[item_key] == 0 then top_ingredients[item_key] = nil end
             end
         end
     end

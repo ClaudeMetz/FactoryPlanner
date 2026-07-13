@@ -163,10 +163,8 @@ function SimplexTableau:solve(floor_id)
         local one_index = nil  ---@type integer?
         local is_basic = true
         for i = 2, #self._matrix do
-            if self._matrix[i][j] > 0.0 + MAGIC_NUMBERS.double_margin_of_error or
-                    self._matrix[i][j] < 0.0 - MAGIC_NUMBERS.double_margin_of_error then
-                if self._matrix[i][j] > 1.0 + MAGIC_NUMBERS.double_margin_of_error or
-                    self._matrix[i][j] < 1.0 - MAGIC_NUMBERS.double_margin_of_error then
+            if self._matrix[i][j] ~= 0 then
+                if self._matrix[i][j] ~= 1 then
                     is_basic = false
                     break
                 elseif one_index then
@@ -174,10 +172,7 @@ function SimplexTableau:solve(floor_id)
                     break
                 else
                     one_index = i
-                    self._matrix[i][j] = 1  -- improve precision
                 end
-            else
-                self._matrix[i][j] = 0  -- improve precision
             end
         end
 
@@ -218,7 +213,7 @@ function SimplexTableau:solve(floor_id)
     local function solve_step(phase)
         -- Select the variable with the most negative objective as the entering variable
         local col_index = 0
-        local min = 0.0 - MAGIC_NUMBERS.double_margin_of_error
+        local min = 0.0
         for j = 2, #self._matrix[1] do
             if self._matrix[1][j] < min then
                 col_index = j
@@ -243,7 +238,7 @@ function SimplexTableau:solve(floor_id)
         min = 2.0^1023
         for i = 2, #self._matrix do
             local denominator = self._matrix[i][col_index] or 0
-            local ratio = (denominator > 0.0 + MAGIC_NUMBERS.double_margin_of_error and self._matrix[i][1])
+            local ratio = (denominator > 0.0 and self._matrix[i][1])
                     and (self._matrix[i][1] / denominator) or -1
             if ratio >= 0 and ratio < min then
                 row_index = i
@@ -299,8 +294,7 @@ function SimplexTableau:solve(floor_id)
         local value = self._matrix[row]--[[@cast -nil]][1] or 0
 
         -- Ignore zeroes
-        if value > 0.0 + MAGIC_NUMBERS.double_margin_of_error or
-                value < 0.0 - MAGIC_NUMBERS.double_margin_of_error then
+        if value ~= 0 then
             if string.sub(key, 1, 5) == "line_" then
                 local id = tonumber(string.sub(key, 6))
                 if id then
