@@ -379,8 +379,6 @@ function simplex_engine.update_floor(floor, scale_factor, top_byproducts, top_in
             simplex_engine.update_line(line_object, scale_factor, top_byproducts, top_ingredients, line_data_table, line_result)
         elseif line_object.class == "Floor" then
             local c = line_result and line_result.machine_amount * scale_factor or 0
-            local floor_byproducts = {}  ---@type ItemList
-            local floor_ingredients = {}  ---@type ItemList
             local floor_result = result_table[line_object.id] or {
                 floor_id = line_object.id,
                 products = {},
@@ -393,62 +391,8 @@ function simplex_engine.update_floor(floor, scale_factor, top_byproducts, top_in
             line_object.byproducts = {}
             line_object.ingredients = {}
 
-            -- Update the products and byproducts
-            for item_key, v in pairs(floor_result.products) do
-                local amount = c * v
-                local item = simplex_engine.string_to_item(item_key, amount)
-                if item and (not item.proto.hidden or (item.proto.special and c > 0)) then
-                    if amount == 0 or not top_byproducts[item_key] then
-                        -- Add as product (used within the floor)
-                        table.insert(line_object.products, item)
-                    else
-                        -- Add as byproduct
-                        local min_amount = math.min(top_byproducts[item_key], amount)
-                        item.amount = min_amount
-                        table.insert(line_object.byproducts, item)
-                        floor_byproducts[item_key] = min_amount
-
-                        -- Calculate item remainder
-                        local product_amount = lib.math.safe_sub(amount, min_amount)
-                        if product_amount > 0 then
-                            local product_item = simplex_engine.string_to_item(item_key, product_amount)
-                            table.insert(line_object.products, product_item)
-                        end
-
-                        -- Calculate byproduct remainder
-                        top_byproducts[item_key] = lib.math.safe_sub(top_byproducts[item_key], min_amount)
-                        if top_byproducts[item_key] == 0 then top_byproducts[item_key] = nil end
-                    end
-                end
-            end
-
-            -- Update the ingredients
-            for item_key, v in pairs(floor_result.ingredients) do
-                local amount = c * v
-                local item = simplex_engine.string_to_item(item_key, amount, true)
-                if item and (not item.proto.hidden or (item.proto.special and c > 0)) then
-                    table.insert(line_object.ingredients, item)
-                    floor_ingredients[item_key] = amount
-
-                    -- Update ingredient satisfaction
-                    if not top_ingredients[item_key] then
-                        item.satisfied_amount = amount
-                    else
-                        local min_amount = math.min(top_ingredients[item_key], amount)
-                        item.satisfied_amount = lib.math.safe_sub(amount, min_amount)
-
-                        -- Calculate top ingredient remainder
-                        top_ingredients[item_key] = lib.math.safe_sub(top_ingredients[item_key], min_amount)
-                        if top_ingredients[item_key] == 0 then top_ingredients[item_key] = nil end
-                    end
-                end
-            end
-
-            -- Sort everything
-            table.sort(line_object.products, solver.item_comparator)
-            table.sort(line_object.byproducts, solver.item_comparator)
-            table.sort(line_object.ingredients, solver.item_comparator)
-
+            local floor_byproducts, floor_ingredients = simplex_engine.update_line_object_common(
+                line_object, c, floor_result.products, floor_result.ingredients, top_byproducts, top_ingredients)
             simplex_engine.update_floor(line_object, c, floor_byproducts, floor_ingredients, line_data_table, result_table)
         end
     end
@@ -499,25 +443,43 @@ function simplex_engine.update_line(line, scale_factor, top_byproducts, top_ingr
         end
     end
 
+    simplex_engine.update_line_object_common( line, line.machine.amount, products, ingredients, top_byproducts, top_ingredients)
+end
+
+
+---@param line_object LineObject
+---@param scale_factor number
+---@param products ItemList
+---@param ingredients ItemList
+---@param top_byproducts ItemList
+---@param top_ingredients ItemList
+---@return ItemList floor_byproducts
+---@return ItemList floor_ingredients
+function simplex_engine.update_line_object_common(line_object, scale_factor, products, ingredients, top_byproducts, top_ingredients)
+    local floor_byproducts = {}  ---@type ItemList
+    local floor_ingredients = {}  ---@type ItemList
+    local is_line = line_object.class == "Line"
+
     -- Update the products and byproducts
     for item_key, v in pairs(products) do
-        local amount = line.machine.amount * v
+        local amount = scale_factor * v
         local item = simplex_engine.string_to_item(item_key, amount)
-        if item and (line.production_ratio > 0 or not item.proto.special) then
+        if item and (not item.proto.hidden or ((item.proto.special or is_line) and scale_factor > 0)) then
             if amount == 0 or not top_byproducts[item_key] then
                 -- Add as product (used within the floor)
-                table.insert(line.products, item)
+                table.insert(line_object.products, item)
             else
                 -- Add as byproduct
                 local min_amount = math.min(top_byproducts[item_key], amount)
                 item.amount = min_amount
-                table.insert(line.byproducts, item)
+                table.insert(line_object.byproducts, item)
+                floor_byproducts[item_key] = min_amount
 
                 -- Calculate item remainder
                 local product_amount = lib.math.safe_sub(amount, min_amount)
                 if product_amount > 0 then
                     local product_item = simplex_engine.string_to_item(item_key, product_amount)
-                    table.insert(line.products, product_item)
+                    table.insert(line_object.products, product_item)
                 end
 
                 -- Calculate byproduct remainder
@@ -529,10 +491,11 @@ function simplex_engine.update_line(line, scale_factor, top_byproducts, top_ingr
 
     -- Update the ingredients
     for item_key, v in pairs(ingredients) do
-        local amount = line.machine.amount * v
+        local amount = scale_factor * v
         local item = simplex_engine.string_to_item(item_key, amount, true)
-        if item and (line.production_ratio > 0 or not item.proto.special) then
-            table.insert(line.ingredients, item)
+        if item and (not item.proto.hidden or ((item.proto.special or is_line) and scale_factor > 0)) then
+            table.insert(line_object.ingredients, item)
+            floor_ingredients[item_key] = amount
 
             -- Update ingredient satisfaction
             if not top_ingredients[item_key] then
@@ -549,9 +512,11 @@ function simplex_engine.update_line(line, scale_factor, top_byproducts, top_ingr
     end
 
     -- Sort everything
-    table.sort(line.products, solver.item_comparator)
-    table.sort(line.byproducts, solver.item_comparator)
-    table.sort(line.ingredients, solver.item_comparator)
+    table.sort(line_object.products, solver.item_comparator)
+    table.sort(line_object.byproducts, solver.item_comparator)
+    table.sort(line_object.ingredients, solver.item_comparator)
+
+    return floor_byproducts, floor_ingredients
 end
 
 
