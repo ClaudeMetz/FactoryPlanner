@@ -16,6 +16,8 @@ local simplex_engine = {}
 ---@field active boolean
 ---@field products ItemList
 ---@field ingredients ItemList
+---@field machine_limit number?
+---@field machine_force_limit boolean?
 ---@field fuel_ratio number?  how much of an ingredient is for fuel (treat as 1 if nil)
 
 
@@ -31,6 +33,7 @@ local objective_vector = {
     floor_transfer_out = 0,
     floor_transfer_in = 0,
 
+    machine_limit = 0,
     special_modifier = 1e-9  -- reduce penalty for emissions, power and heat
 }
 
@@ -132,6 +135,15 @@ function simplex_engine.create_tableau(floor, line_data_table, target_products)
         tableau:add_item_constraint(item_key, floor.id, "out", "<=", amount, objective_vector.target_product)
     end
 
+    for line_id, line_data in pairs(relevant_line_data) do
+        if line_data.machine_limit then
+            local type = line_data.machine_force_limit and "==" or "<="
+            tableau:add_line_constraint(line_id, type, line_data.machine_limit, objective_vector.machine_limit)
+        end
+    end
+
+    ---@TODO: Add more constraints, like ingredient limits
+
     for subfloor_id, subfloor_tableau in pairs(tableau_table) do
         -- Merge the subfloor tableau into this one
         tableau:merge(subfloor_tableau)
@@ -146,8 +158,6 @@ function simplex_engine.create_tableau(floor, line_data_table, target_products)
             tableau:add_item_transfer(item_key, floor.id, subfloor_id, "in", objective_vector.floor_transfer_in)
         end
     end
-
-    ---@TODO: Add more constraints, like ingredient limits and machine limits
 
     return tableau, products, ingredients
 end
@@ -296,14 +306,20 @@ function simplex_engine.get_line_data(player, factory, line, active)
         end
     end
 
+    -- Get machine limit
+    local machine_limit = line.machine.limit
+    local machine_force_limit = machine_limit and line.machine.force_limit
+
     return {
         line_id = line.id,
         floor_id = line.parent.id,
         active = active,
         products = products,
         ingredients = ingredients,
+        machine_limit = machine_limit,
+        machine_force_limit = machine_force_limit,
         fuel_ratio = fuel_ratio
-    }
+    }  ---@type LineData
 end
 
 

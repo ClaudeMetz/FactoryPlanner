@@ -2,6 +2,7 @@
 ---@class ProductionTableMetadata
 ---@field archive_open boolean
 ---@field matrix_solver_active boolean
+---@field simplex_solver_active boolean
 ---@field ingredient_satisfaction boolean
 ---@field fold_out_subfloors boolean
 ---@field player LuaPlayer
@@ -19,6 +20,7 @@ local function generate_metadata(player, factory)
     local metadata = {
         archive_open = factory.archived,
         matrix_solver_active = factory.matrix_solver_active,
+        simplex_solver_active = lib.globals.preferences(player).use_simplex_solver,
         ingredient_satisfaction = preferences.ingredient_satisfaction,
         fold_out_subfloors = preferences.fold_out_subfloors,
         player = player,
@@ -238,7 +240,7 @@ function builders.machine(line, parent_flow, metadata)
 
         local machine_limit = machine.limit
         local style, note = "fflib_slot_button_default_small", nil
-        if not metadata.matrix_solver_active and machine_limit ~= nil then
+        if not (metadata.matrix_solver_active and not metadata.simplex_solver_active) and machine_limit ~= nil then
             if machine.force_limit then
                 style = "fflib_slot_button_pink_small"
                 note = {"fp.machine_limit_force", machine_limit}

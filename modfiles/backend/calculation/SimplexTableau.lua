@@ -121,23 +121,40 @@ end
 ---@param limit number
 ---@param objective number?
 function SimplexTableau:add_item_constraint(item, floor_id, direction, type, limit, objective)
-    local item_col_key = "item_" .. floor_id .. "_".. direction .. "_" .. item
+    return self:_add_constraint("item_" .. floor_id .. "_".. direction .. "_" .. item, type, limit, objective)
+end
 
-    -- Check that the item variable is present in the tableau
-    local item_col_index = self._cols[item_col_key] or 0
-    if item_col_index == 0 then return end
 
-    -- Add a new row for the constaint.
+--- Adds an additional constraint to a given line (machine limit)
+---@param line_id ObjectID
+---@param type InequalityType
+---@param limit number
+---@param objective number?
+function SimplexTableau:add_line_constraint(line_id, type, limit, objective)
+    return self:_add_constraint("line_" .. line_id, type, limit, objective)
+end
+
+
+---@param key VariableKey
+---@param type InequalityType
+---@param limit number
+---@param objective number?
+function SimplexTableau:_add_constraint(key, type, limit, objective)
+    -- Check that the variable is present in the tableau
+    local var_col_index = self._cols[key] or 0
+    if var_col_index == 0 then return end
+
+    -- Add a new row for the constaint
     local row_index = self:_add_row("c_" .. #self._matrix + 1)
 
     -- Fill the row values
-    self._matrix[row_index]--[[@cast -nil]][item_col_index] = 1
+    self._matrix[row_index]--[[@cast -nil]][var_col_index] = 1
     self._matrix[row_index]--[[@cast -nil]][1] = limit
 
-    -- Update the item variable objective
+    -- Update the variable objective
     if objective then
-        local x = self._matrix[1]--[[@cast -nil]][item_col_index] or 0
-        self._matrix[1]--[[@cast -nil]][item_col_index] = x - objective  -- objective coefficient is opposite
+        local x = self._matrix[1]--[[@cast -nil]][var_col_index] or 0
+        self._matrix[1]--[[@cast -nil]][var_col_index] = x - objective  -- objective coefficient is opposite
     end
 
     -- We are done for equality constraints
@@ -146,7 +163,7 @@ function SimplexTableau:add_item_constraint(item, floor_id, direction, type, lim
     -- Add a new slack variable for the inequality
     local slack_col_index = self:_add_column("s_" .. #self._matrix[1] + 1)
 
-    -- Fill the inequality between the item varable and the slack
+    -- Fill the inequality between the given variable and the slack variable
     local sign = (type == "<=" and 1) or (type == ">=" and -1) or 0
     self._matrix[row_index]--[[@cast -nil]][slack_col_index] = sign
 end

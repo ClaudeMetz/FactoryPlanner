@@ -303,6 +303,7 @@ local function handle_checkbox_preference_change(player, tags, event)
             for factory in district:iterator() do
                 if factory and factory.matrix_solver_active then
                     factory.matrix_free_items = {}
+                    factory.linearly_dependant = false
                     solver.update(player, factory)
                     lib.gui.run_refresh(player, "production")
                 end
