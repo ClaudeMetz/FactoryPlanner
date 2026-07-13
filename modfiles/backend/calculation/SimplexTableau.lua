@@ -6,8 +6,8 @@
 ---@alias SolverState "in-progress" | "solved" | "unbounded" | "no-solution"
 ---@alias ConstraintKey "objective" | string `"item_<floor_id>_<proto-key>"` | `"c_<n>"`
 ---@alias VariableKey "solution" | string `"line_<line_id>"` | `"item_<floor_id>_<in|out>_<proto-key>"` | `"s_<n>"` | `"y_<n>"`
----@alias FloorResultTable table<ObjectID, FloorResult>
 ---@alias LineResultTable table<ObjectID, LineResult>
+---@alias FloorResultTable table<ObjectID, FloorResult>
 
 ---@class SimplexTableau
 ---@field _matrix number[][]
@@ -16,17 +16,20 @@
 local SimplexTableau = {}
 SimplexTableau.__index = SimplexTableau
 
----@class FloorResult
----@field floor_id ObjectID
+---@class SimplexResult
 ---@field state SolverState?
 ---@field objective number?
----@field products ItemList
----@field ingredients ItemList
 ---@field line_results LineResultTable
+---@field floor_results FloorResultTable
 
 ---@class LineResult
 ---@field line_id ObjectID
 ---@field machine_amount number
+
+---@class FloorResult
+---@field floor_id ObjectID
+---@field products ItemList
+---@field ingredients ItemList
 
 
 ---@return SimplexTableau
@@ -80,42 +83,45 @@ end
 
 
 --- Adds a slack variable to the inequality constraint of the given item
----@param key PrototypeKey
+---@param item PrototypeKey
 ---@param floor_id ObjectID
 ---@param direction ItemDirection
 ---@param objective number?
-function SimplexTableau:add_item_variable(key, floor_id, direction, objective)
-    objective = objective or 0
-    local item_row_key = "item_" .. floor_id .. "_" .. key
-    local item_col_key = "item_" .. floor_id .. "_".. direction .. "_" .. key
+function SimplexTableau:add_item_variable(item, floor_id, direction, objective)
+    local item_row_key = "item_" .. floor_id .. "_" .. item
+    local item_col_key = "item_" .. floor_id .. "_".. direction .. "_" .. item
 
-    -- This is opposite to recipe where products > 0 and ingredients < 0
+    -- This is opposite to recipes where products > 0 and ingredients < 0
     local sign = (direction == "in" and 1) or (direction == "out" and -1) or 0
     if sign == 0 then return end
 
     -- Item variable is already present in the tableau
     if self._cols[item_col_key] then return end
 
-    -- Check that the item constraint is present in the tableau
+    -- Check if the item constraint is present in the tableau
     local row_index = self._rows[item_row_key] or 0
-    if not self._matrix[row_index] then return end
+    if not self._matrix[row_index] then
+        -- Item not present in this floor (only used in subfloor)
+        row_index = self:_add_row(item_row_key)
+    end
 
     -- Fill the table values
+    if self._matrix[row_index] then
     local col_index = self:_add_column(item_col_key, objective)
     self._matrix[row_index][col_index] = sign
+    end
 end
 
 
 --- Adds an additional constraint to a given item
----@param key PrototypeKey
+---@param item PrototypeKey
 ---@param floor_id ObjectID
 ---@param direction ItemDirection
----@param limit number
 ---@param type InequalityType
+---@param limit number
 ---@param objective number?
-function SimplexTableau:add_item_constraint(key, floor_id, direction, type, limit, objective)
-    objective = objective or 0
-    local item_col_key = "item_" .. floor_id .. "_".. direction .. "_" .. key
+function SimplexTableau:add_item_constraint(item, floor_id, direction, type, limit, objective)
+    local item_col_key = "item_" .. floor_id .. "_".. direction .. "_" .. item
 
     -- Check that the item variable is present in the tableau
     local item_col_index = self._cols[item_col_key] or 0
@@ -129,8 +135,10 @@ function SimplexTableau:add_item_constraint(key, floor_id, direction, type, limi
     self._matrix[row_index]--[[@cast -nil]][1] = limit
 
     -- Update the item variable objective
-    local x = self._matrix[1]--[[@cast -nil]][item_col_index] or 0
-    self._matrix[1]--[[@cast -nil]][item_col_index] = x - objective  -- objective coefficient is opposite
+    if objective then
+        local x = self._matrix[1]--[[@cast -nil]][item_col_index] or 0
+        self._matrix[1]--[[@cast -nil]][item_col_index] = x - objective  -- objective coefficient is opposite
+    end
 
     -- We are done for equality constraints
     if type == "==" then return end
@@ -144,17 +152,122 @@ function SimplexTableau:add_item_constraint(key, floor_id, direction, type, limi
 end
 
 
+--- Adds a subfloor item variable to the current floor item constraint.
+--- In other words, it allows item import/export between the current floor and the subfloor
+---@param item PrototypeKey
 ---@param floor_id ObjectID
----@return FloorResult result
-function SimplexTableau:solve(floor_id)
+---@param direction ItemDirection  from the perspective of the subfloor
+---@param objective number?
+function SimplexTableau:add_item_transfer(item, floor_id, subfloor_id, direction, objective)
+    local item_row_key = "item_" .. floor_id .. "_" .. item
+    local item_col_key = "item_" .. subfloor_id .. "_".. direction .. "_" .. item
+
+    local item_row_index = self._rows[item_row_key] or 0
+    local item_col_index = self._cols[item_col_key] or 0
+
+    -- Sanity check
+    if not self._matrix[item_row_index] or item_col_index == 0 then return end
+
+    -- Update the item variable objective
+    if objective then
+        local x = self._matrix[1]--[[@cast -nil]][item_col_index] or 0
+        self._matrix[1]--[[@cast -nil]][item_col_index] = x - objective  -- objective coefficient is opposite
+    end
+
+    -- To the current floor, the subfloor is like a machine
+    -- Inputs are ingredients and outputs are products
+    self._matrix[item_row_index][item_col_index] = (direction == "in" and -1) or (direction == "out" and 1) or 0
+end
+
+
+--[[
+Merges the specified `tableau` (`B`) into self (`A`) The result should be:
+```
+-------------------
+|  0  | o_A | o_B |
+-------------------
+| s_A |  A* |  0  |
+-------------------
+| s_B |  0  |  B* |
+-------------------
+```
+where `A*` and `B*` are `A` and `B` without the first row and column
+]]--
+---@param tableau SimplexTableau
+function SimplexTableau:merge(tableau)
+    local a_rows, a_cols = #self._matrix, #self._matrix[1]
+    local b_rows, b_cols = #tableau._matrix, #tableau._matrix[1]
+
+    -- Copy the solution column
+    for i = 2, b_rows do
+        self._matrix[a_rows + i - 1] = {}
+        self._matrix[a_rows + i - 1][1] = tableau._matrix[i]--[[@cast -nil]][1]
+    end
+
+    -- Copy the objective row
+    for j = 2, b_cols do
+        self._matrix[1]--[[@cast -nil]][a_cols + j - 1] = tableau._matrix[1]--[[@cast -nil]][j]
+    end
+
+    -- Fill the top-right section with 0
+    for i = 2, a_rows do
+        for j = a_cols + 1, a_cols + b_cols - 1 do
+            self._matrix[i]--[[@cast -nil]][j] = 0
+        end
+    end
+
+    -- Fill the bottom-left section with 0
+    for i = a_rows + 1, a_rows + b_rows - 1 do
+        for j = 2, a_cols do
+            self._matrix[i]--[[@cast -nil]][j] = 0
+        end
+    end
+
+    -- Copy the rest of B into A
+    for i = 2, b_rows do
+        for j = 2, b_cols do
+            self._matrix[a_rows + i - 1]--[[@cast -nil]][a_cols + j - 1] = tableau._matrix[i]--[[@cast -nil]][j]
+        end
+    end
+
+    -- Copy the row keys
+    for k, v in pairs(tableau._rows) do
+        if v > 1 then
+            local new_row = a_rows + v - 1
+            if string.sub(k, 1, 2) == "c_" then
+                self._rows["c_" .. new_row] = new_row
+            else
+                self._rows[k] = new_row
+            end
+        end
+    end
+
+    -- Copy the column keys
+    for k, v in pairs(tableau._cols) do
+        if v > 1 then
+            local new_col = a_cols + v - 1
+            -- Don't handle artificial variables
+            -- If we tried to merge tableaus after starting solving, we got bigger problems
+            if string.sub(k, 1, 2) == "s_" then
+                self._cols["s_" .. new_col] = new_col
+            else
+                self._cols[k] = new_col
+            end
+        end
+    end
+end
+
+
+---@return SimplexResult result
+function SimplexTableau:solve()
     local result = {
-        floor_id = floor_id,
         state = "in-progress",
         objective = 0,
         products = {},
         ingredients = {},
-        line_results = {}
-    }  ---@type FloorResult
+        line_results = {},
+        floor_results = {}
+    }  ---@type SimplexResult
 
     -- Only allow non-negative limits (should never happen in practice though)
     for i = 2, #self._matrix do
@@ -264,7 +377,7 @@ function SimplexTableau:solve(floor_id)
 
     -- Phase 1: Eliminate the virtual variables
     local done = false
-    local max_iterations = 10 * #self._matrix[1]
+    local max_iterations = 2 * #self._matrix[1]
     reduce_objective()
     repeat
         done, result.state = solve_step(1)
@@ -286,7 +399,7 @@ function SimplexTableau:solve(floor_id)
 
     -- Phase 2: Find the optimal solution
     done = false
-    max_iterations = 10 * #self._matrix[1]
+    max_iterations = 2 * #self._matrix[1]
     reduce_objective()
     repeat
         done, result.state = solve_step(2)
@@ -311,13 +424,23 @@ function SimplexTableau:solve(floor_id)
                 end
             elseif string.sub(key, 1, 5) == "item_" then
                 local sep = string.find(key, "_", 6, true) or -2
-                local _floor_id = tonumber(string.sub(key, 6, sep - 1))
+                local floor_id = tonumber(string.sub(key, 6, sep - 1))  ---@as ObjectID
+
+                -- Create a new floor result if necessary
+                if not result.floor_results[floor_id] then
+                    result.floor_results[floor_id] = {
+                        floor_id = floor_id,
+                        products = {},
+                        ingredients = {}
+                    }  ---@type FloorResult
+                end
+
                 if string.sub(key, sep, sep + 4) == "_out_" then
                     local item_key = string.sub(key, sep + 5)
-                    result.products[item_key] = value
+                    result.floor_results[floor_id].products[item_key] = value
                 elseif string.sub(key, sep, sep + 3) == "_in_" then
                     local item_key = string.sub(key, sep + 4)
-                    result.ingredients[item_key] = value
+                    result.floor_results[floor_id].ingredients[item_key] = value
                 end
             end
         end
@@ -327,7 +450,7 @@ function SimplexTableau:solve(floor_id)
 end
 
 
----@param key string
+---@param key ConstraintKey
 ---@param limit number?
 ---@return integer index
 function SimplexTableau:_add_row(key, limit)
@@ -346,16 +469,15 @@ end
 
 
 ---@private
----@param key string
+---@param key VariableKey
 ---@param objective number?
 ---@return integer index
 function SimplexTableau:_add_column(key, objective)
-    objective = objective or 0
     local col_index = #self._matrix[1] + 1
     self._cols[key] = col_index
 
     -- Populate the column
-    self._matrix[1]--[[@cast -nil]][col_index] = -objective  -- objective coefficient is opposite
+    self._matrix[1]--[[@cast -nil]][col_index] = objective and -objective or 0  -- objective coefficient is opposite
     for i = 2, #self._matrix do
         self._matrix[i][col_index] = 0
     end

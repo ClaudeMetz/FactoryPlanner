@@ -25,9 +25,11 @@ local simplex_engine = {}
 local objective_vector = {
     target_product = 1e9,
     product = 0,
+    ingredient = 0,
     intermediate_out = -1,
     intermediate_in = -1000,
-    ingredient = 0,
+    floor_transfer_out = 0,
+    floor_transfer_in = 0,
 
     special_modifier = 1e-9  -- reduce penalty for emissions, power and heat
 }
@@ -45,66 +47,54 @@ function simplex_engine.solve(player, factory)
     for item in factory:iterator() do
         target_products[item.proto.name .. "_" .. item.proto.type] = item.required_amount
     end
-    local result_table = simplex_engine.solve_floor( factory.top_floor, line_data_table, target_products)
-    result_table = result_table or {}
+    local tableau = simplex_engine.create_tableau( factory.top_floor, line_data_table, target_products)
+
+    -- Solve the tableau
+    local result = tableau and tableau:solve()
 
     -- Update GUI
-    simplex_engine.update_factory(factory, line_data_table, result_table)
+    simplex_engine.update_factory(factory, line_data_table, result)
 end
 
 
 ---@param floor Floor
 ---@param line_data_table LineDataTable
 ---@param target_products ItemList?
----@return FloorResultTable? result_table Containins the results of this floor and all subfloors, keyed by floor ID
-function simplex_engine.solve_floor(floor, line_data_table, target_products)
-    local result_table = {}  ---@type FloorResultTable
+---@return SimplexTableau? tableau
+---@return ItemSet? products
+---@return ItemSet? ingredients
+function simplex_engine.create_tableau(floor, line_data_table, target_products)
     local relevant_line_data = {}  ---@type LineDataTable
+    local tableau_table = {}  ---@type table<ObjectID, SimplexTableau>
 
-    -- Recursively solve subfloors and add their results to the line data
-    for line_object in floor:iterator() do
-        local line_data = nil  ---@type LineData?
-
-        if line_object.class == "Line" then line_data = line_data_table[line_object.id]
-        elseif line_object.class == "Floor" then
-            local subfloor_result_table = simplex_engine.solve_floor(line_object, line_data_table)
-            if subfloor_result_table then
-                result_table = lib.table.union(result_table, subfloor_result_table)
-                line_data = simplex_engine.get_line_data_from_floor_results(line_object.id, floor.id, subfloor_result_table)
-            end
-        end
-
-        if line_data and line_data.active then relevant_line_data[line_data.line_id] = line_data end
-    end
-
-    -- Populate the item sets based on the line data
     local products = {}  ---@type ItemSet
     local ingredients = {}  ---@type ItemSet
 
+    -- Recursively solve subfloors and add their results to the line data
+    for line_object in floor:iterator() do
+        if line_object.class == "Line" then
+            local line_data = line_data_table[line_object.id]
+            if line_data and line_data.active then
+                relevant_line_data[line_data.line_id] = line_data
+            end
+        elseif line_object.class == "Floor" then
+            local subfloor_tableau, subfloor_products, subfloor_ingredients = simplex_engine.create_tableau(line_object, line_data_table)
+            if subfloor_tableau then tableau_table[line_object.id] = subfloor_tableau end
+            if subfloor_products then products = lib.table.union(products, subfloor_products) end
+            if subfloor_ingredients then ingredients = lib.table.union(ingredients, subfloor_ingredients) end
+        end
+    end
+
+    -- Populate the item sets based on the line data
     for _, line_data in pairs(relevant_line_data) do
-        for item_key, _ in pairs(line_data.products) do
-            products[item_key] = true
-        end
-        for item_key, _ in pairs(line_data.ingredients) do
-            ingredients[item_key] = true
-        end
+        for item_key, _ in pairs(line_data.products) do products[item_key] = true end
+        for item_key, _ in pairs(line_data.ingredients) do ingredients[item_key] = true end
     end
 
     local intermediates = lib.table.intersection(products, ingredients)  ---@type ItemSet
-    products = lib.table.difference(products, intermediates)  ---@as ItemSet
-    ingredients = lib.table.difference(ingredients, intermediates)  ---@as ItemSet
 
-    -- Sanity check: It shouldn't be possible for the floor to only have lines containing ingredients
-    if not next(products) and not next(intermediates) then return nil end
-
-    -- If the target items were not specified, add the first product as the target
-    if not target_products then
-        target_products = {}
-        local k, _ = next(products)
-        if not k then k = next(intermediates) end
-        ---@cast k -nil
-        target_products[k] = 1
-    end
+    -- Do not continue if the floor can't produce anything.
+    if not next(products) then return end
 
     -- Create the simplex tableau
     local tableau = SimplexTableau:init()
@@ -116,8 +106,10 @@ function simplex_engine.solve_floor(floor, line_data_table, target_products)
 
     -- Add slack variables for products
     for item_key, _ in pairs(products) do
-        local c = string.sub(item_key, -7, -1) == "_entity" and objective_vector.special_modifier or 1
-        tableau:add_item_variable(item_key, floor.id, "out", c * objective_vector.product)
+        if not intermediates[item_key] then
+            local c = string.sub(item_key, -7, -1) == "_entity" and objective_vector.special_modifier or 1
+            tableau:add_item_variable(item_key, floor.id, "out", c * objective_vector.product)
+        end
     end
 
     -- Add slack variables for intermediates
@@ -129,22 +121,35 @@ function simplex_engine.solve_floor(floor, line_data_table, target_products)
 
     -- Add slack variables for ingredients
     for item_key, _ in pairs(ingredients) do
-        local c = string.sub(item_key, -7, -1) == "_entity" and objective_vector.special_modifier or 1
-        tableau:add_item_variable(item_key, floor.id, "in", c * objective_vector.ingredient)
+        if not intermediates[item_key] then
+            local c = string.sub(item_key, -7, -1) == "_entity" and objective_vector.special_modifier or 1
+            tableau:add_item_variable(item_key, floor.id, "in", c * objective_vector.ingredient)
+        end
     end
 
     -- Add additional constraints to target products, so we get a bounded solution
-    for item_key, amount in pairs(target_products) do
+    for item_key, amount in pairs(target_products or {}) do
         tableau:add_item_constraint(item_key, floor.id, "out", "<=", amount, objective_vector.target_product)
+    end
+
+    for subfloor_id, subfloor_tableau in pairs(tableau_table) do
+        -- Merge the subfloor tableau into this one
+        tableau:merge(subfloor_tableau)
+
+        -- Allow importing from the subfloor
+        for item_key, _ in pairs(products) do
+            tableau:add_item_transfer(item_key, floor.id, subfloor_id, "out", objective_vector.floor_transfer_out)
+        end
+
+        -- Allow exporting to the subfloor
+        for item_key, _ in pairs(ingredients) do
+            tableau:add_item_transfer(item_key, floor.id, subfloor_id, "in", objective_vector.floor_transfer_in)
+        end
     end
 
     ---@TODO: Add more constraints, like ingredient limits and machine limits
 
-    -- Solve the tableau
-    local result = tableau:solve(floor.id)
-
-    if result.state == "solved" then result_table[floor.id] = result end
-    return result_table
+    return tableau, products, ingredients
 end
 
 
@@ -302,27 +307,10 @@ function simplex_engine.get_line_data(player, factory, line, active)
 end
 
 
---- Converts the floor into a pseudo-machine based on the solver results
----@param floor_id ObjectID
----@param parent_floor_id ObjectID
----@param result_map FloorResultTable
----@return LineData?
-function simplex_engine.get_line_data_from_floor_results(floor_id, parent_floor_id, result_map)
-    if not result_map[floor_id] then return nil end
-    return {
-        line_id = floor_id,
-        floor_id = parent_floor_id,
-        active = true,
-        products = lib.flib.deep_copy(result_map[floor_id].products),
-        ingredients = lib.flib.deep_copy(result_map[floor_id].ingredients)
-    }  ---@type LineData
-end
-
-
 ---@param factory Factory
 ---@param line_data_table LineDataTable
----@param result_table FloorResultTable
-function simplex_engine.update_factory(factory, line_data_table, result_table)
+---@param result SimplexResult?
+function simplex_engine.update_factory(factory, line_data_table, result)
     local product_list = {}  ---@type table<PrototypeKey, TLProduct>
     local top_byproducts = {}  ---@type ItemList
     local top_ingredients = {}  ---@type ItemList
@@ -338,9 +326,9 @@ function simplex_engine.update_factory(factory, line_data_table, result_table)
     factory.top_floor.byproducts = {}
     factory.top_floor.ingredients = {}
 
-    if result_table[factory.top_floor.id] then
+    if result and result.floor_results[factory.top_floor.id] then
         -- Update the products
-        for item_key, amount in pairs(result_table[factory.top_floor.id].products) do
+        for item_key, amount in pairs(result.floor_results[factory.top_floor.id].products) do
             if product_list[item_key] then
                 -- Update product amount
                 product_list[item_key].amount = amount
@@ -355,63 +343,71 @@ function simplex_engine.update_factory(factory, line_data_table, result_table)
         end
 
         -- Update the ingredients
-        for item_key, amount in pairs(result_table[factory.top_floor.id].ingredients) do
+        for item_key, amount in pairs(result.floor_results[factory.top_floor.id].ingredients) do
             local item = simplex_engine.string_to_item(item_key, amount)
             top_ingredients[item_key] = amount
             if item and (not item.proto.hidden or item.proto.special) then
                 table.insert(factory.top_floor.ingredients, item)
             end
         end
+
+        -- Sort everything
+        table.sort(factory.top_floor.byproducts, solver.item_comparator)
+        table.sort(factory.top_floor.ingredients, solver.item_comparator)
     end
 
-    -- Sort everything
-    table.sort(factory.top_floor.byproducts, solver.item_comparator)
-    table.sort(factory.top_floor.ingredients, solver.item_comparator)
-
-    simplex_engine.update_floor(factory.top_floor, 1, top_byproducts, top_ingredients, line_data_table, result_table)
+    simplex_engine.update_floor(factory.top_floor, top_byproducts, top_ingredients, line_data_table, result)
 end
 
 
 ---@param floor Floor
----@param scale_factor number
 ---@param top_byproducts ItemList
 ---@param top_ingredients ItemList
 ---@param line_data_table LineDataTable
----@param result_table FloorResultTable
-function simplex_engine.update_floor(floor, scale_factor, top_byproducts, top_ingredients, line_data_table, result_table)
+---@param result SimplexResult?
+function simplex_engine.update_floor(floor, top_byproducts, top_ingredients, line_data_table, result)
     for line_object in floor:iterator() do
-        local line_result = result_table[floor.id] and result_table[floor.id].line_results[line_object.id]
+        local line_result = result and result.line_results[line_object.id]
         if line_object.class == "Line" then
-            simplex_engine.update_line(line_object, scale_factor, top_byproducts, top_ingredients, line_data_table, line_result)
+            simplex_engine.update_line(line_object, top_byproducts, top_ingredients, line_data_table, line_result)
         elseif line_object.class == "Floor" then
-            local c = line_result and line_result.machine_amount * scale_factor or 0
-            local floor_result = result_table[line_object.id] or {
+            local floor_result = result and result.floor_results[line_object.id] or {
                 floor_id = line_object.id,
                 products = {},
                 ingredients = {},
-                line_results = {}
             }
             
             -- Reset line UI
             line_object.products = {}
             line_object.byproducts = {}
             line_object.ingredients = {}
+            line_object.machine_amount = 0
 
             local floor_byproducts, floor_ingredients = simplex_engine.update_line_object_common(
-                line_object, c, floor_result.products, floor_result.ingredients, top_byproducts, top_ingredients)
-            simplex_engine.update_floor(line_object, c, floor_byproducts, floor_ingredients, line_data_table, result_table)
+                line_object, 1, floor_result.products, floor_result.ingredients, top_byproducts, top_ingredients)
+            simplex_engine.update_floor(line_object, floor_byproducts, floor_ingredients, line_data_table, result)
         end
+    end
+
+    -- Calculate machine amount after everything on the floor has been updated
+    for line_object in floor:iterator() do
+        local amount = 0
+        if line_object.class == "Floor" then
+            amount = line_object.machine_amount
+        elseif line_object.class == "Line" then
+            amount = math.ceil(line_object.machine.amount - MAGIC_NUMBERS.margin_of_error)
+        end
+        floor.machine_amount = floor.machine_amount + amount
     end
 end
 
 
 ---@param line Line
----@param scale_factor number
 ---@param top_byproducts ItemList
 ---@param top_ingredients ItemList
 ---@param line_data_table LineDataTable
 ---@param line_result LineResult?
-function simplex_engine.update_line(line, scale_factor, top_byproducts, top_ingredients, line_data_table, line_result)
+function simplex_engine.update_line(line, top_byproducts, top_ingredients, line_data_table, line_result)
     -- Reset line UI
     line.products = {}
     line.byproducts = {}
@@ -429,7 +425,7 @@ function simplex_engine.update_line(line, scale_factor, top_byproducts, top_ingr
 
     -- Update the machine
     if line_result then
-        line.machine.amount = scale_factor * line_result.machine_amount
+        line.machine.amount = line_result.machine_amount
         line.production_ratio = line.machine.amount > 0 and 1 or 0
     end
 
@@ -454,23 +450,23 @@ end
 
 
 ---@param line_object LineObject
----@param scale_factor number
+---@param machine_amount number
 ---@param products ItemList
 ---@param ingredients ItemList
 ---@param top_byproducts ItemList
 ---@param top_ingredients ItemList
 ---@return ItemList floor_byproducts
 ---@return ItemList floor_ingredients
-function simplex_engine.update_line_object_common(line_object, scale_factor, products, ingredients, top_byproducts, top_ingredients)
+function simplex_engine.update_line_object_common(line_object, machine_amount, products, ingredients, top_byproducts, top_ingredients)
     local floor_byproducts = {}  ---@type ItemList
     local floor_ingredients = {}  ---@type ItemList
     local is_line = line_object.class == "Line"
 
     -- Update the products and byproducts
     for item_key, v in pairs(products) do
-        local amount = scale_factor * v
+        local amount = v * machine_amount
         local item = simplex_engine.string_to_item(item_key, amount)
-        if item and (not item.proto.hidden or ((item.proto.special or is_line) and scale_factor > 0)) then
+        if item and (not item.proto.hidden or ((item.proto.special or is_line) and amount > 0)) then
             if amount == 0 or not top_byproducts[item_key] then
                 -- Add as product (used within the floor)
                 table.insert(line_object.products, item)
@@ -497,9 +493,9 @@ function simplex_engine.update_line_object_common(line_object, scale_factor, pro
 
     -- Update the ingredients
     for item_key, v in pairs(ingredients) do
-        local amount = scale_factor * v
+        local amount = v * machine_amount
         local item = simplex_engine.string_to_item(item_key, amount, true)
-        if item and (not item.proto.hidden or ((item.proto.special or is_line) and scale_factor > 0)) then
+        if item and (not item.proto.hidden or ((item.proto.special or is_line) and amount > 0)) then
             table.insert(line_object.ingredients, item)
             floor_ingredients[item_key] = amount
 
