@@ -86,6 +86,7 @@ end
 function _clipboard.dummy_paste(player, dummy, parent)
     parent:insert(dummy)
     if not _clipboard.paste(player, dummy) then
+        -- Prevent collapsing the floor on `Floor:remove()`
         parent:remove(dummy, true)
     end
 end
