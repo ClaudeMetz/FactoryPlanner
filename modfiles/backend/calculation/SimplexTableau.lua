@@ -61,18 +61,20 @@ function SimplexTableau:add_line_variable(line_data)
     ---@param sign 1 | -1
     local function add_rows(items, sign)
         for item, value in pairs(items) do
-            local item_row_key = "item_" .. line_data.floor_id .. "_" .. item
-            local row_index = 0
+            if value > 0 then
+                local item_row_key = "item_" .. line_data.floor_id .. "_" .. item
+                local row_index = 0
 
-            -- Add the item to the tableau if not already present
-            if not self._rows[item_row_key] then
-                row_index = self:_add_row(item_row_key)
-            else
-                row_index = self._rows[item_row_key]
+                -- Add the item to the tableau if not already present
+                if not self._rows[item_row_key] then
+                    row_index = self:_add_row(item_row_key)
+                else
+                    row_index = self._rows[item_row_key]
+                end
+
+                local x = self._matrix[row_index]--[[@cast -nil]][col_index] or 0
+                self._matrix[row_index]--[[@cast -nil]][col_index] = x + sign * value
             end
-
-            local x = self._matrix[row_index]--[[@cast -nil]][col_index] or 0
-            self._matrix[row_index]--[[@cast -nil]][col_index] = x + sign * value
         end
     end
 

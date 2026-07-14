@@ -98,8 +98,12 @@ function simplex_engine.create_tableau(floor, line_data_table, target_products, 
 
     -- Populate the item sets based on the line data
     for _, line_data in pairs(relevant_line_data) do
-        for item_key, _ in pairs(line_data.products) do products[item_key] = true end
-        for item_key, _ in pairs(line_data.ingredients) do ingredients[item_key] = true end
+        for item_key, value in pairs(line_data.products) do
+            if value > 0 then products[item_key] = true end
+        end
+        for item_key, value in pairs(line_data.ingredients) do
+            if value > 0 then ingredients[item_key] = true end
+        end
     end
 
     local intermediates = lib.table.intersection(products, ingredients)  ---@type ItemSet
@@ -247,22 +251,20 @@ function simplex_engine.get_line_data(player, factory, line, active)
             lib.table.add(products, item.name .. "_" .. item.type, amount)
         end
         for _, item in pairs(line.recipe.proto.catalysts.ingredients) do
-            if line.recipe:is_temperature_configured(item) then
-                local name = line.recipe:get_name_with_temperature(item)
-                local amount = total_crafts * item.amount * line.machine:get_resource_drain_rate()
-                lib.table.add(ingredients, name .. "_" .. item.type, amount)
-            end
+            local name = line.recipe:get_name_with_temperature(item)
+            local amount = total_crafts * item.amount * line.machine:get_resource_drain_rate()
+            if not line.recipe:is_temperature_configured(item) then amount = 0 end
+            lib.table.add(ingredients, name .. "_" .. item.type, amount)
         end
     end
 
     -- Get simple ingredients
     if line.recipe.proto.ingredients then
         for _, item in pairs(line.recipe.proto.ingredients) do
-            if line.recipe:is_temperature_configured(item) then
-                local name = line.recipe:get_name_with_temperature(item)
-                local amount = total_crafts * item.amount * line.machine:get_resource_drain_rate()
-                lib.table.add(ingredients, name .. "_" .. item.type, amount)
-            end
+            local name = line.recipe:get_name_with_temperature(item)
+            local amount = total_crafts * item.amount * line.machine:get_resource_drain_rate()
+            if not line.recipe:is_temperature_configured(item) then amount = 0 end
+            lib.table.add(ingredients, name .. "_" .. item.type, amount)
         end
     end
 
@@ -564,7 +566,7 @@ function simplex_engine.string_to_item(key, amount, without_temperature)
     local proto = prototyper.util.find("items", name, type)  ---@as FPItemPrototype?
 
     -- Convert to fluid without temperature if requested
-    if proto and type == "fluid" and without_temperature then
+    if proto and type == "fluid" and proto.base_name and without_temperature then
             proto = prototyper.util.find("items", proto.base_name, "fluid")  ---@as FPItemPrototype?
     end
 
