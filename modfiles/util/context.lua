@@ -150,8 +150,10 @@ function _context.ascend_floors(player, destination)
 
     if selected_floor ~= nil then
         -- Reset the subfloor we moved from if it doesn't have any additional recipes
-        if floor:count() == 1 then floor.parent:replace(floor, floor.first--[[@cast -nil]]) end
-        solver.update(player)
+        if floor:count() == 1 then
+            floor.parent:replace(floor, floor.first--[[@cast -nil]])
+            solver.update(player)
+        end
 
         _context.set(player, selected_floor)
         return true
