@@ -35,7 +35,7 @@ local objective_vector = {
     floor_transfer_in = 0,
 
     machine_limit = 0,
-    special_modifier = 1e-9  -- reduce penalty for emissions, power and heat
+    special_modifier = 0  -- no penalty for emissions, power and heat
 }
 
 

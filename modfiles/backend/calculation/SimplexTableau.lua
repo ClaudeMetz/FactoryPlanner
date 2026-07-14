@@ -378,7 +378,7 @@ function SimplexTableau:solve()
             local denominator = self._matrix[i][col_index] or 0
             local ratio = (denominator > 0.0 and self._matrix[i][1])
                     and (self._matrix[i][1] / denominator) or -1
-            if ratio >= 0 and ratio < min then
+            if ratio >= 0 and ratio < min and denominator > MAGIC_NUMBERS.margin_of_error then
                 row_index = i
                 min = ratio
             end

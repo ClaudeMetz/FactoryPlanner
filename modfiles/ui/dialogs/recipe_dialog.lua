@@ -432,7 +432,7 @@ local function open_recipe_dialog(player, modal_data)
         if modal_data.recipe_id then
             local recipe = OBJECT_INDEX[modal_data.recipe_id]  ---@as Recipe
             temperature_data = recipe.temperature_data[modal_data.base_fluid.name]
-        else  ---@cast modal_data.fuel_id -nil
+        elseif modal_data.fuel_id then
             local fuel = OBJECT_INDEX[modal_data.fuel_id]  ---@as Fuel
             temperature_data = fuel.temperature_data
         end
