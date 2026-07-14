@@ -218,6 +218,8 @@ function simplex_engine.get_line_data(player, factory, line, active)
     local products = {}  ---@type ItemList
     local ingredients = {}  ---@type ItemList
 
+    ---@TODO: Fix surface restricions being ignored
+
     -- Check if line can can function
     active = active and line.active and line:get_surface_compatibility() and true or false
 
@@ -249,11 +251,13 @@ function simplex_engine.get_line_data(player, factory, line, active)
         for _, item in pairs(line.recipe.proto.catalysts.products) do
             local amount = total_crafts * solver.util.determine_prodded_amount(item, effects)
             lib.table.add(products, item.name .. "_" .. item.type, amount)
+            lib.table.add(ingredients, item.name .. "_" .. item.type, amount)
         end
         for _, item in pairs(line.recipe.proto.catalysts.ingredients) do
             local name = line.recipe:get_name_with_temperature(item)
             local amount = total_crafts * item.amount * line.machine:get_resource_drain_rate()
             if not line.recipe:is_temperature_configured(item) then amount = 0 end
+            lib.table.add(products, name .. "_" .. item.type, amount)
             lib.table.add(ingredients, name .. "_" .. item.type, amount)
         end
     end
@@ -450,6 +454,8 @@ function simplex_engine.update_line(line, top_byproducts, top_ingredients, line_
     if line.machine.fuel then
         line.machine.fuel.amount = 0
     end
+
+    ---@TODO: Fix catalyst display
 
     local data = line_data_table[line.id]
     if not data then return end
