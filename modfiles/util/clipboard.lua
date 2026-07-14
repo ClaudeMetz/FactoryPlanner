@@ -73,7 +73,7 @@ function _clipboard.paste(player, target)
             elseif error == "recipe_irrelevant" then
                 lib.cursor.create_flying_text(player, {"fp.clipboard_recipe_irrelevant"})
             elseif error == "temperature_not_set" then
-                lib.messages.raise(player, "error", {"fp.error_temperature_not_configured", clone.proto.localised_name}, 1)
+                lib.cursor.create_flying_text(player, {"fp.clipboard_temperature_not_set"})
             end
         end
     end
