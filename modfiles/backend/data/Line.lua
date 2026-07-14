@@ -241,7 +241,7 @@ function Line:is_temperature_fully_configured()
     end
 
     local fuel = self.machine.fuel
-    if fuel and fuel:is_temperature_configured() then return false end
+    if fuel and not fuel:is_temperature_configured() then return false end
 
     return true
 end
