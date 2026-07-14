@@ -93,10 +93,8 @@ end
 function Fuel:paste(object)
     local burner = self.parent.proto.burner
 
-    -- Sanity check. Should exist if fuel can be pasted
-    if burner == nil then
-        return false, "incompatible"
-    end
+    -- Sanity check, should exist if fuel can be pasted
+    if burner == nil then return false, "incompatible" end
 
     local fuel = nil
     if object.class == "Fuel" then
