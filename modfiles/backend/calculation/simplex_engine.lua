@@ -247,18 +247,22 @@ function simplex_engine.get_line_data(player, factory, line, active)
             lib.table.add(products, item.name .. "_" .. item.type, amount)
         end
         for _, item in pairs(line.recipe.proto.catalysts.ingredients) do
-            local name = line.recipe:get_name_with_temperature(item)
-            local amount = total_crafts * item.amount * line.machine:get_resource_drain_rate()
-            lib.table.add(ingredients, name .. "_" .. item.type, amount)
+            if line.recipe:is_temperature_configured(item) then
+                local name = line.recipe:get_name_with_temperature(item)
+                local amount = total_crafts * item.amount * line.machine:get_resource_drain_rate()
+                lib.table.add(ingredients, name .. "_" .. item.type, amount)
+            end
         end
     end
 
     -- Get simple ingredients
     if line.recipe.proto.ingredients then
         for _, item in pairs(line.recipe.proto.ingredients) do
-            local name = line.recipe:get_name_with_temperature(item)
-            local amount = total_crafts * item.amount * line.machine:get_resource_drain_rate()
-            lib.table.add(ingredients, name .. "_" .. item.type, amount)
+            if line.recipe:is_temperature_configured(item) then
+                local name = line.recipe:get_name_with_temperature(item)
+                local amount = total_crafts * item.amount * line.machine:get_resource_drain_rate()
+                lib.table.add(ingredients, name .. "_" .. item.type, amount)
+            end
         end
     end
 
