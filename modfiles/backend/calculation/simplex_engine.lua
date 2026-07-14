@@ -13,7 +13,7 @@ local simplex_engine = {}
 ---@class LineData
 ---@field line_id ObjectID
 ---@field floor_id ObjectID
----@field active boolean
+---@field total_crafts number
 ---@field products ItemList
 ---@field ingredients ItemList
 ---@field machine_limit number?
@@ -85,7 +85,7 @@ function simplex_engine.create_tableau(floor, line_data_table, target_products, 
     for line_object in floor:iterator() do
         if line_object.class == "Line" then
             local line_data = line_data_table[line_object.id]
-            if line_data and line_data.active then
+            if line_data and line_data.total_crafts > 0 then
                 relevant_line_data[line_data.line_id] = line_data
             end
         elseif line_object.class == "Floor" then
@@ -334,7 +334,7 @@ function simplex_engine.get_line_data(player, factory, line, active)
     return {
         line_id = line.id,
         floor_id = line.parent.id,
-        active = active,
+        total_crafts = active and total_crafts or 0,
         products = products,
         ingredients = ingredients,
         machine_limit = machine_limit,
@@ -455,8 +455,6 @@ function simplex_engine.update_line(line, top_byproducts, top_ingredients, line_
         line.machine.fuel.amount = 0
     end
 
-    ---@TODO: Fix catalyst display
-
     local data = line_data_table[line.id]
     if not data then return end
     local products = lib.flib.deep_copy(data.products)
@@ -465,7 +463,21 @@ function simplex_engine.update_line(line, top_byproducts, top_ingredients, line_
     -- Update the machine
     if line_result then
         line.machine.amount = line_result.machine_amount
-        line.production_ratio = line.machine.amount > 0 and 1 or 0
+        line.production_ratio = line_result.machine_amount * data.total_crafts
+    end
+
+    -- Handle catalysts
+    for item_key, product_amount in pairs(products) do
+        if ingredients[item_key] then
+            local ingredient_amount = ingredients[item_key]
+            if product_amount > ingredient_amount then
+                lib.table.add(products, item_key, -ingredient_amount)
+                ingredients[item_key] = nil
+            else
+                lib.table.add(ingredients, item_key, -product_amount)
+                products[item_key] = nil
+            end
+        end
     end
 
     -- Update the fuel
