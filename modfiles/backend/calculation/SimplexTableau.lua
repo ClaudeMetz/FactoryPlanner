@@ -346,8 +346,8 @@ function SimplexTableau:solve()
     ---@param phase 1 | 2
     ---@return boolean done
     ---@return SolverState state
-    local function solve_step(phase)
-        -- Select the variable with the most negative objective as the entering variable
+    local function pivot_step(phase)
+        -- Select the variable with the most negative objective as the entering variable (Danzig's rule)
         -- Add a minimum margin for extra safety
         -- If there is so little score left to maximize, then the solution is pretty close to optimal anyway
         local col_index = 0
@@ -396,10 +396,10 @@ function SimplexTableau:solve()
 
     -- Phase 1: Eliminate the virtual variables
     local done = false
-    local max_iterations = 2 * #self._matrix[1]
+    local max_iterations = (#self._matrix) ^ 2  -- Upper bound is 2^#v, but average case with random pivots is #c^2
     reduce_objective()
     repeat
-        done, result.state = solve_step(1)
+        done, result.state = pivot_step(1)
         max_iterations = max_iterations - 1
     until done or max_iterations == 0
     if result.state ~= "solved" then return result end
@@ -418,10 +418,10 @@ function SimplexTableau:solve()
 
     -- Phase 2: Find the optimal solution
     done = false
-    max_iterations = 2 * #self._matrix[1]
+    max_iterations = (#self._matrix) ^ 2
     reduce_objective()
     repeat
-        done, result.state = solve_step(2)
+        done, result.state = pivot_step(2)
         max_iterations = max_iterations - 1
     until done or max_iterations == 0
     if result.state ~= "solved" then return result end

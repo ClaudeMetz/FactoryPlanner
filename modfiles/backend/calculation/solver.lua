@@ -355,7 +355,6 @@ function solver.update(player, factory)
                         linear_dependence_data = matrix_engine.get_linear_dependence_data(factory_data, matrix_metadata)
                     end
 
-                    ---@diagnostic disable-next-line: undefined-field
                     if matrix_metadata.num_rows == matrix_metadata.num_cols
                             and #linear_dependence_data.linearly_dependent_recipes == 0 then
                         matrix_engine.run_matrix_solver(factory_data, false)
@@ -372,7 +371,7 @@ function solver.update(player, factory)
             sequential_engine.update_factory(factory_data)
         end
     end
-    log(profiler)  ---@TODO: remove
+    log(profiler--[[@as LocalisedString]])  ---@TODO: remove
 end
 
 ---@param factory Factory
