@@ -189,7 +189,7 @@ function simplex_engine.get_floor_data(player, factory, floor, active)
 
     -- Check if floor can function
     active = active and floor.first and (floor.level == 1 or
-            (floor.first.active and floor.first:get_surface_compatibility())) and true or false
+            (floor.first.active and floor.first:get_surface_compatibility().overall)) and true or false
 
     for line_object in floor:iterator() do
         if line_object.class == "Floor" then
@@ -221,7 +221,7 @@ function simplex_engine.get_line_data(player, factory, line, active)
     ---@TODO: Fix surface restricions being ignored
 
     -- Check if line can can function
-    active = active and line.active and line:get_surface_compatibility() and true or false
+    active = active and line.active and line:get_surface_compatibility().overall and true or false
 
     ---@cast line.machine.proto -FPPackedPrototype
     ---@cast line.recipe.proto -FPPackedPrototype
