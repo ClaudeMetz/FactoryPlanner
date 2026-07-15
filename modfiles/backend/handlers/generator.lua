@@ -203,6 +203,7 @@ function generator.recipes.generate()
             recipe.sprite = main_product.type .. "/" .. main_product.name
             recipe.order = proto.order
             recipe.categories = {[proto.resource_category] = true}
+            recipe.allowed_effects = {speed=true, productivity=true, quality=true, consumption=true, pollution=true}
             recipe.productivity_recipe = (any_mining_productivity) and "custom-mining" or nil
 
             local ingredients = {{type="entity", name="custom-" .. proto.name, amount=1}--[[@as Ingredient]]}
