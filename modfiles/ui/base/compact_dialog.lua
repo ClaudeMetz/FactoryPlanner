@@ -67,10 +67,10 @@ end
 ---@return CompactColumnCounts
 local function determine_column_counts(floor, available_columns)
     local column_counts = {ingredients = 1, products = 1, byproducts = 0}  -- ordered by priority
-    available_columns = available_columns - 2  -- two buttons are already assigned
+    local remaining_columns = available_columns - 2  -- two buttons are already assigned
 
     local previous_height, increment = 2^53, 1
-    while available_columns > 0 do
+    while remaining_columns > 0 do
         local table_heights, minimal_height = {}, 2^53
 
         for column, count in pairs(column_counts) do
@@ -83,13 +83,13 @@ local function determine_column_counts(floor, available_columns)
 
         -- If increasing any column by 1 doesn't change the height, try incrementing by more
         --   until height is decreased, or no columns are available anymore
-        if not (minimal_height < previous_height) and increment < available_columns then
+        if not (minimal_height < previous_height) and increment < remaining_columns then
             increment = increment + 1
         else
             for column, height in pairs(table_heights) do
-                if available_columns > 0 and height == minimal_height then
+                if remaining_columns > 0 and height == minimal_height then
                     column_counts[column] = column_counts[column] + 1
-                    available_columns = available_columns - 1
+                    remaining_columns = remaining_columns - 1
                     break
                 end
             end

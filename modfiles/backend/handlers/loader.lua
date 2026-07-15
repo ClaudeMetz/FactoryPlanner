@@ -162,20 +162,18 @@ local function prototype_maps(data_types)
     for data_type, has_categories in pairs(data_types) do
         local map = {}
 
+        local prototypes = storage.prototypes[data_type]  ---@type AnyIndexedPrototypes
+
         if not has_categories then
             ---@cast map MappedPrototypes<FPPrototype>
-
-            ---@type IndexedPrototypes<FPPrototype>
-            local prototypes = storage.prototypes[data_type]
+            ---@cast prototypes IndexedPrototypes<FPPrototype>
 
             for _, prototype in pairs(prototypes) do
                 map[prototype.name] = prototype
             end
         else
             ---@cast map MappedPrototypesWithCategory<FPPrototypeWithCategory>
-
-            ---@type IndexedPrototypesWithCategory<FPPrototypeWithCategory>
-            local prototypes = storage.prototypes[data_type]
+            ---@cast prototypes IndexedPrototypesWithCategory<FPPrototypeWithCategory>
 
             for _, category in pairs(prototypes) do
                 map[category.name] = { name=category.name, id=category.id, members={} }

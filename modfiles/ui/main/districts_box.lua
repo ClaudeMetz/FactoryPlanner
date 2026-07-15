@@ -45,7 +45,6 @@ local function handle_item_button_click(player, tags, action)
         end
 
         local factory = factory_list.add_factory(player, nil, item.proto)
-
         local top_level_item = TLProduct.init(item.proto)
         top_level_item.required_amount = item.abs_diff
         factory:insert(top_level_item)

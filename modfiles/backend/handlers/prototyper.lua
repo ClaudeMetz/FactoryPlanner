@@ -110,7 +110,7 @@ function prototyper.build()
     -- Second pass to do some things that can't be done in the first pass due to the strict sequencing
     for data_type, _ in pairs(prototyper.data_types) do
         local second_pass = generator[data_type].second_pass  ---@as fun(prototypes: NamedPrototypes<FPPrototype>)?
-        if second_pass ~= nil then second_pass(storage.prototypes[data_type]) end
+        if second_pass ~= nil then second_pass(storage.prototypes[data_type]--[[@as NamedPrototypes<FPPrototype>]]) end
     end
 
     -- Finish up generation by converting lists to use ids as keys, and sort if desired
