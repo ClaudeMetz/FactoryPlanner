@@ -168,17 +168,52 @@ end
 function Floor:check_product_compatibility(object)
     if self.level == 1 then return true end
 
-    local relevant_line = (object.class == "Floor") and object.first or object  ---@cast relevant_line Line
+    local relevant_line = (object.class == "Floor") and object.first or object
+    ---@cast relevant_line.recipe -nil
+
     -- The triple loop is crappy, but it's the simplest way to check
-    for _, product in pairs(relevant_line.recipe.proto--[[@as FPRecipePrototype]].products) do
-        for line in self:iterator() do
-            for _, ingredient in pairs(line.ingredients) do
-                if ingredient.proto.type == product.type and ingredient.proto.name == product.name then
-                    return true
+    if relevant_line.recipe.production_type == "produce" then
+        ---@cast relevant_line.recipe.proto.products -nil
+        for _, product in pairs(relevant_line.recipe.proto.products) do
+            for line in self:iterator() do  ---@cast line.recipe -nil
+                -- Check if pasted line produces an ingredient on a line on this floor
+                for _, ingredient in pairs(line.ingredients) do
+                    if ingredient.proto.type == product.type
+                            and (ingredient.proto.name == product.name or ingredient.proto.name == product.base_name)
+                            and (line.recipe:get_temperature(ingredient.proto) == product.temperature) then
+                        return true
+                    end
+                end
+
+                -- Check if pasted line produces a fuel on a line on this floor
+                if line.machine and line.machine.fuel then
+                    local fuel = line.machine.fuel  ---@type Fuel
+                    if fuel.proto.elem_type == product.type
+                            and (fuel.proto.name == product.name or fuel.proto.name == product.base_name)
+                            and (fuel.temperature == product.temperature) then
+                        return true
+                    end
                 end
             end
         end
     end
+
+    -- Check if the pasted line consumes any byproduct of a line on this floor
+    if relevant_line.recipe.production_type == "consume" then
+        ---@cast relevant_line.recipe.proto.ingredients -nil
+        for _, ingredient in pairs(relevant_line.recipe.proto.ingredients) do
+            for line in self:iterator() do
+                for _, byproduct in pairs(line.byproducts) do
+                    if ingredient.type == byproduct.proto.type and
+                            (ingredient.name == byproduct.proto.name or ingredient.name == byproduct.proto.base_name)
+                            and (relevant_line.recipe:get_temperature(ingredient) == byproduct.proto.temperature) then
+                        return true
+                    end
+                end
+            end
+        end
+    end
+
     return false
 end
 

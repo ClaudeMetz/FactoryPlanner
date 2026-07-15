@@ -7,7 +7,6 @@
 ---@field parent Object?
 ---@field next Object?
 ---@field previous Object?
----@field dummy boolean? used by clipboard
 ---@field pack fun(self, full: boolean): PackedObject
 ---@field validate fun(self): boolean
 ---@field repair fun(self, player: LuaPlayer): boolean
