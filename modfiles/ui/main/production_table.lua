@@ -542,7 +542,6 @@ function builders.ingredients(line, parent_flow, metadata)
                 ingredient.satisfied_amount--[[@cast -nil]], ingredient.amount)
             satisfaction_line = sat_line
 
-
             -- We use the formatted percentage here because it smooths out the number to 3 places
             local satisfaction = 0.0
             if string.sub(percentage_string, 1,1) ~= "≤" then
