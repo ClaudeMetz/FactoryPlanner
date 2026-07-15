@@ -87,7 +87,7 @@ local function match_recipes(player, modal_data, proto)
     end
 
     -- Set filters to try and show at least one recipe, should one exist, incorporating user preferences
-    local filters = {}  ---@type RecipeDialogFilters
+    local filters = {disabled=false, hidden=false}  ---@type RecipeDialogFilters
     local user_prefs = preferences.recipe_filters
     local relevant_recipes_count = #relevant_recipes
 

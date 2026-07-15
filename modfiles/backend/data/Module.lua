@@ -92,10 +92,11 @@ function Module:paste(object)
             self.parent:normalize({effects=true})
             return true, nil
         else
-            local existing_module = self.parent:find({
+            local filter = {
                 proto = object.proto--[[@as FPModulePrototype]],
                 quality_proto = object.quality_proto--[[@as FPQualityPrototype]]
-            }--[[@as ObjectFilter]])
+            }  ---@type ObjectFilter
+            local existing_module = self.parent:find(filter)
             local parent = self.parent  -- retain here because it can be changed below
 
             if existing_module then
