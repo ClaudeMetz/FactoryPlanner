@@ -175,8 +175,7 @@ function Floor:check_product_compatibility(object)
     if relevant_line.recipe.production_type == "produce" then
         ---@cast relevant_line.recipe.proto.products -nil
         for _, product in pairs(relevant_line.recipe.proto.products) do
-            for line in self:iterator() do
-                ---@cast line.recipe -nil
+            for line in self:iterator() do  ---@cast line.recipe -nil
                 -- Check if pasted line produces an ingredient on a line on this floor
                 for _, ingredient in pairs(line.ingredients) do
                     if ingredient.proto.type == product.type
@@ -189,7 +188,7 @@ function Floor:check_product_compatibility(object)
                 -- Check if pasted line produces a fuel on a line on this floor
                 if line.machine and line.machine.fuel then
                     local fuel = line.machine.fuel  ---@type Fuel
-                    if fuel.proto.elem_type == product.type 
+                    if fuel.proto.elem_type == product.type
                             and (fuel.proto.name == product.name or fuel.proto.name == product.base_name)
                             and (fuel.temperature == product.temperature) then
                         return true
