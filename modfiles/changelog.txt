@@ -2,11 +2,11 @@
 Version: 0.00.00
 Date: 00. 00. 0000
   Features:
-    - 
+    -
   Changes:
-    - 
+    -
   Bugfixes:
-    - 
+    - Fixed mining recipes no longer being marked as accepting any modules (#788) (Thanks vapopescu!)
 
 ---------------------------------------------------------------------------------------------------
 Version: 2.1.4
