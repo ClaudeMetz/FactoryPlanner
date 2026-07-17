@@ -7,6 +7,7 @@ Date: 00. 00. 0000
     - Added numbers onto the power and emissions item buttons
   Bugfixes:
     - Fixed mining recipes no longer being marked as accepting any modules (#788) (Thanks vapopescu!)
+    - Fixed a crash with very low item satisfaction values (#785) (Thanks vapopescu!)
 
 ---------------------------------------------------------------------------------------------------
 Version: 2.1.4
