@@ -543,7 +543,10 @@ function builders.ingredients(line, parent_flow, metadata)
             satisfaction_line = sat_line
 
             -- We use the formatted percentage here because it smooths out the number to 3 places
-            local satisfaction = tonumber(percentage_string)
+            local satisfaction = 0.0
+            if string.sub(percentage_string, 1,1) ~= "≤" then
+                satisfaction = tonumber(percentage_string)  ---@as number
+            end
             if satisfaction <= 0 then
                 style = "fflib_slot_button_red_small"
             elseif satisfaction < 100 then
