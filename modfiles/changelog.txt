@@ -8,6 +8,7 @@ Date: 00. 00. 0000
   Bugfixes:
     - Fixed mining recipes no longer being marked as accepting any modules (#788) (Thanks vapopescu!)
     - Fixed a crash with very low item satisfaction values (#785) (Thanks vapopescu!)
+    - Fixed a crash when enabling ingredient satisfaction and quickly switching factories (#782)
 
 ---------------------------------------------------------------------------------------------------
 Version: 2.1.4
