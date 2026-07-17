@@ -244,6 +244,7 @@ local function add_item_flow(line, relevant_line, item_category, button_color, m
             on_gui_hover="hover_compact_item", on_gui_leave="leave_compact_item", context="compact_dialog"}
 
         if type == "entity" and proto.special then
+            amount = lib.format.button_number(item.amount)
             number_tooltip = lib.format.special_tooltip(proto.name, item.amount)
             if not relevant_line.done and item_category == "ingredients" then button_color = "cyan" end
             first_special_index = first_special_index or index
@@ -404,6 +405,7 @@ local function refresh_compact_header(player, factory)
             on_gui_leave="leave_compact_item", context="compact_dialog"}
 
         if ingredient.proto.type == "entity" and ingredient.proto.special then
+            amount = lib.format.button_number(ingredient.amount)
             number_tooltip = lib.format.special_tooltip(ingredient.proto.name, ingredient.amount)
         else
             amount, number_tooltip = item_views.process_item(player, ingredient.proto, ingredient.amount, nil)
