@@ -122,6 +122,7 @@ local function build_items_flow(player, parent, district)
                 action_line = {"", "\n", MODIFIER_ACTIONS["act_on_district_special_ingredient"].tooltip}
             end
 
+            diff_number = lib.format.button_number(item.abs_diff)
             amount_tooltip = lib.format.special_tooltip(item.proto.name, item.abs_diff)
             total_tooltip = lib.format.special_tooltip(item.proto.name, total_amount)
         else
