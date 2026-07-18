@@ -11,7 +11,7 @@ local TLProduct = require("backend.data.TLProduct")
 ---@field name string
 ---@field matrix_solver_active boolean
 ---@field matrix_free_items (FPItemPrototype | FPPackedPrototype)[]
----@field blueprints string[]
+---@field blueprints_inventory LuaInventory
 ---@field notes string
 ---@field productivity_boni table<string, EffectValue>
 ---@field first TLProduct?
@@ -36,7 +36,7 @@ local function init(name, matrix_solver_active)
         name = name,
         matrix_solver_active = matrix_solver_active,
         matrix_free_items = {},
-        blueprints = {},
+        blueprints_inventory = game.create_inventory(MAGIC_NUMBERS.blueprint_limit),
         notes = "",
         productivity_boni = {},
         first = nil,
@@ -207,7 +207,7 @@ end
 ---@field name string
 ---@field matrix_solver_active boolean
 ---@field matrix_free_items FPPackedPrototype[]
----@field blueprints string[]
+---@field blueprint_strings table<integer, string> sparse
 ---@field notes string
 ---@field productivity_boni table<string, EffectValue>
 ---@field products PackedProduct[]
@@ -216,13 +216,21 @@ end
 ---@param full boolean
 ---@return PackedFactory packed_self
 function Factory:pack(full)
+    local blueprint_strings = {}
+    for index = 1, #self.blueprints_inventory do
+        local item = self.blueprints_inventory[index]
+        if item.valid_for_read then
+            blueprint_strings[index] = item.export_stack()
+        end
+    end
+
     return {
         class = self.class,
         name = self.name,
         matrix_solver_active = self.matrix_solver_active,
         matrix_free_items = (self.matrix_free_items) and
             prototyper.util.simplify_prototypes(self.matrix_free_items, "type") or nil,
-        blueprints = self.blueprints,
+        blueprint_strings = blueprint_strings,
         notes = self.notes,
         productivity_boni = self.productivity_boni,
         products = self:_pack(full),
@@ -238,7 +246,12 @@ local function unpack(packed_self)
     -- Matrix free items will be automatically unpacked by the validation process
     ---@diagnostic disable-next-line: assign-type-mismatch
     unpacked_self.matrix_free_items = packed_self.matrix_free_items
-    unpacked_self.blueprints = packed_self.blueprints
+
+    unpacked_self.blueprints_inventory = game.create_inventory(MAGIC_NUMBERS.blueprint_limit)
+    for index, blueprint in pairs(packed_self.blueprint_strings) do
+        unpacked_self.blueprints_inventory[index].import_stack(blueprint)
+    end
+
     unpacked_self.notes = packed_self.notes
     unpacked_self.productivity_boni = packed_self.productivity_boni
 

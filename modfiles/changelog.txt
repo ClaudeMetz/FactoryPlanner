@@ -2,11 +2,11 @@
 Version: 0.00.00
 Date: 00. 00. 0000
   Features:
-    - 
+    -
   Changes:
-    - 
+    - Changed the utility dialog blueprint storage to use a real inventory UI (#763)
   Bugfixes:
-    - 
+    -
 
 ---------------------------------------------------------------------------------------------------
 Version: 2.1.5
