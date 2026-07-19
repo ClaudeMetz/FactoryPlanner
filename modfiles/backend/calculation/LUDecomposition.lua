@@ -47,35 +47,45 @@ function LUDecomposition:init(matrix)
             end
         end
 
-        -- Permute
-        if pivot_row ~= k then
-            local temp = o.p_vector[pivot_row]  ---@as integer
-            o.p_vector[pivot_row] = o.p_vector[k]  ---@as integer
-            o.p_vector[k] = temp
+        if max > 0 then
+            -- Permute
+            if pivot_row ~= k then
+                local temp = o.p_vector[pivot_row]  ---@as integer
+                o.p_vector[pivot_row] = o.p_vector[k]  ---@as integer
+                o.p_vector[k] = temp
 
-            o.p_transposed[o.p_vector[pivot_row]] = pivot_row
-            o.p_transposed[o.p_vector[k]] = k
+                o.p_transposed[o.p_vector[pivot_row]] = pivot_row
+                o.p_transposed[o.p_vector[k]] = k
 
-            local temp_u = o.u_matrix[pivot_row]
-            o.u_matrix[pivot_row] = o.u_matrix[k]
-            o.u_matrix[k] = temp_u
+                local temp_u = o.u_matrix[pivot_row]
+                o.u_matrix[pivot_row] = o.u_matrix[k]
+                o.u_matrix[k] = temp_u
 
-            local temp_l = o.l_matrix[pivot_row]
-            o.l_matrix[pivot_row] = o.l_matrix[k]
-            o.l_matrix[k] = temp_l
-        end
+                local temp_l = o.l_matrix[pivot_row]
+                o.l_matrix[pivot_row] = o.l_matrix[k]
+                o.l_matrix[k] = temp_l
+            end
 
-        o.l_matrix[k][k] = 1
+            o.l_matrix[k][k] = 1
 
-        -- Row-subtract below the pivot
-        for i = k + 1, #o.u_matrix do
-            local scalar = o.u_matrix[i][k] / o.u_matrix[k][k]
-            o.l_matrix[i][k] = scalar
-            if o.u_matrix[i][k] ~= 0 then
-                o.u_matrix[i][k] = 0
-                for j = k + 1, #o.u_matrix do
-                    o.u_matrix[i][j] = o.u_matrix[i][j] - scalar * o.u_matrix[k][j]
+            -- Row-subtract below the pivot
+            for i = k + 1, #o.u_matrix do
+                local scalar = o.u_matrix[i][k] / o.u_matrix[k][k]
+                o.l_matrix[i][k] = scalar
+                if o.u_matrix[i][k] ~= 0 then
+                    o.u_matrix[i][k] = 0
+                    for j = k + 1, #o.u_matrix do
+                        o.u_matrix[i][j] = o.u_matrix[i][j] - scalar * o.u_matrix[k][j]
+                    end
                 end
+            end
+        else
+            -- Vector is degenerate. Just put a big number here and hope noting goes wrong
+            o.u_matrix[k][k] = 1e100
+
+            o.l_matrix[k][k] = 1
+            for i = k + 1, #o.u_matrix do
+                o.l_matrix[i][k] = 0
             end
         end
     end
@@ -97,7 +107,9 @@ function LUDecomposition:solve_left(vector)
         ---@diagnostic disable: undefined-field, need-check-nil
         y_vector[k] = vector[k]
         for i = 1, k - 1 do
-            y_vector[k] = y_vector[k] - y_vector[i] * self.u_matrix[i][k]
+            if y_vector[i] ~= 0 and self.u_matrix[i][k] ~= 0 then
+                y_vector[k] = y_vector[k] - y_vector[i] * self.u_matrix[i][k]
+            end
         end
         y_vector[k] = y_vector[k] / self.u_matrix[k][k]
     end
@@ -110,7 +122,9 @@ function LUDecomposition:solve_left(vector)
         ---@diagnostic disable: undefined-field, inject-field, need-check-nil
         local cell = y_vector[k]
         for i = k + 1, #self.l_matrix do
-            cell = cell - x_vector[self.p_vector[i]] * self.l_matrix[i][k]
+            if x_vector[self.p_vector[i]] ~= 0 and self.l_matrix[i][k] then
+                cell = cell - x_vector[self.p_vector[i]] * self.l_matrix[i][k]
+            end
         end
         x_vector[self.p_vector[k]] = cell
     end
@@ -130,7 +144,9 @@ function LUDecomposition:solve_right(vector)
         ---@diagnostic disable: undefined-field, need-check-nil
         y_vector[k] = vector[self.p_vector[k]]
         for i = 1, k - 1 do
-            y_vector[k] = y_vector[k] - y_vector[i] * self.l_matrix[k][i]
+            if  y_vector[i] ~= 0 and self.l_matrix[k][i] ~= 0 then
+                y_vector[k] = y_vector[k] - y_vector[i] * self.l_matrix[k][i]
+            end
         end
     end
 
@@ -142,7 +158,9 @@ function LUDecomposition:solve_right(vector)
         ---@diagnostic disable: undefined-field, need-check-nil
         local cell = y_vector[k]
         for i = k + 1, #self.u_matrix do
-            cell = cell - x_vector[i] * self.u_matrix[k][i]
+            if x_vector[i] ~= 0 and self.u_matrix[k][i] ~= 0 then
+                cell = cell - x_vector[i] * self.u_matrix[k][i]
+            end
         end
         x_vector[k] = cell / self.u_matrix[k][k]
     end

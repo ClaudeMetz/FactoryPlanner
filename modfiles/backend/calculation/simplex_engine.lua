@@ -152,6 +152,7 @@ function simplex_engine.create_tableau(floor, line_data_table, target_products, 
         tableau:add_item_constraint(item_key, floor.id, "in", "<=", amount, objective_vector.limited_ingredient)
     end
 
+    -- Add aditional constraint for machine limits
     for line_id, line_data in pairs(relevant_line_data) do
         if line_data.machine_limit then
             local type = line_data.machine_force_limit and "==" or "<="
