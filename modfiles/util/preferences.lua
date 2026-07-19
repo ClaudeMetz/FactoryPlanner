@@ -217,4 +217,62 @@ function _preferences.import(player, export_string)
     -- No return indicates success
 end
 
+
+---@alias PreferencesChangeType "all" | "main_dimensions" | "compact_dimensions" | "solver_config" | "mod_gui" | "edit_views" | "belts_or_lanes" | "prototype_default"
+
+---@param player LuaPlayer
+---@param change_type PreferencesChangeType
+---@param shrinkwrap boolean?
+function _preferences.refresh_after_change(player, change_type, shrinkwrap)
+    local rebuild_views_data, rebuild_views_interface = false, false
+    local run_solver, run_solver_all = false, false
+    local toggle_mod_gui = false
+    local refresh_scope = nil  ---@type RefreshGUITrigger?
+    local rebuild_main, rebuild_compact = false, false
+
+    if change_type == "all" then  -- import, reset, etc
+        rebuild_views_data = true
+        run_solver_all = true
+        run_solver = true  -- update current factory right away
+        rebuild_main = true
+        rebuild_compact = true
+    elseif change_type == "main_dimensions" then
+        rebuild_main = true
+    elseif change_type == "compact_dimensions" then
+        rebuild_compact = true
+    elseif change_type == "solver_config" then
+        run_solver_all = true
+        run_solver = true  -- update current factory right away
+        refresh_scope = "production"
+    elseif change_type == "mod_gui" then
+        toggle_mod_gui = true
+    elseif change_type == "edit_views" then
+        rebuild_views_interface = true
+        refresh_scope = "factory"
+    elseif change_type == "belts_or_lanes" then
+        rebuild_views_data = true
+        rebuild_views_interface = true
+        run_solver = true
+        refresh_scope = "factory"
+    elseif change_type == "prototype_default" then
+        rebuild_views_data = true
+        rebuild_views_interface = true
+        refresh_scope = "factory"
+    end
+
+    if rebuild_views_data then item_views.rebuild_data(player) end
+    if rebuild_views_interface then item_views.rebuild_interface(player) end
+    if run_solver_all then
+        local realm = lib.globals.player_table(player).realm
+        realm:schedule_solver_updates(game.tick, player)
+    end
+    if run_solver then solver.update(player) end
+    if toggle_mod_gui then lib.gui.toggle_mod_gui(player) end
+    if refresh_scope then lib.gui.run_refresh(player, refresh_scope) end
+    if shrinkwrap then  -- this rebuilds the main interface implicitly
+        GLOBAL_HANDLERS["shrinkwrap_interface"]{player_index=player.index}
+    elseif rebuild_main then main_dialog.rebuild(player, true) end
+    if rebuild_compact then compact_dialog.rebuild(player, false) end
+end
+
 return _preferences
