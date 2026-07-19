@@ -105,8 +105,7 @@ function District:refresh()
     self.needs_refresh = false
     self.item_set:clear()
 
-    local filter = { archived = false, valid = true }  ---@type ObjectFilter
-    for factory in self:iterator(filter) do
+    for factory in self:iterator({archived=false, valid=true}) do
         self.item_set:add_items(factory:as_list(), "production")
         self.item_set:add_items(factory.top_floor.byproducts, "production")
         self.item_set:add_items(factory.top_floor.ingredients, "consumption")
@@ -122,7 +121,7 @@ end
 ---@return MapTick last_scheduled_tick
 function District:schedule_solver_updates(starting_tick, player)
     local running_tick = starting_tick
-    for factory in self:iterator({valid=true}--[[@as ObjectFilter]]) do
+    for factory in self:iterator({valid=true}) do
         factory:schedule_solver_update(running_tick, player)
         running_tick = running_tick + MAGIC_NUMBERS.factory_solver_update_delay
     end

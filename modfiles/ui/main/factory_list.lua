@@ -28,8 +28,7 @@ end
 local function change_factory_archived(player, to_archive)
     local factory = lib.context.get(player, "Factory")  ---@as Factory
 
-    local filter = {archived=true}  ---@type ObjectFilter
-    if to_archive or factory.parent:count(filter) > 1 then
+    if to_archive or factory.parent:count({archived=true}) > 1 then
         local adjacent_factory = lib.context.remove(player, factory)
         lib.context.set(player, adjacent_factory or factory.parent, true)
     end  -- if it's pulling the last factory from the archive, keep the context on it
@@ -196,8 +195,7 @@ local function refresh_factory_list(player)
     -- Set all the button states and styles appropriately
     local factory_exists = (selected_factory ~= nil)
     local district = lib.context.get(player, "District")  ---@as District
-    local filter = {archived=true}  ---@type ObjectFilter
-    local archived_factory_count = district:count(filter)
+    local archived_factory_count = district:count({archived=true})
 
     factory_list_elements.toggle_archive_button.enabled = (archived_factory_count > 0)
     factory_list_elements.toggle_archive_button.style = (archived)
@@ -382,7 +380,7 @@ listeners.gui = {
                 local factory = lib.context.get(player, "Factory")  ---@as Factory
                 local archive_open = (factory) and factory.archived or false
                 local district = (factory) and factory.parent or lib.context.get(player, "District")
-                local filter = {archived=not archive_open}  ---@type ObjectFilter
+                local filter = {archived=not archive_open}
                 local new_factory = district:find(filter)
 
                 main_dialog.toggle_districts_view(player, true)

@@ -214,8 +214,7 @@ function module_configurator.refresh_modules_flow(player, update_only)
             if module_id == nil then
                 frame.destroy()  -- destroy empty frame as it'll be re-added below
             else
-                local filter = {id = module_id}  ---@type ObjectFilter
-                local module = modal_data.module_set:find(filter)
+                local module = modal_data.module_set:find({id = module_id})
                 if module == nil then
                     frame.destroy()
                 else

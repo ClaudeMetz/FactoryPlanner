@@ -133,7 +133,7 @@ end
 
 ---@class GUIEventTable
 ---@field handler GUIEventHandler | GUIActionEventHandler
----@field actions GUIActionTable
+---@field actions GUIActionTable[]
 ---@field shortcuts table<string, GUIActionTable>
 ---@field tooltip LocalisedString
 ---@field timeout MapTick

@@ -97,6 +97,10 @@ function _context.set(player, object, force_district)
         -- The above cache is guaranteed to exist to be able to get here
         floors_cache[factory.id] = object.id
     end
+
+    -- Make sure the selected factory's solve is up to date
+    local factory = _context.get(player, "Factory")  ---@as Factory?
+    if factory and factory.tick_of_solver_update then solver.update(player, factory) end
 end
 
 --- Cleans up after the given object was removed and tries to find a replacement

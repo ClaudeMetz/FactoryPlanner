@@ -72,13 +72,13 @@ local function refresh_item_box(player, factory, show_floor_items, item_category
             local required_amount = product:get_required_amount()
 
             if product.proto.type == "entity" and product.proto.special then
+                amount = lib.format.button_number(required_amount)
                 number_tooltip = lib.format.special_tooltip(product.proto.name, required_amount)
             else
                 amount, number_tooltip = item_views.process_item(player, product.proto, required_amount, nil)
                 if amount == -1 then goto skip_product end  -- an amount of -1 means it was below the margin of error
             end
 
-            --local satisfaction_line, percentage_string = nil, nil
             local satisfaction_line, percentage_string = lib.gui.calculate_satisfaction(
                 product.amount, required_amount)
 
@@ -116,6 +116,7 @@ local function refresh_item_box(player, factory, show_floor_items, item_category
 
             if item.proto.type == "entity" and item.proto.special then
                 action = "act_on_floor_special"
+                amount = lib.format.button_number(item.amount)
                 number_tooltip = lib.format.special_tooltip(item.proto.name, item.amount)
             else
                 amount, number_tooltip = item_views.process_item(player, item.proto, item.amount, nil)

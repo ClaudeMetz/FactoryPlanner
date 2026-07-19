@@ -88,7 +88,7 @@ function TLProduct:paste(object)
         end
 
         -- Avoid duplicate items, but allow pasting over the same item proto
-        local existing_item = self.parent:find({proto=proto}--[[@as ObjectFilter]])
+        local existing_item = self.parent:find({proto=proto})
         if existing_item and not (self.proto.name == proto.name) then
             return false, "already_exists"
         end
