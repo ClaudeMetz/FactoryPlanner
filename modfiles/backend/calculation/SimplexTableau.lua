@@ -383,8 +383,6 @@ function SimplexTableau:solve()
         end
 
         lu = LUDecomposition:init(b_matrix)
-
-        -- Compute the current solution
         x_vector = lu:solve_right(self.solution)
 
         -- Compute the objective vector for the current basis
@@ -403,8 +401,8 @@ function SimplexTableau:solve()
         end
         local c_non_basic = lib.matrix.left_mult(y_vector, a_non_basic)
 
-        for j = 1, #non_basic do
-            ---@diagnostic disable: need-check-nil
+        for j = 1, #c_non_basic do
+            ---@diagnostic disable: undefined-field
             c_non_basic[j] = self.objective[self.cols[non_basic[j]]] - c_non_basic[j]
         end
 

@@ -13,17 +13,6 @@ function _table.add(table, key, value)
 end
 
 
---- Finds the first key in the thabe which has the `value`
----@param table table
----@param value any
----@return any key
-function _table.find(table, value)
-    for k, v in pairs(table) do
-        if value == v then return k end
-    end
-end
-
-
 --- Joins two tables together in a new result table (`L ∪ R`).
 --- The contents of `left_table` are inserted first.
 --- If the `right_table` contains a key that is already in the `left_table`,
@@ -39,23 +28,6 @@ function _table.union(left_table, right_table)
 end
 
 
---- Subtracts the `right_table` from the `left_table` table in a new result table (`L ∖ R`).
---- The result will contain the contents of the `left_table`,
---- excluding the keys that are also present in the `right_table`.
----@param left_table table
----@param right_table table
----@return table result_table
-function _table.difference(left_table, right_table)
-    local result = {}
-    for k, v in pairs(left_table) do
-        -- Intentionally exclude both `nil` and `false` (preserve operation truthyness)
-        if not right_table[k] then result[k] = v end
-    end
-
-    return result
-end
-
-
 --- Returns the intersection of two tables (`L ∩ R`).
 --- The result will contain the contents of the `left_table`,
 --- whose keys are also present in the `right_table`.
@@ -67,6 +39,23 @@ function _table.intersection(left_table, right_table)
     for k, v in pairs(left_table) do
         -- Intentionally exclude both `nil` and `false` (preserve operation truthyness)
         if right_table[k] then result[k] = v end
+    end
+
+    return result
+end
+
+
+--- Subtracts the `right_table` from the `left_table` table in a new result table (`L ∖ R`).
+--- The result will contain the contents of the `left_table`,
+--- excluding the keys that are also present in the `right_table`.
+---@param left_table table
+---@param right_table table
+---@return table result_table
+function _table.difference(left_table, right_table)
+    local result = {}
+    for k, v in pairs(left_table) do
+        -- Intentionally exclude both `nil` and `false` (preserve operation truthyness)
+        if not right_table[k] then result[k] = v end
     end
 
     return result

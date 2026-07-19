@@ -18,8 +18,7 @@ end
 function _matrix.row_subtract(matrix, x, y, scalar)
     for j = 1, #matrix[x] do
         ---@diagnostic disable: need-check-nil
-        matrix[x][j] = lib.math.safe_sub(matrix[x][j], scalar * matrix[y][j])
-        -- matrix[x][j] = matrix[x][j] - scalar * matrix[y][j]
+        matrix[x][j] = matrix[x][j] - scalar * matrix[y][j]
     end
 end
 

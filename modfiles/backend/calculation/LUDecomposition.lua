@@ -16,7 +16,7 @@ LUDecomposition.__index = LUDecomposition
 function LUDecomposition:init(matrix)
     ---@diagnostic disable-next-line: missing-fields
     local o = {
-        lu_matrix = lib.flib.deep_copy(matrix),
+        lu_matrix = matrix,
         p_vector = {},
         p_transposed = {},
     }  ---@type LUDecomposition
@@ -68,7 +68,7 @@ function LUDecomposition:init(matrix)
                 end
             end
         else
-            -- Vector is degenerate. Just put a big number here and hope noting goes wrong
+            -- Column vector is degenerate. Just put a big number here and hope nothing goes wrong
             o.lu_matrix[k][k] = 1e100
             for i = k + 1, #o.lu_matrix do
                 o.lu_matrix[i][k] = 0
@@ -98,12 +98,10 @@ function LUDecomposition:solve_left(vector)
         y_vector[k] = y_vector[k] / self.lu_matrix[k][k]
     end
 
-    ---@TODO: solve for update vectors
-
     -- Solve `(P x)^T L = y^T`
     local x_vector = {}  ---@type number[]
     for k = #self.lu_matrix, 1, -1 do
-        ---@diagnostic disable: undefined-field, inject-field, need-check-nil
+        ---@diagnostic disable: undefined-field, need-check-nil, inject-field
         local cell = y_vector[k]
         for i = k + 1, #self.lu_matrix do
             if x_vector[self.p_vector[i]] ~= 0 and self.lu_matrix[i][k] then
@@ -133,8 +131,6 @@ function LUDecomposition:solve_right(vector)
             end
         end
     end
-
-    ---@TODO: solve for update vectors
 
     -- Solve `U x = y`
     local x_vector = {}  ---@type number[]
