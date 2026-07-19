@@ -22,9 +22,7 @@ function LUDecomposition:init(matrix)
         u_matrix = lib.flib.deep_copy(matrix),
         r_updates = {},
         p_vector = {},
-        q_vector = {},
         p_transposed = {},
-        q_transposed = {}
     }  ---@type LUDecomposition
 
     setmetatable(o, self)
@@ -50,30 +48,34 @@ function LUDecomposition:init(matrix)
         end
 
         -- Permute
-        local temp = o.p_vector[pivot_row]  ---@as integer
-        o.p_vector[pivot_row] = o.p_vector[k]  ---@as integer
-        o.p_vector[k] = temp
+        if pivot_row ~= k then
+            local temp = o.p_vector[pivot_row]  ---@as integer
+            o.p_vector[pivot_row] = o.p_vector[k]  ---@as integer
+            o.p_vector[k] = temp
 
-        o.p_transposed[o.p_vector[pivot_row]] = pivot_row
-        o.p_transposed[o.p_vector[k]] = k
+            o.p_transposed[o.p_vector[pivot_row]] = pivot_row
+            o.p_transposed[o.p_vector[k]] = k
 
-        local temp_u = o.u_matrix[pivot_row]
-        o.u_matrix[pivot_row] = o.u_matrix[k]
-        o.u_matrix[k] = temp_u
+            local temp_u = o.u_matrix[pivot_row]
+            o.u_matrix[pivot_row] = o.u_matrix[k]
+            o.u_matrix[k] = temp_u
 
-        local temp_l = o.l_matrix[pivot_row]
-        o.l_matrix[pivot_row] = o.l_matrix[k]
-        o.l_matrix[k] = temp_l
+            local temp_l = o.l_matrix[pivot_row]
+            o.l_matrix[pivot_row] = o.l_matrix[k]
+            o.l_matrix[k] = temp_l
+        end
 
         o.l_matrix[k][k] = 1
 
         -- Row-subtract below the pivot
         for i = k + 1, #o.u_matrix do
             local scalar = o.u_matrix[i][k] / o.u_matrix[k][k]
-            o.u_matrix[i][k] = 0
             o.l_matrix[i][k] = scalar
-            for j = k + 1, #o.u_matrix do
-                o.u_matrix[i][j] = o.u_matrix[i][j] - scalar * o.u_matrix[k][j]
+            if o.u_matrix[i][k] ~= 0 then
+                o.u_matrix[i][k] = 0
+                for j = k + 1, #o.u_matrix do
+                    o.u_matrix[i][j] = o.u_matrix[i][j] - scalar * o.u_matrix[k][j]
+                end
             end
         end
     end

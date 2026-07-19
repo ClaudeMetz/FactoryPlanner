@@ -5,6 +5,7 @@ local LUDecomposition = require("backend.calculation.LUDecomposition")
 ---@alias InequalityType "==" | "<=" | ">="
 ---@alias ItemDirection "in" | "out"
 ---@alias SolverState "in-progress" | "solved" | "unbounded" | "no-solution"
+---@alias VariableType "unassigned" | "basic" | "non-basic"
 ---@alias ConstraintKey "objective" | string `"item_<floor_id>_<proto-key>"` | `"c_<n>"`
 ---@alias VariableKey "solution" | string `"line_<line_id>"` | `"item_<floor_id>_<in|out>_<proto-key>"` | `"s_<n>"` | `"y_<n>"`
 ---@alias LineResultTable table<ObjectID, LineResult>
@@ -16,6 +17,10 @@ local LUDecomposition = require("backend.calculation.LUDecomposition")
 ---@field cols table<VariableKey, integer> variables
 local SimplexTableau = {}
 SimplexTableau.__index = SimplexTableau
+
+---@class VariableMap
+---@field key VariableKey
+---@field type VariableType
 
 ---@class SimplexResult
 ---@field state SolverState?
@@ -279,6 +284,7 @@ end
 
 ---@return SimplexResult result
 function SimplexTableau:solve()
+    local profiler = helpers.create_profiler()  ---@TODO: remove
     local result = {
         state = "in-progress",
         products = {},
@@ -292,45 +298,84 @@ function SimplexTableau:solve()
         if self.matrix[i][1] < 0 then lib.matrix.row_mult(self.matrix, i, -1) end
     end
 
-    -- Find basic variables (column where one row is 1 and the rest are 0)
+    local variable_map = {}  ---@type VariableMap[]
+    local sorted_variables = {}  ---@type VariableKey[]
     local basic = {}  ---@type VariableKey[]
     local non_basic = {}  ---@type VariableKey[]
-    for j = 2, #self.matrix[1] do
-        local one_index = nil  ---@type integer?
-        local is_basic = true
-        for i = 2, #self.matrix do
-            if self.matrix[i][j] ~= 0 then
-                if self.matrix[i][j] ~= 1 then
-                    is_basic = false
+
+    -- Populate the column index to variable key map
+    for key, column in pairs(self.cols) do
+        if column > 1 then
+            variable_map[column] = {key = key, type = "unassigned"}
+            table.insert(sorted_variables, key)
+        end
+    end
+
+    -- Sort variables descending on objective value (they are inverted in the tableau)
+    table.sort(sorted_variables, function(key1, key2)
+        ---@diagnostic disable: need-check-nil
+        return self.matrix[1][self.cols[key1]] < self.matrix[1][self.cols[key2]]
+    end)
+
+    -- Mark non-0 constrained variables as non-basic
+    for i = 2, #self.matrix do
+        if self.matrix[i][1] ~= 0 then
+            for j = 2, #self.matrix[1] do
+                if self.matrix[i][j] ~= 0 then
+                    local is_basic = true
+                    for k = 2, #self.matrix do
+                        if k ~= i and self.matrix[k][j] ~= 0 then
+                            is_basic = false
+                            break
+                        end
+                    end
+                    if not is_basic then
+                        local map = variable_map[j]  ---@as VariableMap
+                        if map.type == "unassigned" then
+                            map.type = "non-basic"
+                            table.insert(non_basic, map.key)
+                        end
+                    end
+                end
+            end
+        end
+    end
+
+    -- Heuristically pick the inital basis containing the variables with the highest objective
+    for _, key in pairs(sorted_variables) do
+        local map = variable_map[self.cols[key]]  ---@as VariableMap
+        if map.type == "unassigned" then
+            for i = 2, #self.matrix do
+                if self.matrix[i][self.cols[key]] > MAGIC_NUMBERS.margin_of_error and not basic[i - 1] then
+                    map.type = "basic"
+                    basic[i - 1] = key
                     break
-                elseif one_index then
-                    is_basic = false
-                    break
-                else
-                    one_index = i
                 end
             end
         end
 
-        if is_basic and one_index then
-            basic[one_index] = lib.table.find(self.cols, j)
-        else
-            table.insert(non_basic, lib.table.find(self.cols, j))
+        -- If no row was found to form a basis for this variable, mark it as out of base
+        if map.type == "unassigned" then
+            map.type = "non-basic"
+            table.insert(non_basic, key)
         end
     end
 
     -- Add a virtual variables with negative cost for each non-basic row
     for i = 2, #self.matrix do
-        if not basic[i] then
+        if not basic[i - 1] then
             local virtual_key = "y_" .. #self.matrix[1] + 1
             local col_index = self:_add_column(virtual_key, -1e100)
             self.matrix[i][col_index] = 1
-            basic[i] = virtual_key
+            basic[i - 1] = virtual_key
         end
     end
 
     local lu  ---@type LUDecomposition
     local x_vector  ---@type number[]
+    log("Preparation:")
+    log(profiler--[[@as LocalisedString]])  ---@TODO: remove
+    profiler.reset()
 
     ---@return boolean done
     ---@return SolverState state
@@ -340,12 +385,15 @@ function SimplexTableau:solve()
         for i = 2, #self.matrix do
             b_matrix[i - 1] = {}
             for j = 2, #self.matrix do
-                b_matrix[i - 1][j - 1] = self.matrix[i][self.cols[basic[j]--[[@cast -nil]]]]
+                b_matrix[i - 1][j - 1] = self.matrix[i][self.cols[basic[j - 1]--[[@cast -nil]]]]
             end
         end
 
         lu = LUDecomposition:init(b_matrix)
-        local _test1 = lu:recompose()
+        -- local _test1 = lu:recompose()
+        log("LU decomposition:")
+        log(profiler--[[@as LocalisedString]])  ---@TODO: remove
+        profiler.reset()
 
         -- Compute the current solution
         local b_vector = {}  ---@type number[]
@@ -353,15 +401,21 @@ function SimplexTableau:solve()
             b_vector[i - 1] = self.matrix[i][1]
         end
         x_vector = lu:solve_right(b_vector)
+        log("x vector:")
+        log(profiler--[[@as LocalisedString]])  ---@TODO: remove
+        profiler.reset()
 
         -- Compute the objective vector for the current basis
         local c_basic = {}  ---@type number[]
-        for k = 2, #basic do
+        for k = 1, #basic do
             ---@diagnostic disable-next-line: need-check-nil
-            c_basic[k - 1] = self.matrix[1][self.cols[basic[k]]]
+            c_basic[k] = self.matrix[1][self.cols[basic[k]]]
         end
         local y_vector = lu:solve_left(c_basic)
-        local _test2 = lib.matrix.left_mult(y_vector, b_matrix)
+        -- local _test2 = lib.matrix.left_mult(y_vector, b_matrix)
+        log("y vector:")
+        log(profiler--[[@as LocalisedString]])  ---@TODO: remove
+        profiler.reset()
 
         local a_non_basic = {}  ---@type number[][]
         for i = 2, #self.matrix do
@@ -376,6 +430,9 @@ function SimplexTableau:solve()
             ---@diagnostic disable: need-check-nil
             c_non_basic[j] = self.matrix[1][self.cols[non_basic[j]]] - c_non_basic[j]
         end
+        log("c non-basic:")
+        log(profiler--[[@as LocalisedString]])  ---@TODO: remove
+        profiler.reset()
 
         -- Select the variable with the most negative objective as the entering variable (Danzig's rule)
         -- Add a minimum margin for extra safety
@@ -388,11 +445,14 @@ function SimplexTableau:solve()
                 min = c_non_basic[j]  ---@as number
             end
         end
+        log("entering check:")
+        log(profiler--[[@as LocalisedString]])  ---@TODO: remove
+        profiler.reset()
 
         if entering_index == 0 then
             -- We are done, but check that we don't have virtual variables in the solution
             for i = 2, #self.matrix do
-                if basic[i] and string.sub(basic[i], 1, 2) == "y_" then
+                if basic[i - 1] and string.sub(basic[i - 1], 1, 2) == "y_" then
                     return true, "no-solution"
                 end
             end
@@ -407,7 +467,10 @@ function SimplexTableau:solve()
             aj_vector[i - 1] = self.matrix[i][entering_column]
         end
         local t_vector = lu:solve_right(aj_vector)
-        local _test3 = lib.matrix.right_mult(b_matrix, t_vector)
+        -- local _test3 = lib.matrix.right_mult(b_matrix, t_vector)
+        log("t vector:")
+        log(profiler--[[@as LocalisedString]])  ---@TODO: remove
+        profiler.reset()
 
         -- Select the basis with the smallest ratio as the leaving variable
         local leaving_index = 0
@@ -417,12 +480,15 @@ function SimplexTableau:solve()
                 ---@diagnostic disable: need-check-nil
                 local ratio = x_vector[i] / t_vector[i]
                 if ratio < min then
-                    leaving_index = i + 1
+                    leaving_index = i
                     min = ratio
                 end
                 if ratio == 0 then break end
             end
         end
+        log("leaving check:")
+        log(profiler--[[@as LocalisedString]])  ---@TODO: remove
+        profiler.reset()
 
         if leaving_index == 0 then return true, "unbounded" end
 
@@ -449,7 +515,7 @@ function SimplexTableau:solve()
 
     -- Interpret the result
     for row, key in pairs(basic) do
-        local value = x_vector[row - 1] or 0
+        local value = x_vector[row] or 0
 
         -- Ignore zeroes
         if value ~= 0 then
@@ -484,6 +550,9 @@ function SimplexTableau:solve()
             end
         end
     end
+    log("interpretation:")
+    log(profiler--[[@as LocalisedString]])  ---@TODO: remove
+    profiler.reset()
 
     return result
 end

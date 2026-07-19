@@ -32,9 +32,13 @@ function _matrix.right_mult(matrix, vector)
     local result = {}  ---@type number[]
     for i = 1, #matrix do
         result[i] = 0.0
-        for j = 1, #matrix do
-            ---@diagnostic disable: need-check-nil
-            result[i] = result[i] + vector[j] * matrix[i][j]
+    end
+    for j = 1, #matrix do
+        if vector[j] ~= 0 then
+            for i = 1, #matrix do
+                ---@diagnostic disable: need-check-nil
+                result[i] = result[i] + vector[j] * matrix[i][j]
+            end
         end
     end
 
@@ -50,9 +54,15 @@ function _matrix.left_mult(vector, matrix)
     local result = {}  ---@type number[]
     for j = 1, #matrix[1] do
         result[j] = 0.0
-        for i = 1, #matrix do
-            ---@diagnostic disable: need-check-nil
-            result[j] = result[j] + vector[i] * matrix[i][j]
+    end
+    for i = 1, #matrix do
+        if vector[i] ~= 0 then
+            for j = 1, #matrix[1] do
+                if matrix[i][j] ~= 0 then
+                    ---@diagnostic disable: need-check-nil
+                    result[j] = result[j] + vector[i] * matrix[i][j]
+                end
+            end
         end
     end
 
