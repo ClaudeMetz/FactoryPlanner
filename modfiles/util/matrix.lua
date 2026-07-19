@@ -6,7 +6,6 @@ local _matrix = {}
 ---@param x integer x
 ---@param scalar number k
 function _matrix.row_mult(matrix, x, scalar)
-    if not matrix[x] then return end
     for j = 1, #matrix[x] do matrix[x][j] = scalar * matrix[x][j] end
 end
 
@@ -17,13 +16,47 @@ end
 ---@param y integer y
 ---@param scalar number k
 function _matrix.row_subtract(matrix, x, y, scalar)
-    if not matrix[x] or not matrix[y] then return end
-    if scalar == 0 then return end
-    local cols = math.min(#matrix[x], #matrix[y])
-    for j = 1, cols do
-        matrix[x][j] = lib.math.safe_sub(matrix[x][j]--[[@as number]], scalar * matrix[y][j]--[[@as number]])
-        -- matrix[x][j] = matrix[x][j]--[[@as number]] - scalar * matrix[y][j]--[[@as number]]
+    for j = 1, #matrix[x] do
+        ---@diagnostic disable: need-check-nil
+        matrix[x][j] = lib.math.safe_sub(matrix[x][j], scalar * matrix[y][j])
+        -- matrix[x][j] = matrix[x][j] - scalar * matrix[y][j]
     end
+end
+
+
+--- Performs `M * v`
+---@param matrix number[][]
+---@param vector number[]
+---@return number[]
+function _matrix.right_mult(matrix, vector)
+    local result = {}  ---@type number[]
+    for i = 1, #matrix do
+        result[i] = 0.0
+        for j = 1, #matrix do
+            ---@diagnostic disable: need-check-nil
+            result[i] = result[i] + vector[j] * matrix[i][j]
+        end
+    end
+
+    return result
+end
+
+
+--- Performs `v^T * M`
+---@param vector number[]
+---@param matrix number[][]
+---@return number[]
+function _matrix.left_mult(vector, matrix)
+    local result = {}  ---@type number[]
+    for j = 1, #matrix[1] do
+        result[j] = 0.0
+        for i = 1, #matrix do
+            ---@diagnostic disable: need-check-nil
+            result[j] = result[j] + vector[i] * matrix[i][j]
+        end
+    end
+
+    return result
 end
 
 
@@ -35,9 +68,8 @@ end
 --- @param row integer i
 --- @param column integer j
 function _matrix.pivot(matrix, row, column)
-    if row > #matrix or not matrix[row] then return end
-    if column > #matrix[row] then return end
-    _matrix.row_mult(matrix, row, 1 / matrix[row][column]--[[@as number]])
+    ---@diagnostic disable: need-check-nil
+    _matrix.row_mult(matrix, row, 1 / matrix[row][column])
     matrix[row][column] = 1  --improve precision
     for i = 1, #matrix do
         if i ~= row then
