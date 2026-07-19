@@ -125,7 +125,7 @@ end
 ---@param floor_id ObjectID
 ---@param direction ItemDirection
 ---@param type InequalityType
----@param limit number
+---@param limit number must be non-negative (`>=0`)
 ---@param objective number?
 function SimplexTableau:add_item_constraint(item, floor_id, direction, type, limit, objective)
     return self:_add_constraint("item_" .. floor_id .. "_".. direction .. "_" .. item, type, limit, objective)
@@ -135,7 +135,7 @@ end
 --- Adds an additional constraint to a given line (machine limit)
 ---@param line_id ObjectID
 ---@param type InequalityType
----@param limit number
+---@param limit number must be non-negative (`>=0`)
 ---@param objective number?
 function SimplexTableau:add_line_constraint(line_id, type, limit, objective)
     return self:_add_constraint("line_" .. line_id, type, limit, objective)
@@ -144,12 +144,13 @@ end
 
 ---@param key VariableKey
 ---@param type InequalityType
----@param limit number
+---@param limit number must be non-negative (`>=0`)
 ---@param objective number?
 function SimplexTableau:_add_constraint(key, type, limit, objective)
     -- Check that the variable is present in the tableau
     local var_col_index = self.cols[key] or 0
     if var_col_index == 0 then return end
+    if limit < 0 then return end
 
     -- Add a new row for the constaint
     local row_index = self:_add_row("c_" .. #self.matrix + 1)
@@ -284,7 +285,6 @@ end
 
 ---@return SimplexResult result
 function SimplexTableau:solve()
-    local profiler = helpers.create_profiler()  ---@TODO: remove
     local result = {
         state = "in-progress",
         products = {},
@@ -292,11 +292,6 @@ function SimplexTableau:solve()
         line_results = {},
         floor_results = {}
     }  ---@type SimplexResult
-
-    -- Only allow non-negative limits (should never happen in practice though)
-    for i = 2, #self.matrix do
-        if self.matrix[i][1] < 0 then lib.matrix.row_mult(self.matrix, i, -1) end
-    end
 
     local variable_map = {}  ---@type VariableMap[]
     local sorted_variables = {}  ---@type VariableKey[]
@@ -373,9 +368,6 @@ function SimplexTableau:solve()
 
     local lu  ---@type LUDecomposition
     local x_vector  ---@type number[]
-    log("Preparation:")
-    log(profiler--[[@as LocalisedString]])  ---@TODO: remove
-    profiler.reset()
 
     ---@return boolean done
     ---@return SolverState state
@@ -390,10 +382,6 @@ function SimplexTableau:solve()
         end
 
         lu = LUDecomposition:init(b_matrix)
-        -- local _test1 = lu:recompose()
-        log("LU decomposition:")
-        log(profiler--[[@as LocalisedString]])  ---@TODO: remove
-        profiler.reset()
 
         -- Compute the current solution
         local b_vector = {}  ---@type number[]
@@ -401,9 +389,6 @@ function SimplexTableau:solve()
             b_vector[i - 1] = self.matrix[i][1]
         end
         x_vector = lu:solve_right(b_vector)
-        log("x vector:")
-        log(profiler--[[@as LocalisedString]])  ---@TODO: remove
-        profiler.reset()
 
         -- Compute the objective vector for the current basis
         local c_basic = {}  ---@type number[]
@@ -412,10 +397,6 @@ function SimplexTableau:solve()
             c_basic[k] = self.matrix[1][self.cols[basic[k]]]
         end
         local y_vector = lu:solve_left(c_basic)
-        -- local _test2 = lib.matrix.left_mult(y_vector, b_matrix)
-        log("y vector:")
-        log(profiler--[[@as LocalisedString]])  ---@TODO: remove
-        profiler.reset()
 
         local a_non_basic = {}  ---@type number[][]
         for i = 2, #self.matrix do
@@ -430,9 +411,6 @@ function SimplexTableau:solve()
             ---@diagnostic disable: need-check-nil
             c_non_basic[j] = self.matrix[1][self.cols[non_basic[j]]] - c_non_basic[j]
         end
-        log("c non-basic:")
-        log(profiler--[[@as LocalisedString]])  ---@TODO: remove
-        profiler.reset()
 
         -- Select the variable with the most negative objective as the entering variable (Danzig's rule)
         -- Add a minimum margin for extra safety
@@ -445,9 +423,6 @@ function SimplexTableau:solve()
                 min = c_non_basic[j]  ---@as number
             end
         end
-        log("entering check:")
-        log(profiler--[[@as LocalisedString]])  ---@TODO: remove
-        profiler.reset()
 
         if entering_index == 0 then
             -- We are done, but check that we don't have virtual variables in the solution
@@ -467,10 +442,6 @@ function SimplexTableau:solve()
             aj_vector[i - 1] = self.matrix[i][entering_column]
         end
         local t_vector = lu:solve_right(aj_vector)
-        -- local _test3 = lib.matrix.right_mult(b_matrix, t_vector)
-        log("t vector:")
-        log(profiler--[[@as LocalisedString]])  ---@TODO: remove
-        profiler.reset()
 
         -- Select the basis with the smallest ratio as the leaving variable
         local leaving_index = 0
@@ -486,9 +457,6 @@ function SimplexTableau:solve()
                 if ratio == 0 then break end
             end
         end
-        log("leaving check:")
-        log(profiler--[[@as LocalisedString]])  ---@TODO: remove
-        profiler.reset()
 
         if leaving_index == 0 then return true, "unbounded" end
 
@@ -550,9 +518,6 @@ function SimplexTableau:solve()
             end
         end
     end
-    log("interpretation:")
-    log(profiler--[[@as LocalisedString]])  ---@TODO: remove
-    profiler.reset()
 
     return result
 end
