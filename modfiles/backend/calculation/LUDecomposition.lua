@@ -16,7 +16,7 @@ LUDecomposition.__index = LUDecomposition
 function LUDecomposition:init(matrix)
     ---@diagnostic disable-next-line: missing-fields
     local o = {
-        lu_matrix = matrix,
+        lu_matrix = lib.flib.deep_copy(matrix),
         p_vector = {},
         p_transposed = {},
     }  ---@type LUDecomposition

@@ -371,7 +371,6 @@ function solver.update(player, factory)
             sequential_engine.update_factory(factory_data)
         end
     end
-    log("Total:")
     log(profiler--[[@as LocalisedString]])  ---@TODO: remove
 end
 
