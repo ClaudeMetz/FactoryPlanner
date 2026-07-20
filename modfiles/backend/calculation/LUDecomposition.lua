@@ -152,7 +152,7 @@ function LUDecomposition:solve_left(vector)
         ---@diagnostic disable: undefined-field, need-check-nil, inject-field
         local cell = y_vector[k]
         for i = k + 1, #self.lu_matrix do
-            if x_vector[self.p_vector[i]] ~= 0 and self.lu_matrix[i][k] then
+            if x_vector[self.p_vector[i]] ~= 0 and self.lu_matrix[i][k] ~= 0 then
                 cell = cell - x_vector[self.p_vector[i]] * self.lu_matrix[i][k]
             end
         end
