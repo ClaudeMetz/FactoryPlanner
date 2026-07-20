@@ -375,8 +375,6 @@ function SimplexTableau:solve()
     ---@return boolean done
     ---@return SolverState state
     local function iterate()
-        x_vector = lu:solve_right(self.solution)
-
         -- Compute the objective vector for the current basis
         local c_basic = {}  ---@type number[]
         for k = 1, #basic do
@@ -430,15 +428,14 @@ function SimplexTableau:solve()
 
         -- Select the basis with the smallest ratio as the leaving variable
         local leaving_index = 0
-        local theta = 0.0
         min = 2.0^1023
         for i = 1, #d_vector do
             if d_vector[i] > MAGIC_NUMBERS.margin_of_error then
-                theta = x_vector[i]--[[@cast -nil]] / d_vector[i]
-                if theta < min then
+                local ratio = x_vector[i]--[[@cast -nil]] / d_vector[i]
+                if ratio < min then
                     leaving_index = i
-                    min = theta
-                elseif theta == min and self.cols[basic[i]] < self.cols[basic[leaving_index]] then
+                    min = ratio
+                elseif ratio == min and self.cols[basic[i]] < self.cols[basic[leaving_index]] then
                     -- Choose the lower variable intex to prevent cycling
                     leaving_index = i
                 end
@@ -454,6 +451,8 @@ function SimplexTableau:solve()
         non_basic[entering_index] = temp
 
         -- Update the solution
+        ---@diagnostic disable-next-line: need-check-nil
+        local theta = x_vector[leaving_index] / d_vector[leaving_index]
         for i = 1, #self.matrix do
             if i == leaving_index then
                 x_vector[i] = theta
