@@ -12,12 +12,12 @@ LUDecomposition.__index = LUDecomposition
 
 
 --- Performs LU decomposition `L U = P A`
----@param matrix number[][] becomes the `LU` combined matrix
+---@param matrix number[][] column-major order square matrix
 ---@return LUDecomposition
 function LUDecomposition:init(matrix)
     ---@diagnostic disable-next-line: missing-fields
     local o = {
-        lu_matrix = matrix,
+        lu_matrix = {},
         p_vector = {},
         p_transposed = {},
         eta_updates = {}
@@ -25,9 +25,11 @@ function LUDecomposition:init(matrix)
 
     setmetatable(o, self)
     -- Initialize the matrices and the permutation vectors
-    for i = 1, #o.lu_matrix do
+    for i = 1, #matrix do
         o.p_vector[i] = i
         o.p_transposed[i] = i
+        o.lu_matrix[i] = {}
+        for j = 1, #matrix do o.lu_matrix[i][j] = matrix[j][i] end
     end
 
     for k = 1, #o.lu_matrix - 1 do
@@ -216,21 +218,22 @@ end
 
 
 --- Perform `A = P^T LUE` (for debugging)
----@return number[][]
+---@return number[][] matrix column-major order square matrix
 function LUDecomposition:recompose()
     -- Calculate `R = P^T LU`
     local result = {}  ---@type number[][]
-    for i = 1, #self.lu_matrix do
-        result[i] = {}
-        for j = 1, #self.lu_matrix do
-            result[i][j] = 0.0
+    
+    for j = 1, #self.lu_matrix do
+        result[j] = {}
+        for i = 1, #self.lu_matrix do
+            result[j][i] = 0.0
             for k = 1, j do
                 ---@diagnostic disable: undefined-field, need-check-nil
                 local l_row = self.p_transposed[i]
                 if k < l_row then
-                    result[i][j] = result[i][j] + self.lu_matrix[l_row][k] * self.lu_matrix[k][j]
+                    result[j][i] = result[j][i] + self.lu_matrix[l_row][k] * self.lu_matrix[k][j]
                 elseif k == l_row then
-                    result[i][j] = result[i][j] + self.lu_matrix[k][j]
+                    result[j][i] = result[j][i] + self.lu_matrix[k][j]
                 end
             end
         end
@@ -249,10 +252,7 @@ function LUDecomposition:recompose()
             end
         end
 
-        local new_col = lib.matrix.right_mult(result, eta_vector)
-        for i = 1, #result do
-            result[i][column] = new_col[i]
-        end
+        result[column] = lib.matrix.right_mult_cmo(result, eta_vector)
     end
 
     return result

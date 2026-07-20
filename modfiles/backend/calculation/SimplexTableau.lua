@@ -12,7 +12,7 @@ local LUDecomposition = require("backend.calculation.LUDecomposition")
 ---@alias FloorResultTable table<ObjectID, FloorResult>
 
 ---@class SimplexTableau
----@field matrix number[][]
+---@field matrix number[][] column-major order
 ---@field objective number[]
 ---@field solution number[]
 ---@field rows table<ConstraintKey, integer> constraints
@@ -82,8 +82,8 @@ function SimplexTableau:add_line_variable(line_data)
                 end
 
                 ---@diagnostic disable: need-check-nil
-                local x = self.matrix[row_index][col_index]
-                self.matrix[row_index][col_index] = x + sign * value
+                local x = self.matrix[col_index][row_index]
+                self.matrix[col_index][row_index] = x + sign * value
             end
         end
     end
@@ -111,17 +111,15 @@ function SimplexTableau:add_item_variable(item, floor_id, direction, objective)
     if self.cols[item_col_key] then return end
 
     -- Check if the item constraint is present in the tableau
-    local row_index = self.rows[item_row_key] or 0
-    if not self.matrix[row_index] then
+    local row_index = self.rows[item_row_key]
+    if not row_index then
         -- Item not present in this floor (only used in subfloor)
         row_index = self:_add_row(item_row_key)
     end
 
     -- Fill the table values
-    if self.matrix[row_index] then
     local col_index = self:_add_column(item_col_key, objective)
-    self.matrix[row_index][col_index] = sign
-    end
+    self.matrix[col_index]--[[@cast -nil]][row_index] = sign
 end
 
 
@@ -158,11 +156,11 @@ function SimplexTableau:_add_constraint(key, type, limit, objective)
     if limit < 0 then return end
 
     -- Add a new row for the constaint
-    local row_index = self:_add_row("c_" .. #self.matrix + 1)
+    local row_index = self:_add_row("c_" .. #self.matrix[1] + 1)
 
     -- Fill the row values
     ---@diagnostic disable: need-check-nil
-    self.matrix[row_index][var_col_index] = 1
+    self.matrix[var_col_index][row_index] = 1
     self.solution[row_index] = limit
 
     -- Update the variable objective
@@ -175,11 +173,11 @@ function SimplexTableau:_add_constraint(key, type, limit, objective)
     if type == "==" then return end
 
     -- Add a new slack variable for the inequality
-    local slack_col_index = self:_add_column("s_" .. #self.matrix[1] + 1)
+    local slack_col_index = self:_add_column("s_" .. #self.matrix + 1)
 
     -- Fill the inequality between the given variable and the slack variable
     local sign = (type == "<=" and 1) or (type == ">=" and -1) or 0
-    self.matrix[row_index][slack_col_index] = sign
+    self.matrix[slack_col_index][row_index] = sign
 end
 
 
@@ -197,7 +195,7 @@ function SimplexTableau:add_item_transfer(item, floor_id, subfloor_id, direction
     local item_col_index = self.cols[item_col_key] or 0
 
     -- Sanity check
-    if not self.matrix[item_row_index] or item_col_index == 0 then return end
+    if item_row_index == 0 or item_col_index == 0 then return end
 
     -- Update the item variable objective
     if objective then
@@ -207,7 +205,8 @@ function SimplexTableau:add_item_transfer(item, floor_id, subfloor_id, direction
 
     -- To the current floor, the subfloor is like a machine
     -- Inputs are ingredients and outputs are products
-    self.matrix[item_row_index][item_col_index] = (direction == "in" and -1) or (direction == "out" and 1) or 0
+    local sign = (direction == "in" and -1) or (direction == "out" and 1) or 0
+    self.matrix[item_col_index]--[[@cast -nil]][item_row_index] = sign
 end
 
 
@@ -226,8 +225,8 @@ where `A*` and `B*` are `A` and `B` without the first row and column
 ]]--
 ---@param tableau SimplexTableau
 function SimplexTableau:merge(tableau)
-    local a_rows, a_cols = #self.matrix, #self.matrix[1]
-    local b_rows, b_cols = #tableau.matrix, #tableau.matrix[1]
+    local a_rows, a_cols = #self.matrix[1], #self.matrix
+    local b_rows, b_cols = #tableau.matrix[1], #tableau.matrix
 
     -- Copy the solution column
     for i = 1, b_rows do
@@ -241,24 +240,24 @@ function SimplexTableau:merge(tableau)
 
     -- Fill the top-right section with 0
     ---@diagnostic disable: need-check-nil
-    for i = 1, a_rows do
-        for j = a_cols + 1, a_cols + b_cols do
-            self.matrix[i][j] = 0
+    for j = a_cols + 1, a_cols + b_cols do
+        self.matrix[j] = {}
+        for i = 1, a_rows do
+            self.matrix[j][i] = 0
         end
     end
 
     -- Fill the bottom-left section with 0
     for i = a_rows + 1, a_rows + b_rows do
-        self.matrix[i] = {}
         for j = 1, a_cols do
-            self.matrix[i][j] = 0
+            self.matrix[j][i] = 0
         end
     end
 
     -- Copy the rest of B into A
     for i = 1, b_rows do
         for j = 1, b_cols do
-            self.matrix[a_rows + i][a_cols + j] = tableau.matrix[i][j]
+            self.matrix[a_cols + j][a_rows + i] = tableau.matrix[j][i]
         end
     end
 
@@ -314,13 +313,13 @@ function SimplexTableau:solve()
     end)
 
     -- Mark non-0 constrained variables as non-basic
-    for i = 1, #self.matrix do
+    for i = 1, #self.matrix[1] do
         if self.solution[i] ~= 0 then
-            for j = 1, #self.matrix[1] do
-                if self.matrix[i][j] ~= 0 then
+            for j = 1, #self.matrix do
+                if self.matrix[j][i] ~= 0 then
                     local is_basic = true
-                    for k = 1, #self.matrix do
-                        if k ~= i and self.matrix[k][j] ~= 0 then
+                    for k = 1, #self.matrix[1] do
+                        if k ~= i and self.matrix[j][k] ~= 0 then
                             is_basic = false
                             break
                         end
@@ -338,11 +337,11 @@ function SimplexTableau:solve()
     end
 
     -- Heuristically pick the inital basis containing the variables with the highest objective
-    for _, key in pairs(sorted_variables) do
+    for _, key in ipairs(sorted_variables) do
         local map = variable_map[self.cols[key]]  ---@as VariableMap
         if map.type == "unassigned" then
-            for i = 1, #self.matrix do
-                if self.matrix[i][self.cols[key]] > MAGIC_NUMBERS.margin_of_error and not basic[i] then
+            for i = 1, #self.matrix[self.cols[key]] do
+                if self.matrix[self.cols[key]][i] > MAGIC_NUMBERS.margin_of_error and not basic[i] then
                     map.type = "basic"
                     basic[i] = key
                     break
@@ -358,11 +357,11 @@ function SimplexTableau:solve()
     end
 
     -- Add a virtual variables with negative cost for each non-basic row
-    for i = 1, #self.matrix do
+    for i = 1, #self.matrix[1] do
         if not basic[i] then
-            local virtual_key = "y_" .. #self.matrix[1] + 1
+            local virtual_key = "y_" .. #self.matrix + 1
             local col_index = self:_add_column(virtual_key, -1e100)
-            self.matrix[i][col_index] = 1
+            self.matrix[col_index]--[[@cast -nil]][i] = 1
             basic[i] = virtual_key
         end
     end
@@ -384,12 +383,9 @@ function SimplexTableau:solve()
 
         local a_non_basic = {}  ---@type number[][]
         for i = 1, #self.matrix do
-            a_non_basic[i] = {}
-            for j = 1, #non_basic do
-                a_non_basic[i][j] = self.matrix[i][self.cols[non_basic[j]]]
-            end
+            a_non_basic[i] = self.matrix[self.cols[non_basic[i]--[[@cast -nil]]]]
         end
-        local c_non_basic = lib.matrix.left_mult(y_vector, a_non_basic)
+        local c_non_basic = lib.matrix.left_mult_cmo(y_vector, a_non_basic)
 
         for j = 1, #c_non_basic do
             ---@diagnostic disable: undefined-field
@@ -410,7 +406,7 @@ function SimplexTableau:solve()
 
         if entering_index == 0 then
             -- We are done, but check that we don't have virtual variables in the solution
-            for i = 1, #self.matrix do
+            for i = 1, #basic do
                 if basic[i] and string.sub(basic[i], 1, 2) == "y_" then
                     return true, "no-solution"
                 end
@@ -420,11 +416,7 @@ function SimplexTableau:solve()
 
         -- Compute the coefficients of the entering variable
         local entering_column = self.cols[non_basic[entering_index]]  ---@type integer
-        local aj_vector = {}  ---@type number[]
-        for i = 1, #self.matrix do
-            aj_vector[i] = self.matrix[i][entering_column]
-        end
-        local d_vector = lu:solve_right(aj_vector)
+        local d_vector = lu:solve_right(self.matrix[entering_column]--[[@cast -nil]])
 
         -- Select the basis with the smallest ratio as the leaving variable
         local leaving_index = 0
@@ -452,12 +444,13 @@ function SimplexTableau:solve()
         -- Update the solution
         ---@diagnostic disable-next-line: need-check-nil
         local theta = x_vector[leaving_index] / d_vector[leaving_index]
-        for i = 1, #self.matrix do
+        for i = 1, #x_vector do
             if i == leaving_index then
                 x_vector[i] = theta
             else
                 ---@diagnostic disable: need-check-nil
                 x_vector[i] = x_vector[i] - theta * d_vector[i]
+                -- If this becomes negative, bad things will happen
                 x_vector[i] = x_vector[i] > 0 and x_vector[i] or 0
             end
         end
@@ -473,8 +466,8 @@ function SimplexTableau:solve()
     local done = false
     local iterations = 0
     local last_factorization = 0
-    local max_iterations = (#self.matrix) ^ 2  -- Upper bound is 2^#v, but average case with random pivots is #c^2
-    local factorization_interval = #self.matrix  -- Past this point, updating becomes more expensive than refactorizing
+    local max_iterations = (#basic) ^ 2  -- Upper bound is 2^#v, but average case with random pivots is #c^2
+    local factorization_interval = #basic  -- Past this point, updating becomes more expensive than refactorizing
     repeat
         -- If the factorization is too old, we need to recreate it
         if iterations - last_factorization >= factorization_interval then
@@ -484,9 +477,8 @@ function SimplexTableau:solve()
         -- Re-factorize if needed
         if needs_factorization then
             local b_matrix = {}  ---@type number[][]
-            for i = 1, #self.matrix do
-                b_matrix[i] = {}
-                for j = 1, #basic do b_matrix[i][j] = self.matrix[i][self.cols[basic[j]]] end
+            for j = 1, #self.matrix do
+                b_matrix[j] = self.matrix[self.cols[basic[j]--[[@cast -nil]]]]
             end
 
             lu = LUDecomposition:init(b_matrix)
@@ -547,21 +539,13 @@ end
 ---@param limit number?
 ---@return integer index
 function SimplexTableau:_add_row(key, limit)
-    local row_index = #self.matrix + 1
+    local row_index = #(self.matrix[1] or {}) + 1  -- handle special case when cols == 0
     self.rows[key] = row_index
-    self.matrix[row_index] = {}
-
-    -- Handle special case when rows == 0
-    if row_index == 1 then
-        for _, j in pairs(self.cols) do
-            self.matrix[row_index][j] = 0
-        end
-    end
 
     -- Populate the row
     self.solution[row_index] = limit or 0
-    for j = 1, #self.matrix[1] do
-        self.matrix[row_index][j] = 0
+    for j = 1, #self.matrix do
+        self.matrix[j][row_index] = 0
     end
 
     return row_index
@@ -573,13 +557,14 @@ end
 ---@param objective number?
 ---@return integer index
 function SimplexTableau:_add_column(key, objective)
-    local col_index = #(self.matrix[1] or {}) + 1  -- handle special case when rows == 0
+    local col_index = #self.matrix + 1
     self.cols[key] = col_index
+    self.matrix[col_index] = {}
 
     -- Populate the column
     self.objective[col_index] = objective and -objective or 0  -- objective coefficient is opposite
-    for i = 1, #self.matrix do
-        self.matrix[i][col_index] = 0
+    for i = 1, #self.matrix[1] do
+        self.matrix[col_index][i] = 0
     end
 
     return col_index
