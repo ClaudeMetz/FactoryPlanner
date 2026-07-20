@@ -499,7 +499,7 @@ function SimplexTableau:solve()
         done, result.state = iterate()
         iterations = iterations + 1
     until done or iterations == max_iterations
-    log("Iterations: " .. iterations)
+    log("Iterations: " .. iterations)  ---@TODO: remove
 
     -- Interpret the result
     for row, key in pairs(basic) do
