@@ -373,7 +373,7 @@ function SimplexTableau:solve()
 
     ---@return boolean done
     ---@return SolverState state
-    local function pivot_step()
+    local function iterate()
         -- Copy and decompose the basis matrix
         local b_matrix = {}  ---@type number[][]
         for i = 1, #self.matrix do
@@ -474,7 +474,7 @@ function SimplexTableau:solve()
     local max_iterations = (#self.matrix) ^ 2  -- Upper bound is 2^#v, but average case with random pivots is #c^2
     repeat
         profiler.reset()
-        done, result.state = pivot_step()
+        done, result.state = iterate()
         log("Loop remainder: ")
         log(profiler--[[@as LocalisedString]])  ---@TODO: remove
         iterations = iterations + 1
