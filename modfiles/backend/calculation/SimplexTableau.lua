@@ -369,6 +369,7 @@ function SimplexTableau:solve()
 
     local lu  ---@type LUDecomposition
     local x_vector  ---@type number[]
+    local profiler = helpers.create_profiler()  ---@TODO: remove
 
     ---@return boolean done
     ---@return SolverState state
@@ -384,6 +385,9 @@ function SimplexTableau:solve()
 
         lu = LUDecomposition:init(b_matrix)
         x_vector = lu:solve_right(self.solution)
+        log("LU decomposition: ")
+        log(profiler--[[@as LocalisedString]])  ---@TODO: remove
+        profiler.reset()
 
         -- Compute the objective vector for the current basis
         local c_basic = {}  ---@type number[]
@@ -455,6 +459,7 @@ function SimplexTableau:solve()
         if leaving_index == 0 then return true, "unbounded" end
 
         -- Swap the variables
+        log(non_basic[entering_index] .. " -> " .. basic[leaving_index])
         local temp = basic[leaving_index]
         basic[leaving_index] = non_basic[entering_index]
         non_basic[entering_index] = temp
@@ -468,7 +473,10 @@ function SimplexTableau:solve()
     local iterations = 0
     local max_iterations = (#self.matrix) ^ 2  -- Upper bound is 2^#v, but average case with random pivots is #c^2
     repeat
+        profiler.reset()
         done, result.state = pivot_step()
+        log("Loop remainder: ")
+        log(profiler--[[@as LocalisedString]])  ---@TODO: remove
         iterations = iterations + 1
     until done or iterations == max_iterations
     log("Iterations: " .. iterations)
