@@ -456,8 +456,8 @@ function simplex_engine.update_line(line, top_byproducts, top_ingredients, line_
 
     local data = line_data_table[line.id]
     if not data then return end
-    local products = lib.flib.deep_copy(data.products)
-    local ingredients = lib.flib.deep_copy(data.ingredients)
+    local products = lib.flib.shallow_copy(data.products)
+    local ingredients = lib.flib.shallow_copy(data.ingredients)
 
     -- Update the machine
     if line_result then

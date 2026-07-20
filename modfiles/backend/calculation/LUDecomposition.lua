@@ -89,23 +89,23 @@ end
 ---@return boolean is_stable
 function LUDecomposition:update(vector, column)
     local eta = {
-        vector = lib.flib.deep_copy(vector),
+        vector = {},
         column = column
     }  ---@type EtaUpdate
 
     -- Check for stability
-    local scalar = eta.vector[column]  ---@as number
+    local scalar = vector[column]  ---@as number
     if scalar < MAGIC_NUMBERS.margin_of_error and
             scalar > -MAGIC_NUMBERS.margin_of_error then
         return false
     end
 
     -- Invert the vector
-    for i = 1, #eta.vector do
+    for i = 1, #vector do
         if i == column then
             eta.vector[i] = 1 / scalar
         else
-            eta.vector[i] = -eta.vector[i] / scalar
+            eta.vector[i] = -vector[i] / scalar
         end
     end
 
@@ -120,11 +120,12 @@ end
 ---@return number[]
 function LUDecomposition:solve_left(vector)
     -- Solve `z^T E = v^T`
-    local z_vector = lib.flib.deep_copy(vector)
+    local z_vector = {}
+    for j = 1, #vector do z_vector[j] = vector[j] end
     for i = #self.eta_updates, 1, -1 do
         local eta = self.eta_updates[i]
         local dot = 0.0
-        for j, _ in pairs(z_vector) do
+        for j = 1, #z_vector do
             if z_vector[j] ~= 0 and eta.vector[j] ~= 0 then
                 ---@diagnostic disable: need-check-nil
                 dot = dot + z_vector[j] * eta.vector[j]
@@ -237,22 +238,22 @@ function LUDecomposition:recompose()
 
     -- Calculate `R* = RE`
     for k = 1, #self.eta_updates do
-        local eta = lib.flib.deep_copy(self.eta_updates[k])
-        local scalar = eta.vector[eta.column]  ---@as number
-        for i = 1, #eta.vector do
-            if i == eta.column then
-                eta.vector[i] = 1 / scalar
+        local eta_vector = lib.flib.shallow_copy(self.eta_updates[k].vector)
+        local column = self.eta_updates[k].column
+        local scalar = eta_vector[column]  ---@as number
+        for i = 1, #eta_vector do
+            if i == column then
+                eta_vector[i] = 1 / scalar
             else
-                eta.vector[i] = -eta.vector[i] / scalar
+                eta_vector[i] = -eta_vector[i] / scalar
             end
         end
 
-        local new_col = lib.matrix.right_mult(result, eta.vector)
+        local new_col = lib.matrix.right_mult(result, eta_vector)
         for i = 1, #result do
-            result[i][eta.column] = new_col[i]
+            result[i][column] = new_col[i]
         end
     end
-
 
     return result
 end
