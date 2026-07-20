@@ -2,11 +2,13 @@
 Version: 0.00.00
 Date: 00. 00. 0000
   Features:
-    - 
+    - Added support for importing factory products from a held blueprint (#695)
+    - Added support for converting a subfloor into its own factory (#774)
   Changes:
-    - 
+    - Updated rocket silos to scale their speed and energy consumption with quality
+    - Changed the utility dialog blueprint storage to use a real inventory UI (#763)
   Bugfixes:
-    - 
+    -
 
 ---------------------------------------------------------------------------------------------------
 Version: 2.1.5

@@ -64,8 +64,7 @@ local function import_preferences(player_index, export_table)
     if error then
         return error
     else
-        -- This rebuilds the main interface implicitly
-        GLOBAL_HANDLERS["shrinkwrap_interface"]{player_index=player.index}
+        lib.preferences.refresh_after_change(player, "all")
         return true
     end
 end

@@ -73,7 +73,7 @@ function TLProduct:paste(object)
     if object.class == "SimpleItem" or object.class == "Fuel" then
         local proto  ---@type FPItemPrototype | FPPackedPrototype
         if object.class == "Fuel" then  -- need an Item prototype here, not Fuel
-            proto = prototyper.util.find("items", object:get_name_with_temperature(), object.proto.type) ---@as FPItemPrototype
+            proto = prototyper.util.find("items", object:get_name_with_temperature(), object.proto.type)  ---@as FPItemPrototype
         else
             proto = object.proto  ---@as FPItemPrototype | FPPackedPrototype
         end

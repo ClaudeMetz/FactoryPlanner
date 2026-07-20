@@ -217,6 +217,88 @@ local function generate_productivity_recipes()
 end
 
 
+-- Determines the tick count and energy consumption of launching a rocket for the given silo
+-- This does not take into account the full launch cycle, but instead calculates the fastest
+-- possible one, using the quick follow-up rocket mechanic, as that's the limiting case.
+-- The tick results are seemingly off by a handful of ticks, but it's close enough.
+-- Power consumption results might be low by 10% or so from light empirical testing.
+---@param silo_proto LuaEntityPrototype
+---@param quality_level integer
+---@return LauncherDataSet
+local function determine_launch_data(silo_proto, quality_level)
+    local power = silo_proto.active_energy_usage  ---@as double
+    local rocket_proto = silo_proto.rocket_entity_prototype  ---@as LuaEntityPrototype
+
+    local rising_speed = rocket_proto.rising_speed--[[@cast -nil]] * (1 +
+        silo_proto.rocket_rising_speed_modifier_per_quality_level--[[@cast -nil]] * quality_level)
+    local engine_starting_speed = rocket_proto.engine_starting_speed--[[@cast -nil]] * (1 +
+        silo_proto.rocket_engine_starting_speed_modifier_per_quality_level--[[@cast -nil]] * quality_level)
+    -- Arms speed not accessible in the API, so we have to use what vanilla does: 0.3
+    local arms_speed = 0.3 * (1 + silo_proto.arms_speed_modifier_per_quality_level--[[@cast -nil]] * quality_level)
+
+    local frame_count = 32  -- not accessible in the API, use vanilla value
+    local arm_move_offset = rising_speed * frame_count * (1 / arms_speed)
+
+    -- Cycle starts here
+    local launch_ticks, energy_usage = 0, 0  ---@type number, number
+
+    local doors_opened = 1
+    launch_ticks = launch_ticks + doors_opened
+
+    local rocket_rising_threshold = 1 - silo_proto.rocket_quick_relaunch_start_offset--[[@as double]] - arm_move_offset
+    local rocket_rising = rocket_rising_threshold / rising_speed
+    launch_ticks = launch_ticks + rocket_rising
+    energy_usage = energy_usage + (rocket_rising * power)
+
+    local arms_advance = arm_move_offset / rising_speed
+    launch_ticks = launch_ticks + arms_advance
+    energy_usage = energy_usage + (arms_advance * power)
+
+    local launch_starting = 1
+    launch_ticks = launch_ticks + launch_starting
+
+    local launch_started = silo_proto.launch_wait_time--[[@as uint8]]
+    launch_ticks = launch_ticks + launch_started
+
+    local engine_starting = 1 / engine_starting_speed
+    launch_ticks = launch_ticks + engine_starting
+    energy_usage = energy_usage + (engine_starting * power)
+
+    local arms_retract = arm_move_offset / rising_speed
+    launch_ticks = launch_ticks + arms_retract
+    energy_usage = energy_usage + (arms_retract * power)
+
+    local rocket_flight_threshold = 0.1  -- hardcoded in the game files
+    -- I'm not exactly sure why this behaves as the game code does, *but it do*
+    local rocket_flying = math.log(1 + rocket_flight_threshold * rocket_proto.flying_acceleration--[[@as double]]
+        / rocket_proto.flying_speed--[[@as double]]) / math.log(1 + rocket_proto.flying_acceleration--[[@as double]])
+    launch_ticks = launch_ticks + rocket_flying - arms_retract
+
+    return {speed = 1 / (launch_ticks / 60), energy_usage = energy_usage / launch_ticks}
+end
+
+---@alias LauncherData table<string, table<string, LauncherDataSet>>
+---@alias LauncherDataSet {speed: number, energy_usage: number}
+
+-- Pre-calculates all silo-quality combination speeds and energy usages
+---@return LauncherData
+local function generate_launcher_data()
+    local data = {}  ---@type LauncherData
+
+    local silo_filter = {{filter="type", type="rocket-silo"},
+        {filter="hidden", invert=true, mode="and"}}
+    for silo_name, silo_proto in pairs(prototypes.get_entity_filtered(silo_filter)) do
+        data[silo_name] = {}
+        for _, quality_proto in pairs(storage.prototypes.qualities) do
+            local dataset = determine_launch_data(silo_proto, quality_proto.level)
+            data[silo_name][quality_proto.name] = dataset
+        end
+    end
+
+    return data
+end
+
+
 -- ** TOP LEVEL **
 function loader.run()
     PROTOTYPE_MAPS = prototype_maps(prototyper.data_types)
@@ -232,6 +314,7 @@ function loader.run()
     }
 
     PRODUCTIVITY_RECIPES = generate_productivity_recipes()
+    LAUNCHER_DATA = generate_launcher_data()
 
     MULTIPLE_PLANETS = #storage.prototypes.locations > 1
 end
