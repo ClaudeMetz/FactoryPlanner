@@ -736,7 +736,7 @@ end
 ---@field spent_fluid SpentFluidSpecification?
 
 ---@alias EmissionsMap table<string, double>
----@alias PrototypeCategory ("crafter" | "mining_drill" | "boiler" | "offshore_pump")
+---@alias PrototypeCategory ("crafter" | "launcher" | "mining_drill" | "boiler" | "offshore_pump")
 
 ---@return NamedPrototypesWithCategory<FPMachinePrototype>
 function generator.machines.generate()
@@ -883,14 +883,12 @@ function generator.machines.generate()
         if proto.crafting_categories and proto.energy_usage ~= nil then
             -- Silo launch recipes use a separate machine
             if proto.type == "rocket-silo" then
-                local machine = generate_category_entry("launch-rocket", proto, nil)
+                local machine = generate_category_entry("launch-rocket", proto, "launcher")
                 if machine then
-                    local launch_time, energy_usage = generator.util.determine_launch_data(proto)
-                    machine.speed = 1 / launch_time
-                    machine.energy_usage = energy_usage
+                    -- speed and energy_usage will be wrong here, but are determined
+                    -- dynamically later on depending on quality
 
                     machine.built_by_item = nil
-
                     machine.effect_receiver = generator.util.format_effect_receiver()
                     machine.allowed_effects = nil
                     machine.module_limit = 0

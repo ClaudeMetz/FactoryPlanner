@@ -4,6 +4,7 @@ Date: 00. 00. 0000
   Features:
     -
   Changes:
+    - Added support for rocket silos scaling speed and energy consumption with quality
     - Changed the utility dialog blueprint storage to use a real inventory UI (#763)
   Bugfixes:
     -
