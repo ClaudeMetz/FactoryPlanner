@@ -369,25 +369,13 @@ function SimplexTableau:solve()
 
     local lu  ---@type LUDecomposition
     local x_vector  ---@type number[]
-    local profiler = helpers.create_profiler()  ---@TODO: remove
+    local needs_factorization = true
+
 
     ---@return boolean done
     ---@return SolverState state
     local function iterate()
-        -- Copy and decompose the basis matrix
-        local b_matrix = {}  ---@type number[][]
-        for i = 1, #self.matrix do
-            b_matrix[i] = {}
-            for j = 1, #basic do
-                b_matrix[i][j] = self.matrix[i][self.cols[basic[j]]]
-            end
-        end
-
-        lu = LUDecomposition:init(b_matrix)
         x_vector = lu:solve_right(self.solution)
-        log("LU decomposition: ")
-        log(profiler--[[@as LocalisedString]])  ---@TODO: remove
-        profiler.reset()
 
         -- Compute the objective vector for the current basis
         local c_basic = {}  ---@type number[]
@@ -433,26 +421,27 @@ function SimplexTableau:solve()
         end
 
         -- Compute the coefficients of the entering variable
-        ---@diagnostic disable-next-line: undefined-field
         local entering_column = self.cols[non_basic[entering_index]]  ---@type integer
         local aj_vector = {}  ---@type number[]
         for i = 1, #self.matrix do
             aj_vector[i] = self.matrix[i][entering_column]
         end
-        local t_vector = lu:solve_right(aj_vector)
+        local d_vector = lu:solve_right(aj_vector)
 
         -- Select the basis with the smallest ratio as the leaving variable
         local leaving_index = 0
+        local theta = 0.0
         min = 2.0^1023
-        for i = 1, #t_vector do
-            if t_vector[i] > MAGIC_NUMBERS.margin_of_error then
-                ---@diagnostic disable: need-check-nil
-                local ratio = x_vector[i] / t_vector[i]
-                if ratio < min then
+        for i = 1, #d_vector do
+            if d_vector[i] > MAGIC_NUMBERS.margin_of_error then
+                theta = x_vector[i]--[[@cast -nil]] / d_vector[i]
+                if theta < min then
                     leaving_index = i
-                    min = ratio
+                    min = theta
+                elseif theta == min and self.cols[basic[i]] < self.cols[basic[leaving_index]] then
+                    -- Choose the lower variable intex to prevent cycling
+                    leaving_index = i
                 end
-                if ratio == 0 then break end
             end
         end
 
@@ -464,6 +453,20 @@ function SimplexTableau:solve()
         basic[leaving_index] = non_basic[entering_index]
         non_basic[entering_index] = temp
 
+        -- Update the solution
+        for i = 1, #self.matrix do
+            if i == leaving_index then
+                x_vector[i] = theta
+            else
+                ---@diagnostic disable: need-check-nil
+                x_vector[i] = x_vector[i] - theta * d_vector[i]
+                x_vector[i] = x_vector[i] > 0 and x_vector[i] or 0
+            end
+        end
+
+        -- Update the decomposition
+        if not lu:update(d_vector, leaving_index) then needs_factorization = true end
+
         return false, "in-progress"
     end
 
@@ -471,9 +474,34 @@ function SimplexTableau:solve()
     -- Find a solution
     local done = false
     local iterations = 0
+    local last_factorization = 0
     local max_iterations = (#self.matrix) ^ 2  -- Upper bound is 2^#v, but average case with random pivots is #c^2
+    local factorization_interval = #self.matrix  -- Past this point, updating becomes more expensive than refactorizing
     repeat
-        profiler.reset()
+        local profiler = helpers.create_profiler()  ---@TODO: remove
+        -- If the factorization is too old, we need to recreate it
+        if iterations - last_factorization >= factorization_interval then
+            needs_factorization = true
+        end
+
+        -- Re-factorize if needed
+        if needs_factorization then
+            local b_matrix = {}  ---@type number[][]
+            for i = 1, #self.matrix do
+                b_matrix[i] = {}
+                for j = 1, #basic do b_matrix[i][j] = self.matrix[i][self.cols[basic[j]]] end
+            end
+
+            lu = LUDecomposition:init(b_matrix)
+            x_vector = lu:solve_right(self.solution)
+            needs_factorization = false
+            last_factorization = iterations
+            log("LU decomposition: ")
+            log(profiler--[[@as LocalisedString]])  ---@TODO: remove
+            profiler.reset()
+        end
+
+        -- Iterate through the solution
         done, result.state = iterate()
         log("Loop remainder: ")
         log(profiler--[[@as LocalisedString]])  ---@TODO: remove
