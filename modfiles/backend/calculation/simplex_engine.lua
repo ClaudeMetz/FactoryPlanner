@@ -219,8 +219,6 @@ function simplex_engine.get_line_data(player, factory, line, active)
     local products = {}  ---@type ItemList
     local ingredients = {}  ---@type ItemList
 
-    ---@TODO: Fix surface restricions being ignored
-
     -- Check if line can can function
     active = active and line.active and line:get_surface_compatibility().overall and true or false
 

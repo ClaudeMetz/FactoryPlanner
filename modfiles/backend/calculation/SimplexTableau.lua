@@ -445,7 +445,6 @@ function SimplexTableau:solve()
         if leaving_index == 0 then return true, "unbounded" end
 
         -- Swap the variables
-        log(non_basic[entering_index] .. " -> " .. basic[leaving_index])
         local temp = basic[leaving_index]
         basic[leaving_index] = non_basic[entering_index]
         non_basic[entering_index] = temp
@@ -477,7 +476,6 @@ function SimplexTableau:solve()
     local max_iterations = (#self.matrix) ^ 2  -- Upper bound is 2^#v, but average case with random pivots is #c^2
     local factorization_interval = #self.matrix  -- Past this point, updating becomes more expensive than refactorizing
     repeat
-        local profiler = helpers.create_profiler()  ---@TODO: remove
         -- If the factorization is too old, we need to recreate it
         if iterations - last_factorization >= factorization_interval then
             needs_factorization = true
@@ -495,15 +493,10 @@ function SimplexTableau:solve()
             x_vector = lu:solve_right(self.solution)
             needs_factorization = false
             last_factorization = iterations
-            log("LU decomposition: ")
-            log(profiler--[[@as LocalisedString]])  ---@TODO: remove
-            profiler.reset()
         end
 
         -- Iterate through the solution
         done, result.state = iterate()
-        log("Loop remainder: ")
-        log(profiler--[[@as LocalisedString]])  ---@TODO: remove
         iterations = iterations + 1
     until done or iterations == max_iterations
     log("Iterations: " .. iterations)
