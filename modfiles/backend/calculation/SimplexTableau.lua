@@ -448,9 +448,8 @@ function SimplexTableau:solve()
             if i == leaving_index then
                 x_vector[i] = theta
             else
-                ---@diagnostic disable: need-check-nil
-                x_vector[i] = x_vector[i] - theta * d_vector[i]
-                -- If this becomes negative, bad things will happen
+                x_vector[i] = x_vector[i] - theta * d_vector[i]  ---@as number
+                -- If this becomes even slightly negative, bad things will happen
                 x_vector[i] = x_vector[i] > 0 and x_vector[i] or 0
             end
         end

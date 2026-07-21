@@ -22,8 +22,8 @@ function LUDecomposition:init(matrix)
         p_transposed = {},
         eta_updates = {}
     }  ---@type LUDecomposition
-
     setmetatable(o, self)
+
     -- Initialize the matrices and the permutation vectors
     for i = 1, #matrix do
         o.p_vector[i] = i
