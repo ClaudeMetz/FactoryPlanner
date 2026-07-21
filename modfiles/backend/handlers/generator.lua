@@ -1485,9 +1485,8 @@ function generator.locations.generate()
 
         ---@diagnostic disable-next-line: missing-fields
         local location = {
-            -- id
-            data_type = "locations",
             name = proto.name,
+            data_type = "locations",
             localised_name = proto.localised_name,
             sprite = sprite,
             tooltip = tooltip,
@@ -1515,6 +1514,7 @@ function generator.locations.generate()
         ---@diagnostic disable-next-line: missing-fields
         local universal_location = {
             name = "universal",
+            data_type = "locations",
             localised_name = {"fp.universal_location"},
             sprite = "fp_universal_planet",
             tooltip = {"fp.universal_location_tt"},
