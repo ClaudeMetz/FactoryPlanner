@@ -279,18 +279,10 @@ end
 
 
 ---@param object CopyableObject
----@param tags ActOnLineItem
 ---@return boolean success
 ---@return string? error
----@return string? target_class
-function Line:paste(object, tags)
-    -- The target may also be an ingredient on the line
-    local target = self  ---@type Line | SimpleItem
-    if tags.item_category and tags.item_index then
-        target = self[tags.item_category .. "s"][tags.item_index]
-    end
-
-    if target.class == "Line" and (object.class == "Line" or object.class == "Floor") then
+function Line:paste(object)
+    if object.class == "Line" or object.class == "Floor" then
         ---@cast object LineObject
         if not self.parent:check_product_compatibility(object) then
             return false, "recipe_irrelevant"  -- found no use for the recipe's products
@@ -298,30 +290,8 @@ function Line:paste(object, tags)
 
         self.parent:replace(self, object)
         return true, nil
-    elseif target.class == "SimpleItem" and (object.class == "SimpleItem" or object.class == "Fuel") then
-        local item = self[tags.item_category .. "s"][tags.item_index]  ---@as SimpleItem]]
-
-        -- Only allow pasting fluid temperature settings
-        if object.proto.type ~= "fluid" or item.proto.type ~= "fluid" then
-            return false, "incompatible"
-        end
-
-        -- SimpleItems will always be a fluid with temperature
-        if object.class == "SimpleItem" then
-            if object.proto.base_name ~= target.proto.name then return false, "incompatible" end
-            if not self.recipe:set_temperature(target.proto, object.proto.temperature) then
-                return false, "incompatible"
-            end
-        else  -- "Fuel"
-            if object.proto.name ~= target.proto.name then return false, "incompatible" end
-            if not self.recipe:set_temperature(target.proto, object.temperature) then
-                return false, "incompatible"
-            end
-        end
-
-        return true, nil
     else
-        return false, "incompatible_class", target.class
+        return false, "incompatible_class"
     end
 end
 

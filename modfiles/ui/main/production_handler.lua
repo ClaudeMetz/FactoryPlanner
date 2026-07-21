@@ -1,5 +1,6 @@
 local Floor = require("backend.data.Floor")
 local Beacon = require("backend.data.Beacon")
+local SimpleItem = require("backend.data.SimpleItem")
 
 -- ** LOCAL UTIL **
 ---@param player LuaPlayer
@@ -297,12 +298,13 @@ local function handle_item_click(player, tags, action)
             proto = prototyper.util.find("items", item_name, "fluid")
         end
 
-        local copyable_item = {class="SimpleItem", proto=proto, amount=item.amount}
+        local copyable_item = SimpleItem:init(nil, proto, item.amount)
         lib.clipboard.copy(player, copyable_item)
 
     elseif action == "paste" then
         if line.class ~= "Line" then return end
-        lib.clipboard.paste(player, line, tags)
+        if tags.item_category ~= "ingredient" then return end
+        lib.clipboard.paste(player, item)
 
     elseif action == "add_to_cursor" then
         lib.cursor.handle_item_click(player, item.proto, item.amount)

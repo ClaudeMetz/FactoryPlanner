@@ -214,10 +214,9 @@ end
 
 
 ---@param object CopyableObject
----@param tags ClipboardTags
 ---@return boolean success
 ---@return string? error
-function Machine:paste(object, tags)
+function Machine:paste(object, player)
     if object.class == "Machine" then  ---@cast object Machine
         local corresponding_proto = prototyper.util.find("machines", object.proto.name, self.proto.combined_category)  ---@as FPMachinePrototype?
 
@@ -225,7 +224,7 @@ function Machine:paste(object, tags)
             return false, "incompatible"
         end
 
-        self.parent:change_machine_to_proto(tags.player, corresponding_proto)
+        self.parent:change_machine_to_proto(player, corresponding_proto)
         self.quality_proto = object.quality_proto
 
         self.limit = object.limit
