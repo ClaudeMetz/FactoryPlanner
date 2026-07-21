@@ -101,7 +101,6 @@ function Recipe:get_name_with_temperature(ingredient)
     end
 end
 
-
 ---@param ingredient Ingredient | FPItemPrototype
 ---@return float?
 function Recipe:get_temperature(ingredient)
@@ -110,7 +109,6 @@ function Recipe:get_temperature(ingredient)
     end
     return nil
 end
-
 
 ---@param ingredient Ingredient | FPItemPrototype
 ---@param temperature float?

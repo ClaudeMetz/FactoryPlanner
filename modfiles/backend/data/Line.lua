@@ -292,14 +292,13 @@ function Line:paste(object, tags)
 
     if target.class == "Line" and (object.class == "Line" or object.class == "Floor") then
         ---@cast object LineObject
-        if not self.parent:check_product_compatibility(object--[[@as LineObject]]) then
+        if not self.parent:check_product_compatibility(object) then
             return false, "recipe_irrelevant"  -- found no use for the recipe's products
         end
 
-        self.parent:replace(self, object--[[@as LineObject]])
+        self.parent:replace(self, object)
         return true, nil
-    elseif target.class == "SimpleItem" and (object.class == "SimpleItem" or object.class =="Fuel") then
-
+    elseif target.class == "SimpleItem" and (object.class == "SimpleItem" or object.class == "Fuel") then
         local item = self[tags.item_category .. "s"][tags.item_index]  ---@as SimpleItem]]
 
         -- Only allow pasting fluid temperature settings

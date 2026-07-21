@@ -218,7 +218,7 @@ end
 ---@return boolean success
 ---@return string? error
 function Machine:paste(object, tags)
-    if object.class == "Machine" and object.proto then
+    if object.class == "Machine" then  ---@cast object Machine
         local corresponding_proto = prototyper.util.find("machines", object.proto.name, self.proto.combined_category)  ---@as FPMachinePrototype?
 
         if corresponding_proto == nil or not self.parent:is_machine_compatible(corresponding_proto) then
@@ -236,14 +236,11 @@ function Machine:paste(object, tags)
             self.fuel--[[@cast -nil]].parent = self
         end
 
-        if object.module_set then
-            ---@cast object.module_set -nil
-            self.module_set = object.module_set
-            self.module_set.parent = self
-            -- Need to verify compatibility because it depends on the recipe too
-            self.module_set:normalize({compatibility=true, effects=true})
-        end
-        
+        self.module_set = object.module_set
+        self.module_set.parent = self
+        -- Need to verify compatibility because it depends on the recipe too
+        self.module_set:normalize({compatibility=true, effects=true})
+
         return true, nil
     elseif object.class == "Module" then  ---@cast object Module
        return self.module_set:paste(object)
