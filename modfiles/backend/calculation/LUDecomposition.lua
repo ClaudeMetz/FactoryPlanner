@@ -37,9 +37,9 @@ function LUDecomposition:init(matrix)
 
         -- Find pivot
         local pivot_row = k
-        local max = math.abs(o.lu_matrix[k][k]--[[@as number]])
+        local max = o.lu_matrix[k][k] > 0 and o.lu_matrix[k][k] or -o.lu_matrix[k][k]
         for i = k + 1, #o.lu_matrix do
-            local cell = math.abs(o.lu_matrix[i][k]--[[@as number]])
+            local cell = o.lu_matrix[i][k] > 0 and o.lu_matrix[i][k] or -o.lu_matrix[i][k]
             if cell > max then
                 max = cell
                 pivot_row = i
