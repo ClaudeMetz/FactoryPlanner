@@ -79,6 +79,7 @@ end
 ---@field barreling boolean
 ---@field enabling_technologies string[]?
 ---@field custom boolean
+---@field location_resource boolean?
 ---@field enabled_from_the_start boolean
 ---@field hidden boolean
 ---@field order string
@@ -206,6 +207,7 @@ function generator.recipes.generate()
             recipe.allowed_effects = {speed=true, productivity=true, quality=true, consumption=true, pollution=true}
             recipe.productivity_recipe = (any_mining_productivity) and "custom-mining" or nil
             recipe.energy = proto.mineable_properties.mining_time
+            recipe.location_resource = true
 
             local ingredients = {{type="entity", name="custom-" .. proto.name, amount=1}--[[@as Ingredient]]}
 
@@ -375,6 +377,7 @@ function generator.recipes.generate()
     end
 
     -- Add offshore pump recipes based on fluid tiles
+    ---@TODO: Fix Gleba water
     local pumped_fluids = {}
     for _, proto in pairs(prototypes.tile) do
         if proto.fluid and not pumped_fluids[proto.fluid.name] and not proto.hidden then
@@ -389,6 +392,7 @@ function generator.recipes.generate()
             recipe.order = proto.order
             recipe.categories = {["offshore-pump"] = true}
             recipe.energy = 1
+            recipe.location_resource = true
 
             local products = {{type="fluid", name=fluid.name, amount=60,
                 temperature=fluid.default_temperature}--[[@as Product]]}
