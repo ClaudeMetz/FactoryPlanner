@@ -101,6 +101,21 @@ function Recipe:get_name_with_temperature(ingredient)
     end
 end
 
+
+---@param ingredient Ingredient | FPItemPrototype
+---@param temperature float
+---@return boolean success
+function Recipe:is_temperature_valid(ingredient, temperature)
+    if ingredient.type == "fluid" and self.temperatures[ingredient.name] then
+        -- Check that the temperature to be set is a valid temperature
+        for _, value in pairs(self.temperature_data[ingredient.name].applicable_values) do
+            if temperature == value then return true end
+        end
+    end
+    return false
+end
+
+
 ---@param ingredient Ingredient | FPItemPrototype
 ---@return float?
 function Recipe:get_temperature(ingredient)

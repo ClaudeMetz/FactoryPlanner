@@ -47,9 +47,17 @@ function SimpleItem:paste(object)
         -- SimpleItems will always be a fluid with temperature
         if object.class == "SimpleItem" then  ---@cast object SimpleItem
             if object.proto.base_name ~= self.proto.name then return false, "incompatible" end
+            if not object.proto.temperature then return false, "incompatible" end
+            if not self.parent.recipe:is_temperature_valid(self.proto, object.proto.temperature) then
+                return false, "incompatible"
+            end
             self.parent.recipe.temperatures[self.proto.name] = object.proto.temperature
         else  ---@cast object Fuel
             if object.proto.name ~= self.proto.name then return false, "incompatible" end
+            if not object.temperature then return false, "incompatible" end
+            if not self.parent.recipe:is_temperature_valid(self.proto, object.temperature) then
+                return false, "incompatible"
+            end
             self.parent.recipe.temperatures[self.proto.name] = object.temperature
         end
 
