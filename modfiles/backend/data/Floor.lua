@@ -163,6 +163,20 @@ function Floor:get_component_data(skip_done, component_table)
 end
 
 
+---@return boolean any_found
+function Floor:any_lines_not_marked_done()
+    for line in self:iterator() do
+        if line.class == "Floor" then  ---@cast line Floor
+            local result = line:any_lines_not_marked_done()
+            if result then return true end
+        else
+            if not line.done then return true end
+        end
+    end
+    return false
+end
+
+
 ---@param object LineObject
 ---@return boolean compatible
 function Floor:check_product_compatibility(object)

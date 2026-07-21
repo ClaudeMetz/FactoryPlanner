@@ -116,12 +116,21 @@ end
 ---@param relevant_line Line
 ---@param metadata CompactMetadata
 local function add_recipe_button(parent_flow, line, relevant_line, metadata)
-    local recipe_proto = relevant_line.recipe.proto
     local style = (line.class == "Floor") and "fflib_slot_button_blue_small" or "fflib_slot_button_default_small"
-    style = (relevant_line.done) and "fflib_slot_button_grayscale_small" or style
-    local tooltip = (line.class == "Line") and {"", {"fp.tt_title", recipe_proto.localised_name}}
-        or {"", {"fp.tt_title", recipe_proto.localised_name}}
-    table.insert(tooltip, {"", "\n", metadata.action_tooltips["act_on_compact_recipe"]})
+
+    local note = ""  ---@type LocalisedString
+    if relevant_line.done then
+        if line.class == "Floor" and line--[[@as Floor]]:any_lines_not_marked_done() then
+            style = "fflib_slot_button_orange_small"
+            note = {"fp.lines_not_marked_done"}
+        else
+            style = "fflib_slot_button_grayscale_small"
+        end
+    end
+
+    local recipe_proto = relevant_line.recipe.proto
+    local tooltip = {"", {"fp.tt_title", recipe_proto.localised_name}, note,
+        "\n", metadata.action_tooltips["act_on_compact_recipe"]}
 
     ---@class ActOnCompactRecipeTags
     ---@field line_id ObjectID

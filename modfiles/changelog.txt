@@ -6,6 +6,7 @@ Date: 00. 00. 0000
     - Added support for converting a subfloor into its own factory (#774)
   Changes:
     - Updated rocket silos to scale their speed and energy consumption with quality
+    - Subfloors marked as done in the compact dialog now show in orange if any line inside of them is not marked as done (#599)
     - Changed the utility dialog blueprint storage to use a real inventory UI (#763)
   Bugfixes:
     -
