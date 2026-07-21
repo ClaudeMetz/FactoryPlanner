@@ -214,6 +214,7 @@ end
 
 
 ---@param object CopyableObject
+---@param player LuaPlayer
 ---@return boolean success
 ---@return string? error
 function Machine:paste(object, player)
