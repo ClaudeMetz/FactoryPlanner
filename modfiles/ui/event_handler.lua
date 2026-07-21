@@ -42,7 +42,8 @@ local gui_identifier_map = {
     [defines.events.on_gui_elem_changed] = "on_gui_elem_changed",
     [defines.events.on_gui_value_changed] = "on_gui_value_changed",
     [defines.events.on_gui_hover] = "on_gui_hover",
-    [defines.events.on_gui_leave] = "on_gui_leave"
+    [defines.events.on_gui_leave] = "on_gui_leave",
+    [defines.events.on_gui_inventory_action] = "on_gui_inventory_action"
 }  ---@type table<defines.events, string>
 
 local gui_timeouts = {
@@ -133,7 +134,7 @@ end
 
 ---@class GUIEventTable
 ---@field handler GUIEventHandler | GUIActionEventHandler
----@field actions GUIActionTable
+---@field actions GUIActionTable[]
 ---@field shortcuts table<string, GUIActionTable>
 ---@field tooltip LocalisedString
 ---@field timeout MapTick

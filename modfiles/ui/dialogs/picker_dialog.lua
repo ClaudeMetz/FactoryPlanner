@@ -510,8 +510,7 @@ listeners.gui = {
                     lib.cursor.create_flying_text(player, {"fp.picker_invalid_product", name})
                 else
                     local factory = lib.context.get(player, "Factory")  ---@as Factory
-                    local filter = {proto = item_proto}  ---@as ObjectFilter
-                    local enabled = (factory:find(filter) == nil)
+                    local enabled = (factory:find({proto = item_proto}) == nil)
                     local tags = {item_id=item_proto.id, category_id=item_proto.category_id, enabled=enabled}
                     handle_item_pick(player, tags--[[@as SelectPickerItemTags]])
                 end

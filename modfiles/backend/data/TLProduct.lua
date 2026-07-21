@@ -73,7 +73,7 @@ function TLProduct:paste(object)
     if object.class == "SimpleItem" or object.class == "Fuel" then
         local proto  ---@type FPItemPrototype | FPPackedPrototype
         if object.class == "Fuel" then  -- need an Item prototype here, not Fuel
-            proto = prototyper.util.find("items", object:get_name_with_temperature(), object.proto.type) ---@as FPItemPrototype
+            proto = prototyper.util.find("items", object:get_name_with_temperature(), object.proto.type)  ---@as FPItemPrototype
         else
             proto = object.proto  ---@as FPItemPrototype | FPPackedPrototype
         end
@@ -81,8 +81,14 @@ function TLProduct:paste(object)
         if proto.simplified then return false, "incompatible" end
         ---@cast proto -FPPackedPrototype
 
+        -- Only allow pasting fluids with set temperatures
+        local temperature = object.temperature or object.proto--[[@as FPItemPrototype]].temperature or nil
+        if object.proto.type == "fluid" and not temperature then
+            return false, "temperature_not_set"
+        end
+
         -- Avoid duplicate items, but allow pasting over the same item proto
-        local existing_item = self.parent:find({proto=proto}--[[@as ObjectFilter]])
+        local existing_item = self.parent:find({proto=proto})
         if existing_item and not (self.proto.name == proto.name) then
             return false, "already_exists"
         end

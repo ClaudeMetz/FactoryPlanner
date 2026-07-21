@@ -7,7 +7,6 @@
 ---@field parent Object?
 ---@field next Object?
 ---@field previous Object?
----@field dummy boolean? used by clipboard
 ---@field pack fun(self, full: boolean): PackedObject
 ---@field validate fun(self): boolean
 ---@field repair fun(self, player: LuaPlayer): boolean
@@ -53,7 +52,13 @@ end
 
 ---@alias NeighbourDirection "next" | "previous"
 
----@alias ObjectFilter {id: integer, archived: boolean, valid: boolean, proto: FPPrototype, quality_proto: FPQualityPrototype}
+---@class ObjectFilter
+---@field id integer?
+---@field archived boolean?
+---@field valid boolean?
+---@field proto FPPrototype?
+---@field quality_proto FPQualityPrototype?
+
 local filter_options = {"id", "archived", "valid", "proto", "quality_proto"}
 
 ---@param object Object

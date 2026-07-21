@@ -123,6 +123,8 @@ function Machine:get_speed()
         return speed
     elseif category == "boiler" or category == "offshore_pump" then
         return speed * self.quality_proto.default_multiplier
+    elseif category == "launcher" then
+        return LAUNCHER_DATA[self.proto.name][self.quality_proto.name].speed
     else  -- "crafter"
         return speed * self.proto.crafting_speed_quality_multiplier[self.quality_proto.name]
     end
@@ -140,6 +142,8 @@ function Machine:get_energy_usage()
         return energy_usage
     elseif category == "boiler" then
         return energy_usage * self.quality_proto.default_multiplier
+    elseif category == "launcher" then
+        return LAUNCHER_DATA[self.proto.name][self.quality_proto.name].energy_usage
     elseif not self.proto.quality_affects_energy_usage then
         return energy_usage
     else  -- "crafter"

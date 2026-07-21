@@ -1,5 +1,7 @@
+local Floor = require("backend.data.Floor")
 local Line = require("backend.data.Line")
 local matrix_engine = require("backend.calculation.matrix_engine")
+local TLProduct = require("backend.data.TLProduct")
 
 -- ** LOCAL UTIL **
 ---@param player LuaPlayer
@@ -127,6 +129,30 @@ local function toggle_fold_out_subfloors(player)
 end
 
 ---@param player LuaPlayer
+local function handle_convert_subfloor(player)
+    local floor = lib.context.get(player, "Floor")  ---@as Floor
+    local first_product = floor.products[1]  ---@as SimpleItem always one at least
+    local factory = factory_list.add_factory(player, nil, first_product.proto)
+
+    for _, floor_product in pairs(floor.products) do
+        local product = TLProduct.init(floor_product.proto)
+        product.required_amount = floor_product.amount
+        factory:insert(product)
+    end
+
+    local floor_copy = floor:pack(false)
+    floor_copy.level = 1
+    factory.top_floor = Floor.unpack(floor_copy)
+    factory.top_floor.parent = factory
+
+    factory:validate()
+    lib.context.set(player, factory.top_floor)
+
+    solver.update(player)
+    lib.gui.run_refresh(player, "all")
+end
+
+---@param player LuaPlayer
 ---@param event EventData.on_gui_switch_state_changed
 local function handle_solver_change(player, _, event)
     local factory = lib.context.get(player, "Factory")  ---@as Factory
@@ -213,6 +239,9 @@ local function refresh_production_box(player)
 
     production_box_elements.fold_out_subfloors_button.visible = factory_valid
     production_box_elements.fold_out_subfloors_button.toggled = preferences.fold_out_subfloors
+
+    production_box_elements.convert_subfloor_button.visible = factory_valid
+    production_box_elements.convert_subfloor_button.enabled = (current_level > 1)
 
     production_box_elements.solver_flow.visible = factory_valid
     if factory_valid then  ---@cast factory -nil
@@ -301,6 +330,12 @@ local function build_production_box(player)
         style="fp_sprite-button_rounded_icon", mouse_button_filter={"left"}, auto_toggle=true}
     button_fold_out_subfloors.style.margin = {2, 0, 0, 16}
     main_elements.production_box["fold_out_subfloors_button"] = button_fold_out_subfloors
+
+    local button_convert_subfloor = flow_production.add{type="sprite-button", sprite="utility/export_slot",
+        tooltip={"fp.convert_subfloor_tt"}, tags={mod="fp", on_gui_click="convert_subfloor"},
+        style="fp_sprite-button_rounded_icon", mouse_button_filter={"left"}}
+    button_convert_subfloor.style.top_margin = 2
+    main_elements.production_box["convert_subfloor_button"] = button_convert_subfloor
 
     flow_production.add{type="empty-widget", style="fflib_horizontal_pusher"}
 
@@ -403,6 +438,10 @@ listeners.gui = {
         {
             name = "toggle_fold_out_subfloors",
             handler = toggle_fold_out_subfloors
+        },
+        {
+            name = "convert_subfloor",
+            handler = handle_convert_subfloor
         },
         {
             name = "open_utility_dialog",

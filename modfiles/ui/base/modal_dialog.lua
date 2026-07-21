@@ -244,7 +244,7 @@ end
 ---@param player LuaPlayer
 ---@param menu_tags Tags
 ---@param handler string
----@param actions GUIActionTable
+---@param actions GUIActionTable[]
 ---@param location GuiLocation
 function modal_dialog.open_context_menu(player, menu_tags, handler, actions, location)
     local ui_state = lib.globals.ui_state(player)

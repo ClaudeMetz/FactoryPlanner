@@ -72,13 +72,13 @@ local function refresh_item_box(player, factory, show_floor_items, item_category
             local required_amount = product:get_required_amount()
 
             if product.proto.type == "entity" and product.proto.special then
+                amount = lib.format.button_number(required_amount)
                 number_tooltip = lib.format.special_tooltip(product.proto.name, required_amount)
             else
                 amount, number_tooltip = item_views.process_item(player, product.proto, required_amount, nil)
                 if amount == -1 then goto skip_product end  -- an amount of -1 means it was below the margin of error
             end
 
-            --local satisfaction_line, percentage_string = nil, nil
             local satisfaction_line, percentage_string = lib.gui.calculate_satisfaction(
                 product.amount, required_amount)
 
@@ -99,7 +99,7 @@ local function refresh_item_box(player, factory, show_floor_items, item_category
             ::skip_product::
         end
 
-        local tooltip = {"", {"fp.add"}, " ", {"fp.pl_" .. item_category, 1}, "\n", {"fp.shift_to_paste"}}
+        local tooltip = {"fp.add_top_level_product", {"fp.pl_" .. item_category, 1}}
         ---@class AddTopLevelItemTags
         ---@field item_category ItemCategory
         local tags = {mod="fp", on_gui_click="add_top_level_item", item_category=item_category}
@@ -116,6 +116,7 @@ local function refresh_item_box(player, factory, show_floor_items, item_category
 
             if item.proto.type == "entity" and item.proto.special then
                 action = "act_on_floor_special"
+                amount = lib.format.button_number(item.amount)
                 number_tooltip = lib.format.special_tooltip(item.proto.name, item.amount)
             else
                 amount, number_tooltip = item_views.process_item(player, item.proto, item.amount, nil)
@@ -145,10 +146,31 @@ end
 ---@param tags AddTopLevelItemTags
 ---@param event EventData.on_gui_click
 local function handle_item_add(player, tags, event)
+    local factory = lib.context.get(player, "Factory")  ---@as Factory
+
     if event.shift then  -- paste
-        local factory = lib.context.get(player, "Factory")  ---@as Factory
         local dummy_product = TLProduct.init()
         lib.clipboard.dummy_paste(player, dummy_product, factory)
+    elseif player.is_cursor_blueprint() then  -- import blueprint entities
+        local blueprint = player.cursor_record or player.cursor_stack
+        local timescale = lib.globals.preferences(player).timescale
+
+        for _, entity in pairs(blueprint--[[@cast -nil]].cost_to_build) do
+            local proto = prototyper.util.find("items", entity.name, "item")  ---@as FPItemPrototype
+            local existing_item = factory:find({proto=proto})
+
+            local amount = entity.count / timescale
+            if existing_item then
+                existing_item.required_amount = existing_item.required_amount + amount
+            else
+                local product = TLProduct.init(proto)  -- defined_by = "amount"
+                product.required_amount = amount
+                factory:insert(product)
+            end
+        end
+
+        solver.update(player)
+        lib.gui.run_refresh(player, "factory")
     else
         lib.gui.open_dialog(player, {dialog="picker", modal_data={item_id=nil, item_category=tags.item_category}})
     end

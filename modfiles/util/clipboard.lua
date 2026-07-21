@@ -43,11 +43,13 @@ end
 ---@param player LuaPlayer
 ---@param target CopyableObject
 ---@param tags ClipboardTags?
+---@return boolean success
 function _clipboard.paste(player, target, tags)
     local clip = lib.globals.player_table(player).clipboard
 
     if clip == nil then
         lib.cursor.create_flying_text(player, {"fp.clipboard_empty"})
+        return false
     else
         local clone
         if clip.parent then  -- only real objects have parents
@@ -79,8 +81,11 @@ function _clipboard.paste(player, target, tags)
                 lib.cursor.create_flying_text(player, {"fp.clipboard_no_empty_slots"})
             elseif error == "recipe_irrelevant" then
                 lib.cursor.create_flying_text(player, {"fp.clipboard_recipe_irrelevant"})
+            elseif error == "temperature_not_set" then
+                lib.cursor.create_flying_text(player, {"fp.clipboard_temperature_not_set"})
             end
         end
+        return success
     end
 end
 
@@ -88,11 +93,11 @@ end
 ---@param dummy CopyableObject
 ---@param parent CopyableObjectParent
 function _clipboard.dummy_paste(player, dummy, parent)
-    dummy.dummy = true
     parent:insert(dummy)
-    _clipboard.paste(player, dummy)
-    local last = parent:find_last()
-    if last.dummy then parent:remove(last) end
+    if not _clipboard.paste(player, dummy) then
+        -- Prevent collapsing the floor on `Floor:remove()`
+        parent:remove(dummy, true)
+    end
 end
 
 ---@param player LuaPlayer

@@ -362,6 +362,7 @@ function builders.products(line, parent_flow, metadata)
         if proto.type == "entity" and proto.special then
             relevant_flow = special_flow
 
+            amount = lib.format.button_number(product.amount)
             number_tooltip = lib.format.special_tooltip(proto.name, product.amount)
         else
             relevant_flow = items_flow
@@ -375,8 +376,7 @@ function builders.products(line, parent_flow, metadata)
 
             -- items/s/machine does not make sense for lines with subfloors, show items/s instead
             local machine_amount = (line.class ~= "Floor") and line.machine.amount or nil
-            amount, number_tooltip = item_views.process_item(metadata.player, product.proto,
-                product.amount, machine_amount)
+            amount, number_tooltip = item_views.process_item(metadata.player, proto, product.amount, machine_amount)
             if amount == -1 then goto skip_product end  -- an amount of -1 means it was below the margin of error
 
             tags.on_gui_click = "act_on_line_product"
@@ -417,6 +417,7 @@ function builders.byproducts(line, parent_flow, metadata)
             relevant_flow = special_flow
             action = "act_on_line_special_byproduct"
 
+            amount = lib.format.button_number(byproduct.amount)
             number_tooltip = lib.format.special_tooltip(proto.name, byproduct.amount)
         else
             relevant_flow = items_flow
@@ -424,8 +425,7 @@ function builders.byproducts(line, parent_flow, metadata)
 
             -- items/s/machine does not make sense for lines with subfloors, show items/s instead
             local machine_amount = (line.class ~= "Floor") and line.machine.amount or nil
-            amount, number_tooltip = item_views.process_item(metadata.player, byproduct.proto,
-                byproduct.amount, machine_amount)
+            amount, number_tooltip = item_views.process_item(metadata.player, proto, byproduct.amount, machine_amount)
             if amount == -1 then goto skip_byproduct end  -- an amount of -1 means it was below the margin of error
         end
 
@@ -493,19 +493,20 @@ end
 ---@param metadata ProductionTableMetadata
 ---@param item SimpleItem
 ---@param index integer
----@param number_line LocalisedString
-local function add_special_ingredient(line, parent_flow, metadata, item, index, number_line)
+local function add_special_ingredient(line, parent_flow, metadata, item, index)
     local satisfaction_line = ""  ---@type LocalisedString
     if metadata.ingredient_satisfaction and item.amount > 0 then
         satisfaction_line, _ = lib.gui.calculate_satisfaction(item.satisfied_amount--[[@cast -nil]], item.amount)
     end
 
+    local number_line = {"", "\n", lib.format.special_tooltip(item.proto.name, item.amount)}
     local tooltip = {"", {"fp.tt_title", item.proto.localised_name}, number_line, satisfaction_line,
         "\n", MODIFIER_ACTIONS["act_on_line_special_ingredient"].tooltip}
 
+    local button_number = lib.format.button_number(item.amount)
     local tags = {mod="fp", on_gui_click="act_on_line_special_ingredient", item_category="ingredient", line_id=line.id,
         item_index=index, on_gui_hover="set_tooltip", context="production_table"}
-    local button = parent_flow.add{type="sprite-button", tags=tags, sprite=item.proto.sprite,
+    local button = parent_flow.add{type="sprite-button", tags=tags, sprite=item.proto.sprite, number=button_number,
         style="fflib_slot_button_cyan_small", mouse_button_filter={"left-and-right"}, raise_hover_events=true}
     metadata.tooltips[button.index] = tooltip
 end
@@ -521,14 +522,13 @@ function builders.ingredients(line, parent_flow, metadata)
         local proto = ingredient.proto
 
         if proto.type == "entity" and proto.special then
-            local number_line = {"", "\n", lib.format.special_tooltip(proto.name, ingredient.amount)}
-            add_special_ingredient(line, special_flow, metadata, ingredient, index, number_line)
+            add_special_ingredient(line, special_flow, metadata, ingredient, index)
             goto skip_ingredient
         end
 
         -- items/s/machine does not make sense for lines with subfloors, show items/s instead
         local machine_amount = (line.class ~= "Floor") and line.machine.amount or nil
-        local amount, number_tooltip = item_views.process_item(metadata.player, ingredient.proto,
+        local amount, number_tooltip = item_views.process_item(metadata.player, proto,
             ingredient.amount, machine_amount)
         if amount == -1 then goto skip_ingredient end  -- an amount of -1 means it was below the margin of error
 
@@ -543,7 +543,10 @@ function builders.ingredients(line, parent_flow, metadata)
             satisfaction_line = sat_line
 
             -- We use the formatted percentage here because it smooths out the number to 3 places
-            local satisfaction = tonumber(percentage_string)
+            local satisfaction = 0.0
+            if string.sub(percentage_string, 1,1) ~= "≤" then
+                satisfaction = tonumber(percentage_string)  ---@as number
+            end
             if satisfaction <= 0 then
                 style = "fflib_slot_button_red_small"
             elseif satisfaction < 100 then

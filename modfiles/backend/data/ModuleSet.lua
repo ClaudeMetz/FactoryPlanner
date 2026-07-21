@@ -267,10 +267,12 @@ function ModuleSet:paste(module)
     end
 
     local desired_amount = math.min(module.amount, self.empty_slots)
-    local existing_module = self:find({
+    local filter = {
         proto = module.proto--[[@as FPModulePrototype]],
         quality_proto = module.quality_proto--[[@as FPQualityPrototype]]
-    }--[[@as ObjectFilter]])
+    }  ---@type ObjectFilter
+    local existing_module = self:find(filter)
+
     if existing_module then
         existing_module:set_amount(existing_module.amount + desired_amount)
     else

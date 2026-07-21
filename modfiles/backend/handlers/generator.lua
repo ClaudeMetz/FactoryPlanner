@@ -203,6 +203,7 @@ function generator.recipes.generate()
             recipe.sprite = main_product.type .. "/" .. main_product.name
             recipe.order = proto.order
             recipe.categories = {[proto.resource_category] = true}
+            recipe.allowed_effects = {speed=true, productivity=true, quality=true, consumption=true, pollution=true}
             recipe.productivity_recipe = (any_mining_productivity) and "custom-mining" or nil
 
             local ingredients = {{type="entity", name="custom-" .. proto.name, amount=1}--[[@as Ingredient]]}
@@ -735,7 +736,7 @@ end
 ---@field spent_fluid SpentFluidSpecification?
 
 ---@alias EmissionsMap table<string, double>
----@alias PrototypeCategory ("crafter" | "mining_drill" | "boiler" | "offshore_pump")
+---@alias PrototypeCategory ("crafter" | "launcher" | "mining_drill" | "boiler" | "offshore_pump")
 
 ---@return NamedPrototypesWithCategory<FPMachinePrototype>
 function generator.machines.generate()
@@ -825,7 +826,7 @@ function generator.machines.generate()
 
         -- Determine fluid input/output channels
         local fluid_channels = {input = 0, output = 0}
-        if fluid_burner_prototype then fluid_channels.input = fluid_channels.input - 1 end
+        if fluid_burner_prototype then fluid_channels.input = (fluid_channels.input - 1)--[[@as integer]] end
 
         for _, fluidbox in pairs(proto.fluidbox_prototypes) do
             if fluidbox.production_type == "output" then
@@ -882,14 +883,12 @@ function generator.machines.generate()
         if proto.crafting_categories and proto.energy_usage ~= nil then
             -- Silo launch recipes use a separate machine
             if proto.type == "rocket-silo" then
-                local machine = generate_category_entry("launch-rocket", proto, nil)
+                local machine = generate_category_entry("launch-rocket", proto, "launcher")
                 if machine then
-                    local launch_time, energy_usage = generator.util.determine_launch_data(proto)
-                    machine.speed = 1 / launch_time
-                    machine.energy_usage = energy_usage
+                    -- speed and energy_usage will be wrong here, but are determined
+                    -- dynamically later on depending on quality
 
                     machine.built_by_item = nil
-
                     machine.effect_receiver = generator.util.format_effect_receiver()
                     machine.allowed_effects = nil
                     machine.module_limit = 0
@@ -1086,7 +1085,7 @@ function generator.fuels.generate()
     -- Create category for each combination of fuels used by machines
     for _, machine_category in pairs(machine_prototypes) do
         for _, machine_proto in pairs(machine_category.members) do
-            if machine_proto.energy_type == "burner" then
+            if machine_proto.energy_type == "burner" then  ---@cast machine_proto.burner -nil
                 -- This removes invalid fuel categories and sets the combined category
                 generator.util.format_category_data(machine_proto.burner, combined_list, fuel_categories)
 

@@ -1,5 +1,4 @@
 ---@class UtilityDialogModalData: ModalData
----@field utility_inventory LuaInventory
 ---@field recalculate boolean
 ---@field missing_items MissingItem[]
 ---@field factory_index ObjectID[]
@@ -185,84 +184,16 @@ end
 ---@param modal_data UtilityDialogModalData
 function utility_structures.blueprints(player, modal_data)
     local modal_elements = modal_data.modal_elements
-    local blueprints = lib.context.get(player, "Factory")--[[@as Factory]].blueprints
-    local blueprint_limit = MAGIC_NUMBERS.blueprint_limit
+    local blueprints_box = add_utility_box(player, modal_elements, "content_frame", "blueprints", true, false)
+    blueprints_box.style.margin = {4, 0}
 
-    if modal_elements.blueprints_box == nil then
-        local blueprints_box = add_utility_box(player, modal_elements, "content_frame", "blueprints", true, false)
-        blueprints_box.style.margin = {4, 0}
-        modal_elements["blueprints_box"] = blueprints_box
+    -- Disable all actions besides transfer (trash is disabled by default)
+    local inventory_blueprints = blueprints_box.add{type="inventory", slots_per_row=MAGIC_NUMBERS.blueprint_limit,
+        tags={mod="fp", on_gui_inventory_action="utility_blueprints"}, handle_cursor_split=false,
+        handle_open_item=false, handle_open_mod_item=false}
 
-        local frame_blueprints = blueprints_box.add{type="frame", direction="horizontal", style="fp_frame_light_slots"}
-        local table_blueprints = frame_blueprints.add{type="table", column_count=blueprint_limit,
-            style="filter_slot_table"}
-        table_blueprints.style.width = blueprint_limit * 40
-        modal_elements["blueprints_table"] = table_blueprints
-    end
-
-    local table_blueprints =  modal_elements["blueprints_table"]
-    table_blueprints.clear()
-
-    ---@param signal SignalID
-    ---@return string
-    local function format_signal(signal)
-        -- signal.type is nil if it's really "item", plus we need to translate the virtual type
-        local type = (signal.type == "virtual") and "virtual-signal" or "item"
-        return (type .. "/" .. signal.name)
-    end
-
-    local blueprint = modal_data.utility_inventory[1]  -- re-usable inventory slot
-    for index, blueprint_string in pairs(blueprints) do
-        blueprint.import_stack(blueprint_string)
-        local blueprint_book = blueprint.is_blueprint_book
-
-        local tooltip = {"", (blueprint.label or "Blueprint"), "\n", MODIFIER_ACTIONS["act_on_blueprint"].tooltip}
-        local sprite = (blueprint_book) and "item/blueprint-book" or "item/blueprint"
-
-        ---@class ActOnBlueprintTags
-        ---@field index integer
-        local tags = {mod="fp", on_gui_click="act_on_blueprint", index=index}
-        local button = table_blueprints.add{type="sprite-button", tags=tags, sprite=sprite, tooltip=tooltip,
-            mouse_button_filter={"left-and-right"}}
-
-        local icons  ---@type BlueprintSignalIcon[]?
-        if blueprint_book then
-            local inventory = blueprint.get_inventory(defines.inventory.item_main)  ---@cast inventory -nil
-            icons = inventory[1].preview_icons
-        else
-            icons = blueprint.preview_icons
-        end
-
-        if icons ~= nil then  -- this is jank-hell
-            local icon_count = #icons
-            local flow = button.add{type="flow", direction="horizontal", ignored_by_interaction=true}
-            local top_margin = (blueprint_book) and 4 or 7
-
-            if icon_count == 1 then
-                local sprite = format_signal(icons[1]--[[@cast -nil]].signal)
-                local sprite_icon = flow.add{type="sprite", sprite=sprite}
-                sprite_icon.style.margin = {top_margin, 0, 0, 7}
-            else
-                flow.style.padding = {4, 0, 0, 3}
-                local table = flow.add{type="table", column_count=2}
-                table.style.cell_padding = -3
-                if icon_count == 2 then table.style.top_margin = top_margin end
-                for _, icon in pairs(icons) do
-                    table.add{type="sprite", sprite=format_signal(icon.signal)}
-                end
-            end
-        end
-
-        blueprint.clear()
-    end
-
-    if #blueprints < blueprint_limit then
-        local button_add = table_blueprints.add{type="sprite-button", sprite="utility/add",
-            tags={mod="fp", on_gui_click="utility_store_blueprint"}, style="fp_sprite-button_inset",
-            mouse_button_filter={"left"}}
-        button_add.style.padding = 4
-        button_add.style.margin = 4
-    end
+    local factory = lib.context.get(player, "Factory")  ---@as Factory
+    inventory_blueprints.inventory = factory.blueprints_inventory
 end
 
 ---@param player LuaPlayer
@@ -463,49 +394,16 @@ end
 
 
 ---@param player LuaPlayer
-local function store_blueprint(player, _, _)
-    local fly_text = lib.cursor.create_flying_text
+---@param event EventData.on_gui_inventory_action
+local function handle_blueprint_inventory_change(player, _, event)
+    -- Most actions are disabled, leaving only transfer actions, which are fine
+    -- Just need to make sure only blueprints and blueprint books are stored
+    local item = event.element.inventory--[[@cast -nil]][event.slot]
+    if not item.valid_for_read then return end
 
-    if player.is_cursor_empty() then
-        fly_text(player, {"fp.utility_cursor_empty"}); return
-    end
-    local cursor = player.cursor_stack  ---@cast cursor -nil
-    if not (cursor.is_blueprint or cursor.is_blueprint_book) then
-        if cursor.valid_for_read then
-            fly_text(player, {"fp.utility_no_blueprint"}); return
-        else
-            fly_text(player, {"fp.utility_blueprint_from_library"}); return
-        end
-    end
-    if cursor.is_blueprint then
-        if not cursor.is_blueprint_setup() then fly_text(player, {"fp.utility_blueprint_not_setup"}); return end
-    else -- blueprint book
-        local inventory = cursor.get_inventory(defines.inventory.item_main)  ---@cast inventory -nil
-        if inventory.is_empty() then fly_text(player, {"fp.utility_blueprint_book_empty"}); return end
-    end
-
-    local factory = lib.context.get(player, "Factory")  ---@as Factory
-    table.insert(factory.blueprints, cursor.export_stack())
-    fly_text(player, {"fp.utility_blueprint_stored"});
-    player.clear_cursor()  -- doesn't delete blueprint, but puts it back in the inventory
-
-    utility_structures.blueprints(player, lib.globals.modal_data(player)--[[@as UtilityDialogModalData]])
-end
-
----@param player LuaPlayer
----@param tags ActOnBlueprintTags
----@param action string
-local function handle_blueprint_click(player, tags, action)
-    local blueprints = lib.context.get(player, "Factory")--[[@as Factory]].blueprints
-
-    if action == "pick_up" then
-        player.cursor_stack--[[@cast -nil]].import_stack(blueprints[tags.index]--[[@cast -nil]])
-        lib.gui.close_dialog(player, "cancel")
-        main_dialog.toggle(player)
-
-    elseif action == "delete" then
-        table.remove(blueprints, tags.index)
-        utility_structures.blueprints(player, lib.globals.modal_data(player)--[[@as UtilityDialogModalData]])
+    if not item.is_blueprint and not item.is_blueprint_book then
+        player.cursor_stack--[[@cast -nil]].swap_stack(item)
+        lib.cursor.create_flying_text(player, {"fp.utility_not_blueprint"})
     end
 end
 
@@ -527,12 +425,21 @@ local function import_productivity_boni(player, _, _)
     lib.cursor.create_flying_text(player, {"fp.utility_productivity_imported"})
 end
 
+---@param player LuaPlayer
+---@param tags ProductivityBonusTags
+---@param event EventData.on_gui_text_changed
+local function handle_productivity_bonus_change(player, tags, event)
+    local factory = lib.context.get(player, "Factory")  ---@as Factory
+    local bonus = tonumber(event.element.text)  -- nil if invalid or empty
+    if bonus then bonus = math.floor(bonus / 100 * MAGIC_NUMBERS.effect_precision + 1e-4) end
+    factory.productivity_boni[tags.recipe_name] = bonus
+    lib.globals.modal_data(player)--[[@as UtilityDialogModalData]].recalculate = true
+end
+
 
 ---@param player LuaPlayer
 ---@param modal_data UtilityDialogModalData
 local function open_utility_dialog(player, modal_data)
-    modal_data.utility_inventory = game.create_inventory(1)  -- used for blueprint decoding
-
     -- Left side
     utility_structures.components(player, modal_data)
     utility_structures.blueprints(player, modal_data)
@@ -549,7 +456,6 @@ local function close_utility_dialog(player, _)
         solver.update(player)
         lib.gui.run_refresh(player, "production")
     end
-    modal_data.utility_inventory.destroy()
 end
 
 
@@ -573,18 +479,6 @@ listeners.gui = {
             handler = handle_item_handcraft
         },
         {
-            name = "utility_store_blueprint",
-            handler = store_blueprint
-        },
-        {
-            name = "act_on_blueprint",
-            actions_table = {
-                pick_up = {shortcut="left", show=true},
-                delete = {shortcut="control-right", show=true}
-            },
-            handler = handle_blueprint_click
-        },
-        {
             name = "import_productivity_boni",
             handler = import_productivity_boni
         }
@@ -600,20 +494,19 @@ listeners.gui = {
             name = "factory_notes",
             handler = function(player, _, event)
                 ---@cast event EventData.on_gui_text_changed
-                lib.context.get(player, "Factory")--[[@as Factory]].notes = event.element.text
+                local factory = lib.context.get(player, "Factory")  ---@as Factory
+                factory.notes = event.element.text
             end
         },
         {
             name = "productivity_bonus",
-            handler = function(player, tags, event)
-                ---@cast tags ProductivityBonusTags
-                ---@cast event EventData.on_gui_text_changed
-                local factory = lib.context.get(player, "Factory")  ---@as Factory
-                local bonus = tonumber(event.element.text)  -- nil if invalid or empty
-                if bonus then bonus = math.floor(bonus / 100 * MAGIC_NUMBERS.effect_precision + 1e-4) end
-                factory.productivity_boni[tags.recipe_name] = bonus
-                lib.globals.modal_data(player)--[[@as UtilityDialogModalData]].recalculate = true
-            end
+            handler = handle_productivity_bonus_change
+        }
+    },
+    on_gui_inventory_action = {
+        {
+            name = "utility_blueprints",
+            handler = handle_blueprint_inventory_change
         }
     }
 }  ---@as GUIListenerDefinition
