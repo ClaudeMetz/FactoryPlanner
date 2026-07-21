@@ -415,7 +415,7 @@ function generator.recipes.generate()
             recipe.sprite = "item/" .. proto.spoil_result.name
             recipe.order = proto.spoil_result.order
             recipe.categories = {["purposeful-spoiling"] = true}
-            recipe.energy = 0
+            recipe.energy = proto.get_spoil_ticks() / 60 / proto.stack_size
 
             local products = {{type="item", name=proto.spoil_result.name, amount=1}--[[@as Product]]}
             local ingredients = {{type="item", name=proto.name, amount=1}--[[@as Ingredient]]}
@@ -876,8 +876,6 @@ function generator.machines.generate()
         table.insert(machine_categories[machine.category], machine)
     end
 
-    local biggest_chest = nil
-
     local entity_filter = {{filter="hidden", invert=true}}
     for _, proto in pairs(prototypes.get_entity_filtered(entity_filter)) do
         if proto.crafting_categories and proto.energy_usage ~= nil then
@@ -952,19 +950,12 @@ function generator.machines.generate()
             end
 
         elseif proto.type == "container" then
-            -- Just find the biggest container as a spoilage machine
-            local size = proto.get_inventory_size(defines.inventory.chest) or 0
-            local current_size = biggest_chest and biggest_chest.get_inventory_size(defines.inventory.chest) or 0
-            if current_size < size then biggest_chest = proto end
-        end
-    end
-
-    if biggest_chest then
-        local machine = generate_category_entry("purposeful-spoiling", biggest_chest, nil)
-        if machine then
-            machine.speed, machine.energy_usage = 1, 0
-            machine.surface_conditions = nil  -- the chest isn't actually needed for spoiling to happen
-            insert_machine(machine)
+            local machine = generate_category_entry("purposeful-spoiling", proto, nil)
+            if machine then
+                machine.speed = proto.get_inventory_size(defines.inventory.chest) or 1
+                machine.energy_usage = 0
+                insert_machine(machine)
+            end
         end
     end
 
