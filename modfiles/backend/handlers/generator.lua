@@ -377,7 +377,6 @@ function generator.recipes.generate()
     end
 
     -- Add offshore pump recipes based on fluid tiles
-    ---@TODO: Fix Gleba water
     local pumped_fluids = {}
     for _, proto in pairs(prototypes.tile) do
         if proto.fluid and not pumped_fluids[proto.fluid.name] and not proto.hidden then
@@ -385,7 +384,7 @@ function generator.recipes.generate()
             pumped_fluids[fluid.name] = true
 
             local recipe = custom_recipe()
-            recipe.name = "impostor-" .. fluid.name .. "-" .. proto.name
+            recipe.name = "impostor-" .. fluid.name .. "-tile"
             recipe.factoriopedia_id = {type="tile", name=proto.name}
             recipe.localised_name = {"", fluid.localised_name, " ", {"fp.pumping_recipe"}}
             recipe.sprite = "fluid/" .. fluid.name
@@ -1477,7 +1476,7 @@ function generator.locations.generate()
             -- Check for fluid tiles that can be extracted with offshore pumps
             for key, _ in pairs(proto.map_gen_settings.autoplace_settings.tile.settings or {}) do
                 if prototypes.tile[key] and prototypes.tile[key].fluid then
-                    local recipe_key = "impostor-" .. prototypes.tile[key].fluid.name .. "-" .. key
+                    local recipe_key = "impostor-" .. prototypes.tile[key].fluid.name .. "-tile"
                     resource_recipes[recipe_key] = recipe_prototypes[recipe_key]
                 end
             end
