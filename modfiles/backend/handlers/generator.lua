@@ -79,6 +79,7 @@ end
 ---@field barreling boolean
 ---@field enabling_technologies string[]?
 ---@field custom boolean
+---@field location_resource boolean?
 ---@field enabled_from_the_start boolean
 ---@field hidden boolean
 ---@field order string
@@ -205,24 +206,19 @@ function generator.recipes.generate()
             recipe.categories = {[proto.resource_category] = true}
             recipe.allowed_effects = {speed=true, productivity=true, quality=true, consumption=true, pollution=true}
             recipe.productivity_recipe = (any_mining_productivity) and "custom-mining" or nil
+            recipe.energy = proto.mineable_properties.mining_time
+            recipe.location_resource = true
 
             local ingredients = {{type="entity", name="custom-" .. proto.name, amount=1}--[[@as Ingredient]]}
 
-            if not proto.infinite_resource then
-                recipe.energy = proto.mineable_properties.mining_time
-
-                -- Add mining fluid, if required
-                if proto.mineable_properties.required_fluid then
-                    table.insert(ingredients, {
-                        type = "fluid",
-                        name = proto.mineable_properties.required_fluid,
-                        -- fluid_amount is given for a 'set' of mining ops, with a set being 10 ore
-                        amount = proto.mineable_properties.fluid_amount--[[@cast -nil]] / 10
-                    })
-                end
-            else
-                recipe.energy = 0
-                ingredients[1].amount = 1
+            -- Add mining fluid, if required
+            if not proto.infinite_resource and proto.mineable_properties.required_fluid then
+                table.insert(ingredients, {
+                    type = "fluid",
+                    name = proto.mineable_properties.required_fluid,
+                    -- fluid_amount is given for a 'set' of mining ops, with a set being 10 ore
+                    amount = proto.mineable_properties.fluid_amount--[[@cast -nil]] / 10
+                })
             end
 
             generator.util.format_recipe(recipe, products, main_product, ingredients)
@@ -388,13 +384,14 @@ function generator.recipes.generate()
             pumped_fluids[fluid.name] = true
 
             local recipe = custom_recipe()
-            recipe.name = "impostor-" .. fluid.name .. "-" .. proto.name
+            recipe.name = "impostor-" .. fluid.name .. "-tile"
             recipe.factoriopedia_id = {type="tile", name=proto.name}
             recipe.localised_name = {"", fluid.localised_name, " ", {"fp.pumping_recipe"}}
             recipe.sprite = "fluid/" .. fluid.name
             recipe.order = proto.order
             recipe.categories = {["offshore-pump"] = true}
             recipe.energy = 1
+            recipe.location_resource = true
 
             local products = {{type="fluid", name=fluid.name, amount=60,
                 temperature=fluid.default_temperature}--[[@as Product]]}
@@ -1429,6 +1426,7 @@ end
 ---@field tooltip LocalisedString
 ---@field surface_properties SurfaceProperties?
 ---@field pollutant_type string?
+---@field resource_recipes NamedPrototypes<FPRecipePrototype>?
 ---@field entities_require_heating boolean
 
 ---@alias SurfaceProperties table<string, double>
@@ -1439,6 +1437,7 @@ function generator.locations.generate()
     local locations = {}  ---@type NamedPrototypes<FPLocationPrototype>
 
     local property_prototypes = generate_surface_properties()
+    local recipe_prototypes = storage.prototypes.recipes  ---@as NamedPrototypes<FPRecipePrototype>
 
     ---@param proto LuaSpaceLocationPrototype | LuaSurfacePrototype
     ---@param category string
@@ -1452,6 +1451,7 @@ function generator.locations.generate()
         local surface_properties = {}
         local tooltip = {"", {"fp.tt_title", proto.localised_name}, "\n"}  ---@type LocalisedString
         local current_table, next_index = tooltip, 4
+        local resource_recipes = {}  ---@type NamedPrototypes<FPRecipePrototype>
 
         for _, property_proto in pairs(property_prototypes) do
             local value = proto.surface_properties[property_proto.name] or property_proto.default_value
@@ -1464,16 +1464,38 @@ function generator.locations.generate()
                 {"fp.surface_property", property_proto.localised_name, value_and_unit}, current_table, next_index)
         end
 
-        return {
+        if category == "space-location" and proto.map_gen_settings and proto.map_gen_settings.autoplace_settings then
+            -- Check for minable resources
+            for key, _ in pairs(proto.map_gen_settings.autoplace_settings.entity.settings or {}) do
+                if prototypes.entity[key] and prototypes.entity[key].type == "resource" then
+                    local recipe_key = "impostor-" .. key
+                    resource_recipes[recipe_key] = recipe_prototypes[recipe_key]
+                end
+            end
+
+            -- Check for fluid tiles that can be extracted with offshore pumps
+            for key, _ in pairs(proto.map_gen_settings.autoplace_settings.tile.settings or {}) do
+                if prototypes.tile[key] and prototypes.tile[key].fluid then
+                    local recipe_key = "impostor-" .. prototypes.tile[key].fluid.name .. "-tile"
+                    resource_recipes[recipe_key] = recipe_prototypes[recipe_key]
+                end
+            end
+        end
+
+        ---@diagnostic disable-next-line: missing-fields
+        local location = {
             name = proto.name,
+            data_type = "locations",
             localised_name = proto.localised_name,
             sprite = sprite,
             tooltip = tooltip,
             surface_properties = surface_properties,
             pollutant_type = (category == "space-location" and proto.pollutant_type)
                 and proto.pollutant_type.name or nil,
-            entities_require_heating = (category == "space-location" and proto.entities_require_heating)
-        }  ---@as FPLocationPrototype
+            resource_recipes = resource_recipes,
+            entities_require_heating = (category == "space-location" and proto.entities_require_heating or false)
+        }  ---@type FPLocationPrototype
+        return location
     end
 
     for _, proto in pairs(prototypes.space_location) do
@@ -1491,11 +1513,13 @@ function generator.locations.generate()
         ---@diagnostic disable-next-line: missing-fields
         local universal_location = {
             name = "universal",
+            data_type = "locations",
             localised_name = {"fp.universal_location"},
             sprite = "fp_universal_planet",
             tooltip = {"fp.universal_location_tt"},
             surface_properties = nil,  -- accepts all machines and recipes
-            pollutant_type = nil  -- no pollution produced
+            pollutant_type = nil,  -- no pollution produced
+            resource_recipes = nil  -- no restrictions on mined resources
         }  ---@type FPLocationPrototype
         insert_prototype(locations, universal_location, nil)
     end
