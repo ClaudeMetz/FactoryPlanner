@@ -157,6 +157,7 @@ local function add_to_item_combinator(player, blueprint_entity, item_proto, amou
     _cursor.set_item_combinator(player, item_signals)
 end
 
+
 ---@param player LuaPlayer
 ---@param cursor_entity CursorEntityData
 ---@param item_proto FPItemPrototype | FPFuelPrototype
@@ -165,12 +166,13 @@ local function set_filter_on_inserter(player, cursor_entity, item_proto)
         or prototypes.entity[cursor_entity.entity--[[@cast -nil]].name]
 
     if item_proto.type == "fluid" then
-        _cursor.create_flying_text(player, {"fp.inserter_only_filters_items"})
+        _cursor.create_flying_text(player, {"fp.entity_only_filters_items", entity_proto.localised_name})
         return
     end
 
     if not entity_proto.filter_count then
-        _cursor.create_flying_text(player, {"fp.inserter_has_no_filters"})
+        ---@diagnostic disable-next-line: undefined-field
+        _cursor.create_flying_text(player, {"fp.entity_has_no_filters", entity_proto.localised_name})
         return
     end
 
@@ -186,7 +188,7 @@ local function set_filter_on_inserter(player, cursor_entity, item_proto)
 
         local filter_count = #blueprint_entity.filters
         if filter_count == entity_proto.filter_count then
-            _cursor.create_flying_text(player, {"fp.inserter_filter_limit_reached"})
+            _cursor.create_flying_text(player, {"fp.entity_filter_limit_reached", entity_proto.localised_name})
         else
             -- Silently drop any duplicates
             for _, filter in pairs(blueprint_entity.filters--[[@cast -nil]]) do
@@ -211,6 +213,69 @@ local function set_filter_on_inserter(player, cursor_entity, item_proto)
     end
 end
 
+---@param player LuaPlayer
+---@param cursor_entity CursorEntityData
+---@param item_proto FPItemPrototype | FPFuelPrototype
+local function set_filter_on_splitter(player, cursor_entity, item_proto)
+    local entity_proto = (cursor_entity.type == "entity") and cursor_entity.entity
+        or prototypes.entity[cursor_entity.entity--[[@cast -nil]].name]
+
+    if item_proto.type == "fluid" then
+        _cursor.create_flying_text(player, {"fp.entity_only_filters_items", entity_proto.localised_name})
+        return
+    end
+
+    local new_filter = {
+        index = 1,
+        name = item_proto.name,
+        quality = "normal",
+        comparator = "="
+    }
+
+    if cursor_entity.type == "blueprint" then
+        local blueprint_entity = cursor_entity.entity  ---@as BlueprintEntity
+        blueprint_entity.filter = new_filter
+        set_cursor_blueprint(player, {blueprint_entity})
+    else
+        set_cursor_blueprint(player, {
+            {
+                entity_number = 1,
+                name = entity_proto.name,
+                position = {0, 0},
+                quality = cursor_entity.quality,
+                filter = new_filter
+            }
+        })
+    end
+end
+
+
+---@param player LuaPlayer
+---@param cursor_entity CursorEntityData
+---@param item_proto FPItemPrototype | FPFuelPrototype
+---@return boolean applicable
+local function set_filter(player, cursor_entity, item_proto)
+    local entity_proto  ---@type LuaEntityPrototype
+
+    if cursor_entity.type == "entity" then
+        ---@cast cursor_entity.entity LuaEntityPrototype
+        entity_proto = cursor_entity.entity
+    elseif cursor_entity.type == "blueprint" then
+        ---@cast cursor_entity.entity BlueprintEntity
+        entity_proto = prototypes.entity[cursor_entity.entity.name]
+    end
+
+    if entity_proto.type == "inserter" then
+        set_filter_on_inserter(player, cursor_entity, item_proto)
+        return true
+    elseif entity_proto.type == "splitter" or entity_proto.type == "lane-splitter" then
+        set_filter_on_splitter(player, cursor_entity, item_proto)
+        return true
+    end
+
+    return false
+end
+
 
 ---@param player LuaPlayer
 ---@return LuaItemPrototype?
@@ -223,7 +288,6 @@ function _cursor.parse_cursor_item(player)
 
     return prototype
 end
-
 
 ---@alias CursorEntityType "none" | "blueprint" | "entity"
 ---@alias CursorEntity BlueprintEntity | LuaEntityPrototype
@@ -261,20 +325,11 @@ end
 function _cursor.handle_item_click(player, item_proto, amount)
     local cursor_entity = parse_cursor_entity(player)
 
-    if cursor_entity.type == "entity" and cursor_entity.entity--[[@cast -nil]].type == "inserter" then
-        set_filter_on_inserter(player, cursor_entity, item_proto)
+    local applicable = set_filter(player, cursor_entity, item_proto)
+    if applicable then return end
 
-    elseif cursor_entity.type == "blueprint" then
-        ---@cast cursor_entity.entity BlueprintEntity
-        local entity_proto = prototypes.entity[cursor_entity.entity.name]
-        if entity_proto.type == "inserter" then
-            set_filter_on_inserter(player, cursor_entity, item_proto)
-        else
-            add_to_item_combinator(player, cursor_entity.entity, item_proto, amount)
-        end
-    else
-        add_to_item_combinator(player, nil, item_proto, amount)
-    end
+    local blueprint_entity = (cursor_entity.type == "blueprint") and cursor_entity.entity or nil
+    add_to_item_combinator(player, blueprint_entity--[[@as BlueprintEntity?]], item_proto, amount)
 end
 
 return _cursor
