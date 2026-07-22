@@ -185,18 +185,20 @@ local function set_filter_on_inserter(player, cursor_entity, item_proto)
 
     if cursor_entity.type == "blueprint" then
         local blueprint_entity = cursor_entity.entity  ---@as BlueprintEntity
+        blueprint_entity.filters = blueprint_entity.filters or {}
+        blueprint_entity.use_filters = true
 
         local filter_count = #blueprint_entity.filters
         if filter_count == entity_proto.filter_count then
             _cursor.create_flying_text(player, {"fp.entity_filter_limit_reached", entity_proto.localised_name})
         else
             -- Silently drop any duplicates
-            for _, filter in pairs(blueprint_entity.filters--[[@cast -nil]]) do
+            for _, filter in pairs(blueprint_entity.filters) do
                 if filter.name == item_proto.name then return end
             end
 
             new_filter.index = filter_count + 1
-            table.insert(blueprint_entity.filters--[[@as table]], new_filter)
+            table.insert(blueprint_entity.filters, new_filter)
             set_cursor_blueprint(player, {blueprint_entity})
         end
     else
@@ -265,10 +267,11 @@ local function set_filter(player, cursor_entity, item_proto)
         entity_proto = prototypes.entity[cursor_entity.entity.name]
     end
 
-    if entity_proto.type == "inserter" then
+    local type = entity_proto.type
+    if type == "inserter" or type == "loader" or type == "loader-1x1" then
         set_filter_on_inserter(player, cursor_entity, item_proto)
         return true
-    elseif entity_proto.type == "splitter" or entity_proto.type == "lane-splitter" then
+    elseif type == "splitter" or type == "lane-splitter" then
         set_filter_on_splitter(player, cursor_entity, item_proto)
         return true
     end
