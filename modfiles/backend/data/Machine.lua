@@ -219,7 +219,7 @@ end
 ---@return string? error
 function Machine:paste(object, player)
     if object.class == "Machine" then  ---@cast object Machine
-        local corresponding_proto = prototyper.util.find("machines", object.proto.name, self.proto.combined_category)   ---@as FPMachinePrototype?
+        local corresponding_proto = prototyper.util.find("machines", object.proto.name, self.proto.combined_category)  ---@as FPMachinePrototype?
 
         if corresponding_proto == nil or not self.parent:is_machine_compatible(corresponding_proto) then
             return false, "incompatible"

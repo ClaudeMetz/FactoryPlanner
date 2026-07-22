@@ -1,6 +1,7 @@
 local sequential_engine = require("backend.calculation.sequential_engine")
 local matrix_engine = require("backend.calculation.matrix_engine")
 local structures = require("backend.calculation.structures")
+local SimpleItem = require("backend.data.SimpleItem")
 
 solver = {
     util = {}
@@ -203,12 +204,6 @@ local function generate_floor_data(player, factory, floor, calculate_emissions)
 end
 
 
----@class SimpleItem
----@field class "SimpleItem"
----@field proto FPItemPrototype
----@field amount number
----@field satisfied_amount number?
-
 ---@alias SolverItemCategory "products" | "byproducts" | "ingredients"
 
 ---@param a SimpleItem
@@ -238,7 +233,7 @@ local function update_object_items(object, item_category, item_results)
         end
 
         if object.class ~= "Floor" or item_proto.type ~= "entity" or item_proto.special then
-            table.insert(item_list, {class="SimpleItem", proto=item_proto, amount=item_result.amount})
+            table.insert(item_list, SimpleItem:init(object, item_proto, item_result.amount))
         end
     end
 
@@ -253,8 +248,8 @@ local function set_zeroed_items(line, item_category, items)
     local item_list = {}
 
     for _, item in pairs(items) do
-        local item_proto = prototyper.util.find("items", item.name, item.type)
-        table.insert(item_list, {class="SimpleItem", proto=item_proto, amount=0})
+        local item_proto = prototyper.util.find("items", item.name, item.type)  ---@as FPItemPrototype
+        table.insert(item_list, SimpleItem:init(line, item_proto))
     end
 
     line[item_category] = item_list

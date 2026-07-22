@@ -1,4 +1,5 @@
 local TLProduct = require("backend.data.TLProduct")
+local SimpleItem = require("backend.data.SimpleItem")
 
 -- ** LOCAL UTIL **
 ---@param player LuaPlayer
@@ -54,7 +55,7 @@ local function handle_item_button_click(player, tags, action)
         lib.gui.run_refresh(player, "all")
 
     elseif action == "copy" then  -- copy as SimpleItems makes most sense
-        local copyable_item = {class="SimpleItem", proto=item.proto, amount=item.abs_diff}
+        local copyable_item = SimpleItem:init(nil, item.proto, item.abs_diff)
         lib.clipboard.copy(player, copyable_item)
 
     elseif action == "put_into_cursor" then
