@@ -258,7 +258,7 @@ local function set_filter_on_mining_drill(player, cursor_entity, item_proto)
 
     local entity_equivalent = prototypes.entity[item_proto.name]
     if not entity_equivalent then
-        _cursor.create_flying_text(player, {"fp.item_no_equivalent_entity", item_proto.localised_name})
+        _cursor.create_flying_text(player, {"fp.item_no_equivalent_entity", item_proto.localised_name, {"fp.resource"}})
         return
     elseif entity_equivalent.type ~= "resource" then
         _cursor.create_flying_text(player, {"fp.entity_wrong_type", entity_proto.localised_name,
@@ -306,6 +306,54 @@ local function set_filter_on_mining_drill(player, cursor_entity, item_proto)
     end
 end
 
+---@param player LuaPlayer
+---@param cursor_entity CursorEntityData
+---@param item_proto FPItemPrototype | FPFuelPrototype
+local function set_filter_on_asteroid_collector(player, cursor_entity, item_proto)
+    local entity_proto = (cursor_entity.type == "entity") and cursor_entity.entity
+        or prototypes.entity[cursor_entity.entity--[[@cast -nil]].name]
+
+    local entity_equivalent = prototypes.asteroid_chunk[item_proto.name]
+    if not entity_equivalent then
+        _cursor.create_flying_text(player, {"fp.item_no_equivalent_entity", item_proto.localised_name, {"fp.asteroid"}})
+        return
+    end
+
+    local new_filter = {
+        index = 1,
+        name = entity_equivalent.name
+    }
+
+    if cursor_entity.type == "blueprint" then
+        local blueprint_entity = cursor_entity.entity  ---@as BlueprintEntity
+        blueprint_entity["chunk-filter"] = blueprint_entity["chunk-filter"] or {}
+
+        local filter_count = #blueprint_entity["chunk-filter"]
+        if filter_count == entity_proto.filter_count then
+            _cursor.create_flying_text(player, {"fp.entity_filter_limit_reached", entity_proto.localised_name})
+        else
+            -- Silently drop any duplicates
+            for _, filter in pairs(blueprint_entity["chunk-filter"]) do
+                if filter.name == entity_equivalent.name then return end
+            end
+
+            new_filter.index = filter_count + 1
+            table.insert(blueprint_entity["chunk-filter"], new_filter)
+            set_cursor_blueprint(player, {blueprint_entity})
+        end
+    else
+        set_cursor_blueprint(player, {
+            {
+                entity_number = 1,
+                name = entity_proto.name,
+                position = {0, 0},
+                quality = cursor_entity.quality,
+                ["chunk-filter"] = { new_filter }
+            }
+        })
+    end
+end
+
 
 ---@param player LuaPlayer
 ---@param cursor_entity CursorEntityData
@@ -331,6 +379,9 @@ local function set_filter(player, cursor_entity, item_proto)
         return true
     elseif type == "mining-drill" then
         set_filter_on_mining_drill(player, cursor_entity, item_proto)
+        return true
+    elseif type == "asteroid-collector" then
+        set_filter_on_asteroid_collector(player, cursor_entity, item_proto)
         return true
     end
 
