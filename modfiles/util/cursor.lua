@@ -168,9 +168,7 @@ local function set_filter_on_inserter(player, cursor_entity, item_proto)
     if item_proto.type == "fluid" then
         _cursor.create_flying_text(player, {"fp.entity_only_filters_items", entity_proto.localised_name})
         return
-    end
-
-    if not entity_proto.filter_count then
+    elseif (entity_proto.filter_count or 0) == 0 then
         ---@diagnostic disable-next-line: undefined-field
         _cursor.create_flying_text(player, {"fp.entity_has_no_filters", entity_proto.localised_name})
         return
@@ -251,6 +249,63 @@ local function set_filter_on_splitter(player, cursor_entity, item_proto)
     end
 end
 
+---@param player LuaPlayer
+---@param cursor_entity CursorEntityData
+---@param item_proto FPItemPrototype | FPFuelPrototype
+local function set_filter_on_mining_drill(player, cursor_entity, item_proto)
+    local entity_proto = (cursor_entity.type == "entity") and cursor_entity.entity
+        or prototypes.entity[cursor_entity.entity--[[@cast -nil]].name]
+
+    local entity_equivalent = prototypes.entity[item_proto.name]
+    if not entity_equivalent then
+        _cursor.create_flying_text(player, {"fp.item_no_equivalent_entity", item_proto.localised_name})
+        return
+    elseif entity_equivalent.type ~= "resource" then
+        _cursor.create_flying_text(player, {"fp.entity_wrong_type", entity_proto.localised_name,
+            item_proto.localised_name})
+        return
+    elseif (entity_proto.filter_count or 0) == 0 then
+        ---@diagnostic disable-next-line: undefined-field
+        _cursor.create_flying_text(player, {"fp.entity_has_no_filters", entity_proto.localised_name})
+        return
+    end
+
+    local new_filter = {
+        index = 1,
+        name = entity_equivalent.name
+    }
+
+    if cursor_entity.type == "blueprint" then
+        local blueprint_entity = cursor_entity.entity  ---@as BlueprintEntity
+        blueprint_entity.filter = blueprint_entity.filter or {}
+        blueprint_entity.filter.filters = blueprint_entity.filter.filters or {}
+
+        local filter_count = #blueprint_entity.filter.filters
+        if filter_count == entity_proto.filter_count then
+            _cursor.create_flying_text(player, {"fp.entity_filter_limit_reached", entity_proto.localised_name})
+        else
+            -- Silently drop any duplicates
+            for _, filter in pairs(blueprint_entity.filter.filters) do
+                if filter.name == entity_equivalent.name then return end
+            end
+
+            new_filter.index = filter_count + 1
+            table.insert(blueprint_entity.filter.filters, new_filter)
+            set_cursor_blueprint(player, {blueprint_entity})
+        end
+    else
+        set_cursor_blueprint(player, {
+            {
+                entity_number = 1,
+                name = entity_proto.name,
+                position = {0, 0},
+                quality = cursor_entity.quality,
+                filter = { filters = { new_filter } }
+            }
+        })
+    end
+end
+
 
 ---@param player LuaPlayer
 ---@param cursor_entity CursorEntityData
@@ -273,6 +328,9 @@ local function set_filter(player, cursor_entity, item_proto)
         return true
     elseif type == "splitter" or type == "lane-splitter" then
         set_filter_on_splitter(player, cursor_entity, item_proto)
+        return true
+    elseif type == "mining-drill" then
+        set_filter_on_mining_drill(player, cursor_entity, item_proto)
         return true
     end
 
