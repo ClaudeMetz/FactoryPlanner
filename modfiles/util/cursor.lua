@@ -165,8 +165,9 @@ local function set_filter_on_inserter(player, cursor_entity, item_proto)
     local entity_proto = (cursor_entity.type == "entity") and cursor_entity.entity
         or prototypes.entity[cursor_entity.entity--[[@cast -nil]].name]
 
-    if item_proto.type == "fluid" then
-        _cursor.create_flying_text(player, {"fp.entity_only_filters_items", entity_proto.localised_name})
+    if item_proto.type ~= "item" then
+        _cursor.create_flying_text(player, {"fp.entity_wrong_type", entity_proto.localised_name,
+            item_proto.localised_name})
         return
     elseif (entity_proto.filter_count or 0) == 0 then
         ---@diagnostic disable-next-line: undefined-field
@@ -220,8 +221,9 @@ local function set_filter_on_splitter(player, cursor_entity, item_proto)
     local entity_proto = (cursor_entity.type == "entity") and cursor_entity.entity
         or prototypes.entity[cursor_entity.entity--[[@cast -nil]].name]
 
-    if item_proto.type == "fluid" then
-        _cursor.create_flying_text(player, {"fp.entity_only_filters_items", entity_proto.localised_name})
+    if item_proto.type ~= "item" then
+        _cursor.create_flying_text(player, {"fp.entity_wrong_type", entity_proto.localised_name,
+            item_proto.localised_name})
         return
     end
 
@@ -354,6 +356,38 @@ local function set_filter_on_asteroid_collector(player, cursor_entity, item_prot
     end
 end
 
+---@param player LuaPlayer
+---@param cursor_entity CursorEntityData
+---@param item_proto FPItemPrototype | FPFuelPrototype
+local function set_filter_on_pump(player, cursor_entity, item_proto)
+    local entity_proto = (cursor_entity.type == "entity") and cursor_entity.entity
+        or prototypes.entity[cursor_entity.entity--[[@cast -nil]].name]
+
+    if item_proto.type ~= "fluid" then
+        _cursor.create_flying_text(player, {"fp.entity_wrong_type", entity_proto.localised_name,
+            item_proto.localised_name})
+        return
+    end
+
+    local new_filter = item_proto.name
+
+    if cursor_entity.type == "blueprint" then
+        local blueprint_entity = cursor_entity.entity  ---@as BlueprintEntity
+        blueprint_entity.fluid_filter = new_filter
+        set_cursor_blueprint(player, {blueprint_entity})
+    else
+        set_cursor_blueprint(player, {
+            {
+                entity_number = 1,
+                name = entity_proto.name,
+                position = {0, 0},
+                quality = cursor_entity.quality,
+                fluid_filter = new_filter
+            }
+        })
+    end
+end
+
 
 ---@param player LuaPlayer
 ---@param cursor_entity CursorEntityData
@@ -382,6 +416,9 @@ local function set_filter(player, cursor_entity, item_proto)
         return true
     elseif type == "asteroid-collector" then
         set_filter_on_asteroid_collector(player, cursor_entity, item_proto)
+        return true
+    elseif type == "pump" then
+        set_filter_on_pump(player, cursor_entity, item_proto)
         return true
     end
 
