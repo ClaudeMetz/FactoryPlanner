@@ -946,6 +946,8 @@ function generator.machines.generate()
             if machine then
                 machine.speed = 1  -- could be based on available tiles, but not used for now
                 machine.energy_usage = 0  -- TODO implemented later: energy_usage, crane_energy_usage
+                -- Agri tower silently drops any fluid ingredients/products, so just allow them
+                machine.fluid_channels = {input = 255, output = 255}
                 insert_machine(machine)
             end
 

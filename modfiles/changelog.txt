@@ -2,11 +2,11 @@
 Version: 0.00.00
 Date: 00. 00. 0000
   Features:
-    - 
+    -
   Changes:
-    - 
+    -
   Bugfixes:
-    - 
+    - Fixed agriculture tower recipes not being usable with the Condensing Agricultural Tower mod (#727)
 
 ---------------------------------------------------------------------------------------------------
 Version: 2.1.6
