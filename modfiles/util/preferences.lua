@@ -26,6 +26,7 @@ _preferences.compact_width_percentages = {8, 10, 12, 14, 16, 18, 20, 22, 24, 26,
 ---@field calculate_emissions boolean
 ---@field ignore_barreling_recipes boolean
 ---@field ignore_recycling_recipes boolean
+---@field product_click_swap boolean
 ---@field done_column boolean
 ---@field percentage_column boolean
 ---@field line_comment_column boolean
@@ -81,6 +82,7 @@ function _preferences.reload(player_table)
     reload("calculate_emissions", false)
     reload("ignore_barreling_recipes", false)
     reload("ignore_recycling_recipes", false)
+    reload("product_click_swap", false)
 
     reload("done_column", true)
     reload("percentage_column", false)
