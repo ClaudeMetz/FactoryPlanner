@@ -86,8 +86,13 @@ local function refresh_item_box(player, factory, show_floor_items, item_category
             elseif percentage_string == "100" then style = "fflib_slot_button_green"
             else style = "fflib_slot_button_yellow" end
 
+            local action_tooltip = MODIFIER_ACTIONS[action].tooltip
+            if lib.globals.preferences(player).product_click_swap then
+                action_tooltip = MODIFIER_ACTIONS[action].tooltip_click_swap or action_tooltip
+            end
+
             local tooltip = {"", {"fp.tt_title", product.proto.localised_name}, "\n", number_tooltip,
-                satisfaction_line, "\n", MODIFIER_ACTIONS[action].tooltip}
+                satisfaction_line, "\n", action_tooltip}
 
             local tags = {mod="fp", on_gui_click=action, item_category=item_category, item_id=product.id,
                 on_gui_hover="set_tooltip", context="item_boxes"}  ---@type HandleItemBoxClickTags

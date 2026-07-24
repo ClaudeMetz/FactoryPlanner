@@ -284,6 +284,10 @@ local function handle_checkbox_preference_change(player, tags, event)
     elseif preference_name == "show_gui_button" then
         lib.preferences.refresh_after_change(player, "mod_gui")
     end
+
+    elseif preference_name == "product_click_swap" then
+        lib.gui.run_refresh(player, "item_boxes")
+    end
 end
 
 ---@param player LuaPlayer
@@ -408,7 +412,7 @@ local function open_preferences_dialog(player, modal_data)
 
     local general_preference_names = {"show_gui_button", "skip_factory_naming", "attach_factory_products",
         "prefer_matrix_solver", "show_floor_items", "ingredient_satisfaction", "calculate_emissions",
-        "ignore_barreling_recipes", "ignore_recycling_recipes"}
+        "ignore_barreling_recipes", "ignore_recycling_recipes", "product_click_swap"}
     local general_box = add_checkboxes_box(preferences, left_content_frame, "general", general_preference_names)
 
     general_box.add{type="line", direction="horizontal"}.style.margin = {4, 0, 2, 0}
