@@ -277,7 +277,7 @@ local function refresh_production_box(player)
     refresh_paste_button(player)
 
     ui_state.main_elements.solver_frame.visible = false
-    if any_lines_present and factory--[[@cast -nil]].matrix_solver_active then
+    if any_lines_present and not lib.globals.preferences(player).use_simplex_solver and factory--[[@cast -nil]].matrix_solver_active then
         refresh_solver_frame(player)
     end
 end

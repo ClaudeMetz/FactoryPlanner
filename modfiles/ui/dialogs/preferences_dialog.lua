@@ -283,6 +283,18 @@ local function handle_checkbox_preference_change(player, tags, event)
 
     elseif preference_name == "show_gui_button" then
         lib.preferences.refresh_after_change(player, "mod_gui")
+    elseif preference_name == "use_simplex_solver" then
+        -- Update all factories that use the matrix solver
+        for district in lib.globals.player_table(player).realm:iterator() do
+            for factory in district:iterator() do
+                if factory and factory.matrix_solver_active then
+                    factory.matrix_free_items = {}
+                    factory.linearly_dependant = false
+                    solver.update(player, factory)
+                    lib.gui.run_refresh(player, "production")
+                end
+            end
+        end
     end
 end
 
@@ -407,7 +419,7 @@ local function open_preferences_dialog(player, modal_data)
     local left_content_frame = modal_elements.content_frame
 
     local general_preference_names = {"show_gui_button", "skip_factory_naming", "attach_factory_products",
-        "prefer_matrix_solver", "show_floor_items", "ingredient_satisfaction", "calculate_emissions",
+        "prefer_matrix_solver", "use_simplex_solver", "show_floor_items", "ingredient_satisfaction", "calculate_emissions",
         "ignore_barreling_recipes", "ignore_recycling_recipes"}
     local general_box = add_checkboxes_box(preferences, left_content_frame, "general", general_preference_names)
 

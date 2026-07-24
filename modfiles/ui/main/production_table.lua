@@ -2,6 +2,7 @@
 ---@class ProductionTableMetadata
 ---@field archive_open boolean
 ---@field matrix_solver_active boolean
+---@field simplex_solver_active boolean
 ---@field ingredient_satisfaction boolean
 ---@field fold_out_subfloors boolean
 ---@field player LuaPlayer
@@ -19,6 +20,7 @@ local function generate_metadata(player, factory)
     local metadata = {
         archive_open = factory.archived,
         matrix_solver_active = factory.matrix_solver_active,
+        simplex_solver_active = lib.globals.preferences(player).use_simplex_solver,
         ingredient_satisfaction = preferences.ingredient_satisfaction,
         fold_out_subfloors = preferences.fold_out_subfloors,
         player = player,
@@ -238,7 +240,7 @@ function builders.machine(line, parent_flow, metadata)
 
         local machine_limit = machine.limit
         local style, note = "fflib_slot_button_default_small", nil
-        if not metadata.matrix_solver_active and machine_limit ~= nil then
+        if not (metadata.matrix_solver_active and not metadata.simplex_solver_active) and machine_limit ~= nil then
             if machine.force_limit then
                 style = "fflib_slot_button_pink_small"
                 note = {"fp.machine_limit_force", machine_limit}
@@ -496,7 +498,7 @@ end
 local function add_special_ingredient(line, parent_flow, metadata, item, index)
     local satisfaction_line = ""  ---@type LocalisedString
     if metadata.ingredient_satisfaction and item.amount > 0 then
-        satisfaction_line, _ = lib.gui.calculate_satisfaction(item.satisfied_amount--[[@cast -nil]], item.amount)
+        satisfaction_line, _ = lib.gui.calculate_satisfaction(item.satisfied_amount or 0, item.amount)
     end
 
     local number_line = {"", "\n", lib.format.special_tooltip(item.proto.name, item.amount)}
@@ -539,14 +541,11 @@ function builders.ingredients(line, parent_flow, metadata)
             style = "fflib_slot_button_disabled_small"
         elseif metadata.ingredient_satisfaction and ingredient.amount > 0 then
             local sat_line, percentage_string = lib.gui.calculate_satisfaction(
-                ingredient.satisfied_amount--[[@cast -nil]], ingredient.amount)
+                ingredient.satisfied_amount or 0, ingredient.amount)
             satisfaction_line = sat_line
 
             -- We use the formatted percentage here because it smooths out the number to 3 places
-            local satisfaction = 0.0
-            if string.sub(percentage_string, 1,1) ~= "≤" then
-                satisfaction = tonumber(percentage_string)  ---@as number
-            end
+            local satisfaction = tonumber(percentage_string) or 0.0
             if satisfaction <= 0 then
                 style = "fflib_slot_button_red_small"
             elseif satisfaction < 100 then

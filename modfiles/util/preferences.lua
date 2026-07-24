@@ -21,6 +21,7 @@ _preferences.compact_width_percentages = {8, 10, 12, 14, 16, 18, 20, 22, 24, 26,
 ---@field attach_factory_products boolean
 ---@field skip_factory_naming boolean
 ---@field prefer_matrix_solver boolean
+---@field use_simplex_solver boolean
 ---@field show_floor_items boolean
 ---@field ingredient_satisfaction boolean
 ---@field calculate_emissions boolean
@@ -76,6 +77,7 @@ function _preferences.reload(player_table)
     reload("skip_factory_naming", true)
     reload("attach_factory_products", false)
     reload("prefer_matrix_solver", false)
+    reload("use_simplex_solver", false)
     reload("show_floor_items", true)
     reload("ingredient_satisfaction", false)
     reload("calculate_emissions", false)
@@ -115,6 +117,7 @@ _preferences.current_version = 1
 ---@field attach_factory_products boolean
 ---@field skip_factory_naming boolean
 ---@field prefer_matrix_solver boolean
+---@field use_simplex_solver boolean
 ---@field show_floor_items boolean
 ---@field ingredient_satisfaction boolean
 ---@field calculate_emissions boolean
@@ -144,6 +147,7 @@ function _preferences.export(player)
         attach_factory_products = prefs.attach_factory_products,
         skip_factory_naming = prefs.skip_factory_naming,
         prefer_matrix_solver = prefs.prefer_matrix_solver,
+        use_simplex_solver = prefs.use_simplex_solver,
         show_floor_items = prefs.show_floor_items,
         ingredient_satisfaction = prefs.ingredient_satisfaction,
         calculate_emissions = prefs.calculate_emissions,
@@ -196,6 +200,7 @@ function _preferences.import(player, export_string)
         if type(et.attach_factory_products) ~= "boolean" then error() end
         if type(et.skip_factory_naming) ~= "boolean" then error() end
         if type(et.prefer_matrix_solver) ~= "boolean" then error() end
+        if type(et.use_simplex_solver) ~= "boolean" then error() end
         if type(et.show_floor_items) ~= "boolean" then error() end
         if type(et.ingredient_satisfaction) ~= "boolean" then error() end
         if type(et.calculate_emissions) ~= "boolean" then error() end
