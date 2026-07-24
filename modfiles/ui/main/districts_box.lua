@@ -57,7 +57,7 @@ local function handle_item_button_click(player, tags, action)
         local copyable_item = {class="SimpleItem", proto=item.proto, amount=item.abs_diff}
         lib.clipboard.copy(player, copyable_item)
 
-    elseif action == "add_to_cursor" then
+    elseif action == "put_into_cursor" then
         lib.cursor.handle_item_click(player, item.proto, item.abs_diff)
 
     elseif action == "factoriopedia" then
@@ -402,7 +402,7 @@ listeners.gui = {
             name = "act_on_district_product",
             actions_table = {
                 copy = {shortcut="shift-right"},
-                add_to_cursor = {shortcut="alt-right"},
+                put_into_cursor = {shortcut="alt-right"},
                 factoriopedia = {shortcut="alt-left"}
             },
             handler = handle_item_button_click
@@ -412,7 +412,7 @@ listeners.gui = {
             actions_table = {
                 create_factory = {shortcut="left", show=true},
                 copy = {shortcut="shift-right"},
-                add_to_cursor = {shortcut="alt-right"},
+                put_into_cursor = {shortcut="alt-right"},
                 factoriopedia = {shortcut="alt-left"}
             },
             handler = handle_item_button_click

@@ -616,7 +616,7 @@ local function handle_ingredient_click(player, tags, action)
     local floor = OBJECT_INDEX[tags.floor_id]  ---@as Floor
     local item = floor.ingredients[tags.item_index]  ---@as SimpleItem
 
-    if action == "add_to_cursor" then
+    if action == "put_into_cursor" then
         lib.cursor.handle_item_click(player, item.proto, item.amount)
 
     elseif action == "factoriopedia" then
@@ -661,7 +661,7 @@ local function handle_machine_click(player, tags, action)
     local line = OBJECT_INDEX[tags.line_id]  ---@as Line
     -- We don't need to care about relevant lines here because this only gets called on lines without subfloor
 
-    if action == "add_to_cursor" then
+    if action == "put_into_cursor" then
         lib.cursor.set_entity(player, line, line.machine)
 
     elseif action == "factoriopedia" then
@@ -677,7 +677,7 @@ local function handle_beacon_click(player, tags, action)
     ---@cast line.beacon -nil
     -- We don't need to care about relevant lines here because this only gets called on lines without subfloor
 
-    if action == "add_to_cursor" then
+    if action == "put_into_cursor" then
         lib.cursor.set_entity(player, line, line.beacon)
 
     elseif action == "factoriopedia" then
@@ -698,7 +698,7 @@ local function handle_item_click(player, tags, action)
         ---@cast item.proto FPItemPrototype
     end
 
-    if action == "add_to_cursor" then
+    if action == "put_into_cursor" then
         if item.proto.type == "entity" then return end
         lib.cursor.handle_item_click(player, item.proto, item.amount)
 
@@ -768,7 +768,7 @@ factory_listeners.gui = {
         {
             name = "act_on_compact_ingredient",
             actions_table = {
-                add_to_cursor = {shortcut="left", show=true},
+                put_into_cursor = {shortcut="left", show=true},
                 factoriopedia = {shortcut="alt-right", show=true}
             },
             handler = handle_ingredient_click
@@ -791,7 +791,7 @@ factory_listeners.gui = {
         {
             name = "act_on_compact_machine",
             actions_table = {
-                add_to_cursor = {shortcut="left", show=true},
+                put_into_cursor = {shortcut="left", show=true},
                 factoriopedia = {shortcut="alt-right", show=true}
             },
             handler = handle_machine_click
@@ -799,7 +799,7 @@ factory_listeners.gui = {
         {
             name = "act_on_compact_beacon",
             actions_table = {
-                add_to_cursor = {shortcut="left", show=true},
+                put_into_cursor = {shortcut="left", show=true},
                 factoriopedia = {shortcut="alt-right", show=true}
             },
             handler = handle_beacon_click
@@ -807,7 +807,7 @@ factory_listeners.gui = {
         {
             name = "act_on_compact_item",
             actions_table = {
-                add_to_cursor = {shortcut="left", show=true},
+                put_into_cursor = {shortcut="left", show=true},
                 factoriopedia = {shortcut="alt-right", show=true}
             },
             handler = handle_item_click
