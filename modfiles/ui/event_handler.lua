@@ -81,6 +81,12 @@ end)
 ---@field limitations ActionLimitations?
 ---@field show boolean?
 
+-- Actions in the Products view whose plain-left/control-left shortcuts get swapped
+-- for players who enabled the "product_click_swap" preference (left click edits, Ctrlleft adds)
+local product_swappable_actions = {
+    act_on_top_level_product = true,
+    act_on_top_level_special_product = true
+}
 -- Compile and format the list of GUI actions
 for _, listener in pairs(event_listeners) do
     if not listener.gui then goto continue end
@@ -91,6 +97,8 @@ for _, listener in pairs(event_listeners) do
 
             if event_name == "on_gui_click" and action.actions_table then
                 action_table.actions, action_table.shortcuts = {}, {}
+                local swapped_actions = product_swappable_actions[action.name] and {} or nil
+
                 -- Transform actions table into a more useable form
                 for action_name, modifier_action in pairs(action.actions_table) do
                     local action_details = {
@@ -104,8 +112,23 @@ for _, listener in pairs(event_listeners) do
                     if modifier_action.shortcut then
                         action_table.shortcuts[modifier_action.shortcut] = action_details
                     end
+
+                    if swapped_actions then
+                        local swapped_shortcut = modifier_action.shortcut
+                        if swapped_shortcut == "left" then swapped_shortcut = "control-left"
+                        elseif swapped_shortcut == "control-left" then swapped_shortcut = "left" end
+
+                        table.insert(swapped_actions, {
+                            name = action_name,
+                            show = modifier_action.show,
+                            shortcut_string = lib.actions.shortcut_string(swapped_shortcut)
+                        })
+                    end
                 end
                 action_table.tooltip = lib.actions.generate_tooltip(action_table.actions)
+                if swapped_actions then
+                    action_table.tooltip_click_swap = lib.actions.generate_tooltip(swapped_actions)
+                end
             end
 
             if MODIFIER_ACTIONS[action.name] then error("Duplicate action: " .. action.name) end
@@ -189,6 +212,11 @@ local function handle_gui_event(event)
     if event_name == "on_gui_click" and action_table.actions then
         local click_event = event  ---@as EventData.on_gui_click
         local click = convert_click_to_string(click_event)
+
+        if product_swappable_actions[action_name] and (click == "left" or click == "control-left")
+                and lib.globals.preferences(player).product_click_swap then
+            click = (click == "left") and "control-left" or "left"
+        end
 
         if click == "right" then
             modal_dialog.open_context_menu(player, tags, action_name,
