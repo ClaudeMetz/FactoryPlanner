@@ -523,7 +523,7 @@ function SimplexTableau:solve()
     local iterations = 0
     local last_factorization = 0
     local max_iterations = (#basic) ^ 2  -- Upper bound is 2^#v, but average case with random pivots is #c^2
-    local factorization_interval = #basic  -- Past this point, updating becomes more expensive than refactorizing
+    local factorization_interval = math.min(#basic, MAGIC_NUMBERS.simplex_max_factorization_interval)
     repeat
         -- If the factorization is too old, we need to recreate it
         if iterations - last_factorization >= factorization_interval then
