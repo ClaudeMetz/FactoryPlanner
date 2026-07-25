@@ -35,8 +35,18 @@ local objective_vector = {
     floor_transfer_in = 0,
 
     machine_limit = 0,
+    fluid_modifier = 0.01,
     special_modifier = 0  -- no penalty for emissions, power and heat
 }
+
+
+---@param key PrototypeKey
+---@return number
+local function item_cost(key)
+    if string.sub(key, -6, -1) == "_fluid" then return objective_vector.fluid_modifier end
+    if string.sub(key, -7, -1) == "_entity" then return objective_vector.special_modifier end
+    return 1
+end
 
 
 ---@param player LuaPlayer
@@ -77,9 +87,10 @@ end
 function simplex_engine.create_tableau(floor, line_data_table, target_products, limited_ingredients)
     local relevant_line_data = {}  ---@type LineDataTable
     local tableau_table = {}  ---@type table<ObjectID, SimplexTableau>
-
     local products = {}  ---@type ItemSet
     local ingredients = {}  ---@type ItemSet
+    local product_subfloors = {}  ---@type table<PrototypeKey, ObjectID[]>
+    local ingredient_subfloors = {}  ---@type table<PrototypeKey, ObjectID[]>
 
     -- Recursively solve subfloors and add their results to the line data
     for line_object in floor:iterator() do
@@ -91,8 +102,18 @@ function simplex_engine.create_tableau(floor, line_data_table, target_products, 
         elseif line_object.class == "Floor" then
             local subfloor_tableau, subfloor_products, subfloor_ingredients = simplex_engine.create_tableau(line_object, line_data_table)
             if subfloor_tableau then tableau_table[line_object.id] = subfloor_tableau end
-            if subfloor_products then products = lib.table.union(products, subfloor_products) end
-            if subfloor_ingredients then ingredients = lib.table.union(ingredients, subfloor_ingredients) end
+            if subfloor_products then
+                for item_key, _ in pairs(subfloor_products) do
+                    product_subfloors[item_key] = product_subfloors[item_key] or {}
+                    table.insert(product_subfloors[item_key], line_object.id)
+                end
+            end
+            if subfloor_ingredients then
+                for item_key, _ in pairs(subfloor_ingredients) do
+                    ingredient_subfloors[item_key] = ingredient_subfloors[item_key] or {}
+                    table.insert(ingredient_subfloors[item_key], line_object.id)
+                end
+            end
         end
     end
 
@@ -106,10 +127,36 @@ function simplex_engine.create_tableau(floor, line_data_table, target_products, 
         end
     end
 
+    -- Add subfloor products if they are used on this floor
+    for item_key, floor_ids in pairs(product_subfloors) do
+        if products[item_key] or ingredients[item_key] or #floor_ids >= 2 or #(ingredient_subfloors[item_key] or {}) >= 2 then
+            products[item_key] = true
+            product_subfloors[item_key] = nil
+        end
+    end
+
+    -- Add subfloor ingredients if they are used on this floor
+    for item_key, floor_ids in pairs(ingredient_subfloors) do
+        if products[item_key] or ingredients[item_key] or #floor_ids >= 2 or #(product_subfloors[item_key] or {}) >= 2 then
+            ingredients[item_key] = true
+            ingredient_subfloors[item_key] = nil
+        end
+    end
+
+    -- Add items that transfer between subfloors
+    for item_key, floor_ids in pairs(product_subfloors) do
+        if ingredient_subfloors[item_key] and floor_ids[1] ~= ingredient_subfloors[item_key][1] then
+            products[item_key] = true
+            ingredients[item_key] = true
+            product_subfloors[item_key] = nil
+            ingredient_subfloors[item_key] = nil
+        end
+    end
+
     local intermediates = lib.table.intersection(products, ingredients)  ---@type ItemSet
 
     -- Do not continue if the floor can't produce anything.
-    if not next(products) then return end
+    if not next(products) and not next(product_subfloors) then return end
 
     -- Create the simplex tableau
     local tableau = SimplexTableau:init()
@@ -122,14 +169,14 @@ function simplex_engine.create_tableau(floor, line_data_table, target_products, 
     -- Add slack variables for products
     for item_key, _ in pairs(products) do
         if not intermediates[item_key] then
-            local c = string.sub(item_key, -7, -1) == "_entity" and objective_vector.special_modifier or 1
-            tableau:add_item_variable(item_key, floor.id, "out", c * objective_vector.product)
+            local objective = item_cost(item_key) * objective_vector.product
+            tableau:add_item_variable(item_key, floor.id, "out", objective)
         end
     end
 
     -- Add slack variables for intermediates
     for item_key, _ in pairs(intermediates) do
-        local c = string.sub(item_key, -7, -1) == "_entity" and objective_vector.special_modifier or 1
+        local c = item_cost(item_key)
         tableau:add_item_variable(item_key, floor.id, "in", c * objective_vector.intermediate_in)
         tableau:add_item_variable(item_key, floor.id, "out", c * objective_vector.intermediate_out)
     end
@@ -137,19 +184,50 @@ function simplex_engine.create_tableau(floor, line_data_table, target_products, 
     -- Add slack variables for ingredients
     for item_key, _ in pairs(ingredients) do
         if not intermediates[item_key] then
-            local c = string.sub(item_key, -7, -1) == "_entity" and objective_vector.special_modifier or 1
-            tableau:add_item_variable(item_key, floor.id, "in", c * objective_vector.ingredient)
+            local objective = item_cost(item_key) * objective_vector.ingredient
+            tableau:add_item_variable(item_key, floor.id, "in", objective)
         end
+    end
+
+    for subfloor_id, subfloor_tableau in pairs(tableau_table) do
+        -- Merge the subfloor tableau into this one
+        tableau:merge(subfloor_tableau)
+
+        -- Allow importing from the subfloor
+        for item_key, _ in pairs(products) do
+            local objective = item_cost(item_key) * objective_vector.floor_transfer_out
+            tableau:add_item_transfer(item_key, floor.id, subfloor_id, "out", objective)
+        end
+
+        -- Allow exporting to the subfloor
+        for item_key, _ in pairs(ingredients) do
+            local objective = item_cost(item_key) * objective_vector.floor_transfer_in
+            tableau:add_item_transfer(item_key, floor.id, subfloor_id, "in", objective)
+        end
+    end
+
+    -- Add direct floor transfers without adding additional constraints to the tableau
+    for item_key, floor_ids in pairs(product_subfloors) do
+        local objective = item_cost(item_key) * (objective_vector.floor_transfer_out +
+                ((ingredient_subfloors[item_key] and objective_vector.intermediate_out) or objective_vector.product))
+        tableau:mark_equality(item_key, floor_ids[1]--[[@cast -nil]], floor.id, "out", objective)
+    end
+    for item_key, floor_ids in pairs(ingredient_subfloors) do
+        local objective = item_cost(item_key) * (objective_vector.floor_transfer_in +
+                ((product_subfloors[item_key] and objective_vector.intermediate_in) or objective_vector.ingredient))
+        tableau:mark_equality(item_key, floor_ids[1]--[[@cast -nil]], floor.id, "in", objective)
     end
 
     -- Add additional constraint to target products, so we get a bounded solution
     for item_key, amount in pairs(target_products or {}) do
-        tableau:add_item_constraint(item_key, floor.id, "out", "<=", amount, objective_vector.target_product)
+        local objective = item_cost(item_key) * objective_vector.target_product
+        tableau:add_item_constraint(item_key, floor.id, "out", "<=", amount, objective)
     end
 
     -- Add additional constraint for limited ingredients
     for item_key, amount in pairs(limited_ingredients or {}) do
-        tableau:add_item_constraint(item_key, floor.id, "in", "<=", amount, objective_vector.limited_ingredient)
+        local objective = item_cost(item_key) * objective_vector.limited_ingredient
+        tableau:add_item_constraint(item_key, floor.id, "in", "<=", amount, objective)
     end
 
     -- Add aditional constraint for machine limits
@@ -160,20 +238,9 @@ function simplex_engine.create_tableau(floor, line_data_table, target_products, 
         end
     end
 
-    for subfloor_id, subfloor_tableau in pairs(tableau_table) do
-        -- Merge the subfloor tableau into this one
-        tableau:merge(subfloor_tableau)
-
-        -- Allow importing from the subfloor
-        for item_key, _ in pairs(products) do
-            tableau:add_item_transfer(item_key, floor.id, subfloor_id, "out", objective_vector.floor_transfer_out)
-        end
-
-        -- Allow exporting to the subfloor
-        for item_key, _ in pairs(ingredients) do
-            tableau:add_item_transfer(item_key, floor.id, subfloor_id, "in", objective_vector.floor_transfer_in)
-        end
-    end
+    -- Add subfloor items to the item lists
+    for item_key, _ in pairs(product_subfloors) do products[item_key] = true end
+    for item_key, _ in pairs(ingredient_subfloors) do ingredients[item_key] = true end
 
     return tableau, products, ingredients
 end
