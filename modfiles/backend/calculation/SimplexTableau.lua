@@ -365,14 +365,41 @@ function SimplexTableau:solve()
 
     -- Heuristically pick the inital basis containing the variables with the highest objective
     for _, key in ipairs(sorted_variables) do
-        local map = variable_map[self.cols[key]]  ---@as VariableMap
+        local col_index = self.cols[key]
+        local map = variable_map[col_index]  ---@as VariableMap
         if map.type == "unassigned" then
-            for i = 1, #self.matrix[self.cols[key]] do
-                if self.matrix[self.cols[key]][i] > MAGIC_NUMBERS.margin_of_error and not basic[i] then
-                    map.type = "basic"
-                    basic[i] = key
-                    break
+            local min_num_cols = #self.matrix[col_index]
+            local min_cols = {}  ---@type integer[]
+            local min_row = 0
+
+            -- Find the row with the least amount of positive coefficients
+            for i = 1, #self.matrix[col_index] do
+                if self.matrix[col_index][i] > MAGIC_NUMBERS.margin_of_error and not basic[i] then
+                    local cols = {}  ---@type integer[]
+                    for j = 1, #self.matrix do
+                        if self.matrix[j][i] > MAGIC_NUMBERS.margin_of_error and j ~= col_index then
+                            table.insert(cols, j)
+                        end
+                    end
+                    if #cols < min_num_cols then
+                        min_num_cols = #cols
+                        min_cols = cols
+                        min_row = i
+                    end
+                    if #cols == 0 then break end
                 end
+            end
+
+            -- Mark the variable as the basis of this row
+            -- Mark other variables with positive coefficients as non-basic
+            if min_row ~= 0 then
+                for _, var_column in pairs(min_cols) do
+                    local var_map = variable_map[var_column]   ---@as VariableMap
+                    var_map.type = "non-basic"
+                    table.insert(non_basic, var_map.key)
+                end
+                map.type = "basic"
+                basic[min_row] = key
             end
         end
 
