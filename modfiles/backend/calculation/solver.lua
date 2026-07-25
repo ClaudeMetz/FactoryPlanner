@@ -315,7 +315,6 @@ end
 ---@param player LuaPlayer
 ---@param factory Factory?
 function solver.update(player, factory)
-    local profiler = helpers.create_profiler()  ---@TODO: remove
     factory = factory or lib.context.get(player, "Factory")  ---@as Factory
     if factory and factory.valid then
         -- Cancel any pending update as it'll be running right now
@@ -371,7 +370,6 @@ function solver.update(player, factory)
             sequential_engine.update_factory(factory_data)
         end
     end
-    log(profiler--[[@as LocalisedString]])  ---@TODO: remove
 end
 
 ---@param factory Factory

@@ -333,7 +333,7 @@ function SimplexTableau:solve()
         table.insert(sorted_variables, key)
     end
 
-    -- Sort variables descending on objective value (they are inverted in the tableau)
+    -- Sort variables descending on objective value (the coefficients are inverted in the tableau)
     table.sort(sorted_variables, function(key1, key2)
         ---@diagnostic disable: need-check-nil
         return self.objective[self.cols[key1]] < self.objective[self.cols[key2]]
@@ -344,26 +344,17 @@ function SimplexTableau:solve()
         if self.solution[i] ~= 0 then
             for j = 1, #self.matrix do
                 if self.matrix[j][i] ~= 0 then
-                    local is_basic = true
-                    for k = 1, #self.matrix[1] do
-                        if k ~= i and self.matrix[j][k] ~= 0 then
-                            is_basic = false
-                            break
-                        end
-                    end
-                    if not is_basic then
-                        local map = variable_map[j]  ---@as VariableMap
-                        if map.type == "unassigned" then
-                            map.type = "non-basic"
-                            table.insert(non_basic, map.key)
-                        end
+                    local map = variable_map[j]  ---@as VariableMap
+                    if map.type == "unassigned" then
+                        map.type = "non-basic"
+                        table.insert(non_basic, map.key)
                     end
                 end
             end
         end
     end
 
-    -- Heuristically pick the inital basis containing the variables with the highest objective
+    -- Heuristically pick the inital basis containing the variables with the highest objectives
     for _, key in ipairs(sorted_variables) do
         local col_index = self.cols[key]
         local map = variable_map[col_index]  ---@as VariableMap
@@ -493,7 +484,6 @@ function SimplexTableau:solve()
         if leaving_index == 0 then return true, "unbounded" end
 
         -- Swap the variables
-        -- log(non_basic[entering_index] .. " -> " .. basic[leaving_index])  ---@TODO: remove
         local temp = basic[leaving_index]
         basic[leaving_index] = non_basic[entering_index]
         non_basic[entering_index] = temp
@@ -547,7 +537,6 @@ function SimplexTableau:solve()
         done, result.state = iterate()
         iterations = iterations + 1
     until done or iterations == max_iterations
-    log("Iterations: " .. iterations)  ---@TODO: remove
 
     -- Calculate equivalence classes
     local equivalencies = {}  ---@type table<VariableKey, VariableKey[]>

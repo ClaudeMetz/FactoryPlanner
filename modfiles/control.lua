@@ -8,7 +8,7 @@ MAGIC_NUMBERS = {
     effect_precision = 10000,  -- The multiplier to turn module effects into integers (and back)
     formatting_precision = 4,  -- precision of decimal formatting in tooltips
     minimum_energy = 0.001,  -- The lower-bound of the recipe energy property
-    simplex_max_factorization_interval = 50,  -- The upper bound for the amount of iterations between refactorizations
+    simplex_max_factorization_interval = 100,  -- The upper bound for the amount of iterations between refactorizations
 
     -- Some magic numbers to determine and calculate the dimensions of the main dialog
     frame_spacing = 12,  -- Spacing between the base frames in the main dialog
