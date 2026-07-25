@@ -395,8 +395,10 @@ function SimplexTableau:solve()
             if min_row ~= 0 then
                 for _, var_column in pairs(min_cols) do
                     local var_map = variable_map[var_column]   ---@as VariableMap
-                    var_map.type = "non-basic"
-                    table.insert(non_basic, var_map.key)
+                    if var_map.type == "unassigned" then
+                        var_map.type = "non-basic"
+                        table.insert(non_basic, var_map.key)
+                    end
                 end
                 map.type = "basic"
                 basic[min_row] = key
@@ -491,6 +493,7 @@ function SimplexTableau:solve()
         if leaving_index == 0 then return true, "unbounded" end
 
         -- Swap the variables
+        -- log(non_basic[entering_index] .. " -> " .. basic[leaving_index])  ---@TODO: remove
         local temp = basic[leaving_index]
         basic[leaving_index] = non_basic[entering_index]
         non_basic[entering_index] = temp
