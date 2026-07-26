@@ -484,7 +484,6 @@ function simplex_engine.update_floor(floor, top_byproducts, top_ingredients, lin
             line_object.products = {}
             line_object.byproducts = {}
             line_object.ingredients = {}
-            line_object.machine_amount = 0
 
             local floor_byproducts, floor_ingredients = simplex_engine.update_line_object_common(
                 line_object, 1, floor_result.products, floor_result.ingredients, top_byproducts, top_ingredients)
@@ -493,6 +492,7 @@ function simplex_engine.update_floor(floor, top_byproducts, top_ingredients, lin
     end
 
     -- Calculate machine amount after everything on the floor has been updated
+    floor.machine_amount = 0
     for line_object in floor:iterator() do
         local amount = 0
         if line_object.class == "Floor" then
