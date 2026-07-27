@@ -115,7 +115,8 @@ local function add_checkboxes_box(preferences, content_frame, data_type, prefere
         ---@field data_type CheckboxPreferenceDataType
         ---@field name string
         local tags = {mod="fp", on_gui_checked_state_changed="toggle_preference", data_type=data_type, name=pref_name}
-        flow_checkboxes.add{type="checkbox", tags=tags, state=preferences[pref_name], caption=caption, tooltip=tooltip}
+        flow_checkboxes.add{type="checkbox", tags=tags, state=(preferences[pref_name] == true),
+            caption=caption, tooltip=tooltip}
     end
 
     return preference_box
