@@ -298,7 +298,7 @@ local function update_ingredient_satisfaction(floor, product_class)
         for _, ingredient in pairs(line.ingredients) do
             if ingredient.proto.type ~= "entity" or ingredient.proto.special then
                 local name = ingredient.proto.name
-                if line.class ~= "Floor" then name = line.recipe:get_name_with_temperature(ingredient) end
+                if line.class ~= "Floor" then name = line.recipe:get_name_with_temperature(ingredient.proto) end
                 determine_satisfaction(ingredient, name)
             end
         end
