@@ -825,8 +825,14 @@ function generator.machines.generate()
         end
 
         -- Determine fluid input/output channels
+        -- Energy source fluid boxes are part of fluidbox_prototypes, but aren't free for recipe use
         local fluid_channels = {input = 0, output = 0}
-        if fluid_burner_prototype then fluid_channels.input = (fluid_channels.input - 1)--[[@as integer]] end
+        if fluid_burner_prototype then
+            fluid_channels.input = (fluid_channels.input - 1)--[[@as integer]]
+            if fluid_burner_prototype.output_fluid_box then
+                fluid_channels.output = (fluid_channels.output - 1)--[[@as integer]]
+            end
+        end
 
         for _, fluidbox in pairs(proto.fluidbox_prototypes) do
             if fluidbox.production_type == "output" then
