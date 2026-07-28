@@ -712,7 +712,7 @@ end
 ---@field emissions_per_joule EmissionsMap
 ---@field emissions_per_second EmissionsMap
 ---@field burner MachineBurner?
----@field built_by_item FPItemPrototype?
+---@field built_by_item_name string?
 ---@field effect_receiver FormattedEffectReceiver
 ---@field allowed_effects AllowedEffects?
 ---@field allowed_module_categories table<string, boolean>?
@@ -750,7 +750,6 @@ function generator.machines.generate()
         end
     end
 
-    local item_prototypes = generator.util.get_item_members("item")
     local recipe_prototypes = storage.prototypes.recipes  ---@as NamedPrototypes<FPRecipePrototype>
 
     ---@param category string
@@ -774,8 +773,8 @@ function generator.machines.generate()
 
         -- Determine the item that actually builds this machine for the item requester
         -- There can technically be more than one, but bots use the first one, so I do too
-        local built_by_item = (proto.items_to_place_this) and
-            item_prototypes[proto.items_to_place_this[1]--[[@cast -nil]].name] or nil
+        local built_by_item_name = (proto.items_to_place_this) and
+            proto.items_to_place_this[1]--[[@cast -nil]].name or nil
 
         local burner_prototype = proto.burner_prototype
         local fluid_burner_prototype = proto.fluid_energy_source_prototype
@@ -863,7 +862,7 @@ function generator.machines.generate()
             emissions_per_joule = emissions_per_joule,
             emissions_per_second = proto.emissions_per_second or {},
             burner = burner,
-            built_by_item = built_by_item,
+            built_by_item_name = built_by_item_name,
             effect_receiver = generator.util.format_effect_receiver(proto),
             allowed_effects = proto.allowed_effects,  -- can be nil
             allowed_module_categories = proto.allowed_module_categories,  -- can be nil
@@ -892,7 +891,7 @@ function generator.machines.generate()
                     -- speed and energy_usage will be wrong here, but are determined
                     -- dynamically later on depending on quality
 
-                    machine.built_by_item = nil
+                    machine.built_by_item_name = nil
                     machine.effect_receiver = generator.util.format_effect_receiver()
                     machine.allowed_effects = nil
                     machine.module_limit = 0
@@ -1290,8 +1289,7 @@ function generator.modules.generate()
     local module_filter = {{filter="type", type="module"}, {filter="hidden", invert=true, mode="and"}}
     for _, proto in pairs(prototypes.get_item_filtered(module_filter)) do
         local sprite = "item/" .. proto.name
-        local items = generator.util.get_item_members("item")
-        if helpers.is_valid_sprite_path(sprite) and items[proto.name] then
+        if helpers.is_valid_sprite_path(sprite) then
             ---@diagnostic disable-next-line: missing-fields
             local module = {
                 name = proto.name,
@@ -1333,7 +1331,7 @@ end
 ---@field category "beacon"
 ---@field elem_type ElemType
 ---@field prototype_category "beacon"
----@field built_by_item FPItemPrototype
+---@field built_by_item_name string?
 ---@field allowed_effects AllowedEffects?
 ---@field allowed_module_categories table<string, boolean>?
 ---@field module_limit uint16
@@ -1347,18 +1345,14 @@ end
 function generator.beacons.generate()
     local beacons = {}  ---@type NamedPrototypes<FPBeaconPrototype>
 
-    local item_prototypes = generator.util.get_item_members("item")
-
     local beacon_filter = {{filter="type", type="beacon"}, {filter="hidden", invert=true, mode="and"}}
     for _, proto in pairs(prototypes.get_entity_filtered(beacon_filter)) do
         local sprite = generator.util.determine_entity_sprite(proto)
         local any_effect_viable = generator.util.is_any_effect_viable(proto)
         if sprite ~= nil and any_effect_viable and proto.module_inventory_size > 0
                 and proto.distribution_effectivity > 0 then
-            -- Beacons can refer to the actual item prototype right away because they are built after items are
-            local items_to_place_this = proto.items_to_place_this
-            local built_by_item = (items_to_place_this) and
-                item_prototypes[items_to_place_this[1]--[[@cast -nil]].name] or nil
+            local built_by_item_name = (proto.items_to_place_this) and
+                proto.items_to_place_this[1]--[[@cast -nil]].name or nil
 
             local max_usage = generator.util.get_base_value(proto.get_max_energy_usage())
             local energy_usage = proto.energy_usage or max_usage or 0
@@ -1371,7 +1365,7 @@ function generator.beacons.generate()
                 category = "beacon",  -- custom category to be similar to machines
                 elem_type = "entity",
                 prototype_category = "beacon",
-                built_by_item = built_by_item--[[@as FPItemPrototype]],
+                built_by_item_name = built_by_item_name,
                 allowed_effects = proto.allowed_effects,  -- can be nil
                 allowed_module_categories = proto.allowed_module_categories,  -- can be nil
                 module_limit = proto.module_inventory_size--[[@as uint16]],

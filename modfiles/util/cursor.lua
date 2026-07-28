@@ -29,7 +29,7 @@ end
 function _cursor.set_entity(player, line, object)
     local entity_prototype = prototypes.entity[object.proto.name]
     if entity_prototype.has_flag("not-blueprintable") or not entity_prototype.has_flag("player-creation")
-            or not object.proto.built_by_item then
+            or not object.proto.built_by_item_name then
         _cursor.create_flying_text(player, {"fp.put_into_cursor_failed", entity_prototype.localised_name})
         return false
     end
@@ -62,7 +62,7 @@ function _cursor.set_entity(player, line, object)
     -- Put item directly into the cursor if it's simple
     if #items_list == 0 and object.proto.prototype_category ~= "crafter" then
         player.cursor_ghost = {
-            name = object.proto.built_by_item.name,
+            name = object.proto.built_by_item_name,
             quality = object.quality_proto.name
         }  ---@as ItemIDAndQualityIDPair
     else  -- if it's more complex, it needs a blueprint

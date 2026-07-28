@@ -135,23 +135,17 @@ function utility_structures.components(player, modal_data)
                 elseif missing_amount > 0 then button_style = "fflib_slot_button_yellow"
                 else button_style = "fflib_slot_button_green" end
 
-                local title_line = (not quality_proto.always_show) and {"fp.tt_title",proto.localised_name}
+                local title_line = (not quality_proto.always_show) and {"fp.tt_title", proto.localised_name}
                     or {"fp.tt_title_with_note", proto.localised_name, quality_proto.rich_text}
                 local tooltip = {"fp.components_needed_tt", title_line, amount_in_inventory, required_amount}
 
-                local category_id = (proto.data_type == "items") and proto.category_id
-                    or prototyper.util.find("items", nil, "item")--[[@as FPItemPrototype]].id
-                local proto_id = (proto.data_type == "items") and proto.id
-                    or prototyper.util.find("items", proto.name, "item")--[[@as FPItemPrototype]].id
-
                 ---@class UtilityCraftItemsTags
-                ---@field category_id integer
-                ---@field item_id integer
+                ---@field item_name string
                 ---@field missing_amount integer
-                local tags = {mod="fp", on_gui_click="utility_craft_items", category_id=category_id, item_id=proto_id,
+                local tags = {mod="fp", on_gui_click="utility_craft_items", item_name=proto.name,
                     missing_amount=missing_amount}
-                table_components.add{type="sprite-button", tags=tags, sprite=proto.sprite, number=required_amount,
-                    tooltip=tooltip, quality=quality_proto.name, style=button_style,
+                table_components.add{type="sprite-button", tags=tags, sprite=("item/" .. proto.name),
+                    number=required_amount, tooltip=tooltip, quality=quality_proto.name, style=button_style,
                     mouse_button_filter={"left-and-right"}}
             end
         end
@@ -364,23 +358,24 @@ local function handle_item_handcraft(player, tags, event)
 
     if amount_to_craft <= 0 then fly_text(player, {"fp.utility_no_demand"}); return end
 
-    local recipes = RECIPE_MAPS["produce"][tags.category_id][tags.item_id]
-    if not recipes then fly_text(player, {"fp.utility_no_recipe"}); return end
+    local item = prototyper.util.find("items", tags.item_name, "item")  ---@as FPItemPrototype
+    if not item then fly_text(player, {"fp.utility_no_recipes"}); return end
+    local recipes = RECIPE_MAPS["produce"][item.category_id][item.id]
+    if not recipes then fly_text(player, {"fp.utility_no_recipes"}); return end
 
-    local success = false
     for recipe_id, _ in pairs(recipes) do
-        local recipe = prototyper.util.find("recipes", recipe_id, nil) ---@as FPRecipePrototype
+        local recipe = prototyper.util.find("recipes", recipe_id, nil)  ---@as FPRecipePrototype
         local craftable_amount = player.get_craftable_count(recipe.name--[[@as RecipeID]])
 
         if craftable_amount > 0 then
-            success = true
             local crafted_amount = math.min(amount_to_craft, craftable_amount)
             player.begin_crafting{count=crafted_amount, recipe=recipe.name--[[@as RecipeID]], silent=true}
             amount_to_craft = amount_to_craft - crafted_amount
-            break
+            return
         end
     end
-    if not success then fly_text(player, {"fp.utility_no_resources"}); end
+
+    fly_text(player, {"fp.utility_no_resources"})  -- if the loop doesn't return, it didn't craft
 end
 
 ---@param player LuaPlayer

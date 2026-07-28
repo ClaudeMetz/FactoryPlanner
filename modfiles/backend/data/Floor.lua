@@ -100,7 +100,7 @@ function Floor:count(filter, pivot, direction)
 end
 
 
----@alias ComponentDataSet { proto: AnyFPPrototype, quality_proto: FPQualityPrototype, amount: integer }
+---@alias ComponentDataSet { proto: LuaItemPrototype, quality_proto: FPQualityPrototype, amount: integer }
 
 ---@class ComponentData
 ---@field machines table<string, ComponentDataSet>
@@ -114,11 +114,15 @@ function Floor:get_component_data(skip_done, component_table)
     local components = component_table or {machines={}, modules={}}
 
     ---@param table table<string,ComponentDataSet>
-    ---@param proto FPItemPrototype | FPModulePrototype
+    ---@param item_name string?
     ---@param quality_proto FPQualityPrototype
     ---@param amount integer
-    local function add_component(table, proto, quality_proto, amount)
-        local combined_name = proto.name .. "-" .. quality_proto.name
+    local function add_component(table, item_name, quality_proto, amount)
+        if item_name == nil then return end  -- built_by_item_name can be nil
+        local proto = prototypes.item[item_name]
+        if proto == nil then return end
+
+        local combined_name = item_name .. "-" .. quality_proto.name
         local component = table[combined_name]
         if component == nil then
             table[combined_name] = {proto = proto, quality_proto = quality_proto, amount = amount}
@@ -130,15 +134,13 @@ function Floor:get_component_data(skip_done, component_table)
     ---@param object Machine | Beacon
     ---@param amount integer
     local function add_machine(object, amount)
-        if object.proto.built_by_item then
-            ---@cast object.quality_proto FPQualityPrototype
-            add_component(components.machines, object.proto.built_by_item, object.quality_proto, amount)
-        end
+        ---@cast object.quality_proto FPQualityPrototype
+        add_component(components.machines, object.proto.built_by_item_name, object.quality_proto, amount)
 
         for module in object.module_set:iterator() do
             ---@cast module.proto FPModulePrototype
             ---@cast module.quality_proto FPQualityPrototype
-            add_component(components.modules, module.proto, module.quality_proto, amount * module.amount)
+            add_component(components.modules, module.proto.name, module.quality_proto, amount * module.amount)
         end
     end
 
