@@ -1,7 +1,8 @@
 ---@class LUDecomposition
----@field lu_matrix number[][] `U` when `row >= column`, and `L` otherwise
----@field p_vector integer[] shift vector representing `P`
----@field p_transposed integer[] shift vector representing `P^T`
+---@field u_matrix number[][] `U`
+---@field l_matrix number[][] `L`
+---@field p_vector integer[] row shift vector representing `P`
+---@field p_transposed integer[] row shift vector representing `P^T`
 ---@field eta_updates EtaUpdate[] array of vectors representing `E_n^-1`
 local LUDecomposition = {}
 LUDecomposition.__index = LUDecomposition
@@ -17,7 +18,8 @@ LUDecomposition.__index = LUDecomposition
 function LUDecomposition:init(matrix)
     ---@diagnostic disable-next-line: missing-fields
     local o = {
-        lu_matrix = {},
+        u_matrix = {},
+        l_matrix = {},
         p_vector = {},
         p_transposed = {},
         eta_updates = {}
@@ -28,18 +30,20 @@ function LUDecomposition:init(matrix)
     for i = 1, #matrix do
         o.p_vector[i] = i
         o.p_transposed[i] = i
-        o.lu_matrix[i] = {}
-        for j = 1, #matrix do o.lu_matrix[i][j] = matrix[j][i] end
+        o.u_matrix[i] = {}
+        o.l_matrix[i] = {}
+        for j = 1, #matrix do o.u_matrix[i][j] = matrix[j][i] end
+        for j = 1, #matrix do o.l_matrix[i][j] = 0 end
     end
 
-    for k = 1, #o.lu_matrix - 1 do
-        ---@diagnostic disable: undefined-field, need-check-nil
+    for k = 1, #o.u_matrix - 1 do
+        ---@diagnostic disable: need-check-nil
 
         -- Find pivot
         local pivot_row = k
-        local max = o.lu_matrix[k][k] > 0 and o.lu_matrix[k][k] or -o.lu_matrix[k][k]
-        for i = k + 1, #o.lu_matrix do
-            local cell = o.lu_matrix[i][k] > 0 and o.lu_matrix[i][k] or -o.lu_matrix[i][k]
+        local max = o.u_matrix[k][k] > 0 and o.u_matrix[k][k] or -o.u_matrix[k][k]
+        for i = k + 1, #o.u_matrix do
+            local cell = o.u_matrix[i][k] > 0 and o.u_matrix[i][k] or -o.u_matrix[i][k]
             if cell > max then
                 max = cell
                 pivot_row = i
@@ -49,9 +53,13 @@ function LUDecomposition:init(matrix)
         if max > 0 then
             -- Permute
             if pivot_row ~= k then
-                local temp_lu = o.lu_matrix[pivot_row]
-                o.lu_matrix[pivot_row] = o.lu_matrix[k]
-                o.lu_matrix[k] = temp_lu
+                local temp_u = o.u_matrix[pivot_row]
+                o.u_matrix[pivot_row] = o.u_matrix[k]
+                o.u_matrix[k] = temp_u
+
+                local temp_l = o.l_matrix[pivot_row]
+                o.l_matrix[pivot_row] = o.l_matrix[k]
+                o.l_matrix[k] = temp_l
 
                 local temp_p = o.p_vector[pivot_row]  ---@as integer
                 o.p_vector[pivot_row] = o.p_vector[k]  ---@as integer
@@ -62,23 +70,24 @@ function LUDecomposition:init(matrix)
             end
 
             -- Row-subtract below the pivot
-            for i = k + 1, #o.lu_matrix do
-                local scalar = o.lu_matrix[i][k] / o.lu_matrix[k][k]
-                o.lu_matrix[i][k] = scalar
-                if o.lu_matrix[i][k] ~= 0 then
-                    for j = k + 1, #o.lu_matrix do
-                        o.lu_matrix[i][j] = o.lu_matrix[i][j] - scalar * o.lu_matrix[k][j]
+            for i = k + 1, #o.u_matrix do
+                local scalar = o.u_matrix[i][k] / o.u_matrix[k][k]
+                o.u_matrix[i][k] = 0
+                o.l_matrix[i][k] = scalar
+                if scalar ~= 0 then
+                    for j = k + 1, #o.u_matrix do
+                        o.u_matrix[i][j] = o.u_matrix[i][j] - scalar * o.u_matrix[k][j]
                     end
                 end
             end
         else
             -- Column vector is degenerate. Just put a big number here and hope nothing goes wrong
-            o.lu_matrix[k][k] = 1e100
-            for i = k + 1, #o.lu_matrix do
-                o.lu_matrix[i][k] = 0
-            end
+            o.u_matrix[k][k] = 1e100
         end
     end
+
+    -- Fill the diagonal of the lower triangular matrix
+    for k = 1, #o.l_matrix do o.l_matrix[k][k] = 1 end
 
     return o
 end
@@ -138,28 +147,30 @@ function LUDecomposition:solve_left(vector)
 
     -- Solve `y^T U = z^T`
     local y_vector = {}  ---@type number[]
-    for k = 1, #self.lu_matrix do
-        ---@diagnostic disable: undefined-field, need-check-nil
+    for k = 1, #self.u_matrix do
+        ---@diagnostic disable: need-check-nil
         y_vector[k] = z_vector[k]
         for i = 1, k - 1 do
-            if y_vector[i] ~= 0 and self.lu_matrix[i][k] ~= 0 then
-                y_vector[k] = y_vector[k] - y_vector[i] * self.lu_matrix[i][k]
+            if y_vector[i] ~= 0 and self.u_matrix[i][k] ~= 0 then
+                y_vector[k] = y_vector[k] - y_vector[i] * self.u_matrix[i][k]
             end
         end
-        y_vector[k] = y_vector[k] / self.lu_matrix[k][k]
+        y_vector[k] = y_vector[k] / self.u_matrix[k][k]
     end
 
     -- Solve `(P x)^T L = y^T`
     local x_vector = {}  ---@type number[]
-    for k = #self.lu_matrix, 1, -1 do
-        ---@diagnostic disable: undefined-field, need-check-nil, inject-field
+    for k = #self.l_matrix, 1, -1 do
+        ---@diagnostic disable: need-check-nil
         local cell = y_vector[k]
-        for i = k + 1, #self.lu_matrix do
-            if x_vector[self.p_vector[i]] ~= 0 and self.lu_matrix[i][k] ~= 0 then
-                cell = cell - x_vector[self.p_vector[i]] * self.lu_matrix[i][k]
+        local pk = self.p_vector[k]  ---@as integer
+        for i = k + 1, #self.l_matrix do
+            local pi = self.p_vector[i]  ---@as integer
+            if x_vector[pi] ~= 0 and self.l_matrix[i][k] ~= 0 then
+                cell = cell - x_vector[pi] * self.l_matrix[i][k]
             end
         end
-        x_vector[self.p_vector[k]] = cell
+        x_vector[pk] = cell
     end
 
     return x_vector
@@ -173,27 +184,27 @@ end
 function LUDecomposition:solve_right(vector)
     -- Solve `L y = P v`
     local y_vector = {}  ---@type number[]
-    for k = 1, #self.lu_matrix do
-        ---@diagnostic disable: undefined-field, need-check-nil
-        y_vector[k] = vector[self.p_vector[k]]
+    for k = 1, #self.l_matrix do
+        ---@diagnostic disable: need-check-nil
+        y_vector[k] = vector[self.p_vector[k]--[[@cast -nil]]]
         for i = 1, k - 1 do
-            if  y_vector[i] ~= 0 and self.lu_matrix[k][i] ~= 0 then
-                y_vector[k] = y_vector[k] - y_vector[i] * self.lu_matrix[k][i]
+            if  y_vector[i] ~= 0 and self.l_matrix[k][i] ~= 0 then
+                y_vector[k] = y_vector[k] - y_vector[i] * self.l_matrix[k][i]
             end
         end
     end
 
     -- Solve `U x = y`
     local x_vector = {}  ---@type number[]
-    for k = #self.lu_matrix, 1, -1 do
-        ---@diagnostic disable: undefined-field, need-check-nil
+    for k = #self.u_matrix, 1, -1 do
+        ---@diagnostic disable: need-check-nil
         local cell = y_vector[k]
-        for i = k + 1, #self.lu_matrix do
-            if x_vector[i] ~= 0 and self.lu_matrix[k][i] ~= 0 then
-                cell = cell - x_vector[i] * self.lu_matrix[k][i]
+        for i = k + 1, #self.u_matrix do
+            if x_vector[i] ~= 0 and self.u_matrix[k][i] ~= 0 then
+                cell = cell - x_vector[i] * self.u_matrix[k][i]
             end
         end
-        x_vector[k] = cell / self.lu_matrix[k][k]
+        x_vector[k] = cell / self.u_matrix[k][k]
     end
 
     -- Solve `E x* = x`
@@ -223,17 +234,15 @@ function LUDecomposition:recompose()
     -- Calculate `R = P^T LU`
     local result = {}  ---@type number[][]
     
-    for j = 1, #self.lu_matrix do
+    for j = 1, #self.u_matrix do
         result[j] = {}
-        for i = 1, #self.lu_matrix do
+        for i = 1, #self.u_matrix do
             result[j][i] = 0.0
             for k = 1, j do
-                ---@diagnostic disable: undefined-field, need-check-nil
-                local l_row = self.p_transposed[i]
-                if k < l_row then
-                    result[j][i] = result[j][i] + self.lu_matrix[l_row][k] * self.lu_matrix[k][j]
-                elseif k == l_row then
-                    result[j][i] = result[j][i] + self.lu_matrix[k][j]
+                ---@diagnostic disable: need-check-nil
+                local pti = self.p_transposed[i]  ---@as integer
+                if k <= pti then
+                    result[j][i] = result[j][i] + self.l_matrix[pti][k] * self.u_matrix[k][j]
                 end
             end
         end
