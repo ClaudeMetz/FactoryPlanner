@@ -1,6 +1,6 @@
 ---@class LUDecomposition
----@field u_matrix number[][] `U`
----@field l_matrix number[][] `L`
+---@field u_matrix number[][] `U*` permuted upper triangular matrix where `U = P U*`
+---@field l_matrix number[][] `L` lower unit triangular matrix
 ---@field p_vector integer[] row shift vector representing `P`
 ---@field p_transposed integer[] row shift vector representing `P^T`
 ---@field eta_updates EtaUpdate[] array of vectors representing `E_n^-1`
@@ -38,12 +38,14 @@ function LUDecomposition:init(matrix)
 
     for k = 1, #o.u_matrix - 1 do
         ---@diagnostic disable: need-check-nil
+        local pk = o.p_vector[k]  ---@as integer
 
         -- Find pivot
         local pivot_row = k
-        local max = o.u_matrix[k][k] > 0 and o.u_matrix[k][k] or -o.u_matrix[k][k]
+        local max = o.u_matrix[pk][k] > 0 and o.u_matrix[pk][k] or -o.u_matrix[pk][k]
         for i = k + 1, #o.u_matrix do
-            local cell = o.u_matrix[i][k] > 0 and o.u_matrix[i][k] or -o.u_matrix[i][k]
+            local pi = o.p_vector[i]  ---@as integer
+            local cell = o.u_matrix[pi][k] > 0 and o.u_matrix[pi][k] or -o.u_matrix[pi][k]
             if cell > max then
                 max = cell
                 pivot_row = i
@@ -53,17 +55,13 @@ function LUDecomposition:init(matrix)
         if max > 0 then
             -- Permute
             if pivot_row ~= k then
-                local temp_u = o.u_matrix[pivot_row]
-                o.u_matrix[pivot_row] = o.u_matrix[k]
-                o.u_matrix[k] = temp_u
-
                 local temp_l = o.l_matrix[pivot_row]
                 o.l_matrix[pivot_row] = o.l_matrix[k]
                 o.l_matrix[k] = temp_l
 
-                local temp_p = o.p_vector[pivot_row]  ---@as integer
+                pk = o.p_vector[pivot_row] or 0
                 o.p_vector[pivot_row] = o.p_vector[k]  ---@as integer
-                o.p_vector[k] = temp_p
+                o.p_vector[k] = pk
 
                 o.p_transposed[o.p_vector[pivot_row]] = pivot_row
                 o.p_transposed[o.p_vector[k]] = k
@@ -71,18 +69,19 @@ function LUDecomposition:init(matrix)
 
             -- Row-subtract below the pivot
             for i = k + 1, #o.u_matrix do
-                local scalar = o.u_matrix[i][k] / o.u_matrix[k][k]
-                o.u_matrix[i][k] = 0
+                local pi = o.p_vector[i]  ---@as integer
+                local scalar = o.u_matrix[pi][k] / o.u_matrix[pk][k]
+                o.u_matrix[pi][k] = 0
                 o.l_matrix[i][k] = scalar
                 if scalar ~= 0 then
                     for j = k + 1, #o.u_matrix do
-                        o.u_matrix[i][j] = o.u_matrix[i][j] - scalar * o.u_matrix[k][j]
+                        o.u_matrix[pi][j] = o.u_matrix[pi][j] - scalar * o.u_matrix[pk][j]
                     end
                 end
             end
         else
             -- Column vector is degenerate. Just put a big number here and hope nothing goes wrong
-            o.u_matrix[k][k] = 1e100
+            o.u_matrix[pk][k] = 1e100
         end
     end
 
@@ -149,13 +148,15 @@ function LUDecomposition:solve_left(vector)
     local y_vector = {}  ---@type number[]
     for k = 1, #self.u_matrix do
         ---@diagnostic disable: need-check-nil
+        local pk = self.p_vector[k]  ---@as integer
         y_vector[k] = z_vector[k]
         for i = 1, k - 1 do
-            if y_vector[i] ~= 0 and self.u_matrix[i][k] ~= 0 then
-                y_vector[k] = y_vector[k] - y_vector[i] * self.u_matrix[i][k]
+            local pi = self.p_vector[i]  ---@as integer
+            if y_vector[i] ~= 0 and self.u_matrix[pi][k] ~= 0 then
+                y_vector[k] = y_vector[k] - y_vector[i] * self.u_matrix[pi][k]
             end
         end
-        y_vector[k] = y_vector[k] / self.u_matrix[k][k]
+        y_vector[k] = y_vector[k] / self.u_matrix[pk][k]
     end
 
     -- Solve `(P x)^T L = y^T`
@@ -198,13 +199,14 @@ function LUDecomposition:solve_right(vector)
     local x_vector = {}  ---@type number[]
     for k = #self.u_matrix, 1, -1 do
         ---@diagnostic disable: need-check-nil
+        local pk = self.p_vector[k]  ---@as integer
         local cell = y_vector[k]
         for i = k + 1, #self.u_matrix do
-            if x_vector[i] ~= 0 and self.u_matrix[k][i] ~= 0 then
-                cell = cell - x_vector[i] * self.u_matrix[k][i]
+            if x_vector[i] ~= 0 and self.u_matrix[pk][i] ~= 0 then
+                cell = cell - x_vector[i] * self.u_matrix[pk][i]
             end
         end
-        x_vector[k] = cell / self.u_matrix[k][k]
+        x_vector[k] = cell / self.u_matrix[pk][k]
     end
 
     -- Solve `E x* = x`
@@ -240,9 +242,10 @@ function LUDecomposition:recompose()
             result[j][i] = 0.0
             for k = 1, j do
                 ---@diagnostic disable: need-check-nil
+                local pk = self.p_vector[k]  ---@as integer
                 local pti = self.p_transposed[i]  ---@as integer
                 if k <= pti then
-                    result[j][i] = result[j][i] + self.l_matrix[pti][k] * self.u_matrix[k][j]
+                    result[j][i] = result[j][i] + self.l_matrix[pti][k] * self.u_matrix[pk][j]
                 end
             end
         end
