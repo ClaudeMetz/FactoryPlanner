@@ -2,7 +2,6 @@
 ---@field u_matrix number[][] `U*` permuted upper triangular matrix where `U = P U*`
 ---@field l_matrix number[][] `L` lower unit triangular matrix
 ---@field p_vector integer[] row shift vector representing `P`
----@field p_transposed integer[] row shift vector representing `P^T`
 ---@field eta_updates EtaUpdate[] array of vectors representing `E_n^-1`
 local LUDecomposition = {}
 LUDecomposition.__index = LUDecomposition
@@ -29,7 +28,6 @@ function LUDecomposition:init(matrix)
     -- Initialize the matrices and the permutation vectors
     for i = 1, #matrix do
         o.p_vector[i] = i
-        o.p_transposed[i] = i
         o.u_matrix[i] = {}
         o.l_matrix[i] = {}
         for j = 1, #matrix do o.u_matrix[i][j] = matrix[j][i] end
@@ -62,9 +60,6 @@ function LUDecomposition:init(matrix)
                 pk = o.p_vector[pivot_row] or 0
                 o.p_vector[pivot_row] = o.p_vector[k]  ---@as integer
                 o.p_vector[k] = pk
-
-                o.p_transposed[o.p_vector[pivot_row]] = pivot_row
-                o.p_transposed[o.p_vector[k]] = k
             end
 
             -- Row-subtract below the pivot
@@ -233,19 +228,19 @@ end
 --- Perform `A = P^T LUE` (for debugging)
 ---@return number[][] matrix column-major order square matrix
 function LUDecomposition:recompose()
-    -- Calculate `R = P^T LU`
-    local result = {}  ---@type number[][]
+    -- Calculate `PA = LU`
+    local a_matrix = {}  ---@type number[][]
     
     for j = 1, #self.u_matrix do
-        result[j] = {}
+        a_matrix[j] = {}
         for i = 1, #self.u_matrix do
-            result[j][i] = 0.0
+            local pi = self.p_vector[i]  ---@as integer
+            a_matrix[j][pi] = 0.0
             for k = 1, j do
                 ---@diagnostic disable: need-check-nil
                 local pk = self.p_vector[k]  ---@as integer
-                local pti = self.p_transposed[i]  ---@as integer
-                if k <= pti then
-                    result[j][i] = result[j][i] + self.l_matrix[pti][k] * self.u_matrix[pk][j]
+                if k <= i then
+                    a_matrix[j][pi] = a_matrix[j][pi] + self.l_matrix[i][k] * self.u_matrix[pk][j]
                 end
             end
         end
@@ -264,10 +259,10 @@ function LUDecomposition:recompose()
             end
         end
 
-        result[column] = lib.matrix.right_mult_cmo(result, eta_vector)
+        a_matrix[column] = lib.matrix.right_mult_cmo(a_matrix, eta_vector)
     end
 
-    return result
+    return a_matrix
 end
 
 
