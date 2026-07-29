@@ -351,7 +351,7 @@ function simplex_engine.get_line_data(player, factory, line, active)
     local heat_amount = 0.0
     if line.machine.proto.energy_type == "burner" and fuel_proto then
         ---@cast line.machine.proto.burner -nil
-        fuel_amount = fuel_amount + solver.util.determine_fuel_amount(power, line.machine.proto.burner, fuel_proto.fuel_value)
+        fuel_amount = fuel_amount + solver.util.determine_fuel_amount(power, line.machine.proto.burner, fuel_proto.fuel_value, 1)
     elseif line.machine.proto.energy_type == "electric" then
         power_amount = power_amount + power
     elseif line.machine.proto.energy_type == "heat" then
