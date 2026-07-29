@@ -4,6 +4,7 @@ Date: 00. 00. 0000
   Features:
     - Added support for machine fuel that takes its energy from the fluid's heat instead of burning it (#641)
     - Implemented machine counts, power and emission solving for agricultural towers (#633)
+    - Added support for stacking in belt throughput calculations (#341)
   Changes:
     -
   Bugfixes:

@@ -1,7 +1,5 @@
 item_views = {}
 
-local timescale_map = {[1] = "second", [60] = "minute"}
-
 local processors = {}  -- individual functions for each kind of view state
 
 ---@param metadata ItemViewsData
@@ -143,7 +141,8 @@ function item_views.process_item(player, proto, item_amount, machine_amount)
         local amount = (proto.fixed_unit) and item_amount or item_amount * views_data.timescale
         local button_number = lib.format.button_number(amount)
         local tooltip_number = lib.format.number(amount, views_data.formatting_precision)
-        local unit = proto.fixed_unit or {"fp.per_timescale", {"fp." .. timescale_map[views_data.timescale]}}
+        local unit = proto.fixed_unit or {"fp.per_timescale",
+            {"fp." .. lib.gui.timescale_as_string(views_data.timescale)}}
         return button_number, {"", tooltip_number, " ", unit}
     else
         local view_preferences = lib.globals.preferences(player).item_views
@@ -186,11 +185,12 @@ end
 ---@param player LuaPlayer
 function item_views.rebuild_data(player)
     local preferences = lib.globals.preferences(player)
-    local timescale_string = timescale_map[preferences.timescale]
+    local timescale_string = lib.gui.timescale_as_string(preferences.timescale)
 
     local belt_proto = defaults.get(player, "belts").proto  ---@as FPBeltPrototype
-    local belts_or_lanes = preferences.belts_or_lanes
+    local belts_or_lanes, belt_stack = preferences.belts_or_lanes, preferences.belt_stack
     local throughput_divisor = (belts_or_lanes == "belts") and belt_proto.throughput or (belt_proto.throughput / 2)
+    local throughput_insert = (belt_stack > 1) and {"", {"fp.throughput_insert", belt_stack}, " "} or ""
 
     local default_pump = defaults.get(player, "pumps")  ---@cast default_pump.proto FPPumpPrototype
     local pump_proto, pump_quality = proto_and_quality_string(default_pump)
@@ -217,8 +217,8 @@ function item_views.rebuild_data(player)
                 index = 2,
                 caption = {"", belt_proto.rich_text, " ", default_pump.proto.rich_text},
                 tooltip = {"fp.view_tt", {"fp.throughput", {"fp.pl_" .. belts_or_lanes:sub(1, -2), 2},
-                    belt_proto.rich_text, belt_proto.localised_name, default_pump.proto.rich_text,
-                    default_pump.proto.localised_name, pump_quality}}
+                    throughput_insert, belt_proto.rich_text, belt_proto.localised_name,
+                    default_pump.proto.rich_text, default_pump.proto.localised_name, pump_quality}}
             },
             items_per_second_per_machine = {
                 index = 3,
@@ -247,10 +247,10 @@ function item_views.rebuild_data(player)
             }
         },
         timescale = preferences.timescale,
-        timescale_string = {"fp.unit_" .. timescale_map[preferences.timescale]}--[[@as LocalisedString]],
+        timescale_string = {"fp.unit_" .. timescale_string}--[[@as LocalisedString]],
         adjusted_margin_of_error = MAGIC_NUMBERS.margin_of_error / preferences.timescale,
         belts_or_lanes = belts_or_lanes,
-        throughput_multiplier = 1 / throughput_divisor,
+        throughput_multiplier = (1 / throughput_divisor) / belt_stack,
         formatting_precision = MAGIC_NUMBERS.formatting_precision,
         pumping_speed = pump_proto.get_pumping_speed(default_pump.quality--[[@cast -nil]].name) * 60,
         lift_capacity = default_silo.proto--[[@as FPSiloPrototype]].rocket_lift_weight,

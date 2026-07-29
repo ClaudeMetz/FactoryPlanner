@@ -4,6 +4,11 @@ _preferences.products_per_row_options = {5, 6, 7, 8, 9, 10}
 _preferences.factory_list_rows_options = {20, 22, 24, 26, 28, 30, 32}
 _preferences.compact_width_percentages = {8, 10, 12, 14, 16, 18, 20, 22, 24, 26, 28, 30, 32, 34, 36}
 
+_preferences.belt_stack_options = {}
+for i = 1, prototypes.utility_constants.max_belt_stack_size do
+    _preferences.belt_stack_options[i] = i
+end
+
 ---@alias Timescale 1 | 60
 ---@alias BeltsOrLanes "belts" | "lanes"
 
@@ -31,6 +36,7 @@ _preferences.compact_width_percentages = {8, 10, 12, 14, 16, 18, 20, 22, 24, 26,
 ---@field line_comment_column boolean
 ---@field item_views ItemViewPreferences
 ---@field belts_or_lanes BeltsOrLanes
+---@field belt_stack integer
 ---@field default_prototypes DefaultPrototypesTable
 ---@field default_temperatures TemperatureDefaultMap
 
@@ -89,6 +95,9 @@ function _preferences.reload(player_table)
     reload("item_views", item_views.default_preferences())
 
     reload("belts_or_lanes", "belts")
+    reload("belt_stack", 1)
+    local max_stack = prototypes.utility_constants.max_belt_stack_size
+    updated_prefs["belt_stack"] = math.min(updated_prefs["belt_stack"], max_stack)
 
     updated_prefs.default_prototypes = defaults.refresh_preferences(player_preferences.default_prototypes)
 
@@ -100,7 +109,7 @@ end
 
 -- Version, incremented each time the format of exported preferences changes in any way
 -- The mod prevents importing non-matching preferences versions to avoid needing migrations
-_preferences.current_version = 1
+_preferences.current_version = 2
 
 ---@class PreferencesExportTable
 ---@field version integer
@@ -124,6 +133,7 @@ _preferences.current_version = 1
 ---@field percentage_column boolean
 ---@field line_comment_column boolean
 ---@field belts_or_lanes BeltsOrLanes
+---@field belt_stack integer
 
 ---@param player LuaPlayer
 ---@return ExportString
@@ -152,7 +162,8 @@ function _preferences.export(player)
         done_column = prefs.done_column,
         percentage_column = prefs.percentage_column,
         line_comment_column = prefs.line_comment_column,
-        belts_or_lanes = prefs.belts_or_lanes
+        belts_or_lanes = prefs.belts_or_lanes,
+        belt_stack = prefs.belt_stack
     }
 
     return lib.pack_export_string(export_table)
@@ -205,6 +216,7 @@ function _preferences.import(player, export_string)
         if type(et.percentage_column) ~= "boolean" then error() end
         if type(et.line_comment_column) ~= "boolean" then error() end
         if et.belts_or_lanes ~= "belts" and et.belts_or_lanes ~= "lanes" then error() end
+        if not verify_range(et.belt_stack, _preferences.belt_stack_options) then error() end
     end) then return "unpacking_failure" end
 
     -- All good, overwrite preferences
@@ -218,7 +230,7 @@ function _preferences.import(player, export_string)
 end
 
 
----@alias PreferencesChangeType "all" | "main_dimensions" | "compact_dimensions" | "solver_config" | "mod_gui" | "edit_views" | "belts_or_lanes" | "prototype_default"
+---@alias PreferencesChangeType "all" | "main_dimensions" | "compact_dimensions" | "solver_config" | "mod_gui" | "edit_views" | "belt_config" | "prototype_default"
 
 ---@param player LuaPlayer
 ---@param change_type PreferencesChangeType
@@ -249,7 +261,7 @@ function _preferences.refresh_after_change(player, change_type, shrinkwrap)
     elseif change_type == "edit_views" then
         rebuild_views_interface = true
         refresh_scope = "factory"
-    elseif change_type == "belts_or_lanes" then
+    elseif change_type == "belt_config" then
         rebuild_views_data = true
         rebuild_views_interface = true
         run_solver = true

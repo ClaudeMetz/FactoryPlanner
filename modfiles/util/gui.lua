@@ -249,4 +249,13 @@ function _gui.compile_elem_filter(data_type)
     return {{filter="name", name=names}}
 end
 
+
+local timescale_map = {[1] = "second", [60] = "minute"}
+
+---@param timescale Timescale
+---@return string
+function _gui.timescale_as_string(timescale)
+    return timescale_map[timescale]
+end
+
 return _gui
