@@ -161,7 +161,7 @@ local function handle_item_add(player, tags, event)
 
             local amount = entity.count / timescale
             if existing_item then
-                existing_item.required_amount = existing_item.required_amount + amount
+                existing_item:add_required_amount(amount)
             else
                 local product = TLProduct.init(proto)  -- defined_by = "amount"
                 product.required_amount = amount

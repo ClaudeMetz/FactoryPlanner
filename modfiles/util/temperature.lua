@@ -4,25 +4,34 @@ local _temperature = {}
 ---@field annotation LocalisedString?
 ---@field applicable_values float[]
 
+--- An exclusive minimum rejects the minimum itself, which fuels burned for their heat need, as a
+--- fluid at its default temperature carries no usable heat
 ---@param ingredient Ingredient.fluid
+---@param exclusive_minimum boolean?
 ---@return TemperatureData data
-function _temperature.generate_data(ingredient)
+function _temperature.generate_data(ingredient, exclusive_minimum)
     local min_temp = ingredient.minimum_temperature
     local max_temp = ingredient.maximum_temperature
 
+    -- An exclusive minimum is the fluid's default temperature, which isn't a restriction worth
+    -- showing - it's simply not selectable, as a fluid at it carries no heat to extract
+    local shown_min = (not exclusive_minimum) and min_temp or nil
+
     local annotation = nil
-    if min_temp and not max_temp then
-        annotation = {"fp.min_temperature", min_temp}
-    elseif not min_temp and max_temp then
+    if shown_min and not max_temp then
+        annotation = {"fp.min_temperature", shown_min}
+    elseif not shown_min and max_temp then
         annotation = {"fp.max_temperature", max_temp}
-    elseif min_temp and max_temp then
-        annotation = {"fp.min_max_temperature", min_temp, max_temp}
+    elseif shown_min and max_temp then
+        annotation = {"fp.min_max_temperature", shown_min, max_temp}
     end
 
     local applicable_values = {}
     for _, fluid_proto in pairs(TEMPERATURE_MAP[ingredient.name]) do
-        if (not min_temp or min_temp <= fluid_proto.temperature) and
-                (not max_temp or max_temp >= fluid_proto.temperature) then
+        local temperature = fluid_proto.temperature
+        local above_min = (min_temp == nil) or (temperature > min_temp)
+            or (temperature == min_temp and not exclusive_minimum)
+        if above_min and (not max_temp or max_temp >= temperature) then
             table.insert(applicable_values, fluid_proto.temperature)
         end
     end
