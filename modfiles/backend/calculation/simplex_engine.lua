@@ -341,9 +341,9 @@ function simplex_engine.get_line_data(player, factory, line, active)
     -- Get emissions
     local fuel_proto = line.machine.fuel and line.machine.fuel.proto  ---@as FPFuelPrototype?
     local energy_usage = line.machine:get_energy_usage()
-    local pollutant_type = lib.globals.preferences(player).calculate_emissions and factory.parent.location_proto.pollutant_type or nil
+    local pollutant_type = lib.globals.preferences(player).calculate_emissions and factory.parent.location_proto.pollutant_type
     local power, emissions = solver.util.determine_power_and_emissions(line.machine.proto, line.recipe.proto,
-    fuel_proto, 1, energy_usage, effects, pollutant_type)
+    fuel_proto, 1, total_crafts, energy_usage, effects, pollutant_type, line.machine:get_fuel_performance())
 
     -- Get fuel/power/heat energy requirements
     local fuel_amount = 0.0
