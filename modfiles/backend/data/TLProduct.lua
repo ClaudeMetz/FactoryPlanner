@@ -1,6 +1,7 @@
 local Object = require("backend.data.Object")
 
----@alias ProductDefinedBy "amount" | BeltsOrLanes
+-- Belt-defined products are always stored in belts; lanes are only a display unit
+---@alias ProductDefinedBy "amount" | "belts"
 
 ---@class TLProduct: Object, ObjectMethods
 ---@field class "TLProduct"
@@ -47,24 +48,22 @@ end
 function TLProduct:get_required_amount()
     if self.defined_by == "amount" then
         return self.required_amount
-    else   -- defined_by == "belts" | "lanes"
+    else   -- defined_by == "belts"
         ---@cast self.belt_proto FPBeltPrototype
         ---@cast self.belt_stack -nil
-        local multiplier = (self.defined_by == "belts") and 1 or 0.5
-        return self.required_amount * (self.belt_proto.throughput * multiplier) * self.belt_stack
+        return self.required_amount * self.belt_proto.throughput * self.belt_stack
     end
 end
 
-
--- Only used when switching between belts and lanes
----@param new_defined_by ProductDefinedBy
-function TLProduct:change_definition(new_defined_by)
-    if self.defined_by ~= "amount" and new_defined_by ~= self.defined_by then
-        self.defined_by = new_defined_by
-
-        local multiplier = (new_defined_by == "belts") and 0.5 or 2
-        self.required_amount = self.required_amount * multiplier
+-- Adds to this item's requirement, converting the given amount into however it is defined
+---@param added_amount number amount per second
+function TLProduct:add_required_amount(added_amount)
+    if self.defined_by ~= "amount" then
+        ---@cast self.belt_proto FPBeltPrototype
+        ---@cast self.belt_stack -nil
+        added_amount = added_amount / (self.belt_proto.throughput * self.belt_stack)
     end
+    self.required_amount = self.required_amount + added_amount
 end
 
 

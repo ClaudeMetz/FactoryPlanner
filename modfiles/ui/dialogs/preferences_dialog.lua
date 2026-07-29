@@ -367,8 +367,8 @@ end
 ---@param event EventData.on_gui_switch_state_changed
 local function handle_bol_change(player, _, event)
     local player_table = lib.globals.player_table(player)
-    local defined_by = (event.element.switch_state == "left") and "belts" or "lanes"
-    player_table.preferences.belts_or_lanes = defined_by
+    local belts_or_lanes = (event.element.switch_state == "left") and "belts" or "lanes"
+    player_table.preferences.belts_or_lanes = belts_or_lanes
 
     lib.preferences.refresh_after_change(player, "belt_config")
     refresh_views_table(player)

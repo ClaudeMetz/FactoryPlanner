@@ -12,7 +12,7 @@ local TLProduct = require("backend.data.TLProduct")
 ---@field amount_defined_by ProductDefinedBy
 ---@field item_proto FPItemPrototype?
 ---@field belt_proto FPBeltPrototype?
----@field belt_stack integer?
+---@field belt_stack integer
 ---@field selected_group_id integer?
 
 -- This dialog works as the product picker currently, but could also work as an ingredient picker down the line
@@ -221,7 +221,7 @@ end
 local function set_appropriate_focus(modal_data)
     if modal_data.amount_defined_by == "amount" then
         lib.gui.select_all(modal_data.modal_elements["item_amount_textfield"])
-    else  -- "belts"/"lanes"
+    else  -- "belts"
         lib.gui.select_all(modal_data.modal_elements["belt_amount_textfield"])
     end
 end
@@ -237,7 +237,7 @@ local function sync_amounts(modal_data)
     else
         local belt_proto = modal_data.belt_proto  ---@cast belt_proto -nil
         local throughput = belt_proto.throughput * ((modal_data.belts_or_lanes == "belts") and 1 or 0.5)
-        local item_amount = belt_amount * throughput * modal_data.timescale * (modal_data.belt_stack or 1)
+        local item_amount = belt_amount * throughput * modal_data.timescale * modal_data.belt_stack
         modal_elements.item_amount_textfield.text = lib.format.number(item_amount, 6)
     end
 end
@@ -259,12 +259,12 @@ local function set_belt_proto(modal_data, belt_proto)
     else
         -- Might double set the choice button, but it doesn't matter
         modal_elements.belt_choice_button.elem_value = belt_proto.name
-        modal_data.amount_defined_by = modal_data.belts_or_lanes
+        modal_data.amount_defined_by = "belts"
 
         local item_amount = lib.gui.parse_expression_field(modal_elements.item_amount_textfield, true)
         if item_amount ~= nil then
             local throughput = belt_proto.throughput * ((modal_data.belts_or_lanes == "belts") and 1 or 0.5)
-            local belt_amount = item_amount / throughput / modal_data.timescale
+            local belt_amount = item_amount / throughput / modal_data.timescale / modal_data.belt_stack
             modal_elements.belt_amount_textfield.text = lib.format.number(belt_amount, 6)
         end
         sync_amounts(modal_data)
@@ -367,7 +367,10 @@ local function add_item_pane(parent_flow, modal_data, item_category, item)
 
     flow_belts.add{type="label", caption="x"}
 
-    local belt_amount = (item and defined_by ~= "amount") and tostring(item.required_amount) or ""
+    -- Products are stored in belts, so they need to be converted for display as lanes
+    local lane_multiplier = (modal_data.belts_or_lanes == "lanes") and 2 or 1
+    local belt_amount = (item and defined_by ~= "amount")
+        and tostring(item.required_amount * lane_multiplier) or ""
     local belt_width = 50
     local textfield_belts = flow_belts.add{type="textfield", text=belt_amount,
         tags={mod="fp", on_gui_text_changed="picker_belt_amount", on_gui_confirmed="picker_amount",
@@ -480,6 +483,8 @@ local function close_picker_dialog(player, action)
         if defined_by == "amount" then
             relevant_amount = relevant_amount / modal_data.timescale
             relevant_amount = math.max(relevant_amount, MAGIC_NUMBERS.margin_of_error * 10)
+        elseif modal_data.belts_or_lanes == "lanes" then
+            relevant_amount = relevant_amount * 0.5  -- lanes are stored as belts
         end
 
         if modal_data.item ~= nil then  -- ie. this is an edit
