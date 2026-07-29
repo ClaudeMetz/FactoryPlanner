@@ -75,9 +75,13 @@ function Machine:normalize_fuel(player)
         self.fuel = Fuel.init(self, default_fuel_proto)  -- builds temperature_data implicitly
         self.fuel:apply_temperature_default(player)
     else  -- make sure the fuel is of the right combined category
-        if burner.combined_category ~= self.fuel.proto.category then
+        if burner.combined_category ~= self.fuel.proto.combined_category then
             local proto = prototyper.util.find("fuels", self.fuel.proto.name, burner.combined_category)  ---@as FPFuelPrototype
             self.fuel:set_proto(proto, player)
+        else
+            -- The category can stay the same while the machine's fluid box allows other temperatures
+            self.fuel:rebuild_temperature_data()
+            if self.fuel.temperature == nil then self.fuel:apply_temperature_default(player) end
         end
     end
 end
@@ -160,7 +164,7 @@ function Machine:get_resource_drain_rate()
 
     if self.proto.prototype_category == "mining_drill" then
         return resource_drain_rate * self.quality_proto.mining_drill_resource_drain_multiplier
-    else  -- "crafter" | "boiler"| "offshore_pump" | nil
+    else  -- "crafter" | "launcher" | "boiler" | "offshore_pump" | nil
         return resource_drain_rate
     end
 end
@@ -179,9 +183,33 @@ function Machine:get_module_limit()
         return limit
     elseif category == "mining_drill" then
         return limit + self.quality_proto.mining_drill_module_slots_bonus
-    else  -- "crafter"
+    else  -- "crafter" | "launcher"
         return limit + self.proto.module_slots_quality_bonus[self.quality_proto.name]
     end
+end
+
+
+--- The fraction of the energy this machine wants that its fuel can actually supply, which it runs at.
+--- A fluid energy source only moves so much fluid per tick, capping the energy it can deliver.
+--- Also determines the share of the fuel's energy that is wasted, which happens when a source
+--- that doesn't scale its usage takes in more energy than the machine can use.
+---@return number performance
+---@return number wasted_share
+function Machine:get_fuel_performance()
+    if self.fuel == nil then return 1, 0 end
+
+    local burner = self.proto.burner
+    local fuel_value = self.fuel:get_fuel_value()
+    if burner == nil or burner.fluid_usage_per_tick == nil or fuel_value == nil then return 1, 0 end
+
+    local consumption = self.parent.total_effects.consumption / MAGIC_NUMBERS.effect_precision
+    local wanted = self:get_energy_usage() * (1 + consumption)
+    if wanted <= 0 then return 1, 0 end
+
+    -- Both sides scale with the machine count, so this ratio is a per-machine constant
+    local ratio = (burner.fluid_usage_per_tick * fuel_value * burner.effectivity) / wanted
+    local wasted_share = (not burner.scale_fluid_usage and ratio > 1) and (1 - 1/ratio) or 0
+    return math.min(1, ratio), wasted_share
 end
 
 

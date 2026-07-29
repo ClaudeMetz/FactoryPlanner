@@ -1,6 +1,7 @@
 local Object = require("backend.data.Object")
 
----@alias ProductDefinedBy "amount" | BeltsOrLanes
+-- Belt-defined products are always stored in belts; lanes are only a display unit
+---@alias ProductDefinedBy "amount" | "belts"
 
 ---@class TLProduct: Object, ObjectMethods
 ---@field class "TLProduct"
@@ -9,6 +10,7 @@ local Object = require("backend.data.Object")
 ---@field defined_by ProductDefinedBy
 ---@field required_amount number
 ---@field belt_proto (FPBeltPrototype | FPPackedPrototype)?
+---@field belt_stack integer?
 ---@field amount number
 local TLProduct = Object.methods()
 TLProduct.__index = TLProduct
@@ -28,6 +30,7 @@ local function init(proto)
         defined_by = "amount",
         required_amount = 0,  -- always per second
         belt_proto = nil,
+        belt_stack = nil,
 
         amount = 0  -- the amount satisfied by the solver
     }, "TLProduct", TLProduct)  ---@as TLProduct
@@ -45,23 +48,22 @@ end
 function TLProduct:get_required_amount()
     if self.defined_by == "amount" then
         return self.required_amount
-    else   -- defined_by == "belts" | "lanes"
+    else   -- defined_by == "belts"
         ---@cast self.belt_proto FPBeltPrototype
-        local multiplier = (self.defined_by == "belts") and 1 or 0.5
-        return self.required_amount * (self.belt_proto.throughput * multiplier)
+        ---@cast self.belt_stack -nil
+        return self.required_amount * self.belt_proto.throughput * self.belt_stack
     end
 end
 
-
--- Only used when switching between belts and lanes
----@param new_defined_by ProductDefinedBy
-function TLProduct:change_definition(new_defined_by)
-    if self.defined_by ~= "amount" and new_defined_by ~= self.defined_by then
-        self.defined_by = new_defined_by
-
-        local multiplier = (new_defined_by == "belts") and 0.5 or 2
-        self.required_amount = self.required_amount * multiplier
+-- Adds to this item's requirement, converting the given amount into however it is defined
+---@param added_amount number amount per second
+function TLProduct:add_required_amount(added_amount)
+    if self.defined_by ~= "amount" then
+        ---@cast self.belt_proto FPBeltPrototype
+        ---@cast self.belt_stack -nil
+        added_amount = added_amount / (self.belt_proto.throughput * self.belt_stack)
     end
+    self.required_amount = self.required_amount + added_amount
 end
 
 
@@ -110,6 +112,7 @@ end
 ---@field defined_by ProductDefinedBy
 ---@field required_amount number
 ---@field belt_proto FPPackedPrototype?
+---@field belt_stack integer?
 
 ---@param full boolean
 ---@return PackedProduct packed_self
@@ -120,6 +123,7 @@ function TLProduct:pack(full)
         defined_by = self.defined_by,
         required_amount = self.required_amount,
         belt_proto = (self.belt_proto) and prototyper.util.simplify_prototype(self.belt_proto, nil) or nil,
+        belt_stack = self.belt_stack,
 
         amount = (full) and self.amount or nil
     }
@@ -134,6 +138,7 @@ local function unpack(packed_self)
     unpacked_self.defined_by = packed_self.defined_by
     unpacked_self.required_amount = packed_self.required_amount
     unpacked_self.belt_proto = packed_self.belt_proto
+    unpacked_self.belt_stack = packed_self.belt_stack
 
     return unpacked_self
 end
@@ -145,7 +150,16 @@ function TLProduct:validate()
     self.valid = (not self.proto.simplified)
 
     self.belt_proto = (self.belt_proto) and prototyper.util.validate_prototype_object(self.belt_proto, nil) or nil
-    if self.belt_proto then self.valid = (not self.belt_proto.simplified) and self.valid end
+    if self.belt_proto then  ---@cast self.belt_stack -nil
+        self.valid = (not self.belt_proto.simplified) and self.valid
+
+        local max_stack = prototypes.utility_constants.max_belt_stack_size
+        if self.belt_stack > max_stack then
+            -- The max stack size can shrink between loads, so scale the amount to keep it equivalent
+            self.required_amount = self.required_amount * (self.belt_stack / max_stack)
+            self.belt_stack = max_stack
+        end
+    end
 
     return self.valid
 end

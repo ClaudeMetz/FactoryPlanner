@@ -71,9 +71,50 @@ end
 
 function Fuel:build_temperature_data()
     self.temperature_data = nil
+    if self.proto.type ~= "fluid" then return end
+    ---@cast self.proto FPFluidFuelPrototype
 
-    if self.proto.type == "fluid" then
-        self.temperature_data = lib.temperature.generate_data(self.proto--[[@as Ingredient.fluid]])
+    -- The machine's fluid box can narrow the temperatures further than the fuel itself allows
+    local burner = (self.parent) and self.parent.proto.burner or nil
+    local min_temp, exclusive_minimum = self.proto.minimum_temperature, self.proto.exclusive_minimum
+    local max_temp = (burner) and burner.maximum_temperature or nil
+
+    if burner and burner.minimum_temperature and (not min_temp or burner.minimum_temperature > min_temp) then
+        -- The fuel's own minimum is the only one that can be exclusive
+        min_temp, exclusive_minimum = burner.minimum_temperature, false
+    end
+
+    local bounds = {name=self.proto.name, minimum_temperature=min_temp, maximum_temperature=max_temp}
+    self.temperature_data = lib.temperature.generate_data(bounds--[[@as Ingredient.fluid]], exclusive_minimum)
+end
+
+--- The energy a single unit of this fuel provides, before machine effectivity.
+--- Nil when it can't be determined yet, ie. the fuel needs a temperature but has none configured.
+---@return number?
+function Fuel:get_fuel_value()
+    ---@cast self.proto FPFluidFuelPrototype
+    if self.proto.heat_capacity then  -- burned for its heat rather than its fuel value
+        if self.temperature == nil then return nil end
+        return (self.temperature - self.proto.default_temperature--[[@as float]]) * self.proto.heat_capacity
+    end
+    return self.proto.fuel_value
+end
+
+--- Rebuilds the temperature data, keeping the configured temperature only if it's still applicable.
+--- Needed whenever the machine changes, since its fluid box can narrow the temperatures.
+function Fuel:rebuild_temperature_data()
+    local previous_temperature = self.temperature
+    self.temperature = nil
+
+    self:build_temperature_data()
+
+    if self.proto.type == "fluid" and previous_temperature ~= nil then
+        for _, temperature in pairs(self.temperature_data.applicable_values) do
+            if temperature == previous_temperature then
+                self.temperature = previous_temperature
+                break
+            end
+        end
     end
 end
 
@@ -96,36 +137,30 @@ function Fuel:paste(object)
     -- Sanity check, should exist if fuel can be pasted
     if burner == nil then return false, "incompatible" end
 
-    local fuel = nil
+    local fuel_name, temperature = nil, nil
     if object.class == "Fuel" then
         ---@cast object Fuel
-        fuel = object
+        fuel_name = object.proto.name
+        temperature = object.temperature
     elseif object.class == "SimpleItem" then
         ---@cast object SimpleItem
-        -- Try to convert SimpleItem to Fuel
-        local proto = prototyper.util.find("fuels", object.proto.base_name or object.proto.name, burner.combined_category)  ---@as FPFuelPrototype?
-        if proto then
-            fuel = init(nil, proto)
-            fuel.temperature = object.proto.temperature
-        end
+        fuel_name = object.proto.base_name or object.proto.name
+        temperature = object.proto.temperature
     else
         -- Only allow pasting items and fuels
         return false, "incompatible_class"
     end
 
-    if fuel then
-        -- Check invididual categories so you can paste between combined_categories
-        for category_name, _ in pairs(burner.categories) do
-            if fuel.proto.category == category_name then
-                self.proto = fuel.proto
-                self.temperature = fuel.temperature
-                self:build_temperature_data()
-                return true, nil
-            end
-        end
-    end
+    -- Looking the fuel up by name checks compatibility across combined_categories, and picks
+    -- up this machine's own prototype copy of it, so its fluid box bounds apply
+    local proto = prototyper.util.find("fuels", fuel_name, burner.combined_category)  ---@as FPFuelPrototype?
+    if proto == nil then return false, "incompatible" end
 
-    return false, "incompatible"
+    self.proto = proto
+    self.temperature = temperature
+    -- The pasted temperature might not be applicable to this machine, which unsets it
+    self:rebuild_temperature_data()
+    return true, nil
 end
 
 
@@ -183,19 +218,7 @@ function Fuel:validate()
 
     -- An invalid temperature shouldn't invalidate the fuel
     if self.valid then  ---@cast self.proto FPFuelPrototype
-        local previous_temperature = self.temperature
-        self.temperature = nil
-
-        self:build_temperature_data()
-
-        if self.proto.type == "fluid" and previous_temperature ~= nil then
-            for _, temperature in pairs(self.temperature_data.applicable_values) do
-                if temperature == previous_temperature then
-                    self.temperature = previous_temperature
-                    break
-                end
-            end
-        end
+        self:rebuild_temperature_data()
     end
 
     return self.valid

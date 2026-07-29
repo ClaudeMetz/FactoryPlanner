@@ -12,6 +12,7 @@ local TLProduct = require("backend.data.TLProduct")
 ---@field amount_defined_by ProductDefinedBy
 ---@field item_proto FPItemPrototype?
 ---@field belt_proto FPBeltPrototype?
+---@field belt_stack integer
 ---@field selected_group_id integer?
 
 -- This dialog works as the product picker currently, but could also work as an ingredient picker down the line
@@ -220,7 +221,7 @@ end
 local function set_appropriate_focus(modal_data)
     if modal_data.amount_defined_by == "amount" then
         lib.gui.select_all(modal_data.modal_elements["item_amount_textfield"])
-    else  -- "belts"/"lanes"
+    else  -- "belts"
         lib.gui.select_all(modal_data.modal_elements["belt_amount_textfield"])
     end
 end
@@ -236,7 +237,7 @@ local function sync_amounts(modal_data)
     else
         local belt_proto = modal_data.belt_proto  ---@cast belt_proto -nil
         local throughput = belt_proto.throughput * ((modal_data.belts_or_lanes == "belts") and 1 or 0.5)
-        local item_amount = belt_amount * throughput * modal_data.timescale
+        local item_amount = belt_amount * throughput * modal_data.timescale * modal_data.belt_stack
         modal_elements.item_amount_textfield.text = lib.format.number(item_amount, 6)
     end
 end
@@ -249,6 +250,7 @@ local function set_belt_proto(modal_data, belt_proto)
     local modal_elements = modal_data.modal_elements
     modal_elements.item_amount_textfield.enabled = (belt_proto == nil)
     modal_elements.belt_amount_textfield.enabled = (belt_proto ~= nil)
+    modal_elements.belt_stack_dropdown.enabled = (belt_proto ~= nil)
 
     if belt_proto == nil then
         modal_elements.belt_choice_button.elem_value = nil
@@ -257,12 +259,12 @@ local function set_belt_proto(modal_data, belt_proto)
     else
         -- Might double set the choice button, but it doesn't matter
         modal_elements.belt_choice_button.elem_value = belt_proto.name
-        modal_data.amount_defined_by = modal_data.belts_or_lanes
+        modal_data.amount_defined_by = "belts"
 
         local item_amount = lib.gui.parse_expression_field(modal_elements.item_amount_textfield, true)
         if item_amount ~= nil then
             local throughput = belt_proto.throughput * ((modal_data.belts_or_lanes == "belts") and 1 or 0.5)
-            local belt_amount = item_amount / throughput / modal_data.timescale
+            local belt_amount = item_amount / throughput / modal_data.timescale / modal_data.belt_stack
             modal_elements.belt_amount_textfield.text = lib.format.number(belt_amount, 6)
         end
         sync_amounts(modal_data)
@@ -331,7 +333,8 @@ local function add_item_pane(parent_flow, modal_data, item_category, item)
     item_choice_button.style.right_margin = 12
     modal_elements["item_choice_button"] = item_choice_button
 
-    flow_amount.add{type="label", caption={"fp.amount"}}
+    local timescale_string = {"fp." .. lib.gui.timescale_as_string(modal_data.timescale)}
+    flow_amount.add{type="label", caption={"fp.amount_per", timescale_string}}
 
     local item_amount = ""
     if item and defined_by == "amount" then
@@ -354,12 +357,21 @@ local function add_item_pane(parent_flow, modal_data, item_category, item)
 
 
     local flow_belts = create_flow()
-    local belts_or_lanes = {"fp.pl_" .. modal_data.belts_or_lanes:sub(1, -2), 2}
-    local label = flow_belts.add{type="label", caption={"fp.amount_by", belts_or_lanes}}
-    label.style.right_margin = 6
+    local belts_or_lanes = {"fp.pl_" .. modal_data.belts_or_lanes:sub(1, -2), 1}
+    flow_belts.add{type="label", caption={"fp.amount_by", belts_or_lanes}}
 
-    local belt_amount = (item and defined_by ~= "amount") and tostring(item.required_amount) or ""
-    local belt_width = 86
+    local choose_belt_button = flow_belts.add{type="choose-elem-button", elem_type="entity",
+        tags={mod="fp", on_gui_elem_changed="picker_choose_belt"}, elem_filters=lib.gui.compile_elem_filter("belts"),
+        style="fp_sprite-button_inset"}
+    modal_elements["belt_choice_button"] = choose_belt_button
+
+    flow_belts.add{type="label", caption="x"}
+
+    -- Products are stored in belts, so they need to be converted for display as lanes
+    local lane_multiplier = (modal_data.belts_or_lanes == "lanes") and 2 or 1
+    local belt_amount = (item and defined_by ~= "amount")
+        and tostring(item.required_amount * lane_multiplier) or ""
+    local belt_width = 50
     local textfield_belts = flow_belts.add{type="textfield", text=belt_amount,
         tags={mod="fp", on_gui_text_changed="picker_belt_amount", on_gui_confirmed="picker_amount",
         width=belt_width}, tooltip={"fp.expression_textfield"}}
@@ -368,11 +380,12 @@ local function add_item_pane(parent_flow, modal_data, item_category, item)
 
     flow_belts.add{type="label", caption="x"}
 
-    local choose_belt_button = flow_belts.add{type="choose-elem-button", elem_type="entity",
-        tags={mod="fp", on_gui_elem_changed="picker_choose_belt"}, elem_filters=lib.gui.compile_elem_filter("belts"),
-        style="fp_sprite-button_inset"}
-    modal_elements["belt_choice_button"] = choose_belt_button
-
+    local belt_stack_dropdown = flow_belts.add{type="drop-down", items=lib.preferences.belt_stack_options,
+        tags={mod="fp", on_gui_selection_state_changed="picker_choose_belt_stack"},
+        selected_index=modal_data.belt_stack}
+    belt_stack_dropdown.style.minimal_width = 0
+    modal_elements["belt_stack_dropdown"] = belt_stack_dropdown
+    flow_belts.add{type="label", caption={"fp.pl_stack", 2}}
 
     local item_proto = (item) and item.proto or nil
     set_item_proto(modal_data, item_proto--[[@as FPItemPrototype?]])
@@ -416,15 +429,29 @@ local function handle_belt_pick(player, _, event)
     update_dialog_submit_button(modal_data.modal_elements)
 end
 
+---@param player LuaPlayer
+---@param event EventData.on_gui_selection_state_changed
+local function handle_belt_stack_change(player, _, event)
+    local modal_data = lib.globals.modal_data(player)  ---@as PickerDialogModalData
+    modal_data.belt_stack = event.element.selected_index  ---@as integer
+
+    set_appropriate_focus(modal_data)
+    sync_amounts(modal_data)
+end
+
 
 ---@param player LuaPlayer
 ---@param modal_data PickerDialogModalData
 local function open_picker_dialog(player, modal_data)
     local preferences = lib.globals.preferences(player)
-
-    if modal_data.item_id then modal_data.item = OBJECT_INDEX[modal_data.item_id] end
     modal_data.timescale = preferences.timescale
     modal_data.belts_or_lanes = preferences.belts_or_lanes
+    modal_data.belt_stack = preferences.belt_stack
+
+    if modal_data.item_id then
+        modal_data.item = OBJECT_INDEX[modal_data.item_id]  ---@as TLProduct
+        modal_data.belt_stack = modal_data.item.belt_stack or modal_data.belt_stack
+    end
 
     local content_frame = modal_data.modal_elements.content_frame
     content_frame.style.minimal_width = 325
@@ -456,18 +483,22 @@ local function close_picker_dialog(player, action)
         if defined_by == "amount" then
             relevant_amount = relevant_amount / modal_data.timescale
             relevant_amount = math.max(relevant_amount, MAGIC_NUMBERS.margin_of_error * 10)
+        elseif modal_data.belts_or_lanes == "lanes" then
+            relevant_amount = relevant_amount * 0.5  -- lanes are stored as belts
         end
 
         if modal_data.item ~= nil then  -- ie. this is an edit
             modal_data.item.defined_by = defined_by
             modal_data.item.required_amount = relevant_amount
             modal_data.item.belt_proto = modal_data.belt_proto
+            modal_data.item.belt_stack = (modal_data.belt_proto) and modal_data.belt_stack or nil
         else
             local item_proto = modal_data.item_proto
             local top_level_item = TLProduct.init(item_proto)
             top_level_item.defined_by = defined_by
             top_level_item.required_amount = relevant_amount
             top_level_item.belt_proto = modal_data.belt_proto
+            top_level_item.belt_stack = (modal_data.belt_proto) and modal_data.belt_stack or nil
 
             if modal_data.create_factory then  -- if this flag is set, create a factory to put the item into
                 factory = factory_list.add_factory(player, nil, item_proto)
@@ -533,6 +564,12 @@ listeners.gui = {
         {
             name = "picker_choose_belt",
             handler = handle_belt_pick
+        }
+    },
+    on_gui_selection_state_changed = {
+        {
+            name = "picker_choose_belt_stack",
+            handler = handle_belt_stack_change
         }
     },
     on_gui_text_changed = {

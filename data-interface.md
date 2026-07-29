@@ -12,7 +12,7 @@ Note that if there's some data you'd like to see exposed, please open a Github i
 
 ## `export_current_factory`
 
-**Availability:** from `2.1.1`
+**Availability:** from `2.1.3`
 
 This interface returns the given player's currently selected Factory as a portable table. This uses the same format as Factory Planner's export strings do, but also includes solver results such as machine counts, and products and ingredients.
 
@@ -26,7 +26,7 @@ local current_factory = remote.call("fp-interface", "export_current_factory", pl
 
 ## `export_preferences`
 
-**Availability:** from `2.1.1`
+**Availability:** from `2.1.3`
 
 This interface returns the given player's preferences as a table. This does not include any prototype-related preferences.
 
@@ -40,7 +40,7 @@ local preferences_table = remote.call("fp-interface", "export_preferences", play
 
 ## `import_preferences`
 
-**Availability:** from `2.1.1`
+**Availability:** from `2.1.3`
 
 This interface allows overwriting a player's preferences as a table. This does not include any prototype-related preferences.
 

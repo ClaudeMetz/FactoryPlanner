@@ -22,7 +22,7 @@ Note that anything configured through runtime integrations is reset [on_configur
 
 ### `overwrite_recipe_picker`
 
-**Current version:** `1`, available from `2.1.1`
+**Current version:** `1`, available from `2.1.3`
 
 This integration enables overwriting Factory Planner's decision tree for determining whether a recipe is able to be chosen in the recipe picker. It runs various checks for whether a recipe is actually usable, but it makes sense to overwrite this in some cases where recipes or technologies are managed by scripting.
 
@@ -49,7 +49,7 @@ Note that mods need to set up their remote interface during the `control.lua` st
 
 ### `recycling_recipes`
 
-**Current version:** `1`, available from `2.1.1`
+**Current version:** `1`, available from `2.1.3`
 
 This integration allows mods to indicate recycling recipes to Factory Planner. It uses this information to offer users a toggle to ignore these recipes in the picker, as they can clutter up the choices for many recipes. Recycling recipes don't have a strict definition, but they are generally understood to reverse another crafting process.
 
@@ -70,7 +70,7 @@ remote.add_interface("fp-integration-example-mod", {
 
 ### `compacting_recipes`
 
-**Current version:** `1`, available from `2.1.1`
+**Current version:** `1`, available from `2.1.3`
 
 This integration allows mods to indicate compacting recipes to Factory Planner. It uses this information to offer users a toggle to ignore these recipes in the picker, as they can clutter up the choices for many recipes. Compacting recipes are understood to be those that change the 'format' of an item, while not transforming them into something different. Recipes that create barrels or stacked boxes are common examples.
 

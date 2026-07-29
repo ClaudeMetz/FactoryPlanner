@@ -174,15 +174,6 @@ function Factory:get_productivity_bonus(force, recipe_name)
 end
 
 
--- Only used when switching between belts and lanes
----@param new_defined_by ProductDefinedBy
-function Factory:update_product_definitions(new_defined_by)
-    for product in self:iterator() do
-        product:change_definition(new_defined_by)
-    end
-end
-
-
 ---@param desired_tick MapTick
 ---@param player LuaPlayer
 function Factory:schedule_solver_update(desired_tick, player)

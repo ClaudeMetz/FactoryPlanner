@@ -185,6 +185,8 @@ end
 ---@param player LuaPlayer
 ---@param content_frame LuaGuiElement
 local function add_belts_proto_box(player, content_frame)
+    local preferences = lib.globals.preferences(player)
+
     local modal_elements = lib.globals.modal_elements(player)
     local preference_box = add_preference_box(content_frame, "default_belts")
 
@@ -192,13 +194,26 @@ local function add_belts_proto_box(player, content_frame)
     modal_elements["belts"] = frame.add{type="table", column_count=8, style="fp_table_slots_small"}
     refresh_defaults_table(player, modal_elements, "belts", nil)
 
-    preference_box.title_flow.add{type="empty-widget", style="fflib_horizontal_pusher"}
-    local belts_or_lanes = lib.globals.preferences(player).belts_or_lanes
-    local switch_state = (belts_or_lanes == "belts") and "left" or "right"
-    preference_box.title_flow.add{type="switch", switch_state=switch_state,
-        tooltip={"fp.preference_belts_or_lanes_tt"},
+    local line = preference_box.add{type="line", direction="horizontal"}
+    line.style.margin = {4, 0}
+    local flow_additional = preference_box.add{type="flow", direction="horizontal"}
+    flow_additional.style.margin = {0, 20}
+    flow_additional.style.vertical_align = "center"
+
+    local switch_state = (preferences.belts_or_lanes == "belts") and "left" or "right"
+    flow_additional.add{type="switch", switch_state=switch_state, tooltip={"fp.preference_belts_or_lanes_tt"},
         tags={mod="fp", on_gui_switch_state_changed="choose_belts_or_lanes"},
         left_label_caption={"fp.pu_belt", 2}, right_label_caption={"fp.pu_lane", 2}}
+
+    flow_additional.add{type="empty-widget", style="fflib_horizontal_pusher"}
+
+    local label_stacks = flow_additional.add{type="label", caption={"fp.preference_belt_stack"}}
+    label_stacks.style.right_margin = 8
+
+    local dropdown = flow_additional.add{type="drop-down", items=lib.preferences.belt_stack_options,
+        selected_index=preferences.belt_stack, style="fp_drop-down_slim",
+        tags={mod="fp", on_gui_selection_state_changed="preferences_choose_belt_stack"}}
+    dropdown.style.minimal_width = 0
 end
 
 ---@alias ProtoPreferenceDataType "pumps" | "silos" | "wagons"
@@ -364,10 +379,20 @@ end
 ---@param event EventData.on_gui_switch_state_changed
 local function handle_bol_change(player, _, event)
     local player_table = lib.globals.player_table(player)
-    local defined_by = (event.element.switch_state == "left") and "belts" or "lanes"
-    player_table.preferences.belts_or_lanes = defined_by
+    local belts_or_lanes = (event.element.switch_state == "left") and "belts" or "lanes"
+    player_table.preferences.belts_or_lanes = belts_or_lanes
 
-    lib.preferences.refresh_after_change(player, "belts_or_lanes")
+    lib.preferences.refresh_after_change(player, "belt_config")
+    refresh_views_table(player)
+end
+
+---@param player LuaPlayer
+---@param event EventData.on_gui_selection_state_changed
+local function handle_belt_stack_change(player, _, event)
+    local player_table = lib.globals.player_table(player)
+    player_table.preferences.belt_stack = event.element.selected_index  ---@as integer
+
+    lib.preferences.refresh_after_change(player, "belt_config")
     refresh_views_table(player)
 end
 
@@ -523,6 +548,10 @@ listeners.gui = {
         {
             name = "choose_preference",
             handler = handle_dropdown_preference_change
+        },
+        {
+            name = "preferences_choose_belt_stack",
+            handler = handle_belt_stack_change
         }
     },
     on_gui_switch_state_changed = {
