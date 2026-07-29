@@ -102,7 +102,7 @@ local function update_line(line_data, aggregate, looped_fuel)
 
     -- Determine power (including potential fuel needs) and emissions
     local power, emissions = solver.util.determine_power_and_emissions(machine_proto, recipe_proto, fuel_proto,
-        machine_amount, line_data.energy_usage, total_effects, line_data.pollutant_type)
+        machine_amount, line_data.energy_usage, total_effects, line_data.pollutant_type, line_data.fuel_performance)
 
     local fuel_amount = nil
     if machine_proto.energy_type == "burner" then
@@ -110,7 +110,8 @@ local function update_line(line_data, aggregate, looped_fuel)
         ---@cast machine_proto.burner -nil
 
         local fuel_name = line_data.fuel_name  ---@as string
-        fuel_amount = solver.util.determine_fuel_amount(power, machine_proto.burner, fuel_proto.fuel_value)
+        fuel_amount = solver.util.determine_fuel_amount(power, machine_proto.burner,
+            line_data.fuel_value--[[@as number]], machine_amount)
 
         -- Handle recipes producing their own machine's fuel
         if self_feeding and production_ratio > 0 then

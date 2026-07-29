@@ -473,8 +473,18 @@ local function add_fuel(line, parent_flow, metadata)
         end
     end
 
+    -- Note when this fuel doesn't carry enough energy to run the machine at full speed,
+    -- or so much of it that the machine can't use everything it takes in
+    local fuel_performance, wasted_share = line.machine:get_fuel_performance()
+    local performance_line = ""  ---@type LocalisedString
+    if fuel_performance < 1 then
+        performance_line = {"fp.fuel_limits_speed", math.floor(fuel_performance * 100)}
+    elseif wasted_share >= 0.01 then
+        performance_line = {"fp.fuel_energy_wasted", math.floor(wasted_share * 100)}
+    end
+
     local number_line = (number_tooltip) and {"", "\n", number_tooltip} or ""
-    local tooltip = {"", name_line, temperature_line, number_line, satisfaction_line,
+    local tooltip = {"", name_line, temperature_line, performance_line, number_line, satisfaction_line,
         "\n", MODIFIER_ACTIONS["act_on_line_fuel"].tooltip}
 
     ---@class ActOnLineFuelTags

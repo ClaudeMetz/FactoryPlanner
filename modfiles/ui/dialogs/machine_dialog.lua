@@ -124,8 +124,7 @@ local function refresh_fuel_frame(player)
 
     if not burns_fuel then return end  ---@cast machine.fuel -nil
 
-    local burner = machine.proto.burner
-    local elem_type = (burner and burner.categories["fluid-fuel"]) and "fluid" or "item"
+    local elem_type = machine.fuel.proto.elem_type
 
     modal_elements.fuel_button_flow.add{type="choose-elem-button", elem_type=elem_type,
         [elem_type]=machine.fuel.proto.name, elem_filters=machine:compile_fuel_filter(),
