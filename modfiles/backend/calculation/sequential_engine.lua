@@ -102,7 +102,8 @@ local function update_line(line_data, aggregate, looped_fuel)
 
     -- Determine power (including potential fuel needs) and emissions
     local power, emissions = solver.util.determine_power_and_emissions(machine_proto, recipe_proto, fuel_proto,
-        machine_amount, line_data.energy_usage, total_effects, line_data.pollutant_type, line_data.fuel_performance)
+        machine_amount, production_ratio, line_data.energy_usage, total_effects, line_data.pollutant_type,
+        line_data.fuel_performance)
 
     local fuel_amount = nil
     if machine_proto.energy_type == "burner" then

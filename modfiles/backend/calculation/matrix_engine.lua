@@ -718,7 +718,7 @@ function matrix_engine.get_line_aggregate(line_data, player_index, floor_id, mac
     -- Determine power (including potential fuel needs) and emissions
     local fuel_proto = line_data.fuel_proto
     local power, emissions = solver.util.determine_power_and_emissions( machine_proto, line_data.recipe_proto,
-        fuel_proto, machine_amount, line_data.energy_usage, total_effects, line_data.pollutant_type,
+        fuel_proto, machine_amount, total_crafts, line_data.energy_usage, total_effects, line_data.pollutant_type,
         line_data.fuel_performance)
 
     local fuel, fuel_amount = nil, nil

@@ -495,13 +495,14 @@ end
 ---@param recipe_proto FPRecipePrototype
 ---@param fuel_proto AnyFPFuelPrototype?
 ---@param machine_amount number
+---@param production_ratio number
 ---@param energy_usage number
 ---@param total_effects IntegerModuleEffects
 ---@param pollutant_type string?
 ---@param fuel_performance number
 ---@return number, number
 function solver.util.determine_power_and_emissions(machine_proto, recipe_proto,
-        fuel_proto, machine_amount, energy_usage, total_effects, pollutant_type, fuel_performance)
+        fuel_proto, machine_amount, production_ratio, energy_usage, total_effects, pollutant_type, fuel_performance)
     local consumption_multiplier = 1 + (total_effects.consumption / MAGIC_NUMBERS.effect_precision)
     -- A fuel-starved machine only draws what it can get, and pollutes proportionally less
     local power = machine_amount * (energy_usage * 60) * consumption_multiplier * fuel_performance
@@ -516,7 +517,9 @@ function solver.util.determine_power_and_emissions(machine_proto, recipe_proto,
 
     local emissions_per_joule = power * (machine_proto.emissions_per_joule[pollutant_type] or 0)
     local emissions_per_second = machine_amount * (machine_proto.emissions_per_second[pollutant_type] or 0)
-    local total_emissions = (emissions_per_joule + emissions_per_second) * total_multiplier * 60
+    local emissions_per_craft = (recipe_proto.emissions_per_craft) and
+        production_ratio * (recipe_proto.emissions_per_craft[pollutant_type] or 0) or 0
+    local total_emissions = (emissions_per_joule + emissions_per_second + emissions_per_craft) * total_multiplier * 60
 
     return total_power, total_emissions
 end

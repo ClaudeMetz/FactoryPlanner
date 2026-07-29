@@ -65,6 +65,7 @@ end
 ---@field combined_category string
 ---@field energy double
 ---@field emissions_multiplier double
+---@field emissions_per_craft EmissionsMap?
 ---@field ingredients Ingredient[]
 ---@field products FormattedProduct[]
 ---@field main_product FormattedProduct?
@@ -268,13 +269,21 @@ function generator.recipes.generate()
             recipe.sprite = main_product.type .. "/" .. main_product.name
             recipe.order = proto.order
             recipe.categories = {["agricultural-tower"] = true}
-            recipe.energy = 0
+            recipe.energy = proto.growth_ticks--[[@cast -nil]] / 60
 
-            -- TODO Deal with proto.harvest_emissions + proto.emissions_per_second somehow, probably on machine?
+            -- Each craft releases the harvest emissions plus a full growth period of the plant's emissions
+            recipe.emissions_per_craft = {}
+            for pollutant, amount in pairs(proto.harvest_emissions or {}) do
+                recipe.emissions_per_craft[pollutant] = amount
+            end
+            for pollutant, amount in pairs(proto.emissions_per_second or {}) do
+                recipe.emissions_per_craft[pollutant] = (recipe.emissions_per_craft[pollutant] or 0)
+                    + (amount * recipe.energy)
+            end
 
             local ingredients = {
                 {type="item", name=seed_name, amount=1},
-                {type="entity", name="custom-agriculture-square", amount=(proto.growth_ticks--[[@cast -nil]] / 60)}
+                {type="entity", name="custom-agriculture-square", amount=recipe.energy}
             }
             generator.util.format_recipe(recipe, products, main_product, ingredients)
             insert_prototype(recipes, recipe, nil)
@@ -965,8 +974,12 @@ function generator.machines.generate()
         elseif proto.type == "agricultural-tower" then
             local machine = generate_category_entry(proto.type, proto, nil)
             if machine then
-                machine.speed = 1  -- could be based on available tiles, but not used for now
-                machine.energy_usage = 0  -- TODO implemented later: energy_usage, crane_energy_usage
+                local radius = proto.agricultural_tower_radius  ---@cast radius -nil
+                local crane_energy_usage = proto.crane_energy_usage  ---@cast crane_energy_usage -nil
+                -- One plant per grid square, with the tower occupying the center square
+                machine.speed = ((2 * radius + 1) ^ 2) - 1
+                -- The crane of a fully utilized tower is moving near-constantly, so include its usage
+                machine.energy_usage = machine.energy_usage + crane_energy_usage
                 -- Agri tower silently drops any fluid ingredients/products, so just allow them
                 machine.fluid_channels = {input = 255, output = 255}
                 insert_machine(machine)
