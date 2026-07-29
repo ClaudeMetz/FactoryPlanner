@@ -185,47 +185,47 @@ function Floor:check_product_compatibility(object)
     if self.level == 1 then return true end
 
     local relevant_line = (object.class == "Floor") and object.first or object
-    ---@cast relevant_line.recipe -nil
+    local recipe = relevant_line.recipe  ---@cast recipe -nil
+    local producing = (recipe.production_type == "produce")
 
-    -- The triple loop is crappy, but it's the simplest way to check
-    if relevant_line.recipe.production_type == "produce" then
-        ---@cast relevant_line.recipe.proto.products -nil
-        for _, product in pairs(relevant_line.recipe.proto.products) do
-            for line in self:iterator() do  ---@cast line.recipe -nil
-                -- Check if pasted line produces an ingredient on a line on this floor
-                for _, ingredient in pairs(line.ingredients) do
-                    if ingredient.proto.type == product.type
-                            and (ingredient.proto.name == product.name or ingredient.proto.name == product.base_name)
-                            and (line.recipe:get_temperature(ingredient.proto) == product.temperature) then
-                        return true
-                    end
-                end
+    local relevant_items = producing and recipe.proto.products or recipe.proto.ingredients
+    ---@cast relevant_items -nil
 
-                -- Check if pasted line produces a fuel on a line on this floor
-                if line.machine and line.machine.fuel then
-                    local fuel = line.machine.fuel  ---@type Fuel
-                    if fuel.proto.elem_type == product.type
-                            and (fuel.proto.name == product.name or fuel.proto.name == product.base_name)
-                            and (fuel.temperature == product.temperature) then
-                        return true
-                    end
-                end
+    ---@param type string
+    ---@param name string
+    ---@param base_name string?
+    ---@param temperature float?
+    ---@return boolean
+    local function relevant(type, name, base_name, temperature)
+        for _, item in pairs(relevant_items) do
+            local item_temperature = producing and item.temperature or recipe:get_temperature(item)
+            if item.type == type and (item.name == name or item.name == base_name or item.base_name == name)
+                    and item_temperature == temperature then
+                return true
             end
         end
+        return false
     end
 
-    -- Check if the pasted line consumes any byproduct of a line on this floor
-    if relevant_line.recipe.production_type == "consume" then
-        ---@cast relevant_line.recipe.proto.ingredients -nil
-        for _, ingredient in pairs(relevant_line.recipe.proto.ingredients) do
-            for line in self:iterator() do
-                for _, byproduct in pairs(line.byproducts) do
-                    if ingredient.type == byproduct.proto.type and
-                            (ingredient.name == byproduct.proto.name or ingredient.name == byproduct.proto.base_name)
-                            and (relevant_line.recipe:get_temperature(ingredient) == byproduct.proto.temperature) then
-                        return true
-                    end
-                end
+    for line in self:iterator() do
+        if producing then
+            -- Check whether any line on this floor consumes something the pasted line produces
+            for _, ingredient in pairs(line.ingredients) do
+                local proto = ingredient.proto
+                -- Subfloors have no recipe to resolve a temperature with, so use the proto's directly
+                local temperature = proto.temperature
+                if line.recipe then temperature = line.recipe:get_temperature(proto) end
+                if relevant(proto.type, proto.name, nil, temperature) then return true end
+            end
+            local fuel = line.machine and line.machine.fuel
+            if fuel and relevant(fuel.proto.elem_type--[[@as string]], fuel.proto.name, nil, fuel.temperature) then
+                return true
+            end
+        else
+            -- Check whether any line on this floor produces a byproduct the pasted line consumes
+            for _, byproduct in pairs(line.byproducts) do
+                local proto = byproduct.proto
+                if relevant(proto.type, proto.name, proto.base_name, proto.temperature) then return true end
             end
         end
     end
