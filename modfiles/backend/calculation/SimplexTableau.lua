@@ -484,7 +484,6 @@ function SimplexTableau:solve()
             end
             return true, "solved"
         end
-        log ("entering cost:" .. min)
 
         -- Compute the coefficients of the entering variable
         local entering_column = self.cols[non_basic[entering_index]]  ---@type integer
@@ -507,10 +506,8 @@ function SimplexTableau:solve()
         end
 
         if leaving_index == 0 then return true, "unbounded" end
-        log ("leaving ratio:" .. min)
 
         -- Swap the variables
-        log(non_basic[entering_index] .. " -> " .. basic[leaving_index])  ---@TODO: remove
         local temp = basic[leaving_index]
         basic[leaving_index] = non_basic[entering_index]
         non_basic[entering_index] = temp
@@ -554,7 +551,6 @@ function SimplexTableau:solve()
                 b_matrix[j] = self.matrix[self.cols[basic[j]--[[@cast -nil]]]]
             end
 
-            log("Refactorize: " .. iterations)  ---@TODO: remove
             lu = LUDecomposition:init(b_matrix)
             x_vector = lu:solve_right(self.solution)
             needs_factorization = false
@@ -565,7 +561,6 @@ function SimplexTableau:solve()
         done, result.state = iterate()
         iterations = iterations + 1
     until done or iterations == max_iterations
-    log("Iterations: " .. iterations)  ---@TODO: remove
 
     -- Calculate equivalence classes
     local equivalencies = {}  ---@type table<VariableKey, VariableKey[]>
