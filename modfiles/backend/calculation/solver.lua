@@ -233,7 +233,7 @@ local function update_object_items(object, item_category, item_results)
         end
 
         if object.class ~= "Floor" or item_proto.type ~= "entity" or item_proto.special then
-            table.insert(item_list, SimpleItem:init(object, item_proto, item_result.amount))
+            table.insert(item_list, SimpleItem.init(object, item_proto, item_result.amount))
         end
     end
 
@@ -249,7 +249,7 @@ local function set_zeroed_items(line, item_category, items)
 
     for _, item in pairs(items) do
         local item_proto = prototyper.util.find("items", item.name, item.type)  ---@as FPItemPrototype
-        table.insert(item_list, SimpleItem:init(line, item_proto))
+        table.insert(item_list, SimpleItem.init(line, item_proto))
     end
 
     line[item_category] = item_list

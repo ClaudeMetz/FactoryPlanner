@@ -55,7 +55,7 @@ local function handle_item_button_click(player, tags, action)
         lib.gui.run_refresh(player, "all")
 
     elseif action == "copy" then  -- copy as SimpleItems makes most sense
-        local copyable_item = SimpleItem:init(nil, item.proto, item.abs_diff)
+        local copyable_item = SimpleItem.init(nil, item.proto, item.abs_diff)
         lib.clipboard.copy(player, copyable_item)
 
     elseif action == "add_to_cursor" then

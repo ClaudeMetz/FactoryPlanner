@@ -13,7 +13,7 @@ script.register_metatable("SimpleItem", SimpleItem)
 ---@param proto FPItemPrototype
 ---@param amount number?
 ---@return SimpleItem
-function SimpleItem:init(parent, proto, amount)
+local function init(parent, proto, amount)
     local item = {
         proto = proto,
         class = "SimpleItem",
@@ -21,7 +21,7 @@ function SimpleItem:init(parent, proto, amount)
         satisfied_amount = nil,
         parent = parent  -- can be nil
     }  ---@type SimpleItem
-    setmetatable(item, self)
+    setmetatable(item, SimpleItem)
     return item
 end
 
@@ -64,4 +64,4 @@ function SimpleItem:paste(object)
     end
 end
 
-return SimpleItem
+return {init = init}
