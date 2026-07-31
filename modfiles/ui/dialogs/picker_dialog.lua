@@ -605,7 +605,11 @@ listeners.gui = {
             handler = function(player, _, event)
                 ---@cast event EventData.on_gui_confirmed
                 local confirmed = lib.gui.confirm_expression_field(event.element, true)
-                if confirmed then lib.gui.close_dialog(player, "submit") end
+
+                local item_proto = lib.globals.modal_data(player)--[[@as PickerDialogModalData]].item_proto
+                local power_item = (item_proto) and lib.is_special_power_item(item_proto.name) or false
+
+                if confirmed or power_item then lib.gui.close_dialog(player, "submit") end
             end
         }
     }
