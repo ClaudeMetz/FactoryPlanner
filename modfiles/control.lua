@@ -60,5 +60,6 @@ end
 -- Import screenshotter code if its scenario is active
 if remote.interfaces["fp_screenshotter"] then
     DEVELOPER_MODE = false
+    ---@diagnostic disable-next-line: unresolved-require
     require("scenarios.screenshotter.script")
 end
