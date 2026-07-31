@@ -1607,7 +1607,7 @@ end
 ---@field tooltip LocalisedString
 ---@field surface_properties SurfaceProperties?
 ---@field pollutant_type string?
----@field resource_recipes NamedPrototypes<FPRecipePrototype>?
+---@field resource_recipes table<string, true>?
 ---@field entities_require_heating boolean
 
 ---@alias SurfaceProperties table<string, double>
@@ -1618,7 +1618,6 @@ function generator.locations.generate()
     local locations = {}  ---@type NamedPrototypes<FPLocationPrototype>
 
     local property_prototypes = generate_surface_properties()
-    local recipe_prototypes = storage.prototypes.recipes  ---@as NamedPrototypes<FPRecipePrototype>
 
     ---@param proto LuaSpaceLocationPrototype | LuaSurfacePrototype
     ---@param category string
@@ -1632,7 +1631,7 @@ function generator.locations.generate()
         local surface_properties = {}
         local tooltip = {"", {"fp.tt_title", proto.localised_name}, "\n"}  ---@type LocalisedString
         local current_table, next_index = tooltip, 4
-        local resource_recipes = {}  ---@type NamedPrototypes<FPRecipePrototype>
+        local resource_recipes = {}  ---@type table<string, true>
 
         for _, property_proto in pairs(property_prototypes) do
             local value = proto.surface_properties[property_proto.name] or property_proto.default_value
@@ -1650,7 +1649,7 @@ function generator.locations.generate()
             for key, _ in pairs(proto.map_gen_settings.autoplace_settings.entity.settings or {}) do
                 if prototypes.entity[key] and prototypes.entity[key].type == "resource" then
                     local recipe_key = "impostor-" .. key
-                    resource_recipes[recipe_key] = recipe_prototypes[recipe_key]
+                    resource_recipes[recipe_key] = true
                 end
             end
 
@@ -1658,7 +1657,7 @@ function generator.locations.generate()
             for key, _ in pairs(proto.map_gen_settings.autoplace_settings.tile.settings or {}) do
                 if prototypes.tile[key] and prototypes.tile[key].fluid then
                     local recipe_key = "impostor-" .. prototypes.tile[key].fluid.name .. "-tile"
-                    resource_recipes[recipe_key] = recipe_prototypes[recipe_key]
+                    resource_recipes[recipe_key] = true
                 end
             end
         end
