@@ -397,6 +397,9 @@ function builders.products(line, parent_flow, metadata)
     end
 
     add_catalysts(line, items_flow, "products", metadata)
+
+    items_flow.visible = #items_flow.children_names > 0
+    special_flow.visible = #special_flow.children_names > 0
 end
 
 ---@param line LineObject
@@ -440,6 +443,9 @@ function builders.byproducts(line, parent_flow, metadata)
 
         ::skip_byproduct::
     end
+
+    items_flow.visible = #items_flow.children_names > 0
+    special_flow.visible = #special_flow.children_names > 0
 end
 
 ---@param line Line
@@ -602,6 +608,9 @@ function builders.ingredients(line, parent_flow, metadata)
     if line.class ~= "Floor" then  ---@cast line Line
         if line.machine.fuel then add_fuel(line, special_flow, metadata) end
     end
+
+    items_flow.visible = #items_flow.children_names > 0
+    special_flow.visible = #special_flow.children_names > 0
 end
 
 ---@param line LineObject

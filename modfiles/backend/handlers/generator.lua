@@ -178,8 +178,15 @@ function generator.recipes.generate()
         end
     end
 
+    local first_generator = nil  ---@type string?
+
     local entity_filter = {{filter="hidden", invert=true}}
     for _, proto in pairs(prototypes.get_entity_filtered(entity_filter)) do
+        -- Note the alphabetically first power generating machine for the electricity recipe below
+        if proto.type == "generator" or proto.type == "burner-generator" then
+            if first_generator == nil or proto.name < first_generator then first_generator = proto.name end
+        end
+
         -- Recipes fixed to machines are duplicated with a special category
         if proto.crafting_categories and proto.energy_usage and proto.fixed_recipe then
             local recipe = recipes[proto.fixed_recipe.name]
@@ -432,6 +439,25 @@ function generator.recipes.generate()
         end
     end
 
+    -- Add the recipe that power generating machines run. There is only one of it, since what
+    -- differs between those machines is their fuel, which is configured on the machine itself.
+    if first_generator ~= nil then
+        local electricity_recipe = custom_recipe()
+        electricity_recipe.name = "impostor-electricity"
+        -- No single entity defines this, so just pick the first one for Factoriopedia
+        electricity_recipe.factoriopedia_id = {type="entity", name=first_generator}
+        electricity_recipe.localised_name = {"fp.electric_power"}
+        electricity_recipe.sprite = "fp_electric_power"
+        electricity_recipe.order = "z-a"
+        electricity_recipe.categories = {["electricity"] = true}
+        -- An energy of 1J means a machine speed given in watts yields that many joules per second
+        electricity_recipe.energy = 1
+
+        local products = {{type="entity", name="custom-electric-power", amount=1}--[[@as Product]]}
+        generator.util.format_recipe(electricity_recipe, products, products[1], {})
+        insert_prototype(recipes, electricity_recipe, nil)
+    end
+
     return recipes
 end
 
@@ -487,6 +513,8 @@ end
 function generator.items.generate()
     local items = {}   ---@type NamedPrototypesWithCategory<FPItemPrototype>
 
+    local recipe_prototypes = storage.prototypes.recipes  ---@as NamedPrototypes<FPRecipePrototype>
+
     -- Build custom items, representing in-world entities mostly
     local custom_items = {}  ---@type NamedPrototypes<CustomItemDetails>
     local rocket_parts = {}  ---@type table<string, boolean>
@@ -506,7 +534,7 @@ function generator.items.generate()
         -- Mark rocket silo part items here so they can be marked as non-hidden
         elseif proto.type == "rocket-silo" and not proto.hidden then
             local silo_categories = proto.crafting_categories  ---@cast silo_categories -nil
-            for _, recipe in pairs(storage.prototypes.recipes) do
+            for _, recipe in pairs(recipe_prototypes) do
                 if recipe.main_product then
                     for category, _ in pairs(recipe.categories) do
                         if silo_categories[category] then
@@ -565,15 +593,18 @@ function generator.items.generate()
     }
     generator.util.add_default_groups(custom_items["custom-agriculture-square"])
 
-    custom_items["custom-electric-power"] = {
+    local electric_power = {
         name = "custom-electric-power",
         localised_name = {"fp.electric_power"},
         sprite = "fp_electric_power",
-        hidden = true,
+        hidden = false,
         order = "z-c1",
         special = true
     }
-    generator.util.add_default_groups(custom_items["custom-electric-power"])
+    local electricity_recipe = recipe_prototypes["impostor-electricity"]
+    local factoriopedia_id = (electricity_recipe) and electricity_recipe.factoriopedia_id or nil
+    generator.util.add_entity_groups(electric_power, (factoriopedia_id) and factoriopedia_id.name or nil)
+    custom_items["custom-electric-power"] = electric_power
 
     custom_items["custom-heat-power"] = {
         name = "custom-heat-power",
@@ -599,7 +630,7 @@ function generator.items.generate()
     local fluid_has_temperature = {}
     -- Extract items from recipes and note whether they are ever used as a product
     for _, item_category in pairs({"products", "ingredients"}) do
-        for _, recipe_proto in pairs(storage.prototypes.recipes) do
+        for _, recipe_proto in pairs(recipe_prototypes) do
             for _, item_data in pairs(recipe_proto[item_category]) do
                 local type_data = relevant_items[item_data.type]
 
@@ -653,8 +684,11 @@ function generator.items.generate()
         relevant_items["entity"][item_name] = {ingredient_only=true}
     end
 
+    -- Electricity is normally produced by generators, add manually otherwise
+    relevant_items["entity"]["custom-electric-power"] =
+        relevant_items["entity"]["custom-electric-power"] or {ingredient_only=true}
+
     -- No recipes use these (yet) so they need to be added manually
-    relevant_items["entity"]["custom-electric-power"] = {ingredient_only=true}
     relevant_items["entity"]["custom-heat-power"] = {ingredient_only=true}
     relevant_items["entity"]["custom-heating-power"] = {ingredient_only=true}
 
@@ -749,7 +783,7 @@ end
 ---@field maximum_temperature float?
 
 ---@alias EmissionsMap table<string, double>
----@alias PrototypeCategory ("crafter" | "launcher" | "mining_drill" | "boiler" | "offshore_pump")
+---@alias PrototypeCategory ("crafter" | "launcher" | "mining_drill" | "boiler" | "offshore_pump" | "generator")
 
 ---@return NamedPrototypesWithCategory<FPMachinePrototype>
 function generator.machines.generate()
@@ -763,7 +797,28 @@ function generator.machines.generate()
         end
     end
 
-    local recipe_prototypes = storage.prototypes.recipes  ---@as NamedPrototypes<FPRecipePrototype>
+    ---@param burns_fluid boolean
+    ---@param fluid_box LuaFluidBoxPrototype
+    ---@return string
+    local function fluid_fuel_category(burns_fluid, fluid_box)
+        local fuel_category = (burns_fluid) and "fluid-fuel" or "fluid-heat"
+        if fluid_box.filter then fuel_category = fuel_category .. "-filter-" .. fluid_box.filter.name end
+        return fuel_category
+    end
+
+    -- A generator's boxes are plain entity ones, so unlike a fluid energy source it doesn't
+    -- expose them separately and they have to be picked out by their production type
+    ---@param proto LuaEntityPrototype
+    ---@return LuaFluidBoxPrototype? input
+    ---@return LuaFluidBoxPrototype? output
+    local function generator_fluid_boxes(proto)
+        local input, output = nil, nil
+        for _, fluid_box in pairs(proto.fluidbox_prototypes) do
+            if fluid_box.production_type == "output" then output = output or fluid_box
+            else input = input or fluid_box end
+        end
+        return input, output
+    end
 
     ---@param category string
     ---@param proto LuaEntityPrototype
@@ -780,8 +835,16 @@ function generator.machines.generate()
         local energy_type, emissions_per_joule = "", {}  -- no emissions if no energy source is present
         local burner = nil  ---@type MachineBurner?
 
-        local max_usage = generator.util.get_base_value(proto.get_max_energy_usage())
-        local energy_usage = proto.energy_usage or max_usage or 0
+        local energy_usage  ---@type number
+        if prototype_category == "generator" then
+            -- For these machines this is the power they put out, not what they consume. It can't
+            -- come from get_max_energy_usage(), which reports a burner generator's fuel consumption,
+            -- ie. its output divided by its effectivity.
+            energy_usage = generator.util.get_base_value(proto.get_max_energy_production()) or 0
+        else
+            local max_usage = generator.util.get_base_value(proto.get_max_energy_usage())
+            energy_usage = proto.energy_usage or max_usage or 0
+        end
         local energy_drain = 0.0
 
         -- Determine the item that actually builds this machine for the item requester
@@ -791,9 +854,38 @@ function generator.machines.generate()
 
         local burner_prototype = proto.burner_prototype
         local fluid_burner_prototype = proto.fluid_energy_source_prototype
+        -- Only plain generators feed on a fluid box of their own; burner generators use a real burner
+        local generator_fluid_box, generator_output_box = nil, nil
+        if proto.type == "generator" then generator_fluid_box, generator_output_box = generator_fluid_boxes(proto) end
 
         -- Determine the details of this entity's energy source
-        if burner_prototype then
+        if generator_fluid_box then
+            -- A generator's electric source is its output, so it's the fluid box that acts as its
+            -- energy source. It carries the same fields a fluid energy source does, so it maps
+            -- onto a burner in the same way, just with the resulting energy flowing outwards.
+            energy_type = "burner"
+            local electric_source = proto.electric_energy_source_prototype  ---@cast electric_source -nil
+            emissions_per_joule = electric_source.emissions_per_joule
+
+            local burns_fluid = proto.burns_fluid or false
+            burner = {
+                effectivity = proto.effectivity or 1,
+                categories = {[fluid_fuel_category(burns_fluid, generator_fluid_box)] = true},
+                combined_category = "",  -- filled in by fuel generator
+                -- An output box without a spent_fluid falls back to the input fluid's own one
+                produces_spent_fluid = (generator_output_box ~= nil),
+                spent_fluid = proto.spent_fluid,
+                fluid_usage_per_tick = generator.util.get_base_value(proto.get_fluid_usage_per_tick()),
+                scale_fluid_usage = proto.scale_fluid_usage,
+                burns_fluid = burns_fluid,
+                fluid_filter = (generator_fluid_box.filter) and generator_fluid_box.filter.name or nil,
+                -- Deliberately not proto.maximum_temperature: a generator clamps the energy it
+                -- extracts rather than refusing hotter fluid, which is what wasted_share models
+                minimum_temperature = generator_fluid_box.minimum_temperature,
+                maximum_temperature = generator_fluid_box.maximum_temperature
+            }
+
+        elseif burner_prototype then
             energy_type = "burner"
             emissions_per_joule = burner_prototype.emissions_per_joule
             burner = {
@@ -806,16 +898,10 @@ function generator.machines.generate()
             energy_type = "burner"
             emissions_per_joule = fluid_burner_prototype.emissions_per_joule
 
-            -- The filter decides which fluid is allowed, so it belongs in the category, named like the
-            -- boiler ones. Its temperature bounds only narrow that fluid's temperatures and are kept
-            -- on the burner instead, so machines accepting it over different ranges can share one.
             local fluid_box = fluid_burner_prototype.fluid_box
-            local fuel_category = (fluid_burner_prototype.burns_fluid) and "fluid-fuel" or "fluid-heat"
-            if fluid_box.filter then fuel_category = fuel_category .. "-filter-" .. fluid_box.filter.name end
-
             burner = {
                 effectivity = fluid_burner_prototype.effectivity,
-                categories = {[fuel_category] = true},
+                categories = {[fluid_fuel_category(fluid_burner_prototype.burns_fluid, fluid_box)] = true},
                 combined_category = "",  -- filled in by fuel generator
                 produces_spent_fluid = (fluid_burner_prototype.output_fluid_box ~= nil),
                 spent_fluid = fluid_burner_prototype.spent_fluid,
@@ -847,13 +933,18 @@ function generator.machines.generate()
         -- Determine fluid input/output channels
         -- Energy source fluid boxes are part of fluidbox_prototypes, but aren't free for recipe use
         local fluid_channels = {input = 0, output = 0}
+        if generator_fluid_box then
+            fluid_channels.input = (fluid_channels.input - 1)--[[@as integer]]
+            if generator_output_box then
+                fluid_channels.output = (fluid_channels.output - 1)--[[@as integer]]
+            end
+        end
         if fluid_burner_prototype then
             fluid_channels.input = (fluid_channels.input - 1)--[[@as integer]]
             if fluid_burner_prototype.output_fluid_box then
                 fluid_channels.output = (fluid_channels.output - 1)--[[@as integer]]
             end
         end
-
         for _, fluidbox in pairs(proto.fluidbox_prototypes) do
             if fluidbox.production_type == "output" then
                 fluid_channels.output = fluid_channels.output + 1
@@ -901,6 +992,8 @@ function generator.machines.generate()
         machine_categories[machine.category] = machine_categories[machine.category] or {}
         table.insert(machine_categories[machine.category], machine)
     end
+
+    local recipe_prototypes = storage.prototypes.recipes  ---@as NamedPrototypes<FPRecipePrototype>
 
     local entity_filter = {{filter="hidden", invert=true}}
     for _, proto in pairs(prototypes.get_entity_filtered(entity_filter)) do
@@ -986,6 +1079,15 @@ function generator.machines.generate()
             if machine then
                 machine.speed = proto.get_inventory_size(defines.inventory.chest) or 1
                 machine.energy_usage = 0
+                insert_machine(machine)
+            end
+
+        elseif proto.type == "generator" or proto.type == "burner-generator" then
+            local machine = generate_category_entry("electricity", proto, "generator")
+            if machine then
+                -- Speed in watts combines with the recipe energy of 1J to produce
+                --   that many joules of power per second
+                machine.speed = machine.energy_usage * 60
                 insert_machine(machine)
             end
         end

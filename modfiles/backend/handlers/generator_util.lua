@@ -202,7 +202,7 @@ function _util.format_recipe(recipe_proto, products, main_product, ingredients)
 end
 
 
----@param normal_quality_value number
+---@param normal_quality_value number?
 ---@return number? base_value
 function _util.get_base_value(normal_quality_value)
     if normal_quality_value == nil then return nil end
@@ -442,6 +442,24 @@ end
 function _util.add_default_groups(proto)
     proto.group = _util.generate_group_table(prototypes.item_group["other"])
     proto.subgroup = _util.generate_group_table(prototypes.item_subgroup["other"])
+end
+
+-- Puts the prototype in the groups of the item that places the given entity, so that custom
+-- ones can sit with the machines they relate to instead of in a group of their own
+---@param proto CustomItemDetails | FPRecipePrototype
+---@param entity_name string?
+function _util.add_entity_groups(proto, entity_name)
+    local entity = (entity_name) and prototypes.entity[entity_name] or nil
+    local items_to_place_this = (entity) and entity.items_to_place_this or nil
+    local first_item = (items_to_place_this) and items_to_place_this[1] or nil
+    local placing_item = (first_item) and prototypes.item[first_item.name] or nil
+
+    if placing_item == nil then
+        _util.add_default_groups(proto)
+    else
+        proto.group = _util.generate_group_table(placing_item.group)
+        proto.subgroup = _util.generate_group_table(placing_item.subgroup)
+    end
 end
 
 

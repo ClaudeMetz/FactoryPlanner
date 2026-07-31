@@ -481,7 +481,10 @@ local function close_picker_dialog(player, action)
 
         local relevant_amount = lib.gui.parse_expression_field(amount_textfield, true) or 0
         if defined_by == "amount" then
-            relevant_amount = relevant_amount / modal_data.timescale
+            -- Special items are entered in their own fixed unit, so they ignore the timescale
+            if not modal_data.item_proto--[[@as FPItemPrototype]].special then
+                relevant_amount = relevant_amount / modal_data.timescale
+            end
             relevant_amount = math.max(relevant_amount, MAGIC_NUMBERS.margin_of_error * 10)
         elseif modal_data.belts_or_lanes == "lanes" then
             relevant_amount = relevant_amount * 0.5  -- lanes are stored as belts
@@ -602,7 +605,11 @@ listeners.gui = {
             handler = function(player, _, event)
                 ---@cast event EventData.on_gui_confirmed
                 local confirmed = lib.gui.confirm_expression_field(event.element, true)
-                if confirmed then lib.gui.close_dialog(player, "submit") end
+
+                local item_proto = lib.globals.modal_data(player)--[[@as PickerDialogModalData]].item_proto
+                local power_item = (item_proto) and lib.is_special_power_item(item_proto.name) or false
+
+                if confirmed or power_item then lib.gui.close_dialog(player, "submit") end
             end
         }
     }
