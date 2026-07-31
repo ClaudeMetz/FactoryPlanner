@@ -12,8 +12,8 @@ local unpackers = {
 
 local _clipboard = {}
 
----@alias CopyableObject Floor | Line | Machine | Beacon | Module | Fuel | SimpleItem
----@alias CopyableObjectClass "Floor" | "Line" | "Machine" | "Beacon" | "Module" | "Fuel" | "SimpleItem"
+---@alias CopyableObject TLProduct | Floor | Line | Machine | Beacon | Module | Fuel | SimpleItem
+---@alias CopyableObjectClass "TLProduct" | "Floor" | "Line" | "Machine" | "Beacon" | "Module" | "Fuel" | "SimpleItem"
 ---@alias CopyableObjectParent Factory | Floor | Line | ModuleSet | Machine
 
 ---@class ClipboardEntry
@@ -30,7 +30,7 @@ function _clipboard.copy(player, object)
         class = object.class,
         packed_object = (object.pack ~= nil) and object:pack(true) or object,
         parent = object.parent  -- just used for unpacking, will remain a reference even if deleted elsewhere
-    }
+    }  ---@as ClipboardEntry
 
     lib.cursor.create_flying_text(player, {"fp.copied_into_clipboard", {"fp.pu_" .. object.class:lower(), 1}})
     lib.gui.run_refresh(player, "paste_button")
@@ -49,6 +49,7 @@ function _clipboard.paste(player, target)
     else
         local clone
         if clip.parent then  -- only real objects have parents
+            ---@diagnostic disable-next-line: param-type-mismatch
             clone = unpackers[clip.class](clip.packed_object, clip.parent)  ---@as CopyableObject
             ---@cast clone -SimpleItem
             clone:validate()
@@ -58,12 +59,15 @@ function _clipboard.paste(player, target)
         local success, error = target:paste(clone, player)
 
         if success then  -- objects in the clipboard are always valid since it resets on_config_changed
-            lib.cursor.create_flying_text(player, {"fp.pasted_from_clipboard", {"fp.pu_" .. clip.class:lower(), 1}})
+            local message = {"fp.pasted_from_clipboard", {"fp.pu_" .. clip.class--[[@as string]]:lower(), 1}}
+            lib.cursor.create_flying_text(player, message--[[@as LocalisedString]])
 
             solver.update(player)
             lib.gui.run_refresh(player, "production")
         else
-            local object_lower, target_lower = {"fp.pl_" .. clip.class:lower(), 1}, {"fp.pl_" .. target.class:lower(), 1}
+            local object_lower = {"fp.pl_" .. clip.class--[[@as string]]:lower(), 1}
+            local target_lower = {"fp.pl_" .. target.class:lower(), 1}
+
             if error == "incompatible_class" then
                 lib.cursor.create_flying_text(player, {"fp.clipboard_incompatible_class", object_lower, target_lower})
             elseif error == "incompatible" then
@@ -83,22 +87,24 @@ function _clipboard.paste(player, target)
 end
 
 ---@param player LuaPlayer
----@param dummy CopyableObject
----@param parent CopyableObjectParent
+---@param dummy TLProduct | Line
+---@param parent Factory | Floor
 function _clipboard.dummy_paste(player, dummy, parent)
+    ---@diagnostic disable-next-line: param-type-mismatch
     parent:insert(dummy)
     if not _clipboard.paste(player, dummy) then
         -- Prevent collapsing the floor on `Floor:remove()`
+        ---@diagnostic disable-next-line: param-type-mismatch
         parent:remove(dummy, true)
     end
 end
 
 ---@param player LuaPlayer
----@param classes table<CopyableObject, boolean>
+---@param classes table<CopyableObjectClass, boolean>
 ---@return boolean present
 function _clipboard.check_classes(player, classes)
     local clip = lib.globals.player_table(player).clipboard
-    return (clip ~= nil and classes[clip.class])
+    return (clip ~= nil and classes[clip.class] == true)
 end
 
 return _clipboard

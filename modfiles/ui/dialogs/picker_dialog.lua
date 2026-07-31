@@ -296,7 +296,7 @@ local function update_dialog_submit_button(modal_elements)
     local item_choice_button = modal_elements.item_choice_button
     local item_amount = lib.gui.parse_expression_field(modal_elements.item_amount_textfield, true)
 
-    local message = nil
+    local message  ---@type LocalisedString
     if item_choice_button.sprite == "" then
         message = {"fp.picker_issue_select_item"}
     elseif item_amount == nil then

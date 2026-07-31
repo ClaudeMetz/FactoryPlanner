@@ -7,7 +7,7 @@
 ---@param enabled boolean
 ---@param action_to_take "import_string" | "select_factory"
 local function set_dialog_submit_button(modal_elements, enabled, action_to_take)
-    local message = (not enabled) and {"fp.importer_issue_" .. action_to_take} or nil
+    local message = (not enabled) and {"fp.importer_issue_" .. action_to_take} or ""  ---@type LocalisedString
     modal_dialog.set_submit_button_state(modal_elements, enabled, message)
 end
 

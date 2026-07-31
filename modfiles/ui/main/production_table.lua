@@ -230,7 +230,7 @@ function builders.machine(line, parent_flow, metadata)
         local machine_amount = line.machine_amount
         local tooltip = {"fp.subfloor_machine_amount", machine_amount, {"fp.pl_machine", machine_amount}}
         parent_flow.add{type="sprite-button", sprite="fp_generic_assembler", style="fflib_slot_button_disabled_small",
-            number=machine_amount, tooltip=tooltip}
+            number=machine_amount, tooltip=tooltip--[[@as LocalisedString]]}
     else  ---@cast line Line
         local machine = line.machine
         local machine_proto, quality_proto = machine.proto, machine.quality_proto
@@ -463,8 +463,8 @@ local function add_fuel(line, parent_flow, metadata)
         satisfaction_line, _ = lib.gui.calculate_satisfaction(fuel.satisfied_amount, fuel.amount)
     end
 
-    ---@type LocalisedString, LocalisedString
-    local name_line, temperature_line = {"fp.tt_title_with_note", fuel.proto.localised_name, {"fp.pu_fuel", 1}}, ""
+    local name_line = {"fp.tt_title_with_note", fuel.proto.localised_name, {"fp.pu_fuel", 1}} ---@as LocalisedString
+    local temperature_line = ""  ---@type LocalisedString
     local style = "fflib_slot_button_cyan_small"
 
     if fuel.proto.type == "fluid" then

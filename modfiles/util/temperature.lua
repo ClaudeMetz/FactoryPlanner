@@ -37,7 +37,7 @@ function _temperature.generate_data(ingredient, exclusive_minimum)
     end
 
     return {
-        annotation = {"", " ", annotation},
+        annotation = {"", " ", annotation}--[[@as LocalisedString]],
         applicable_values = applicable_values
     }
 end

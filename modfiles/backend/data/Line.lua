@@ -290,12 +290,11 @@ end
 ---@return string? error
 function Line:paste(object)
     if object.class == "Line" or object.class == "Floor" then
-        ---@cast object LineObject
-        if not self.parent:check_product_compatibility(object) then
+        if not self.parent:check_product_compatibility(object--[[@as LineObject]]) then
             return false, "recipe_irrelevant"  -- found no use for the recipe's products
         end
 
-        self.parent:replace(self, object)
+        self.parent:replace(self, object--[[@as LineObject]])
         return true, nil
     else
         return false, "incompatible_class"

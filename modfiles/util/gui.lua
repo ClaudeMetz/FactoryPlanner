@@ -26,7 +26,7 @@ function _gui.switch.add_on_off(parent_flow, action, additional_tags, state, cap
     end
 
     local function add_label()
-        caption = (tooltip ~= nil) and {"", caption, " [img=info]"} or caption
+        caption = (tooltip ~= nil) and {"", caption, " [img=info]"}--[[@as LocalisedString]] or caption
         label = flow.add{type="label", caption=caption, tooltip=tooltip}
     end
 
