@@ -239,7 +239,7 @@ function _util.determine_entity_sprite(proto)
 end
 
 
----@param effects ModuleEffects?
+---@param effects Effect?
 ---@return IntegerModuleEffects
 function _util.formatted_effects(effects)
     if effects == nil then return {} end
@@ -277,7 +277,7 @@ end
 ---@field uses_module_effects boolean
 ---@field uses_beacon_effects boolean
 ---@field uses_surface_effects boolean
----@field limits table<ModuleEffectName, EffectValueRange>
+---@field limits table<ModuleEffectName, IntegerEffectValueRange>
 
 ---@param proto LuaEntityPrototype?
 ---@return FormattedEffectReceiver effect_receiver
@@ -298,7 +298,7 @@ function _util.format_effect_receiver(proto)
         }
     else
         local base_effect = effect_receiver.base_effect  -- can be nil
-        effect_receiver.base_effect = _util.formatted_effects(base_effect)  ---@as ModuleEffects
+        effect_receiver.base_effect = _util.formatted_effects(base_effect)  ---@as Effect
     end
 
     local module_limit = (proto) and proto.module_inventory_size or 0

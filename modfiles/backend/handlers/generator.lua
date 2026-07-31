@@ -71,7 +71,7 @@ end
 ---@field main_product FormattedProduct?
 ---@field allowed_effects AllowedEffects?
 ---@field allowed_module_categories table<string, boolean>?
----@field maximum_productivity EffectValue
+---@field maximum_productivity IntegerEffectValue
 ---@field productivity_recipe string?
 ---@field type_counts { products: ItemTypeCounts, ingredients: ItemTypeCounts }
 ---@field catalysts { products: FormattedProduct[], ingredients: Ingredient[] }

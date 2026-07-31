@@ -71,7 +71,7 @@ end
 
 ---@param force LuaForce
 ---@param recipe_name string
----@return EffectValue productivity_bonus
+---@return IntegerEffectValue productivity_bonus
 function _lib.get_recipe_productivity(force, recipe_name)
     local bonus = nil
     if recipe_name == "custom-mining" then
