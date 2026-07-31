@@ -208,12 +208,11 @@ function generator.recipes.generate()
             recipe.categories = {[proto.resource_category] = true}
             recipe.allowed_effects = {speed=true, productivity=true, quality=true, consumption=true, pollution=true}
             recipe.productivity_recipe = (any_mining_productivity) and "custom-mining" or nil
-            recipe.energy = proto.mineable_properties.mining_time
+            recipe.energy = (proto.infinite_resource) and 0 or proto.mineable_properties.mining_time
             recipe.location_resource = true
 
             local ingredients = {{type="entity", name="custom-" .. proto.name, amount=1}--[[@as Ingredient]]}
 
-            -- Add mining fluid, if required
             if not proto.infinite_resource and proto.mineable_properties.required_fluid then
                 table.insert(ingredients, {
                     type = "fluid",
@@ -1565,7 +1564,6 @@ function generator.locations.generate()
         ---@diagnostic disable-next-line: missing-fields
         local location = {
             name = proto.name,
-            data_type = "locations",
             localised_name = proto.localised_name,
             sprite = sprite,
             tooltip = tooltip,
@@ -1593,7 +1591,6 @@ function generator.locations.generate()
         ---@diagnostic disable-next-line: missing-fields
         local universal_location = {
             name = "universal",
-            data_type = "locations",
             localised_name = {"fp.universal_location"},
             sprite = "fp_universal_planet",
             tooltip = {"fp.universal_location_tt"},
