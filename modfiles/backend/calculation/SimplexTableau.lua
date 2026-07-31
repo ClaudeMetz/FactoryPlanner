@@ -39,6 +39,10 @@ SimplexTableau.__index = SimplexTableau
 ---@field products ItemList
 ---@field ingredients ItemList
 
+-- An heuristic initial basis speeds up the solving cosiderably, but may give an inaccurate solution
+---@TODO: move this to options
+local USE_HEURISTIC_INITIAL_BASIS = true
+
 
 ---@return SimplexTableau
 function SimplexTableau:init()
@@ -339,64 +343,84 @@ function SimplexTableau:solve()
         return self.objective[self.cols[key1]] < self.objective[self.cols[key2]]
     end)
 
-    -- Mark non-0 constrained variables as non-basic
-    for i = 1, #self.matrix[1] do
-        if self.solution[i] ~= 0 then
-            for j = 1, #self.matrix do
-                if self.matrix[j][i] ~= 0 then
-                    local map = variable_map[j]  ---@as VariableMap
-                    if map.type == "unassigned" then
-                        map.type = "non-basic"
-                        table.insert(non_basic, map.key)
+    -- Find true basic variables (positive coefficient in one row, 0 on the rest)
+    for j = 1, #self.matrix do
+        local map = variable_map[j]  ---@as VariableMap
+        local pos_index = nil  ---@type integer?
+        local is_basic = true
+
+        if map.type == "unassigned" then
+            for i = 1, #self.matrix[j] do
+                if self.matrix[j][i] > MAGIC_NUMBERS.margin_of_error then
+                    if pos_index then
+                        is_basic = false
+                        break
+                    else
+                        pos_index = i
                     end
+                elseif self.matrix[j][i] < 0 then
+                    is_basic = false
+                    break
                 end
+            end
+
+            -- For the heuristic basis, just consider non-zero constraints
+            if is_basic and pos_index and not basic[pos_index] and
+                    (not USE_HEURISTIC_INITIAL_BASIS or self.solution[pos_index] > 0) then
+                map.type = "basic"
+                basic[pos_index] = map.key
             end
         end
     end
 
     -- Heuristically pick the inital basis containing the variables with the highest objectives
-    for _, key in ipairs(sorted_variables) do
-        local col_index = self.cols[key]
-        local map = variable_map[col_index]  ---@as VariableMap
-        if map.type == "unassigned" then
-            local min_num_cols = #self.matrix[col_index]
-            local min_cols = {}  ---@type integer[]
-            local min_row = 0
+    if USE_HEURISTIC_INITIAL_BASIS then
+        for _, key in ipairs(sorted_variables) do
+            local col_index = self.cols[key]
+            local map = variable_map[col_index]  ---@as VariableMap
+            if map.type == "unassigned" then
+                local min_num_cols = #self.matrix[col_index]
+                local min_cols = {}  ---@type integer[]
+                local min_row = 0
 
-            -- Find the row with the least amount of positive coefficients
-            for i = 1, #self.matrix[col_index] do
-                if self.matrix[col_index][i] > MAGIC_NUMBERS.margin_of_error and not basic[i] then
-                    local cols = {}  ---@type integer[]
-                    for j = 1, #self.matrix do
+                -- Find the row with the least amount of positive coefficients
+                for i = 1, #self.matrix[col_index] do
+                    if self.matrix[col_index][i] > MAGIC_NUMBERS.margin_of_error and not basic[i] then
+                        local cols = {}  ---@type integer[]
+                        for j = 1, #self.matrix do
                         if self.matrix[j][i] > MAGIC_NUMBERS.margin_of_error and j ~= col_index then
-                            table.insert(cols, j)
+                                table.insert(cols, j)
+                            end
+                        end
+                        if #cols < min_num_cols then
+                            min_num_cols = #cols
+                            min_cols = cols
+                            min_row = i
+                        end
+                        if #cols == 0 then break end
+                    end
+                end
+
+                -- Mark the variable as the basis of this row
+                -- Mark other variables with positive coefficients as non-basic
+                if min_row ~= 0 then
+                    for _, var_column in pairs(min_cols) do
+                        local var_map = variable_map[var_column]   ---@as VariableMap
+                        if var_map.type == "unassigned" then
+                            var_map.type = "non-basic"
+                            table.insert(non_basic, var_map.key)
                         end
                     end
-                    if #cols < min_num_cols then
-                        min_num_cols = #cols
-                        min_cols = cols
-                        min_row = i
-                    end
-                    if #cols == 0 then break end
+                    map.type = "basic"
+                    basic[min_row] = key
                 end
-            end
-
-            -- Mark the variable as the basis of this row
-            -- Mark other variables with positive coefficients as non-basic
-            if min_row ~= 0 then
-                for _, var_column in pairs(min_cols) do
-                    local var_map = variable_map[var_column]   ---@as VariableMap
-                    if var_map.type == "unassigned" then
-                        var_map.type = "non-basic"
-                        table.insert(non_basic, var_map.key)
-                    end
-                end
-                map.type = "basic"
-                basic[min_row] = key
             end
         end
+    end
 
-        -- If no row was found to form a basis for this variable, mark it as out of base
+    -- Mark unassigned variables as non-basic
+    for _, key in ipairs(sorted_variables) do
+        local map = variable_map[self.cols[key]]  ---@as VariableMap
         if map.type == "unassigned" then
             map.type = "non-basic"
             table.insert(non_basic, key)
@@ -460,6 +484,7 @@ function SimplexTableau:solve()
             end
             return true, "solved"
         end
+        log ("entering cost:" .. min)
 
         -- Compute the coefficients of the entering variable
         local entering_column = self.cols[non_basic[entering_index]]  ---@type integer
@@ -482,8 +507,10 @@ function SimplexTableau:solve()
         end
 
         if leaving_index == 0 then return true, "unbounded" end
+        log ("leaving ratio:" .. min)
 
         -- Swap the variables
+        log(non_basic[entering_index] .. " -> " .. basic[leaving_index])  ---@TODO: remove
         local temp = basic[leaving_index]
         basic[leaving_index] = non_basic[entering_index]
         non_basic[entering_index] = temp
@@ -527,6 +554,7 @@ function SimplexTableau:solve()
                 b_matrix[j] = self.matrix[self.cols[basic[j]--[[@cast -nil]]]]
             end
 
+            log("Refactorize: " .. iterations)  ---@TODO: remove
             lu = LUDecomposition:init(b_matrix)
             x_vector = lu:solve_right(self.solution)
             needs_factorization = false
@@ -537,6 +565,7 @@ function SimplexTableau:solve()
         done, result.state = iterate()
         iterations = iterations + 1
     until done or iterations == max_iterations
+    log("Iterations: " .. iterations)  ---@TODO: remove
 
     -- Calculate equivalence classes
     local equivalencies = {}  ---@type table<VariableKey, VariableKey[]>

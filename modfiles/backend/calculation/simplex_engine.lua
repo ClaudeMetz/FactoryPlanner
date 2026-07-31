@@ -36,7 +36,7 @@ local objective_vector = {
 
     machine_limit = 0,
     fluid_modifier = 0.01,
-    special_modifier = 0  -- no penalty for emissions, power and heat
+    special_modifier = 1e-12,
 }
 
 
