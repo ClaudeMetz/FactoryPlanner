@@ -54,13 +54,10 @@ end
 ---@return IntegerEffectValue
 ---@return string?
 function _effects.limit_value(effect, bounds)
-    local low_bound = (bounds.low * MAGIC_NUMBERS.effect_precision)  ---@as IntegerEffectValue
-    local high_bound = (bounds.high * MAGIC_NUMBERS.effect_precision)  ---@as IntegerEffectValue
-
-    if effect < low_bound then
-        return low_bound, "[img=fp_limited_down]"
-    elseif effect > high_bound then
-        return high_bound, "[img=fp_limited_up]"
+    if effect < bounds.low then
+        return bounds.low, "[img=fp_limited_down]"
+    elseif effect > bounds.high then
+        return bounds.high, "[img=fp_limited_up]"
     else
         return effect, nil
     end

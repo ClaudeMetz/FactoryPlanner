@@ -14,6 +14,7 @@ script.register_metatable("SimpleItem", SimpleItem)
 ---@param amount number?
 ---@return SimpleItem
 local function init(parent, proto, amount)
+    ---@diagnostic disable-next-line: missing-fields
     local item = {
         proto = proto,
         class = "SimpleItem",
@@ -31,7 +32,7 @@ end
 ---@return string? error
 function SimpleItem:paste(object)
     if object.class == "SimpleItem" or object.class == "Fuel" then
-        ---@cast object SimpleItem | Fuel
+        ---@cast object.proto -nil
 
         -- Only pasting on a line item is allowed
         if not self.parent or self.parent.class ~= "Line" then

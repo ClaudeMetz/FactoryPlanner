@@ -316,7 +316,11 @@ function _util.format_effect_receiver(proto)
     local formatted = effect_receiver  ---@as FormattedEffectReceiver
     formatted.limits = {}
     for name, _ in pairs(lib.effects.blank) do
-        formatted.limits[name] = effect_receiver[name .. "_limits"]
+        local limits = effect_receiver[name .. "_limits"]
+        formatted.limits[name] = {
+            low = math.floor(limits.low * MAGIC_NUMBERS.effect_precision),
+            high = math.floor(limits.high * MAGIC_NUMBERS.effect_precision)
+        }
         effect_receiver[name .. "_limits"] = nil
     end
 
@@ -467,7 +471,7 @@ end
 ---@param color Color
 ---@return LocalisedString
 function _util.colored_rich_text(text, color)
-    return {"", "[color=", color.r, ",", color.g, ",", color.b, "]", text, "[/color]"}
+    return {"", "[color=", color.r, ",", color.g, ",", color.b, "]", text, "[/color]"}  ---@as LocalisedString
 end
 
 return _util
