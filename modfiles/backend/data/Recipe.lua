@@ -101,7 +101,6 @@ function Recipe:get_name_with_temperature(ingredient)
     end
 end
 
-
 ---@param ingredient Ingredient | FPItemPrototype
 ---@param temperature float
 ---@return boolean success
@@ -114,7 +113,6 @@ function Recipe:is_temperature_valid(ingredient, temperature)
     end
     return false
 end
-
 
 ---@param ingredient Ingredient | FPItemPrototype
 ---@return float?
