@@ -2,6 +2,16 @@
 Version: 0.00.00
 Date: 00. 00. 0000
   Features:
+    - 
+  Changes:
+    - 
+  Bugfixes:
+    - 
+
+---------------------------------------------------------------------------------------------------
+Version: 2.1.7
+Date: 31. 07. 2026
+  Features:
     - Added support for machines that generate electricity (#81)
     - Added support for machine fuel that takes its energy from the fluid's heat instead of burning it (#641)
     - Implemented machine counts, power and emission solving for agricultural towers (#633)
