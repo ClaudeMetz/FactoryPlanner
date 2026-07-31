@@ -4,5 +4,3 @@ require("prototypes.sprites")
 require("prototypes.hotkeys")
 require("prototypes.shortcuts")
 require("prototypes.tools")
-
-require("prototypes.generator-prototypes")()
