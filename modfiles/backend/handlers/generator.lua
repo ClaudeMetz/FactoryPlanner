@@ -1646,18 +1646,24 @@ function generator.locations.generate()
 
         if category == "space-location" and proto.map_gen_settings and proto.map_gen_settings.autoplace_settings then
             -- Check for minable resources
-            for key, _ in pairs(proto.map_gen_settings.autoplace_settings.entity.settings or {}) do
-                if prototypes.entity[key] and prototypes.entity[key].type == "resource" then
-                    local recipe_key = "impostor-" .. key
-                    resource_recipes[recipe_key] = true
+            local entity_autoplace = proto.map_gen_settings.autoplace_settings.entity
+            if entity_autoplace then
+                for key, _ in pairs(entity_autoplace.settings or {}) do
+                    if prototypes.entity[key] and prototypes.entity[key].type == "resource" then
+                        local recipe_key = "impostor-" .. key
+                        resource_recipes[recipe_key] = true
+                    end
                 end
             end
 
             -- Check for fluid tiles that can be extracted with offshore pumps
-            for key, _ in pairs(proto.map_gen_settings.autoplace_settings.tile.settings or {}) do
-                if prototypes.tile[key] and prototypes.tile[key].fluid then
-                    local recipe_key = "impostor-" .. prototypes.tile[key].fluid.name .. "-tile"
-                    resource_recipes[recipe_key] = true
+            local tile_autoplace = proto.map_gen_settings.autoplace_settings.tile
+            if tile_autoplace then
+                for key, _ in pairs(tile_autoplace.settings or {}) do
+                    if prototypes.tile[key] and prototypes.tile[key].fluid then
+                        local recipe_key = "impostor-" .. prototypes.tile[key].fluid.name .. "-tile"
+                        resource_recipes[recipe_key] = true
+                    end
                 end
             end
         end

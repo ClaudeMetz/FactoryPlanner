@@ -2,11 +2,11 @@
 Version: 0.00.00
 Date: 00. 00. 0000
   Features:
-    - 
+    -
   Changes:
-    - 
+    -
   Bugfixes:
-    - 
+    - Fixed a crash on startup in certain modded configurations (#802)
 
 ---------------------------------------------------------------------------------------------------
 Version: 2.1.7
