@@ -6,6 +6,7 @@
 ---@field parent LineObject?
 local SimpleItem = {}
 SimpleItem.__index = SimpleItem
+script.register_metatable("SimpleItem", SimpleItem)
 
 
 ---@param parent LineObject?
