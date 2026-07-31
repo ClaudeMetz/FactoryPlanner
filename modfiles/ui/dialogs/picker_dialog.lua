@@ -481,7 +481,10 @@ local function close_picker_dialog(player, action)
 
         local relevant_amount = lib.gui.parse_expression_field(amount_textfield, true) or 0
         if defined_by == "amount" then
-            relevant_amount = relevant_amount / modal_data.timescale
+            -- Special items are entered in their own fixed unit, so they ignore the timescale
+            if not modal_data.item_proto--[[@as FPItemPrototype]].special then
+                relevant_amount = relevant_amount / modal_data.timescale
+            end
             relevant_amount = math.max(relevant_amount, MAGIC_NUMBERS.margin_of_error * 10)
         elseif modal_data.belts_or_lanes == "lanes" then
             relevant_amount = relevant_amount * 0.5  -- lanes are stored as belts

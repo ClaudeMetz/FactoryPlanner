@@ -2,15 +2,17 @@
 Version: 0.00.00
 Date: 00. 00. 0000
   Features:
+    - Added support for machines that generate electricity (#81)
     - Added support for machine fuel that takes its energy from the fluid's heat instead of burning it (#641)
     - Implemented machine counts, power and emission solving for agricultural towers (#633)
     - Added support for stacking in belt throughput calculations (#341)
   Changes:
-    -
+    - Machine drain is now based on the exact machine count instead of the whole machines that'd be built, a change which was required for technical reasons
   Bugfixes:
     - Fixed agriculture tower recipes not being usable with the Condensing Agricultural Tower mod (#727)
     - Fixed an issue with modules not being offered when they don't have a valid recipe (#797)
     - Fixed that ingredient satisfaction was not always being calculated (#795) (Thanks vapopescu!)
+    - Fixed that machines with an energy source effectivity below 1 reported too few emissions
 
 ---------------------------------------------------------------------------------------------------
 Version: 2.1.6

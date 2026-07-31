@@ -125,7 +125,7 @@ function Machine:get_speed()
 
     if category == nil or category == "mining_drill" then
         return speed
-    elseif category == "boiler" or category == "offshore_pump" then
+    elseif category == "boiler" or category == "offshore_pump" or category == "generator" then
         return speed * self.quality_proto.default_multiplier
     elseif category == "launcher" then
         return LAUNCHER_DATA[self.proto.name][self.quality_proto.name].speed
@@ -144,7 +144,7 @@ function Machine:get_energy_usage()
 
     if category == nil or category == "mining_drill" or category == "offshore_pump" then
         return energy_usage
-    elseif category == "boiler" then
+    elseif category == "boiler" or category == "generator" then
         return energy_usage * self.quality_proto.default_multiplier
     elseif category == "launcher" then
         return LAUNCHER_DATA[self.proto.name][self.quality_proto.name].energy_usage
@@ -164,7 +164,7 @@ function Machine:get_resource_drain_rate()
 
     if self.proto.prototype_category == "mining_drill" then
         return resource_drain_rate * self.quality_proto.mining_drill_resource_drain_multiplier
-    else  -- "crafter" | "launcher" | "boiler" | "offshore_pump" | nil
+    else  -- "crafter" | "launcher" | "boiler" | "offshore_pump" | "generator" | nil
         return resource_drain_rate
     end
 end
@@ -177,7 +177,7 @@ function Machine:get_module_limit()
     local limit = self.proto.module_limit
     local category = self.proto.prototype_category
 
-    if category == nil or category == "boiler" or category == "offshore_pump" then
+    if category == nil or category == "boiler" or category == "offshore_pump" or category == "generator" then
         return limit
     elseif not self.proto.quality_affects_module_slots then
         return limit
@@ -186,6 +186,21 @@ function Machine:get_module_limit()
     else  -- "crafter" | "launcher"
         return limit + self.proto.module_slots_quality_bonus[self.quality_proto.name]
     end
+end
+
+---@return number?
+function Machine:get_fluid_usage_per_tick()
+    ---@cast self.proto FPMachinePrototype
+    ---@cast self.quality_proto FPQualityPrototype
+
+    local burner = self.proto.burner
+    local fluid_usage_per_tick = (burner) and burner.fluid_usage_per_tick or nil
+    if fluid_usage_per_tick == nil then return nil end
+
+    if self.proto.prototype_category == "generator" then
+        return fluid_usage_per_tick * self.quality_proto.default_multiplier
+    end
+    return fluid_usage_per_tick
 end
 
 
@@ -200,14 +215,15 @@ function Machine:get_fuel_performance()
 
     local burner = self.proto.burner
     local fuel_value = self.fuel:get_fuel_value()
-    if burner == nil or burner.fluid_usage_per_tick == nil or fuel_value == nil then return 1, 0 end
+    local fluid_usage_per_tick = self:get_fluid_usage_per_tick()
+    if burner == nil or fluid_usage_per_tick == nil or fuel_value == nil then return 1, 0 end
 
     local consumption = self.parent.total_effects.consumption / MAGIC_NUMBERS.effect_precision
     local wanted = self:get_energy_usage() * (1 + consumption)
     if wanted <= 0 then return 1, 0 end
 
     -- Both sides scale with the machine count, so this ratio is a per-machine constant
-    local ratio = (burner.fluid_usage_per_tick * fuel_value * burner.effectivity) / wanted
+    local ratio = (fluid_usage_per_tick * fuel_value * burner.effectivity) / wanted
     local wasted_share = (not burner.scale_fluid_usage and ratio > 1) and (1 - 1/ratio) or 0
     return math.min(1, ratio), wasted_share
 end
