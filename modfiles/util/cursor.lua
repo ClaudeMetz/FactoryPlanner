@@ -399,6 +399,7 @@ end
 ---@param item_proto FPItemPrototype | FPFuelPrototype
 ---@return boolean applicable
 local function set_filter(player, cursor_entity, item_proto)
+    if cursor_entity.type == "none" then return false end
     local entity_proto  ---@type LuaEntityPrototype
 
     if cursor_entity.type == "entity" then
