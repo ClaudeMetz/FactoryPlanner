@@ -342,32 +342,20 @@ function SimplexTableau:solve()
         return self.objective[self.cols[key1]] < self.objective[self.cols[key2]]
     end)
 
-    -- Find true basic variables (positive coefficient in one row, 0 on the rest)
-    for j = 1, #self.matrix do
-        local map = variable_map[j]  ---@as VariableMap
-        local pos_index = nil  ---@type integer?
-        local is_basic = true
-
-        if map.type == "unassigned" then
-            for i = 1, #self.matrix[j] do
-                if self.matrix[j][i] > MAGIC_NUMBERS.margin_of_error then
-                    if pos_index then
-                        is_basic = false
-                        break
+    -- Add constraint slack variables to the basis
+    for k = 1, #self.matrix[1] do
+        if not basic[k] and self.solution[k] > 0 then
+            for j = 1, #self.matrix do
+                local map = variable_map[j]  ---@as VariableMap
+                if map.type == "unassigned" and self.matrix[j][k] > MAGIC_NUMBERS.margin_of_error then
+                    if string.sub(map.key, 1, 2) == "s_" then
+                        map.type = "basic"
+                        basic[k] = map.key
                     else
-                        pos_index = i
+                        map.type = "non-basic"
+                        table.insert(non_basic, map.key)
                     end
-                elseif self.matrix[j][i] < 0 then
-                    is_basic = false
-                    break
                 end
-            end
-
-            -- For the heuristic basis, just consider non-zero constraints
-            if is_basic and pos_index and not basic[pos_index] and
-                    (not USE_HEURISTIC_INITIAL_BASIS or self.solution[pos_index] > 0) then
-                map.type = "basic"
-                basic[pos_index] = map.key
             end
         end
     end
@@ -412,6 +400,32 @@ function SimplexTableau:solve()
                     end
                     map.type = "basic"
                     basic[min_row] = key
+                end
+            end
+        end
+    end
+
+    -- Find true basic variables (positive coefficient in one row, 0 on the rest)
+    for k = 1, #self.matrix[1] do
+        if not basic[k] then
+            for j = 1, #self.matrix do
+                local map = variable_map[j]  ---@as VariableMap
+                if map.type == "unassigned" and self.matrix[j][k] > MAGIC_NUMBERS.margin_of_error then
+                    local is_basic = true
+                    for i = 1, #self.matrix[j] do
+                        if i ~= k and self.matrix[j][i] ~= 0 then
+                            is_basic = false
+                            break
+                        end
+                    end
+
+                    if is_basic then
+                        map.type = "basic"
+                        basic[k] = map.key
+                    else
+                        map.type = "non-basic"
+                        table.insert(non_basic, map.key)
+                    end
                 end
             end
         end
