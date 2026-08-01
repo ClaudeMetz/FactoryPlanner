@@ -11,8 +11,6 @@ LUDecomposition.__index = LUDecomposition
 ---@field vector number[]
 ---@field column integer
 
-local USE_ROOK_PIVOTING = true
-
 
 --- Performs LU decomposition `L U = P A Q`
 ---@param matrix number[][] column-major order square matrix
@@ -46,19 +44,7 @@ function LUDecomposition:init(matrix)
         -- Find pivot
         local pivot_row = k
         local pivot_col = k
-        if USE_ROOK_PIVOTING then
-            pivot_row, pivot_col = o:_rook_pivot_vertical(k, k, k, k)
-        else
-            local max = o.u_matrix[pk][k] > 0 and o.u_matrix[pk][k] or -o.u_matrix[pk][k]
-            for i = k + 1, #o.u_matrix do
-                local pi = o.p_vector[i]  ---@as integer
-                local cell = o.u_matrix[pi][k] > 0 and o.u_matrix[pi][k] or -o.u_matrix[pi][k]
-                if cell > max then
-                    max = cell
-                    pivot_row = i
-                end
-            end
-        end
+        pivot_row, pivot_col = o:_rook_pivot_vertical(k, k, k, k)
 
         -- Permute
         if pivot_row ~= k then
