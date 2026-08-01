@@ -159,7 +159,8 @@ function generator.recipes.generate()
                 emissions_multiplier = proto.emissions_multiplier,
                 allowed_effects = proto.allowed_effects,  -- can be nil
                 allowed_module_categories = proto.allowed_module_categories,  -- can be nil
-                maximum_productivity = math.floor(proto.maximum_productivity + 1e-4),
+                maximum_productivity = math.floor(proto.maximum_productivity
+                    * MAGIC_NUMBERS.effect_precision + 1e-4),
                 productivity_recipe = (productivity_recipes[proto.name]) and proto.name or nil,
                 surface_conditions = proto.surface_conditions,
                 recycling = recycling_recipes[proto.name],
