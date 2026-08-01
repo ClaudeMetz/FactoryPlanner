@@ -119,8 +119,8 @@ function simplex_engine.solve_floor(floor_data, previous_basis, line_metadata_ta
     local tableau = SimplexTableau:init()
 
     -- Add line variables to the tableau
-    for _, line_data in pairs(relevant_line_metadata) do
-        tableau:add_line_variable(line_data)
+    for _, line_metadata in pairs(relevant_line_metadata) do
+        tableau:add_line_variable(line_metadata)
     end
 
     -- Add slack variables for products
@@ -163,10 +163,19 @@ function simplex_engine.solve_floor(floor_data, previous_basis, line_metadata_ta
         end
 
         -- Add aditional constraint for machine limits
-        for line_id, line_data in pairs(relevant_line_metadata) do
-            if line_data.machine_limit then
-                local type = line_data.machine_force_limit and "==" or "<="
-                tableau:add_line_constraint(line_id, type, line_data.machine_limit, objective_vector.machine_limit)
+        for line_id, line_metadata in pairs(relevant_line_metadata) do
+            if line_metadata.machine_limit then
+                local type = line_metadata.machine_force_limit and "==" or "<="
+                tableau:add_line_constraint(line_id, type, line_metadata.machine_limit, objective_vector.machine_limit)
+            end
+        end
+        for _, line_object_data in pairs(floor_data.lines) do
+            if line_object_data.subfloor then
+                local top_line_data = line_object_data.subfloor.lines[1]  ---@as LineData?
+                if top_line_data and top_line_data.machine_limit.limit then
+                    local type = top_line_data.machine_limit.force_limit and "==" or "<="
+                    tableau:add_line_constraint(line_object_data.id, type, top_line_data.machine_limit.limit, objective_vector.machine_limit)
+                end
             end
         end
     else

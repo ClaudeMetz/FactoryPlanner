@@ -391,7 +391,7 @@ function SimplexTableau:solve(previous_basis)
 
     -- Find a solution
     local done = false
-    local max_iterations = (#basic) ^ 2  -- Upper bound is 2^#v, but average case with random pivots is #c^2
+    local max_iterations = 4 * #basic
     local factorization_interval = math.min(#basic, MAGIC_NUMBERS.simplex_max_factorization_interval)
     repeat
         -- If the factorization is too old, we need to recreate it
