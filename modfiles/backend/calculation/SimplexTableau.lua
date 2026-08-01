@@ -1,4 +1,3 @@
----@namespace Simplex
 local LUDecomposition = require("backend.calculation.LUDecomposition")
 
 
@@ -8,8 +7,8 @@ local LUDecomposition = require("backend.calculation.LUDecomposition")
 ---@alias VariableType "unassigned" | "basic" | "non-basic"
 ---@alias ConstraintKey string `"item_<floor_id>_<proto-key>"` | `"c_<n>"`
 ---@alias VariableKey string `"line_<line_id>"` | `"item_<floor_id>_<in|out>_<proto-key>"` | `"s_<n>"` | `"y_<n>"`
----@alias LineResultTable table<ObjectID, LineResult>
----@alias FloorResultTable table<ObjectID, FloorResult>
+---@alias LineResultTable table<ObjectID, SimplexLineResult>
+---@alias FloorResultTable table<ObjectID, SimplexFloorResult>
 
 ---@class SimplexTableau
 ---@field matrix number[][] column-major order
@@ -30,14 +29,14 @@ SimplexTableau.__index = SimplexTableau
 ---@field line_results LineResultTable
 ---@field floor_results FloorResultTable
 
----@class LineResult
+---@class SimplexLineResult
 ---@field line_id ObjectID
 ---@field machine_amount number
 
----@class FloorResult
+---@class SimplexFloorResult
 ---@field floor_id ObjectID
----@field products ItemList
----@field ingredients ItemList
+---@field products SimplexItemList
+---@field ingredients SimplexItemList
 
 -- An heuristic initial basis speeds up the solving cosiderably, but may give an inaccurate solution
 ---@TODO: move this to options
@@ -72,7 +71,7 @@ function SimplexTableau:add_line_variable(line_data)
 
     local col_index = self:_add_column(line_key)
 
-    ---@param items ItemList
+    ---@param items SimplexItemList
     ---@param sign 1 | -1
     local function add_rows(items, sign)
         for item, value in pairs(items) do
@@ -593,7 +592,7 @@ function SimplexTableau:solve()
                             floor_id = floor_id,
                             products = {},
                             ingredients = {}
-                        }  ---@type FloorResult
+                        }  ---@type SimplexFloorResult
                     end
 
                     if string.sub(key, sep, sep + 4) == "_out_" then

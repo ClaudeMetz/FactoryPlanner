@@ -93,7 +93,7 @@ end
 
 ---@class FloorData
 ---@field id ObjectID
----@field products FormattedProduct[] | SolverItem[]
+---@field products (FormattedProduct | SolverItem)[]
 ---@field lines (LineData | SubfloorLineData)[]
 
 ---@class SubfloorLineData
@@ -331,7 +331,7 @@ function solver.update(player, factory)
 
         if factory.matrix_solver_active then
             if lib.globals.preferences(player).use_simplex_solver then
-                simplex_engine.solve(player, factory)
+                simplex_engine.solve(factory_data)
             else
                 local matrix_metadata = matrix_engine.get_matrix_solver_metadata(factory_data)
 
