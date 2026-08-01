@@ -416,6 +416,7 @@ function SimplexTableau:solve(previous_basis)
         done, result.state = iterate()
         iterations = iterations + 1
     until done or iterations == max_iterations
+    if result.state ~= "solved" then return result end
 
     -- Cache the solution basis for later
     for key, i in pairs(self.rows) do
