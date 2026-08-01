@@ -2,11 +2,11 @@
 Version: 0.00.00
 Date: 00. 00. 0000
   Features:
-    - 
+    -
   Changes:
-    - 
+    -
   Bugfixes:
-    - 
+    - Fixed that the recipe productivity cap was set 1000 too low (#804)
 
 ---------------------------------------------------------------------------------------------------
 Version: 2.1.8
