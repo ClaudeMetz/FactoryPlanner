@@ -417,13 +417,6 @@ function SimplexTableau:solve(previous_basis)
         iterations = iterations + 1
     until done or iterations == max_iterations
 
-    -- Calculate equivalence classes
-    local equivalencies = {}  ---@type table<VariableKey, VariableKey[]>
-    for _, key in pairs(basic) do equivalencies[key] = { key } end
-    for dest_key, src_key in pairs(self.equality) do
-        if equivalencies[src_key] then table.insert(equivalencies[src_key], dest_key) end
-    end
-
     -- Cache the solution basis for later
     for key, i in pairs(self.rows) do
         result.basis[key] = basic[i]

@@ -355,7 +355,7 @@ function simplex_engine.update_factory(factory_data, line_metadata_table, result
         end
     end
 
-    simplex_engine.update_floor(factory_data.player_index, factory_data.top_floor, top_byproducts, line_metadata_table, result)
+    simplex_engine.update_floor(factory_data.player_index, factory_data.top_floor, 1, top_byproducts, line_metadata_table, result)
 
     solver.set_factory_result{
         player_index = factory_data.player_index,
@@ -370,64 +370,69 @@ end
 
 ---@param player_index integer
 ---@param floor_data FloorData
+---@param scale_factor number
 ---@param byproducts SimplexItemList
 ---@param line_metadata_table LineMetadataTable
 ---@param result SimplexResult?
 ---@return integer machine_amount
-function simplex_engine.update_floor(player_index, floor_data, byproducts, line_metadata_table, result)
-    local machine_amount = 0.0
+function simplex_engine.update_floor(player_index, floor_data, scale_factor, byproducts, line_metadata_table, result)
+    local machine_amount = 0
 
     for _, line_object_data in pairs(floor_data.lines) do
-        local line_result = result and result.line_results[line_object_data.id]
         if not line_object_data.subfloor then
-            machine_amount = machine_amount + simplex_engine.update_line(player_index, floor_data.id,
-                    line_object_data, byproducts, line_metadata_table, line_result)
+            local line_result = result and result.line_results[line_object_data.id]
+            local line_machines = simplex_engine.update_line(player_index, floor_data.id,
+                    line_object_data, scale_factor, byproducts, line_metadata_table, line_result)
+            machine_amount = machine_amount + math.ceil(line_machines - MAGIC_NUMBERS.margin_of_error)
         else
-            local floor_result = result and result.floor_results[line_object_data.id] or {
+            local subfloor_result = result and result.floor_results[line_object_data.id] or {
                 floor_id = line_object_data.id,
                 products = {},
                 ingredients = {},
             }
+            local line_result = result and result.line_results[line_object_data.id]
+            local subfloor_scale_factor = (line_result and line_result.machine_amount or 0) * scale_factor
 
             local product_result, byproduct_result, ingredient_result, floor_byproducts =
-                    simplex_engine.update_line_object_common(1, floor_result.products, byproducts, floor_result.ingredients)
-            local floor_machine_amount = simplex_engine.update_floor(player_index,
-                    line_object_data.subfloor, floor_byproducts, line_metadata_table, result)
+                    simplex_engine.update_line_object_common(subfloor_scale_factor, subfloor_result.products, byproducts, subfloor_result.ingredients)
+            local floor_machines = simplex_engine.update_floor(player_index,
+                    line_object_data.subfloor, subfloor_scale_factor, floor_byproducts, line_metadata_table, result)
 
             solver.set_line_result{
                 player_index = player_index,
                 floor_id = floor_data.id,
                 line_id = line_object_data.id,
-                machine_amount = floor_machine_amount,
+                machine_amount = floor_machines,
                 Product = product_result,
                 Byproduct = byproduct_result,
                 Ingredient = ingredient_result
             }
 
-            machine_amount = machine_amount + floor_machine_amount
+            machine_amount = machine_amount + floor_machines
         end
     end
 
-    return math.ceil(machine_amount - MAGIC_NUMBERS.margin_of_error)
+    return machine_amount
 end
 
 
 ---@param player_index integer
 ---@param floor_id ObjectID
 ---@param line_data LineData
+---@param scale_factor number
 ---@param byproducts SimplexItemList
 ---@param line_metadata_table LineMetadataTable
 ---@param result SimplexLineResult?
 ---@return number machine_amount
-function simplex_engine.update_line(player_index, floor_id, line_data, byproducts, line_metadata_table, result)
+function simplex_engine.update_line(player_index, floor_id, line_data, scale_factor, byproducts, line_metadata_table, result)
     local data = line_metadata_table[line_data.id]
     if not data then return 0 end
     local products = lib.flib.shallow_copy(data.products)
     local ingredients = lib.flib.shallow_copy(data.ingredients)
 
     -- Update the machine
-    local machine_amount = result and result.machine_amount or 0
-    local production_ratio = machine_amount > 0 and data.total_crafts or 0
+    local machine_amount = result and scale_factor * result.machine_amount or 0
+    local production_ratio = machine_amount * (data.total_crafts or 0)
     local fuel_amount = 0.0
 
     -- Update the fuel
