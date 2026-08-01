@@ -307,9 +307,13 @@ local function open_machine_dialog(player, modal_data)
 
     -- Limit
     local factory = lib.context.get(player, "Factory")  ---@as Factory
+    local line = modal_data.line
+    local floor = line.parent
     -- Unavailable with matrix solver or special recipes
-    local limit_enabled = (not factory.matrix_solver_active and modal_data.line.recipe.proto.energy > 0)
-            or (factory.matrix_solver_active and lib.globals.preferences(player).use_simplex_solver)
+    -- Limited availability with simplex solver (top floor only)
+    local limit_enabled = (not factory.matrix_solver_active and line.recipe.proto.energy > 0)
+            or (factory.matrix_solver_active and lib.globals.preferences(player).use_simplex_solver and
+            (floor.level == 1 or floor.level == 2 and line == floor.first))
     add_limit_frame(content_frame, player, limit_enabled)
 
     -- Modules

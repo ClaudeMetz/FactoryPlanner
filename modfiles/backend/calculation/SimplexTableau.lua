@@ -16,7 +16,6 @@ local LUDecomposition = require("backend.calculation.LUDecomposition")
 ---@field solution number[]
 ---@field rows table<ConstraintKey, integer> constraints
 ---@field cols table<VariableKey, integer> variables
----@field equality table<VariableKey, VariableKey>
 local SimplexTableau = {}
 SimplexTableau.__index = SimplexTableau
 
@@ -48,8 +47,7 @@ function SimplexTableau:init()
         objective = {},
         solution = {},
         rows = {},
-        cols = {},
-        equality = {}
+        cols = {}
     }  ---@type SimplexTableau
 
     setmetatable(instance, self)
@@ -153,7 +151,7 @@ end
 ---@param objective number?
 function SimplexTableau:_add_constraint(key, type, limit, objective)
     -- Check that the variable is present in the tableau
-    local var_col_index = self.cols[key] or (self.equality[key] and self.cols[self.equality[key]])
+    local var_col_index = self.cols[key]
     if not var_col_index then return end
     if limit < 0 then return end
 
@@ -177,134 +175,6 @@ function SimplexTableau:_add_constraint(key, type, limit, objective)
     -- Fill the inequality between the given variable and the slack variable
     local sign = (type == "<=" and 1) or (type == ">=" and -1) or 0
     self.matrix[slack_col_index][row_index] = sign
-end
-
-
---- Adds a subfloor item variable to the current floor item constraint.
---- In other words, it allows item import/export between the current floor and the subfloor
----@param item PrototypeKey
----@param floor_id ObjectID
----@param subfloor_id ObjectID
----@param direction ItemDirection  from the perspective of the subfloor
----@param objective number?
-function SimplexTableau:add_item_transfer(item, floor_id, subfloor_id, direction, objective)
-    local item_row_key = "item_" .. floor_id .. "_" .. item
-    local item_col_key = "item_" .. subfloor_id .. "_".. direction .. "_" .. item
-
-    local item_row_index = self.rows[item_row_key]
-    local item_col_index = self.cols[item_col_key] or
-            (self.equality[item_col_key] and self.cols[self.equality[item_col_key]])
-
-    -- Sanity check
-    if not item_row_index or not item_col_index then return end
-
-    -- Update the item variable objective
-    lib.table.add(self.objective, item_col_index, -(objective or 0))  -- objective coefficient is opposite
-
-    -- To the current floor, the subfloor is like a machine
-    -- Inputs are ingredients and outputs are products
-    local sign = (direction == "in" and -1) or (direction == "out" and 1) or 0
-    self.matrix[item_col_index]--[[@cast -nil]][item_row_index] = sign
-end
-
-
---- Adds an equality between item variables without explicitly adding a constraint to the tableau.
----@param item PrototypeKey
----@param floor1_id ObjectID
----@param floor2_id ObjectID
----@param direction ItemDirection
----@param objective number?
-function SimplexTableau:mark_equality(item, floor1_id, floor2_id, direction, objective)
-    local item_col_key1 = "item_" .. floor1_id .. "_".. direction .. "_" .. item
-    local item_col_key2 = "item_" .. floor2_id .. "_".. direction .. "_" .. item
-
-    local real_key1 = (self.cols[item_col_key1] and item_col_key1) or self.equality[item_col_key1]
-    if real_key1 then
-        self.equality[item_col_key2] = real_key1
-        lib.table.add(self.objective, self.cols[real_key1], -(objective or 0))  -- objective coefficient is opposite
-        return
-    end
-
-    local real_key2 = (self.cols[item_col_key2] and item_col_key2) or self.equality[item_col_key2]
-    if real_key2 then
-        self.equality[item_col_key1] = real_key2
-        lib.table.add(self.objective, self.cols[real_key2], -(objective or 0))  -- objective coefficient is opposite
-        return
-    end
-end
-
-
---[[
-Merges the specified `tableau` (`B`) into self (`A`) The result should be:
-```
--------------------
-|  0  | o_A | o_B |
--------------------
-| s_A |  A* |  0  |
--------------------
-| s_B |  0  |  B* |
--------------------
-```
-where `A*` and `B*` are `A` and `B` without the first row and column
-]]--
----@param tableau SimplexTableau
-function SimplexTableau:merge(tableau)
-    local a_rows, a_cols = #(self.matrix[1] or {}), #self.matrix
-    local b_rows, b_cols = #(tableau.matrix[1] or {}), #tableau.matrix
-
-    -- Copy the solution column
-    for i = 1, b_rows do
-        self.solution[a_rows + i] = tableau.solution[i]
-    end
-
-    -- Copy the objective row
-    for j = 1, b_cols do
-        self.objective[a_cols + j] = tableau.objective[j]
-    end
-
-    -- Fill the top-right section with 0
-    ---@diagnostic disable: need-check-nil
-    for j = a_cols + 1, a_cols + b_cols do
-        self.matrix[j] = {}
-        for i = 1, a_rows do
-            self.matrix[j][i] = 0
-        end
-    end
-
-    -- Fill the bottom-left section with 0
-    for i = a_rows + 1, a_rows + b_rows do
-        for j = 1, a_cols do
-            self.matrix[j][i] = 0
-        end
-    end
-
-    -- Copy the rest of B into A
-    for i = 1, b_rows do
-        for j = 1, b_cols do
-            self.matrix[a_cols + j][a_rows + i] = tableau.matrix[j][i]
-        end
-    end
-
-    -- Copy the row keys
-    for k, v in pairs(tableau.rows) do
-        local new_row = a_rows + v
-        self.rows[k] = new_row
-    end
-
-    -- Copy the column keys
-    for k, v in pairs(tableau.cols) do
-        local new_col = a_cols + v
-        -- Don't handle artificial variables
-        -- If we tried to merge tableaus after starting solving, we got bigger problems
-        if string.sub(k, 1, 2) == "s_" then
-            self.cols["s_" .. new_col] = new_col
-        else
-            self.cols[k] = new_col
-        end
-    end
-
-    -- Copy equalities
-    self.equality = lib.table.union(self.equality, tableau.equality)
 end
 
 
@@ -336,7 +206,7 @@ function SimplexTableau:solve(previous_basis)
         if row_index and col_index then
             variable_map[col_index]--[[@cast -nil]].type = "basic"
             basic[row_index] = col_key
-        else
+        elseif row_index and not col_index or not row_index and col_index then
             cache_valid = false
             break
         end
@@ -425,6 +295,18 @@ function SimplexTableau:solve(previous_basis)
     end
 
 
+    ---@return boolean
+    ---@return SolverState
+    local function solution_reached()
+        for i = 1, #basic do
+            if basic[i] and string.sub(basic[i], 1, 2) == "y_" then
+                return true, "no-solution"
+            end
+        end
+        return true, "solved"
+    end
+
+
     ---@return boolean done
     ---@return SolverState state
     local function iterate()
@@ -458,15 +340,7 @@ function SimplexTableau:solve(previous_basis)
             end
         end
 
-        if entering_index == 0 then
-            -- We are done, but check that we don't have virtual variables in the solution
-            for i = 1, #basic do
-                if basic[i] and string.sub(basic[i], 1, 2) == "y_" then
-                    return true, "no-solution"
-                end
-            end
-            return true, "solved"
-        end
+        if entering_index == 0 then return solution_reached() end
 
         -- Compute the coefficients of the entering variable
         local entering_column = self.cols[non_basic[entering_index]]  ---@type integer
@@ -532,6 +406,12 @@ function SimplexTableau:solve(previous_basis)
             break
         end
 
+        -- Cached results may already have a solution
+        if #self.matrix == #self.matrix[1] then
+            _, result.state = solution_reached()
+            break
+        end
+
         -- Iterate through the solution
         done, result.state = iterate()
         iterations = iterations + 1
@@ -550,41 +430,49 @@ function SimplexTableau:solve(previous_basis)
     end
 
     -- Interpret the result
-    for row, src_key in pairs(basic) do
+    for row, key in pairs(basic) do
         local value = x_vector[row] or 0
-        for _, key in pairs(equivalencies[src_key]) do
-            -- Ignore zeroes
-            if value > MAGIC_NUMBERS.margin_of_error then
-                if string.sub(key, 1, 5) == "line_" then
-                    local id = tonumber(string.sub(key, 6))
-                    if id then
-                        result.line_results[id] = {
-                            line_id = id,
-                            machine_amount = value
-                        }
-                    end
-                elseif string.sub(key, 1, 5) == "item_" then
-                    local sep = string.find(key, "_", 6, true) or -2
-                    local floor_id = tonumber(string.sub(key, 6, sep - 1))  ---@as ObjectID
+        if value > MAGIC_NUMBERS.margin_of_error then
+            if string.sub(key, 1, 5) == "line_" then
+                local id = tonumber(string.sub(key, 6))
+                if id then
+                    result.line_results[id] = {
+                        line_id = id,
+                        machine_amount = value
+                    }
+                end
+            elseif string.sub(key, 1, 5) == "item_" then
+                local sep = string.find(key, "_", 6, true) or -2
+                local floor_id = tonumber(string.sub(key, 6, sep - 1))  ---@as ObjectID
 
-                    -- Create a new floor result if necessary
-                    if not result.floor_results[floor_id] then
-                        result.floor_results[floor_id] = {
-                            floor_id = floor_id,
-                            products = {},
-                            ingredients = {}
-                        }  ---@type SimplexFloorResult
-                    end
+                -- Create a new floor result if necessary
+                if not result.floor_results[floor_id] then
+                    result.floor_results[floor_id] = {
+                        floor_id = floor_id,
+                        products = {},
+                        ingredients = {}
+                    }  ---@type SimplexFloorResult
+                end
 
-                    if string.sub(key, sep, sep + 4) == "_out_" then
-                        local item_key = string.sub(key, sep + 5)
-                        result.floor_results[floor_id].products[item_key] = value
-                    elseif string.sub(key, sep, sep + 3) == "_in_" then
-                        local item_key = string.sub(key, sep + 4)
-                        result.floor_results[floor_id].ingredients[item_key] = value
-                    end
+                if string.sub(key, sep, sep + 4) == "_out_" then
+                    local item_key = string.sub(key, sep + 5)
+                    result.floor_results[floor_id].products[item_key] = value
+                elseif string.sub(key, sep, sep + 3) == "_in_" then
+                    local item_key = string.sub(key, sep + 4)
+                    result.floor_results[floor_id].ingredients[item_key] = value
                 end
             end
+        end
+    end
+
+    -- Invalidate the floor cache
+    if not cache_valid then
+        local invalid_columns = {}  ---@type table<VariableKey, true>
+        for floor_id, _ in pairs(result.floor_results) do
+            invalid_columns["line_" .. floor_id] = true
+        end
+        for row_key, col_key in pairs(previous_basis) do
+            if invalid_columns[col_key] then previous_basis[row_key] = nil end
         end
     end
 

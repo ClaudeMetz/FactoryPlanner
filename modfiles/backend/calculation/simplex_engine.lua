@@ -1,5 +1,6 @@
 local SimplexTableau = require("backend.calculation.SimplexTableau")
 local structures = require("backend.calculation.structures")
+local util = require("util")
 
 --- Matrix solver based on the simplex method
 local simplex_engine = {}
@@ -15,7 +16,7 @@ local simplex_engine = {}
 ---@field floor_id ObjectID
 ---@field products SimplexItemList
 ---@field ingredients SimplexItemList
----@field total_crafts number
+---@field total_crafts number?
 ---@field machine_limit number?
 ---@field machine_force_limit boolean?
 ---@field fuel_ratio number?  how much of an ingredient is for fuel (treat as 1 if nil)
@@ -26,6 +27,7 @@ local simplex_engine = {}
 -- and negative values indicate a cost
 local objective_vector = {
     target_product = 1e9,
+    target_machine = 1e9,
     limited_ingredient = 0,
     product = 0,
     ingredient = -0.001,
@@ -54,11 +56,8 @@ function simplex_engine.solve(factory_data)
     -- Get floor metadata
     local line_metadata_table = simplex_engine.get_floor_metadata(factory_data.top_floor)
 
-    -- Create the simplex tableau of the factory
-    local tableau = simplex_engine.create_tableau( factory_data.top_floor, line_metadata_table, true)
-
-    -- Solve the tableau
-    local result = tableau and tableau:solve(factory_data.simplex_basis)
+    -- Solve each floor recursively
+    local result = simplex_engine.solve_floor( factory_data.top_floor, factory_data.simplex_basis, line_metadata_table, 1)
 
     -- Update GUI
     simplex_engine.update_factory(factory_data, line_metadata_table, result)
@@ -67,81 +66,54 @@ end
 
 ---@param floor_data FloorData
 ---@param line_metadata_table LineMetadataTable
----@param is_top_level boolean?
----@return SimplexTableau? tableau
----@return SimplexItemSet? products
----@return SimplexItemSet? ingredients
-function simplex_engine.create_tableau(floor_data, line_metadata_table, is_top_level)
+---@param level integer
+---@return SimplexResult?
+function simplex_engine.solve_floor(floor_data, previous_basis, line_metadata_table, level)
     local relevant_line_metadata = {}  ---@type LineMetadataTable
-    local tableau_table = {}  ---@type table<ObjectID, SimplexTableau>
     local products = {}  ---@type SimplexItemSet
     local ingredients = {}  ---@type SimplexItemSet
-    local product_subfloors = {}  ---@type table<PrototypeKey, ObjectID[]>
-    local ingredient_subfloors = {}  ---@type table<PrototypeKey, ObjectID[]>
+    local cycled_intermediates = {}  ---@type SimplexItemSet
+    local result  ---@type SimplexResult?
 
     -- Recursively solve subfloors and add their results to the line data
     for _, line_object_data in pairs(floor_data.lines) do
         if line_object_data.subfloor then
-            local subfloor_tableau, subfloor_products, subfloor_ingredients =
-                    simplex_engine.create_tableau(line_object_data.subfloor, line_metadata_table)
-            if subfloor_tableau then tableau_table[line_object_data.id] = subfloor_tableau end
-            if subfloor_products then
-                for item_key, _ in pairs(subfloor_products) do
-                    product_subfloors[item_key] = product_subfloors[item_key] or {}
-                    table.insert(product_subfloors[item_key], line_object_data.id)
-                end
+            local partial_result = simplex_engine.solve_floor(line_object_data.subfloor, previous_basis, line_metadata_table, level + 1)
+            result = util.merge({result or {}, partial_result})  ---@as SimplexResult?
+
+            -- Add line metadata for this floor based on the results
+            local floor_result = partial_result and partial_result.floor_results[line_object_data.id]
+            if floor_result then
+                line_metadata_table[line_object_data.id] = {
+                    floor_id = floor_data.id,
+                    line_id = line_object_data.id,
+                    products = floor_result.products,
+                    ingredients = floor_result.ingredients
+                }
             end
-            if subfloor_ingredients then
-                for item_key, _ in pairs(subfloor_ingredients) do
-                    ingredient_subfloors[item_key] = ingredient_subfloors[item_key] or {}
-                    table.insert(ingredient_subfloors[item_key], line_object_data.id)
-                end
-            end
-        else
-            relevant_line_metadata[line_object_data.id] = line_metadata_table[line_object_data.id]
         end
+
+        relevant_line_metadata[line_object_data.id] = line_metadata_table[line_object_data.id]
     end
+
+    -- Do not continue if the floor is empty (sanity check)
+    if not next(relevant_line_metadata) then return end
 
     -- Populate the item sets based on the line data
     for _, line_data in pairs(relevant_line_metadata) do
-        for item_key, value in pairs(line_data.products) do
-            if value > 0 then products[item_key] = true end
-        end
-        for item_key, value in pairs(line_data.ingredients) do
-            if value > 0 then ingredients[item_key] = true end
-        end
-    end
-
-    -- Add subfloor products if they are used on this floor
-    for item_key, floor_ids in pairs(product_subfloors) do
-        if products[item_key] or ingredients[item_key] or #floor_ids >= 2 or #(ingredient_subfloors[item_key] or {}) >= 2 then
+        for item_key, _ in pairs(line_data.products) do
             products[item_key] = true
-            product_subfloors[item_key] = nil
         end
-    end
-
-    -- Add subfloor ingredients if they are used on this floor
-    for item_key, floor_ids in pairs(ingredient_subfloors) do
-        if products[item_key] or ingredients[item_key] or #floor_ids >= 2 or #(product_subfloors[item_key] or {}) >= 2 then
+        for item_key, _ in pairs(line_data.ingredients) do
             ingredients[item_key] = true
-            ingredient_subfloors[item_key] = nil
-        end
-    end
-
-    -- Add items that transfer between subfloors
-    for item_key, floor_ids in pairs(product_subfloors) do
-        if ingredient_subfloors[item_key] and floor_ids[1] ~= ingredient_subfloors[item_key][1] then
-            products[item_key] = true
-            ingredients[item_key] = true
-            product_subfloors[item_key] = nil
-            ingredient_subfloors[item_key] = nil
+            if products[item_key] then cycled_intermediates[item_key] = true end
         end
     end
 
     local intermediates = lib.table.intersection(products, ingredients)  ---@type SimplexItemSet
 
-    -- Do not continue if the floor can't produce anything.
-    if not next(products) and not next(product_subfloors) then return end
+    -- Do not continue if the floor can't produce anything (sanity check)
+    if not next(products) then return end
 
     -- Create the simplex tableau
     local tableau = SimplexTableau:init()
@@ -159,8 +131,8 @@ function simplex_engine.create_tableau(floor_data, line_metadata_table, is_top_l
         end
     end
 
-    -- Add slack variables for intermediates
-    for item_key, _ in pairs(intermediates) do
+    -- Add slack variables for cycled intermediates
+    for item_key, _ in pairs(cycled_intermediates) do
         local c = item_cost(item_key)
         tableau:add_item_variable(item_key, floor_data.id, "in", c * objective_vector.intermediate_in)
         tableau:add_item_variable(item_key, floor_data.id, "out", c * objective_vector.intermediate_out)
@@ -174,65 +146,39 @@ function simplex_engine.create_tableau(floor_data, line_metadata_table, is_top_l
         end
     end
 
-    for subfloor_id, subfloor_tableau in pairs(tableau_table) do
-        -- Merge the subfloor tableau into this one
-        tableau:merge(subfloor_tableau)
-
-        -- Allow importing from the subfloor
-        for item_key, _ in pairs(products) do
-            local objective = item_cost(item_key) * objective_vector.floor_transfer_out
-            tableau:add_item_transfer(item_key, floor_data.id, subfloor_id, "out", objective)
-        end
-
-        -- Allow exporting to the subfloor
-        for item_key, _ in pairs(ingredients) do
-            local objective = item_cost(item_key) * objective_vector.floor_transfer_in
-            tableau:add_item_transfer(item_key, floor_data.id, subfloor_id, "in", objective)
-        end
-    end
-
-    -- Add direct floor transfers without adding additional constraints to the tableau
-    for item_key, floor_ids in pairs(product_subfloors) do
-        local objective = item_cost(item_key) * (objective_vector.floor_transfer_out +
-                ((ingredient_subfloors[item_key] and objective_vector.intermediate_out) or objective_vector.product))
-        tableau:mark_equality(item_key, floor_ids[1]--[[@cast -nil]], floor_data.id, "out", objective)
-    end
-    for item_key, floor_ids in pairs(ingredient_subfloors) do
-        local objective = item_cost(item_key) * (objective_vector.floor_transfer_in +
-                ((product_subfloors[item_key] and objective_vector.intermediate_in) or objective_vector.ingredient))
-        tableau:mark_equality(item_key, floor_ids[1]--[[@cast -nil]], floor_data.id, "in", objective)
-    end
-
-    -- Add additional constraint to target products, so we get a bounded solution
-    if is_top_level then
+    if level == 1 then
+        -- Add additional constraint to target products, so we get a bounded solution
         for _, item in pairs(floor_data.products) do  ---@cast item SolverItem
             local item_key = item.name .. "_" .. item.type
             local objective = item_cost(item_key) * objective_vector.target_product
             tableau:add_item_constraint(item_key, floor_data.id, "out", "<=", item.amount, objective)
         end
-    end
 
-    -- Add additional constraint for limited ingredients
-    ---@TODO: implement limited ingredients
-    for _, item in pairs({}) do  ---@cast item SolverItem
-        local item_key = item.name .. "_" .. item.type
-        local objective = item_cost(item_key) * objective_vector.limited_ingredient
-        tableau:add_item_constraint(item_key, floor_data.id, "in", "<=", item.amount, objective)
-    end
-
-    -- Add aditional constraint for machine limits
-    for line_id, line_data in pairs(relevant_line_metadata) do
-        if line_data.machine_limit then
-            local type = line_data.machine_force_limit and "==" or "<="
-            tableau:add_line_constraint(line_id, type, line_data.machine_limit, objective_vector.machine_limit)
+        -- Add additional constraint for limited ingredients
+        ---@TODO: implement limited ingredients
+        for _, item in pairs({}) do  ---@cast item SolverItem
+            local item_key = item.name .. "_" .. item.type
+            local objective = item_cost(item_key) * objective_vector.limited_ingredient
+            tableau:add_item_constraint(item_key, floor_data.id, "in", "<=", item.amount, objective)
         end
+
+        -- Add aditional constraint for machine limits
+        for line_id, line_data in pairs(relevant_line_metadata) do
+            if line_data.machine_limit then
+                local type = line_data.machine_force_limit and "==" or "<="
+                tableau:add_line_constraint(line_id, type, line_data.machine_limit, objective_vector.machine_limit)
+            end
+        end
+    else
+        -- Artificially limit the top line to one machine so we get a solution for this subfloor
+        local _, line_metadata = next(relevant_line_metadata)  ---@cast line_metadata -nil
+        tableau:add_line_constraint(line_metadata.line_id, "==", 1, objective_vector.target_machine)
     end
 
-    -- Add subfloor items to the item lists
-    for item_key, _ in pairs(product_subfloors) do products[item_key] = true end
-    for item_key, _ in pairs(ingredient_subfloors) do ingredients[item_key] = true end
+    -- Solve the tableau
+    local tableau_result = tableau:solve(previous_basis)
 
-    return tableau, products, ingredients
+    return util.merge({result or {}, tableau_result})  ---@as SimplexResult?
 end
 
 
