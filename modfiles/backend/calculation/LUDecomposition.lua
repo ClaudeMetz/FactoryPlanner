@@ -11,7 +11,7 @@ LUDecomposition.__index = LUDecomposition
 ---@field vector number[]
 ---@field column integer
 
-local USE_ROOK_PIVOTING = false
+local USE_ROOK_PIVOTING = true
 
 
 --- Performs LU decomposition `L U = P A Q`

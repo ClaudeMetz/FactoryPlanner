@@ -41,7 +41,7 @@ SimplexTableau.__index = SimplexTableau
 
 -- An heuristic initial basis speeds up the solving cosiderably, but may give an inaccurate solution
 ---@TODO: move this to options
-local USE_HEURISTIC_INITIAL_BASIS = true
+local USE_HEURISTIC_INITIAL_BASIS = false
 
 
 ---@return SimplexTableau
@@ -63,7 +63,7 @@ end
 
 --- Adds a column representing the line recipe.
 --- Missing items are automatically added.
----@param line_data LineData
+---@param line_data LineMetadata
 function SimplexTableau:add_line_variable(line_data)
     local line_key = "line_" .. line_data.line_id
 
