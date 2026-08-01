@@ -2,9 +2,15 @@
 Version: 0.00.00
 Date: 00. 00. 0000
   Features:
-    -
+    - 
   Changes:
-    -
+    - 
+  Bugfixes:
+    - 
+
+---------------------------------------------------------------------------------------------------
+Version: 2.1.9
+Date: 01. 08. 2026
   Bugfixes:
     - Fixed a crash when clicking an item in the compact dialog with an empty cursor (#803)
     - Fixed that the recipe productivity cap was set 1000 too low (#804)
