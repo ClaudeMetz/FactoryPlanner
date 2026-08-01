@@ -11,6 +11,7 @@ local TLProduct = require("backend.data.TLProduct")
 ---@field name string
 ---@field matrix_solver_active boolean
 ---@field matrix_free_items (FPItemPrototype | FPPackedPrototype)[]
+---@field simplex_basis table<ConstraintKey, VariableKey>?
 ---@field blueprints_inventory LuaInventory
 ---@field notes string
 ---@field productivity_boni table<string, IntegerEffectValue>
@@ -36,6 +37,7 @@ local function init(name, matrix_solver_active)
         name = name,
         matrix_solver_active = matrix_solver_active,
         matrix_free_items = {},
+        simplex_basis = nil,
         blueprints_inventory = game.create_inventory(MAGIC_NUMBERS.blueprint_limit),
         notes = "",
         productivity_boni = {},

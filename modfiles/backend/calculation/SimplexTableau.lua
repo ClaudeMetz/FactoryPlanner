@@ -5,7 +5,7 @@ local LUDecomposition = require("backend.calculation.LUDecomposition")
 ---@alias ItemDirection "in" | "out"
 ---@alias SolverState "in-progress" | "solved" | "unbounded" | "no-solution"
 ---@alias VariableType "unassigned" | "basic" | "non-basic"
----@alias ConstraintKey string `"item_<floor_id>_<proto-key>"` | `"c_<n>"`
+---@alias ConstraintKey string `"item_<floor_id>_<proto-key>"` | `"c_<var-key>"`
 ---@alias VariableKey string `"line_<line_id>"` | `"item_<floor_id>_<in|out>_<proto-key>"` | `"s_<n>"` | `"y_<n>"`
 ---@alias LineResultTable table<ObjectID, SimplexLineResult>
 ---@alias FloorResultTable table<ObjectID, SimplexFloorResult>
@@ -25,7 +25,8 @@ SimplexTableau.__index = SimplexTableau
 ---@field type VariableType
 
 ---@class SimplexResult
----@field state SolverState?
+---@field state SolverState
+---@field basis table<ConstraintKey, VariableKey>
 ---@field line_results LineResultTable
 ---@field floor_results FloorResultTable
 
@@ -124,7 +125,7 @@ function SimplexTableau:add_item_variable(item, floor_id, direction, objective)
 end
 
 
---- Adds an additional constraint to a given item
+--- Adds an additional constraint to a given item (at most one per item)
 ---@param item PrototypeKey
 ---@param floor_id ObjectID
 ---@param direction ItemDirection
@@ -171,7 +172,7 @@ function SimplexTableau:_add_constraint(key, type, limit, objective)
     if type == "==" then return end
 
     -- Add a new slack variable for the inequality
-    local slack_col_index = self:_add_column("s_" .. #self.matrix + 1)
+    local slack_col_index = self:_add_column("s_" .. key)
 
     -- Fill the inequality between the given variable and the slack variable
     local sign = (type == "<=" and 1) or (type == ">=" and -1) or 0
@@ -287,11 +288,7 @@ function SimplexTableau:merge(tableau)
     -- Copy the row keys
     for k, v in pairs(tableau.rows) do
         local new_row = a_rows + v
-        if string.sub(k, 1, 2) == "c_" then
-            self.rows["c_" .. new_row] = new_row
-        else
-            self.rows[k] = new_row
-        end
+        self.rows[k] = new_row
     end
 
     -- Copy the column keys
@@ -311,10 +308,12 @@ function SimplexTableau:merge(tableau)
 end
 
 
+---@param previous_basis table<ConstraintKey, VariableKey>
 ---@return SimplexResult result
-function SimplexTableau:solve()
+function SimplexTableau:solve(previous_basis)
     local result = {
         state = "in-progress",
+        basis = {},
         line_results = {},
         floor_results = {}
     }  ---@type SimplexResult
@@ -322,42 +321,48 @@ function SimplexTableau:solve()
     local variable_map = {}  ---@type VariableMap[]
     local basic = {}  ---@type VariableKey[]
     local non_basic = {}  ---@type VariableKey[]
-    local lu  ---@type LUDecomposition
-    local x_vector  ---@type number[]
-    local iterations = 0
-    local last_factorization = iterations
-    local needs_factorization = false
-
-
-    local function refactorize()
-        local b_matrix = {}  ---@type number[][]
-        for j = 1, #self.matrix do
-            b_matrix[j] = self.matrix[self.cols[basic[j]--[[@cast -nil]]]]
-        end
-
-        local new_lu, error_column = LUDecomposition:init(b_matrix)
-        local new_lu = LUDecomposition:init(b_matrix)
-        if new_lu then
-            lu = new_lu
-            x_vector = lu:solve_right(self.solution)
-            needs_factorization = false
-            last_factorization = iterations
-        end
-    end
-
 
     -- Populate the column index to variable key map
     for key, column in pairs(self.cols) do
         variable_map[column] = {key = key, type = "unassigned"}
     end
 
-    repeat
+    -- Populate the basis vector pased on the previous result
+    local cache_valid = true
+    for row_key, col_key in pairs(previous_basis) do
+        local row_index = self.rows[row_key]
+        local col_index = self.cols[col_key]
+
+        if row_index and col_index then
+            variable_map[col_index]--[[@cast -nil]].type = "basic"
+            basic[row_index] = col_key
+        else
+            cache_valid = false
+            break
+        end
+    end
+
+    -- Check if the cache covered all the bases
+    for i = 1, #self.matrix[1] do
+        if not basic[i] then
+            cache_valid = false
+            break
+        end
+    end
+
+    if not cache_valid then
+        -- Reset the basis
+        for i, key in pairs(basic) do
+            basic[i] = nil
+            variable_map[self.cols[key]]--[[@cast -nil]].type = "unassigned"
+        end
+
         -- Find basic variables (positive coefficient in one row, 0 on the rest)
         for k = 1, #self.matrix[1] do
             if not basic[k] then
                 for j = 1, #self.matrix do
-                    local map = variable_map[j]
-                    if map and map.type == "unassigned" and self.matrix[j][k] > MAGIC_NUMBERS.margin_of_error then
+                    local map = variable_map[j]  ---@as VariableMap
+                    if map.type == "unassigned" and self.matrix[j][k] > MAGIC_NUMBERS.margin_of_error then
                         local is_basic = true
                         for i = 1, #self.matrix[j] do
                             if i ~= k and self.matrix[j][i] ~= 0 then
@@ -378,7 +383,7 @@ function SimplexTableau:solve()
             end
         end
 
-        -- Add a virtual variables with negative cost for each non-basic row
+        -- Add a virtual variables with huge cost for each non-basic row
         for i = 1, #self.matrix[1] do
             if not basic[i] then
                 local virtual_key = "y_" .. #self.matrix + 1
@@ -387,22 +392,35 @@ function SimplexTableau:solve()
                 basic[i] = virtual_key
             end
         end
-
-        -- Factorize to check if the basis is feasible
-        -- If it's not, reset the basis and try again from scratch
-        refactorize()
-        if not lu then
-            basic = {}
-            non_basic = {}
-            for _, map in ipairs(variable_map) do map.type = "unassigned" end
-        end
-    until lu
+    end
 
     -- Mark unassigned variables as non-basic
     for _, map in ipairs(variable_map) do
         if map.type == "unassigned" then
             map.type = "non-basic"
             table.insert(non_basic, map.key)
+        end
+    end
+
+    local lu  ---@type LUDecomposition
+    local x_vector  ---@type number[]
+    local iterations = 0
+    local last_factorization = iterations
+    local needs_factorization = true
+
+
+    local function refactorize()
+        local b_matrix = {}  ---@type number[][]
+        for j = 1, #self.matrix do
+            b_matrix[j] = self.matrix[self.cols[basic[j]--[[@cast -nil]]]]
+        end
+
+        local new_lu = LUDecomposition:init(b_matrix)
+        if new_lu then
+            lu = new_lu
+            x_vector = lu:solve_right(self.solution)
+            needs_factorization = false
+            last_factorization = iterations
         end
     end
 
@@ -509,6 +527,10 @@ function SimplexTableau:solve()
 
         -- Re-factorize if needed
         if needs_factorization then refactorize() end
+        if not lu then
+            result.state = "no-solution"
+            break
+        end
 
         -- Iterate through the solution
         done, result.state = iterate()
@@ -520,6 +542,11 @@ function SimplexTableau:solve()
     for _, key in pairs(basic) do equivalencies[key] = { key } end
     for dest_key, src_key in pairs(self.equality) do
         if equivalencies[src_key] then table.insert(equivalencies[src_key], dest_key) end
+    end
+
+    -- Cache the solution basis for later
+    for key, i in pairs(self.rows) do
+        result.basis[key] = basic[i]
     end
 
     -- Interpret the result

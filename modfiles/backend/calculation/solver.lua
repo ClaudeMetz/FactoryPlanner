@@ -389,17 +389,21 @@ end
 ---@field factory_id ObjectID
 ---@field top_floor FloorData
 ---@field matrix_free_items FPItemPrototype[]
+---@field simplex_basis table<ConstraintKey, VariableKey>
 
 --- Returns a table containing all the data needed to run the calculations for the given factory
 ---@param player LuaPlayer
 ---@param factory Factory
 ---@return FactoryData
 function solver.generate_factory_data(player, factory)
+    local free_items = factory.matrix_free_items  ---@as FPItemPrototype[]
+
     local factory_data = {
         player_index = player.index,
         factory_id = factory.id,
         top_floor = generate_floor_data(player, factory, factory.top_floor),
-        matrix_free_items = factory.matrix_free_items  ---@as FPItemPrototype[]
+        matrix_free_items = free_items,
+        simplex_basis = factory.simplex_basis or {}
     }
 
     return factory_data
@@ -409,6 +413,7 @@ end
 ---@field player_index uint32
 ---@field factory_id ObjectID
 ---@field matrix_free_items FPItemPrototype[]?
+---@field simplex_basis table<ConstraintKey, VariableKey>?
 ---@field Product SolverClass
 ---@field Byproduct SolverClass
 ---@field Ingredient SolverClass
@@ -421,6 +426,7 @@ function solver.set_factory_result(result)
     if factory.parent then factory.parent.needs_refresh = true end
 
     factory.matrix_free_items = result.matrix_free_items or {}
+    factory.simplex_basis = result.simplex_basis or {}
 
     for product in factory:iterator() do
         local product_result_amount = result.Product[product.proto.type][product.proto.name] or 0

@@ -58,7 +58,7 @@ function simplex_engine.solve(factory_data)
     local tableau = simplex_engine.create_tableau( factory_data.top_floor, line_metadata_table, true)
 
     -- Solve the tableau
-    local result = tableau and tableau:solve()
+    local result = tableau and tableau:solve(factory_data.simplex_basis)
 
     -- Update GUI
     simplex_engine.update_factory(factory_data, line_metadata_table, result)
@@ -82,7 +82,8 @@ function simplex_engine.create_tableau(floor_data, line_metadata_table, is_top_l
     -- Recursively solve subfloors and add their results to the line data
     for _, line_object_data in pairs(floor_data.lines) do
         if line_object_data.subfloor then
-            local subfloor_tableau, subfloor_products, subfloor_ingredients = simplex_engine.create_tableau(line_object_data.subfloor, line_metadata_table)
+            local subfloor_tableau, subfloor_products, subfloor_ingredients =
+                    simplex_engine.create_tableau(line_object_data.subfloor, line_metadata_table)
             if subfloor_tableau then tableau_table[line_object_data.id] = subfloor_tableau end
             if subfloor_products then
                 for item_key, _ in pairs(subfloor_products) do
@@ -415,7 +416,8 @@ function simplex_engine.update_factory(factory_data, line_metadata_table, result
         factory_id = factory_data.factory_id,
         Product = product_result,
         Byproduct = byproduct_result,
-        Ingredient = ingredient_result
+        Ingredient = ingredient_result,
+        simplex_basis = result and result.basis
     }
 end
 
