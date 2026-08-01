@@ -17,7 +17,6 @@ local USE_ROOK_PIVOTING = true
 --- Performs LU decomposition `L U = P A Q`
 ---@param matrix number[][] column-major order square matrix
 ---@return LUDecomposition?
----@return integer? error_column
 function LUDecomposition:init(matrix)
     ---@diagnostic disable-next-line: missing-fields
     local o = {
@@ -93,7 +92,7 @@ function LUDecomposition:init(matrix)
             end
         else
             -- Basis is unfeasible
-            return nil, qk
+            return nil
         end
     end
 

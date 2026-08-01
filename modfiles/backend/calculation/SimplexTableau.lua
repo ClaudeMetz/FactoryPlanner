@@ -38,10 +38,6 @@ SimplexTableau.__index = SimplexTableau
 ---@field products SimplexItemList
 ---@field ingredients SimplexItemList
 
--- An heuristic initial basis speeds up the solving cosiderably, but may give an inaccurate solution
----@TODO: move this to options
-local USE_HEURISTIC_INITIAL_BASIS = true
-
 
 ---@return SimplexTableau
 function SimplexTableau:init()
@@ -319,14 +315,11 @@ end
 function SimplexTableau:solve()
     local result = {
         state = "in-progress",
-        products = {},
-        ingredients = {},
         line_results = {},
         floor_results = {}
     }  ---@type SimplexResult
 
     local variable_map = {}  ---@type VariableMap[]
-    local candidate_variables = {}  ---@type VariableKey[]
     local basic = {}  ---@type VariableKey[]
     local non_basic = {}  ---@type VariableKey[]
     local lu  ---@type LUDecomposition
@@ -336,7 +329,6 @@ function SimplexTableau:solve()
     local needs_factorization = false
 
 
-    ---@return integer? error_column
     local function refactorize()
         local b_matrix = {}  ---@type number[][]
         for j = 1, #self.matrix do
@@ -344,93 +336,28 @@ function SimplexTableau:solve()
         end
 
         local new_lu, error_column = LUDecomposition:init(b_matrix)
+        local new_lu = LUDecomposition:init(b_matrix)
         if new_lu then
             lu = new_lu
             x_vector = lu:solve_right(self.solution)
             needs_factorization = false
             last_factorization = iterations
         end
-
-        return error_column
     end
+
 
     -- Populate the column index to variable key map
     for key, column in pairs(self.cols) do
         variable_map[column] = {key = key, type = "unassigned"}
-        table.insert(candidate_variables, key)
-    end
-
-    -- Add constraint slack variables to the basis
-    for k = 1, #self.matrix[1] do
-        if not basic[k] and self.solution[k] > 0 then
-            for j = 1, #self.matrix do
-                local map = variable_map[j]  ---@as VariableMap
-                if map.type == "unassigned" and self.matrix[j][k] > MAGIC_NUMBERS.margin_of_error then
-                    if string.sub(map.key, 1, 2) == "s_" then
-                        map.type = "basic"
-                        basic[k] = map.key
-                    else
-                        map.type = "non-basic"
-                        table.insert(non_basic, map.key)
-                    end
-                end
-            end
-        end
     end
 
     repeat
-        -- Heuristically pick the inital basis containing the variables with the highest objectives
-        -- This may lead to an unfeasible basis, so we need to check
-        if USE_HEURISTIC_INITIAL_BASIS then
-            for _, key in ipairs(candidate_variables) do
-                local col_index = self.cols[key]
-                local map = variable_map[col_index]  ---@as VariableMap
-                if map.type == "unassigned" then
-                    local min_num_cols = #self.matrix[col_index]
-                    local min_cols = {}  ---@type integer[]
-                    local min_row = 0
-
-                    -- Find the row with the least amount of positive coefficients
-                    for i = 1, #self.matrix[col_index] do
-                        if self.matrix[col_index][i] > MAGIC_NUMBERS.margin_of_error and not basic[i] then
-                            local cols = {}  ---@type integer[]
-                            for j = 1, #self.matrix do
-                            if self.matrix[j][i] > MAGIC_NUMBERS.margin_of_error and j ~= col_index then
-                                    table.insert(cols, j)
-                                end
-                            end
-                            if #cols < min_num_cols then
-                                min_num_cols = #cols
-                                min_cols = cols
-                                min_row = i
-                            end
-                            if #cols == 0 then break end
-                        end
-                    end
-
-                    -- Mark the variable as the basis of this row
-                    -- Mark other variables with positive coefficients as non-basic
-                    if min_row ~= 0 then
-                        for _, var_column in pairs(min_cols) do
-                            local var_map = variable_map[var_column]   ---@as VariableMap
-                            if var_map.type == "unassigned" then
-                                var_map.type = "non-basic"
-                                table.insert(non_basic, var_map.key)
-                            end
-                        end
-                        map.type = "basic"
-                        basic[min_row] = key
-                    end
-                end
-            end
-        end
-
-        -- Find true basic variables (positive coefficient in one row, 0 on the rest)
+        -- Find basic variables (positive coefficient in one row, 0 on the rest)
         for k = 1, #self.matrix[1] do
             if not basic[k] then
                 for j = 1, #self.matrix do
-                    local map = variable_map[j]  ---@as VariableMap
-                    if map.type == "unassigned" and self.matrix[j][k] > MAGIC_NUMBERS.margin_of_error then
+                    local map = variable_map[j]
+                    if map and map.type == "unassigned" and self.matrix[j][k] > MAGIC_NUMBERS.margin_of_error then
                         local is_basic = true
                         for i = 1, #self.matrix[j] do
                             if i ~= k and self.matrix[j][i] ~= 0 then
@@ -462,26 +389,20 @@ function SimplexTableau:solve()
         end
 
         -- Factorize to check if the basis is feasible
-        -- If it's not, remove to offending variable from the basis and try again
-        local error_column = refactorize()
-        if error_column then
-            local map = variable_map[error_column]  ---@as VariableMap
-            for i, key in pairs(basic) do
-                if key == map.key then
-                    basic[i] = nil
-                    map.type = "non-basic"
-                    table.insert(non_basic, key)
-                end
-            end
+        -- If it's not, reset the basis and try again from scratch
+        refactorize()
+        if not lu then
+            basic = {}
+            non_basic = {}
+            for _, map in ipairs(variable_map) do map.type = "unassigned" end
         end
     until lu
 
     -- Mark unassigned variables as non-basic
-    for _, key in ipairs(candidate_variables) do
-        local map = variable_map[self.cols[key]]  ---@as VariableMap
+    for _, map in ipairs(variable_map) do
         if map.type == "unassigned" then
             map.type = "non-basic"
-            table.insert(non_basic, key)
+            table.insert(non_basic, map.key)
         end
     end
 
