@@ -16,7 +16,8 @@ local USE_ROOK_PIVOTING = true
 
 --- Performs LU decomposition `L U = P A Q`
 ---@param matrix number[][] column-major order square matrix
----@return LUDecomposition
+---@return LUDecomposition?
+---@return integer? error_column
 function LUDecomposition:init(matrix)
     ---@diagnostic disable-next-line: missing-fields
     local o = {
@@ -91,8 +92,8 @@ function LUDecomposition:init(matrix)
                 end
             end
         else
-            -- Column vector is degenerate. Just put a big number here and hope nothing goes wrong
-            o.u_matrix[pk][qk] = 1e100
+            -- Basis is unfeasible
+            return nil, qk
         end
     end
 
