@@ -319,6 +319,20 @@ function simplex_engine.get_line_data(line_data, floor_id)
         local fuel_as_ingredient = ingredients[fuel_key] or 0
         lib.table.add(ingredients, fuel_key, fuel_amount)
 
+        -- Add burnt result
+        if line_data.fuel_proto.burnt_result then
+            local burnt_result_key = line_data.fuel_proto.burnt_result .. "_item"
+            lib.table.add(products, burnt_result_key, fuel_amount)
+        end
+
+        -- Add spent fluid
+        if line_data.fuel_proto.spent_fluid then
+            local spent_fluid_key = line_data.fuel_proto.spent_fluid.name .. "-" ..
+                    line_data.fuel_proto.spent_fluid.temperature .. "_fluid"
+            local spent_fluid_amount = fuel_amount * line_data.fuel_proto.spent_fluid.amount
+            lib.table.add(products, spent_fluid_key, spent_fluid_amount)
+        end
+
         -- Handle special case where fuel is also an ingredient
         if fuel_as_ingredient > 0 then
             fuel_ratio = fuel_amount / (fuel_amount + fuel_as_ingredient)
