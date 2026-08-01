@@ -163,15 +163,15 @@ end
 ---@param item_proto FPItemPrototype | FPFuelPrototype
 local function set_filter_on_inserter(player, cursor_entity, item_proto)
     local entity_proto = (cursor_entity.type == "entity") and cursor_entity.entity
-        or prototypes.entity[cursor_entity.entity--[[@cast -nil]].name]
+        or prototypes.entity[cursor_entity.entity--[[@cast -nil]].name]  ---@type LuaEntityPrototype
 
     if item_proto.type ~= "item" then
-        _cursor.create_flying_text(player, {"fp.entity_wrong_type", entity_proto.localised_name,
-            item_proto.localised_name})
+        local message = {"fp.entity_wrong_type", entity_proto.localised_name, item_proto.localised_name}
+        _cursor.create_flying_text(player, message--[[@as LocalisedString]])
         return
     elseif (entity_proto.filter_count or 0) == 0 then
-        ---@diagnostic disable-next-line: undefined-field
-        _cursor.create_flying_text(player, {"fp.entity_has_no_filters", entity_proto.localised_name})
+        local message = {"fp.entity_has_no_filters", entity_proto.localised_name}
+        _cursor.create_flying_text(player, message--[[@as LocalisedString]])
         return
     end
 
@@ -189,7 +189,8 @@ local function set_filter_on_inserter(player, cursor_entity, item_proto)
 
         local filter_count = #blueprint_entity.filters
         if filter_count == entity_proto.filter_count then
-            _cursor.create_flying_text(player, {"fp.entity_filter_limit_reached", entity_proto.localised_name})
+            local message = {"fp.entity_filter_limit_reached", entity_proto.localised_name}
+            _cursor.create_flying_text(player, message--[[@as LocalisedString]])
         else
             -- Silently drop any duplicates
             for _, filter in pairs(blueprint_entity.filters) do
@@ -219,11 +220,11 @@ end
 ---@param item_proto FPItemPrototype | FPFuelPrototype
 local function set_filter_on_splitter(player, cursor_entity, item_proto)
     local entity_proto = (cursor_entity.type == "entity") and cursor_entity.entity
-        or prototypes.entity[cursor_entity.entity--[[@cast -nil]].name]
+        or prototypes.entity[cursor_entity.entity--[[@cast -nil]].name]  ---@type LuaEntityPrototype
 
     if item_proto.type ~= "item" then
-        _cursor.create_flying_text(player, {"fp.entity_wrong_type", entity_proto.localised_name,
-            item_proto.localised_name})
+        local message = {"fp.entity_wrong_type", entity_proto.localised_name, item_proto.localised_name}
+        _cursor.create_flying_text(player, message--[[@as LocalisedString]])
         return
     end
 
@@ -256,19 +257,20 @@ end
 ---@param item_proto FPItemPrototype | FPFuelPrototype
 local function set_filter_on_mining_drill(player, cursor_entity, item_proto)
     local entity_proto = (cursor_entity.type == "entity") and cursor_entity.entity
-        or prototypes.entity[cursor_entity.entity--[[@cast -nil]].name]
+        or prototypes.entity[cursor_entity.entity--[[@cast -nil]].name]  ---@type LuaEntityPrototype
 
     local entity_equivalent = prototypes.entity[item_proto.name]
     if not entity_equivalent then
-        _cursor.create_flying_text(player, {"fp.item_no_equivalent_entity", item_proto.localised_name, {"fp.resource"}})
+        local message = {"fp.item_no_equivalent_entity", item_proto.localised_name, {"fp.resource"}}
+        _cursor.create_flying_text(player, message--[[@as LocalisedString]])
         return
     elseif entity_equivalent.type ~= "resource" then
-        _cursor.create_flying_text(player, {"fp.entity_wrong_type", entity_proto.localised_name,
-            item_proto.localised_name})
+        local message = {"fp.entity_wrong_type", entity_proto.localised_name, item_proto.localised_name}
+        _cursor.create_flying_text(player, message--[[@as LocalisedString]])
         return
     elseif (entity_proto.filter_count or 0) == 0 then
-        ---@diagnostic disable-next-line: undefined-field
-        _cursor.create_flying_text(player, {"fp.entity_has_no_filters", entity_proto.localised_name})
+        local message = {"fp.entity_has_no_filters", entity_proto.localised_name}
+        _cursor.create_flying_text(player, message--[[@as LocalisedString]])
         return
     end
 
@@ -284,7 +286,8 @@ local function set_filter_on_mining_drill(player, cursor_entity, item_proto)
 
         local filter_count = #blueprint_entity.filter.filters
         if filter_count == entity_proto.filter_count then
-            _cursor.create_flying_text(player, {"fp.entity_filter_limit_reached", entity_proto.localised_name})
+            local message = {"fp.entity_filter_limit_reached", entity_proto.localised_name}
+            _cursor.create_flying_text(player, message--[[@as LocalisedString]])
         else
             -- Silently drop any duplicates
             for _, filter in pairs(blueprint_entity.filter.filters) do
@@ -313,11 +316,12 @@ end
 ---@param item_proto FPItemPrototype | FPFuelPrototype
 local function set_filter_on_asteroid_collector(player, cursor_entity, item_proto)
     local entity_proto = (cursor_entity.type == "entity") and cursor_entity.entity
-        or prototypes.entity[cursor_entity.entity--[[@cast -nil]].name]
+        or prototypes.entity[cursor_entity.entity--[[@cast -nil]].name]  ---@type LuaEntityPrototype
 
     local entity_equivalent = prototypes.asteroid_chunk[item_proto.name]
     if not entity_equivalent then
-        _cursor.create_flying_text(player, {"fp.item_no_equivalent_entity", item_proto.localised_name, {"fp.asteroid"}})
+        local message = {"fp.item_no_equivalent_entity", item_proto.localised_name, {"fp.asteroid"}}
+        _cursor.create_flying_text(player, message--[[@as LocalisedString]])
         return
     end
 
@@ -332,7 +336,8 @@ local function set_filter_on_asteroid_collector(player, cursor_entity, item_prot
 
         local filter_count = #blueprint_entity["chunk-filter"]
         if filter_count == entity_proto.filter_count then
-            _cursor.create_flying_text(player, {"fp.entity_filter_limit_reached", entity_proto.localised_name})
+            local message = {"fp.entity_filter_limit_reached", entity_proto.localised_name}
+            _cursor.create_flying_text(player, message--[[@as LocalisedString]])
         else
             -- Silently drop any duplicates
             for _, filter in pairs(blueprint_entity["chunk-filter"]) do
@@ -361,11 +366,11 @@ end
 ---@param item_proto FPItemPrototype | FPFuelPrototype
 local function set_filter_on_pump(player, cursor_entity, item_proto)
     local entity_proto = (cursor_entity.type == "entity") and cursor_entity.entity
-        or prototypes.entity[cursor_entity.entity--[[@cast -nil]].name]
+        or prototypes.entity[cursor_entity.entity--[[@cast -nil]].name]  ---@type LuaEntityPrototype
 
     if item_proto.type ~= "fluid" then
-        _cursor.create_flying_text(player, {"fp.entity_wrong_type", entity_proto.localised_name,
-            item_proto.localised_name})
+        local message ={"fp.entity_wrong_type", entity_proto.localised_name, item_proto.localised_name}
+        _cursor.create_flying_text(player, message--[[@as LocalisedString]])
         return
     end
 
@@ -402,7 +407,7 @@ local function set_filter(player, cursor_entity, item_proto)
     elseif cursor_entity.type == "blueprint" then
         ---@cast cursor_entity.entity BlueprintEntity
         entity_proto = prototypes.entity[cursor_entity.entity.name]
-    end
+    end  ---@cast entity_proto -nil
 
     local type = entity_proto.type
     if type == "inserter" or type == "loader" or type == "loader-1x1" then

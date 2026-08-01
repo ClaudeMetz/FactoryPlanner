@@ -141,7 +141,7 @@ end
 local function update_dialog_submit_button(modal_data)
     local beacon_amount = modal_data.object.amount
 
-    local message = nil
+    local message  ---@type LocalisedString
     if not beacon_amount or beacon_amount == 0 then
         message = {"fp.beacon_issue_set_amount"}
     elseif modal_data.module_set.module_count == 0 then

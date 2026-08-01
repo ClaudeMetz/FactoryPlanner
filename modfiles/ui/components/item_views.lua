@@ -49,7 +49,7 @@ end
 ---@param item_proto FPItemPrototype | FPFuelPrototype
 ---@param machine_amount number?
 ---@return number? button_number
----@return LocalisedString tooltip
+---@return LocalisedString? tooltip
 function processors.items_per_second_per_machine(metadata, raw_amount, item_proto, machine_amount)
     local adjusted_count = (math.ceil((machine_amount or 1) - MAGIC_NUMBERS.margin_of_error))
     if adjusted_count == 0 then return 0, nil end  -- avoid division by zero
@@ -129,7 +129,7 @@ end
 ---@param item_amount number
 ---@param machine_amount number?
 ---@return (number | -1 | nil) button_number
----@return LocalisedString tooltip_line
+---@return LocalisedString? tooltip_line
 function item_views.process_item(player, proto, item_amount, machine_amount)
     local views_data = lib.globals.ui_state(player).views_data  ---@cast views_data -nil
 

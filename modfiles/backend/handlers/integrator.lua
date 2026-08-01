@@ -98,7 +98,8 @@ function integrator.collect(name)
     local storage_table = get_integration_table(name)
     for interface, functions in pairs(interfaces) do
         if functions[name] then
-            local dataset = remote.call(interface, name)
+            ---@diagnostic disable-next-line: generic-constraint-mismatch
+            local dataset = remote.call(interface, name)  ---@as Any
             handlers[name]--[[@cast -nil]](dataset, storage_table)
         end
     end

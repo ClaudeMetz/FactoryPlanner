@@ -1,3 +1,5 @@
+if helpers.stage ~= "runtime" then return {} end
+
 local _preferences = {}
 
 _preferences.products_per_row_options = {5, 6, 7, 8, 9, 10}

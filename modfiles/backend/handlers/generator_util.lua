@@ -202,7 +202,7 @@ function _util.format_recipe(recipe_proto, products, main_product, ingredients)
 end
 
 
----@param normal_quality_value number
+---@param normal_quality_value number?
 ---@return number? base_value
 function _util.get_base_value(normal_quality_value)
     if normal_quality_value == nil then return nil end
@@ -239,7 +239,7 @@ function _util.determine_entity_sprite(proto)
 end
 
 
----@param effects ModuleEffects?
+---@param effects Effect?
 ---@return IntegerModuleEffects
 function _util.formatted_effects(effects)
     if effects == nil then return {} end
@@ -277,7 +277,7 @@ end
 ---@field uses_module_effects boolean
 ---@field uses_beacon_effects boolean
 ---@field uses_surface_effects boolean
----@field limits table<ModuleEffectName, EffectValueRange>
+---@field limits table<ModuleEffectName, IntegerEffectValueRange>
 
 ---@param proto LuaEntityPrototype?
 ---@return FormattedEffectReceiver effect_receiver
@@ -298,7 +298,7 @@ function _util.format_effect_receiver(proto)
         }
     else
         local base_effect = effect_receiver.base_effect  -- can be nil
-        effect_receiver.base_effect = _util.formatted_effects(base_effect)  ---@as ModuleEffects
+        effect_receiver.base_effect = _util.formatted_effects(base_effect)  ---@as Effect
     end
 
     local module_limit = (proto) and proto.module_inventory_size or 0
@@ -316,7 +316,11 @@ function _util.format_effect_receiver(proto)
     local formatted = effect_receiver  ---@as FormattedEffectReceiver
     formatted.limits = {}
     for name, _ in pairs(lib.effects.blank) do
-        formatted.limits[name] = effect_receiver[name .. "_limits"]
+        local limits = effect_receiver[name .. "_limits"]
+        formatted.limits[name] = {
+            low = math.floor(limits.low * MAGIC_NUMBERS.effect_precision),
+            high = math.floor(limits.high * MAGIC_NUMBERS.effect_precision)
+        }
         effect_receiver[name .. "_limits"] = nil
     end
 
@@ -444,12 +448,30 @@ function _util.add_default_groups(proto)
     proto.subgroup = _util.generate_group_table(prototypes.item_subgroup["other"])
 end
 
+-- Puts the prototype in the groups of the item that places the given entity, so that custom
+-- ones can sit with the machines they relate to instead of in a group of their own
+---@param proto CustomItemDetails | FPRecipePrototype
+---@param entity_name string?
+function _util.add_entity_groups(proto, entity_name)
+    local entity = (entity_name) and prototypes.entity[entity_name] or nil
+    local items_to_place_this = (entity) and entity.items_to_place_this or nil
+    local first_item = (items_to_place_this) and items_to_place_this[1] or nil
+    local placing_item = (first_item) and prototypes.item[first_item.name] or nil
+
+    if placing_item == nil then
+        _util.add_default_groups(proto)
+    else
+        proto.group = _util.generate_group_table(placing_item.group)
+        proto.subgroup = _util.generate_group_table(placing_item.subgroup)
+    end
+end
+
 
 ---@param text LocalisedString
 ---@param color Color
 ---@return LocalisedString
 function _util.colored_rich_text(text, color)
-    return {"", "[color=", color.r, ",", color.g, ",", color.b, "]", text, "[/color]"}
+    return {"", "[color=", color.r, ",", color.g, ",", color.b, "]", text, "[/color]"}  ---@as LocalisedString
 end
 
 return _util

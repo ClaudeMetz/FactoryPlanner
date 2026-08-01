@@ -2,9 +2,10 @@ local _effects = {}
 
 _effects.blank = {speed = 0, productivity = 0, quality = 0, consumption = 0, pollution = 0}
 
----@alias EffectValue integer
+---@alias IntegerEffectValue integer
 ---@alias ModuleEffectName "speed" | "productivity" | "quality" | "consumption" | "pollution"
----@alias IntegerModuleEffects table<ModuleEffectName, EffectValue>
+---@alias IntegerModuleEffects table<ModuleEffectName, IntegerEffectValue>
+---@alias IntegerEffectValueRange {low: integer, high: integer}
 
 local is_effect_positive = {speed=true, productivity=true, quality=true,
                             consumption=false, pollution=false}
@@ -48,18 +49,15 @@ function _effects.merge(effect_tables)
 end
 
 
----@param effect EffectValue
----@param bounds EffectValueRange
----@return EffectValue
+---@param effect IntegerEffectValue
+---@param bounds IntegerEffectValueRange
+---@return IntegerEffectValue
 ---@return string?
 function _effects.limit_value(effect, bounds)
-    local low_bound = (bounds.low * MAGIC_NUMBERS.effect_precision)  ---@as EffectValue
-    local high_bound = (bounds.high * MAGIC_NUMBERS.effect_precision)  ---@as EffectValue
-
-    if effect < low_bound then
-        return low_bound, "[img=fp_limited_down]"
-    elseif effect > high_bound then
-        return high_bound, "[img=fp_limited_up]"
+    if effect < bounds.low then
+        return bounds.low, "[img=fp_limited_down]"
+    elseif effect > bounds.high then
+        return bounds.high, "[img=fp_limited_up]"
     else
         return effect, nil
     end
@@ -82,7 +80,7 @@ function _effects.limit(effects, effect_receiver)
 end
 
 
----@param value EffectValue
+---@param value IntegerEffectValue
 ---@param color string
 ---@return LocalisedString
 local function format_effect(value, color)

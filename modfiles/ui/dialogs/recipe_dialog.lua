@@ -272,6 +272,7 @@ local function create_recipe_group_box(modal_data, relevant_group)
         local tooltip = {""}
         if recipe_proto.custom then table.insert(tooltip, recipe_proto.tooltip) end
         if not recipe.enabled and recipe_proto.enabling_technologies then
+            ---@type LuaTechnologyPrototype
             local technology = prototypes.technology[recipe_proto.enabling_technologies[1]]
             table.insert(tooltip, {"fp.recipe_unlocked_by", technology.localised_name})
         end

@@ -43,7 +43,7 @@ function _format.SI_value(value, unit, precision)
 
     value = value / (1000 ^ scale_counter)
     local prefix = scale_counter == 0 and "" or {"fp.prefix_" .. prefixes[scale_counter + 1]}
-    return {"", sign .. lib.format.number(value, precision) .. " ", prefix, units[unit]}
+    return {"", sign .. lib.format.number(value, precision) .. " ", prefix, units[unit]}  ---@as LocalisedString
 end
 
 

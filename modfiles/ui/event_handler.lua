@@ -48,7 +48,7 @@ local gui_identifier_map = {
 
 local gui_timeouts = {
     on_gui_click = 2,
-    on_gui_confirmed = 20
+    on_gui_confirmed = 2
 }  ---@type table<string, MapTick>
 
 local special_gui_handlers = {}

@@ -433,6 +433,10 @@ function matrix_engine.run_matrix_solver(factory_data, check_linear_dependence)
 
     local top_floor_aggregate = set_line_results("line", factory_data.top_floor)
 
+    -- Nets out items that are produced and consumed in equal amounts across the whole factory,
+    -- while the amounts on both sides are still around to tell solver noise from a real leftover
+    matrix_engine.consolidate(top_floor_aggregate)
+
     local total = structures.class.init()
     for _, item in ipairs(structures.class.list(top_floor_aggregate.Product)) do
         structures.class.add(total, item)
@@ -455,6 +459,9 @@ function matrix_engine.run_matrix_solver(factory_data, check_linear_dependence)
         local key = matrix_engine.get_item_key(item.type, item.name)
         local req = required_amount[key] or 0
         local amount = item.amount - req
+        -- A product that comes out to its required amount shouldn't leave a leftover either
+        if math.abs(amount) < math.abs(req) * MAGIC_NUMBERS.margin_of_error then amount = 0 end
+
         if amount > 0 then
             structures.class.add(main_aggregate.Byproduct, item, amount)
         else
@@ -491,7 +498,17 @@ function matrix_engine.consolidate(aggregate)
         for _, output_item in pairs(structures.class.list(aggregate[output_class])) do
             local input_amount = aggregate[input_class][output_item.type][output_item.name] or 0
             local net_amount = output_item.amount - input_amount
-            if net_amount > 0 then
+
+            -- Solving leaves a relative error behind, so the leftover of an item that actually
+            -- cancels out is proportional to how much of it flows. A fixed margin can't catch
+            -- that across amounts as far apart as items and power, so this scales with the flow.
+            local scale = math.max(math.abs(output_item.amount), math.abs(input_amount))
+            local cancels_out = math.abs(net_amount) < scale * MAGIC_NUMBERS.margin_of_error
+
+            if cancels_out then  -- take both sides down to nothing, rather than leaving the rest
+                structures.class.subtract(aggregate[input_class], output_item, input_amount)
+                structures.class.subtract(aggregate[output_class], output_item)
+            elseif net_amount > 0 then
                 structures.class.subtract(aggregate[input_class], output_item, input_amount)
                 structures.class.subtract(aggregate[output_class], output_item, input_amount)
             else
@@ -583,6 +600,10 @@ function matrix_engine.get_matrix(factory_data, rows, columns)
         table.insert(matrix, row)
     end
 
+    -- Power that lines draw regardless of their machine count, collected to be demanded below
+    local electric_power = {type="entity", name="custom-electric-power"}
+    local constant_demand = 0
+
     -- loop over columns since it's easier to look up items for lines/free vars than vice-versa
     for col_num=1, #columns.values do
         local col_str = columns.values[col_num]
@@ -605,6 +626,15 @@ function matrix_engine.get_matrix(factory_data, rows, columns)
             -- use amounts for 1 building as matrix entries
             local line_aggregate = matrix_engine.get_line_aggregate(line, factory_data.player_index,
                 floor.id, 1)
+
+            -- Beacons draw the same power however many machines the line ends up needing, so that
+            -- part of it can't be expressed per building. It only depends on how the line is
+            -- configured though, so it's known upfront and can be demanded of the factory directly.
+            if line.beacon_power and line.beacon_power > 0 then
+                structures.class.subtract(line_aggregate.Ingredient, electric_power, line.beacon_power)
+                constant_demand = constant_demand + line.beacon_power
+            end
+
             matrix_engine.consolidate(line_aggregate)
 
             for item_type_name, items in pairs(line_aggregate.Product) do
@@ -633,6 +663,15 @@ function matrix_engine.get_matrix(factory_data, rows, columns)
         if row_num ~= nil then
             local amount = product.amount
             matrix[row_num][#columns.values+1] = amount
+        end
+    end
+
+    -- The power taken out of the lines above still needs to come from somewhere, so ask the
+    -- factory to produce that much on top of whatever its machines use
+    if constant_demand > 0 then
+        local row_num = rows.map[matrix_engine.get_item_key(electric_power.type, electric_power.name)]
+        if row_num ~= nil then
+            matrix[row_num][#columns.values+1] = matrix[row_num][#columns.values+1] + constant_demand
         end
     end
 
@@ -717,15 +756,12 @@ function matrix_engine.get_line_aggregate(line_data, player_index, floor_id, mac
 
     -- Determine power (including potential fuel needs) and emissions
     local fuel_proto = line_data.fuel_proto
-    local power, emissions = solver.util.determine_power_and_emissions( machine_proto, line_data.recipe_proto,
-        fuel_proto, machine_amount, total_crafts, line_data.energy_usage, total_effects, line_data.pollutant_type,
-        line_data.fuel_performance)
+    local power, emissions = solver.util.determine_power_and_emissions(line_data, machine_amount, total_crafts)
 
     local fuel, fuel_amount = nil, nil
     if machine_proto.energy_type == "burner" then
         local burner = machine_proto.burner
-        fuel_amount = solver.util.determine_fuel_amount(power, burner,
-            line_data.fuel_value--[[@as number]], machine_amount)
+        fuel_amount = solver.util.determine_fuel_amount(line_data, power, machine_amount)
 
         fuel = {type=fuel_proto.type, name=line_data.fuel_name, amount=fuel_amount}
         structures.class.add(line_aggregate.Ingredient, fuel)
