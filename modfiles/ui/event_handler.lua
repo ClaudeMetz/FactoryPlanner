@@ -31,20 +31,20 @@ end
 
 -- ** GUI EVENTS **
 -- These events go out to the single handler that registered for it.
-local gui_identifier_map = {
-    [defines.events.on_gui_click] = "on_gui_click",
-    [defines.events.on_gui_closed] = "on_gui_closed",
-    [defines.events.on_gui_confirmed] = "on_gui_confirmed",
-    [defines.events.on_gui_text_changed] = "on_gui_text_changed",
-    [defines.events.on_gui_checked_state_changed] = "on_gui_checked_state_changed",
-    [defines.events.on_gui_switch_state_changed] = "on_gui_switch_state_changed",
-    [defines.events.on_gui_selection_state_changed] = "on_gui_selection_state_changed",
-    [defines.events.on_gui_elem_changed] = "on_gui_elem_changed",
-    [defines.events.on_gui_value_changed] = "on_gui_value_changed",
-    [defines.events.on_gui_hover] = "on_gui_hover",
-    [defines.events.on_gui_leave] = "on_gui_leave",
-    [defines.events.on_gui_inventory_action] = "on_gui_inventory_action"
-}  ---@type table<defines.events, string>
+local gui_events = {
+    defines.events.on_gui_click,
+    defines.events.on_gui_closed,
+    defines.events.on_gui_confirmed,
+    defines.events.on_gui_text_changed,
+    defines.events.on_gui_checked_state_changed,
+    defines.events.on_gui_switch_state_changed,
+    defines.events.on_gui_selection_state_changed,
+    defines.events.on_gui_elem_changed,
+    defines.events.on_gui_value_changed,
+    defines.events.on_gui_hover,
+    defines.events.on_gui_leave,
+    defines.events.on_gui_inventory_action
+}  ---@type defines.events[]
 
 local gui_timeouts = {
     on_gui_click = 2,
@@ -170,7 +170,7 @@ local function handle_gui_event(event)
     if tags.mod ~= "fp" then return end
 
     -- The event table actually contains its identifier, not its name
-    local event_name = gui_identifier_map[event.name]  ---@as string
+    local event_name = script.get_event_name(event.name)  ---@as string
     local action_name = tags[event_name]  ---@as string?
 
     -- If a special handler is set, it needs to return true before proceeding with the registered handlers
@@ -210,42 +210,47 @@ local function handle_gui_event(event)
     if event_name ~= "on_gui_hover" and event_name ~= "on_gui_leave" then lib.messages.refresh(player) end
 end
 
-for event_id, _ in pairs(gui_identifier_map) do script.on_event(event_id, handle_gui_event) end
+script.on_event(gui_events, handle_gui_event)
 
 
 -- ** PLAYER EVENTS **
 -- These events go out to every handler that has subscribed to it by ID or name.
-local player_identifier_map = {
+local player_events = {
     -- Standard events
-    [defines.events.on_gui_opened] = "on_gui_opened",
-    [defines.events.on_player_display_resolution_changed] = "on_player_display_resolution_changed",
-    [defines.events.on_player_display_scale_changed] = "on_player_display_scale_changed",
-    [defines.events.on_player_selected_area] = "on_player_selected_area",
-    [defines.events.on_player_cursor_stack_changed] = "on_player_cursor_stack_changed",
-    [defines.events.on_player_main_inventory_changed] = "on_player_main_inventory_changed",
-    [defines.events.on_lua_shortcut] = "on_lua_shortcut",
+    defines.events.on_gui_opened,
+    defines.events.on_player_display_resolution_changed,
+    defines.events.on_player_display_scale_changed,
+    defines.events.on_player_selected_area,
+    defines.events.on_player_cursor_stack_changed,
+    defines.events.on_player_main_inventory_changed,
+    defines.events.on_lua_shortcut,
 
     -- Translation events
-    [defines.events.on_player_joined_game] = "on_player_joined_game",
-    [defines.events.on_player_locale_changed] = "on_player_locale_changed",
-    [defines.events.on_string_translated] = "on_string_translated",
-    [lib.translator.on_player_dictionaries_ready] = "on_player_dictionaries_ready",
+    defines.events.on_player_joined_game,
+    defines.events.on_player_locale_changed,
+    defines.events.on_string_translated,
+    lib.translator.on_player_dictionaries_ready,
 
     -- Keyboard shortcuts
-    ["fp_toggle_interface"] = "fp_toggle_interface",
-    ["fp_toggle_compact_view"] = "fp_toggle_compact_view",
-    ["fp_toggle_pause"] = "fp_toggle_pause",
-    ["fp_refresh_production"] = "fp_refresh_production",
-    ["fp_up_floor"] = "fp_up_floor",
-    ["fp_top_floor"] = "fp_top_floor",
-    ["fp_toggle_fold_out_subfloors"] = "fp_toggle_fold_out_subfloors",
-    ["fp_cycle_production_views"] = "fp_cycle_production_views",
-    ["fp_reverse_cycle_production_views"] = "fp_reverse_cycle_production_views",
-    ["fp_confirm_dialog"] = "fp_confirm_dialog",
-    ["fp_confirm_gui"] = "fp_confirm_gui",
-    ["fp_focus_searchfield"] = "fp_focus_searchfield",
-    ["fp_toggle_calculator"] = "fp_toggle_calculator"
-}  ---@type table<(defines.events | string), string>
+    "fp_toggle_interface",
+    "fp_toggle_compact_view",
+    "fp_toggle_pause",
+    "fp_refresh_production",
+    "fp_up_floor",
+    "fp_top_floor",
+    "fp_toggle_fold_out_subfloors",
+    "fp_cycle_production_views",
+    "fp_reverse_cycle_production_views",
+    "fp_confirm_dialog",
+    "fp_confirm_gui",
+    "fp_focus_searchfield",
+    "fp_toggle_calculator"
+}  ---@type (defines.events | string)[]
+
+-- Events generated at runtime have no name of their own, so they need to be named manually
+local custom_event_names = {
+    [lib.translator.on_player_dictionaries_ready] = "on_player_dictionaries_ready"
+}  ---@type table<defines.events, string>
 
 local player_timeouts = {
     fp_refresh_production = 20,
@@ -290,8 +295,12 @@ end
 ---@param event PlayerEventData
 local function handle_player_event(event)
     local event_name = event.input_name or event.name
-    local string_name = player_identifier_map[event_name] or event_name
-    local event_handlers = player_event_cache[string_name]
+    if type(event_name) == "number" then  -- standard event
+        local event_id = event_name  --[[@as defines.events]]
+        event_name = script.get_event_name(event_id) or custom_event_names[event_id]
+    end
+
+    local event_handlers = player_event_cache[event_name]
     if not event_handlers then return end  -- make sure the given event is even handled
 
     -- Guard against an event being called before the player is initialized
@@ -316,19 +325,19 @@ local function handle_player_event(event)
     if event.input_name then lib.messages.refresh(player) end
 end
 
-for event_id, _ in pairs(player_identifier_map) do script.on_event(event_id, handle_player_event) end
+script.on_event(player_events, handle_player_event)
 
 
 -- ** GAME EVENTS **
 -- These events go out to every handler that has subscribed to it by ID.
-local game_identifier_map = {
-    [defines.events.on_player_created] = "on_player_created",
-    [defines.events.on_player_removed] = "on_player_removed",
-    [defines.events.on_tick] = "on_tick",
-    [defines.events.on_singleplayer_init] = "on_singleplayer_init",
-    [defines.events.on_multiplayer_init] = "on_multiplayer_init",
-    [defines.events.on_research_finished] = "on_research_finished"
-}  ---@type table<defines.events, string>
+local game_events = {
+    defines.events.on_player_created,
+    defines.events.on_player_removed,
+    defines.events.on_tick,
+    defines.events.on_singleplayer_init,
+    defines.events.on_multiplayer_init,
+    defines.events.on_research_finished
+}  ---@type defines.events[]
 
 ---@alias GameEventHandler fun(event: EventData)
 
@@ -345,7 +354,7 @@ end
 
 ---@param event EventData
 local function handle_game_event(event)
-    local event_name = game_identifier_map[event.name]
+    local event_name = script.get_event_name(event.name)  ---@as string
     local event_handlers = game_event_cache[event_name]
     if not event_handlers then return end  -- make sure the given event is even handled
 
@@ -354,7 +363,7 @@ local function handle_game_event(event)
     end
 end
 
-for event_id, _ in pairs(game_identifier_map) do script.on_event(event_id, handle_game_event) end
+script.on_event(game_events, handle_game_event)
 
 
 -- ** DIALOG EVENTS **
