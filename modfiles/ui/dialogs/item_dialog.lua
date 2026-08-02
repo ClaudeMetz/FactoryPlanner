@@ -51,8 +51,10 @@ local function refresh_defaults_table(player)
             local tags_up = {mod="fp", on_gui_click="move_temperature_default", direction="up", index=index}
             active_flow.add{type="sprite-button", tags=tags_up, sprite="fp_arrow_up",
                 style="fp_sprite-button_move_small", enabled=(index > 1), mouse_button_filter={"left"}}
+
             local tags_down = {mod="fp", on_gui_click="move_temperature_default", direction="down", index=index}
-            active_flow.add{type="sprite-button", tags=tags_down, sprite="fp_arrow_down",
+            local down_sprite = (index == #modal_data.defaults) and "fp_arrow_right" or "fp_arrow_down"
+            active_flow.add{type="sprite-button", tags=tags_down, sprite=down_sprite,
                 style="fp_sprite-button_move_small", mouse_button_filter={"left"}}
 
             local active_label = active_flow.add{type="label", caption={"fp.temperature_value", active_temp},
