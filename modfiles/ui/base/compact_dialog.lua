@@ -781,7 +781,7 @@ factory_listeners.gui = {
             name = "act_on_compact_ingredient",
             actions_table = {
                 put_into_cursor = {shortcut="left", show=true},
-                factoriopedia = {shortcut="alt-right", show=true}
+                factoriopedia = {shortcut="alt-left", show=true}
             },
             handler = handle_ingredient_click
         },
@@ -789,14 +789,14 @@ factory_listeners.gui = {
             name = "act_on_compact_recipe",
             actions_table = {
                 open_subfloor = {shortcut="left", show=true},
-                factoriopedia = {shortcut="alt-right", show=true}
+                factoriopedia = {shortcut="alt-left", show=true}
             },
             handler = handle_recipe_click
         },
         {
             name = "act_on_compact_module",
             actions_table = {
-                factoriopedia = {shortcut="alt-right", show=true}
+                factoriopedia = {shortcut="alt-left", show=true}
             },
             handler = handle_module_click
         },
@@ -804,7 +804,7 @@ factory_listeners.gui = {
             name = "act_on_compact_machine",
             actions_table = {
                 put_into_cursor = {shortcut="left", show=true},
-                factoriopedia = {shortcut="alt-right", show=true}
+                factoriopedia = {shortcut="alt-left", show=true}
             },
             handler = handle_machine_click
         },
@@ -812,7 +812,7 @@ factory_listeners.gui = {
             name = "act_on_compact_beacon",
             actions_table = {
                 put_into_cursor = {shortcut="left", show=true},
-                factoriopedia = {shortcut="alt-right", show=true}
+                factoriopedia = {shortcut="alt-left", show=true}
             },
             handler = handle_beacon_click
         },
@@ -820,7 +820,7 @@ factory_listeners.gui = {
             name = "act_on_compact_item",
             actions_table = {
                 put_into_cursor = {shortcut="left", show=true},
-                factoriopedia = {shortcut="alt-right", show=true}
+                factoriopedia = {shortcut="alt-left", show=true}
             },
             handler = handle_item_click
         }
