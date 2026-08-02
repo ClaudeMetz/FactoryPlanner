@@ -74,7 +74,6 @@ end
 ---@field maximum_productivity IntegerEffectValue
 ---@field productivity_recipe string?
 ---@field type_counts { products: ItemTypeCounts, ingredients: ItemTypeCounts }
----@field catalysts { products: FormattedProduct[], ingredients: Ingredient[] }
 ---@field surface_conditions SurfaceCondition[]?
 ---@field recycling boolean
 ---@field barreling boolean
@@ -662,7 +661,7 @@ function generator.items.generate()
     for name, exists in pairs(fluid_has_temperature) do
         if not exists then
             local temperature = prototypes.fluid[name].default_temperature
-            relevant_items["fluid"][name .. "-" .. temperature] = {
+            relevant_items["fluid"][lib.temperature.name_with(name, temperature)] = {
                 ingredient_only = true,
                 temperature = temperature,
                 base_name = name

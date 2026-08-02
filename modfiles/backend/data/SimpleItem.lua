@@ -49,14 +49,14 @@ function SimpleItem:paste(object)
             if not self.parent.recipe:is_temperature_valid(self.proto, object.proto.temperature) then
                 return false, "incompatible"
             end
-            self.parent.recipe.temperatures[self.proto.name] = object.proto.temperature
+            self.parent.recipe:set_temperature(self.proto.name, object.proto.temperature)
         else  ---@cast object Fuel
             if object.proto.name ~= self.proto.name then return false, "incompatible" end
             if not object.temperature then return false, "incompatible" end
             if not self.parent.recipe:is_temperature_valid(self.proto, object.temperature) then
                 return false, "incompatible"
             end
-            self.parent.recipe.temperatures[self.proto.name] = object.temperature
+            self.parent.recipe:set_temperature(self.proto.name, object.temperature)
         end
 
         return true, nil

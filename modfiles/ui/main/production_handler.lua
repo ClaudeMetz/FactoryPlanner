@@ -242,7 +242,8 @@ end
 ---@param action string
 local function handle_item_click(player, tags, action)
     local line = OBJECT_INDEX[tags.line_id]  ---@as LineObject
-    local item = line[tags.item_category .. "s"][tags.item_index]
+    local item_list = (tags.catalyst) and line--[[@as Line]].recipe.catalysts or line
+    local item = item_list[tags.item_category .. "s"][tags.item_index]
 
     if action == "prioritize" then
         if line.class ~= "Line" then
@@ -491,6 +492,36 @@ listeners.gui = {
             handler = function(player, tags, action)
                 ---@cast tags ActOnLineItem
                 tags.item_category = "ingredient"
+                handle_item_click(player, tags, action--[[@as string]])
+            end
+        },
+        {
+            -- The catalyst an ingredient was reduced to still needs to offer its temperature,
+            -- since that is what decides whether it cancels with its peer product at all
+            name = "act_on_line_catalyst_ingredient",
+            actions_table = {
+                edit_temperature = {shortcut="control-left", limitations={archive_open=false}, show=true},
+                copy = {shortcut="shift-right"},
+                paste = {shortcut="shift-left", limitations={archive_open=false}},
+                put_into_cursor = {shortcut="alt-right"},
+                factoriopedia = {shortcut="alt-left"}
+            },
+            handler = function(player, tags, action)
+                ---@cast tags ActOnLineItem
+                tags.item_category, tags.catalyst = "ingredient", true
+                handle_item_click(player, tags, action--[[@as string]])
+            end
+        },
+        {
+            name = "act_on_line_catalyst_product",
+            actions_table = {
+                copy = {shortcut="shift-right"},
+                put_into_cursor = {shortcut="alt-right"},
+                factoriopedia = {shortcut="alt-left"}
+            },
+            handler = function(player, tags, action)
+                ---@cast tags ActOnLineItem
+                tags.item_category, tags.catalyst = "product", true
                 handle_item_click(player, tags, action--[[@as string]])
             end
         },

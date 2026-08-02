@@ -741,7 +741,7 @@ function matrix_engine.get_line_aggregate(line_data, player_index, floor_id, mac
         end
     end
 
-    for _, product in pairs(line_data.recipe_proto.products) do
+    for _, product in pairs(line_data.products) do
         local prodded_amount = solver.util.determine_prodded_amount(product, total_effects)
         add_product(product, prodded_amount * total_crafts)
     end
@@ -779,7 +779,7 @@ function matrix_engine.get_line_aggregate(line_data, player_index, floor_id, mac
             if spent_fluid then
                 add_product({
                     type="fluid",
-                    name=spent_fluid.name .. "-" .. spent_fluid.temperature,
+                    name=lib.temperature.name_with(spent_fluid.name, spent_fluid.temperature),
                     amount=fuel_amount * spent_fluid.amount
                 })
             end

@@ -11,7 +11,6 @@ local sequential_engine = {}
 ---@param aggregate SolverAggregate
 ---@param looped_fuel number?
 local function update_line(line_data, aggregate, looped_fuel)
-    local recipe_proto = line_data.recipe_proto
     local machine_proto = line_data.machine_proto
     local total_effects = line_data.total_effects
 
@@ -23,7 +22,7 @@ local function update_line(line_data, aggregate, looped_fuel)
     local fuel_proto = line_data.fuel_proto
 
     -- Determine relevant products
-    for _, product in pairs(recipe_proto.products) do
+    for _, product in pairs(line_data.products) do
         local is_product = (aggregate.Ingredient[product.type][product.name] ~= nil)
         table.insert((is_product) and relevant_products or byproducts, product)
 
@@ -157,7 +156,7 @@ local function update_line(line_data, aggregate, looped_fuel)
             if spent_fluid then
                 table.insert(byproducts, {
                     type="fluid",
-                    name=spent_fluid.name .. "-" .. spent_fluid.temperature,
+                    name=lib.temperature.name_with(spent_fluid.name, spent_fluid.temperature),
                     amount=fuel_amount * spent_fluid.amount,
                     constant=true
                 })
@@ -275,7 +274,7 @@ local function update_floor(floor_data, aggregate)
         if subfloor ~= nil then
             -- Determine the products that are relevant for this subfloor
             local subfloor_aggregate = structures.aggregate.init(aggregate.player_index, subfloor.id)
-           for _, product in pairs(line_data.recipe_proto.products) do
+           for _, product in pairs(line_data.products) do
                 local ingredient_amount = aggregate.Ingredient[product.type][product.name]  ---@type number?
                 if ingredient_amount then
                     structures.class.add(subfloor_aggregate.Ingredient, product, ingredient_amount)

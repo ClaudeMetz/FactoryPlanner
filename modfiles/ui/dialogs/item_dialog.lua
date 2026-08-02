@@ -186,7 +186,7 @@ local function close_item_dialog(player, action)
         if modal_data.object.class == "Fuel" then
             modal_data.object.temperature = temperature
         else  -- "Recipe"
-            modal_data.object.temperatures[modal_data.name] = temperature
+            modal_data.object:set_temperature(modal_data.name, temperature)
         end
 
         solver.update(player)

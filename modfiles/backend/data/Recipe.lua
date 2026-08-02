@@ -1,6 +1,8 @@
 local Object = require("backend.data.Object")
+local SimpleItem = require("backend.data.SimpleItem")
 
 ---@alias RecipeProductionType "produce" | "consume"
+---@alias RecipeCatalysts { products: SimpleItem[], ingredients: SimpleItem[] }
 
 ---@class SurfaceCompatibility
 ---@field recipe boolean
@@ -15,6 +17,9 @@ local Object = require("backend.data.Object")
 ---@field priority_product (FPItemPrototype | FPPackedPrototype)?
 ---@field temperatures table<string, float>
 ---@field temperature_data table<string, TemperatureData>
+---@field ingredients Ingredient[]
+---@field products FormattedProduct[]
+---@field catalysts RecipeCatalysts
 ---@field effects IntegerModuleEffects?
 local Recipe = Object.methods()
 Recipe.__index = Recipe
@@ -37,6 +42,9 @@ local function init(parent, proto, production_type)
         temperatures = {},
 
         temperature_data = nil,
+        ingredients = nil,
+        products = nil,
+        catalysts = nil,
         effects = nil,
 
         parent = parent
@@ -44,6 +52,7 @@ local function init(parent, proto, production_type)
 
     if not this_proto.simplified then
         object:build_temperatures_data()
+        object:build_items()
     end
 
     return object
@@ -66,15 +75,101 @@ function Recipe:build_temperatures_data()
     end
 end
 
---- There might be no valid default to apply
 ---@param player LuaPlayer
-function Recipe:apply_temperature_defaults(player)
+---@param produced FPItemPrototype?
+function Recipe:apply_temperature_defaults(player, produced)
     ---@cast self.proto FPRecipePrototype
+    self.temperatures = {}
+
     for _, ingredient in pairs(self.proto.ingredients) do
         if ingredient.type == "fluid" then
+            local excluded = nil
+
+            -- If the produced item is the same, temperature included, as this ingredient, it could
+            -- end up cancelling out, which makes the recipe useless. Set a different default instead.
+            if produced and produced.base_name == ingredient.name then
+                for _, product in pairs(self.proto.products) do
+                    if product.name == produced.name and ingredient.amount >= product.amount then
+                        excluded = produced.temperature
+                        break
+                    end
+                end
+            end
+
             local applicable_values = self.temperature_data[ingredient.name].applicable_values
             self.temperatures[ingredient.name] = lib.temperature.determine_applicable_default(
-                player, ingredient, applicable_values)
+                player, ingredient, applicable_values, excluded)
+        end
+    end
+
+    self:build_items()
+end
+
+---@param fluid_name string
+---@param temperature float?
+function Recipe:set_temperature(fluid_name, temperature)
+    self.temperatures[fluid_name] = temperature
+    self:build_items()
+end
+
+
+--- Determine net products and ingredients, while breaking out resulting catalysts. This needs
+--- to be done dynamically based on user-picked fluid ingredient temperatures.
+function Recipe:build_items()
+    ---@cast self.proto FPRecipePrototype
+    local products = self.proto.products
+
+    ---@type table<ItemType, table<ItemName, number>>
+    local indexed_products = {item={}, fluid={}, entity={}}
+    local product_amounts = {}  ---@type table<number, number?>
+
+    for index, product in pairs(products) do
+        indexed_products[product.type][product.name] = index
+        product_amounts[index] = product.amount
+    end
+
+    self.ingredients, self.products = {}, {}
+    self.catalysts = {products={}, ingredients={}}
+
+    for _, ingredient in pairs(self.proto.ingredients) do
+        local peer_index = indexed_products[ingredient.type][self:get_name_with_temperature(ingredient)]
+        local peer_product = (peer_index) and products[peer_index] or nil
+
+        if peer_product == nil then
+            table.insert(self.ingredients, ingredient)
+
+        elseif ingredient.amount > peer_product.amount then
+            -- The product cancels out entirely, leaving the ingredient with the difference
+            local proto = prototyper.util.find("items", peer_product.name, peer_product.type)
+            local item = SimpleItem.init(self.parent, proto--[[@as FPItemPrototype]], peer_product.amount)
+            table.insert(self.catalysts.products, item)
+
+            local remainder = lib.flib.shallow_copy(ingredient)
+            remainder.amount = ingredient.amount - peer_product.amount
+            table.insert(self.ingredients, remainder)
+
+            product_amounts[peer_index] = nil
+
+        else
+            -- The ingredient cancels out entirely, leaving the product with the difference, if any
+            local proto = prototyper.util.find("items", ingredient.name, ingredient.type)
+            local item = SimpleItem.init(self.parent, proto--[[@as FPItemPrototype]], ingredient.amount)
+            table.insert(self.catalysts.ingredients, item)
+
+            local difference = peer_product.amount - ingredient.amount
+            product_amounts[peer_index] = (difference > 0) and difference or nil
+        end
+    end
+
+    for index, product in ipairs(products) do
+        local amount = product_amounts[index]
+        if amount ~= nil then
+            local item = product
+            if amount ~= product.amount then
+                item = lib.flib.shallow_copy(product)
+                item.amount = amount
+            end
+            table.insert(self.products, item)
         end
     end
 end
@@ -89,16 +184,8 @@ end
 ---@param ingredient Ingredient | FPItemPrototype
 ---@return string
 function Recipe:get_name_with_temperature(ingredient)
-    if ingredient.type ~= "fluid" then
-        return ingredient.name  ---@as string
-    else
-        local temperature = self.temperatures[ingredient.name]
-        if temperature ~= nil then
-            return ingredient.name .. "-" .. temperature
-        else
-            return ingredient.name  ---@as string
-        end
-    end
+    if ingredient.type ~= "fluid" then return ingredient.name--[[@as string]] end
+    return lib.temperature.name_with(ingredient.name, self.temperatures[ingredient.name])
 end
 
 ---@param ingredient Ingredient | FPItemPrototype
@@ -212,6 +299,8 @@ function Recipe:validate()
                 end
             end
         end
+
+        self:build_items()
     end
 
     return self.valid
