@@ -195,8 +195,9 @@ local function unpack(packed_self, parent)
 end
 
 
+---@param player LuaPlayer
 ---@return boolean valid
-function Fuel:validate()
+function Fuel:validate(player)
     self.proto = prototyper.util.validate_prototype_object(self.proto, "combined_category")
     self.valid = (not self.proto.simplified)
 

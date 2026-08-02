@@ -52,7 +52,7 @@ function _clipboard.paste(player, target)
             ---@diagnostic disable-next-line: param-type-mismatch
             clone = unpackers[clip.class](clip.packed_object, clip.parent)  ---@as CopyableObject
             ---@cast clone -SimpleItem
-            clone:validate()
+            clone:validate(player)
         else
             clone = lib.flib.shallow_copy(clip.packed_object)  ---@as SimpleItem
         end

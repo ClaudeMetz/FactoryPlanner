@@ -107,7 +107,7 @@ local function refresh_player_table(player)
     player_table.translation_tables = nil
     player_table.clipboard = nil
 
-    player_table.realm:validate()
+    player_table.realm:validate(player)
 end
 
 

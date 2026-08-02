@@ -263,17 +263,22 @@ local function unpack(packed_self, parent)
 end
 
 
+---@param player LuaPlayer
 ---@return boolean valid
-function Recipe:validate()
+function Recipe:validate(player)
     self.proto = prototyper.util.validate_prototype_object(self.proto, nil)  ---@as FPRecipePrototype | FPPackedPrototype
     self.valid = (not self.proto.simplified)
 
-    if self.valid and self.priority_product then
+    -- A recipe the force can't obtain at all is not valid, mirroring what the recipe picker offers
+    if self.valid then
+        local recipe_proto = self.proto  --[[@as FPRecipePrototype]]
+        self.valid = lib.is_recipe_available(player.force--[[@as LuaForce]], recipe_proto)
     end
 
+    -- A priority product that doesn't exist anymore is simply dropped, it doesn't invalidate the recipe
     self.priority_product = (self.priority_product) and
         prototyper.util.validate_prototype_object(self.priority_product, "type") or nil
-    if self.priority_product then self.valid = (not self.priority_product.simplified) and self.valid end
+    if self.priority_product and self.priority_product.simplified then self.priority_product = nil end
 
     -- An invalid temperature shouldn't invalidate the recipe
     if self.valid then  ---@cast self.proto FPRecipePrototype
@@ -309,15 +314,8 @@ end
 ---@param player LuaPlayer
 ---@return boolean success
 function Recipe:repair(player)
-    if self.proto.simplified then
-        self.valid = false  -- this situation can't be repaired
-    end
-
-    if self.valid and self.priority_product and self.priority_product.simplified then
-        self.priority_product = nil
-    end
-
-    return self.valid
+    -- Neither a missing prototype nor a recipe the force can't obtain can be repaired
+    return false
 end
 
 return {init = init, unpack = unpack}

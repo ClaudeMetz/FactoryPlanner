@@ -311,9 +311,10 @@ local function unpack(packed_self, parent)
 end
 
 
+---@param player LuaPlayer
 ---@return boolean valid
-function ModuleSet:validate()
-    self.valid = self:_validate()
+function ModuleSet:validate(player)
+    self.valid = self:_validate(player)
 
     -- Can't be valid with an invalid parent
     self.valid = self.parent.valid and self.valid

@@ -8,7 +8,7 @@
 ---@field next Object?
 ---@field previous Object?
 ---@field pack fun(self, full: boolean): PackedObject
----@field validate fun(self): boolean
+---@field validate fun(self, player: LuaPlayer): boolean
 ---@field repair fun(self, player: LuaPlayer): boolean
 
 ---@class ObjectMethods
@@ -297,12 +297,13 @@ end
 
 
 ---@protected
+---@param player LuaPlayer
 ---@return boolean valid
-function methods:_validate()
+function methods:_validate(player)
     local valid = true
     for object in self:_iterator() do
         -- Stays true until a single dataset is invalid, then stays false
-        valid = object:validate() and valid
+        valid = object:validate(player) and valid
     end
     return valid
 end

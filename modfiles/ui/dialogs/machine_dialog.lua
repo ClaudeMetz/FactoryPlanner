@@ -295,8 +295,8 @@ local function open_machine_dialog(player, modal_data)
     modal_data.line = modal_data.object.parent
 
     modal_data.module_set = modal_data.object.module_set
-    modal_data.machine_backup = modal_data.object:clone()
-    modal_data.beacon_backup = modal_data.line.beacon and modal_data.line.beacon:clone()
+    modal_data.machine_backup = modal_data.object:clone(player)
+    modal_data.beacon_backup = modal_data.line.beacon and modal_data.line.beacon:clone(player)
 
     local content_frame = modal_data.modal_elements.content_frame
 

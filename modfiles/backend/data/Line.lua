@@ -347,13 +347,14 @@ local function unpack(packed_self)
 end
 
 
+---@param player LuaPlayer
 ---@return boolean valid
-function Line:validate()
-    self.valid = self.recipe:validate()
+function Line:validate(player)
+    self.valid = self.recipe:validate(player)
 
-    if self.recipe.valid then self.valid = self.machine:validate() and self.valid end
+    if self.recipe.valid then self.valid = self.machine:validate(player) and self.valid end
 
-    if self.recipe.valid and self.beacon then self.valid = self.beacon:validate() and self.valid end
+    if self.recipe.valid and self.beacon then self.valid = self.beacon:validate(player) and self.valid end
 
     self.surface_compatibility = nil  -- reset cached value
 

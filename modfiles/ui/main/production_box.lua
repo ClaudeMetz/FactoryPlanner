@@ -145,7 +145,7 @@ local function handle_convert_subfloor(player)
     factory.top_floor = Floor.unpack(floor_copy)
     factory.top_floor.parent = factory
 
-    factory:validate()
+    factory:validate(player)
     lib.context.set(player, factory.top_floor)
 
     solver.update(player)

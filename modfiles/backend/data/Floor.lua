@@ -298,9 +298,10 @@ local function unpack(packed_self)
 end
 
 
+---@param player LuaPlayer
 ---@return boolean valid
-function Floor:validate()
-    self.valid = self:_validate()
+function Floor:validate(player)
+    self.valid = self:_validate(player)
     return self.valid
 end
 

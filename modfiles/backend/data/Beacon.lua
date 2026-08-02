@@ -203,16 +203,18 @@ local function unpack(packed_self, parent)
     return unpacked_self
 end
 
+---@param player LuaPlayer
 ---@return Beacon clone
-function Beacon:clone()
+function Beacon:clone(player)
     local clone = unpack(self:pack(false), self.parent)
-    clone:validate()
+    clone:validate(player)
     return clone
 end
 
 
+---@param player LuaPlayer
 ---@return boolean valid
-function Beacon:validate()
+function Beacon:validate(player)
     self.proto = prototyper.util.validate_prototype_object(self.proto, nil)  ---@as FPBeaconPrototype | FPPackedPrototype
     self.valid = (not self.proto.simplified)
 
@@ -224,7 +226,7 @@ function Beacon:validate()
 
     if self.valid then
         self.valid = self.parent:uses_beacon_effects() and self.valid
-        self.valid = self.module_set:validate() and self.valid
+        self.valid = self.module_set:validate(player) and self.valid
     end
 
     if self.valid and self:is_mono_beacon() then self.amount = 1 end
