@@ -278,6 +278,7 @@ function Machine:paste(object, player)
         if object.fuel then
             self.fuel = object.fuel
             self.fuel--[[@cast -nil]].parent = self
+            self:normalize_fuel(player)
         end
 
         self.module_set = object.module_set
