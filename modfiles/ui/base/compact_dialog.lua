@@ -45,8 +45,7 @@ local function determine_table_height(floor, column_counts)
 
             if line.class == "Line" then
                 if column == "ingredients" and line.machine.fuel then item_count = item_count + 1 end
-                local recipe_proto = line.recipe.proto  ---@as FPRecipePrototype
-                local catalysts = recipe_proto.catalysts[column--[[@as "ingredients" | "products"]]]
+                local catalysts = line.recipe.catalysts[column--[[@as "ingredients" | "products"]]]
                 if catalysts then item_count = item_count + table_size(catalysts) end
             end
 
@@ -304,17 +303,30 @@ local function add_item_flow(line, relevant_line, item_category, button_color, m
     ---@cast line Line
 
     if item_category == "products" or item_category == "ingredients" then
-        local recipe_proto = line.recipe--[[@cast -nil]].proto  ---@as FPRecipePrototype
-        for _, item in pairs(recipe_proto.catalysts[item_category]) do
-            local item_proto = prototyper.util.find("items", item.name, item.type)  ---@as FPItemPrototype
+        for _, item in pairs(line.recipe.catalysts[item_category]) do
+            local proto = item.proto
 
-            local amount, number_tooltip = item_views.process_item(metadata.player, item_proto,
+            local amount, number_tooltip = item_views.process_item(metadata.player, proto,
                 (item.amount * line.production_ratio), line.machine.amount)
-            local title_line = {"fp.tt_title_with_note", item_proto.localised_name, {"fp.catalyst"}}
+
+            ---@type LocalisedString, LocalisedString
+            local name_line, temperature_line = {"", {"fp.tt_title_with_note",
+                proto.localised_name, {"fp.catalyst"}}}, ""
+
+            -- Ingredient catalysts carry the base fluid proto, so their temperature needs spelling out
+            if item_category == "ingredients" and proto.type == "fluid" then
+                local temperature_data = line.recipe.temperature_data[proto.name]
+                table.insert(name_line--[[@as table]], temperature_data.annotation)
+                temperature_line = {"fp.configured_temperature", line.recipe:get_temperature(proto)}  ---@as LocalisedString
+            end
+
             local number_line = (number_tooltip) and {"", "\n", number_tooltip} or ""
 
-            item_table.add{type="sprite-button", sprite=item_proto.sprite, number=amount,
-                tooltip={"", title_line, number_line}, style="fflib_slot_button_blue_small"}
+            -- Slots in ahead of the special items, which stay at the end alongside the fuel
+            item_table.add{type="sprite-button", sprite=proto.sprite, number=amount,
+                tooltip={"", name_line, temperature_line, number_line},
+                style="fflib_slot_button_blue_small", index=first_special_index}
+            if first_special_index then first_special_index = first_special_index + 1 end
         end
     end
 
@@ -769,7 +781,7 @@ factory_listeners.gui = {
             name = "act_on_compact_ingredient",
             actions_table = {
                 put_into_cursor = {shortcut="left", show=true},
-                factoriopedia = {shortcut="alt-right", show=true}
+                factoriopedia = {shortcut="alt-left", show=true}
             },
             handler = handle_ingredient_click
         },
@@ -777,14 +789,14 @@ factory_listeners.gui = {
             name = "act_on_compact_recipe",
             actions_table = {
                 open_subfloor = {shortcut="left", show=true},
-                factoriopedia = {shortcut="alt-right", show=true}
+                factoriopedia = {shortcut="alt-left", show=true}
             },
             handler = handle_recipe_click
         },
         {
             name = "act_on_compact_module",
             actions_table = {
-                factoriopedia = {shortcut="alt-right", show=true}
+                factoriopedia = {shortcut="alt-left", show=true}
             },
             handler = handle_module_click
         },
@@ -792,7 +804,7 @@ factory_listeners.gui = {
             name = "act_on_compact_machine",
             actions_table = {
                 put_into_cursor = {shortcut="left", show=true},
-                factoriopedia = {shortcut="alt-right", show=true}
+                factoriopedia = {shortcut="alt-left", show=true}
             },
             handler = handle_machine_click
         },
@@ -800,7 +812,7 @@ factory_listeners.gui = {
             name = "act_on_compact_beacon",
             actions_table = {
                 put_into_cursor = {shortcut="left", show=true},
-                factoriopedia = {shortcut="alt-right", show=true}
+                factoriopedia = {shortcut="alt-left", show=true}
             },
             handler = handle_beacon_click
         },
@@ -808,7 +820,7 @@ factory_listeners.gui = {
             name = "act_on_compact_item",
             actions_table = {
                 put_into_cursor = {shortcut="left", show=true},
-                factoriopedia = {shortcut="alt-right", show=true}
+                factoriopedia = {shortcut="alt-left", show=true}
             },
             handler = handle_item_click
         }

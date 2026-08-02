@@ -163,7 +163,7 @@ end
 ---@param item_proto FPItemPrototype | FPFuelPrototype
 local function set_filter_on_inserter(player, cursor_entity, item_proto)
     local entity_proto = (cursor_entity.type == "entity") and cursor_entity.entity
-        or prototypes.entity[cursor_entity.entity--[[@cast -nil]].name]  ---@type LuaEntityPrototype
+        or prototypes.entity[cursor_entity.entity--[[@cast -nil]].name]  ---@as LuaEntityPrototype
 
     if item_proto.type ~= "item" then
         local message = {"fp.entity_wrong_type", entity_proto.localised_name, item_proto.localised_name}
@@ -220,7 +220,7 @@ end
 ---@param item_proto FPItemPrototype | FPFuelPrototype
 local function set_filter_on_splitter(player, cursor_entity, item_proto)
     local entity_proto = (cursor_entity.type == "entity") and cursor_entity.entity
-        or prototypes.entity[cursor_entity.entity--[[@cast -nil]].name]  ---@type LuaEntityPrototype
+        or prototypes.entity[cursor_entity.entity--[[@cast -nil]].name]  ---@as LuaEntityPrototype
 
     if item_proto.type ~= "item" then
         local message = {"fp.entity_wrong_type", entity_proto.localised_name, item_proto.localised_name}
@@ -257,7 +257,7 @@ end
 ---@param item_proto FPItemPrototype | FPFuelPrototype
 local function set_filter_on_mining_drill(player, cursor_entity, item_proto)
     local entity_proto = (cursor_entity.type == "entity") and cursor_entity.entity
-        or prototypes.entity[cursor_entity.entity--[[@cast -nil]].name]  ---@type LuaEntityPrototype
+        or prototypes.entity[cursor_entity.entity--[[@cast -nil]].name]  ---@as LuaEntityPrototype
 
     local entity_equivalent = prototypes.entity[item_proto.name]
     if not entity_equivalent then
@@ -316,7 +316,7 @@ end
 ---@param item_proto FPItemPrototype | FPFuelPrototype
 local function set_filter_on_asteroid_collector(player, cursor_entity, item_proto)
     local entity_proto = (cursor_entity.type == "entity") and cursor_entity.entity
-        or prototypes.entity[cursor_entity.entity--[[@cast -nil]].name]  ---@type LuaEntityPrototype
+        or prototypes.entity[cursor_entity.entity--[[@cast -nil]].name]  ---@as LuaEntityPrototype
 
     local entity_equivalent = prototypes.asteroid_chunk[item_proto.name]
     if not entity_equivalent then
@@ -366,7 +366,7 @@ end
 ---@param item_proto FPItemPrototype | FPFuelPrototype
 local function set_filter_on_pump(player, cursor_entity, item_proto)
     local entity_proto = (cursor_entity.type == "entity") and cursor_entity.entity
-        or prototypes.entity[cursor_entity.entity--[[@cast -nil]].name]  ---@type LuaEntityPrototype
+        or prototypes.entity[cursor_entity.entity--[[@cast -nil]].name]  ---@as LuaEntityPrototype
 
     if item_proto.type ~= "fluid" then
         local message ={"fp.entity_wrong_type", entity_proto.localised_name, item_proto.localised_name}

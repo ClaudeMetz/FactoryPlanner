@@ -2,7 +2,6 @@ local _util = {}
 
 -- ** LOCAL UTIL **
 ---@alias RecipeItem FormattedProduct | Ingredient
----@alias IndexedItemList table<ItemType, table<ItemName, { index: number, item: RecipeItem }>>
 ---@alias ItemList table<ItemType, table<ItemName, RecipeItem>>
 ---@alias ItemTypeCounts { items: number, fluids: number }
 
@@ -53,7 +52,7 @@ local function generate_formatted_product(product)
     if product.type == "fluid" then
         local fluid = prototypes.fluid[product.name]
         formatted_product.temperature = product.temperature or fluid.default_temperature
-        formatted_product.name = product.name .. "-" .. formatted_product.temperature
+        formatted_product.name = lib.temperature.name_with(product.name, formatted_product.temperature)
         formatted_product.base_name = product.name
     end
 
@@ -83,24 +82,16 @@ local function combine_identical_products(item_list)
 end
 
 ---@param item_list RecipeItem[]
----@return IndexedItemList
-local function create_type_indexed_list(item_list)
-    local indexed_list = {item = {}, fluid = {}, entity = {}}  ---@type IndexedItemList
+---@return ItemTypeCounts
+local function determine_item_type_counts(item_list)
+    local counts = {items = 0, fluids = 0}  ---@type ItemTypeCounts
 
-    for index, item in pairs(item_list) do
-        indexed_list[item.type][item.name] = {index = index, item = lib.flib.shallow_copy(item)}
+    for _, item in pairs(item_list) do
+        if item.type == "item" then counts.items = counts.items + 1
+        elseif item.type == "fluid" then counts.fluids = counts.fluids + 1 end
     end
 
-    return indexed_list
-end
-
----@param indexed_items IndexedItemList
----@return ItemTypeCounts
-local function determine_item_type_counts(indexed_items)
-    return {
-        items = table_size(indexed_items.item),
-        fluids = table_size(indexed_items.fluid)
-    }
+    return counts
 end
 
 
@@ -127,7 +118,6 @@ function _util.format_recipe(recipe_proto, products, main_product, ingredients)
             base_ingredient.maximum_temperature = max_temp
         end
     end
-    local indexed_ingredients = create_type_indexed_list(ingredients)
 
 
     local formatted_products = {}  ---@type FormattedProduct[]
@@ -146,55 +136,14 @@ function _util.format_recipe(recipe_proto, products, main_product, ingredients)
         end
     end
     combine_identical_products(formatted_products)
-    local indexed_products = create_type_indexed_list(formatted_products)
 
 
-    -- Reduce item amounts for items that are both an ingredient and a product
-    recipe_proto.catalysts = {products={}, ingredients={}}
-    for _, items_of_type in pairs(indexed_ingredients) do
-        for _, ingredient in pairs(items_of_type) do
-            local peer_product = indexed_products[ingredient.item.type][ingredient.item.name]
-
-            if peer_product then
-                local difference = ingredient.item.amount - peer_product.item.amount
-
-                if difference < 0 then
-                    local item = lib.flib.shallow_copy(ingredient.item)
-                    item.amount = peer_product.item.amount + difference
-                    table.insert(recipe_proto.catalysts.ingredients,  item)
-
-                    ingredients[ingredient.index]--[[@cast -nil]].amount = nil
-                    formatted_products[peer_product.index]--[[@cast -nil]].amount = -difference
-                elseif difference > 0 then
-                    local item = lib.flib.shallow_copy(peer_product.item)
-                    item.amount = ingredient.item.amount - difference
-                    table.insert(recipe_proto.catalysts.products, item)
-
-                    ingredients[ingredient.index]--[[@cast -nil]].amount = difference
-                    formatted_products[peer_product.index]--[[@cast -nil]].amount = nil
-                else
-                    -- Nilled-out items are just shown as ingredient catalysts
-                    local item = lib.flib.shallow_copy(ingredient.item)
-                    table.insert(recipe_proto.catalysts.ingredients, item)
-
-                    ingredients[ingredient.index]--[[@cast -nil]].amount = nil
-                    formatted_products[peer_product.index]--[[@cast -nil]].amount = nil
-                end
-            end
-        end
-    end
-
-    -- Remove items after the fact so the iteration above doesn't break
-    for _, item_table in pairs{ingredients, formatted_products} do
-        for i = #item_table, 1, -1 do
-            if item_table[i].amount == nil then table.remove(item_table, i) end
-        end
-    end
-
+    -- Items that are both an ingredient and a product are reduced by the solver, since a fluid
+    -- ingredient's temperature is only picked per-line, and it decides whether they cancel at all
 
     recipe_proto.type_counts = {
-        products = determine_item_type_counts(indexed_products),
-        ingredients = determine_item_type_counts(indexed_ingredients)
+        products = determine_item_type_counts(formatted_products),
+        ingredients = determine_item_type_counts(ingredients)
     }
 
     recipe_proto.ingredients = ingredients

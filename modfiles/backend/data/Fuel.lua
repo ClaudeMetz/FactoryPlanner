@@ -62,11 +62,8 @@ end
 
 ---@return string
 function Fuel:get_name_with_temperature()
-    if self.proto.type ~= "fluid" or self.temperature == nil then
-        return self.proto.name
-    else
-        return self.proto.name .. "-" .. self.temperature
-    end
+    if self.proto.type ~= "fluid" then return self.proto.name end
+    return lib.temperature.name_with(self.proto.name, self.temperature)
 end
 
 function Fuel:build_temperature_data()

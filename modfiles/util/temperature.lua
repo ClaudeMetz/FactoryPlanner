@@ -4,6 +4,14 @@ local _temperature = {}
 ---@field annotation LocalisedString?
 ---@field applicable_values float[]
 
+---@param name string
+---@param temperature float?
+---@return string
+function _temperature.name_with(name, temperature)
+    if temperature == nil then return name end
+    return name .. "-" .. temperature
+end
+
 --- An exclusive minimum rejects the minimum itself, which fuels burned for their heat need, as a
 --- fluid at its default temperature carries no usable heat
 ---@param ingredient Ingredient.fluid
@@ -43,20 +51,30 @@ function _temperature.generate_data(ingredient, exclusive_minimum)
 end
 
 
+--- An excluded temperature is one that would cancel out the product the recipe is being added
+--- for, so it doesn't count as a candidate at all
 ---@param player LuaPlayer
 ---@param ingredient Ingredient.fluid
 ---@param applicable_values float[]
+---@param excluded float?
 ---@return number? default
-function _temperature.determine_applicable_default(player, ingredient, applicable_values)
+function _temperature.determine_applicable_default(player, ingredient, applicable_values, excluded)
     local preferences = lib.globals.preferences(player)
     local defaults = preferences.default_temperatures[ingredient.name]
 
-    if #applicable_values == 1 then
-        return applicable_values[1]
+    local candidates = applicable_values
+    if excluded ~= nil then
+        candidates = {}
+        for _, value in pairs(applicable_values) do
+            if value ~= excluded then table.insert(candidates, value) end
+        end
     end
 
+    -- No preference to apply when there's no choice left to make
+    if #candidates == 1 then return candidates[1] end
+
     for _, default in pairs(defaults) do
-        for _, value in pairs(applicable_values) do
+        for _, value in pairs(candidates) do
             if default == value then return default end
         end
     end

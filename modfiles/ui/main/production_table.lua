@@ -325,17 +325,37 @@ end
 local function add_catalysts(line, parent_flow, category, metadata)
     if line.class == "Floor" then return end  ---@cast line Line
 
-    local recipe_proto = line.recipe.proto  ---@as FPRecipePrototype
-    for _, item in pairs(recipe_proto.catalysts[category]) do
-        local item_proto = prototyper.util.find("items", item.name, item.type)  ---@as FPItemPrototype
+    local action_name = "act_on_line_catalyst_" .. string.sub(category, 1, -2)
 
-        local amount, number_tooltip = item_views.process_item(metadata.player, item_proto,
+    for index, item in pairs(line.recipe.catalysts[category]) do
+        local proto = item.proto
+
+        local amount, number_tooltip = item_views.process_item(metadata.player, proto,
             (item.amount * line.production_ratio), line.machine.amount)
-        local title_line = {"fp.tt_title_with_note", item_proto.localised_name, {"fp.catalyst"}}
-        local number_line = (number_tooltip) and {"", "\n", number_tooltip} or ""
 
-        parent_flow.add{type="sprite-button", sprite=item_proto.sprite, number=amount,
-            tooltip={"", title_line, number_line}, style="fflib_slot_button_blue_small"}
+        ---@type LocalisedString, LocalisedString
+        local name_line, temperature_line = {"", {"fp.tt_title_with_note",
+            proto.localised_name, {"fp.catalyst"}}}, ""
+
+        -- Ingredient catalysts carry the base fluid proto, so their temperature needs spelling out.
+        -- It is always configured, since an unconfigured one can't cancel out in the first place.
+        if category == "ingredients" and proto.type == "fluid" then
+            local temperature_data = line.recipe.temperature_data[proto.name]
+            table.insert(name_line--[[@as table]], temperature_data.annotation)
+            temperature_line = {"fp.configured_temperature", line.recipe:get_temperature(proto)}  ---@as LocalisedString
+        end
+
+        local number_line = (number_tooltip) and {"", "\n", number_tooltip} or ""
+        local action_line = {"", "\n", MODIFIER_ACTIONS[action_name].tooltip}
+
+        local tooltip = {"", name_line, temperature_line, number_line, action_line}
+        local tags = {mod="fp", on_gui_click=action_name, on_gui_hover="set_tooltip",
+            context="production_table", line_id=line.id, item_index=index}
+
+        local button = parent_flow.add{type="sprite-button", sprite=proto.sprite, tags=tags,
+            number=amount, style="fflib_slot_button_blue_small",
+            mouse_button_filter={"left-and-right"}, raise_hover_events=true}
+        metadata.tooltips[button.index] = tooltip
     end
 end
 
@@ -344,6 +364,7 @@ end
 ---@field item_index integer
 ---@field context "production_table"
 ---@field item_category ItemCategory
+---@field catalyst boolean
 
 ---@param line LineObject
 ---@param parent_flow LuaGuiElement
