@@ -74,7 +74,8 @@ end
 ---@return LocalisedString? error
 ---@return RecipeDialogFilters filters
 local function match_recipes(player, modal_data, proto)
-    local force_recipes, force_technologies = player.force.recipes, player.force.technologies
+    local force = player.force  --[[@as LuaForce]]
+    local force_recipes, force_technologies = force.recipes, force.technologies
     local preferences = lib.globals.preferences(player)
 
     local relevant_recipes = {}
@@ -101,7 +102,10 @@ local function match_recipes(player, modal_data, proto)
 
             elseif force_recipe ~= nil then  -- only add recipes that exist on the current force
                 local recipe_enabled, recipe_hidden = force_recipe.enabled, recipe.hidden
-                local overwrite = overwrite_recipe_picker[recipe.name]
+                local overwrite = overwrite_recipe_picker[recipe.name]  ---@type boolean?
+                if overwrite == nil then  -- fall back to the base game's visibility override
+                    overwrite = force.get_script_visible({type="recipe", name=recipe.name})
+                end
                 local recipe_should_show = overwrite
 
                 if overwrite == nil then  -- run this in the normal case

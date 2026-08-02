@@ -4,6 +4,7 @@ Date: 00. 00. 0000
   Features:
     -
   Changes:
+    - Added support for mods disabling recipes dynamically at runtime
     - Bumped the required Factorio version to 2.1.12
   Bugfixes:
     - Fixed recipes using fluids with temperature not balancing products and ingredients against each other, causing diverse problems (#649)
