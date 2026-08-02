@@ -20,6 +20,51 @@ local Line = require("backend.data.Line")
 ---@alias RecipeDialogFilters {disabled: boolean, hidden: boolean}
 
 -- ** LOCAL UTIL **
+---@param items (Ingredient | FormattedProduct)[]
+---@param type string
+---@param name string
+---@return number? amount
+local function peer_amount(items, type, name)
+    for _, item in pairs(items) do
+        if item.type == type and item.name == name then return item.amount end
+    end
+    return nil
+end
+
+---@param recipe FPRecipePrototype
+---@param proto FPItemPrototype
+---@param production_type RecipeProductionType
+---@return boolean
+local function recipe_nets_item(recipe, proto, production_type)
+    -- Products carry their temperature in their name, ingredients are keyed by the base fluid
+    local ingredient_name = proto.base_name or proto.name
+    local ingredient_amount = peer_amount(recipe.ingredients, proto.type, ingredient_name)
+    local product_amount = peer_amount(recipe.products, proto.type, proto.name)
+
+    if production_type == "consume" then
+        -- Consuming pins the ingredient to the temperature of the item in question, unlike
+        -- producing, so a product at that same temperature is certain to cancel it out
+        if ingredient_amount == nil then return false end
+        return (product_amount == nil) or (ingredient_amount > product_amount)
+
+    else  -- production_type == "produce"
+        if product_amount == nil then return false end
+        if ingredient_amount == nil or product_amount > ingredient_amount then return true end
+
+        -- The ingredient only cancels the product out when set to its temperature, so the recipe is
+        -- still worth offering as long as there is any other temperature to pick instead
+        for _, ingredient in pairs(recipe.ingredients) do
+            if ingredient.type == "fluid" and ingredient.name == ingredient_name then
+                local temperature_data = lib.temperature.generate_data(ingredient--[[@as Ingredient.fluid]])
+                for _, value in pairs(temperature_data.applicable_values) do
+                    if value ~= proto.temperature then return true end
+                end
+            end
+        end
+        return false
+    end
+end
+
 -- Serves the dual-purpose of determining the appropriate settings for the recipe picker filter
 -- and finding any recipes that produce the given prototype
 ---@param player any
@@ -43,6 +88,12 @@ local function match_recipes(player, modal_data, proto)
         for recipe_id, _ in pairs(map) do
             local recipe = prototyper.util.find("recipes", recipe_id, nil)  ---@as FPRecipePrototype
             local force_recipe = force_recipes[recipe.name]
+
+            -- Make sure the recipe actually is a net producer/consumer of the item
+            -- Fluid ingredient temperature configuration influences this
+            if not recipe_nets_item(recipe, proto, modal_data.production_type) then
+                goto skip_recipe
+            end
 
             if recipe.custom then
                 -- These are always enabled and non-hidden, so no need to tally them
@@ -83,6 +134,8 @@ local function match_recipes(player, modal_data, proto)
                     elseif recipe_hidden then counts.hidden = counts.hidden + 1 end
                 end
             end
+
+            ::skip_recipe::
         end
     end
 
@@ -129,8 +182,19 @@ local function attempt_adding_line(player, recipe_id, modal_data)
         local relative_object = OBJECT_INDEX[modal_data.add_after_line_id--[[@cast -nil]]]  ---@as LineObject?
         floor:insert(line, relative_object, "next")  -- if not relative, insert uses last line
 
-        -- Apply defaults as appropriate
-        line.recipe:apply_temperature_defaults(player)
+        local requested_proto = nil
+        if modal_data.temperature then  -- fold in selected temperature if this is a base_fluid dialog
+            local name = lib.temperature.name_with(modal_data.base_fluid--[[@cast -nil]].name, modal_data.temperature)
+            requested_proto = prototyper.util.find("items", name, "fluid")
+        else
+            requested_proto = prototyper.util.find("items", modal_data.product_id, modal_data.category_id)
+        end  ---@cast requested_proto FPItemPrototype
+
+        -- Apply default as appropriate. The picker offers recipes that only produce the requested
+        -- fluid at some temperatures, so the recipe needs to know which one was asked for.
+        local produced = (modal_data.production_type == "produce") and requested_proto or nil
+        line.recipe:apply_temperature_defaults(player, produced)
+
         line.machine:reset(player)
         line:setup_beacon(player)
 
@@ -139,7 +203,7 @@ local function attempt_adding_line(player, recipe_id, modal_data)
             if modal_data.recipe_id then
                 local fluid_name = modal_data.base_fluid--[[@cast -nil]].name
                 local recipe = OBJECT_INDEX[modal_data.recipe_id]  ---@as Recipe
-                recipe.temperatures[fluid_name] = modal_data.temperature
+                recipe:set_temperature(fluid_name, modal_data.temperature)
             elseif modal_data.fuel_id then
                 local fuel = OBJECT_INDEX[modal_data.fuel_id]  ---@as Fuel
                 fuel.temperature = modal_data.temperature
@@ -147,10 +211,8 @@ local function attempt_adding_line(player, recipe_id, modal_data)
         end
 
         -- Set ingredient temperature to match byproduct recipe
-        if modal_data.production_type == "consume" then
-            local proto = prototyper.util.find("items", modal_data.product_id, modal_data.category_id)
-            ---@cast proto FPItemPrototype
-            if proto.temperature then line.recipe.temperatures[proto.base_name] = proto.temperature end
+        if modal_data.production_type == "consume" and requested_proto.temperature then
+            line.recipe:set_temperature(requested_proto.base_name--[[@as string]], requested_proto.temperature)
         end
 
         if not line:is_temperature_fully_configured() then
@@ -381,7 +443,7 @@ local function apply_temperature(player, temperature)
     local modal_data = lib.globals.modal_data(player)  ---@as RecipeDialogModalData
     modal_data.temperature = temperature
 
-    local name = modal_data.base_fluid--[[@cast -nil]].name .. "-" .. temperature
+    local name = lib.temperature.name_with(modal_data.base_fluid--[[@cast -nil]].name, temperature)
     local proto = prototyper.util.find("items", name, "fluid")
     local relevant_recipes, _, filters = match_recipes(player, modal_data, proto)
     modal_data.relevant_recipes = relevant_recipes or {}  -- no match for a given temperature is fine

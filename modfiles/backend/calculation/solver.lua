@@ -75,16 +75,19 @@ end
 ---@param line Line
 ---@return SolverItem[]?
 local function line_ingredients(line)
+    local recipe = line.recipe
+
+    -- The recipe items are already reduced against each other, using the configured temperatures
     local ingredients = {}
-    for _, ingredient in pairs(line.recipe.proto--[[@as FPRecipePrototype]].ingredients) do
+    for _, ingredient in pairs(recipe.ingredients) do
         -- If any relevant ingredient has no temperature set, this line is invalid
-        if not line.recipe:is_temperature_configured(ingredient) then return nil end
+        if not recipe:is_temperature_configured(ingredient) then return nil end
 
         table.insert(ingredients, {
-            name = line.recipe:get_name_with_temperature(ingredient),
+            name = recipe:get_name_with_temperature(ingredient),
             type = ingredient.type,
             amount = ingredient.amount,
-            temperature = line.recipe:get_temperature(ingredient)
+            temperature = recipe:get_temperature(ingredient)
         })  -- don't need min/max temperatures here
     end
     return ingredients
@@ -98,6 +101,7 @@ end
 ---@class SubfloorLineData
 ---@field id ObjectID
 ---@field recipe_proto FPRecipePrototype
+---@field products FormattedProduct[]
 ---@field subfloor FloorData?
 
 ---@class LineData
@@ -105,6 +109,7 @@ end
 ---@field recipe_proto FPRecipePrototype
 ---@field recipe_energy double
 ---@field ingredients SolverItem[]
+---@field products FormattedProduct[]
 ---@field percentage number
 ---@field production_type RecipeProductionType
 ---@field priority_product_proto FPItemPrototype
@@ -136,7 +141,7 @@ local function generate_floor_data(player, factory, floor, calculate_emissions)
     local floor_data = {
         id = floor.id,
         products = (floor.level == 1) and factory_products(factory)
-            or floor.first--[[@as Line]].recipe.proto--[[@as FPRecipePrototype]].products,
+            or floor.first--[[@as Line]].recipe.products,
         lines = {}
     }  ---@type FloorData
 
@@ -145,6 +150,7 @@ local function generate_floor_data(player, factory, floor, calculate_emissions)
 
         if line.class == "Floor" then  ---@cast line Floor
             line_data.recipe_proto = line.first--[[@as Line]].recipe.proto
+            line_data.products = line.first--[[@as Line]].recipe.products
             line_data.subfloor = generate_floor_data(player, factory, line, calculate_emissions)
             table.insert(floor_data.lines, line_data)
         else  ---@cast line Line
@@ -165,6 +171,7 @@ local function generate_floor_data(player, factory, floor, calculate_emissions)
                 line_data.recipe_proto = recipe_proto
                 line_data.recipe_energy = recipe_proto.energy
                 line_data.ingredients = ingredients
+                line_data.products = line.recipe.products
                 line_data.percentage = line.percentage  -- non-zero
                 line_data.production_type = line.recipe.production_type
                 line_data.priority_product_proto = line.recipe.priority_product
@@ -192,7 +199,8 @@ local function generate_floor_data(player, factory, floor, calculate_emissions)
 
                 if machine.proto.prototype_category == "boiler" then
                     local goal_temperature = recipe_proto.products[1]--[[@cast -nil]].temperature  ---@as float
-                    local input_temperature = ingredients[1]--[[@cast -nil]].temperature  ---@as float
+                    local input_temperature = line.recipe:get_temperature(
+                        recipe_proto.ingredients[1]--[[@cast -nil]])  ---@as float
                     line_data.recipe_energy = (goal_temperature - input_temperature)
                         * recipe_proto.heat_capacity--[[@as double]]
                 end
@@ -506,10 +514,9 @@ function solver.set_line_result(result)
     end
 
     if line.production_ratio == 0 then  ---@cast line Line
-        local recipe_proto = line.recipe.proto  ---@as FPRecipePrototype
-        set_zeroed_items(line, "products", recipe_proto.products)
+        set_zeroed_items(line, "products", line.recipe.products)
         line.byproducts = {}
-        set_zeroed_items(line, "ingredients", recipe_proto.ingredients)
+        set_zeroed_items(line, "ingredients", line.recipe.ingredients)
     else
         update_object_items(line, "products", result.Product)
         update_object_items(line, "byproducts", result.Byproduct)
