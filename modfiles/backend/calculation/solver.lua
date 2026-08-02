@@ -266,7 +266,7 @@ end
 --- Goes through every line and setting their satisfied_amounts appropriately
 ---@param floor Floor
 ---@param product_class SolverClass?
-local function update_ingredient_satisfaction(floor, product_class)
+local function update_ingredient_satisfaction_sequential(floor, product_class)
     product_class = product_class or structures.class.init()
 
     ---@param ingredient SimpleItem | Fuel
@@ -291,7 +291,7 @@ local function update_ingredient_satisfaction(floor, product_class)
     for line in floor:iterator(nil, floor:find_last(), "previous") do
         if line.class == "Floor" then
             local subfloor_product_class = lib.flib.deep_copy(product_class)
-            update_ingredient_satisfaction(line, subfloor_product_class)
+            update_ingredient_satisfaction_sequential(line, subfloor_product_class)
         elseif line.machine.fuel then
             local fuel = line.machine.fuel
             determine_satisfaction(fuel, fuel:get_name_with_temperature())
@@ -311,6 +311,46 @@ local function update_ingredient_satisfaction(floor, product_class)
                 structures.class.add(product_class, product)
             end
         end
+    end
+end
+
+
+---@param floor Floor
+local function update_ingredient_satisfaction_matrix(floor)
+    local ingredient_deficit = structures.class.init()
+    for _, item in pairs(floor.ingredients) do
+        if floor.level == 1 then item.satisfied_amount = 0 end
+        structures.class.add(ingredient_deficit, item, item.amount - (item.satisfied_amount or 0))
+    end
+
+    ---@param item SimpleItem | Fuel
+    ---@param item_name string
+    local function calculate_satisfation(item, item_name)
+        ---@cast item.proto -FPPackedPrototype
+        local unsatisfied_amount = ingredient_deficit[item.proto.type][item_name] ---@as number?
+        local deficit = math.min(unsatisfied_amount or 0, item.amount)
+
+        item.satisfied_amount = item.amount - deficit
+        if item.satisfied_amount < MAGIC_NUMBERS.margin_of_error then item.satisfied_amount = 0 end
+
+        if deficit > 0 then
+            structures.class.subtract(ingredient_deficit, {name = item_name, type = item.proto.type, amount = deficit})
+        end
+    end
+
+    for line_object in floor:iterator(nil, floor:find_last(), "previous") do
+        for _, item in pairs(line_object.ingredients) do
+            local name = line_object.class == "Line" and line_object.recipe:get_name_with_temperature(item.proto)
+                    or item.proto.name
+            calculate_satisfation(item, name)
+        end
+
+        if line_object.class == "Line" and line_object.machine.fuel then
+            local name = line_object.machine.fuel:get_name_with_temperature()
+            calculate_satisfation(line_object.machine.fuel, name)
+        end
+
+        if line_object.class == "Floor" then update_ingredient_satisfaction_matrix(line_object) end
     end
 end
 
@@ -377,7 +417,11 @@ end
 ---@param factory Factory
 function solver.determine_ingredient_satisfaction(factory)
     if not factory.valid then return end
-    update_ingredient_satisfaction(factory.top_floor, nil)
+    if not factory.matrix_solver_active then
+        update_ingredient_satisfaction_sequential(factory.top_floor, nil)
+    else
+        update_ingredient_satisfaction_matrix(factory.top_floor)
+    end
 end
 
 
