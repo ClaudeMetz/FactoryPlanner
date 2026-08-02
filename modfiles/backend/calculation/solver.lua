@@ -14,7 +14,7 @@ solver = {
 ---@param line LineObject
 local function set_blank_line(player, floor, line)
     local blank_class = structures.class.init()
-    solver.set_line_result( {
+    solver.set_line_result{
         player_index = player.index,
         floor_id = floor.id,
         line_id = line.id,
@@ -24,7 +24,7 @@ local function set_blank_line(player, floor, line)
         Byproduct = blank_class,
         Ingredient = blank_class,
         fuel_amount = 0
-    })
+    }
 end
 
 ---@param player LuaPlayer
@@ -136,8 +136,9 @@ end
 ---@param player LuaPlayer
 ---@param factory Factory
 ---@param floor Floor
+---@param calculate_emissions boolean
 ---@return FloorData
-local function generate_floor_data(player, factory, floor)
+local function generate_floor_data(player, factory, floor, calculate_emissions)
     local calculate_emissions = lib.globals.preferences(player).calculate_emissions
     local floor_data = {
         id = floor.id,
@@ -152,7 +153,7 @@ local function generate_floor_data(player, factory, floor)
         if line.class == "Floor" then  ---@cast line Floor
             line_data.recipe_proto = line.first--[[@as Line]].recipe.proto
             line_data.products = line.first--[[@as Line]].recipe.products
-            line_data.subfloor = generate_floor_data(player, factory, line)
+            line_data.subfloor = generate_floor_data(player, factory, line, calculate_emissions)
             table.insert(floor_data.lines, line_data)
         else  ---@cast line Line
             local relevant_line = (line.parent.level > 1) and line.parent.first or nil  ---@as Line
@@ -183,11 +184,6 @@ local function generate_floor_data(player, factory, floor)
                 line_data.resource_drain_rate = machine:get_resource_drain_rate()
                 line_data.pollutant_type = (calculate_emissions) and factory.parent.location_proto.pollutant_type or nil
                 line_data.entities_require_heating = factory.parent.location_proto.entities_require_heating
-
-                -- Boiler recipe energy
-                if machine.proto.prototype_category == "boiler" then
-                    line_data.recipe_energy = solver.util.determine_boiler_energy(line.recipe)
-                end
 
                 -- Effects - update line with recipe effects here if applicable
                 line.recipe:update_effects(player.force--[[@as LuaForce]], factory)
@@ -230,7 +226,7 @@ end
 ---@param a SimpleItem
 ---@param b SimpleItem
 ---@return boolean
-function solver.item_comparator(a, b)
+local function item_comparator(a, b)
     local a_type, b_type = a.proto.type, b.proto.type
     if a_type < b_type then return false
     elseif a_type > b_type then return true
@@ -258,7 +254,7 @@ local function update_object_items(object, item_category, item_results)
         end
     end
 
-    table.sort(item_list, solver.item_comparator)
+    table.sort(item_list, item_comparator)
     object[item_category] = item_list
 end
 
@@ -455,12 +451,13 @@ end
 ---@param factory Factory
 ---@return FactoryData
 function solver.generate_factory_data(player, factory)
+    local calculate_emissions = lib.globals.preferences(player).calculate_emissions
     local free_items = factory.matrix_free_items  ---@as FPItemPrototype[]
 
     local factory_data = {
         player_index = player.index,
         factory_id = factory.id,
-        top_floor = generate_floor_data(player, factory, factory.top_floor),
+        top_floor = generate_floor_data(player, factory, factory.top_floor, calculate_emissions),
         matrix_free_items = free_items,
         simplex_basis = factory.simplex_basis or {}
     }
@@ -614,18 +611,6 @@ function solver.util.determine_fuel_amount(line_data, power, machine_amount)
     -- Power is already reduced by the fuel performance, so this collapses to the usage per tick
     -- when the source can't keep up, and to the demanded amount when it can
     return (power / burner.effectivity) / line_data.fuel_value--[[@as number]]
-end
-
-
----@param recipe Recipe
-function solver.util.determine_boiler_energy(recipe)
-    ---@cast recipe.proto -FPPackedPrototype
-    local product = recipe.proto.products[1]  ---@as FormattedProduct
-    local ingredient = recipe.proto.ingredients[1]  ---@as Ingredient
-    local goal_temperature = product.temperature or 0
-    local heat_capacity = prototypes.fluid[ingredient.name].heat_capacity
-    local input_temperature = recipe:get_temperature(ingredient) or 0
-    return (goal_temperature - input_temperature) * heat_capacity
 end
 
 

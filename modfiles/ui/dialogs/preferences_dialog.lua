@@ -305,6 +305,7 @@ local function handle_checkbox_preference_change(player, tags, event)
                 if factory and factory.matrix_solver_active then
                     factory.matrix_free_items = {}
                     factory.linearly_dependant = false
+                    factory.simplex_basis = nil
                     solver.update(player, factory)
                     lib.gui.run_refresh(player, "production")
                 end
