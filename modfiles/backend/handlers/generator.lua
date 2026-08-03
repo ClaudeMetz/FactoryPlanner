@@ -933,26 +933,21 @@ function generator.machines.generate()
         end
 
         -- Determine fluid input/output channels
-        -- Energy source fluid boxes are part of fluidbox_prototypes, but aren't free for recipe use
-        local fluid_channels = {input = 0, output = 0}
-        if generator_fluid_box then
-            fluid_channels.input = (fluid_channels.input - 1)--[[@as integer]]
-            if generator_output_box then
-                fluid_channels.output = (fluid_channels.output - 1)--[[@as integer]]
-            end
-        end
-        if fluid_burner_prototype then
-            fluid_channels.input = (fluid_channels.input - 1)--[[@as integer]]
-            if fluid_burner_prototype.output_fluid_box then
-                fluid_channels.output = (fluid_channels.output - 1)--[[@as integer]]
-            end
-        end
+        local input_channels, output_channels = 0, 0  ---@type integer, integer
         for _, fluidbox in pairs(proto.fluidbox_prototypes) do
             if fluidbox.production_type == "output" then
-                fluid_channels.output = fluid_channels.output + 1
+                output_channels = output_channels + 1
             else  -- "input" and "input-output"
-                fluid_channels.input = fluid_channels.input + 1
+                input_channels = input_channels + 1
             end
+        end
+
+        if generator_fluid_box then
+            input_channels = input_channels - 1
+            if generator_output_box then output_channels = output_channels - 1 end
+        elseif fluid_burner_prototype then
+            input_channels = input_channels - 1
+            if fluid_burner_prototype.output_fluid_box then output_channels = output_channels - 1 end
         end
 
         return {
@@ -965,7 +960,7 @@ function generator.machines.generate()
             prototype_category = prototype_category,
             ingredient_limit = (proto.ingredient_count or 255),
             product_limit = (proto.max_item_product_count or 255),
-            fluid_channels = fluid_channels,
+            fluid_channels = {input = input_channels, output = output_channels},
             speed = generator.util.get_base_value(proto.get_crafting_speed()),
             crafting_speed_quality_multiplier = proto.crafting_speed_quality_multiplier,
             energy_type = energy_type,
