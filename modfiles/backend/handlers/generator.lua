@@ -179,6 +179,7 @@ function generator.recipes.generate()
     end
 
     local first_generator = nil  ---@type string?
+    local pumped_fixed_fluids = {}  ---@type table<string, boolean>
 
     local entity_filter = {{filter="hidden", invert=true}}
     for _, proto in pairs(prototypes.get_entity_filtered(entity_filter)) do
@@ -237,16 +238,17 @@ function generator.recipes.generate()
         -- Add offshore pump recipes based on fixed fluids
         elseif proto.type == "offshore-pump" then
             local fluid_box = proto.fluidbox_prototypes[1]
-            local fixed_fluid = (fluid_box and fluid_box.filter) and fluid_box.filter.name or nil
-            if fixed_fluid then
-                local fluid = prototypes.fluid[fixed_fluid]
+            local fluid = fluid_box and fluid_box.filter
+            -- Offshore pumps producing the same fluid can share a recipe
+            if fluid ~= nil and not pumped_fixed_fluids[fluid.name] then
+                pumped_fixed_fluids[fluid.name] = true
 
                 local recipe = custom_recipe()
-                recipe.name = "impostor-" .. fluid.name .. "-" .. proto.name
-                recipe.factoriopedia_id = {type="entity", name=proto.name}
+                recipe.name = "impostor-" .. fluid.name .. "-pumped"
+                recipe.factoriopedia_id = {type="fluid", name=fluid.name}
                 recipe.localised_name = {"", fluid.localised_name, " ", {"fp.pumping_recipe"}}
                 recipe.sprite = "fluid/" .. fluid.name
-                recipe.order = proto.order
+                recipe.order = fluid.order
                 recipe.categories = {["offshore-pump-" .. fluid.name] = true}
                 recipe.energy = 1
 
