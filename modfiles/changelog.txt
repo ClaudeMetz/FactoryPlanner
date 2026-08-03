@@ -7,13 +7,11 @@ Date: 00. 00. 0000
     - Added support for mods disabling recipes dynamically at runtime
     - Bumped the required Factorio version to 2.1.12
   Bugfixes:
-    - Fixed offshore pumps fixed to the same fluid each generating their own identical recipe
     - Fixed recipes using fluids with temperature not balancing products and ingredients against each other, causing diverse problems (#649)
     - Fixed that migrations used overly permissive logic to determine whether a recipe is still valid (#43)
     - Fixed that ingredient satisfaction calculations were not always correct for the matrix solver (#497) (Thanks vapopescu!)
     - Fixed that the 'Open in Factoriopedia' action in the compact dialog used Alt+Right instead of Alt+Left for some reason
     - Fixed a few edge cases with boiler recipes
-    - Fixed ingredient temperatures being offered that would cancel out the recipe's own product
 
 ---------------------------------------------------------------------------------------------------
 Version: 2.1.9
