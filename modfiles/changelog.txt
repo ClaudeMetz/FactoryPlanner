@@ -12,6 +12,8 @@ Date: 00. 00. 0000
     - Fixed that migrations used overly permissive logic to determine whether a recipe is still valid (#43)
     - Fixed that ingredient satisfaction calculations were not always correct for the matrix solver (#497) (Thanks vapopescu!)
     - Fixed that the 'Open in Factoriopedia' action in the compact dialog used Alt+Right instead of Alt+Left for some reason
+    - Fixed a few edge cases with boiler recipes
+    - Fixed ingredient temperatures being offered that would cancel out the recipe's own product
 
 ---------------------------------------------------------------------------------------------------
 Version: 2.1.9

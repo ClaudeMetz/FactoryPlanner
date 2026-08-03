@@ -70,7 +70,19 @@ function Recipe:build_temperatures_data()
 
     for _, ingredient in pairs(self.proto.ingredients) do
         if ingredient.type == "fluid" then
-            self.temperature_data[ingredient.name] = lib.temperature.generate_data(ingredient)
+            -- Going in at the temperature a product of the same fluid comes out at would only
+            -- cancel that product out, making the recipe useless, so it isn't offered at all
+            local exclusive_maximum = false
+            for _, product in pairs(self.proto.products) do
+                if product.base_name == ingredient.name and ingredient.amount >= product.amount
+                        and product.temperature == ingredient.maximum_temperature then
+                    exclusive_maximum = true
+                    break
+                end
+            end
+
+            self.temperature_data[ingredient.name] =
+                lib.temperature.generate_data(ingredient, nil, exclusive_maximum)
         end
     end
 end

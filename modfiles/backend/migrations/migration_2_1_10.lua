@@ -1,15 +1,50 @@
 local migration = {}
 
--- Offshore pumps fixed to a fluid used to generate a recipe each, so several of them pumping
--- the same fluid produced that many identical recipes. There is one per fluid now, named after
--- it rather than after any one pump. Both schemes are spelled out here rather than taken from
--- the generator, so that this keeps producing the same mapping however that changes later on.
+-- Sorry about this piece of crap, but the changes really do make a difference to users
+
 ---@return table<string, FPRecipePrototype>
 local function get_migration_map()
     local migration_map = {}
 
-    local entity_filter = {{filter="type", type="offshore-pump"}, {filter="hidden", invert=true, mode="and"}}
-    for _, proto in pairs(prototypes.get_entity_filtered(entity_filter)) do
+    local boiler_filter = {{filter="type", type="boiler"}, {filter="hidden", invert=true, mode="and"}}
+    for _, proto in pairs(prototypes.get_entity_filtered(boiler_filter)) do
+        local target = proto.target_temperature
+        if target == 0 then goto next_boiler end
+
+        local input, output  ---@type LuaFluidBoxPrototype, LuaFluidBoxPrototype
+        for _, fluid_box in pairs(proto.fluidbox_prototypes) do
+            if fluid_box.production_type == "input-output" or fluid_box.production_type == "input" then
+                input = fluid_box
+            elseif fluid_box.production_type == "output" then
+                output = fluid_box
+            end
+        end
+        if input == nil then goto next_boiler end
+
+        local category = "boiler-target-" .. target
+        if output ~= nil and output.filter ~= nil then
+            category = category .. "-output-" .. output.filter.name
+        end
+        if input.filter ~= nil then
+            category = category .. "-filter-" .. input.filter.name
+        end
+
+        for _, fluid in pairs((input.filter) and {input.filter} or prototypes.fluid) do
+            local output_fluid = (output ~= nil and output.filter) or fluid
+            local new_name = table.concat({"impostor-boil", fluid.name,
+                math.max(input.minimum_temperature or -math.huge, fluid.default_temperature),
+                math.min(input.maximum_temperature or math.huge, fluid.max_temperature, target),
+                output_fluid.name, target}, "-")
+
+            migration_map["impostor-" .. category .. "-fluid-" .. fluid.name] =
+                prototyper.util.find("recipes", new_name, nil)
+        end
+
+        ::next_boiler::
+    end
+
+    local pump_filter = {{filter="type", type="offshore-pump"}, {filter="hidden", invert=true, mode="and"}}
+    for _, proto in pairs(prototypes.get_entity_filtered(pump_filter)) do
         local fluid_box = proto.fluidbox_prototypes[1]
         local fluid = fluid_box and fluid_box.filter
 
@@ -31,7 +66,7 @@ function migration.player_table(player_table)
         for line_object in floor:iterator() do
             if line_object.class == "Floor" then
                 iterate_floor(line_object)
-            elseif line_object.class == "Line" then
+            else
                 local proto = migration_map[line_object.recipe.proto.name]
                 if proto then line_object.recipe.proto = proto end
             end
@@ -54,7 +89,7 @@ function migration.packed_factory(packed_factory)
         for _, line_object in pairs(floor.lines) do
             if line_object.class == "Floor" then
                 iterate_floor(line_object)
-            elseif line_object.class == "Line" then
+            else
                 local proto = migration_map[line_object.recipe.proto.name]
                 if proto then line_object.recipe.proto = prototyper.util.simplify_prototype(proto, nil) end
             end

@@ -35,7 +35,7 @@ function migration.player_table(player_table)
         for line_object in floor:iterator() do
             if line_object.class == "Floor" then
                 iterate_floor(line_object)
-            elseif line_object.class == "Line" then
+            else
                 local proto = migration_map[line_object.recipe.proto.name]
                 if proto then line_object.recipe.proto = proto end
             end
@@ -61,7 +61,7 @@ function migration.packed_factory(packed_factory)
         for _, line_object in pairs(floor.lines) do
             if line_object.class == "Floor" then
                 iterate_floor(line_object)
-            elseif line_object.class == "Line" then
+            else
                 local proto = migration_map[line_object.recipe.proto.name]
                 if proto then line_object.recipe.proto = prototyper.util.simplify_prototype(proto, nil) end
             end

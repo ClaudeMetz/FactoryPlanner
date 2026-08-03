@@ -277,35 +277,72 @@ function _util.format_effect_receiver(proto)
 end
 
 
+---@class BoilerConversion
+---@field input LuaFluidPrototype
+---@field output LuaFluidPrototype
+---@field minimum_temperature double
+---@field maximum_temperature double
+---@field goal_temperature double
+
+-- Determines every fluid conversion a boiler can actually carry out
 ---@param proto LuaEntityPrototype
----@return string? category
----@return LuaFluidBoxPrototype? input
----@return LuaFluidBoxPrototype? output
-function _util.get_boiler_data(proto)
+---@return BoilerConversion[]
+function _util.get_boiler_conversions(proto)
+    local source = proto.fluid_energy_source_prototype
     local input, output  ---@type LuaFluidBoxPrototype, LuaFluidBoxPrototype
-    -- Need to find the right fluidboxes by iterating manually
+
     for _, fluid_box in pairs(proto.fluidbox_prototypes) do
-        if fluid_box.production_type == "input-output" or fluid_box.production_type == "input" then
-            input = fluid_box
-        elseif fluid_box.production_type == "output" then
-            output = fluid_box
+        -- A fluid energy source puts its own boxes in this list, where they could pass for the input
+        if source == nil or (fluid_box ~= source.fluid_box and fluid_box ~= source.output_fluid_box) then
+            if fluid_box.production_type == "input-output" or fluid_box.production_type == "input" then
+                input = fluid_box
+            elseif fluid_box.production_type == "output" then
+                output = fluid_box
+            end
+        end
+    end
+    if input == nil then return {} end  -- without an input it can't do anything
+
+    -- Only this mode has a target temperature, and only it uses the output fluidbox at all
+    -- The other one tops the fluid out at its own maximum, where it stays the same fluid
+    local separate_pipe = (proto.boiler_mode == "output-to-separate-pipe")
+    local conversions = {}  ---@type BoilerConversion[]
+
+    ---@param fluid_proto LuaFluidPrototype
+    local function add_conversion(fluid_proto)
+        local output_proto, goal_temperature = fluid_proto, 0.0  ---@type LuaFluidPrototype, double
+
+        if separate_pipe then
+            output_proto = (output ~= nil and output.filter) or fluid_proto
+            goal_temperature = proto.target_temperature--[[@as double]]
+        else
+            goal_temperature = math.min(fluid_proto.max_temperature, input.maximum_temperature or math.huge)
+        end
+
+        -- A goal not above the default temperature can't be achieved
+        if goal_temperature <= fluid_proto.default_temperature then return end
+
+        table.insert(conversions, {
+            input = fluid_proto,
+            output = output_proto,
+            minimum_temperature = math.max(input.minimum_temperature or -math.huge,
+                fluid_proto.default_temperature),
+            maximum_temperature = math.min(input.maximum_temperature or math.huge,
+                fluid_proto.max_temperature, goal_temperature),
+            goal_temperature = goal_temperature
+        })
+    end
+
+    if input.filter then
+        add_conversion(input.filter)
+    else  -- an unfiltered boiler takes in any fluid that can actually be put into it
+        for _, fluid_proto in pairs(prototypes.fluid) do
+            -- Parameters are blueprint placeholders, and hidden fluids aren't offered anywhere
+            if not fluid_proto.parameter and not fluid_proto.hidden then add_conversion(fluid_proto) end
         end
     end
 
-    if input == nil then return nil, nil, nil end  -- input needs to exist
-
-    local category = "boiler"
-    if proto.boiler_mode == "output-to-separate-pipe" then
-        category = category .. "-target-" .. proto.target_temperature
-    end
-    if output.filter ~= nil then
-        category = category .. "-output-" .. output.filter.name
-    end
-    if input.filter ~= nil then
-        category = category .. "-filter-" .. input.filter.name
-    end
-
-    return category, input, output
+    return conversions
 end
 
 
