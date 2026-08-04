@@ -2,7 +2,7 @@
 Version: 0.00.00
 Date: 00. 00. 0000
   Features:
-    - Added support for recipes that consume byproducts to the sequential solver, including the ability to prioritize their ingredients to steer throughput (#86)
+    - Added support for recipes that consume byproducts to the traditional solver, including the ability to prioritize their ingredients to steer throughput (#86)
     - Added support for mods disabling recipes dynamically at runtime
   Changes:
     - Bumped the required Factorio version to 2.1.12
@@ -11,6 +11,7 @@ Date: 00. 00. 0000
     - Fixed that migrations used overly permissive logic to determine whether a recipe is still valid (#43)
     - Fixed that ingredient satisfaction calculations were not always correct for the matrix solver (#497) (Thanks vapopescu!)
     - Fixed that the 'Open in Factoriopedia' action in the compact dialog used Alt+Right instead of Alt+Left for some reason
+    - Fixed that machine fuels did not use up available byproducts with the traditional solver
     - Fixed a few edge cases with boiler recipes
 
 ---------------------------------------------------------------------------------------------------

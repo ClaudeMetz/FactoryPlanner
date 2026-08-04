@@ -150,37 +150,37 @@ local function update_line(line_data, aggregate, looped_fuel)
         local fuel_name = line_data.fuel_name  ---@as string
         fuel_amount = solver.util.determine_fuel_amount(line_data, power, machine_amount)
 
-        -- Handle recipes producing their own machine's fuel
-        if production_ratio > 0 then
-            if fuel_demanded then  -- means the fuel is a main product
-                local ingredient_class = aggregate.Ingredient[fuel_proto.type]
-                local initial_demand = ingredient_class[fuel_name]
-                local ratio = fuel_amount / initial_demand
+        -- Handle recipes producing their own machine's fuel as a main product
+        if production_ratio > 0 and fuel_demanded then
+            local ingredient_class = aggregate.Ingredient[fuel_proto.type]
+            local initial_demand = ingredient_class[fuel_name]
+            local ratio = fuel_amount / initial_demand
 
-                if ratio + MAGIC_NUMBERS.margin_of_error < 1 then  -- a ratio >= 1 means this can't outproduce itself
-                    -- Need a lot of precision here, hence the exponent of 20
-                    local bumped_demand = initial_demand * ((1 - ratio ^ 20) / (1 - ratio))
-                    ingredient_class[fuel_name] = bumped_demand
+            if ratio + MAGIC_NUMBERS.margin_of_error < 1 then  -- a ratio >= 1 means this can't outproduce itself
+                -- Need a lot of precision here, hence the exponent of 20
+                local bumped_demand = initial_demand * ((1 - ratio ^ 20) / (1 - ratio))
+                ingredient_class[fuel_name] = bumped_demand
 
-                    -- Run line with fuel amount bumped to account for own consumption
-                    update_line(line_data, aggregate, bumped_demand - initial_demand)
-                    return
-                end
-            elseif fuel_byproduct ~= nil then  -- the fuel is a byproduct, which shouldn't affect production
-                local byproduct_amount = determine_amount_with_productivity(fuel_byproduct)
-                local used_amount = math.min(fuel_amount, byproduct_amount)  ---@as number
-
-                local fuel_item = {type=fuel_proto.type, name=fuel_name, amount=used_amount}  ---@type SolverItem
-                structures.class.subtract(aggregate.Byproduct, fuel_item)  -- subtract from floor
-                looped_fuel = used_amount
+                -- Run line with fuel amount bumped to account for own consumption
+                update_line(line_data, aggregate, bumped_demand - initial_demand)
+                return
             end
+            -- The aggregate can now be modified, as it won't be needed for the redo on looped fuel
         end
-        -- The aggregate can now be modified, as it won't be needed for the redo on looped fuel
 
-        -- Removed looped fuel from main aggregate as its used right away
-        local corrected_amount = fuel_amount - (looped_fuel or 0)
-        local fuel_item = {type=fuel_proto.type, name=fuel_name, amount=corrected_amount}  ---@type SolverItem
-        structures.class.add(aggregate.Ingredient, fuel_item)  -- add to floor
+        -- Looped fuel is used up right away, and never enters the aggregate
+        local outstanding_amount = fuel_amount - (looped_fuel or 0)
+
+        -- Fuel first draws on the byproducts of this floor, including from this line
+        local available_amount = aggregate.Byproduct[fuel_proto.type][fuel_name] or 0
+        if fuel_byproduct ~= nil then  -- consuming it shouldn't affect production
+            available_amount = available_amount + determine_amount_with_productivity(fuel_byproduct)
+        end
+        local drawn_amount = math.min(outstanding_amount, available_amount)  ---@as number
+
+        local fuel_item = {type=fuel_proto.type, name=fuel_name, amount=drawn_amount}  ---@type SolverItem
+        structures.class.subtract(aggregate.Byproduct, fuel_item)  -- subtract from floor
+        structures.class.add(aggregate.Ingredient, fuel_item, outstanding_amount - drawn_amount)
         -- Fuel itself is set via a special amount variable on the line itself
 
         if fuel_proto.burnt_result then
