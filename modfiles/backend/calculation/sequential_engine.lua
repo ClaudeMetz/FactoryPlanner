@@ -100,15 +100,14 @@ local function update_line(line_data, aggregate, looped_fuel)
 
     -- Repare for the recipe producing its own fuel, which requires a second pass
     local fuel_byproduct = nil  ---@type FormattedProduct?
-    local original_aggregate = nil  ---@type SolverAggregate?
+    local fuel_demanded = false
     if looped_fuel == nil and fuel_proto ~= nil then  -- don't loop if this already is the loop
         for _, product in pairs(line_data.products) do
             if product.type == fuel_proto.type and product.name == line_data.fuel_name then
                 if aggregate.Ingredient[product.type][product.name] == nil then
                     fuel_byproduct = product
                 elseif not consuming then  -- bumping demand is pointless for a consuming line
-                    original_aggregate = aggregate
-                    aggregate = lib.flib.deep_copy(aggregate)
+                    fuel_demanded = true
                 end
                 break
             end
@@ -131,9 +130,6 @@ local function update_line(line_data, aggregate, looped_fuel)
 
     -- Determine machine count
     local machine_amount = production_ratio / crafts_per_second
-    -- Add the integer machine count to the aggregate so it can be displayed on the origin_line
-    aggregate.machine_amount = aggregate.machine_amount + math.ceil(machine_amount - MAGIC_NUMBERS.margin_of_error)
-
 
     --- Determines the amount of the given item, considering productivity
     ---@param item FormattedProduct
@@ -156,8 +152,8 @@ local function update_line(line_data, aggregate, looped_fuel)
 
         -- Handle recipes producing their own machine's fuel
         if production_ratio > 0 then
-            if original_aggregate ~= nil then  -- means the fuel is a main product
-                local ingredient_class = original_aggregate.Ingredient[fuel_proto.type]
+            if fuel_demanded then  -- means the fuel is a main product
+                local ingredient_class = aggregate.Ingredient[fuel_proto.type]
                 local initial_demand = ingredient_class[fuel_name]
                 local ratio = fuel_amount / initial_demand
 
@@ -167,7 +163,7 @@ local function update_line(line_data, aggregate, looped_fuel)
                     ingredient_class[fuel_name] = bumped_demand
 
                     -- Run line with fuel amount bumped to account for own consumption
-                    update_line(line_data, original_aggregate, bumped_demand - initial_demand)
+                    update_line(line_data, aggregate, bumped_demand - initial_demand)
                     return
                 end
             elseif fuel_byproduct ~= nil then  -- the fuel is a byproduct, which shouldn't affect production
@@ -179,6 +175,7 @@ local function update_line(line_data, aggregate, looped_fuel)
                 looped_fuel = used_amount
             end
         end
+        -- The aggregate can now be modified, as it won't be needed for the redo on looped fuel
 
         -- Removed looped fuel from main aggregate as its used right away
         local corrected_amount = fuel_amount - (looped_fuel or 0)
@@ -293,6 +290,9 @@ local function update_line(line_data, aggregate, looped_fuel)
         end
     end
     structures.class.balance_items(Ingredient, aggregate.Byproduct, aggregate.Ingredient)
+
+    -- Add the integer machine count to the aggregate so it can be displayed on the origin_line
+    aggregate.machine_amount = aggregate.machine_amount + math.ceil(machine_amount - MAGIC_NUMBERS.margin_of_error)
 
 
     -- Update the actual line with the calculated results
