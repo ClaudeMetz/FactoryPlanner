@@ -197,7 +197,7 @@ function SimplexTableau:solve(previous_basis)
         variable_map[column] = {key = key, type = "unassigned"}
     end
 
-    -- Populate the basis vector pased on the previous result
+    -- Populate the basis vector based on the previous result
     local cache_valid = true
     for row_key, col_key in pairs(previous_basis) do
         local row_index = self.rows[row_key]
@@ -272,11 +272,11 @@ function SimplexTableau:solve(previous_basis)
         end
     end
 
-    local lu  ---@type LUDecomposition
-    local x_vector  ---@type number[]
+    local lu = LUDecomposition:init(#self.matrix[1])
+    local x_vector = lib.flib.shallow_copy(self.solution)
     local iterations = 0
     local last_factorization = iterations
-    local needs_factorization = true
+    local needs_factorization = false
 
 
     local function refactorize()
@@ -285,7 +285,7 @@ function SimplexTableau:solve(previous_basis)
             b_matrix[j] = self.matrix[self.cols[basic[j]--[[@cast -nil]]]]
         end
 
-        local new_lu = LUDecomposition:init(b_matrix)
+        local new_lu = LUDecomposition:decompose(b_matrix)
         if new_lu then
             lu = new_lu
             x_vector = lu:solve_right(self.solution)

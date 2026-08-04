@@ -12,10 +12,42 @@ LUDecomposition.__index = LUDecomposition
 ---@field column integer
 
 
+---@param size integer
+---@return LUDecomposition
+function LUDecomposition:init(size)
+    ---@diagnostic disable-next-line: missing-fields
+    local o = {
+        u_matrix = {},
+        l_matrix = {},
+        p_vector = {},
+        q_vector = {},
+        q_transposed = {},
+        eta_updates = {},
+        ft_updates = {}
+    }  ---@type LUDecomposition
+    setmetatable(o, self)
+
+    -- Initialize the matrices and the permutation vectors
+    for k = 1, size do
+        o.p_vector[k] = k
+        o.q_vector[k] = k
+        o.q_transposed[k] = k
+        o.u_matrix[k] = {}
+        o.l_matrix[k] = {}
+        for j = 1, size do o.u_matrix[k][j] = 0 end
+        for j = 1, k - 1 do o.l_matrix[k][j] = 0 end
+        o.u_matrix[k][k] = 1
+        o.l_matrix[k][k] = 1
+    end
+
+    return o
+end
+
+
 --- Performs LU decomposition `L U = P A Q`
 ---@param matrix number[][] column-major order square matrix
 ---@return LUDecomposition?
-function LUDecomposition:init(matrix)
+function LUDecomposition:decompose(matrix)
     ---@diagnostic disable-next-line: missing-fields
     local o = {
         u_matrix = {},
@@ -33,7 +65,6 @@ function LUDecomposition:init(matrix)
         o.u_matrix[i] = {}
         o.l_matrix[i] = {}
         for j = 1, #matrix do o.u_matrix[i][j] = matrix[j][i] end
-        for j = 1, #matrix do o.l_matrix[i][j] = 0 end
     end
 
     for k = 1, #o.u_matrix - 1 do
@@ -184,11 +215,11 @@ function LUDecomposition:solve_right(vector)
     -- Solve `L y = P v`
     local y_vector = {}  ---@type number[]
     for k = 1, #self.l_matrix do
-        ---@diagnostic disable: need-check-nil
         y_vector[k] = vector[self.p_vector[k]--[[@cast -nil]]]
-        for i = 1, k - 1 do
-            if  y_vector[i] ~= 0 and self.l_matrix[k][i] ~= 0 then
-                y_vector[k] = y_vector[k] - y_vector[i] * self.l_matrix[k][i]
+        for j = 1, k - 1 do
+            if  y_vector[j] ~= 0 and self.l_matrix[k][j] ~= 0 then
+                ---@diagnostic disable: need-check-nil
+                y_vector[k] = y_vector[k] - y_vector[j] * self.l_matrix[k][j]
             end
         end
     end
@@ -199,10 +230,10 @@ function LUDecomposition:solve_right(vector)
         ---@diagnostic disable: need-check-nil
         local qk = self.q_vector[k]  ---@as integer
         local cell = y_vector[k]
-        for i = k + 1, #self.u_matrix do
-            local qi = self.q_vector[i]  ---@as integer
-            if x_vector[qi] ~= 0 and self.u_matrix[k][qi] ~= 0 then
-                cell = cell - x_vector[qi] * self.u_matrix[k][qi]
+        for j = k + 1, #self.u_matrix do
+            local qj = self.q_vector[j]  ---@as integer
+            if x_vector[qj] ~= 0 and self.u_matrix[k][qj] ~= 0 then
+                cell = cell - x_vector[qj] * self.u_matrix[k][qj]
             end
         end
         x_vector[qk] = cell / self.u_matrix[k][qk]
