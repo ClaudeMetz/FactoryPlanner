@@ -19,11 +19,16 @@ local function get_migration_map()
         if proto.fluid then
             local old_key = "impostor-" .. proto.fluid.name .. "-" .. proto.name
             local new_key = "impostor-" .. proto.fluid.name .. "-tile"
-            migration_map[old_key] = prototyper.util.find("recipes", new_key, nil)
+            migration_map[old_key] = new_key
         end
     end
 
     return migration_map
+end
+
+local function migrate_recipe(recipe, migration_map)
+    local name = migration_map[recipe.proto.name]
+    if name then recipe.proto = {name=name, data_type="recipes", simplified=true} end
 end
 
 function migration.player_table(player_table)
@@ -34,8 +39,7 @@ function migration.player_table(player_table)
             if line_object.class == "Floor" then
                 iterate_floor(line_object)
             else
-                local proto = migration_map[line_object.recipe.proto.name]
-                if proto then line_object.recipe.proto = proto end
+                migrate_recipe(line_object.recipe, migration_map)
             end
         end
     end
@@ -58,8 +62,7 @@ function migration.packed_factory(packed_factory)
             if line_object.class == "Floor" then
                 iterate_floor(line_object)
             else
-                local proto = migration_map[line_object.recipe.proto.name]
-                if proto then line_object.recipe.proto = prototyper.util.simplify_prototype(proto, nil) end
+                migrate_recipe(line_object.recipe, migration_map)
             end
         end
     end

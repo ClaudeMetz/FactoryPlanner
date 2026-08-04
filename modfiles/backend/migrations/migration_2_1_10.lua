@@ -37,8 +37,7 @@ local function get_migration_map()
                 math.min(input.maximum_temperature or math.huge, fluid.max_temperature, target),
                 output_fluid.name, target}, "-")
 
-            migration_map["impostor-" .. category .. "-fluid-" .. fluid.name] =
-                prototyper.util.find("recipes", new_name, nil)
+            migration_map["impostor-" .. category .. "-fluid-" .. fluid.name] = new_name
         end
 
         ::next_boiler::
@@ -51,7 +50,7 @@ local function get_migration_map()
 
         if fluid ~= nil then
             migration_map["impostor-" .. fluid.name .. "-" .. proto.name] =
-                prototyper.util.find("recipes", "impostor-" .. fluid.name .. "-pumped", nil)
+                "impostor-" .. fluid.name .. "-pumped"
         end
     end
 
@@ -83,6 +82,18 @@ local function migrated_item_proto(proto, temperature_map)
     return {name = fluid_name, category = "fluid", data_type = "items", simplified = true}
 end
 
+local function migrate_recipe(recipe, migration_map, temperature_map)
+    local name = migration_map[recipe.proto.name]
+    if name then recipe.proto = {name=name, data_type="recipes", simplified=true} end
+
+    recipe.priority_item = recipe.priority_product
+    recipe.priority_product = nil
+
+    if recipe.priority_item then
+        recipe.priority_item = migrated_item_proto(recipe.priority_item, temperature_map)
+    end
+end
+
 
 function migration.player_table(player_table)
     local migration_map = get_migration_map()
@@ -93,16 +104,7 @@ function migration.player_table(player_table)
             if line_object.class == "Floor" then
                 iterate_floor(line_object)
             else
-                local recipe = line_object.recipe
-                local proto = migration_map[recipe.proto.name]
-                if proto then recipe.proto = proto end
-
-                recipe.priority_item = recipe.priority_product
-                recipe.priority_product = nil
-
-                if recipe.priority_item then
-                    recipe.priority_item = migrated_item_proto(recipe.priority_item, temperature_map)
-                end
+                migrate_recipe(line_object.recipe, migration_map, temperature_map)
             end
         end
     end
@@ -131,16 +133,7 @@ function migration.packed_factory(packed_factory)
             if line_object.class == "Floor" then
                 iterate_floor(line_object)
             else
-                local recipe = line_object.recipe
-                local proto = migration_map[recipe.proto.name]
-                if proto then recipe.proto = prototyper.util.simplify_prototype(proto, nil) end
-
-                recipe.priority_item = recipe.priority_product
-                recipe.priority_product = nil
-
-                if recipe.priority_item then
-                    recipe.priority_item = migrated_item_proto(recipe.priority_item, temperature_map)
-                end
+                migrate_recipe(line_object.recipe, migration_map, temperature_map)
             end
         end
     end
