@@ -2,6 +2,16 @@
 Version: 0.00.00
 Date: 00. 00. 0000
   Features:
+    - 
+  Changes:
+    - 
+  Bugfixes:
+    - 
+
+---------------------------------------------------------------------------------------------------
+Version: 2.1.10
+Date: 04. 08. 2026
+  Features:
     - Added support for recipes that consume byproducts to the traditional solver, including the ability to prioritize their ingredients to steer throughput (#86)
     - Added support for mods disabling recipes dynamically at runtime
   Changes:
