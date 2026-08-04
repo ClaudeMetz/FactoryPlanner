@@ -124,10 +124,6 @@ function builders.recipe(line, parent_flow, metadata, indent)
             table.insert(status_info, {"fp.blocking_condition", {"fp.pl_machine", 1}})
         end
 
-        if not (metadata.matrix_solver_active or relevant_line.recipe.production_type ~= "consume") then
-            table.insert(status_info, {"fp.incompatible_solver"})
-        end
-
         if not relevant_line:is_temperature_fully_configured() then
             table.insert(status_info, {"fp.temperature_not_configured"})
         end
@@ -376,7 +372,7 @@ function builders.products(line, parent_flow, metadata)
 
         local relevant_flow = nil
         local style = "fflib_slot_button_default_small"
-        local note, action_tooltip = nil, nil
+        local priority_line, action_tooltip = "", nil  ---@type LocalisedString, LocalisedString?
         local amount, number_tooltip = nil, nil
         local tags = {mod="fp", on_gui_hover="set_tooltip", context="production_table"}
 
@@ -390,9 +386,9 @@ function builders.products(line, parent_flow, metadata)
             action_tooltip = {"", "\n", MODIFIER_ACTIONS["act_on_line_product"].tooltip}
 
             if line.class ~= "Floor" and not metadata.matrix_solver_active
-                    and line.recipe.priority_product == proto then
+                    and line.recipe.priority_item == proto then
                 style = "fflib_slot_button_pink_small"
-                note = {"fp.priority_product"}
+                priority_line = {"fp.item_prioritized"}
             end
 
             -- items/s/machine does not make sense for lines with subfloors, show items/s instead
@@ -405,10 +401,9 @@ function builders.products(line, parent_flow, metadata)
             tags.item_index = index
         end
 
-        local name_line = (note == nil) and {"fp.tt_title", proto.localised_name}
-            or {"fp.tt_title_with_note", proto.localised_name, note}
+        local name_line = {"fp.tt_title", proto.localised_name}
         local number_line = (number_tooltip) and {"", "\n", number_tooltip} or ""
-        local tooltip = {"", name_line, number_line, action_tooltip}
+        local tooltip = {"", name_line, priority_line, number_line, action_tooltip}
 
         local button = relevant_flow.add{type="sprite-button", sprite=proto.sprite, style=style,
             tags=tags, number=amount, mouse_button_filter={"left-and-right"}, raise_hover_events=true}
@@ -591,6 +586,14 @@ function builders.ingredients(line, parent_flow, metadata)
             end  -- else, it stays green
         end
 
+        -- Only byproduct recipes can prioritize an ingredient, which paces the line by itself
+        local priority_line = ""  ---@type LocalisedString
+        if line.class ~= "Floor" and not metadata.matrix_solver_active and line.recipe.priority_item ~= nil
+                and line.recipe.priority_item.name == line.recipe:get_name_with_temperature(proto) then
+            style = "fflib_slot_button_pink_small"
+            priority_line = {"fp.item_prioritized"}
+        end
+
         ---@type LocalisedString, LocalisedString
         local name_line, temperature_line = {"", {"fp.tt_title", proto.localised_name}}, ""
         if proto.type == "fluid" and line.class ~= "Floor" then
@@ -607,7 +610,7 @@ function builders.ingredients(line, parent_flow, metadata)
         end
 
         local number_line = (number_tooltip) and {"", "\n", number_tooltip} or ""
-        local tooltip = {"", name_line, temperature_line, number_line, satisfaction_line}
+        local tooltip = {"", name_line, temperature_line, priority_line, number_line, satisfaction_line}
         local tags = {mod="fp", on_gui_hover="set_tooltip", context="production_table"}
 
         if proto.type ~= "entity" then

@@ -249,13 +249,26 @@ local function handle_item_click(player, tags, action)
         if line.class ~= "Line" then
             lib.cursor.create_flying_text(player, {"fp.can_only_edit_line_items"})
             return
-        elseif #line.products < 2 then
-            lib.messages.raise(player, "warning", {"fp.warning_no_prioritizing_single_product"}, 1)
-            return
         end  ---@cast line Line
 
-        -- Remove the priority_product if the already selected one is clicked
-        line.recipe.priority_product = (line.recipe.priority_product ~= item.proto) and item.proto or nil
+        -- A byproduct recipe's throughput is defined by its ingredients, a normal one's by its products
+        local consuming = (line.recipe.production_type == "consume")
+        if tags.item_category ~= ((consuming) and "ingredient" or "product") then
+            local message = (consuming) and {"fp.warning_prioritize_ingredient"}
+                or {"fp.warning_prioritize_product"}
+            lib.messages.raise(player, "warning", message, 1)
+            return
+        end
+
+        local proto = item.proto
+        -- Ingredients are kept under their base name, so the temperature needs adding back on
+        if consuming and proto.type == "fluid" then
+            local item_name = line.recipe:get_name_with_temperature(proto)
+            proto = prototyper.util.find("items", item_name, "fluid")  ---@as FPItemPrototype
+        end
+
+        -- Remove the priority_item if the already selected one is clicked
+        line.recipe.priority_item = (line.recipe.priority_item ~= proto) and proto or nil
 
         solver.update(player)
         lib.gui.run_refresh(player, "production")
@@ -440,7 +453,7 @@ listeners.gui = {
         {
             name = "act_on_line_product",
             actions_table = {
-                prioritize = {shortcut="left", limitations={archive_open=false, matrix_active=false}, show=true},
+                prioritize = {shortcut="control-right", limitations={archive_open=false, matrix_active=false}},
                 copy = {shortcut="shift-right"},
                 put_into_cursor = {shortcut="alt-right"},
                 factoriopedia = {shortcut="alt-left"}
@@ -454,8 +467,8 @@ listeners.gui = {
         {
             name = "act_on_line_byproduct",
             actions_table = {
-                add_recipe_to_end = {shortcut="left", limitations={archive_open=false, matrix_active=true}, show=true},
-                add_recipe_below = {limitations={archive_open=false, matrix_active=true}},
+                add_recipe_to_end = {shortcut="left", limitations={archive_open=false}, show=true},
+                add_recipe_below = {limitations={archive_open=false}},
                 copy = {shortcut="shift-right"},
                 put_into_cursor = {shortcut="alt-right"},
                 factoriopedia = {shortcut="alt-left"}
@@ -469,8 +482,8 @@ listeners.gui = {
         {
             name = "act_on_line_special_byproduct",
             actions_table = {
-                add_recipe_to_end = {shortcut="left", limitations={archive_open=false, matrix_active=true}, show=true},
-                add_recipe_below = {limitations={archive_open=false, matrix_active=true}}
+                add_recipe_to_end = {shortcut="left", limitations={archive_open=false}, show=true},
+                add_recipe_below = {limitations={archive_open=false}}
             },
             handler = function(player, tags, action)
                 ---@cast tags ActOnLineItem
@@ -484,6 +497,7 @@ listeners.gui = {
                 add_recipe_to_end = {shortcut="left", limitations={archive_open=false}, show=true},
                 add_recipe_below = {limitations={archive_open=false}},
                 edit_temperature = {shortcut="control-left", limitations={archive_open=false}, show=true},
+                prioritize = {shortcut="control-right", limitations={archive_open=false, matrix_active=false}},
                 copy = {shortcut="shift-right"},
                 paste = {shortcut="shift-left", limitations={archive_open=false}},
                 put_into_cursor = {shortcut="alt-right"},

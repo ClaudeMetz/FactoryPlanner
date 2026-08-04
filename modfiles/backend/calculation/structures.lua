@@ -11,6 +11,7 @@ local structures = {
 ---@field Product SolverClass
 ---@field Byproduct SolverClass
 ---@field Ingredient SolverClass
+---@field known_byproducts SolverSet
 
 ---@param player_index integer
 ---@param floor_id integer
@@ -23,13 +24,14 @@ function structures.aggregate.init(player_index, floor_id)
         production_ratio = nil,
         Product = structures.class.init(),
         Byproduct = structures.class.init(),
-        Ingredient = structures.class.init()
+        Ingredient = structures.class.init(),
+        known_byproducts = {item = {}, fluid = {}, entity = {}}
     }
 end
 
-
 ---@alias SolverClass { item: SolverMap, fluid: SolverMap, entity: SolverMap }
 ---@alias SolverMap table<string, number>
+---@alias SolverSet table<ItemType, table<ItemName, true>>
 
 ---@return SolverClass
 function structures.class.init()

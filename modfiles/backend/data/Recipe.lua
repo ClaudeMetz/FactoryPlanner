@@ -14,7 +14,7 @@ local SimpleItem = require("backend.data.SimpleItem")
 ---@field parent Line
 ---@field proto FPRecipePrototype | FPPackedPrototype
 ---@field production_type RecipeProductionType
----@field priority_product (FPItemPrototype | FPPackedPrototype)?
+---@field priority_item (FPItemPrototype | FPPackedPrototype)?
 ---@field temperatures table<string, float>
 ---@field temperature_data table<string, TemperatureData>
 ---@field ingredients Ingredient[]
@@ -38,7 +38,7 @@ local function init(parent, proto, production_type)
     local object = Object.init({
         proto = this_proto,
         production_type = production_type or "produce",
-        priority_product = nil,
+        priority_item = nil,
         temperatures = {},
 
         temperature_data = nil,
@@ -121,6 +121,12 @@ end
 ---@param temperature float?
 function Recipe:set_temperature(fluid_name, temperature)
     self.temperatures[fluid_name] = temperature
+
+    local priority_item = self.priority_item  -- priority is specific to one temperature
+    if priority_item and (priority_item.base_name or priority_item.name) == fluid_name then
+        self.priority_item = nil
+    end
+
     self:build_items()
 end
 
@@ -244,7 +250,7 @@ end
 ---@field class "Recipe"
 ---@field proto FPPackedPrototype
 ---@field production_type RecipeProductionType
----@field priority_product FPPackedPrototype?
+---@field priority_item FPPackedPrototype?
 ---@field temperatures table<string, float>
 
 ---@param full boolean
@@ -254,8 +260,8 @@ function Recipe:pack(full)
         class = self.class,
         proto = prototyper.util.simplify_prototype(self.proto, nil),
         production_type = self.production_type,
-        priority_product = (self.priority_product) and
-            prototyper.util.simplify_prototype(self.priority_product, "type") or nil,
+        priority_item = (self.priority_item) and
+            prototyper.util.simplify_prototype(self.priority_item, "type") or nil,
         temperatures = self.temperatures
     }
 end
@@ -266,7 +272,7 @@ end
 local function unpack(packed_self, parent)
     -- Prototypes are unpacked at validate
     local unpacked_self = init(parent, packed_self.proto, packed_self.production_type)
-    unpacked_self.priority_product = packed_self.priority_product
+    unpacked_self.priority_item = packed_self.priority_item
 
     -- Will be automatically unpacked by the validation process
     unpacked_self.temperatures = packed_self.temperatures
@@ -287,10 +293,10 @@ function Recipe:validate(player)
         self.valid = lib.is_recipe_available(player.force--[[@as LuaForce]], recipe_proto)
     end
 
-    -- A priority product that doesn't exist anymore is simply dropped, it doesn't invalidate the recipe
-    self.priority_product = (self.priority_product) and
-        prototyper.util.validate_prototype_object(self.priority_product, "type") or nil
-    if self.priority_product and self.priority_product.simplified then self.priority_product = nil end
+    -- A priority item that doesn't exist anymore is simply dropped, it doesn't invalidate the recipe
+    self.priority_item = (self.priority_item) and
+        prototyper.util.validate_prototype_object(self.priority_item, "type") or nil
+    if self.priority_item and self.priority_item.simplified then self.priority_item = nil end
 
     -- An invalid temperature shouldn't invalidate the recipe
     if self.valid then  ---@cast self.proto FPRecipePrototype

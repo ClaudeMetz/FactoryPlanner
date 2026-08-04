@@ -455,8 +455,7 @@ local function refresh_compact_header(player, factory)
 end
 
 ---@param player LuaPlayer
----@param factory Factory
-local function refresh_compact_production(player, factory)
+local function refresh_compact_production(player)
     local ui_state = lib.globals.ui_state(player)
     local compact_elements = ui_state.compact_elements
 
@@ -493,8 +492,7 @@ local function refresh_compact_production(player, factory)
 
     for line in floor:iterator() do -- build the individual lines
         local relevant_line = (line.class == "Floor") and line.first or line  ---@as Line
-        if not relevant_line.active or not relevant_line:get_surface_compatibility().overall
-                or (not factory.matrix_solver_active and relevant_line.recipe.production_type == "consume") then
+        if not relevant_line.active or not relevant_line:get_surface_compatibility().overall then
             goto skip_line
         end
 
@@ -530,7 +528,7 @@ local function refresh_compact_factory(player)
     ui_state.compact_elements.item_buttons = {}
 
     refresh_compact_header(player, factory)
-    refresh_compact_production(player, factory)
+    refresh_compact_production(player)
 end
 
 ---@param player LuaPlayer

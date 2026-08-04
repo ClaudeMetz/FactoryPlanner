@@ -7,6 +7,79 @@ local sequential_engine = {}
 ---@field constant boolean?
 
 -- ** LOCAL UTIL **
+--- A producing line is paced by the outstanding demand for the products it makes
+---@param line_data LineData
+---@param aggregate SolverAggregate
+---@param demanded_products FormattedProduct[]
+---@return number
+local function determine_producing_ratio(line_data, aggregate, demanded_products)
+    ---@param product FormattedProduct
+    ---@return number
+    local function demanded_ratio(product)
+        local demand = aggregate.Ingredient[product.type][product.name]
+        local prodded_amount = solver.util.determine_prodded_amount(product, line_data.total_effects)
+        return (demand * (line_data.percentage / 100)) / prodded_amount
+    end
+
+    if #demanded_products == 1 then return demanded_ratio(demanded_products[1]) end
+
+    local priority_proto = line_data.priority_item_proto
+    local production_ratio = 0  ---@type number
+
+    for _, product in ipairs(demanded_products) do
+        if priority_proto == nil then  -- satisfy every demand, so take the highest ratio
+            production_ratio = math.max(production_ratio, demanded_ratio(product))
+
+        elseif product.type == priority_proto.type and product.name == priority_proto.name then
+            return demanded_ratio(product)  -- the priority product paces the line by itself
+        end
+    end
+
+    return production_ratio
+end
+
+--- A consuming line is paced by the byproducts available to its ingredients
+---@param line_data LineData
+---@param aggregate SolverAggregate
+---@param ingredients SolverItemWithConstant[]
+---@return number
+local function determine_consuming_ratio(line_data, aggregate, ingredients)
+    ---@param ingredient SolverItemWithConstant
+    ---@param available number
+    ---@return number
+    local function available_ratio(ingredient, available)
+        local amount = ingredient.amount
+        if ingredient.type ~= "fluid" then amount = amount * line_data.resource_drain_rate end
+        return (available * (line_data.percentage / 100)) / amount
+    end
+
+    local priority_proto = line_data.priority_item_proto
+    local production_ratio = 0  ---@type number
+
+    for _, ingredient in pairs(ingredients) do
+        local available = aggregate.Byproduct[ingredient.type][ingredient.name]  ---@type number?
+
+        if priority_proto ~= nil then
+            -- The priority ingredient paces the line by itself, importing the others as needed
+            if ingredient.type == priority_proto.type and ingredient.name == priority_proto.name then
+                if available == nil then return 0 end  -- nothing of it left to consume
+                return available_ratio(ingredient, available)
+            end
+
+        elseif available == nil then
+            -- Avoid importing additional ingredients if they are a consumed byproduct further up
+            if aggregate.known_byproducts[ingredient.type][ingredient.name] then return 0 end
+
+        else  -- stay within every byproduct's availability, so take the lowest ratio
+            local ratio = available_ratio(ingredient, available)
+            production_ratio = (production_ratio == 0) and ratio or math.min(production_ratio, ratio)
+        end
+    end
+
+    return production_ratio
+end
+
+
 ---@param line_data LineData
 ---@param aggregate SolverAggregate
 ---@param looped_fuel number?
@@ -14,65 +87,36 @@ local function update_line(line_data, aggregate, looped_fuel)
     local machine_proto = line_data.machine_proto
     local total_effects = line_data.total_effects
 
-    local relevant_products, byproducts = {}, {}
     local ingredients = line_data.ingredients  ---@as SolverItemWithConstant[]
-    local self_feeding = false
+    local fuel_proto = line_data.fuel_proto
+    local consuming = (line_data.production_type == "consume")
+
+    -- Split the recipe's products by whether this floor has a demand for them
+    local demanded_products, byproducts = {}, {}
+    for _, product in pairs(line_data.products) do
+        local demanded = (aggregate.Ingredient[product.type][product.name] ~= nil)
+        table.insert((demanded) and demanded_products or byproducts, product)
+    end
+
+    -- Repare for the recipe producing its own fuel, which requires a second pass
     local fuel_byproduct = nil  ---@type FormattedProduct?
     local original_aggregate = nil  ---@type SolverAggregate?
-    local fuel_proto = line_data.fuel_proto
-
-    -- Determine relevant products
-    for _, product in pairs(line_data.products) do
-        local is_product = (aggregate.Ingredient[product.type][product.name] ~= nil)
-        table.insert((is_product) and relevant_products or byproducts, product)
-
-        -- Prepare for this line producing its own fuel
-        if looped_fuel == nil and fuel_proto ~= nil then  -- don't loop if this already is the loop
+    if looped_fuel == nil and fuel_proto ~= nil then  -- don't loop if this already is the loop
+        for _, product in pairs(line_data.products) do
             if product.type == fuel_proto.type and product.name == line_data.fuel_name then
-                self_feeding = true
-                if is_product then  -- conserve aggregate reference if we'll restart the calculation
+                if aggregate.Ingredient[product.type][product.name] == nil then
+                    fuel_byproduct = product
+                elseif not consuming then  -- bumping demand is pointless for a consuming line
                     original_aggregate = aggregate
                     aggregate = lib.flib.deep_copy(aggregate)
-                else  -- retain byproduct item for later
-                    fuel_byproduct = product
                 end
+                break
             end
         end
     end
 
-    --- Determines the production ratio that would be needed to fully satisfy the given product
-    ---@param relevant_product FormattedProduct
-    ---@return number
-    local function determine_production_ratio(relevant_product)
-        local demand = aggregate.Ingredient[relevant_product.type][relevant_product.name]
-        local prodded_amount = solver.util.determine_prodded_amount(relevant_product, total_effects)
-        return (demand * (line_data.percentage / 100)) / prodded_amount
-    end
-
-    -- Determine production ratio
-    local production_ratio = 0  ---@type number
-
-    local relevant_product_count = #relevant_products
-    if relevant_product_count == 1 then
-        local relevant_product = relevant_products[1]  ---@as FormattedProduct
-        production_ratio = determine_production_ratio(relevant_product)
-
-    elseif relevant_product_count >= 2 then
-        local priority_proto = line_data.priority_product_proto
-
-        for _, relevant_product in ipairs(relevant_products) do
-            if priority_proto ~= nil then  -- Use the priority product to determine the production ratio, if it's set
-                if relevant_product.type == priority_proto.type and relevant_product.name == priority_proto.name then
-                    production_ratio = determine_production_ratio(relevant_product)
-                    break
-                end
-
-            else  -- Otherwise, determine the highest production ratio needed to fulfill every demand
-                local ratio = determine_production_ratio(relevant_product)
-                production_ratio = math.max(production_ratio, ratio)
-            end
-        end
-    end
+    local production_ratio = (consuming) and determine_consuming_ratio(line_data, aggregate, ingredients)
+        or determine_producing_ratio(line_data, aggregate, demanded_products)
 
     local speed_multiplier = 1 + (total_effects.speed / MAGIC_NUMBERS.effect_precision)
     local crafts_per_second = (line_data.machine_speed * speed_multiplier) / line_data.recipe_energy
@@ -111,7 +155,7 @@ local function update_line(line_data, aggregate, looped_fuel)
         fuel_amount = solver.util.determine_fuel_amount(line_data, power, machine_amount)
 
         -- Handle recipes producing their own machine's fuel
-        if self_feeding and production_ratio > 0 then
+        if production_ratio > 0 then
             if original_aggregate ~= nil then  -- means the fuel is a main product
                 local ingredient_class = original_aggregate.Ingredient[fuel_proto.type]
                 local initial_demand = ingredient_class[fuel_name]
@@ -126,8 +170,8 @@ local function update_line(line_data, aggregate, looped_fuel)
                     update_line(line_data, original_aggregate, bumped_demand - initial_demand)
                     return
                 end
-            else  -- means the fuel is a byproduct only, which shouldn't affect production
-                local byproduct_amount = determine_amount_with_productivity(fuel_byproduct--[[@cast -nil]])
+            elseif fuel_byproduct ~= nil then  -- the fuel is a byproduct, which shouldn't affect production
+                local byproduct_amount = determine_amount_with_productivity(fuel_byproduct)
                 local used_amount = math.min(fuel_amount, byproduct_amount)  ---@as number
 
                 local fuel_item = {type=fuel_proto.type, name=fuel_name, amount=used_amount}  ---@type SolverItem
@@ -193,8 +237,8 @@ local function update_line(line_data, aggregate, looped_fuel)
         local emission_item = {type="entity", name=emission_name,
             amount=math.abs(emissions)--[[@as number]], constant=true}
         if emissions > 0 then
-            local is_product = (aggregate.Ingredient["entity"][emission_name] ~= nil)
-            table.insert((is_product) and relevant_products or byproducts, emission_item)
+            local demanded = (aggregate.Ingredient["entity"][emission_name] ~= nil)
+            table.insert((demanded) and demanded_products or byproducts, emission_item)
         elseif emissions < 0 then
             table.insert(ingredients, emission_item)
         end
@@ -208,11 +252,12 @@ local function update_line(line_data, aggregate, looped_fuel)
 
         structures.class.add(Byproduct, byproduct, byproduct_amount)
         structures.class.add(aggregate.Byproduct, byproduct, byproduct_amount)
+        aggregate.known_byproducts[byproduct.type][byproduct.name] = true
     end
 
     -- Determine products
     local Product = structures.class.init()
-    for _, product in ipairs(relevant_products) do
+    for _, product in ipairs(demanded_products) do
         local product_amount = (product.constant) and product.amount
             or determine_amount_with_productivity(product)
         local product_demand = aggregate.Ingredient[product.type][product.name] or 0
@@ -221,6 +266,7 @@ local function update_line(line_data, aggregate, looped_fuel)
             local overflow_amount = product_amount - product_demand
             structures.class.add(Byproduct, product, overflow_amount)
             structures.class.add(aggregate.Byproduct, product, overflow_amount)
+            aggregate.known_byproducts[product.type][product.name] = true
             product_amount = product_demand  -- desired amount
         end
 
@@ -291,6 +337,12 @@ local function update_floor(floor_data, aggregate)
             end
 
             structures.class.balance_items(subfloor_aggregate.Ingredient, aggregate.Byproduct, aggregate.Ingredient)
+            -- Byproducts coming out of a subfloor are consumable on this floor like any other
+            for type, items_of_type in pairs(subfloor_aggregate.Byproduct) do
+                for name, _ in pairs(items_of_type) do
+                    aggregate.known_byproducts[type][name] = true
+                end
+            end
             structures.class.balance_items(subfloor_aggregate.Byproduct, aggregate.Product, aggregate.Byproduct)
 
             aggregate.machine_amount = aggregate.machine_amount + subfloor_aggregate.machine_amount
