@@ -38,7 +38,6 @@ function LUDecomposition:init(matrix)
 
     for k = 1, #o.u_matrix - 1 do
         ---@diagnostic disable: need-check-nil
-        local pk = o.p_vector[k]  ---@as integer
         local qk = o.q_vector[k]  ---@as integer
 
         -- Find pivot
@@ -48,13 +47,17 @@ function LUDecomposition:init(matrix)
 
         -- Permute
         if pivot_row ~= k then
-            local temp = o.l_matrix[pivot_row]
-            o.l_matrix[pivot_row] = o.l_matrix[k]
-            o.l_matrix[k] = temp
+            local temp_u = o.u_matrix[pivot_row]
+            o.u_matrix[pivot_row] = o.u_matrix[k]
+            o.u_matrix[k] = temp_u
 
-            pk = o.p_vector[pivot_row] or 0
+            local temp_l = o.l_matrix[pivot_row]
+            o.l_matrix[pivot_row] = o.l_matrix[k]
+            o.l_matrix[k] = temp_l
+
+            local temp_p = o.p_vector[pivot_row] or 0
             o.p_vector[pivot_row] = o.p_vector[k]  ---@as integer
-            o.p_vector[k] = pk
+            o.p_vector[k] = temp_p
         end
         if pivot_col ~= k then
             qk = o.q_vector[pivot_col] or 0
@@ -62,17 +65,16 @@ function LUDecomposition:init(matrix)
             o.q_vector[k] = qk
         end
 
-        if o.u_matrix[pk][qk] ~= 0 then
+        if o.u_matrix[k][qk] ~= 0 then
             -- Row-subtract below the pivot
             for i = k + 1, #o.u_matrix do
-                local pi = o.p_vector[i]  ---@as integer
-                local scalar = o.u_matrix[pi][qk] / o.u_matrix[pk][qk]
-                o.u_matrix[pi][qk] = 0
+                local scalar = o.u_matrix[i][qk] / o.u_matrix[k][qk]
+                o.u_matrix[i][qk] = 0
                 o.l_matrix[i][k] = scalar
                 if scalar ~= 0 then
                     for j = k + 1, #o.u_matrix do
                         local qj = o.q_vector[j]  ---@as integer
-                        o.u_matrix[pi][qj] = o.u_matrix[pi][qj] - scalar * o.u_matrix[pk][qj]
+                        o.u_matrix[i][qj] = o.u_matrix[i][qj] - scalar * o.u_matrix[k][qj]
                     end
                 end
             end
@@ -145,16 +147,14 @@ function LUDecomposition:solve_left(vector)
     local y_vector = {}  ---@type number[]
     for k = 1, #self.u_matrix do
         ---@diagnostic disable: need-check-nil
-        local pk = self.p_vector[k]  ---@as integer
         local qk = self.q_vector[k]  ---@as integer
         y_vector[k] = z_vector[qk]
         for i = 1, k - 1 do
-            local pi = self.p_vector[i]  ---@as integer
-            if y_vector[i] ~= 0 and self.u_matrix[pi][qk] ~= 0 then
-                y_vector[k] = y_vector[k] - y_vector[i] * self.u_matrix[pi][qk]
+            if y_vector[i] ~= 0 and self.u_matrix[i][qk] ~= 0 then
+                y_vector[k] = y_vector[k] - y_vector[i] * self.u_matrix[i][qk]
             end
         end
-        y_vector[k] = y_vector[k] / self.u_matrix[pk][qk]
+        y_vector[k] = y_vector[k] / self.u_matrix[k][qk]
     end
 
     -- Solve `x P^T L = y^T`
@@ -197,16 +197,15 @@ function LUDecomposition:solve_right(vector)
     local x_vector = {}  ---@type number[]
     for k = #self.u_matrix, 1, -1 do
         ---@diagnostic disable: need-check-nil
-        local pk = self.p_vector[k]  ---@as integer
         local qk = self.q_vector[k]  ---@as integer
         local cell = y_vector[k]
         for i = k + 1, #self.u_matrix do
             local qi = self.q_vector[i]  ---@as integer
-            if x_vector[qi] ~= 0 and self.u_matrix[pk][qi] ~= 0 then
-                cell = cell - x_vector[qi] * self.u_matrix[pk][qi]
+            if x_vector[qi] ~= 0 and self.u_matrix[k][qi] ~= 0 then
+                cell = cell - x_vector[qi] * self.u_matrix[k][qi]
             end
         end
-        x_vector[qk] = cell / self.u_matrix[pk][qk]
+        x_vector[qk] = cell / self.u_matrix[k][qk]
     end
 
     -- Solve `E x* = x`
@@ -244,8 +243,7 @@ function LUDecomposition:recompose()
             a_matrix[qj][pi] = 0.0
             for k = 1, math.min(i, j) do
                 ---@diagnostic disable: need-check-nil
-                local pk = self.p_vector[k]  ---@as integer
-                a_matrix[qj][pi] = a_matrix[qj][pi] + self.l_matrix[i][k] * self.u_matrix[pk][qj]
+                a_matrix[qj][pi] = a_matrix[qj][pi] + self.l_matrix[i][k] * self.u_matrix[k][qj]
             end
         end
     end
@@ -278,14 +276,12 @@ end
 ---@return integer pivot_column
 function LUDecomposition:_rook_pivot_vertical(i, j, min_i, min_j)
     ---@diagnostic disable: need-check-nil
-    local pi = self.p_vector[i]  ---@as integer
     local qj = self.q_vector[j]  ---@as integer
-    local max = self.u_matrix[pi][qj] >= 0 and self.u_matrix[pi][qj] or -self.u_matrix[pi][qj]
+    local max = self.u_matrix[i][qj] >= 0 and self.u_matrix[i][qj] or -self.u_matrix[i][qj]
     local pivot_row = i
     for k = min_i, #self.u_matrix do
         if k ~= i then
-            local pk = self.p_vector[k]  ---@as integer
-            local cell_abs = self.u_matrix[pk][qj] >= 0 and self.u_matrix[pk][qj] or -self.u_matrix[pk][qj]
+            local cell_abs = self.u_matrix[k][qj] >= 0 and self.u_matrix[k][qj] or -self.u_matrix[k][qj]
             if cell_abs > max then
                 max = cell_abs
                 pivot_row = k
@@ -308,14 +304,13 @@ end
 ---@return integer pivot_column
 function LUDecomposition:_rook_pivot_horizontal(i, j, min_i, min_j)
     ---@diagnostic disable: need-check-nil
-    local pi = self.p_vector[i]  ---@as integer
     local qj = self.q_vector[j]  ---@as integer
-    local max = self.u_matrix[pi][qj] >= 0 and self.u_matrix[pi][qj] or -self.u_matrix[pi][qj]
+    local max = self.u_matrix[i][qj] >= 0 and self.u_matrix[i][qj] or -self.u_matrix[i][qj]
     local pivot_column = j
     for k = min_j, #self.u_matrix[i] do
         if k ~= j then
             local qk = self.q_vector[k]  ---@as integer
-            local cell_abs = self.u_matrix[pi][qk] >= 0 and self.u_matrix[pi][qk] or -self.u_matrix[pi][qk]
+            local cell_abs = self.u_matrix[i][qk] >= 0 and self.u_matrix[i][qk] or -self.u_matrix[i][qk]
             if cell_abs > max then
                 max = cell_abs
                 pivot_column = k
