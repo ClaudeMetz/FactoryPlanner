@@ -1,8 +1,9 @@
+---@diagnostic disable
+
 local migration = {}
 
 -- Sorry about this piece of crap, but the changes really do make a difference to users
 
----@return table<string, FPRecipePrototype>
 local function get_migration_map()
     local migration_map = {}
 
@@ -11,7 +12,7 @@ local function get_migration_map()
         local target = proto.target_temperature
         if target == 0 then goto next_boiler end
 
-        local input, output  ---@type LuaFluidBoxPrototype, LuaFluidBoxPrototype
+        local input, output
         for _, fluid_box in pairs(proto.fluidbox_prototypes) do
             if fluid_box.production_type == "input-output" or fluid_box.production_type == "input" then
                 input = fluid_box
@@ -57,11 +58,9 @@ local function get_migration_map()
     return migration_map
 end
 
----@param player_table PlayerTable
 function migration.player_table(player_table)
     local migration_map = get_migration_map()
 
-    ---@param floor Floor
     local function iterate_floor(floor)
         for line_object in floor:iterator() do
             if line_object.class == "Floor" then
@@ -84,11 +83,9 @@ function migration.player_table(player_table)
     end
 end
 
----@param packed_factory PackedFactory
 function migration.packed_factory(packed_factory)
     local migration_map = get_migration_map()
 
-    ---@param floor PackedFloor
     local function iterate_floor(floor)
         for _, line_object in pairs(floor.lines) do
             if line_object.class == "Floor" then

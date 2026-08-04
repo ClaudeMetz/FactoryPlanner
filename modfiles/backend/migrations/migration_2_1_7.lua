@@ -1,7 +1,8 @@
+---@diagnostic disable
+
 local migration = {}
 
 -- Products defined by lanes are now stored as belts, with lanes being a display unit only
----@param product TLProduct | PackedProduct
 local function migrate_product(product)
     if product.belt_proto then product.belt_stack = 1 end
 
@@ -11,7 +12,6 @@ local function migrate_product(product)
     end
 end
 
----@return table<string, FPRecipePrototype>
 local function get_migration_map()
     local migration_map = {}
 
@@ -26,11 +26,9 @@ local function get_migration_map()
     return migration_map
 end
 
----@param player_table PlayerTable
 function migration.player_table(player_table)
     local migration_map = get_migration_map()
 
-    ---@param floor Floor
     local function iterate_floor(floor)
         for line_object in floor:iterator() do
             if line_object.class == "Floor" then
@@ -52,11 +50,9 @@ function migration.player_table(player_table)
     end
 end
 
----@param packed_factory PackedFactory
 function migration.packed_factory(packed_factory)
     local migration_map = get_migration_map()
 
-    ---@param floor PackedFloor
     local function iterate_floor(floor)
         for _, line_object in pairs(floor.lines) do
             if line_object.class == "Floor" then
