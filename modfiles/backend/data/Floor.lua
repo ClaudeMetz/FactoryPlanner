@@ -208,6 +208,18 @@ function Floor:check_product_compatibility(object)
         return false
     end
 
+    ---@param items SimpleItem[]
+    ---@return boolean
+    local function any_relevant(items)
+        for _, item in pairs(items) do
+            local proto = item.proto
+            if relevant(proto.type, proto.name, proto.base_name, proto.temperature) then
+                return true
+            end
+        end
+        return false
+    end
+
     for line in self:iterator() do
         if producing then
             -- Check whether any line on this floor consumes something the pasted line produces
@@ -223,11 +235,8 @@ function Floor:check_product_compatibility(object)
                 return true
             end
         else
-            -- Check whether any line on this floor produces a byproduct the pasted line consumes
-            for _, byproduct in pairs(line.byproducts) do
-                local proto = byproduct.proto
-                if relevant(proto.type, proto.name, proto.base_name, proto.temperature) then return true end
-            end
+            -- Check whether any line on this floor produces something the pasted line consumes
+            if any_relevant(line.products) or any_relevant(line.byproducts) then return true end
         end
     end
 
