@@ -58,8 +58,35 @@ local function get_migration_map()
     return migration_map
 end
 
+local function get_temperature_map()
+    local temperature_map = {}
+
+    for base_name, protos in pairs(TEMPERATURE_MAP) do
+        for _, proto in pairs(protos) do
+            temperature_map[base_name .. "-" .. proto.temperature] =
+                base_name .. "|" .. proto.temperature
+        end
+    end
+
+    return temperature_map
+end
+
+local function migrated_item_name(proto, temperature_map)
+    if proto.simplified then return temperature_map[proto.name] end
+    if proto.type ~= "fluid" or proto.temperature == nil then return nil end
+    return proto.base_name .. "|" .. proto.temperature
+end
+
+local function migrated_item_proto(proto, temperature_map)
+    local fluid_name = migrated_item_name(proto, temperature_map)
+    if fluid_name == nil then return proto end
+    return {name = fluid_name, category = "fluid", data_type = "items", simplified = true}
+end
+
+
 function migration.player_table(player_table)
     local migration_map = get_migration_map()
+    local temperature_map = get_temperature_map()
 
     local function iterate_floor(floor)
         for line_object in floor:iterator() do
@@ -72,6 +99,10 @@ function migration.player_table(player_table)
 
                 recipe.priority_item = recipe.priority_product
                 recipe.priority_product = nil
+
+                if recipe.priority_item then
+                    recipe.priority_item = migrated_item_proto(recipe.priority_item, temperature_map)
+                end
             end
         end
     end
@@ -79,12 +110,21 @@ function migration.player_table(player_table)
     for district in player_table.realm:iterator() do
         for factory in district:iterator() do
             iterate_floor(factory.top_floor)
+
+            for _, product in pairs(factory:as_list()) do
+                product.proto = migrated_item_proto(product.proto, temperature_map)
+            end
+
+            for index, item_proto in pairs(factory.matrix_free_items) do
+                factory.matrix_free_items[index] = migrated_item_proto(item_proto, temperature_map)
+            end
         end
     end
 end
 
 function migration.packed_factory(packed_factory)
     local migration_map = get_migration_map()
+    local temperature_map = get_temperature_map()
 
     local function iterate_floor(floor)
         for _, line_object in pairs(floor.lines) do
@@ -97,11 +137,23 @@ function migration.packed_factory(packed_factory)
 
                 recipe.priority_item = recipe.priority_product
                 recipe.priority_product = nil
+
+                if recipe.priority_item then
+                    recipe.priority_item = migrated_item_proto(recipe.priority_item, temperature_map)
+                end
             end
         end
     end
 
     iterate_floor(packed_factory.top_floor)
+
+    for _, product in pairs(packed_factory.products) do
+        product.proto = migrated_item_proto(product.proto, temperature_map)
+    end
+
+    for index, item_proto in pairs(packed_factory.matrix_free_items) do
+        packed_factory.matrix_free_items[index] = migrated_item_proto(item_proto, temperature_map)
+    end
 end
 
 return migration

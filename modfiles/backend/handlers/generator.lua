@@ -626,8 +626,8 @@ function generator.items.generate()
     local relevant_items = {item={}, fluid={}, entity={}}
     local fluid_has_temperature = {}
     -- Extract items from recipes and note whether they are ever used as a product
-    for _, item_category in pairs({"products", "ingredients"}) do
-        for _, recipe_proto in pairs(recipe_prototypes) do
+    for _, recipe_proto in pairs(recipe_prototypes) do
+        for _, item_category in pairs({"products", "ingredients"}) do
             for _, item_data in pairs(recipe_proto[item_category]) do
                 local type_data = relevant_items[item_data.type]
 

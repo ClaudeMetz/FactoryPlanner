@@ -9,7 +9,7 @@ local _temperature = {}
 ---@return string
 function _temperature.name_with(name, temperature)
     if temperature == nil then return name end
-    return name .. "-" .. temperature
+    return name .. "|" .. temperature
 end
 
 --- An exclusive bound rejects the bound itself. Fuels burned for their heat need this on their
