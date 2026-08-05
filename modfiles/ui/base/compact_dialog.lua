@@ -123,7 +123,7 @@ local function add_recipe_button(parent_flow, line, relevant_line, metadata)
             style = "fflib_slot_button_orange_small"
             note = {"fp.lines_not_marked_done"}
         else
-            style = "fflib_slot_button_grayscale_small"
+            style = "fflib_slot_button_default_grayscale_small"
         end
     end
 
@@ -152,7 +152,7 @@ local function add_modules_flow(parent_flow, line, module_set, metadata)
             or {"fp.tt_title_with_note", module.proto.localised_name, quality_proto.rich_text}
         local number_line = {"", "\n", module.amount, " ", {"fp.pl_module", module.amount}}
         local tooltip = {"", title_line, number_line, "\n", metadata.action_tooltips["act_on_compact_module"]}
-        local style = (line.done) and "fflib_slot_button_grayscale_small" or "fflib_slot_button_default_small"
+        local style = (line.done) and "fflib_slot_button_default_grayscale_small" or "fflib_slot_button_default_small"
 
         ---@class ActOnCompactModuleTags
         ---@field module_id ObjectID
@@ -179,7 +179,7 @@ local function add_machine_flow(parent_flow, line, metadata)
             or {"fp.tt_title_with_note", machine_proto.localised_name, quality_proto.rich_text}
         local amount, tooltip_line = lib.format.machine_amount(machine.amount, true)
         local tooltip = {"", title_line, tooltip_line, "\n", metadata.action_tooltips["act_on_compact_machine"]}
-        local style = (line.done) and "fflib_slot_button_grayscale_small" or "fflib_slot_button_default_small"
+        local style = (line.done) and "fflib_slot_button_default_grayscale_small" or "fflib_slot_button_default_small"
 
         ---@class ActOnCompactMachineTags
         ---@field line_id ObjectID
@@ -207,7 +207,7 @@ local function add_beacon_flow(parent_flow, line, metadata)
             or {"fp.tt_title_with_note", beacon_proto.localised_name, quality_proto.rich_text}
         local number_line = {"", "\n", beacon.amount, " ", {"fp.pl_beacon", beacon.amount}}
         local tooltip = {"", title_line, number_line, "\n", metadata.action_tooltips["act_on_compact_beacon"]}
-        local style = (line.done) and "fflib_slot_button_grayscale_small" or "fflib_slot_button_default_small"
+        local style = (line.done) and "fflib_slot_button_default_grayscale_small" or "fflib_slot_button_default_small"
 
         ---@class ActOnCompactBeaconTags
         ---@field line_id ObjectID
@@ -239,7 +239,7 @@ local function add_item_flow(line, relevant_line, item_category, button_color, m
         local proto, type = item.proto, item.proto.type
 
         local amount, number_tooltip = nil, nil
-        button_color = (relevant_line.done) and "grayscale" or button_color
+        button_color = (relevant_line.done) and "default_grayscale" or button_color
         local name_line = {"", {"fp.tt_title", {"", proto.localised_name}}}
         local action_line, temperature_line = "", ""  ---@type LocalisedString, LocalisedString
 
@@ -352,7 +352,7 @@ local function add_item_flow(line, relevant_line, item_category, button_color, m
             end
         end
 
-        style = (relevant_line.done) and "fflib_slot_button_grayscale_small" or style
+        style = (relevant_line.done) and "fflib_slot_button_default_grayscale_small" or style
         local number_line = (number_tooltip) and {"", "\n", number_tooltip} or ""
         local tooltip = {"", name_line, temperature_line, number_line, "\n",
             metadata.action_tooltips["act_on_compact_item"]}
@@ -491,10 +491,9 @@ local function refresh_compact_production(player)
     }
 
     for line in floor:iterator() do -- build the individual lines
-        local relevant_line = (line.class == "Floor") and line.first or line  ---@as Line
-        if not relevant_line.active or not relevant_line:get_surface_compatibility().overall then
-            goto skip_line
-        end
+        local relevant_line = (line.class == "Floor") and line.first or line  ---@cast relevant_line Line
+        -- Lines that produce nothing have nothing to build, so they are left out entirely
+        if relevant_line:get_status() ~= nil then goto skip_line end
 
         -- Recipe and Checkmark
         local recipe_flow = production_table.add{type="flow", direction="horizontal"}

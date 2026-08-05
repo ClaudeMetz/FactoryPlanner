@@ -72,17 +72,11 @@ local function factory_products(factory)
     return products
 end
 
----@param line Line
----@return SolverItem[]?
-local function line_ingredients(line)
-    local recipe = line.recipe
-
-    -- The recipe items are already reduced against each other, using the configured temperatures
+---@param recipe Recipe
+---@return SolverItem[]
+local function line_ingredients(recipe)
     local ingredients = {}
     for _, ingredient in pairs(recipe.ingredients) do
-        -- If any relevant ingredient has no temperature set, this line is invalid
-        if not recipe:is_temperature_configured(ingredient) then return nil end
-
         table.insert(ingredients, {
             name = recipe:get_name_with_temperature(ingredient),
             type = ingredient.type,
@@ -154,22 +148,16 @@ local function generate_floor_data(player, factory, floor, calculate_emissions)
             line_data.subfloor = generate_floor_data(player, factory, line, calculate_emissions)
             table.insert(floor_data.lines, line_data)
         else  ---@cast line Line
-            local relevant_line = (line.parent.level > 1) and line.parent.first or nil  ---@as Line
-            local recipe_proto = line.recipe.proto  ---@as FPRecipePrototype
-            local ingredients = line_ingredients(line)  -- builds in chosen temperatures
-            local fuel = line.machine.fuel
-
-            -- If a line has a percentage of zero or is inactive, it is not useful to the result of the factory
-            -- Alternatively, if this line is on a subfloor and the top line of the floor is useless, it is useless too
-            if (relevant_line and (relevant_line.percentage == 0 or not relevant_line.active))
-                    or line.percentage == 0 or not line.active or not line:get_surface_compatibility().overall
-                    or ingredients == nil or (fuel and not fuel:is_temperature_configured()) then
-                set_blank_line(player, floor, line)  -- useless lines don't need to run through the solver
+            if line:get_blocker() ~= nil then
+                -- Useless lines don't need to run through the solver
+                set_blank_line(player, floor, line)
             else
                 local machine = line.machine
+                local recipe_proto = line.recipe.proto  ---@as FPRecipePrototype
+
                 line_data.recipe_proto = recipe_proto
                 line_data.recipe_energy = recipe_proto.energy
-                line_data.ingredients = ingredients
+                line_data.ingredients = line_ingredients(line.recipe)  -- bakes in temperatures
                 line_data.products = line.recipe.products
                 line_data.percentage = line.percentage  -- non-zero
                 line_data.production_type = line.recipe.production_type
@@ -186,10 +174,10 @@ local function generate_floor_data(player, factory, floor, calculate_emissions)
                 line.recipe:update_effects(player.force--[[@as LuaForce]], factory)
                 line_data.total_effects = line.total_effects
 
-                if fuel ~= nil then
-                    line_data.fuel_proto = fuel.proto
-                    line_data.fuel_name = fuel:get_name_with_temperature()
-                    line_data.fuel_value = fuel:get_fuel_value()
+                if machine.fuel ~= nil then
+                    line_data.fuel_proto = machine.fuel.proto
+                    line_data.fuel_name = machine.fuel:get_name_with_temperature()
+                    line_data.fuel_value = machine.fuel:get_fuel_value()
                 end
 
                 -- The machine needs to potentially run slower if fuel is insufficient

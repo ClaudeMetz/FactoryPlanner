@@ -285,6 +285,37 @@ function Line:get_surface_compatibility()
 end
 
 
+---@alias LineBlocker "disabled" | "zero_percentage" | "incompatible_recipe" | "incompatible_machine" | "unconfigured_temperature"
+
+--- Returns why this line can't take part in the calculation, or nil if it can
+---@return LineBlocker?
+function Line:get_blocker()
+    if not self.active then return "disabled" end
+    if self.percentage == 0 then return "zero_percentage" end
+
+    local compatibility = self:get_surface_compatibility()
+    if not compatibility.recipe then return "incompatible_recipe" end
+    if not compatibility.machine then return "incompatible_machine" end
+
+    if not self:is_temperature_fully_configured() then return "unconfigured_temperature" end
+
+    return nil
+end
+
+---@alias LineStatus LineBlocker | "no_byproducts" | "no_demand"
+
+--- Returns why this line doesn't produce anything, or nil if it does
+---@return LineStatus?
+function Line:get_status()
+    local blocker = self:get_blocker()
+    if blocker ~= nil then return blocker end
+    if self.production_ratio > 0 then return nil end
+
+    -- The line is configured fine, so the calculation just had nothing for it to do
+    return (self.recipe.production_type == "consume") and "no_byproducts" or "no_demand"
+end
+
+
 ---@param object CopyableObject
 ---@return boolean success
 ---@return string? error

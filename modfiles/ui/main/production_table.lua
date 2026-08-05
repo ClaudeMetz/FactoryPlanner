@@ -106,47 +106,27 @@ function builders.recipe(line, parent_flow, metadata, indent)
     parent_flow.style.horizontal_spacing = 3
     parent_flow.style.left_margin = indent * 12
 
-    local line_active = (relevant_line.production_ratio > 0)
-    local style = (line_active) and "fflib_slot_button_default_small" or "fflib_slot_button_red_small"
-    local note = (line_active) and "" or {"fp.recipe_inactive"}  ---@type LocalisedString
-    local status_info = {""}
-
-    if not line_active then
-        if not relevant_line.active then
-            table.insert(status_info, {"fp.line_disabled"})
-        end
-
-        local surface_compatibility = relevant_line:get_surface_compatibility()
-        if not surface_compatibility.recipe then
-            table.insert(status_info, {"fp.blocking_condition", {"fp.pl_recipe", 1}})
-        end
-        if not surface_compatibility.machine then
-            table.insert(status_info, {"fp.blocking_condition", {"fp.pl_machine", 1}})
-        end
-
-        if not relevant_line:is_temperature_fully_configured() then
-            table.insert(status_info, {"fp.temperature_not_configured"})
-        end
-    end
-
     local first_subfloor_line = (line.parent.level > 1 and line.previous == nil)
-    local indication = first_subfloor_line and {"fp.floor_recipe"} or ""
+    local color, note = "default", nil  ---@type string, LocalisedString?
     if line.class == "Floor" then
-        style = (line_active) and "fflib_slot_button_blue_small" or "fflib_slot_button_purple_small"
-        indication = {"fp.recipe_subfloor_attached"}
-
-    -- Byproduct-consuming lines can't have subfloors, so this if-branching works
+        color, note = "blue", {"fp.recipe_subfloor_attached"}
+    elseif first_subfloor_line then
+        note = {"fp.floor_recipe"}
     elseif relevant_line.recipe.production_type == "consume" then
-        style = (line_active) and "fflib_slot_button_yellow_small" or "fflib_slot_button_orange_small"
-        note = {"fp.recipe_consumes_byproduct"}
+        color, note = "yellow", {"fp.recipe_consumes_byproduct"}
     end
+
+    local status = relevant_line:get_status()
+    local variant = (status ~= nil) and "_grayscale_small" or "_small"
+    local status_line = (status ~= nil) and {"fp.line_status", {"fp.line_status_" .. status}} or ""
 
     local recipe_proto = relevant_line.recipe.proto
-    local first_line = (note == "") and {"fp.tt_title", recipe_proto.localised_name}
+    local first_line = (note == nil) and {"fp.tt_title", recipe_proto.localised_name}
         or {"fp.tt_title_with_note", recipe_proto.localised_name, note}
     local action = (first_subfloor_line) and "act_on_floor_recipe" or "act_on_line_recipe"
     local effects_section = (line.class == "Line") and format_effects_tooltip(relevant_line.effects_tooltip) or ""
-    local tooltip = {"", first_line, indication, status_info, effects_section, "\n", MODIFIER_ACTIONS[action].tooltip}
+    local tooltip = {"", first_line, status_line, effects_section, "\n", MODIFIER_ACTIONS[action].tooltip}
+    local style = "fflib_slot_button_" .. color .. variant
 
     ---@class ActOnLineObjectRecipe
     ---@field line_id ObjectID
