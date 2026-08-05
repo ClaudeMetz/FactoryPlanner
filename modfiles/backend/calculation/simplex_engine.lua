@@ -228,11 +228,9 @@ function simplex_engine.get_line_data(line_data, floor_id)
     local total_crafts = speed_multiplier / energy
 
     -- Get simple products
-    if line_data.recipe_proto.products then
-        for _, item in pairs(line_data.recipe_proto.products) do
-            local amount = total_crafts * solver.util.determine_prodded_amount(item, line_data.total_effects)
-            lib.table.add(products, item.name .. "_" .. item.type, amount)
-        end
+    for _, item in pairs(line_data.products) do
+        local amount = total_crafts * solver.util.determine_prodded_amount(item, line_data.total_effects)
+        lib.table.add(products, item.name .. "_" .. item.type, amount)
     end
 
     -- Get simple ingredients
