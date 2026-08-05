@@ -21,7 +21,6 @@ function LUDecomposition:init(size)
         l_matrix = {},
         p_vector = {},
         q_vector = {},
-        q_transposed = {},
         eta_updates = {},
         ft_updates = {}
     }  ---@type LUDecomposition
@@ -31,7 +30,6 @@ function LUDecomposition:init(size)
     for k = 1, size do
         o.p_vector[k] = k
         o.q_vector[k] = k
-        o.q_transposed[k] = k
         o.u_matrix[k] = {}
         o.l_matrix[k] = {}
         for j = 1, size do o.u_matrix[k][j] = 0 end
@@ -212,24 +210,24 @@ end
 ---@param vector number[]
 ---@return number[]
 function LUDecomposition:solve_right(vector)
-    -- Solve `L y = P v`
-    local y_vector = {}  ---@type number[]
+    -- Solve `L u = P v`
+    local u_vector = {}  ---@type number[]
     for k = 1, #self.l_matrix do
-        y_vector[k] = vector[self.p_vector[k]--[[@cast -nil]]]
+        u_vector[k] = vector[self.p_vector[k]--[[@cast -nil]]]
         for j = 1, k - 1 do
-            if  y_vector[j] ~= 0 and self.l_matrix[k][j] ~= 0 then
+            if  u_vector[j] ~= 0 and self.l_matrix[k][j] ~= 0 then
                 ---@diagnostic disable: need-check-nil
-                y_vector[k] = y_vector[k] - y_vector[j] * self.l_matrix[k][j]
+                u_vector[k] = u_vector[k] - u_vector[j] * self.l_matrix[k][j]
             end
         end
     end
 
-    -- Solve `U Q^T x = y`
+    -- Solve `U Q^T x = u`
     local x_vector = {}  ---@type number[]
     for k = #self.u_matrix, 1, -1 do
         ---@diagnostic disable: need-check-nil
         local qk = self.q_vector[k]  ---@as integer
-        local cell = y_vector[k]
+        local cell = u_vector[k]
         for j = k + 1, #self.u_matrix do
             local qj = self.q_vector[j]  ---@as integer
             if x_vector[qj] ~= 0 and self.u_matrix[k][qj] ~= 0 then

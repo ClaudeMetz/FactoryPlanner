@@ -198,7 +198,7 @@ function SimplexTableau:solve(previous_basis)
     end
 
     -- Populate the basis vector based on the previous result
-    local cache_valid = true
+    local cache_invalid = false
     for row_key, col_key in pairs(previous_basis) do
         local row_index = self.rows[row_key]
         local col_index = self.cols[col_key]
@@ -207,7 +207,7 @@ function SimplexTableau:solve(previous_basis)
             variable_map[col_index]--[[@cast -nil]].type = "basic"
             basic[row_index] = col_key
         elseif row_index and not col_index or not row_index and col_index then
-            cache_valid = false
+            cache_invalid = true
             break
         end
     end
@@ -215,12 +215,12 @@ function SimplexTableau:solve(previous_basis)
     -- Check if the cache covered all the bases
     for i = 1, #self.matrix[1] do
         if not basic[i] then
-            cache_valid = false
+            cache_invalid = true
             break
         end
     end
 
-    if not cache_valid then
+    if cache_invalid then
         -- Reset the basis
         for i, key in pairs(basic) do
             basic[i] = nil
@@ -460,7 +460,7 @@ function SimplexTableau:solve(previous_basis)
     end
 
     -- Invalidate the floor cache
-    if not cache_valid then
+    if cache_invalid then
         local invalid_columns = {}  ---@type table<VariableKey, true>
         for floor_id, _ in pairs(result.floor_results) do
             invalid_columns["line_" .. floor_id] = true

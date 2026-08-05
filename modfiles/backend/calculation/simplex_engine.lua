@@ -69,7 +69,7 @@ end
 ---@param level integer
 ---@return SimplexResult?
 function simplex_engine.solve_floor(floor_data, previous_basis, line_metadata_table, level)
-    local relevant_line_metadata = {}  ---@type LineMetadataTable
+    local relevant_line_metadata = {}  ---@type LineMetadata[]
     local products = {}  ---@type SimplexItemSet
     local ingredients = {}  ---@type SimplexItemSet
     local cycled_intermediates = {}  ---@type SimplexItemSet
@@ -93,7 +93,7 @@ function simplex_engine.solve_floor(floor_data, previous_basis, line_metadata_ta
             end
         end
 
-        relevant_line_metadata[line_object_data.id] = line_metadata_table[line_object_data.id]
+        table.insert(relevant_line_metadata, line_metadata_table[line_object_data.id])
     end
 
     -- Do not continue if the floor is empty (sanity check)
