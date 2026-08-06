@@ -239,6 +239,7 @@ function _util.format_effect_receiver(proto)
             uses_module_effects = false,
             uses_beacon_effects = false,
             uses_surface_effects = false,
+            uses_local_effects = false,
             consumption_limits = {low = -0.8, high = 1000},
             speed_limits = {low = -0.8, high = 1000},
             productivity_limits = {low = -0.8, high = 1000},
