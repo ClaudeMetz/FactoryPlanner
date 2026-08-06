@@ -1,19 +1,12 @@
 integrator = {}
 
 ---@class IntegrationsTable
----@field overwrite_recipe_picker table<string, boolean>
 ---@field recycling_recipes table<string, true>
 ---@field compacting_recipes table<string, true>
 ---@field machine_effects table<ForceIndex, table<string, IntegerModuleEffects>>
+---@field overwrite_recipe_picker table<ForceIndex, table<string, boolean>>
 
 -- ** LOCAL UTIL **
----@param name string
----@return table
-local function get_integration_table(name)
-    storage.integrations[name] = storage.integrations[name] or {}
-    return storage.integrations[name]
-end
-
 ---@param table Any?
 ---@param name string
 ---@return AnyBasic?
@@ -23,20 +16,6 @@ end
 
 
 -- ** RUNTIME INTEGRATIONS **
-
----@param dataset Any?
-local function overwrite_recipe_picker(dataset)
-    local version = get_table_value(dataset, "version")
-    local recipes = get_table_value(dataset, "recipes")
-
-    if version == 1 and type(recipes) == "table" then
-        local storage_table = get_integration_table("overwrite_recipe_picker")
-
-        for recipe_name, value in pairs(recipes) do
-            storage_table[recipe_name] = value  -- nil equals removal
-        end
-    end
-end
 
 -- Signals that a mod's data changed, prompting FP to collect it again
 ---@param dataset Any?
@@ -52,7 +31,6 @@ end
 
 -- Push-based system, where mods can push integration data to FP at any time
 remote.add_interface("fp-integration", {
-    overwrite_recipe_picker = overwrite_recipe_picker,
     invalidate = invalidate
 })
 
@@ -126,6 +104,19 @@ function handlers.machine_effects(dataset, storage_table)
     end
 end
 
+---@param dataset Any
+---@param storage_table table
+function handlers.overwrite_recipe_picker(dataset, storage_table)
+    local version = get_table_value(dataset, "version")
+    local recipes = get_table_value(dataset, "recipes")
+
+    if version == 1 and type(recipes) == "table" then
+        for recipe_name, value in pairs(recipes) do
+            if type(value) == "boolean" then storage_table[recipe_name] = value end
+        end
+    end
+end
+
 
 ---@param name string
 ---@param force_index ForceIndex?
@@ -143,7 +134,7 @@ local function call_providers(name, force_index)
 end
 
 -- Integrations that are collected once per force, instead of a single time
-local force_scoped = {machine_effects = true}
+local force_scoped = {machine_effects = true, overwrite_recipe_picker = true}
 
 ---@param name string
 function integrator.collect(name)
@@ -163,6 +154,7 @@ end
 
 function integrator.initialize()
     integrator.collect("machine_effects")
+    integrator.collect("overwrite_recipe_picker")
 end
 
 

@@ -89,7 +89,7 @@ end
 function _lib.recipe_picker_overwrite(force, recipe)
     local overwrite = nil  ---@type boolean?
 
-    local overwrites = storage.integrations.overwrite_recipe_picker
+    local overwrites = storage.integrations.overwrite_recipe_picker[force.index]
     if overwrites then overwrite = overwrites[recipe.name] end
 
     if overwrite == nil then  -- fall back to the base game's visibility override

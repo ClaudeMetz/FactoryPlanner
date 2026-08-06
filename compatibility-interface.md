@@ -7,37 +7,18 @@ Note that this compatibility interface is currently very limited, but I'm open t
 ## Index
 
 - [Runtime integrations](#runtime-integrations)
-  - [`overwrite_recipe_picker`](#overwrite_recipe_picker)
   - [`invalidate`](#invalidate)
 - [Static integrations](#static-integrations)
   - [`recycling_recipes`](#recycling_recipes)
   - [`compacting_recipes`](#compacting_recipes)
   - [`machine_effects`](#machine_effects)
+  - [`overwrite_recipe_picker`](#overwrite_recipe_picker)
 
 ## Runtime integrations
 
 A runtime integration can be used at any time in the [lifecycle](https://lua-api.factorio.com/latest/auxiliary/data-lifecycle.html). It influences Factory Planner from that point on. It's implemented via a [remote interface](https://lua-api.factorio.com/latest/classes/LuaRemote.html) called `"fp-integration"` that mods can call. Details on how to use the individual integrations can be found in dedicated sections below.
 
 All runtime integrations require a `version` integer to be included to indicate the format used. The individual integration docs below indicate which version they describe. They also indicate the first release of Factory Planner that the interface became available on.
-
-Note that anything configured through runtime integrations is reset [on_configuration_changed](https://lua-api.factorio.com/latest/classes/LuaBootstrap.html#on_configuration_changed), and thus needs to be setup again afterwards.
-
-### `overwrite_recipe_picker`
-
-**Current version:** `1`, available from `2.1.3`
-
-This integration enables overwriting Factory Planner's decision tree for determining whether a recipe is able to be chosen in the recipe picker. It runs various checks for whether a recipe is actually usable, but it makes sense to overwrite this in some cases where recipes or technologies are managed by scripting.
-
-The integration expects a table called `recipes`, which maps recipe names to either `true` (always show) or `false` (never show). Writing `nil` removes a previously configured recipe from the list.
-
-#### Example
-
-```lua
-remote.call("fp-integration", "overwrite_recipe_picker", {
-    version = 1,
-    recipes = { ["fast-transport-belt"] = true }
-})
-```
 
 ### `invalidate`
 
@@ -47,7 +28,7 @@ Some static integrations are collected per-force, which means Factory Planner ne
 
 The integration expects the name of the `integration` that went stale. Only one can be named at a time, so a mod that changed several of them calls this once for each.
 
-Unlike the other runtime integrations, this one does not need to be repeated after [on_configuration_changed](https://lua-api.factorio.com/latest/classes/LuaBootstrap.html#on_configuration_changed), because nothing about it is stored. Factory Planner re-reads all per-force integrations at that point regardless.
+This does not need to be repeated after [on_configuration_changed](https://lua-api.factorio.com/latest/classes/LuaBootstrap.html#on_configuration_changed), because Factory Planner re-reads all per-force integrations at that point regardless.
 
 #### Example
 
@@ -130,6 +111,29 @@ remote.add_interface("fp-integration-example-mod", {
             effects = {
                 ["assembling-machine-2"] = {speed = 0.5, productivity = 0.1}
             }
+        }
+    end)
+})
+```
+
+### `overwrite_recipe_picker`
+
+**Current version:** `1`, available from `2.1.11`
+
+This integration enables overwriting Factory Planner's decision tree for determining whether a recipe is able to be chosen in the recipe picker. It runs various checks for whether a recipe is actually usable, but it makes sense to overwrite this in some cases where recipes or technologies are managed by scripting.
+
+This integration is collected per-force, so it's passed a force index and should return what currently applies to that force. Call [`invalidate`](#invalidate) whenever that changes.
+
+The integration expects a table called `recipes`, which maps recipe names to either `true` (always show) or `false` (never show). Any recipe that's left out is judged by Factory Planner's own checks.
+
+#### Example
+
+```lua
+remote.add_interface("fp-integration-example-mod", {
+    overwrite_recipe_picker = (function(force_index)
+        return {
+            version = 1,
+            recipes = { ["fast-transport-belt"] = true }
         }
     end)
 })
