@@ -108,51 +108,27 @@ function builders.recipe(line, parent_flow, metadata, indent)
     parent_flow.style.horizontal_spacing = 3
     parent_flow.style.left_margin = indent * 12
 
-    local line_active = (relevant_line.production_ratio > 0)
-    local style = (line_active) and "fflib_slot_button_default_small" or "fflib_slot_button_red_small"
-    local note = (line_active) and "" or {"fp.recipe_inactive"}  ---@type LocalisedString
-    local status_info = {""}
-
-    if not line_active then
-        if not relevant_line.active then
-            table.insert(status_info, {"fp.line_disabled"})
-        end
-
-        local surface_compatibility = relevant_line:get_surface_compatibility()
-        if not surface_compatibility.recipe then
-            table.insert(status_info, {"fp.blocking_condition", {"fp.pl_recipe", 1}})
-        end
-        if not surface_compatibility.machine then
-            table.insert(status_info, {"fp.blocking_condition", {"fp.pl_machine", 1}})
-        end
-
-        if not (metadata.matrix_solver_active or relevant_line.recipe.production_type ~= "consume") then
-            table.insert(status_info, {"fp.incompatible_solver"})
-        end
-
-        if not relevant_line:is_temperature_fully_configured() then
-            table.insert(status_info, {"fp.temperature_not_configured"})
-        end
-    end
-
     local first_subfloor_line = (line.parent.level > 1 and line.previous == nil)
-    local indication = first_subfloor_line and {"fp.floor_recipe"} or ""
+    local color, note = "default", nil  ---@type string, LocalisedString?
     if line.class == "Floor" then
-        style = (line_active) and "fflib_slot_button_blue_small" or "fflib_slot_button_purple_small"
-        indication = {"fp.recipe_subfloor_attached"}
-
-    -- Byproduct-consuming lines can't have subfloors, so this if-branching works
+        color, note = "blue", {"fp.recipe_subfloor_attached"}
+    elseif first_subfloor_line then
+        note = {"fp.floor_recipe"}
     elseif relevant_line.recipe.production_type == "consume" then
-        style = (line_active) and "fflib_slot_button_yellow_small" or "fflib_slot_button_orange_small"
-        note = {"fp.recipe_consumes_byproduct"}
+        color, note = "yellow", {"fp.recipe_consumes_byproduct"}
     end
+
+    local status = relevant_line:get_status()
+    local variant = (status ~= nil) and "_grayscale_small" or "_small"
+    local status_line = (status ~= nil) and {"fp.line_status", {"fp.line_status_" .. status}} or ""
 
     local recipe_proto = relevant_line.recipe.proto
-    local first_line = (note == "") and {"fp.tt_title", recipe_proto.localised_name}
+    local first_line = (note == nil) and {"fp.tt_title", recipe_proto.localised_name}
         or {"fp.tt_title_with_note", recipe_proto.localised_name, note}
     local action = (first_subfloor_line) and "act_on_floor_recipe" or "act_on_line_recipe"
     local effects_section = (line.class == "Line") and format_effects_tooltip(relevant_line.effects_tooltip) or ""
-    local tooltip = {"", first_line, indication, status_info, effects_section, "\n", MODIFIER_ACTIONS[action].tooltip}
+    local tooltip = {"", first_line, status_line, effects_section, "\n", MODIFIER_ACTIONS[action].tooltip}
+    local style = "fflib_slot_button_" .. color .. variant
 
     ---@class ActOnLineObjectRecipe
     ---@field line_id ObjectID
@@ -378,7 +354,7 @@ function builders.products(line, parent_flow, metadata)
 
         local relevant_flow = nil
         local style = "fflib_slot_button_default_small"
-        local note, action_tooltip = nil, nil
+        local priority_line, action_tooltip = "", nil  ---@type LocalisedString, LocalisedString?
         local amount, number_tooltip = nil, nil
         local tags = {mod="fp", on_gui_hover="set_tooltip", context="production_table"}
 
@@ -392,9 +368,9 @@ function builders.products(line, parent_flow, metadata)
             action_tooltip = {"", "\n", MODIFIER_ACTIONS["act_on_line_product"].tooltip}
 
             if line.class ~= "Floor" and not metadata.matrix_solver_active
-                    and line.recipe.priority_product == proto then
+                    and line.recipe.priority_item == proto then
                 style = "fflib_slot_button_pink_small"
-                note = {"fp.priority_product"}
+                priority_line = {"fp.item_prioritized"}
             end
 
             -- items/s/machine does not make sense for lines with subfloors, show items/s instead
@@ -407,10 +383,9 @@ function builders.products(line, parent_flow, metadata)
             tags.item_index = index
         end
 
-        local name_line = (note == nil) and {"fp.tt_title", proto.localised_name}
-            or {"fp.tt_title_with_note", proto.localised_name, note}
+        local name_line = {"fp.tt_title", proto.localised_name}
         local number_line = (number_tooltip) and {"", "\n", number_tooltip} or ""
-        local tooltip = {"", name_line, number_line, action_tooltip}
+        local tooltip = {"", name_line, priority_line, number_line, action_tooltip}
 
         local button = relevant_flow.add{type="sprite-button", sprite=proto.sprite, style=style,
             tags=tags, number=amount, mouse_button_filter={"left-and-right"}, raise_hover_events=true}
@@ -590,6 +565,14 @@ function builders.ingredients(line, parent_flow, metadata)
             end  -- else, it stays green
         end
 
+        -- Only byproduct recipes can prioritize an ingredient, which paces the line by itself
+        local priority_line = ""  ---@type LocalisedString
+        if line.class ~= "Floor" and not metadata.matrix_solver_active and line.recipe.priority_item ~= nil
+                and line.recipe.priority_item.name == line.recipe:get_name_with_temperature(proto) then
+            style = "fflib_slot_button_pink_small"
+            priority_line = {"fp.item_prioritized"}
+        end
+
         ---@type LocalisedString, LocalisedString
         local name_line, temperature_line = {"", {"fp.tt_title", proto.localised_name}}, ""
         if proto.type == "fluid" and line.class ~= "Floor" then
@@ -606,7 +589,7 @@ function builders.ingredients(line, parent_flow, metadata)
         end
 
         local number_line = (number_tooltip) and {"", "\n", number_tooltip} or ""
-        local tooltip = {"", name_line, temperature_line, number_line, satisfaction_line}
+        local tooltip = {"", name_line, temperature_line, priority_line, number_line, satisfaction_line}
         local tags = {mod="fp", on_gui_hover="set_tooltip", context="production_table"}
 
         if proto.type ~= "entity" then

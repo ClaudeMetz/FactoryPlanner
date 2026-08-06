@@ -30,10 +30,11 @@ function _porter.generate_export_string(factories)
 end
 
 -- Converts the given factory exchange string into a temporary Factory
+---@param player LuaPlayer
 ---@param export_string ExportString
 ---@return ImportTable?
 ---@return string?
-function _porter.process_export_string(export_string)
+function _porter.process_export_string(player, export_string)
     local export_table = nil  ---@type AnyBasic?
 
     if not pcall(function()
@@ -53,7 +54,7 @@ function _porter.process_export_string(export_string)
     if not pcall(function()  -- Unpacking and validating could be pcall-ed separately, but that's too many slow pcalls
         for _, packed_factory in pairs(export_table.factories) do
             local unpacked_factory = Factory.unpack(packed_factory)
-            unpacked_factory:validate()
+            unpacked_factory:validate(player)
             table.insert(import_table.factories, unpacked_factory)
         end
     end) then return nil, "unpacking_failure" end
@@ -131,7 +132,7 @@ end
 ---@param player LuaPlayer
 ---@param export_string ExportString
 function _porter.add_factories(player, export_string)
-    local import_table, _ = lib.porter.process_export_string(export_string)  ---@cast import_table -nil
+    local import_table, _ = lib.porter.process_export_string(player, export_string)  ---@cast import_table -nil
     -- No error handling here, as the export_string for this will always be known to work
 
     local district = lib.context.get(player, "District")  ---@as District

@@ -86,6 +86,54 @@ function _lib.get_recipe_productivity(force, recipe_name)
 end
 
 
+---@param force LuaForce
+---@param recipe FPRecipePrototype
+---@return boolean? overwrite
+function _lib.recipe_picker_overwrite(force, recipe)
+    local overwrite = nil  ---@type boolean?
+
+    local overwrites = storage.integrations.overwrite_recipe_picker
+    if overwrites then overwrite = overwrites[recipe.name] end
+
+    if overwrite == nil then  -- fall back to the base game's visibility override
+        overwrite = force.get_script_visible({type="recipe", name=recipe.name})
+    end
+
+    return overwrite
+end
+
+-- Determines whether the given force can obtain the given recipe at all.
+---@param force LuaForce
+---@param recipe FPRecipePrototype
+---@return boolean available
+---@return boolean? overwrite
+function _lib.is_recipe_available(force, recipe)
+    if recipe.custom then return true end  -- custom recipes are always available
+
+    local force_recipe = force.recipes[recipe.name]
+    if force_recipe == nil then return false end
+
+    -- A mod overwriting the picker knows better than the recipe's own state, either way
+    local overwrite = _lib.recipe_picker_overwrite(force, recipe)
+    if overwrite ~= nil then return overwrite, overwrite end
+
+    if recipe.enabled_from_the_start or force_recipe.enabled then return true end
+
+    -- If the recipe is not enabled, it has to be made sure that there is at
+    -- least one enabled technology that could potentially enable it
+    if recipe.enabling_technologies ~= nil then
+        for _, technology_name in pairs(recipe.enabling_technologies) do
+            local force_technology = force.technologies[technology_name]
+            if force_technology and (force_technology.enabled or force_technology.visible_when_disabled) then
+                return true
+            end
+        end
+    end
+
+    return false
+end
+
+
 ---@alias FactoriopediaIDType "item" | "fluid" | "recipe" | "entity" | "tile" | "space-location" | "ammo-category" | "space-connection" | "asteroid-chunk" | "virtual-signal" | "surface"
 
 ---@param type FactoriopediaIDType

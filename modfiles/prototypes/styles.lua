@@ -201,12 +201,18 @@ styles["fp_button_green"] = {
     left_click_sound = "__core__/sound/gui-green-confirm.ogg"
 }
 
--- Generate smaller versions of flib's slot buttons (size 36)
+-- Generate smaller versions of flib's slot buttons (size 36), plus a grayscale variant
 for _, color in pairs{"default", "grey", "red", "orange", "yellow", "green", "cyan", "blue", "purple", "pink"} do
     styles["fflib_slot_button_" .. color .. "_small"] = {
         type = "button_style",
         parent = "fflib_slot_button_" .. color,
         size = 36
+    }
+
+    styles["fflib_slot_button_" .. color .. "_grayscale_small"] = {
+        type = "button_style",
+        parent = "fflib_slot_button_" .. color .. "_small",
+        draw_grayscale_picture = true
     }
 end
 
@@ -224,12 +230,6 @@ styles["fflib_slot_button_disabled_small"] = {
     type = "button_style",
     parent = "fflib_slot_button_disabled",
     size = 36
-}
-
-styles["fflib_slot_button_grayscale_small"] = {
-    type = "button_style",
-    parent = "fflib_slot_button_default_small",
-    draw_grayscale_picture = true
 }
 
 styles["fflib_slot_button_disabled_grayscale_small"] = {

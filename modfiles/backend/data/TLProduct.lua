@@ -83,6 +83,10 @@ function TLProduct:paste(object)
         if proto.simplified then return false, "incompatible" end
         ---@cast proto -FPPackedPrototype
 
+        -- The item picker doesn't offer these as products, so pasting shouldn't sneak them in
+        local item_proto = proto  ---@as FPItemPrototype
+        if item_proto.hidden or item_proto.ingredient_only then return false, "incompatible" end
+
         -- Only allow pasting fluids with set temperatures
         local temperature = object.temperature or object.proto--[[@as FPItemPrototype]].temperature or nil
         if object.proto.type == "fluid" and not temperature then
@@ -144,8 +148,9 @@ local function unpack(packed_self)
 end
 
 
+---@param player LuaPlayer
 ---@return boolean valid
-function TLProduct:validate()
+function TLProduct:validate(player)
     self.proto = prototyper.util.validate_prototype_object(self.proto, "type")  ---@as FPItemPrototype | FPPackedPrototype
     self.valid = (not self.proto.simplified)
 

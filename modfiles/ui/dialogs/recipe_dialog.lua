@@ -74,7 +74,8 @@ end
 ---@return LocalisedString? error
 ---@return RecipeDialogFilters filters
 local function match_recipes(player, modal_data, proto)
-    local force_recipes, force_technologies = player.force.recipes, player.force.technologies
+    local force = player.force  --[[@as LuaForce]]
+    local force_recipes = force.recipes
     local preferences = lib.globals.preferences(player)
 
     local relevant_recipes = {}
@@ -82,7 +83,6 @@ local function match_recipes(player, modal_data, proto)
     local counts = {disabled = 0, hidden = 0, disabled_hidden = 0}
 
     local map = RECIPE_MAPS[modal_data.production_type][proto.category_id][proto.id]
-    local overwrite_recipe_picker = storage.integrations.overwrite_recipe_picker or {}
 
     if map ~= nil then  -- this being nil means that the item has no recipes
         for recipe_id, _ in pairs(map) do
@@ -101,29 +101,16 @@ local function match_recipes(player, modal_data, proto)
 
             elseif force_recipe ~= nil then  -- only add recipes that exist on the current force
                 local recipe_enabled, recipe_hidden = force_recipe.enabled, recipe.hidden
-                local overwrite = overwrite_recipe_picker[recipe.name]
-                local recipe_should_show = overwrite
+                local recipe_should_show, overwrite = lib.is_recipe_available(force, recipe)
 
-                if overwrite == nil then  -- run this in the normal case
+                if overwrite == nil then  -- user preferences don't apply to overwritten recipes
                     local user_disabled = (preferences.ignore_barreling_recipes and recipe.barreling)
                         or (preferences.ignore_recycling_recipes and recipe.recycling)
-                    user_disabled_recipe = user_disabled_recipe or user_disabled
+                    -- Only blame the preferences for recipes that would otherwise have shown up
+                    user_disabled_recipe = user_disabled_recipe or (user_disabled and recipe_should_show)
 
-                    if not user_disabled then  -- only add recipes that are not disabled by the user
-                        recipe_should_show = recipe.enabled_from_the_start or recipe_enabled
-
-                        -- If the recipe is not enabled, it has to be made sure that there is at
-                        -- least one enabled technology that could potentially enable it
-                        if not recipe_should_show and recipe.enabling_technologies ~= nil then
-                            for _, technology_name in pairs(recipe.enabling_technologies) do
-                                local force_tech = force_technologies[technology_name]
-                                if force_tech and (force_tech.enabled or force_tech.visible_when_disabled) then
-                                    recipe_should_show = true
-                                    break
-                                end
-                            end
-                        end
-                    end
+                    -- Only show recipes that are not disabled by the user
+                    recipe_should_show = recipe_should_show and not user_disabled
                 end
 
                 if recipe_should_show then

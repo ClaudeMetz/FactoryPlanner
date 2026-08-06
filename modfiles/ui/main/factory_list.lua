@@ -68,7 +68,7 @@ local function duplicate_factory(player, _, event)
     if current_floor:count() == 1 then lib.context.ascend_floors(player, "up") end
 
     local factory = lib.context.get(player, "Factory")  ---@as Factory
-    local clone = factory:clone()
+    local clone = factory:clone(player)
     clone.archived = false  -- always clone as unarchived
     local pivot = (event.shift and not factory.archived) and factory or nil
     factory.parent:insert(clone, pivot, "next")

@@ -22,7 +22,7 @@ local function init(proto, amount, quality_proto)
         quality_proto = quality_proto,
         amount = amount,
 
-        total_effects = nil,
+        total_effects = lib.flib.shallow_copy(lib.effects.blank),
         effects_tooltip = ""
     }, "Module", Module)  ---@as Module
 
@@ -147,8 +147,9 @@ local function unpack(packed_self, parent)
 end
 
 
+---@param player LuaPlayer
 ---@return boolean valid
-function Module:validate()
+function Module:validate(player)
     self.proto = prototyper.util.validate_prototype_object(self.proto, "category")  ---@as FPModulePrototype | FPPackedPrototype
     self.valid = (not self.proto.simplified)
 

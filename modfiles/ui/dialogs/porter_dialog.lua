@@ -165,7 +165,7 @@ local function import_factories(player, _, _)
     local content_frame = modal_elements.content_frame
     local textfield_export_string = modal_elements.import_textfield
 
-    local import_table, error = lib.porter.process_export_string(textfield_export_string.text)
+    local import_table, error = lib.porter.process_export_string(player, textfield_export_string.text)
 
     ---@param caption LocalisedString
     local function add_info_label(caption)

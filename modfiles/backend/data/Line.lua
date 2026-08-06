@@ -285,6 +285,37 @@ function Line:get_surface_compatibility()
 end
 
 
+---@alias LineBlocker "disabled" | "zero_percentage" | "incompatible_recipe" | "incompatible_machine" | "unconfigured_temperature"
+
+--- Returns why this line can't take part in the calculation, or nil if it can
+---@return LineBlocker?
+function Line:get_blocker()
+    if not self.active then return "disabled" end
+    if self.percentage == 0 then return "zero_percentage" end
+
+    local compatibility = self:get_surface_compatibility()
+    if not compatibility.recipe then return "incompatible_recipe" end
+    if not compatibility.machine then return "incompatible_machine" end
+
+    if not self:is_temperature_fully_configured() then return "unconfigured_temperature" end
+
+    return nil
+end
+
+---@alias LineStatus LineBlocker | "no_byproducts" | "no_demand"
+
+--- Returns why this line doesn't produce anything, or nil if it does
+---@return LineStatus?
+function Line:get_status()
+    local blocker = self:get_blocker()
+    if blocker ~= nil then return blocker end
+    if self.production_ratio > 0 then return nil end
+
+    -- The line is configured fine, so the calculation just had nothing for it to do
+    return (self.recipe.production_type == "consume") and "no_byproducts" or "no_demand"
+end
+
+
 ---@param object CopyableObject
 ---@return boolean success
 ---@return string? error
@@ -347,13 +378,14 @@ local function unpack(packed_self)
 end
 
 
+---@param player LuaPlayer
 ---@return boolean valid
-function Line:validate()
-    self.valid = self.recipe:validate()
+function Line:validate(player)
+    self.valid = self.recipe:validate(player)
 
-    if self.recipe.valid then self.valid = self.machine:validate() and self.valid end
+    if self.recipe.valid then self.valid = self.machine:validate(player) and self.valid end
 
-    if self.recipe.valid and self.beacon then self.valid = self.beacon:validate() and self.valid end
+    if self.recipe.valid and self.beacon then self.valid = self.beacon:validate(player) and self.valid end
 
     self.surface_compatibility = nil  -- reset cached value
 

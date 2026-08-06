@@ -126,9 +126,10 @@ end
 
 
 ---@param object CopyableObject
+---@param player LuaPlayer
 ---@return boolean success
 ---@return string? error
-function Fuel:paste(object)
+function Fuel:paste(object, player)
     local burner = self.parent.proto.burner
 
     -- Sanity check, should exist if fuel can be pasted
@@ -157,6 +158,7 @@ function Fuel:paste(object)
     self.temperature = temperature
     -- The pasted temperature might not be applicable to this machine, which unsets it
     self:rebuild_temperature_data()
+    if self.temperature == nil then self:apply_temperature_default(player) end
     return true, nil
 end
 
@@ -193,8 +195,9 @@ local function unpack(packed_self, parent)
 end
 
 
+---@param player LuaPlayer
 ---@return boolean valid
-function Fuel:validate()
+function Fuel:validate(player)
     self.proto = prototyper.util.validate_prototype_object(self.proto, "combined_category")
     self.valid = (not self.proto.simplified)
 

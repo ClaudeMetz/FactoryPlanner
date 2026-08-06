@@ -363,7 +363,7 @@ listeners.gui = {
         {
             name = "act_on_floor_byproduct",
             actions_table = {
-                add_recipe = {shortcut="left", limitations={archive_open=false, matrix_active=true}, show=true},
+                add_recipe = {shortcut="left", limitations={archive_open=false}, show=true},
                 copy = {shortcut="shift-right"},
                 put_into_cursor = {shortcut="alt-right"},
                 factoriopedia = {shortcut="alt-left"}

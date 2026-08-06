@@ -73,17 +73,11 @@ local function factory_products(factory)
     return products
 end
 
----@param line Line
----@return SolverItem[]?
-local function line_ingredients(line)
-    local recipe = line.recipe
-
-    -- The recipe items are already reduced against each other, using the configured temperatures
+---@param recipe Recipe
+---@return SolverItem[]
+local function line_ingredients(recipe)
     local ingredients = {}
     for _, ingredient in pairs(recipe.ingredients) do
-        -- If any relevant ingredient has no temperature set, this line is invalid
-        if not recipe:is_temperature_configured(ingredient) then return nil end
-
         table.insert(ingredients, {
             name = recipe:get_name_with_temperature(ingredient),
             type = ingredient.type,
@@ -113,7 +107,7 @@ end
 ---@field products FormattedProduct[]
 ---@field percentage number
 ---@field production_type RecipeProductionType
----@field priority_product_proto FPItemPrototype
+---@field priority_item_proto FPItemPrototype
 ---@field machine_proto FPMachinePrototype
 ---@field machine_limit MachineLimit
 ---@field machine_speed double
@@ -155,27 +149,20 @@ local function generate_floor_data(player, factory, floor, calculate_emissions)
             line_data.subfloor = generate_floor_data(player, factory, line, calculate_emissions)
             table.insert(floor_data.lines, line_data)
         else  ---@cast line Line
-            local relevant_line = (line.parent.level > 1) and line.parent.first or nil  ---@as Line
-            local recipe_proto = line.recipe.proto  ---@as FPRecipePrototype
-            local ingredients = line_ingredients(line)  -- builds in chosen temperatures
-            local fuel = line.machine.fuel
-
-            -- If a line has a percentage of zero or is inactive, it is not useful to the result of the factory
-            -- Alternatively, if this line is on a subfloor and the top line of the floor is useless, it is useless too
-            if (relevant_line and (relevant_line.percentage == 0 or not relevant_line.active))
-                    or line.percentage == 0 or not line.active or not line:get_surface_compatibility().overall
-                    or (not factory.matrix_solver_active and line.recipe.production_type == "consume")
-                    or ingredients == nil or (fuel and not fuel:is_temperature_configured()) then
-                set_blank_line(player, floor, line)  -- useless lines don't need to run through the solver
+            if line:get_blocker() ~= nil then
+                -- Useless lines don't need to run through the solver
+                set_blank_line(player, floor, line)
             else
                 local machine = line.machine
+                local recipe_proto = line.recipe.proto  ---@as FPRecipePrototype
+
                 line_data.recipe_proto = recipe_proto
                 line_data.recipe_energy = recipe_proto.energy
-                line_data.ingredients = ingredients
+                line_data.ingredients = line_ingredients(line.recipe)  -- bakes in temperatures
                 line_data.products = line.recipe.products
                 line_data.percentage = line.percentage  -- non-zero
                 line_data.production_type = line.recipe.production_type
-                line_data.priority_product_proto = line.recipe.priority_product
+                line_data.priority_item_proto = line.recipe.priority_item
                 line_data.machine_proto = machine.proto
                 line_data.machine_limit = {limit=machine.limit, force_limit=machine.force_limit}
                 line_data.energy_usage = machine:get_energy_usage()
@@ -188,10 +175,10 @@ local function generate_floor_data(player, factory, floor, calculate_emissions)
                 line.recipe:update_effects(player.force--[[@as LuaForce]], factory)
                 line_data.total_effects = line.total_effects
 
-                if fuel ~= nil then
-                    line_data.fuel_proto = fuel.proto
-                    line_data.fuel_name = fuel:get_name_with_temperature()
-                    line_data.fuel_value = fuel:get_fuel_value()
+                if machine.fuel ~= nil then
+                    line_data.fuel_proto = machine.fuel.proto
+                    line_data.fuel_name = machine.fuel:get_name_with_temperature()
+                    line_data.fuel_value = machine.fuel:get_fuel_value()
                 end
 
                 -- The machine needs to potentially run slower if fuel is insufficient
@@ -272,60 +259,8 @@ local function set_zeroed_items(line, item_category, items)
 end
 
 
---- Goes through every line and setting their satisfied_amounts appropriately
 ---@param floor Floor
----@param product_class SolverClass?
-local function update_ingredient_satisfaction_sequential(floor, product_class)
-    product_class = product_class or structures.class.init()
-
-    ---@param ingredient SimpleItem | Fuel
-    ---@param name string
-    local function determine_satisfaction(ingredient, name)
-        local product_amount = product_class[ingredient.proto.type][name]
-
-        if product_amount ~= nil then
-            if product_amount >= ingredient.amount then
-                ingredient.satisfied_amount = ingredient.amount
-                structures.class.subtract(product_class, ingredient)
-            else  -- product_amount < ingredient.amount
-                ingredient.satisfied_amount = product_amount
-                structures.class.subtract(product_class, ingredient, product_amount)
-            end
-        else
-            ingredient.satisfied_amount = 0
-        end
-    end
-
-    -- Iterates the lines from the bottom up, setting satisfaction amounts along the way
-    for line in floor:iterator(nil, floor:find_last(), "previous") do
-        if line.class == "Floor" then
-            local subfloor_product_class = lib.flib.deep_copy(product_class)
-            update_ingredient_satisfaction_sequential(line, subfloor_product_class)
-        elseif line.machine.fuel then
-            local fuel = line.machine.fuel
-            determine_satisfaction(fuel, fuel:get_name_with_temperature())
-        end
-
-        for _, ingredient in pairs(line.ingredients) do
-            if ingredient.proto.type ~= "entity" or ingredient.proto.special then
-                local name = ingredient.proto.name
-                if line.class ~= "Floor" then name = line.recipe:get_name_with_temperature(ingredient.proto) end
-                determine_satisfaction(ingredient, name)
-            end
-        end
-
-        -- Products and byproducts just get added to the list as being produced
-        for _, item_category in pairs{"products", "byproducts"} do
-            for _, product in pairs(line[item_category]) do
-                structures.class.add(product_class, product)
-            end
-        end
-    end
-end
-
-
----@param floor Floor
-local function update_ingredient_satisfaction_matrix(floor)
+local function update_ingredient_satisfaction(floor)
     local ingredient_deficit = structures.class.init()
     for _, item in pairs(floor.ingredients) do
         if floor.level == 1 then item.satisfied_amount = 0 end
@@ -359,7 +294,7 @@ local function update_ingredient_satisfaction_matrix(floor)
             calculate_satisfation(line_object.machine.fuel, name)
         end
 
-        if line_object.class == "Floor" then update_ingredient_satisfaction_matrix(line_object) end
+        if line_object.class == "Floor" then update_ingredient_satisfaction(line_object) end
     end
 end
 
@@ -429,11 +364,7 @@ end
 ---@param factory Factory
 function solver.determine_ingredient_satisfaction(factory)
     if not factory.valid then return end
-    if not factory.matrix_solver_active then
-        update_ingredient_satisfaction_sequential(factory.top_floor, nil)
-    else
-        update_ingredient_satisfaction_matrix(factory.top_floor)
-    end
+    update_ingredient_satisfaction(factory.top_floor)
 end
 
 

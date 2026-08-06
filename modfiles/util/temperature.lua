@@ -9,29 +9,31 @@ local _temperature = {}
 ---@return string
 function _temperature.name_with(name, temperature)
     if temperature == nil then return name end
-    return name .. "-" .. temperature
+    return name .. "|" .. temperature
 end
 
---- An exclusive minimum rejects the minimum itself, which fuels burned for their heat need, as a
---- fluid at its default temperature carries no usable heat
+--- An exclusive bound rejects the bound itself. Fuels burned for their heat need this on their
+--- minimum, as a fluid at its default temperature carries no usable heat, and recipes reheating
+--- a fluid need it on their maximum, as one going in that hot would only cancel the product out
 ---@param ingredient Ingredient.fluid
 ---@param exclusive_minimum boolean?
+---@param exclusive_maximum boolean?
 ---@return TemperatureData data
-function _temperature.generate_data(ingredient, exclusive_minimum)
+function _temperature.generate_data(ingredient, exclusive_minimum, exclusive_maximum)
     local min_temp = ingredient.minimum_temperature
     local max_temp = ingredient.maximum_temperature
 
-    -- An exclusive minimum is the fluid's default temperature, which isn't a restriction worth
-    -- showing - it's simply not selectable, as a fluid at it carries no heat to extract
+    -- An exclusive bound isn't a restriction worth showing, as it's simply not selectable
     local shown_min = (not exclusive_minimum) and min_temp or nil
+    local shown_max = (not exclusive_maximum) and max_temp or nil
 
     local annotation = nil
-    if shown_min and not max_temp then
+    if shown_min and not shown_max then
         annotation = {"fp.min_temperature", shown_min}
-    elseif not shown_min and max_temp then
-        annotation = {"fp.max_temperature", max_temp}
-    elseif shown_min and max_temp then
-        annotation = {"fp.min_max_temperature", shown_min, max_temp}
+    elseif not shown_min and shown_max then
+        annotation = {"fp.max_temperature", shown_max}
+    elseif shown_min and shown_max then
+        annotation = {"fp.min_max_temperature", shown_min, shown_max}
     end
 
     local applicable_values = {}
@@ -39,7 +41,9 @@ function _temperature.generate_data(ingredient, exclusive_minimum)
         local temperature = fluid_proto.temperature
         local above_min = (min_temp == nil) or (temperature > min_temp)
             or (temperature == min_temp and not exclusive_minimum)
-        if above_min and (not max_temp or max_temp >= temperature) then
+        local below_max = (max_temp == nil) or (temperature < max_temp)
+            or (temperature == max_temp and not exclusive_maximum)
+        if above_min and below_max then
             table.insert(applicable_values, fluid_proto.temperature)
         end
     end

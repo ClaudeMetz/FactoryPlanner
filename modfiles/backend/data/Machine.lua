@@ -105,13 +105,15 @@ function Machine:uses_effects()
     return self.proto.effect_receiver.uses_module_effects
 end
 
----@param proto FPModulePrototype
+---@param proto FPModulePrototype | FPPackedPrototype
 ---@return boolean
 function Machine:allows_module(proto)
-    return not self.proto.simplified and
-           lib.effects.is_compatible(self.proto--[[@as FPMachinePrototype]], proto) and
-           not self.parent.recipe.proto.simplified and
-           lib.effects.is_compatible(self.parent.recipe.proto--[[@as FPRecipePrototype]], proto)
+    local recipe_proto = self.parent.recipe.proto
+    if self.proto.simplified or recipe_proto.simplified or proto.simplified then return false end
+    local module_proto = proto  ---@as FPModulePrototype
+
+    return lib.effects.is_compatible(self.proto--[[@as FPMachinePrototype]], module_proto) and
+           lib.effects.is_compatible(recipe_proto--[[@as FPRecipePrototype]], module_proto)
 end
 
 
@@ -278,6 +280,7 @@ function Machine:paste(object, player)
         if object.fuel then
             self.fuel = object.fuel
             self.fuel--[[@cast -nil]].parent = self
+            self:normalize_fuel(player)
         end
 
         self.module_set = object.module_set
@@ -335,8 +338,9 @@ local function unpack(packed_self, parent)
     return unpacked_self
 end
 
+---@param player LuaPlayer
 ---@return Machine clone
-function Machine:clone()
+function Machine:clone(player)
     local clone = unpack(self:pack(false), self.parent)
 
     -- Copy these over so we don't need to run the solver
@@ -346,13 +350,14 @@ function Machine:clone()
         clone.fuel.satisfied_amount = self.fuel.satisfied_amount
     end
 
-    clone:validate()
+    clone:validate(player)
     return clone
 end
 
 
+---@param player LuaPlayer
 ---@return boolean valid
-function Machine:validate()
+function Machine:validate(player)
     local recipe_category = self.parent.recipe.proto.combined_category
     if recipe_category ~= self.proto.combined_category then
         local corresponding_proto = prototyper.util.find("machines", self.proto.name, recipe_category)  ---@as FPMachinePrototype?
@@ -390,10 +395,10 @@ function Machine:validate()
             }
             self.fuel = Fuel.init(self, fuel_proto)
         end
-        if self.fuel then self.valid = self.fuel:validate() and self.valid end
+        if self.fuel then self.valid = self.fuel:validate(player) and self.valid end
     end
 
-    self.valid = self.module_set:validate() and self.valid
+    self.valid = self.module_set:validate(player) and self.valid
 
     return self.valid
 end

@@ -142,10 +142,11 @@ local function handle_convert_subfloor(player)
 
     local floor_copy = floor:pack(false)
     floor_copy.level = 1
+    factory.top_floor.parent = nil  -- detach the floor the factory was created with
     factory.top_floor = Floor.unpack(floor_copy)
     factory.top_floor.parent = factory
 
-    factory:validate()
+    factory:validate(player)
     lib.context.set(player, factory.top_floor)
 
     solver.update(player)

@@ -1,6 +1,5 @@
 .DS_Store
-.vscode
-modfiles/scenarios
 .luarc.json
 .emmyrc.json
+.vscode
 .claude

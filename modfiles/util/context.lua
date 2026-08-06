@@ -3,6 +3,17 @@ local _context = {}
 ---@class ContextTable
 ---@field object_id ObjectID?
 ---@field cache ContextCache
+---@field history ContextHistory
+
+---@class ContextHistory
+---@field stack HistoryEntry[]
+---@field position integer index into stack; 0 when empty
+
+---@class HistoryEntry
+---@field object_id ObjectID
+---@field districts_view boolean
+
+---@alias NavigationDirection "back" | "forward"
 
 ---@class ContextCache
 ---@field district ObjectID? DistrictID
@@ -21,6 +32,10 @@ function _context.init(player_table)
         cache = {
             district = nil,
             factories = {}
+        },
+        history = {
+            stack = {},
+            position = 0
         }
     }
 end
@@ -135,6 +150,129 @@ function _context.remove(player, object)
 end
 
 
+--- Determines whether the given object is still part of the player's realm
+--- Uses links to related objects, which the object methods have to keep correct
+---@param player LuaPlayer
+---@param object ContextObject
+---@return boolean alive
+local function is_alive(player, object)
+    local realm = lib.globals.player_table(player).realm
+    local current = object  ---@type ContextObject?
+
+    while current ~= nil do
+        local parent = current.parent
+        if parent == nil then return false end
+
+        if current.class == "Floor" and parent.class == "Factory" then  -- not part of any list
+            local factory = parent  ---@as Factory
+            if factory.top_floor ~= current then return false end
+        elseif current.previous == nil then  -- every class heads its list with .first
+            local list = parent  ---@as table
+            if list.first ~= current then return false end
+        else
+            -- _remove() only patches up the neighbours, so a removed object keeps
+            -- pointing at a previous one that doesn't point back at it anymore
+            if current.previous.next ~= current then return false end
+        end
+
+        if parent == realm then return true end
+        current = parent  ---@as ContextObject?
+    end
+
+    return false
+end
+
+
+---@param player LuaPlayer
+---@return boolean recorded
+function _context.record(player)
+    local player_table = lib.globals.player_table(player)
+    local context = player_table.context
+    local history = context.history
+
+    -- The compact dialog can't navigate the history, so it doesn't add to it either
+    if player_table.ui_state.compact_view then return false end
+
+    if context.object_id == nil then return false end
+    local entry = {
+        object_id = context.object_id,
+        districts_view = player_table.ui_state.districts_view
+    }
+
+    -- Comparing against the cursor instead of the tail is what makes navigating
+    -- self-suppressing, as it'll always land on an entry equal to the current location
+    local current = history.stack[history.position]
+    if current and current.object_id == entry.object_id
+        and current.districts_view == entry.districts_view then return false end
+
+    -- Any entries ahead of the cursor are discarded, like in a browser
+    for index = #history.stack, history.position + 1, -1 do
+        history.stack[index] = nil
+    end
+
+    table.insert(history.stack, entry)
+    if #history.stack > MAGIC_NUMBERS.history_limit then table.remove(history.stack, 1) end
+    history.position = #history.stack
+
+    return true
+end
+
+---@param player LuaPlayer
+---@param history ContextHistory
+---@param direction NavigationDirection
+---@return integer? index
+local function find_entry(player, history, direction)
+    local step = (direction == "back") and -1 or 1
+    local current = history.stack[history.position]
+    local index = history.position + step
+    local entry = history.stack[index]
+
+    while entry ~= nil do
+        local object = OBJECT_INDEX[entry.object_id]  ---@type ContextObject?
+
+        -- Skip dead entries, as well as live ones that are where we already are
+        if object and is_alive(player, object) and not (current
+                and entry.object_id == current.object_id
+                and entry.districts_view == current.districts_view) then
+            return index
+        end
+
+        index = index + step
+        entry = history.stack[index]
+    end
+
+    return nil
+end
+
+---@param player LuaPlayer
+---@param direction NavigationDirection
+---@return boolean success
+function _context.navigate(player, direction)
+    local player_table = lib.globals.player_table(player)
+    local history = player_table.context.history
+
+    local index = find_entry(player, history, direction)
+    if index == nil then return false end
+
+    local entry = history.stack[index]  ---@as HistoryEntry
+    history.position = index
+
+    local object = OBJECT_INDEX[entry.object_id]  ---@as ContextObject
+    _context.set(player, object)
+    player_table.ui_state.districts_view = entry.districts_view
+
+    return true
+end
+
+---@param player LuaPlayer
+---@param direction NavigationDirection
+---@return boolean possible
+function _context.can_navigate(player, direction)
+    local history = lib.globals.player_table(player).context.history
+    return find_entry(player, history, direction) ~= nil
+end
+
+
 ---@alias FloorDestination "up" | "top"
 
 ---@param player LuaPlayer
@@ -187,6 +325,21 @@ function _context.validate(player)
             end
         end
     end
+
+    -- Compact the navigation history, dropping entries whose object is gone
+    local history = context.history
+    local cleaned_stack, position = {}, 0  ---@type HistoryEntry[], integer
+    for index, entry in ipairs(history.stack) do
+        local previous = cleaned_stack[#cleaned_stack]
+        if OBJECT_INDEX[entry.object_id] and not (previous
+                and previous.object_id == entry.object_id
+                and previous.districts_view == entry.districts_view) then
+            cleaned_stack[#cleaned_stack + 1] = entry
+        end
+        -- Move the cursor along with the entry it points to, or the last one kept before it
+        if index <= history.position then position = #cleaned_stack end
+    end
+    history.stack, history.position = cleaned_stack, position
 
     if not (context.object_id and OBJECT_INDEX[context.object_id]) then
         _context.set(player, player_table.realm.first)

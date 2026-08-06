@@ -87,9 +87,10 @@ function Realm:schedule_solver_updates(starting_tick, player)
 end
 
 
+---@param player LuaPlayer
 ---@return boolean valid
-function Realm:validate()
-    self:_validate()
+function Realm:validate(player)
+    self:_validate(player)
     return true  -- Realm can't be invalid
 end
 

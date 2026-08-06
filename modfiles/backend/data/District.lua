@@ -129,9 +129,10 @@ function District:schedule_solver_updates(starting_tick, player)
 end
 
 
+---@param player LuaPlayer
 ---@return boolean valid
-function District:validate()
-    self:_validate()  -- invalid factories don't make the district invalid
+function District:validate(player)
+    self:_validate(player)  -- invalid factories don't make the district invalid
 
     -- Invalid locations are just replaced with valid ones to make the district valid
     self.location_proto = prototyper.util.validate_prototype_object(self.location_proto, nil)  ---@as FPLocationPrototype | FPPackedPrototype

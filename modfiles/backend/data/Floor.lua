@@ -65,6 +65,7 @@ end
 ---@param line LineObject
 ---@param new_line LineObject
 function Floor:replace(line, new_line)
+    line.parent = nil
     new_line.parent = self
     self:_replace(line, new_line)
 end
@@ -188,8 +189,9 @@ function Floor:check_product_compatibility(object)
     local recipe = relevant_line.recipe  ---@cast recipe -nil
     local producing = (recipe.production_type == "produce")
 
-    local relevant_items = producing and recipe.proto.products or recipe.proto.ingredients
-    ---@cast relevant_items -nil
+    -- Use the recipe's net items, as the picker only offers recipes that actually net the
+    -- item in question, which the raw prototype items don't take into account
+    local relevant_items = producing and recipe.products or recipe.ingredients
 
     ---@param type string
     ---@param name string
@@ -201,6 +203,18 @@ function Floor:check_product_compatibility(object)
             local item_temperature = producing and item.temperature or recipe:get_temperature(item)
             if item.type == type and (item.name == name or item.name == base_name or item.base_name == name)
                     and item_temperature == temperature then
+                return true
+            end
+        end
+        return false
+    end
+
+    ---@param items SimpleItem[]
+    ---@return boolean
+    local function any_relevant(items)
+        for _, item in pairs(items) do
+            local proto = item.proto
+            if relevant(proto.type, proto.name, proto.base_name, proto.temperature) then
                 return true
             end
         end
@@ -222,11 +236,8 @@ function Floor:check_product_compatibility(object)
                 return true
             end
         else
-            -- Check whether any line on this floor produces a byproduct the pasted line consumes
-            for _, byproduct in pairs(line.byproducts) do
-                local proto = byproduct.proto
-                if relevant(proto.type, proto.name, proto.base_name, proto.temperature) then return true end
-            end
+            -- Check whether any line on this floor produces something the pasted line consumes
+            if any_relevant(line.products) or any_relevant(line.byproducts) then return true end
         end
     end
 
@@ -297,9 +308,10 @@ local function unpack(packed_self)
 end
 
 
+---@param player LuaPlayer
 ---@return boolean valid
-function Floor:validate()
-    self.valid = self:_validate()
+function Floor:validate(player)
+    self.valid = self:_validate(player)
     return self.valid
 end
 

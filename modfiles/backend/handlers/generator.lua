@@ -179,6 +179,8 @@ function generator.recipes.generate()
     end
 
     local first_generator = nil  ---@type string?
+    local pumped_fixed_fluids = {}  ---@type table<string, boolean>
+    local boiler_recipes = {}  ---@type table<string, FPRecipePrototype>
 
     local entity_filter = {{filter="hidden", invert=true}}
     for _, proto in pairs(prototypes.get_entity_filtered(entity_filter)) do
@@ -237,16 +239,17 @@ function generator.recipes.generate()
         -- Add offshore pump recipes based on fixed fluids
         elseif proto.type == "offshore-pump" then
             local fluid_box = proto.fluidbox_prototypes[1]
-            local fixed_fluid = (fluid_box and fluid_box.filter) and fluid_box.filter.name or nil
-            if fixed_fluid then
-                local fluid = prototypes.fluid[fixed_fluid]
+            local fluid = fluid_box and fluid_box.filter
+            -- Offshore pumps producing the same fluid can share a recipe
+            if fluid ~= nil and not pumped_fixed_fluids[fluid.name] then
+                pumped_fixed_fluids[fluid.name] = true
 
                 local recipe = custom_recipe()
-                recipe.name = "impostor-" .. fluid.name .. "-" .. proto.name
-                recipe.factoriopedia_id = {type="entity", name=proto.name}
+                recipe.name = "impostor-" .. fluid.name .. "-pumped"
+                recipe.factoriopedia_id = {type="fluid", name=fluid.name}
                 recipe.localised_name = {"", fluid.localised_name, " ", {"fp.pumping_recipe"}}
                 recipe.sprite = "fluid/" .. fluid.name
-                recipe.order = proto.order
+                recipe.order = fluid.order
                 recipe.categories = {["offshore-pump-" .. fluid.name] = true}
                 recipe.energy = 1
 
@@ -346,50 +349,44 @@ function generator.recipes.generate()
             end
 
         elseif proto.type == "boiler" then
-            local category, input, output = generator.util.get_boiler_data(proto)
-            if category == nil or proto.target_temperature == 0 then goto skip_boiler end
-            ---@cast input -nil
+            -- Boilers that perform the same conversion use the same recipe, with
+            --   one category for each boiler prototype.
+            local category = "boiler-" .. proto.name
 
-            ---@param fluid_proto LuaFluidPrototype
-            ---@param target_temperature float?
-            local function add_boiler_recipe(fluid_proto, target_temperature)
-                local goal_temperature = target_temperature or fluid_proto.max_temperature
+            for _, conversion in pairs(generator.util.get_boiler_conversions(proto)) do
+                local input_proto, output_proto = conversion.input, conversion.output
+                local name = table.concat({"impostor-boil", input_proto.name,
+                    conversion.minimum_temperature, conversion.maximum_temperature,
+                    output_proto.name, conversion.goal_temperature}, "-")
+                local boiler_recipe = boiler_recipes[name]
 
-                local boiler_recipe = custom_recipe()
-                boiler_recipe.name = "impostor-" .. category .. "-fluid-" .. fluid_proto.name
-                boiler_recipe.factoriopedia_id = {type="entity", name=proto.name}
-                boiler_recipe.localised_name = {"", fluid_proto.localised_name, " ", {"fp.boiling_recipe"}}
-                boiler_recipe.sprite = "fluid/" .. fluid_proto.name
-                boiler_recipe.order = proto.order .. "-" .. fluid_proto.order
-                boiler_recipe.categories = {[category] = true}
-                boiler_recipe.energy = 0  -- treated separately by solver
-                boiler_recipe.heat_capacity = fluid_proto.heat_capacity
+                if boiler_recipe == nil then
+                    boiler_recipe = custom_recipe()
+                    boiler_recipe.name = name
+                    boiler_recipe.factoriopedia_id = {type="fluid", name=output_proto.name}
+                    boiler_recipe.localised_name = {"", input_proto.localised_name, " ", {"fp.boiling_recipe"}}
+                    boiler_recipe.sprite = "fluid/" .. output_proto.name
+                    boiler_recipe.order = input_proto.order .. "-" .. output_proto.order
+                    boiler_recipe.categories = {}
+                    boiler_recipe.energy = 0  -- treated separately by solver
+                    boiler_recipe.heat_capacity = input_proto.heat_capacity
 
-                local ingredients = {{type="fluid", name=fluid_proto.name, amount=1,
-                    minimum_temperature=input.minimum_temperature, maximum_temperature=input.maximum_temperature}}
+                    local ingredients = {{type="fluid", name=input_proto.name, amount=1,
+                        minimum_temperature=conversion.minimum_temperature,
+                        maximum_temperature=conversion.maximum_temperature}}
+                    -- Heating in place leaves the fluid alone, which this ratio comes out at 1 for
+                    local amount = input_proto.heat_capacity / output_proto.heat_capacity
+                    local products = {{type="fluid", name=output_proto.name,
+                        temperature=conversion.goal_temperature, amount=amount}--[[@as Product]]}
 
-                local product_name, product_amount = fluid_proto.name, 1.0
-                if output ~= nil and output.filter ~= nil then
-                    product_name = output.filter.name
-                    product_amount = 1 * (fluid_proto.heat_capacity / output.filter.heat_capacity)
-                    boiler_recipe.sprite = "fluid/" .. output.filter.name
+                    generator.util.format_recipe(boiler_recipe, products, products[1], ingredients)
+
+                    boiler_recipes[name] = boiler_recipe
+                    insert_prototype(recipes, boiler_recipe, nil)
                 end
-                local products = {{type="fluid", name=product_name, amount=product_amount,
-                    temperature=goal_temperature}--[[@as Product]]}
 
-                generator.util.format_recipe(boiler_recipe, products, products[1], ingredients)
-                insert_prototype(recipes, boiler_recipe, nil)
+                boiler_recipe.categories[category] = true
             end
-
-            if input.filter then
-                add_boiler_recipe(input.filter, proto.target_temperature)
-            else
-                for _, fluid_proto in pairs(prototypes.fluid) do
-                    add_boiler_recipe(fluid_proto, proto.target_temperature)
-                end
-            end
-
-            ::skip_boiler::
         end
     end
 
@@ -629,8 +626,8 @@ function generator.items.generate()
     local relevant_items = {item={}, fluid={}, entity={}}
     local fluid_has_temperature = {}
     -- Extract items from recipes and note whether they are ever used as a product
-    for _, item_category in pairs({"products", "ingredients"}) do
-        for _, recipe_proto in pairs(recipe_prototypes) do
+    for _, recipe_proto in pairs(recipe_prototypes) do
+        for _, item_category in pairs({"products", "ingredients"}) do
             for _, item_data in pairs(recipe_proto[item_category]) do
                 local type_data = relevant_items[item_data.type]
 
@@ -931,26 +928,21 @@ function generator.machines.generate()
         end
 
         -- Determine fluid input/output channels
-        -- Energy source fluid boxes are part of fluidbox_prototypes, but aren't free for recipe use
-        local fluid_channels = {input = 0, output = 0}
-        if generator_fluid_box then
-            fluid_channels.input = (fluid_channels.input - 1)--[[@as integer]]
-            if generator_output_box then
-                fluid_channels.output = (fluid_channels.output - 1)--[[@as integer]]
-            end
-        end
-        if fluid_burner_prototype then
-            fluid_channels.input = (fluid_channels.input - 1)--[[@as integer]]
-            if fluid_burner_prototype.output_fluid_box then
-                fluid_channels.output = (fluid_channels.output - 1)--[[@as integer]]
-            end
-        end
+        local input_channels, output_channels = 0, 0  ---@type integer, integer
         for _, fluidbox in pairs(proto.fluidbox_prototypes) do
             if fluidbox.production_type == "output" then
-                fluid_channels.output = fluid_channels.output + 1
+                output_channels = output_channels + 1
             else  -- "input" and "input-output"
-                fluid_channels.input = fluid_channels.input + 1
+                input_channels = input_channels + 1
             end
+        end
+
+        if generator_fluid_box then
+            input_channels = input_channels - 1
+            if generator_output_box then output_channels = output_channels - 1 end
+        elseif fluid_burner_prototype then
+            input_channels = input_channels - 1
+            if fluid_burner_prototype.output_fluid_box then output_channels = output_channels - 1 end
         end
 
         return {
@@ -963,7 +955,7 @@ function generator.machines.generate()
             prototype_category = prototype_category,
             ingredient_limit = (proto.ingredient_count or 255),
             product_limit = (proto.max_item_product_count or 255),
-            fluid_channels = fluid_channels,
+            fluid_channels = {input = input_channels, output = output_channels},
             speed = generator.util.get_base_value(proto.get_crafting_speed()),
             crafting_speed_quality_multiplier = proto.crafting_speed_quality_multiplier,
             energy_type = energy_type,
@@ -1039,16 +1031,12 @@ function generator.machines.generate()
             end
 
         elseif proto.type == "boiler" then
-            local category, _, _ = generator.util.get_boiler_data(proto)
-            if category == nil then goto skip_boiler end
-
-            local machine = generate_category_entry(category, proto, "boiler")
+            -- Every boiler is its own category, assigned to the recipes that can use it
+            local machine = generate_category_entry("boiler-" .. proto.name, proto, "boiler")
             if machine then
                 machine.speed = machine.energy_usage * 60
                 insert_machine(machine)
             end
-
-            ::skip_boiler::
 
         elseif proto.type == "offshore-pump" then
             local fluid_box = proto.fluidbox_prototypes[1]

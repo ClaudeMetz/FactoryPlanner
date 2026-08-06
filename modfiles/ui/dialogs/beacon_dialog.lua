@@ -226,7 +226,7 @@ local function open_beacon_dialog(player, modal_data)
     modal_data.line = line
 
     if line.beacon ~= nil then
-        modal_data.beacon_backup = line.beacon:clone()
+        modal_data.beacon_backup = line.beacon:clone(player)
         modal_data.object = line.beacon
     else
         local default_beacon = defaults.get(player, "beacons")

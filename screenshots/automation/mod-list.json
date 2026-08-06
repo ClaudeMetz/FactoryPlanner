@@ -9,14 +9,6 @@
       "enabled": true
     },
     {
-      "name": "flib",
-      "enabled": true
-    },
-    {
-      "name": "debugadapter",
-      "enabled": false
-    },
-    {
       "name": "coverage",
       "enabled": false
     },

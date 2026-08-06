@@ -78,6 +78,7 @@ end
 ---@param product TLProduct
 ---@param new_product TLProduct
 function Factory:replace(product, new_product)
+    product.parent = nil
     new_product.parent = self
     self:_replace(product, new_product)
 end
@@ -256,21 +257,23 @@ local function unpack(packed_self)
     return unpacked_self
 end
 
+---@param player LuaPlayer
 ---@return Factory clone
-function Factory:clone()
+function Factory:clone(player)
     local clone = unpack(self:pack(false))
-    clone:validate()
+    clone:validate(player)
     return clone
 end
 
 
+---@param player LuaPlayer
 ---@return boolean valid
-function Factory:validate()
+function Factory:validate(player)
     local previous_validity = self.valid
     self.valid = true
 
-    self.valid = self:_validate() and self.valid
-    self.valid = self.top_floor:validate() and self.valid
+    self.valid = self:_validate(player) and self.valid
+    self.valid = self.top_floor:validate(player) and self.valid
 
     local matrix_free_items, valid = prototyper.util.validate_prototype_objects(self.matrix_free_items, "type")
     self.matrix_free_items = matrix_free_items

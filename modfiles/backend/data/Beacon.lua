@@ -100,12 +100,14 @@ function Beacon:uses_effects()
     return self.parent:uses_beacon_effects()
 end
 
----@param proto FPModulePrototype
+---@param proto FPModulePrototype | FPPackedPrototype
 ---@return boolean
 function Beacon:allows_module(proto)
-    return not self.proto.simplified and
-           lib.effects.is_compatible(self.proto--[[@as FPBeaconPrototype]], proto) and
-           self.parent.machine:allows_module(proto)
+    if self.proto.simplified or proto.simplified then return false end
+    local module_proto = proto  ---@as FPModulePrototype
+
+    return lib.effects.is_compatible(self.proto--[[@as FPBeaconPrototype]], module_proto) and
+           self.parent.machine:allows_module(module_proto)
 end
 
 
@@ -203,16 +205,18 @@ local function unpack(packed_self, parent)
     return unpacked_self
 end
 
+---@param player LuaPlayer
 ---@return Beacon clone
-function Beacon:clone()
+function Beacon:clone(player)
     local clone = unpack(self:pack(false), self.parent)
-    clone:validate()
+    clone:validate(player)
     return clone
 end
 
 
+---@param player LuaPlayer
 ---@return boolean valid
-function Beacon:validate()
+function Beacon:validate(player)
     self.proto = prototyper.util.validate_prototype_object(self.proto, nil)  ---@as FPBeaconPrototype | FPPackedPrototype
     self.valid = (not self.proto.simplified)
 
@@ -224,7 +228,7 @@ function Beacon:validate()
 
     if self.valid then
         self.valid = self.parent:uses_beacon_effects() and self.valid
-        self.valid = self.module_set:validate() and self.valid
+        self.valid = self.module_set:validate(player) and self.valid
     end
 
     if self.valid and self:is_mono_beacon() then self.amount = 1 end
