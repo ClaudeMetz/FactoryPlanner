@@ -54,6 +54,8 @@ function _porter.process_export_string(player, export_string)
     if not pcall(function()  -- Unpacking and validating could be pcall-ed separately, but that's too many slow pcalls
         for _, packed_factory in pairs(export_table.factories) do
             local unpacked_factory = Factory.unpack(packed_factory)
+            -- The string can come from a save that has different substitutions applied
+            unpacked_factory:apply_recipe_substitution(player)
             unpacked_factory:validate(player)
             table.insert(import_table.factories, unpacked_factory)
         end

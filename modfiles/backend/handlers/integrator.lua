@@ -5,6 +5,7 @@ integrator = {}
 ---@field compacting_recipes table<string, true>
 ---@field machine_effects table<ForceIndex, table<string, IntegerModuleEffects>>
 ---@field overwrite_recipe_picker table<ForceIndex, table<string, boolean>>
+---@field recipe_substitutions table<ForceIndex, table<string, string>>
 
 -- ** LOCAL UTIL **
 ---@param table Any?
@@ -106,6 +107,22 @@ end
 
 ---@param dataset Any
 ---@param storage_table table
+function handlers.recipe_substitutions(dataset, storage_table)
+    local version = get_table_value(dataset, "version")
+    local substitutions = get_table_value(dataset, "substitutions")
+
+    if version == 1 and type(substitutions) == "table" then
+        for recipe_name, replacement_name in pairs(substitutions) do
+            -- A recipe standing in for itself would just make it permanently unobtainable
+            if type(replacement_name) == "string" and replacement_name ~= recipe_name then
+                storage_table[recipe_name] = replacement_name
+            end
+        end
+    end
+end
+
+---@param dataset Any
+---@param storage_table table
 function handlers.overwrite_recipe_picker(dataset, storage_table)
     local version = get_table_value(dataset, "version")
     local recipes = get_table_value(dataset, "recipes")
@@ -134,7 +151,11 @@ local function call_providers(name, force_index)
 end
 
 -- Integrations that are collected once per force, instead of a single time
-local force_scoped = {machine_effects = true, overwrite_recipe_picker = true}
+local force_scoped = {
+    machine_effects = true,
+    recipe_substitutions = true,
+    overwrite_recipe_picker = true
+}
 
 ---@param name string
 function integrator.collect(name)
@@ -154,6 +175,7 @@ end
 
 function integrator.initialize()
     integrator.collect("machine_effects")
+    integrator.collect("recipe_substitutions")
     integrator.collect("overwrite_recipe_picker")
 end
 
@@ -169,6 +191,13 @@ function integrator.invalidate(integration)
             local realm = lib.globals.player_table(player).realm
             realm:schedule_solver_updates((game.tick + offset), player)
             offset = offset + 2
+        end
+
+    elseif integration == "recipe_substitutions" then
+        local running_tick = game.tick + 1  ---@type MapTick?
+        for _, player in pairs(game.players) do
+            local realm = lib.globals.player_table(player).realm
+            running_tick = realm:apply_recipe_substitution(player, running_tick)
         end
     end
 end

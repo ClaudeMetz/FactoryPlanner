@@ -162,6 +162,18 @@ function Line:change_machine_to_default(player)
 end
 
 
+---@param player LuaPlayer
+---@return boolean changed
+function Line:apply_recipe_substitution(player)
+    if not self.recipe:apply_substitution(player.force--[[@as LuaForce]]) then return false end
+
+    -- The replacement can have moved categories or disallow modules, which needs repairing here
+    if not self:validate(player) then self:repair(player) end
+
+    return true
+end
+
+
 ---@param beacon Beacon?
 function Line:set_beacon(beacon)
     self.beacon = beacon  -- can be nil

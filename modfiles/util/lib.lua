@@ -110,6 +110,10 @@ function _lib.is_recipe_available(force, recipe)
     local force_recipe = force.recipes[recipe.name]
     if force_recipe == nil then return false end
 
+    -- A recipe that another one stands in for can't be obtained anymore, no matter its own state
+    local substitutions = storage.integrations.recipe_substitutions[force.index]
+    if substitutions and substitutions[recipe.name] then return false end
+
     -- A mod overwriting the picker knows better than the recipe's own state, either way
     local overwrite = _lib.recipe_picker_overwrite(force, recipe)
     if overwrite ~= nil then return overwrite, overwrite end

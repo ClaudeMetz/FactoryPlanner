@@ -180,6 +180,17 @@ function Floor:any_lines_not_marked_done()
 end
 
 
+---@param player LuaPlayer
+---@return boolean changed
+function Floor:apply_recipe_substitution(player)
+    local changed = false
+    for line in self:iterator() do
+        changed = line:apply_recipe_substitution(player) or changed
+    end
+    return changed
+end
+
+
 ---@param object LineObject
 ---@return boolean compatible
 function Floor:check_product_compatibility(object)

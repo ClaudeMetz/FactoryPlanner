@@ -13,6 +13,7 @@ Note that this compatibility interface is currently very limited, but I'm open t
   - [`compacting_recipes`](#compacting_recipes)
   - [`machine_effects`](#machine_effects)
   - [`overwrite_recipe_picker`](#overwrite_recipe_picker)
+  - [`recipe_substitutions`](#recipe_substitutions)
 
 ## Runtime integrations
 
@@ -134,6 +135,33 @@ remote.add_interface("fp-integration-example-mod", {
         return {
             version = 1,
             recipes = { ["fast-transport-belt"] = true }
+        }
+    end)
+})
+```
+
+### `recipe_substitutions`
+
+**Current version:** `1`, available from `2.1.11`
+
+This integration allows mods to tell Factory Planner that they replaced one recipe with another by scripting, which it has no way of noticing otherwise. Factory Planner hides the replaced recipes from the recipe picker, and migrates any existing production line using one over to its replacement, keeping the line's machine, modules, beacon and fluid temperatures wherever they still apply.
+
+This integration is collected per-force, so it's passed a force index and should return what currently applies to that force. Call [`invalidate`](#invalidate) whenever that changes.
+
+The integration expects a table called `substitutions`, which maps the name of a recipe the force can't obtain right now to the name of the one that stands in for it. Any recipe that's left out is judged by Factory Planner's own checks. A recipe mapping to itself is ignored.
+
+A recipe that appears as a replacement must never also appear as one being replaced. Substitutions are applied in a single step, they are not followed transitively.
+
+Undoing a replacement is done by returning the reverse mapping, which migrates the affected lines back the same way. Note that this is not an undo: a module that the replacement didn't allow is gone for good, as is a machine that had to be swapped out along with it.
+
+#### Example
+
+```lua
+remote.add_interface("fp-integration-example-mod", {
+    recipe_substitutions = (function(force_index)
+        return {
+            version = 1,
+            substitutions = { ["iron-gear-wheel"] = "iron-gear-wheel-improved" }
         }
     end)
 })

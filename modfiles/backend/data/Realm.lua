@@ -88,6 +88,18 @@ end
 
 
 ---@param player LuaPlayer
+---@param starting_tick MapTick?
+---@return MapTick? running_tick
+function Realm:apply_recipe_substitution(player, starting_tick)
+    local running_tick = starting_tick
+    for district in self:iterator() do
+        running_tick = district:apply_recipe_substitution(player, running_tick)
+    end
+    return running_tick
+end
+
+
+---@param player LuaPlayer
 ---@return boolean valid
 function Realm:validate(player)
     self:_validate(player)
