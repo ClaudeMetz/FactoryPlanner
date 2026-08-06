@@ -8,9 +8,11 @@ Note that this compatibility interface is currently very limited, but I'm open t
 
 - [Runtime integrations](#runtime-integrations)
   - [`overwrite_recipe_picker`](#overwrite_recipe_picker)
+  - [`invalidate`](#invalidate)
 - [Static integrations](#static-integrations)
   - [`recycling_recipes`](#recycling_recipes)
   - [`compacting_recipes`](#compacting_recipes)
+  - [`machine_effects`](#machine_effects)
 
 ## Runtime integrations
 
@@ -34,6 +36,25 @@ The integration expects a table called `recipes`, which maps recipe names to eit
 remote.call("fp-integration", "overwrite_recipe_picker", {
     version = 1,
     recipes = { ["fast-transport-belt"] = true }
+})
+```
+
+### `invalidate`
+
+**Current version:** `1`, available from `2.1.11`
+
+Some static integrations are collected per-force, which means Factory Planner needs to know when a mod's per-force state changed. There's no way for it to notice this on its own, so mods managing such state by scripting are required to call this. It carries no data itself, it only prompts Factory Planner to read that static integration again.
+
+The integration expects the name of the `integration` that went stale. Only one can be named at a time, so a mod that changed several of them calls this once for each.
+
+Unlike the other runtime integrations, this one does not need to be repeated after [on_configuration_changed](https://lua-api.factorio.com/latest/classes/LuaBootstrap.html#on_configuration_changed), because nothing about it is stored. Factory Planner re-reads all per-force integrations at that point regardless.
+
+#### Example
+
+```lua
+remote.call("fp-integration", "invalidate", {
+    version = 1,
+    integration = "machine_effects"
 })
 ```
 
@@ -84,6 +105,31 @@ remote.add_interface("fp-integration-example-mod", {
         return {
             version = 1,
             recipes = {"landfill"}
+        }
+    end)
+})
+```
+
+### `machine_effects`
+
+**Current version:** `1`, available from `2.1.11`
+
+This integration allows mods to tell Factory Planner about effects they apply to a machine outside of the module system, which it has no way of seeing otherwise. A hidden module inserted into a hidden beacon next to every machine of a given type is the typical case. Factory Planner treats these as an addition to the machine's base effects, meaning they are subject to the machine's effect limits and are shown to the user as machine effects.
+
+This integration is collected per-force, so it's passed a force index and should return what currently applies to that force. Call [`invalidate`](#invalidate) whenever that changes.
+
+The integration expects a table called `effects`, which maps machine names to a table of effects. These are given as floats, in the same format that a module prototype's effects use. Any effect that's left out counts as zero.
+
+#### Example
+
+```lua
+remote.add_interface("fp-integration-example-mod", {
+    machine_effects = (function(force_index)
+        return {
+            version = 1,
+            effects = {
+                ["assembling-machine-2"] = {speed = 0.5, productivity = 0.1}
+            }
         }
     end)
 })

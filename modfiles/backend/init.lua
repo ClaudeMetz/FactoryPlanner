@@ -161,6 +161,7 @@ local function global_init()
     -- Table containing all integration data collected from other mods
     storage.integrations = {}  ---@diagnostic disable-line: missing-fields
     prototyper.build()  -- Generate all relevant prototypes and save them in storage
+    integrator.initialize()  -- Collect the integration data that generation doesn't cover
     run_on_load(true)  -- Run loader which creates useful indexes of prototype data
     generate_object_index()  -- This just initializes the OBJECT_INDEX variable
 
@@ -189,6 +190,7 @@ local function handle_configuration_change()
     storage.prototypes = {}  ---@diagnostic disable-line: missing-fields
     storage.integrations = {}  ---@diagnostic disable-line: missing-fields
     prototyper.build()
+    integrator.initialize()
     run_on_load(true)
 
     migrator.migrate_global(migrations)

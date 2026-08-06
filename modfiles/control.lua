@@ -40,6 +40,7 @@ llog = require("util.llog")
 require("ui.event_handler")
 
 ---@alias PlayerIndex uint32
+---@alias ForceIndex uint8
 ---@alias VersionString string
 ---@alias ModToVersion table<string, VersionString>
 ---@alias AllowedEffects table<string, boolean>

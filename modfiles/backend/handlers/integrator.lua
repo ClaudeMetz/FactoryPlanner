@@ -4,6 +4,7 @@ integrator = {}
 ---@field overwrite_recipe_picker table<string, boolean>
 ---@field recycling_recipes table<string, true>
 ---@field compacting_recipes table<string, true>
+---@field machine_effects table<ForceIndex, table<string, IntegerModuleEffects>>
 
 -- ** LOCAL UTIL **
 ---@param name string
@@ -37,9 +38,22 @@ local function overwrite_recipe_picker(dataset)
     end
 end
 
+-- Signals that a mod's data changed, prompting FP to collect it again
+---@param dataset Any?
+local function invalidate(dataset)
+    local version = get_table_value(dataset, "version")
+    local integration = get_table_value(dataset, "integration")
+
+    if version ~= 1 then return end
+    if integration ~= nil and type(integration) == "string" then
+        integrator.invalidate(integration)
+    end
+end
+
 -- Push-based system, where mods can push integration data to FP at any time
 remote.add_interface("fp-integration", {
-    overwrite_recipe_picker = overwrite_recipe_picker
+    overwrite_recipe_picker = overwrite_recipe_picker,
+    invalidate = invalidate
 })
 
 
@@ -90,17 +104,79 @@ function handlers.compacting_recipes(dataset, storage_table)
     end
 end
 
+---@param dataset Any
+---@param storage_table table
+function handlers.machine_effects(dataset, storage_table)
+    local version = get_table_value(dataset, "version")
+    local effects = get_table_value(dataset, "effects")
+
+    if version == 1 and type(effects) == "table" then
+        for machine_name, machine_effects in pairs(effects) do
+            if type(machine_effects) == "table" then
+                local formatted = {}
+                -- Only actual effects are kept, so the table stays sparse like a machine's own
+                for effect_name, value in pairs(machine_effects) do
+                    if lib.effects.blank[effect_name] ~= nil and type(value) == "number" and value ~= 0 then
+                        formatted[effect_name] = math.floor(value * MAGIC_NUMBERS.effect_precision + 1e-4)
+                    end
+                end
+                storage_table[machine_name] = formatted
+            end
+        end
+    end
+end
+
+
+---@param name string
+---@param force_index ForceIndex?
+---@return table
+local function call_providers(name, force_index)
+    local collected = {}
+    for interface, functions in pairs(interfaces--[[@cast -nil]]) do
+        if functions[name] then
+            ---@diagnostic disable-next-line: param-type-mismatch
+            local dataset = remote.call(interface, name, force_index)  ---@as Any
+            handlers[name]--[[@cast -nil]](dataset, collected)
+        end
+    end
+    return collected
+end
+
+-- Integrations that are collected once per force, instead of a single time
+local force_scoped = {machine_effects = true}
+
 ---@param name string
 function integrator.collect(name)
     if interfaces == nil then seek_provided_interfaces() end
-    ---@cast interfaces Interfaces
 
-    local storage_table = get_integration_table(name)
-    for interface, functions in pairs(interfaces) do
-        if functions[name] then
-            ---@diagnostic disable-next-line: generic-constraint-mismatch
-            local dataset = remote.call(interface, name)  ---@as Any
-            handlers[name]--[[@cast -nil]](dataset, storage_table)
+    local collected = {}  ---@type table
+    if force_scoped[name] then
+        for _, force in pairs(game.forces) do
+            collected[force.index] = call_providers(name, force.index)
+        end
+    else
+        collected = call_providers(name, nil)
+    end
+
+    storage.integrations[name] = collected
+end
+
+function integrator.initialize()
+    integrator.collect("machine_effects")
+end
+
+
+-- Collects the named integration again, and runs appropriate updates if necessary
+---@param integration string
+function integrator.invalidate(integration)
+    integrator.collect(integration)
+
+    if integration == "machine_effects" then
+        local offset = 1
+        for _, player in pairs(game.players) do
+            local realm = lib.globals.player_table(player).realm
+            realm:schedule_solver_updates((game.tick + offset), player)
+            offset = offset + 2
         end
     end
 end
