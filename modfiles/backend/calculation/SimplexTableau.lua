@@ -344,7 +344,7 @@ function SimplexTableau:solve(previous_basis)
 
         -- Compute the coefficients of the entering variable
         local entering_column = self.cols[non_basic[entering_index]]  ---@type integer
-        local d_vector = lu:solve_right(self.matrix[entering_column]--[[@cast -nil]])
+        local d_vector, u_vector = lu:solve_right(self.matrix[entering_column]--[[@cast -nil]])
 
         -- Select the basis with the smallest ratio as the leaving variable
         local leaving_index = 0
@@ -383,7 +383,7 @@ function SimplexTableau:solve(previous_basis)
         end
 
         -- Update the decomposition
-        if not lu:update(d_vector, leaving_index) then needs_factorization = true end
+        if not lu:update(u_vector, leaving_index) then needs_factorization = true end
 
         return false, "in-progress"
     end

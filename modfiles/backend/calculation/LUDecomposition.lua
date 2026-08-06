@@ -3,13 +3,13 @@
 ---@field l_matrix number[][] `L` lower unit triangular matrix
 ---@field p_vector integer[] row shift vector representing `P`
 ---@field q_vector integer[] column shift vector representing `Q`
----@field eta_updates EtaUpdate[] array of vectors representing `E_n^-1`
+---@field ft_updates FTUpdate[] array of vectors representing `R_n`
 local LUDecomposition = {}
 LUDecomposition.__index = LUDecomposition
 
----@class EtaUpdate
+---@class FTUpdate
 ---@field vector number[]
----@field column integer
+---@field index integer
 
 
 ---@param size integer
@@ -21,7 +21,6 @@ function LUDecomposition:init(size)
         l_matrix = {},
         p_vector = {},
         q_vector = {},
-        eta_updates = {},
         ft_updates = {}
     }  ---@type LUDecomposition
     setmetatable(o, self)
@@ -42,7 +41,7 @@ function LUDecomposition:init(size)
 end
 
 
---- Performs LU decomposition `L U = P A Q`
+--- Performs LU decomposition `LU = PAQ`
 ---@param matrix number[][] column-major order square matrix
 ---@return LUDecomposition?
 function LUDecomposition:decompose(matrix)
@@ -52,7 +51,7 @@ function LUDecomposition:decompose(matrix)
         l_matrix = {},
         p_vector = {},
         q_vector = {},
-        eta_updates = {}
+        ft_updates = {}
     }  ---@type LUDecomposition
     setmetatable(o, self)
 
@@ -121,63 +120,86 @@ end
 
 
 --- Updates the decomposed matrix by replacing a column.
---- The updates are stored as eta factorizations
----@param vector number[] `v` where `A v = a` and `a` is the column entering the basis
+--- The updates are stored as Forrest-Tomlin updates
+---@param vector number[] `u` where `LR u = P a` and `a` is the column entering the basis
 ---@param column integer
 ---@return boolean is_stable
 function LUDecomposition:update(vector, column)
-    local eta = {
-        vector = {},
-        column = column
-    }  ---@type EtaUpdate
+    -- Find the update index by reversing the column permutations
+    local index = 0
+    for j = 1, #self.q_vector do
+        if self.q_vector[j] == column then
+            index = j
+            break
+        end
+    end
+    if index == 0 then return false end
 
-    -- Check for stability
-    local scalar = vector[column]  ---@as number
-    if scalar < MAGIC_NUMBERS.margin_of_error and
-            scalar > -MAGIC_NUMBERS.margin_of_error then
-        return false
+    -- Solve `U^T t = U_rr e_r`
+    local t_vector = {}
+    t_vector[index] = 1
+    for k = index + 1, #self.u_matrix[index] do
+        ---@diagnostic disable: need-check-nil
+        local qk = self.q_vector[k]
+        t_vector[k] = 0.0
+        for i = index, k - 1 do
+            if  t_vector[i] ~= 0 and self.u_matrix[i][qk] ~= 0 then
+                t_vector[k] = t_vector[k] - t_vector[i] * self.u_matrix[i][qk]
+            end
+        end
+        t_vector[k] = t_vector[k] / self.u_matrix[k][qk]
     end
 
-    -- Invert the vector
-    for i = 1, #vector do
-        if i == column then
-            eta.vector[i] = 1 / scalar
-        else
-            eta.vector[i] = -vector[i] / scalar
+    -- Check for stablility
+    for i = index + 1, #self.u_matrix do
+        if t_vector[i] > MAGIC_NUMBERS.simplex_update_threshold or
+                t_vector[i] < -MAGIC_NUMBERS.simplex_update_threshold then
+            return false
         end
     end
 
-    -- Add to the update list
-    table.insert(self.eta_updates, eta)
+    -- Compute new diagonal coefficient
+    local delta = 0.0
+    for i = index, #self.u_matrix do
+        if t_vector[i] ~= 0 and vector[i] ~= 0 then
+            delta = delta + t_vector[i] * vector[i]
+        end
+    end
+
+    -- Update the upper matrix
+    for i = 1, #self.u_matrix do self.u_matrix[i][column] = vector[i] end
+    for j = index + 1, #self.u_matrix[index] do self.u_matrix[index][self.q_vector[j]--[[@cast -nil]]] = 0 end
+    self.u_matrix[index]--[[@cast -nil]][column] = delta
+
+    -- Permute rows
+    local temp_u = self.u_matrix[index]
+    for i = index, #self.u_matrix - 1 do self.u_matrix[i] = self.u_matrix[i + 1] end
+    self.u_matrix[#self.u_matrix] = temp_u
+
+    -- Permute columns
+    local temp_q = self.q_vector[index]
+    for j = index, #self.q_vector - 1 do self.q_vector[j] = self.q_vector[j + 1] end
+    self.q_vector[#self.q_vector] = temp_q
+
+    -- Store the update
+    local update = { vector = t_vector, index = index }  ---@type FTUpdate
+    table.insert(self.ft_updates, update)
+
     return true
 end
 
+
 --- Calculates `x` vector where `x^T A = v^T` (`A^T x = v`).
---- After decomposition, the equation becomes `x P^T LU Q^T E = v^T`
+--- After decomposition, the equation becomes `x^T P^T LRU = v^T Q`
 ---@param vector number[]
 ---@return number[]
 function LUDecomposition:solve_left(vector)
-    -- Solve `z^T E = v^T`
-    local z_vector = {}
-    for j = 1, #vector do z_vector[j] = vector[j] end
-    for i = #self.eta_updates, 1, -1 do
-        local eta = self.eta_updates[i]
-        local dot = 0.0
-        for j = 1, #z_vector do
-            if z_vector[j] ~= 0 and eta.vector[j] ~= 0 then
-                ---@diagnostic disable: need-check-nil
-                dot = dot + z_vector[j] * eta.vector[j]
-            end
-        end
-        z_vector[eta.column] = dot
-    end
-
     -- Solve `y^T U = z^T Q`
     local y_vector = {}  ---@type number[]
     for k = 1, #self.u_matrix do
         ---@diagnostic disable: need-check-nil
         local qk = self.q_vector[k]  ---@as integer
-        y_vector[k] = z_vector[qk]
+        y_vector[k] = vector[qk]
         for i = 1, k - 1 do
             if y_vector[i] ~= 0 and self.u_matrix[i][qk] ~= 0 then
                 y_vector[k] = y_vector[k] - y_vector[i] * self.u_matrix[i][qk]
@@ -186,7 +208,26 @@ function LUDecomposition:solve_left(vector)
         y_vector[k] = y_vector[k] / self.u_matrix[k][qk]
     end
 
-    -- Solve `x P^T L = y^T`
+    -- Solve `y_(n-1)^T R_n = y_n^T`
+    -- The coefficients of the `R` matrix are the negations of the update vector
+    for k = #self.ft_updates, 1, -1 do
+        local update = self.ft_updates[k]
+
+        local temp = y_vector[#y_vector]
+        for j = #y_vector, update.index + 1, -1 do y_vector[j] = y_vector[j - 1] end
+        y_vector[update.index] = temp
+
+        if y_vector[update.index] ~= 0 then
+            for j = update.index + 1, #y_vector do
+                if update.vector[j] ~= 0 then
+                    ---@diagnostic disable: need-check-nil
+                    y_vector[j] = y_vector[j] + y_vector[update.index] * update.vector[j]
+                end
+            end
+        end
+    end
+
+    -- Solve `x^T P^T L = y^T`
     local x_vector = {}  ---@type number[]
     for k = #self.l_matrix, 1, -1 do
         ---@diagnostic disable: need-check-nil
@@ -206,20 +247,37 @@ end
 
 
 --- Calculates `x` vector where `A x = v`.
---- After decomposition, the equation becomes `LU Q^T E x = P v`
+--- After decomposition, the equation becomes `LRU Q^T x = P v`
 ---@param vector number[]
----@return number[]
+---@return number[] `x`
+---@return number[] `u` update vector for which `LR u = P a`
 function LUDecomposition:solve_right(vector)
-    -- Solve `L u = P v`
-    local u_vector = {}  ---@type number[]
+    -- Solve `L y = P v`
+    local y_vector = {}  ---@type number[]
     for k = 1, #self.l_matrix do
-        u_vector[k] = vector[self.p_vector[k]--[[@cast -nil]]]
+        y_vector[k] = vector[self.p_vector[k]--[[@cast -nil]]]
         for j = 1, k - 1 do
-            if  u_vector[j] ~= 0 and self.l_matrix[k][j] ~= 0 then
+            if  y_vector[j] ~= 0 and self.l_matrix[k][j] ~= 0 then
                 ---@diagnostic disable: need-check-nil
-                u_vector[k] = u_vector[k] - u_vector[j] * self.l_matrix[k][j]
+                y_vector[k] = y_vector[k] - y_vector[j] * self.l_matrix[k][j]
             end
         end
+    end
+
+    -- Solve `R_n y_n = y_(n-1)`
+    -- The coefficients of the `R` matrix are the negations of the update vector
+    for k = 1, #self.ft_updates do
+        local update = self.ft_updates[k]
+        for j = update.index + 1, #y_vector do
+            if y_vector[j] ~= 0 and update.vector[j] ~= 0 then
+                ---@diagnostic disable: need-check-nil
+                y_vector[update.index] = y_vector[update.index] + y_vector[j] * update.vector[j]
+            end
+        end
+
+        local temp = y_vector[update.index]
+        for j = update.index, #y_vector - 1 do y_vector[j] = y_vector[j + 1] end
+        y_vector[#y_vector] = temp
     end
 
     -- Solve `U Q^T x = u`
@@ -227,7 +285,7 @@ function LUDecomposition:solve_right(vector)
     for k = #self.u_matrix, 1, -1 do
         ---@diagnostic disable: need-check-nil
         local qk = self.q_vector[k]  ---@as integer
-        local cell = u_vector[k]
+        local cell = y_vector[k]
         for j = k + 1, #self.u_matrix do
             local qj = self.q_vector[j]  ---@as integer
             if x_vector[qj] ~= 0 and self.u_matrix[k][qj] ~= 0 then
@@ -237,63 +295,75 @@ function LUDecomposition:solve_right(vector)
         x_vector[qk] = cell / self.u_matrix[k][qk]
     end
 
-    -- Solve `E x* = x`
-    for i = 1, #self.eta_updates do
-        local eta = self.eta_updates[i]
-        if x_vector[eta.column] > MAGIC_NUMBERS.margin_of_error or
-                x_vector[eta.column] < -MAGIC_NUMBERS.margin_of_error then
-            local scalar = x_vector[eta.column]
-            for j = 1, #x_vector do
-                ---@diagnostic disable: need-check-nil
-                if j == eta.column then
-                    x_vector[j] = scalar * eta.vector[j]
-                elseif eta.vector[j] ~= 0 then
-                    x_vector[j] = x_vector[j] + scalar * eta.vector[j]
-                end
-            end
-        end
-    end
-
-    return x_vector
+    return x_vector, y_vector
 end
 
 
---- Calculate `A = P^T LU Q^T E` (for debugging)
+--- Calculate `A = P^T LRU Q^T` (for debugging)
 ---@return number[][] matrix column-major order square matrix
 function LUDecomposition:recompose()
-    -- Calculate `PAQ = LU`
-    local a_matrix = {}  ---@type number[][]
-    
-    for j = 1, #self.u_matrix do
-        local qj = self.q_vector[j]  ---@as integer
-        a_matrix[qj] = {}
-        for i = 1, #self.u_matrix do
-            local pi = self.p_vector[i]  ---@as integer
-            a_matrix[qj][pi] = 0.0
-            for k = 1, math.min(i, j) do
+    local u_matrix = lib.flib.deep_copy(self.u_matrix)
+    local q_vector = lib.flib.deep_copy(self.q_vector)
+
+    -- Calculate `U* = RU`
+    for k = #self.ft_updates, 1, -1 do
+        local update = self.ft_updates[k]
+
+        -- Permute rows
+        local temp_u = u_matrix[#u_matrix]
+        for i = #u_matrix - 1, update.index, -1 do u_matrix[i + 1] = u_matrix[i] end
+        u_matrix[update.index] = temp_u
+
+        -- Permute columns
+        local temp_q = q_vector[#q_vector]
+        for j = #q_vector - 1, update.index, -1 do q_vector[j + 1] = q_vector[j] end
+        q_vector[update.index] = temp_q
+
+        -- Update the upper matrix
+        -- The coefficients of the `R` matrix are the negations of the update vector
+        for j = update.index, #u_matrix[update.index] do
+            local qj = q_vector[j]  ---@as integer
+            local cell = u_matrix[update.index][qj]
+            for i = update.index + 1, #u_matrix do
                 ---@diagnostic disable: need-check-nil
-                a_matrix[qj][pi] = a_matrix[qj][pi] + self.l_matrix[i][k] * self.u_matrix[k][qj]
+                cell = cell - update.vector[i] * u_matrix[i][qj]
             end
+            u_matrix[update.index][qj] = cell
         end
     end
 
-    -- Calculate `A* = AE`
-    for k = 1, #self.eta_updates do
-        local eta_vector = lib.flib.shallow_copy(self.eta_updates[k].vector)
-        local column = self.eta_updates[k].column
-        local scalar = eta_vector[column]  ---@as number
-        for i = 1, #eta_vector do
-            if i == column then
-                eta_vector[i] = 1 / scalar
-            else
-                eta_vector[i] = -eta_vector[i] / scalar
+    -- Calculate `PAQ = LU*`
+    local a_matrix = {}  ---@type number[][]
+    
+    for j = 1, #u_matrix do
+        local qj = q_vector[j]  ---@as integer
+        a_matrix[qj] = {}
+        for i = 1, #u_matrix do
+            local pi = self.p_vector[i]  ---@as integer
+            a_matrix[qj][pi] = 0.0
+            for k = 1, i do
+                ---@diagnostic disable: need-check-nil
+                a_matrix[qj][pi] = a_matrix[qj][pi] + self.l_matrix[i][k] * u_matrix[k][qj]
             end
         end
-
-        a_matrix[column] = lib.matrix.right_mult_cmo(a_matrix, eta_vector)
     end
 
     return a_matrix
+end
+
+
+--- Get permuted upper matrix `U` (for debugging)
+---@return number[][]
+function LUDecomposition:get_upper_matrix()
+    local result = {}  ---@type number[][]
+    for i = 1, #self.u_matrix do
+        result[i] = {}
+        for j = 1, #self.u_matrix[i] do
+            local qj = self.q_vector[j]  ---@as integer
+            result[i][j] = self.u_matrix[i][qj]
+        end
+    end
+    return result
 end
 
 
