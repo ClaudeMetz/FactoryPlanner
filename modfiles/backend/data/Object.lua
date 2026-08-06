@@ -316,6 +316,7 @@ function methods:_repair(player, pivot)
         if not object.valid and not object:repair(player) then
             local parent = object.parent  ---@as Object & ObjectMethods
             parent:_remove(object)
+            object.parent = nil
         end
     end
 end

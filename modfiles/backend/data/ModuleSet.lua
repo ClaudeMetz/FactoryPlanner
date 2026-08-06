@@ -57,6 +57,7 @@ end
 ---@param module Module
 ---@param new_module Module
 function ModuleSet:replace(module, new_module)
+    module.parent = nil
     new_module.parent = self
     self:_replace(module, new_module)
     self:count_modules()

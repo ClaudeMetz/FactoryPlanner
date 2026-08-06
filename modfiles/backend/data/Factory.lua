@@ -76,6 +76,7 @@ end
 ---@param product TLProduct
 ---@param new_product TLProduct
 function Factory:replace(product, new_product)
+    product.parent = nil
     new_product.parent = self
     self:_replace(product, new_product)
 end

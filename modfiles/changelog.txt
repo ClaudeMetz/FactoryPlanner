@@ -2,6 +2,7 @@
 Version: 0.00.00
 Date: 00. 00. 0000
   Features:
+    - Implemented backwards and forwards buttons for the main interface (#69)
   Changes:
     - Inactive recipes now clearly indicate the reason for not being active
   Bugfixes:

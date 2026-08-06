@@ -65,6 +65,7 @@ end
 ---@param line LineObject
 ---@param new_line LineObject
 function Floor:replace(line, new_line)
+    line.parent = nil
     new_line.parent = self
     self:_replace(line, new_line)
 end

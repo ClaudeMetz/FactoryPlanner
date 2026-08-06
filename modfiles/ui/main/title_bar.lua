@@ -10,6 +10,13 @@ local function toggle_paused_state(player, _, _)
     end
 end
 
+---@param player LuaPlayer
+---@param direction NavigationDirection
+local function navigate(player, direction)
+    if lib.context.navigate(player, direction) then
+        lib.gui.run_refresh(player, "all")
+    end
+end
 
 ---@param player LuaPlayer
 local function refresh_title_bar(player)
@@ -21,6 +28,9 @@ local function refresh_title_bar(player)
 
     title_bar_elements.compact_button.enabled = factory ~= nil and factory.valid
     title_bar_elements.pause_button.enabled = (not game.is_multiplayer())
+
+    title_bar_elements.back_button.enabled = lib.context.can_navigate(player, "back")
+    title_bar_elements.forward_button.enabled = lib.context.can_navigate(player, "forward")
 end
 
 
@@ -75,6 +85,18 @@ local function build_title_bar(player)
     flow_title_bar.add{type="button", caption={"fp.preferences"}, style="fp_button_frame_tool",
         tags={mod="fp", on_gui_click="title_bar_open_preferences"}, mouse_button_filter={"left"}}
 
+    local navigation_flow = flow_title_bar.add{type="flow", direction="horizontal"}
+    navigation_flow.style.horizontal_spacing = 0
+
+    local button_back = navigation_flow.add{type="sprite-button", sprite="utility/backward_arrow",
+        tags={mod="fp", on_gui_click="navigate_back"}, tooltip={"fp.navigate_back"},
+        style="fp_button_frame", mouse_button_filter={"left"}}
+    main_elements.title_bar["back_button"] = button_back
+    local button_forward = navigation_flow.add{type="sprite-button", sprite="utility/forward_arrow",
+        tags={mod="fp", on_gui_click="navigate_forward"}, tooltip={"fp.navigate_forward"},
+        style="fp_button_frame", mouse_button_filter={"left"}}
+    main_elements.title_bar["forward_button"] = button_forward
+
     local button_close = flow_title_bar.add{type="sprite-button", tags={mod="fp", on_gui_click="exit_main_dialog"},
         sprite="utility/close", tooltip={"fp.close_interface"}, style="fp_button_frame",
         mouse_button_filter={"left"}}
@@ -114,12 +136,6 @@ listeners.gui = {
             end
         },
         {
-            name = "exit_main_dialog",
-            handler = function(player, _, _)
-                main_dialog.toggle(player)
-            end
-        },
-        {
             name = "toggle_pause_game",
             handler = toggle_paused_state
         },
@@ -128,13 +144,37 @@ listeners.gui = {
             handler = function(player, _, _)
                 lib.gui.open_dialog(player, {dialog="preferences"})
             end
-        }
+        },
+        {
+            name = "navigate_back",
+            handler = function(player, _, _)
+                navigate(player, "back")
+            end
+        },
+        {
+            name = "navigate_forward",
+            handler = function(player, _, _)
+                navigate(player, "forward")
+            end
+        },
+        {
+            name = "exit_main_dialog",
+            handler = function(player, _, _)
+                main_dialog.toggle(player)
+            end
+        },
     }
 }  ---@as GUIListenerDefinition
 
 listeners.player = {
     fp_toggle_pause = function(player, _)
         if main_dialog.is_in_focus(player) then toggle_paused_state(player) end
+    end,
+    fp_navigate_back = function(player, _)
+        if main_dialog.is_in_focus(player) then navigate(player, "back") end
+    end,
+    fp_navigate_forward = function(player, _)
+        if main_dialog.is_in_focus(player) then navigate(player, "forward") end
     end,
 
     build_gui_element = function(player, event)

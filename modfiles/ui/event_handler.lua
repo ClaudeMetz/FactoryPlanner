@@ -208,6 +208,9 @@ local function handle_gui_event(event)
 
     -- Only refresh messages if the event wasn't a hover event
     if event_name ~= "on_gui_hover" and event_name ~= "on_gui_leave" then lib.messages.refresh(player) end
+
+    -- The navigation buttons need to reflect the entry that was just added
+    if lib.context.record(player) then lib.gui.run_refresh(player, "title_bar") end
 end
 
 script.on_event(gui_events, handle_gui_event)
@@ -238,6 +241,8 @@ local player_events = {
     "fp_refresh_production",
     "fp_up_floor",
     "fp_top_floor",
+    "fp_navigate_back",
+    "fp_navigate_forward",
     "fp_toggle_fold_out_subfloors",
     "fp_cycle_production_views",
     "fp_reverse_cycle_production_views",
@@ -322,7 +327,10 @@ local function handle_player_event(event)
     end
 
     -- Only refresh messages if this event was a keyboard shortcut
-    if event.input_name then lib.messages.refresh(player) end
+    if event.input_name then
+        lib.messages.refresh(player)
+        if lib.context.record(player) then lib.gui.run_refresh(player, "title_bar") end
+    end
 end
 
 script.on_event(player_events, handle_player_event)
