@@ -139,7 +139,6 @@ end
 ---@param calculate_emissions boolean
 ---@return FloorData
 local function generate_floor_data(player, factory, floor, calculate_emissions)
-    local calculate_emissions = lib.globals.preferences(player).calculate_emissions
     local floor_data = {
         id = floor.id,
         products = (floor.level == 1) and factory_products(factory)

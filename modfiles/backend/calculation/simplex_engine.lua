@@ -17,8 +17,6 @@ local simplex_engine = {}
 ---@field products SimplexItemList
 ---@field ingredients SimplexItemList
 ---@field total_crafts number?
----@field machine_limit number?
----@field machine_force_limit boolean?
 ---@field fuel_ratio number?  how much of an ingredient is for fuel (treat as 1 if nil)
 
 
@@ -27,7 +25,6 @@ local simplex_engine = {}
 -- and negative values indicate a cost
 local objective_vector = {
     target_product = 1e9,
-    target_machine = 1e9,
     limited_ingredient = 0,
     product = 0,
     ingredient = -0.001,
@@ -36,7 +33,6 @@ local objective_vector = {
     floor_transfer_out = 0,
     floor_transfer_in = 0,
 
-    machine_limit = 0,
     fluid_modifier = 0.01,
     special_modifier = 1e-12,
 }
@@ -162,13 +158,6 @@ function simplex_engine.solve_floor(floor_data, previous_basis, line_metadata_ta
             tableau:add_item_constraint(item_key, floor_data.id, "in", "<=", item.amount, objective)
         end
 
-        -- Add aditional constraint for machine limits
-        for line_id, line_metadata in pairs(relevant_line_metadata) do
-            if line_metadata.machine_limit then
-                local type = line_metadata.machine_force_limit and "==" or "<="
-                tableau:add_line_constraint(line_id, type, line_metadata.machine_limit, objective_vector.machine_limit)
-            end
-        end
         for _, line_object_data in pairs(floor_data.lines) do
             if line_object_data.subfloor then
                 local top_line_data = line_object_data.subfloor.lines[1]  ---@as LineData?
@@ -307,8 +296,6 @@ function simplex_engine.get_line_data(line_data, floor_id)
         products = products,
         ingredients = ingredients,
         total_crafts = total_crafts,
-        machine_limit = line_data.machine_limit.limit,
-        machine_force_limit = line_data.machine_limit.force_limit,
         fuel_ratio = fuel_ratio
     }  ---@type LineMetadata
 end
