@@ -22,7 +22,7 @@ local function init(proto, amount, quality_proto)
         quality_proto = quality_proto,
         amount = amount,
 
-        total_effects = nil,
+        total_effects = lib.flib.shallow_copy(lib.effects.blank),
         effects_tooltip = ""
     }, "Module", Module)  ---@as Module
 

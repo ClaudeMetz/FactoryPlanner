@@ -100,12 +100,14 @@ function Beacon:uses_effects()
     return self.parent:uses_beacon_effects()
 end
 
----@param proto FPModulePrototype
+---@param proto FPModulePrototype | FPPackedPrototype
 ---@return boolean
 function Beacon:allows_module(proto)
-    return not self.proto.simplified and
-           lib.effects.is_compatible(self.proto--[[@as FPBeaconPrototype]], proto) and
-           self.parent.machine:allows_module(proto)
+    if self.proto.simplified or proto.simplified then return false end
+    local module_proto = proto  ---@as FPModulePrototype
+
+    return lib.effects.is_compatible(self.proto--[[@as FPBeaconPrototype]], module_proto) and
+           self.parent.machine:allows_module(module_proto)
 end
 
 
