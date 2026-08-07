@@ -164,7 +164,7 @@ function SimplexTableau:_add_constraint(key, type, limit, objective)
     self.solution[row_index] = limit
 
     -- Update the variable objective
-    lib.table.add(self.objective, var_col_index, -(objective or 0))  -- objective coefficient is opposite
+    solver.util.table.add(self.objective, var_col_index, -(objective or 0))  -- objective coefficient is opposite
 
     -- We are done for equality constraints
     if type == "==" then return end
@@ -321,7 +321,7 @@ function SimplexTableau:solve(previous_basis)
         for i = 1, #self.matrix do
             a_non_basic[i] = self.matrix[self.cols[non_basic[i]--[[@cast -nil]]]]
         end
-        local c_non_basic = lib.matrix.left_mult_cmo(y_vector, a_non_basic)
+        local c_non_basic = solver.util.matrix.left_mult_cmo(y_vector, a_non_basic)
 
         for j = 1, #c_non_basic do
             ---@diagnostic disable: undefined-field

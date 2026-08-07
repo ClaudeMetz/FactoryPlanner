@@ -5,7 +5,7 @@ local structures = require("backend.calculation.structures")
 local SimpleItem = require("backend.data.SimpleItem")
 
 solver = {
-    util = {}
+    util = require("backend.calculation.solver_util")
 }
 
 -- ** LOCAL UTIL **
@@ -463,84 +463,6 @@ function solver.set_line_result(result)
         update_object_items(line, "byproducts", result.Byproduct)
         update_object_items(line, "ingredients", result.Ingredient)
     end
-end
-
-
--- ** UTIL **
---- Calculates the product amount after applying productivity bonuses
----@param item FormattedProduct
----@param total_effects IntegerModuleEffects
----@return number
-function solver.util.determine_prodded_amount(item, total_effects)
-    if total_effects.productivity <= 0 then return item.amount end  -- no negative productivity
-
-    -- Return formula is a simplification of the following formula:
-    -- item.amount - item.proddable_amount + (item.proddable_amount *
-    --   (1 + (productivity / MAGIC_NUMBERS.effect_precision)))
-    return item.amount + (item.proddable_amount * (total_effects.productivity / MAGIC_NUMBERS.effect_precision))
-end
-
---- Determines the amount of energy needed for a machine and the emissions that produces
----@param line_data LineData
----@param machine_amount number
----@param production_ratio number
----@return number, number
-function solver.util.determine_power_and_emissions(line_data, machine_amount, production_ratio)
-    local machine_proto = line_data.machine_proto
-    local recipe_proto = line_data.recipe_proto
-    local total_effects = line_data.total_effects
-    local pollutant_type = line_data.pollutant_type
-
-    local consumption_multiplier = 1 + (total_effects.consumption / MAGIC_NUMBERS.effect_precision)
-    -- A fuel-starved machine only draws what it can get, and pollutes proportionally less
-    local power = machine_amount * (line_data.energy_usage * 60) * consumption_multiplier * line_data.fuel_performance
-    -- Drain follows the exact machine count rather than the whole machines that'd actually be
-    -- built, so that power stays proportional to it. The matrix solver relies on that to balance
-    -- power against the machines producing it, since it works in amounts for a single machine.
-    local drain = machine_amount * (machine_proto.energy_drain * 60)
-    local total_power = power + drain
-
-    if pollutant_type == nil then return total_power, 0 end
-
-    local fuel_multiplier = (line_data.fuel_proto ~= nil) and line_data.fuel_proto.emissions_multiplier or 1
-    local pollution_multiplier = 1 + (total_effects.pollution / MAGIC_NUMBERS.effect_precision)
-    local total_multiplier = fuel_multiplier * pollution_multiplier * recipe_proto.emissions_multiplier
-
-    -- Pollution comes from the fuel that's burned, not the energy the machine puts to use: an
-    -- effectivity below 1 burns extra, and a source that doesn't scale its usage burns its full
-    -- amount even when the machine can't use all of it
-    local burner, wasted_share = machine_proto.burner, line_data.wasted_share
-    local burned_energy = power
-    if burner then
-        burned_energy = burned_energy / burner.effectivity
-        if wasted_share > 0 and wasted_share < 1 then burned_energy = burned_energy / (1 - wasted_share) end
-    end
-
-    local emissions_per_joule = burned_energy * (machine_proto.emissions_per_joule[pollutant_type] or 0)
-    local emissions_per_second = machine_amount * (machine_proto.emissions_per_second[pollutant_type] or 0)
-    local emissions_per_craft = (recipe_proto.emissions_per_craft) and
-        production_ratio * (recipe_proto.emissions_per_craft[pollutant_type] or 0) or 0
-    local total_emissions = (emissions_per_joule + emissions_per_second + emissions_per_craft) * total_multiplier * 60
-
-    return total_power, total_emissions
-end
-
---- Determines the amount of fuel needed in the given context
----@param line_data LineData
----@param power number
----@param machine_amount number
----@return number
-function solver.util.determine_fuel_amount(line_data, power, machine_amount)
-    local burner = line_data.machine_proto.burner  ---@cast burner -nil
-    local fluid_usage_per_tick = line_data.fluid_usage_per_tick
-
-    if fluid_usage_per_tick and not burner.scale_fluid_usage then
-        -- Without scaling, the source always moves its full usage, wasting any energy beyond demand
-        return fluid_usage_per_tick * 60 * machine_amount
-    end
-    -- Power is already reduced by the fuel performance, so this collapses to the usage per tick
-    -- when the source can't keep up, and to the demanded amount when it can
-    return (power / burner.effectivity) / line_data.fuel_value--[[@as number]]
 end
 
 

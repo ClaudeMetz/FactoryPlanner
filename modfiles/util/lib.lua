@@ -15,9 +15,6 @@ local _lib = {
     effects = require("util.effects"),
     temperature = require("util.temperature"),
     preferences = require("util.preferences"),
-    table = require("util.table"),
-    matrix = require("util.matrix"),
-    math = require("util.math")
 }
 
 

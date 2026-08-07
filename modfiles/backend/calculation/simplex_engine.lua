@@ -1,6 +1,6 @@
 local SimplexTableau = require("backend.calculation.SimplexTableau")
 local structures = require("backend.calculation.structures")
-local util = require("util")
+local util = require("__core__.lualib.util")
 
 --- Matrix solver based on the simplex method
 local simplex_engine = {}
@@ -106,7 +106,7 @@ function simplex_engine.solve_floor(floor_data, previous_basis, line_metadata_ta
         end
     end
 
-    local intermediates = lib.table.intersection(products, ingredients)  ---@type SimplexItemSet
+    local intermediates = solver.util.table.intersection(products, ingredients)  ---@type SimplexItemSet
 
     -- Do not continue if the floor can't produce anything (sanity check)
     if not next(products) then return end
@@ -189,7 +189,7 @@ function simplex_engine.get_floor_metadata(floor_data)
     for _, line_object_data in pairs(floor_data.lines) do
         if line_object_data.subfloor then
             local subfloor_data = simplex_engine.get_floor_metadata(line_object_data.subfloor)
-            if subfloor_data then line_data_table = lib.table.union(line_data_table, subfloor_data) end
+            if subfloor_data then line_data_table = solver.util.table.union(line_data_table, subfloor_data) end
         else
             local line_data = simplex_engine.get_line_data(line_object_data, floor_data.id)
             if line_data then line_data_table[line_data.line_id] = line_data end
@@ -219,13 +219,13 @@ function simplex_engine.get_line_data(line_data, floor_id)
     -- Get simple products
     for _, item in pairs(line_data.products) do
         local amount = total_crafts * solver.util.determine_prodded_amount(item, line_data.total_effects)
-        lib.table.add(products, item.name .. "_" .. item.type, amount)
+        solver.util.table.add(products, item.name .. "_" .. item.type, amount)
     end
 
     -- Get simple ingredients
     for _, item in pairs(line_data.ingredients) do
         local amount = item.amount * total_crafts * (item.type ~= "fluid" and line_data.resource_drain_rate or 1)
-        lib.table.add(ingredients, item.name .. "_" .. item.type, amount)
+        solver.util.table.add(ingredients, item.name .. "_" .. item.type, amount)
     end
 
     -- Get power and emissions
@@ -257,12 +257,12 @@ function simplex_engine.get_line_data(line_data, floor_id)
     if line_data.fuel_proto then
         local fuel_key = line_data.fuel_proto.name .. "_" .. line_data.fuel_proto.type
         local fuel_as_ingredient = ingredients[fuel_key] or 0
-        lib.table.add(ingredients, fuel_key, fuel_amount)
+        solver.util.table.add(ingredients, fuel_key, fuel_amount)
 
         -- Add burnt result
         if line_data.fuel_proto.burnt_result then
             local burnt_result_key = line_data.fuel_proto.burnt_result .. "_item"
-            lib.table.add(products, burnt_result_key, fuel_amount)
+            solver.util.table.add(products, burnt_result_key, fuel_amount)
         end
 
         -- Add spent fluid
@@ -270,7 +270,7 @@ function simplex_engine.get_line_data(line_data, floor_id)
             local spent_fluid_key = line_data.fuel_proto.spent_fluid.name .. "-" ..
                     line_data.fuel_proto.spent_fluid.temperature .. "_fluid"
             local spent_fluid_amount = fuel_amount * line_data.fuel_proto.spent_fluid.amount
-            lib.table.add(products, spent_fluid_key, spent_fluid_amount)
+            solver.util.table.add(products, spent_fluid_key, spent_fluid_amount)
         end
 
         -- Handle special case where fuel is also an ingredient
@@ -280,13 +280,13 @@ function simplex_engine.get_line_data(line_data, floor_id)
     end
 
     -- Add other special categories
-    if power_amount > 0 then lib.table.add(ingredients, "custom-electric-power_entity", power_amount) end
-    if heat_amount > 0 then lib.table.add(ingredients, "custom-heat-power_entity", heat_amount) end
+    if power_amount > 0 then solver.util.table.add(ingredients, "custom-electric-power_entity", power_amount) end
+    if heat_amount > 0 then solver.util.table.add(ingredients, "custom-heat-power_entity", heat_amount) end
     if line_data.pollutant_type and emissions ~= 0 then
         if emissions > 0 then
-            lib.table.add(products, "custom-" .. line_data.pollutant_type .. "_entity", emissions)
+            solver.util.table.add(products, "custom-" .. line_data.pollutant_type .. "_entity", emissions)
         else
-            lib.table.add(ingredients, "custom-" .. line_data.pollutant_type .. "_entity", -emissions)
+            solver.util.table.add(ingredients, "custom-" .. line_data.pollutant_type .. "_entity", -emissions)
         end
     end
 
@@ -492,14 +492,14 @@ function simplex_engine.update_line_object_common(machine_amount, products, bypr
             floor_byproducts[item_key] = min_amount
 
             -- Calculate item remainder
-            local product_amount = lib.math.safe_sub(amount, min_amount)
+            local product_amount = solver.util.safe_sub(amount, min_amount)
             if product_amount > 0 then
                 item.amount = product_amount
                 structures.class.add(product_result, item)
             end
 
             -- Calculate byproduct remainder
-            byproducts[item_key] = lib.math.safe_sub(byproducts[item_key], min_amount)
+            byproducts[item_key] = solver.util.safe_sub(byproducts[item_key], min_amount)
             if byproducts[item_key] == 0 then byproducts[item_key] = nil end
         end
     end
