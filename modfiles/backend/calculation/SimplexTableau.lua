@@ -1,4 +1,5 @@
 local LUDecomposition = require("backend.calculation.LUDecomposition")
+local util = require("__core__.lualib.util")
 
 
 ---@alias InequalityType "==" | "<=" | ">="
@@ -74,6 +75,12 @@ end
 ---@return VariableKey
 local function pack_slack_variable(key, is_virtual)
     return (is_virtual and "y" or "s") .. SEPARATOR .. key
+end
+
+---@param key ConstraintKey | VariableKey
+---@return string[]
+local function unpack_key(key)
+    return util.split(key--[[@as string]], SEPARATOR)
 end
 
 
@@ -326,9 +333,8 @@ function SimplexTableau:solve(previous_basis)
     ---@return SolverState
     local function solution_reached()
         for i = 1, #basic do
-            if basic[i] and string.sub(basic[i], 1, 2) == "y;" then
-                return true, "no-solution"
-            end
+            local var_unpacked = basic[i] and unpack_key(basic[i]) or {}
+            if var_unpacked[1] == "y" then return true, "no-solution" end
         end
         return true, "solved"
     end
@@ -453,17 +459,16 @@ function SimplexTableau:solve(previous_basis)
     for row, key in pairs(basic) do
         local value = x_vector[row] or 0
         if value > MAGIC_NUMBERS.margin_of_error then
-            if string.sub(key, 1, 5) == "line;" then
-                local id = tonumber(string.sub(key, 6))
-                if id then
-                    result.line_results[id] = {
-                        line_id = id,
-                        machine_amount = value
-                    }
-                end
-            elseif string.sub(key, 1, 5) == "item;" then
-                local sep = string.find(key, ";", 6, true) or -2
-                local floor_id = tonumber(string.sub(key, 6, sep - 1))  ---@as ObjectID
+            local var_unpacked = unpack_key(key)
+            if var_unpacked[1] == "line" then
+                local id = tonumber(var_unpacked[2])  ---@as ObjectID
+                result.line_results[id] = {
+                    line_id = id,
+                    machine_amount = value
+                }
+            elseif var_unpacked[1] == "item" then
+                local item_key = var_unpacked[4]  ---@as PrototypeKey
+                local floor_id = tonumber(var_unpacked[2])  ---@as ObjectID
 
                 -- Create a new floor result if necessary
                 if not result.floor_results[floor_id] then
@@ -474,11 +479,9 @@ function SimplexTableau:solve(previous_basis)
                     }  ---@type SimplexFloorResult
                 end
 
-                if string.sub(key, sep, sep + 4) == ";out;" then
-                    local item_key = string.sub(key, sep + 5)
+                if var_unpacked[3] == "out" then
                     result.floor_results[floor_id].products[item_key] = value
-                elseif string.sub(key, sep, sep + 3) == ";in;" then
-                    local item_key = string.sub(key, sep + 4)
+                elseif var_unpacked[3] == "in" then
                     result.floor_results[floor_id].ingredients[item_key] = value
                 end
             end
