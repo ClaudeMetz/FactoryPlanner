@@ -1,8 +1,7 @@
 -- ** LOCAL UTIL **
 ---@class ProductionTableMetadata
 ---@field archive_open boolean
----@field matrix_solver_active boolean
----@field simplex_solver_active boolean
+---@field solver SolverName
 ---@field ingredient_satisfaction boolean
 ---@field fold_out_subfloors boolean
 ---@field player LuaPlayer
@@ -19,8 +18,7 @@ local function generate_metadata(player, factory)
 
     local metadata = {
         archive_open = factory.archived,
-        matrix_solver_active = factory.matrix_solver_active,
-        simplex_solver_active = lib.globals.preferences(player).use_simplex_solver,
+        solver = factory.solver,
         ingredient_satisfaction = preferences.ingredient_satisfaction,
         fold_out_subfloors = preferences.fold_out_subfloors,
         player = player,
@@ -151,7 +149,7 @@ function builders.percentage(line, parent_flow, metadata)
     local tags = {mod="fp", on_gui_text_changed="change_line_percentage",
        on_gui_confirmed="set_line_percentage", line_id=line.id}
     local textfield_percentage = parent_flow.add{type="textfield", tags=tags, text=tostring(relevant_line.percentage),
-        enabled=(not metadata.archive_open and not metadata.matrix_solver_active)}
+        enabled=(not metadata.archive_open and metadata.solver == "sequential")}
     lib.gui.setup_numeric_textfield(textfield_percentage, true, false)
     textfield_percentage.style.horizontal_align = "center"
     textfield_percentage.style.width = 55
@@ -216,7 +214,7 @@ function builders.machine(line, parent_flow, metadata)
 
         local machine_limit = machine.limit
         local style, note = "fflib_slot_button_default_small", nil
-        if not (metadata.matrix_solver_active and not metadata.simplex_solver_active) and machine_limit ~= nil then
+        if metadata.solver ~= "gaussian" and machine_limit ~= nil then
             if machine.force_limit then
                 style = "fflib_slot_button_pink_small"
                 note = {"fp.machine_limit_force", machine_limit}
@@ -367,7 +365,7 @@ function builders.products(line, parent_flow, metadata)
             relevant_flow = items_flow
             action_tooltip = {"", "\n", MODIFIER_ACTIONS["act_on_line_product"].tooltip}
 
-            if line.class ~= "Floor" and not metadata.matrix_solver_active
+            if line.class ~= "Floor" and metadata.solver == "sequential"
                     and line.recipe.priority_item == proto then
                 style = "fflib_slot_button_pink_small"
                 priority_line = {"fp.item_prioritized"}
@@ -567,7 +565,7 @@ function builders.ingredients(line, parent_flow, metadata)
 
         -- Only byproduct recipes can prioritize an ingredient, which paces the line by itself
         local priority_line = ""  ---@type LocalisedString
-        if line.class ~= "Floor" and not metadata.matrix_solver_active and line.recipe.priority_item ~= nil
+        if line.class ~= "Floor" and metadata.solver == "sequential" and line.recipe.priority_item ~= nil
                 and line.recipe.priority_item.name == line.recipe:get_name_with_temperature(proto) then
             style = "fflib_slot_button_pink_small"
             priority_line = {"fp.item_prioritized"}

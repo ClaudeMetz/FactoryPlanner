@@ -307,8 +307,8 @@ local function open_machine_dialog(player, modal_data)
 
     -- Limit
     local factory = lib.context.get(player, "Factory")  ---@as Factory
-    -- Unavailable with matrix solver or special recipes
-    local limit_enabled = (not factory.matrix_solver_active and modal_data.line.recipe.proto.energy > 0)
+    -- Unavailable with the gaussian solver or special recipes
+    local limit_enabled = (factory.solver ~= "gaussian" and modal_data.line.recipe.proto.energy > 0)
     add_limit_frame(content_frame, player, limit_enabled)
 
     -- Modules

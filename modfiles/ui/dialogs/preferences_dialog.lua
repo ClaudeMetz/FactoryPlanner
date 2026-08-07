@@ -142,6 +142,14 @@ local function add_dropdowns(preferences, parent_flow)
             style="fp_drop-down_slim"}
     end
 
+    local solver_items, solver_index = {}, nil  ---@type LocalisedString[], integer?
+    for index, name in pairs(solver.choices) do
+        solver_items[index] = {"fp.solver_" .. name}
+        if name == preferences.default_solver then solver_index = index end
+    end
+    add_dropdown("default_solver", solver_items, solver_index--[[@cast -nil]])
+    parent_flow.add{type="line", direction="horizontal"}.style.margin = {4, 0, 2, 0}
+
     local width_items, width_index = {}, nil  ---@type LocalisedString[], integer?
     for index, value in pairs(lib.preferences.products_per_row_options) do
         width_items[index] = {"", value .. " ", {"fp.pl_product", 2}}
@@ -298,19 +306,6 @@ local function handle_checkbox_preference_change(player, tags, event)
 
     elseif preference_name == "show_gui_button" then
         lib.preferences.refresh_after_change(player, "mod_gui")
-    elseif preference_name == "use_simplex_solver" then
-        -- Update all factories that use the matrix solver
-        for district in lib.globals.player_table(player).realm:iterator() do
-            for factory in district:iterator() do
-                if factory and factory.matrix_solver_active then
-                    factory.matrix_free_items = {}
-                    factory.linearly_dependant = false
-                    factory.simplex_basis = nil
-                    solver.update(player, factory)
-                    lib.gui.run_refresh(player, "production")
-                end
-            end
-        end
     end
 end
 
@@ -321,7 +316,9 @@ local function handle_dropdown_preference_change(player, tags, event)
     local selected_index = event.element.selected_index  ---@as integer
     local preferences = lib.globals.preferences(player)
 
-    if tags.name == "products_per_row" then
+    if tags.name == "default_solver" then
+        preferences.default_solver = solver.choices[selected_index]
+    elseif tags.name == "products_per_row" then
         preferences.products_per_row = lib.preferences.products_per_row_options[selected_index]
         lib.preferences.refresh_after_change(player, "main_dimensions")
         lib.gui.open_dialog(player, {dialog="preferences"})
@@ -445,11 +442,10 @@ local function open_preferences_dialog(player, modal_data)
     local left_content_frame = modal_elements.content_frame
 
     local general_preference_names = {"show_gui_button", "skip_factory_naming", "attach_factory_products",
-        "prefer_matrix_solver", "use_simplex_solver", "show_floor_items", "ingredient_satisfaction", "calculate_emissions",
+        "show_floor_items", "ingredient_satisfaction", "calculate_emissions",
         "ignore_barreling_recipes", "ignore_recycling_recipes"}
     local general_box = add_checkboxes_box(preferences, left_content_frame, "general", general_preference_names)
 
-    general_box.add{type="line", direction="horizontal"}.style.margin = {4, 0, 2, 0}
     add_dropdowns(preferences, general_box)
 
     local production_preference_names = {"done_column", "percentage_column", "line_comment_column"}

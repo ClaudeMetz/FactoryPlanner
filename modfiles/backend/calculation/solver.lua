@@ -4,8 +4,11 @@ local simplex_engine = require("backend.calculation.simplex_engine")
 local structures = require("backend.calculation.structures")
 local SimpleItem = require("backend.data.SimpleItem")
 
+---@alias SolverName "sequential" | "simplex" | "gaussian"
+
 solver = {
-    util = require("backend.calculation.solver_util")
+    util = require("backend.calculation.solver_util"),
+    choices = {"sequential", "simplex", "gaussian"}  ---@type SolverName[]
 }
 
 -- ** LOCAL UTIL **
@@ -314,49 +317,49 @@ function solver.update(player, factory)
 
         local factory_data = solver.generate_factory_data(player, factory)
 
-        if factory.matrix_solver_active then
-            if lib.globals.preferences(player).use_simplex_solver then
-                simplex_engine.solve(factory_data)
-            else
-                local matrix_metadata = matrix_engine.get_matrix_solver_metadata(factory_data)
-
-                if matrix_metadata.num_rows ~= 0 then  -- don't run calculations if the factory has no lines
-                    local linear_dependence_data = matrix_engine.get_linear_dependence_data(factory_data, matrix_metadata)
-
-                    -- In the case of linearly dependent free items, we remove it automatically if there's only one option.
-                    -- Otherwise we present the user with a choice to remove problematic free items in the production box.
-                    local num_ld_free_items, last_ld_free_item = 0, nil
-                    for _, ld_free_item in pairs(linear_dependence_data.linearly_dependent_free_items) do
-                        num_ld_free_items = num_ld_free_items + 1
-                        last_ld_free_item = ld_free_item
-                    end
-                    if num_ld_free_items == 1 then  ---@cast last_ld_free_item FPItemPrototype
-                        for index, item in pairs(factory.matrix_free_items) do
-                            if item.type == last_ld_free_item.type and item.name == last_ld_free_item.name then
-                                table.remove(factory.matrix_free_items, index)
-                                break
-                            end
-                        end
-                        -- Redo all these since we've changed the factory
-                        factory_data = solver.generate_factory_data(player, factory)
-                        matrix_metadata = matrix_engine.get_matrix_solver_metadata(factory_data)
-                        linear_dependence_data = matrix_engine.get_linear_dependence_data(factory_data, matrix_metadata)
-                    end
-
-                    if matrix_metadata.num_rows == matrix_metadata.num_cols
-                            and #linear_dependence_data.linearly_dependent_recipes == 0 then
-                        matrix_engine.run_matrix_solver(factory_data, false)
-                        factory.linearly_dependant = false
-                    else
-                        set_blank_factory(player, factory)  -- reset factory by blanking everything
-                        factory.linearly_dependant = true
-                    end
-                else  -- reset top level items
-                    set_blank_factory(player, factory)
-                end
-            end
-        else
+        if factory.solver == "sequential" then
             sequential_engine.update_factory(factory_data)
+
+        elseif factory.solver == "simplex" then
+            simplex_engine.solve(factory_data)
+
+        else  -- "gaussian"
+            local matrix_metadata = matrix_engine.get_matrix_solver_metadata(factory_data)
+
+            if matrix_metadata.num_rows ~= 0 then  -- don't run calculations if the factory has no lines
+                local linear_dependence_data = matrix_engine.get_linear_dependence_data(factory_data, matrix_metadata)
+
+                -- In the case of linearly dependent free items, we remove it automatically if there's only one option.
+                -- Otherwise we present the user with a choice to remove problematic free items in the production box.
+                local num_ld_free_items, last_ld_free_item = 0, nil
+                for _, ld_free_item in pairs(linear_dependence_data.linearly_dependent_free_items) do
+                    num_ld_free_items = num_ld_free_items + 1
+                    last_ld_free_item = ld_free_item
+                end
+                if num_ld_free_items == 1 then  ---@cast last_ld_free_item FPItemPrototype
+                    for index, item in pairs(factory.matrix_free_items) do
+                        if item.type == last_ld_free_item.type and item.name == last_ld_free_item.name then
+                            table.remove(factory.matrix_free_items, index)
+                            break
+                        end
+                    end
+                    -- Redo all these since we've changed the factory
+                    factory_data = solver.generate_factory_data(player, factory)
+                    matrix_metadata = matrix_engine.get_matrix_solver_metadata(factory_data)
+                    linear_dependence_data = matrix_engine.get_linear_dependence_data(factory_data, matrix_metadata)
+                end
+
+                if matrix_metadata.num_rows == matrix_metadata.num_cols
+                        and #linear_dependence_data.linearly_dependent_recipes == 0 then
+                    matrix_engine.run_matrix_solver(factory_data, false)
+                    factory.linearly_dependant = false
+                else
+                    set_blank_factory(player, factory)  -- reset factory by blanking everything
+                    factory.linearly_dependant = true
+                end
+            else  -- reset top level items
+                set_blank_factory(player, factory)
+            end
         end
     end
 end
