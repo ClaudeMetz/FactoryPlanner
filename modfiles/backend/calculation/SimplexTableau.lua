@@ -5,8 +5,8 @@ local LUDecomposition = require("backend.calculation.LUDecomposition")
 ---@alias ItemDirection "in" | "out"
 ---@alias SolverState "in-progress" | "solved" | "unbounded" | "no-solution"
 ---@alias VariableType "unassigned" | "basic" | "non-basic"
----@alias ConstraintKey string `"item_<floor_id>_<proto-key>"` | `"c_<var-key>"`
----@alias VariableKey string `"line_<line_id>"` | `"item_<floor_id>_<in|out>_<proto-key>"` | `"s_<n>"` | `"y_<n>"`
+---@alias ConstraintKey string `"item;<floor_id>;<proto-key>"` | `"c;<var-key>"`
+---@alias VariableKey string `"line;<line_id>"` | `"item;<floor_id>;<in|out>;<proto-key>"` | `"s;<n>"` | `"y;<n>"`
 ---@alias LineResultTable table<ObjectID, SimplexLineResult>
 ---@alias FloorResultTable table<ObjectID, SimplexFloorResult>
 
@@ -39,6 +39,43 @@ SimplexTableau.__index = SimplexTableau
 ---@field ingredients SimplexItemList
 
 
+local SEPARATOR = ";"
+
+---@param item_key PrototypeKey
+---@param floor_id ObjectID
+---@return ConstraintKey
+local function pack_item_constraint(item_key, floor_id)
+    return "item" .. SEPARATOR .. floor_id .. SEPARATOR .. item_key
+end
+
+---@param key string | integer
+---@return ConstraintKey
+local function pack_generic_constraint(key)
+    return "c" .. SEPARATOR .. key
+end
+
+---@param item_key PrototypeKey
+---@param floor_id ObjectID
+---@param direction ItemDirection
+---@return VariableKey
+local function pack_item_variable(item_key, floor_id, direction)
+    return "item" .. SEPARATOR .. floor_id .. SEPARATOR .. direction .. SEPARATOR .. item_key
+end
+
+---@param line_id ObjectID
+---@return VariableKey
+local function pack_line_variable(line_id)
+    return "line" .. SEPARATOR .. line_id
+end
+
+---@param key string | integer
+---@param is_virtual boolean?
+---@return VariableKey
+local function pack_slack_variable(key, is_virtual)
+    return (is_virtual and "y" or "s") .. SEPARATOR .. key
+end
+
+
 ---@return SimplexTableau
 function SimplexTableau:init()
     ---@diagnostic disable-next-line: missing-fields
@@ -58,7 +95,7 @@ end
 --- Missing items are automatically added.
 ---@param line_data LineMetadata
 function SimplexTableau:add_line_variable(line_data)
-    local line_key = "line_" .. line_data.line_id
+    local line_key = pack_line_variable(line_data.line_id)
 
     -- Line is already present in the tableau
     if self.cols[line_key] then return end
@@ -70,7 +107,7 @@ function SimplexTableau:add_line_variable(line_data)
     local function add_rows(items, sign)
         for item, value in pairs(items) do
             if value > 0 then
-                local item_row_key = "item_" .. line_data.floor_id .. "_" .. item
+                local item_row_key = pack_item_constraint(item, line_data.floor_id)
                 local row_index = 0
 
                 -- Add the item to the tableau if not already present
@@ -98,8 +135,8 @@ end
 ---@param direction ItemDirection
 ---@param objective number?
 function SimplexTableau:add_item_variable(item, floor_id, direction, objective)
-    local item_row_key = "item_" .. floor_id .. "_" .. item
-    local item_col_key = "item_" .. floor_id .. "_".. direction .. "_" .. item
+    local item_row_key = pack_item_constraint(item, floor_id)
+    local item_col_key = pack_item_variable(item, floor_id, direction)
 
     -- This is opposite to recipes where products > 0 and ingredients < 0
     local sign = (direction == "in" and 1) or (direction == "out" and -1) or 0
@@ -128,7 +165,7 @@ end
 ---@param limit number must be non-negative (`>=0`)
 ---@param objective number?
 function SimplexTableau:add_item_constraint(item, floor_id, direction, type, limit, objective)
-    return self:_add_constraint("item_" .. floor_id .. "_".. direction .. "_" .. item, type, limit, objective)
+    return self:_add_constraint(pack_item_variable(item, floor_id, direction), type, limit, objective)
 end
 
 --- Adds an additional constraint to a given line (machine limit)
@@ -137,7 +174,7 @@ end
 ---@param limit number must be non-negative (`>=0`)
 ---@param objective number?
 function SimplexTableau:add_line_constraint(line_id, type, limit, objective)
-    return self:_add_constraint("line_" .. line_id, type, limit, objective)
+    return self:_add_constraint(pack_line_variable(line_id), type, limit, objective)
 end
 
 ---@param key VariableKey
@@ -151,7 +188,7 @@ function SimplexTableau:_add_constraint(key, type, limit, objective)
     if limit < 0 then return end
 
     -- Add a new row for the constaint
-    local row_index = self:_add_row("c_" .. #self.matrix[1] + 1)
+    local row_index = self:_add_row(pack_slack_variable(#self.matrix[1] + 1))
 
     -- Fill the row values
     ---@diagnostic disable: need-check-nil
@@ -165,7 +202,7 @@ function SimplexTableau:_add_constraint(key, type, limit, objective)
     if type == "==" then return end
 
     -- Add a new slack variable for the inequality
-    local slack_col_index = self:_add_column("s_" .. key)
+    local slack_col_index = self:_add_column(pack_generic_constraint(key))
 
     -- Fill the inequality between the given variable and the slack variable
     local sign = (type == "<=" and 1) or (type == ">=" and -1) or 0
@@ -250,7 +287,7 @@ function SimplexTableau:solve(previous_basis)
         -- Add a virtual variables with huge cost for each non-basic row
         for i = 1, #self.matrix[1] do
             if not basic[i] then
-                local virtual_key = "y_" .. #self.matrix + 1
+                local virtual_key = pack_slack_variable(#self.matrix + 1, true)
                 local col_index = self:_add_column(virtual_key, -1e100)
                 self.matrix[col_index]--[[@cast -nil]][i] = 1
                 basic[i] = virtual_key
@@ -291,7 +328,7 @@ function SimplexTableau:solve(previous_basis)
     ---@return SolverState
     local function solution_reached()
         for i = 1, #basic do
-            if basic[i] and string.sub(basic[i], 1, 2) == "y_" then
+            if basic[i] and string.sub(basic[i], 1, 2) == "y;" then
                 return true, "no-solution"
             end
         end
@@ -417,7 +454,7 @@ function SimplexTableau:solve(previous_basis)
     for row, key in pairs(basic) do
         local value = x_vector[row] or 0
         if value > MAGIC_NUMBERS.margin_of_error then
-            if string.sub(key, 1, 5) == "line_" then
+            if string.sub(key, 1, 5) == "line;" then
                 local id = tonumber(string.sub(key, 6))
                 if id then
                     result.line_results[id] = {
@@ -425,8 +462,8 @@ function SimplexTableau:solve(previous_basis)
                         machine_amount = value
                     }
                 end
-            elseif string.sub(key, 1, 5) == "item_" then
-                local sep = string.find(key, "_", 6, true) or -2
+            elseif string.sub(key, 1, 5) == "item;" then
+                local sep = string.find(key, ";", 6, true) or -2
                 local floor_id = tonumber(string.sub(key, 6, sep - 1))  ---@as ObjectID
 
                 -- Create a new floor result if necessary
@@ -438,10 +475,10 @@ function SimplexTableau:solve(previous_basis)
                     }  ---@type SimplexFloorResult
                 end
 
-                if string.sub(key, sep, sep + 4) == "_out_" then
+                if string.sub(key, sep, sep + 4) == ";out;" then
                     local item_key = string.sub(key, sep + 5)
                     result.floor_results[floor_id].products[item_key] = value
-                elseif string.sub(key, sep, sep + 3) == "_in_" then
+                elseif string.sub(key, sep, sep + 3) == ";in;" then
                     local item_key = string.sub(key, sep + 4)
                     result.floor_results[floor_id].ingredients[item_key] = value
                 end
@@ -453,7 +490,7 @@ function SimplexTableau:solve(previous_basis)
     if cache_invalid then
         local invalid_columns = {}  ---@type table<VariableKey, true>
         for floor_id, _ in pairs(result.floor_results) do
-            invalid_columns["line_" .. floor_id] = true
+            invalid_columns["line;" .. floor_id] = true
         end
         for row_key, col_key in pairs(previous_basis) do
             if invalid_columns[col_key] then previous_basis[row_key] = nil end
