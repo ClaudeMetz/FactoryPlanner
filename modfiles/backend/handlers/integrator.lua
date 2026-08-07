@@ -193,11 +193,12 @@ function integrator.invalidate(integration)
             offset = offset + 2
         end
 
-    elseif integration == "recipe_substitutions" then
+    elseif integration == "recipe_substitutions" or integration == "overwrite_recipe_picker" then
+        -- Both of these can change which recipes are available, which the walk re-derives
         local running_tick = game.tick + 1  ---@type MapTick?
         for _, player in pairs(game.players) do
             local realm = lib.globals.player_table(player).realm
-            running_tick = realm:apply_recipe_substitution(player, running_tick)
+            running_tick = realm:refresh_recipes(player, running_tick)
         end
     end
 end

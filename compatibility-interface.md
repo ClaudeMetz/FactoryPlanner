@@ -127,6 +127,8 @@ This integration is collected per-force, so it's passed a force index and should
 
 The integration expects a table called `recipes`, which maps recipe names to either `true` (always show) or `false` (never show). Any recipe that's left out is judged by Factory Planner's own checks.
 
+Existing production lines using a recipe that is hidden this way are not removed; they are marked as blocked and excluded from the calculation until their recipe becomes obtainable again.
+
 #### Example
 
 ```lua

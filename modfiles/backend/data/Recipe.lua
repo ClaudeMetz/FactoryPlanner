@@ -14,6 +14,7 @@ local SimpleItem = require("backend.data.SimpleItem")
 ---@field parent Line
 ---@field proto FPRecipePrototype | FPPackedPrototype
 ---@field production_type RecipeProductionType
+---@field available boolean
 ---@field priority_item (FPItemPrototype | FPPackedPrototype)?
 ---@field temperatures table<string, float>
 ---@field temperature_data table<string, TemperatureData>
@@ -38,6 +39,7 @@ local function init(parent, proto, production_type)
     local object = Object.init({
         proto = this_proto,
         production_type = production_type or "produce",
+        available = true,
         priority_item = nil,
         temperatures = {},
 
@@ -289,6 +291,16 @@ function Recipe:apply_substitution(force)
     return true
 end
 
+--- Re-derives whether the force can currently obtain this recipe, which blocks the line if not
+---@param force LuaForce
+---@return boolean changed
+function Recipe:refresh_availability(force)
+    local recipe_proto = self.proto  --[[@as FPRecipePrototype]]
+    local previous = self.available
+    self.available = lib.is_recipe_available(force, recipe_proto)
+    return self.available ~= previous
+end
+
 
 --- Called when the solver runs because it's the most convenient spot for it
 ---@param force LuaForce
@@ -354,11 +366,7 @@ function Recipe:validate(player)
     self.proto = prototyper.util.validate_prototype_object(self.proto, nil)  ---@as FPRecipePrototype | FPPackedPrototype
     self.valid = (not self.proto.simplified)
 
-    -- A recipe the force can't obtain at all is not valid, mirroring what the recipe picker offers
-    if self.valid then
-        local recipe_proto = self.proto  --[[@as FPRecipePrototype]]
-        self.valid = lib.is_recipe_available(player.force--[[@as LuaForce]], recipe_proto)
-    end
+    if self.valid then self:refresh_availability(player.force--[[@as LuaForce]]) end
 
     -- A priority item that doesn't exist anymore is simply dropped, it doesn't invalidate the recipe
     self.priority_item = (self.priority_item) and
@@ -374,7 +382,7 @@ end
 ---@param player LuaPlayer
 ---@return boolean success
 function Recipe:repair(player)
-    -- Neither a missing prototype nor a recipe the force can't obtain can be repaired
+    -- If the prototype is missing, the recipe is unrepairable
     return false
 end
 

@@ -132,11 +132,11 @@ end
 ---@param player LuaPlayer
 ---@param starting_tick MapTick?
 ---@return MapTick? running_tick
-function District:apply_recipe_substitution(player, starting_tick)
+function District:refresh_recipes(player, starting_tick)
     local running_tick = starting_tick
     -- Unfiltered, since archived and invalid factories need to migrate along as well
     for factory in self:iterator() do
-        running_tick = factory:apply_recipe_substitution(player, running_tick)
+        running_tick = factory:refresh_recipes(player, running_tick)
     end
     return running_tick
 end

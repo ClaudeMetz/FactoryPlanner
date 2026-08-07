@@ -55,7 +55,7 @@ function _porter.process_export_string(player, export_string)
         for _, packed_factory in pairs(export_table.factories) do
             local unpacked_factory = Factory.unpack(packed_factory)
             -- The string can come from a save that has different substitutions applied
-            unpacked_factory:apply_recipe_substitution(player)
+            unpacked_factory:refresh_recipes(player)
             unpacked_factory:validate(player)
             table.insert(import_table.factories, unpacked_factory)
         end

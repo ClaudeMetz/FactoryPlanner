@@ -164,13 +164,15 @@ end
 
 ---@param player LuaPlayer
 ---@return boolean changed
-function Line:apply_recipe_substitution(player)
-    if not self.recipe:apply_substitution(player.force--[[@as LuaForce]]) then return false end
+function Line:refresh_recipe(player)
+    if self.recipe:apply_substitution(player.force--[[@as LuaForce]]) then
+        -- The replacement can have moved categories or disallow modules, which needs repairing here
+        if not self:validate(player) then self:repair(player) end
+        return true
+    end
 
-    -- The replacement can have moved categories or disallow modules, which needs repairing here
-    if not self:validate(player) then self:repair(player) end
-
-    return true
+    if self.recipe.proto.simplified then return false end
+    return self.recipe:refresh_availability(player.force--[[@as LuaForce]])
 end
 
 
@@ -297,12 +299,13 @@ function Line:get_surface_compatibility()
 end
 
 
----@alias LineBlocker "disabled" | "zero_percentage" | "incompatible_recipe" | "incompatible_machine" | "unconfigured_temperature"
+---@alias LineBlocker "disabled" | "unavailable_recipe" | "zero_percentage" | "incompatible_recipe" | "incompatible_machine" | "unconfigured_temperature"
 
 --- Returns why this line can't take part in the calculation, or nil if it can
 ---@return LineBlocker?
 function Line:get_blocker()
     if not self.active then return "disabled" end
+    if not self.recipe.available then return "unavailable_recipe" end
     if self.percentage == 0 then return "zero_percentage" end
 
     local compatibility = self:get_surface_compatibility()

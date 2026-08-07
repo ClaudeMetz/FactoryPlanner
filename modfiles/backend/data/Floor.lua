@@ -182,10 +182,14 @@ end
 
 ---@param player LuaPlayer
 ---@return boolean changed
-function Floor:apply_recipe_substitution(player)
+function Floor:refresh_recipes(player)
     local changed = false
     for line in self:iterator() do
-        changed = line:apply_recipe_substitution(player) or changed
+        if line.class == "Floor" then  ---@cast line Floor
+            changed = line:refresh_recipes(player) or changed
+        else  ---@cast line Line
+            changed = line:refresh_recipe(player) or changed
+        end
     end
     return changed
 end

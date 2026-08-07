@@ -545,6 +545,12 @@ listeners.global = {
         local player = game.get_player(metadata.player_index)  ---@as LuaPlayer
         local factory = OBJECT_INDEX[metadata.factory_id]
         solver.update(player, factory)
+
+        -- Scheduled updates run without user interaction, so the interface needs a refresh
+        if lib.context.get(player, "Factory") == factory then
+            local compact_view = lib.globals.ui_state(player).compact_view
+            lib.gui.run_refresh(player, (compact_view) and "compact_factory" or "production")
+        end
     end
 }
 
