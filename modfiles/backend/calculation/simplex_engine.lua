@@ -50,8 +50,14 @@ function simplex_engine.solve(factory_data)
     -- Get floor metadata
     local line_metadata_table = simplex_engine.get_floor_metadata(factory_data.top_floor)
 
+    -- Invalidate the floor in context cache
+    local cache_invalid_map = {}  ---@type table<ObjectID, true>
+    local player = game.get_player(factory_data.player_index)  ---@as LuaPlayer
+    local context_floor = lib.context.get(player, "Floor")
+    if context_floor then cache_invalid_map[context_floor.id] = true end
+
     -- Solve each floor recursively
-    local result = simplex_engine.solve_floor( factory_data.top_floor, factory_data.simplex_basis, line_metadata_table, 1)
+    local result = simplex_engine.solve_floor( factory_data.top_floor, line_metadata_table, 1, factory_data.simplex_basis, cache_invalid_map)
 
     -- Update GUI
     simplex_engine.update_factory(factory_data, line_metadata_table, result)
@@ -60,19 +66,23 @@ end
 ---@param floor_data FloorData
 ---@param line_metadata_table LineMetadataTable
 ---@param level integer
+---@param previous_basis table<ConstraintKey, VariableKey>
+---@param cache_invalid_map table<ObjectID, true>
 ---@return SimplexResult?
-function simplex_engine.solve_floor(floor_data, previous_basis, line_metadata_table, level)
+function simplex_engine.solve_floor(floor_data, line_metadata_table, level, previous_basis, cache_invalid_map)
     local relevant_line_metadata = {}  ---@type LineMetadata[]
     local products = {}  ---@type SimplexItemSet
     local ingredients = {}  ---@type SimplexItemSet
     local cycled_intermediates = {}  ---@type SimplexItemSet
+    local cache_invalid = cache_invalid_map[floor_data.id]
     local result  ---@type SimplexResult?
 
     -- Recursively solve subfloors and add their results to the line data
     for _, line_object_data in pairs(floor_data.lines) do
         if line_object_data.subfloor then
-            local partial_result = simplex_engine.solve_floor(line_object_data.subfloor, previous_basis, line_metadata_table, level + 1)
+            local partial_result = simplex_engine.solve_floor(line_object_data.subfloor, line_metadata_table, level + 1, previous_basis, cache_invalid_map)
             result = util.merge({result or {}, partial_result})  ---@as SimplexResult?
+            cache_invalid = cache_invalid or (result and result.cache_invalid)
 
             -- Add line metadata for this floor based on the results
             local floor_result = partial_result and partial_result.floor_results[line_object_data.id]
@@ -171,7 +181,7 @@ function simplex_engine.solve_floor(floor_data, previous_basis, line_metadata_ta
     end
 
     -- Solve the tableau
-    local tableau_result = tableau:solve(previous_basis)
+    local tableau_result = tableau:solve(not cache_invalid and previous_basis or {})
 
     return util.merge({result or {}, tableau_result})  ---@as SimplexResult?
 end
@@ -187,7 +197,7 @@ function simplex_engine.get_floor_metadata(floor_data)
             local subfloor_data = simplex_engine.get_floor_metadata(line_object_data.subfloor)
             if subfloor_data then line_data_table = solver.util.table.union(line_data_table, subfloor_data) end
         else
-            local line_data = simplex_engine.get_line_data(line_object_data, floor_data.id)
+            local line_data = simplex_engine.get_line_metadata(line_object_data, floor_data.id)
             if line_data then line_data_table[line_data.line_id] = line_data end
         end
     end
@@ -202,7 +212,7 @@ end
 ---@param line_data LineData
 ---@param floor_id ObjectID
 ---@return LineMetadata?
-function simplex_engine.get_line_data(line_data, floor_id)
+function simplex_engine.get_line_metadata(line_data, floor_id)
     local products = {}  ---@type SimplexItemList
     local ingredients = {}  ---@type SimplexItemList
 

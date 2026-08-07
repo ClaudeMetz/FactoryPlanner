@@ -28,6 +28,7 @@ SimplexTableau.__index = SimplexTableau
 ---@field basis table<ConstraintKey, VariableKey>
 ---@field line_results LineResultTable
 ---@field floor_results FloorResultTable
+---@field cache_invalid boolean
 
 ---@class SimplexLineResult
 ---@field line_id ObjectID
@@ -216,7 +217,8 @@ function SimplexTableau:solve(previous_basis)
         state = "in-progress",
         basis = {},
         line_results = {},
-        floor_results = {}
+        floor_results = {},
+        cache_invalid = false,
     }  ---@type SimplexResult
 
     local variable_map = {}  ---@type VariableMap[]
@@ -229,7 +231,6 @@ function SimplexTableau:solve(previous_basis)
     end
 
     -- Populate the basis vector based on the previous result
-    local cache_invalid = false
     for row_key, col_key in pairs(previous_basis) do
         local row_index = self.rows[row_key]
         local col_index = self.cols[col_key]
@@ -237,21 +238,18 @@ function SimplexTableau:solve(previous_basis)
         if row_index and col_index then
             variable_map[col_index]--[[@cast -nil]].type = "basic"
             basic[row_index] = col_key
-        elseif row_index and not col_index or not row_index and col_index then
-            cache_invalid = true
-            break
         end
     end
 
     -- Check if the cache covered all the bases
     for i = 1, #self.matrix[1] do
         if not basic[i] then
-            cache_invalid = true
+            result.cache_invalid = true
             break
         end
     end
 
-    if cache_invalid then
+    if result.cache_invalid then
         -- Reset the basis
         for i, key in pairs(basic) do
             basic[i] = nil
@@ -416,34 +414,35 @@ function SimplexTableau:solve(previous_basis)
         return false, "in-progress"
     end
 
-    -- Find a solution
-    local done = false
-    local max_iterations = 4 * #basic
-    local factorization_interval = math.min(#basic, MAGIC_NUMBERS.simplex_max_factorization_interval)
-    repeat
-        -- If the factorization is too old, we need to recreate it
-        if iterations - last_factorization >= factorization_interval then
-            needs_factorization = true
-        end
+    -- If a cached result was found, then we need to calculate the initial 
+    if result.cache_invalid then
+        -- Find a solution
+        local done = false
+        local max_iterations = 4 * #basic
+        local factorization_interval = math.min(#basic, MAGIC_NUMBERS.simplex_max_factorization_interval)
+        repeat
+            -- If the factorization is too old, we need to recreate it
+            if iterations - last_factorization >= factorization_interval then
+                needs_factorization = true
+            end
 
-        -- Re-factorize if needed
-        if needs_factorization then refactorize() end
-        if not lu then
-            result.state = "no-solution"
-            break
-        end
+            -- Re-factorize if needed
+            if needs_factorization then refactorize() end
+            if not lu then
+                result.state = "no-solution"
+                break
+            end
 
-        -- Cached results may already have a solution
-        if #self.matrix == #self.matrix[1] then
-            _, result.state = solution_reached()
-            break
-        end
-
-        -- Iterate through the solution
-        done, result.state = iterate()
-        iterations = iterations + 1
-    until done or iterations == max_iterations
-    if result.state ~= "solved" then return result end
+            -- Iterate through the solution
+            done, result.state = iterate()
+            iterations = iterations + 1
+        until done or iterations == max_iterations
+        if result.state ~= "solved" then return result end
+    else
+        -- Re-use the cached solution
+        refactorize()
+        result.state = "solved"
+    end
 
     -- Cache the solution basis for later
     for key, i in pairs(self.rows) do
@@ -483,17 +482,6 @@ function SimplexTableau:solve(previous_basis)
                     result.floor_results[floor_id].ingredients[item_key] = value
                 end
             end
-        end
-    end
-
-    -- Invalidate the floor cache
-    if cache_invalid then
-        local invalid_columns = {}  ---@type table<VariableKey, true>
-        for floor_id, _ in pairs(result.floor_results) do
-            invalid_columns["line;" .. floor_id] = true
-        end
-        for row_key, col_key in pairs(previous_basis) do
-            if invalid_columns[col_key] then previous_basis[row_key] = nil end
         end
     end
 
