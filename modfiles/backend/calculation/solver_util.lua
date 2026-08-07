@@ -88,7 +88,6 @@ function _util.determine_fuel_amount(line_data, power, machine_amount)
     return (power / burner.effectivity) / line_data.fuel_value--[[@as number]]
 end
 
-
 --- Inserts a `value` at the end of the `table` with a given `key`.
 --- If `key` already contains a value, the two are added together.
 ---@generic T
@@ -100,7 +99,6 @@ function _util.table.add(table, key, value)
     table[key] = table[key] ~= nil and table[key] + value or value
     return table[key]
 end
-
 
 --- Joins two tables together in a new result table (`L ∪ R`).
 --- The contents of `left_table` are inserted first.
@@ -116,7 +114,6 @@ function _util.table.union(left_table, right_table)
     for k, v in pairs(right_table) do result[k] = v end
     return result
 end
-
 
 --- Returns the intersection of two tables (`L ∩ R`).
 --- The result will contain the contents of the `left_table`,
@@ -135,7 +132,6 @@ function _util.table.intersection(left_table, right_table)
     return result
 end
 
-
 --- Subtracts the `right_table` from the `left_table` table in a new result table (`L ∖ R`).
 --- The result will contain the contents of the `left_table`,
 --- excluding the keys that are also present in the `right_table`.
@@ -151,7 +147,6 @@ function _util.table.difference(left_table, right_table)
 
     return result
 end
-
 
 --- Performs `M * v`
 ---@param matrix number[][] column-major order
@@ -175,7 +170,6 @@ function _util.matrix.right_mult_cmo(matrix, vector)
 
     return result
 end
-
 
 --- Performs `v^T * M`
 ---@param vector number[]

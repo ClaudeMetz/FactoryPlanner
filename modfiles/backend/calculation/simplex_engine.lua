@@ -5,7 +5,6 @@ local util = require("__core__.lualib.util")
 --- Matrix solver based on the simplex method
 local simplex_engine = {}
 
-
 ---@alias PrototypeKey string  "`<proto.name>`_`<proto.type>`"
 ---@alias SimplexItemList table<PrototypeKey, number>
 ---@alias SimplexItemSet table<PrototypeKey, true>
@@ -46,7 +45,6 @@ local function item_cost(key)
     return 1
 end
 
-
 ---@param factory_data FactoryData
 function simplex_engine.solve(factory_data)
     -- Get floor metadata
@@ -58,7 +56,6 @@ function simplex_engine.solve(factory_data)
     -- Update GUI
     simplex_engine.update_factory(factory_data, line_metadata_table, result)
 end
-
 
 ---@param floor_data FloorData
 ---@param line_metadata_table LineMetadataTable
@@ -179,7 +176,6 @@ function simplex_engine.solve_floor(floor_data, previous_basis, line_metadata_ta
     return util.merge({result or {}, tableau_result})  ---@as SimplexResult?
 end
 
-
 -- Iterate through lines and subfloors collecting line data
 ---@param floor_data FloorData
 ---@return LineMetadataTable
@@ -198,7 +194,6 @@ function simplex_engine.get_floor_metadata(floor_data)
 
     return line_data_table
 end
-
 
 --- Applies all effects on the machine of the line and returns how many
 --- products/ingredients are produced/consumed per second by one machine.
@@ -300,7 +295,6 @@ function simplex_engine.get_line_data(line_data, floor_id)
     }  ---@type LineMetadata
 end
 
-
 ---@param key PrototypeKey
 ---@param amount number?
 ---@return SolverItem
@@ -313,7 +307,6 @@ local function string_to_item(key, amount)
         amount = amount or 0
     }
 end
-
 
 ---@param factory_data FactoryData
 ---@param line_metadata_table LineMetadataTable
@@ -361,7 +354,6 @@ function simplex_engine.update_factory(factory_data, line_metadata_table, result
     }
 end
 
-
 ---@param player_index integer
 ---@param floor_data FloorData
 ---@param scale_factor number
@@ -408,7 +400,6 @@ function simplex_engine.update_floor(player_index, floor_data, scale_factor, byp
 
     return machine_amount
 end
-
 
 ---@param player_index integer
 ---@param floor_id ObjectID
@@ -462,7 +453,6 @@ function simplex_engine.update_line(player_index, floor_id, line_data, scale_fac
     return machine_amount
 end
 
-
 ---@param machine_amount number
 ---@param products SimplexItemList
 ---@param byproducts SimplexItemList
@@ -514,6 +504,5 @@ function simplex_engine.update_line_object_common(machine_amount, products, bypr
 
     return product_result, byproduct_result, ingredient_result, floor_byproducts
 end
-
 
 return simplex_engine

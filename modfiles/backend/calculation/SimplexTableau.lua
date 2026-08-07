@@ -54,7 +54,6 @@ function SimplexTableau:init()
     return instance
 end
 
-
 --- Adds a column representing the line recipe.
 --- Missing items are automatically added.
 ---@param line_data LineMetadata
@@ -93,7 +92,6 @@ function SimplexTableau:add_line_variable(line_data)
     add_rows(line_data.ingredients, -1)
 end
 
-
 --- Adds a slack variable to the inequality constraint of the given item
 ---@param item PrototypeKey
 ---@param floor_id ObjectID
@@ -122,7 +120,6 @@ function SimplexTableau:add_item_variable(item, floor_id, direction, objective)
     self.matrix[col_index]--[[@cast -nil]][row_index] = sign
 end
 
-
 --- Adds an additional constraint to a given item (at most one per item)
 ---@param item PrototypeKey
 ---@param floor_id ObjectID
@@ -134,7 +131,6 @@ function SimplexTableau:add_item_constraint(item, floor_id, direction, type, lim
     return self:_add_constraint("item_" .. floor_id .. "_".. direction .. "_" .. item, type, limit, objective)
 end
 
-
 --- Adds an additional constraint to a given line (machine limit)
 ---@param line_id ObjectID
 ---@param type InequalityType
@@ -143,7 +139,6 @@ end
 function SimplexTableau:add_line_constraint(line_id, type, limit, objective)
     return self:_add_constraint("line_" .. line_id, type, limit, objective)
 end
-
 
 ---@param key VariableKey
 ---@param type InequalityType
@@ -176,7 +171,6 @@ function SimplexTableau:_add_constraint(key, type, limit, objective)
     local sign = (type == "<=" and 1) or (type == ">=" and -1) or 0
     self.matrix[slack_col_index][row_index] = sign
 end
-
 
 ---@param previous_basis table<ConstraintKey, VariableKey>
 ---@return SimplexResult result
@@ -278,7 +272,6 @@ function SimplexTableau:solve(previous_basis)
     local last_factorization = iterations
     local needs_factorization = false
 
-
     local function refactorize()
         local b_matrix = {}  ---@type number[][]
         for j = 1, #self.matrix do
@@ -294,7 +287,6 @@ function SimplexTableau:solve(previous_basis)
         end
     end
 
-
     ---@return boolean
     ---@return SolverState
     local function solution_reached()
@@ -305,7 +297,6 @@ function SimplexTableau:solve(previous_basis)
         end
         return true, "solved"
     end
-
 
     ---@return boolean done
     ---@return SolverState state
@@ -387,7 +378,6 @@ function SimplexTableau:solve(previous_basis)
 
         return false, "in-progress"
     end
-
 
     -- Find a solution
     local done = false
@@ -473,7 +463,6 @@ function SimplexTableau:solve(previous_basis)
     return result
 end
 
-
 ---@param key ConstraintKey
 ---@param limit number?
 ---@return integer index
@@ -490,8 +479,6 @@ function SimplexTableau:_add_row(key, limit)
     return row_index
 end
 
-
----@private
 ---@param key VariableKey
 ---@param objective number?
 ---@return integer index
@@ -508,6 +495,5 @@ function SimplexTableau:_add_column(key, objective)
 
     return col_index
 end
-
 
 return SimplexTableau
