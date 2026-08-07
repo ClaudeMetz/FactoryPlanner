@@ -43,7 +43,7 @@ SimplexTableau.__index = SimplexTableau
 
 local SEPARATOR = ";"
 
----@param item_key PrototypeKey
+---@param item_key SolverItemKey
 ---@param floor_id ObjectID
 ---@return ConstraintKey
 local function pack_item_constraint(item_key, floor_id)
@@ -56,7 +56,7 @@ local function pack_generic_constraint(key)
     return "c" .. SEPARATOR .. key
 end
 
----@param item_key PrototypeKey
+---@param item_key SolverItemKey
 ---@param floor_id ObjectID
 ---@param direction ItemDirection
 ---@return VariableKey
@@ -138,7 +138,7 @@ function SimplexTableau:add_line_variable(line_data)
 end
 
 --- Adds a slack variable to the inequality constraint of the given item
----@param item PrototypeKey
+---@param item SolverItemKey
 ---@param floor_id ObjectID
 ---@param direction ItemDirection
 ---@param objective number?
@@ -166,7 +166,7 @@ function SimplexTableau:add_item_variable(item, floor_id, direction, objective)
 end
 
 --- Adds an additional constraint to a given item (at most one per item)
----@param item PrototypeKey
+---@param item SolverItemKey
 ---@param floor_id ObjectID
 ---@param direction ItemDirection
 ---@param type InequalityType
@@ -467,7 +467,7 @@ function SimplexTableau:solve(previous_basis)
                     machine_amount = value
                 }
             elseif var_unpacked[1] == "item" then
-                local item_key = var_unpacked[4]  ---@as PrototypeKey
+                local item_key = var_unpacked[4]  ---@as SolverItemKey
                 local floor_id = tonumber(var_unpacked[2])  ---@as ObjectID
 
                 -- Create a new floor result if necessary
