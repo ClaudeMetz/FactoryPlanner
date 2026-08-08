@@ -4,7 +4,6 @@ local structures = {
 }
 
 ---@class SolverAggregate
----@field player_index integer
 ---@field floor_id integer
 ---@field machine_amount number
 ---@field production_ratio number?
@@ -13,12 +12,10 @@ local structures = {
 ---@field Ingredient SolverClass
 ---@field known_byproducts SolverSet
 
----@param player_index integer
 ---@param floor_id integer
 ---@return SolverAggregate
-function structures.aggregate.init(player_index, floor_id)
+function structures.aggregate.init(floor_id)
     return {
-        player_index = player_index,
         floor_id = floor_id,
         machine_amount = 0,
         production_ratio = nil,

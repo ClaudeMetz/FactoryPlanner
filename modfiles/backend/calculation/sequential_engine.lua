@@ -297,7 +297,6 @@ local function update_line(line_data, aggregate, looped_fuel)
 
     -- Update the actual line with the calculated results
     solver.set_line_result {
-        player_index = aggregate.player_index,
         floor_id = aggregate.floor_id,
         line_id = line_data.id,
         machine_amount = machine_amount,
@@ -319,7 +318,7 @@ local function update_floor(floor_data, aggregate)
         local subfloor = line_data.subfloor
         if subfloor ~= nil then
             -- Determine the products that are relevant for this subfloor
-            local subfloor_aggregate = structures.aggregate.init(aggregate.player_index, subfloor.id)
+            local subfloor_aggregate = structures.aggregate.init(subfloor.id)
            for _, product in pairs(line_data.products) do
                 local ingredient_amount = aggregate.Ingredient[product.type][product.name]  ---@type number?
                 if ingredient_amount then
@@ -349,7 +348,6 @@ local function update_floor(floor_data, aggregate)
 
             -- Update the parent line of the subfloor with the results from the subfloor aggregate
             solver.set_line_result {
-                player_index = aggregate.player_index,
                 floor_id = aggregate.floor_id,
                 line_id = line_data.id,
                 machine_amount = subfloor_aggregate.machine_amount,
@@ -378,7 +376,7 @@ end
 ---@param factory_data FactoryData
 function sequential_engine.update_factory(factory_data)
     -- Initialize aggregate with the top level items
-    local aggregate = structures.aggregate.init(factory_data.player_index, 1)
+    local aggregate = structures.aggregate.init(1)
     for _, product in pairs(factory_data.top_floor.products) do
         structures.class.add(aggregate.Ingredient, product)
     end

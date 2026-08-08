@@ -433,7 +433,6 @@ function solver.set_factory_result(result)
 end
 
 ---@class LineResult
----@field player_index uint32
 ---@field floor_id ObjectID
 ---@field line_id ObjectID
 ---@field machine_amount number
