@@ -49,13 +49,9 @@ require("ui.event_handler")
 
 
 -- Import test code to run within the mod's context
-local test_mods = {"tests-generator", "tests-runtime"}
-
-for _, mod in pairs(test_mods) do
-    if script.active_mods[mod] then
-        test_runner = require("__" .. mod .. "__.runner")
-        break  -- failsafe, one at a time
-    end
+if script.active_mods["factoryplanner-test"] then
+    ---@diagnostic disable-next-line: unresolved-require
+    test_runner = require("__factoryplanner-test__.runner")
 end
 
 -- Import screenshotter code if its scenario is active
