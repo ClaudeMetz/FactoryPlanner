@@ -7,11 +7,12 @@ local _util = {
 
 local SEPARATOR = "/"
 
----@param item_name string
----@param item_type string
+---@param item SolverInputItem
 ---@return SolverItemKey
-function _util.pack_item(item_name, item_type)
-    return item_type .. SEPARATOR .. item_name
+function _util.pack_item(item)
+    local type = item.proto and item.proto.type or item.type
+    local name = item.proto and item.proto.name or item.name
+    return type .. SEPARATOR .. name
 end
 
 ---@param item_key SolverItemKey
