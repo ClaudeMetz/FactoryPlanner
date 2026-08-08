@@ -173,7 +173,7 @@ end
 ---@param limit number must be non-negative (`>=0`)
 ---@param objective number?
 function SimplexTableau:add_item_constraint(item, floor_id, direction, type, limit, objective)
-    return self:_add_constraint(pack_item_variable(item, floor_id, direction), type, limit, objective)
+    self:_add_constraint(pack_item_variable(item, floor_id, direction), type, limit, objective)
 end
 
 --- Adds an additional constraint to a given line (machine limit)
@@ -182,7 +182,7 @@ end
 ---@param limit number must be non-negative (`>=0`)
 ---@param objective number?
 function SimplexTableau:add_line_constraint(line_id, type, limit, objective)
-    return self:_add_constraint(pack_line_variable(line_id), type, limit, objective)
+    self:_add_constraint(pack_line_variable(line_id), type, limit, objective)
 end
 
 ---@param key VariableKey
@@ -420,7 +420,7 @@ function SimplexTableau:solve(previous_basis)
         return false, "in-progress"
     end
 
-    -- If a cached result was found, then we need to calculate the initial 
+    -- If a cached result was found, then we need to calculate the initial
     if result.cache_invalid then
         -- Find a solution
         local done = false

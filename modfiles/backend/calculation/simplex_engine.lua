@@ -20,7 +20,7 @@ local simplex_engine = {}
 ---@field fuel_ratio number?  how much of an ingredient is for fuel (treat as 1 if nil)
 
 
----@TODO: Move this to a better place. Maybe let the user configure it
+-- @TODO: Move this to a better place. Maybe let the user configure it
 -- The objective function is maximized, so positive values indicate a score,
 -- and negative values indicate a cost
 local objective_vector = {
@@ -162,7 +162,7 @@ function simplex_engine.solve_floor(floor_data, line_metadata_table, level, prev
         end
 
         -- Add additional constraint for limited ingredients
-        ---@TODO: implement limited ingredients
+        -- @TODO: implement limited ingredients
         for _, item in pairs({}) do  ---@cast item SolverItem
             local item_key = solver.util.pack_item(item.name, item.type)
             local objective = item_cost(item_key) * objective_vector.limited_ingredient
