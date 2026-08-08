@@ -15,6 +15,8 @@ local generator = {
     qualities = {}
 }
 
+local tile_can_have_plant = {}  ---@type table<string, string[]>
+
 
 ---@class FPPrototype
 ---@field id integer
@@ -80,7 +82,7 @@ end
 ---@field enabling_technologies string[]?
 ---@field heat_capacity double?
 ---@field custom boolean
----@field location_resource boolean?
+---@field location_restricted boolean?
 ---@field enabled_from_the_start boolean
 ---@field hidden boolean
 ---@field order string
@@ -218,7 +220,7 @@ function generator.recipes.generate()
             recipe.allowed_effects = {speed=true, productivity=true, quality=true, consumption=true, pollution=true}
             recipe.productivity_recipe = (any_mining_productivity) and "custom-mining" or nil
             recipe.energy = (proto.infinite_resource) and 0 or proto.mineable_properties.mining_time
-            recipe.location_resource = true
+            recipe.location_restricted = true
 
             local ingredients = {{type="entity", name="custom-" .. proto.name, amount=1}--[[@as Ingredient]]}
 
@@ -275,6 +277,17 @@ function generator.recipes.generate()
             recipe.order = proto.order
             recipe.categories = {["agricultural-tower"] = true}
             recipe.energy = proto.growth_ticks--[[@cast -nil]] / 60
+            recipe.location_restricted = true
+
+            -- Add the plant prototype name to the list of tiles it can be planted on
+            if proto.autoplace_specification then
+                for _, tile_restriction in pairs(proto.autoplace_specification.tile_restriction or {}) do
+                    if tile_restriction.first then
+                        tile_can_have_plant[tile_restriction.first] = tile_can_have_plant[tile_restriction.first] or {}
+                        table.insert(tile_can_have_plant[tile_restriction.first], proto.name)
+                    end
+                end
+            end
 
             -- Each craft releases the harvest emissions plus a full growth period of the plant's emissions
             recipe.emissions_per_craft = {}
@@ -404,7 +417,7 @@ function generator.recipes.generate()
             recipe.order = proto.order
             recipe.categories = {["offshore-pump"] = true}
             recipe.energy = 1
-            recipe.location_resource = true
+            recipe.location_restricted = true
 
             local products = {{type="fluid", name=fluid.name, amount=60,
                 temperature=fluid.default_temperature}--[[@as Product]]}
@@ -1636,13 +1649,20 @@ function generator.locations.generate()
                 end
             end
 
-            -- Check for fluid tiles that can be extracted with offshore pumps
             local tile_autoplace = proto.map_gen_settings.autoplace_settings.tile
             if tile_autoplace then
                 for key, _ in pairs(tile_autoplace.settings or {}) do
+                    -- Check for fluid tiles that can be extracted with offshore pumps
                     if prototypes.tile[key] and prototypes.tile[key].fluid then
                         local recipe_key = "impostor-" .. prototypes.tile[key].fluid.name .. "-tile"
                         resource_recipes[recipe_key] = true
+                    end
+
+                    -- Check for natural tiles that plants can grow on
+                    if tile_can_have_plant[key] then
+                        for _, plant in pairs(tile_can_have_plant[key]) do
+                            resource_recipes["impostor-" .. plant] = true
+                        end
                     end
                 end
             end

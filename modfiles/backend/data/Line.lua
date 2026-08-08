@@ -274,7 +274,7 @@ function Line:get_surface_compatibility()
         local machine = check_compatibility(properties, self.machine.proto.surface_conditions)
 
         -- Only allow resources found on this location
-        if object.location_proto.resource_recipes and self.recipe.proto.location_resource
+        if object.location_proto.resource_recipes and self.recipe.proto.location_restricted
                 and not object.location_proto.resource_recipes[self.recipe.proto.name] then
             recipe = false
         end
