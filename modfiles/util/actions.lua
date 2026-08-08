@@ -1,7 +1,7 @@
 local _actions = {}
 
----@alias ActionLimitations { archive_open: boolean?, matrix_active: boolean? }
----@alias ActiveLimitations { archive_open: boolean, matrix_active: boolean }
+---@alias ActionLimitations { archive_open: boolean?, sequential_solver: boolean? }
+---@alias ActiveLimitations { archive_open: boolean, sequential_solver: boolean }
 ---@alias ActionList table<string, string>
 
 ---@param player LuaPlayer
@@ -10,7 +10,7 @@ function _actions.current_limitations(player)
     local factory = lib.context.get(player, "Factory")  ---@as Factory?
     return {
         archive_open = (factory ~= nil) and factory.archived or false,
-        matrix_active = (factory ~= nil) and factory.matrix_solver_active or false
+        sequential_solver = (factory ~= nil) and factory.solver == "sequential" or false
     }
 end
 

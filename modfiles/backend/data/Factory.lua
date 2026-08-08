@@ -9,8 +9,9 @@ local TLProduct = require("backend.data.TLProduct")
 ---@field previous Factory?
 ---@field archived boolean
 ---@field name string
----@field matrix_solver_active boolean
+---@field solver SolverName
 ---@field matrix_free_items (FPItemPrototype | FPPackedPrototype)[]
+---@field simplex_basis table<ConstraintKey, VariableKey>?
 ---@field blueprints_inventory LuaInventory
 ---@field notes string
 ---@field productivity_boni table<string, IntegerEffectValue>
@@ -25,17 +26,18 @@ Factory.__index = Factory
 script.register_metatable("Factory", Factory)
 
 ---@param name string?
----@param matrix_solver_active boolean
+---@param solver_name SolverName
 ---@return Factory
-local function init(name, matrix_solver_active)
+local function init(name, solver_name)
     local object = Object.init({
         archived = false,
         --owner = nil,
         --shared = false,
 
         name = name,
-        matrix_solver_active = matrix_solver_active,
+        solver = solver_name,
         matrix_free_items = {},
+        simplex_basis = nil,
         blueprints_inventory = game.create_inventory(MAGIC_NUMBERS.blueprint_limit),
         notes = "",
         productivity_boni = {},
@@ -197,7 +199,7 @@ end
 ---@class PackedFactory: PackedObject
 ---@field class "Factory"
 ---@field name string
----@field matrix_solver_active boolean
+---@field solver SolverName
 ---@field matrix_free_items FPPackedPrototype[]
 ---@field blueprint_strings table<integer, string> sparse
 ---@field notes string
@@ -219,7 +221,7 @@ function Factory:pack(full)
     return {
         class = self.class,
         name = self.name,
-        matrix_solver_active = self.matrix_solver_active,
+        solver = self.solver,
         matrix_free_items = (self.matrix_free_items) and
             prototyper.util.simplify_prototypes(self.matrix_free_items, "type") or nil,
         blueprint_strings = blueprint_strings,
@@ -233,7 +235,7 @@ end
 ---@param packed_self PackedFactory
 ---@return Factory factory
 local function unpack(packed_self)
-    local unpacked_self = init(packed_self.name, packed_self.matrix_solver_active)
+    local unpacked_self = init(packed_self.name, packed_self.solver)
 
     -- Matrix free items will be automatically unpacked by the validation process
     ---@diagnostic disable-next-line: assign-type-mismatch

@@ -453,7 +453,7 @@ listeners.gui = {
         {
             name = "act_on_line_product",
             actions_table = {
-                prioritize = {shortcut="control-right", limitations={archive_open=false, matrix_active=false}},
+                prioritize = {shortcut="control-right", limitations={archive_open=false, sequential_solver=true}},
                 copy = {shortcut="shift-right"},
                 put_into_cursor = {shortcut="alt-right"},
                 factoriopedia = {shortcut="alt-left"}
@@ -497,7 +497,7 @@ listeners.gui = {
                 add_recipe_to_end = {shortcut="left", limitations={archive_open=false}, show=true},
                 add_recipe_below = {limitations={archive_open=false}},
                 edit_temperature = {shortcut="control-left", limitations={archive_open=false}, show=true},
-                prioritize = {shortcut="control-right", limitations={archive_open=false, matrix_active=false}},
+                prioritize = {shortcut="control-right", limitations={archive_open=false, sequential_solver=true}},
                 copy = {shortcut="shift-right"},
                 paste = {shortcut="shift-left", limitations={archive_open=false}},
                 put_into_cursor = {shortcut="alt-right"},
