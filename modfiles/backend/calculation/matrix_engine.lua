@@ -727,7 +727,7 @@ function matrix_engine.get_line_aggregate(line_data, player_index, floor_id, mac
     local speed_multiplier = 1 + (total_effects.speed / MAGIC_NUMBERS.effect_precision)
     local energy = line_data.recipe_energy
     -- hacky workaround for recipes with zero energy - this really messes up the matrix
-    if energy==0 then energy=0.000001 end
+    energy = math.max(energy, MAGIC_NUMBERS.minimum_energy)
     local time_per_craft = energy / (line_data.machine_speed * speed_multiplier)
     local total_crafts = machine_amount * (1 / time_per_craft)
     line_aggregate.production_ratio = total_crafts
@@ -756,45 +756,49 @@ function matrix_engine.get_line_aggregate(line_data, player_index, floor_id, mac
 
     -- Determine power (including potential fuel needs) and emissions
     local fuel_proto = line_data.fuel_proto
-    local power, emissions = solver.util.determine_power_and_emissions(line_data, machine_amount, total_crafts)
+    local power, emissions = 0, 0
 
     local fuel, fuel_amount = nil, nil
-    if machine_proto.energy_type == "burner" then
-        local burner = machine_proto.burner
-        fuel_amount = solver.util.determine_fuel_amount(line_data, power, machine_amount)
+    if energy > MAGIC_NUMBERS.minimum_energy then
+        power, emissions = solver.util.determine_power_and_emissions(line_data, machine_amount, total_crafts)
 
-        fuel = {type=fuel_proto.type, name=line_data.fuel_name, amount=fuel_amount}
-        structures.class.add(line_aggregate.Ingredient, fuel)
+        if machine_proto.energy_type == "burner" then
+            local burner = machine_proto.burner
+            fuel_amount = solver.util.determine_fuel_amount(line_data, power, machine_amount)
 
-        if fuel_proto.burnt_result then
-            add_product({
-                type="item",
-                name=fuel_proto.burnt_result,
-                amount=fuel_amount
-            })
-        end
+            fuel = {type=fuel_proto.type, name=line_data.fuel_name, amount=fuel_amount}
+            structures.class.add(line_aggregate.Ingredient, fuel)
 
-        if burner.produces_spent_fluid then
-            local spent_fluid = burner.spent_fluid or fuel_proto.spent_fluid
-            if spent_fluid then
+            if fuel_proto.burnt_result then
                 add_product({
-                    type="fluid",
-                    name=lib.temperature.name_with(spent_fluid.name, spent_fluid.temperature),
-                    amount=fuel_amount * spent_fluid.amount
+                    type="item",
+                    name=fuel_proto.burnt_result,
+                    amount=fuel_amount
                 })
             end
+
+            if burner.produces_spent_fluid then
+                local spent_fluid = burner.spent_fluid or fuel_proto.spent_fluid
+                if spent_fluid then
+                    add_product({
+                        type="fluid",
+                        name=lib.temperature.name_with(spent_fluid.name, spent_fluid.temperature),
+                        amount=fuel_amount * spent_fluid.amount
+                    })
+                end
+            end
+
+            power = 0  -- set power to 0 when fuel is used
+
+        elseif machine_proto.energy_type == "heat" then
+            local heat_item = {type="entity", name="custom-heat-power", amount=power}
+            structures.class.add(line_aggregate.Ingredient, heat_item)
+
+            power = 0  -- set power to 0 when heat is used
+
+        elseif machine_proto.energy_type == "void" then
+            power = 0  -- set power to 0 while still polluting
         end
-
-        power = 0  -- set power to 0 when fuel is used
-
-    elseif machine_proto.energy_type == "heat" then
-        local heat_item = {type="entity", name="custom-heat-power", amount=power}
-        structures.class.add(line_aggregate.Ingredient, heat_item)
-
-        power = 0  -- set power to 0 when heat is used
-
-    elseif machine_proto.energy_type == "void" then
-        power = 0  -- set power to 0 while still polluting
     end
 
     power = power + (line_data.beacon_power or 0)
@@ -876,55 +880,41 @@ function matrix_engine.to_reduced_row_echelon_form(m)
     if #m==0 then return m end
     local num_cols = #m[1]
 
-    -- set tolerance based on max value in matrix
-    local max_value = 0
-    for i = 1, num_rows do
-        for j = 1, num_cols do
-            if math.abs(m[i][j]) > max_value then
-                max_value = math.abs(m[i][j])
-            end
-        end
-    end
-    local tolerance = 1e-12 * max_value
-
+    local tolerance = 1e-12
     local pivot_row = 1
 
     for curr_col = 1, num_cols do
         -- find row with highest value in curr col as next pivot
         local max_pivot_index = pivot_row
-        local max_pivot_value = m[pivot_row][curr_col]
-        for curr_row = pivot_row+1, num_rows do -- does this need an if-wrapper?
+        local max_pivot_value = math.abs(m[pivot_row][curr_col])
+        for curr_row = pivot_row+1, num_rows do
             local curr_pivot_value = math.abs(m[curr_row][curr_col])
-            if math.abs(m[curr_row][curr_col]) > math.abs(max_pivot_value) then
+            if curr_pivot_value > max_pivot_value then
                 max_pivot_index = curr_row
                 max_pivot_value = curr_pivot_value
             end
         end
 
-        if math.abs(max_pivot_value) < tolerance then
+        if max_pivot_value < tolerance then
             -- if highest value is approximately zero, set this row and all rows below to zero
             for zero_row = pivot_row, num_rows do
                 m[zero_row][curr_col] = 0
             end
         else
             -- swap current row with highest value row
-            for swap_col = curr_col, num_cols do
-                local temp = m[pivot_row][swap_col]
-                m[pivot_row][swap_col] = m[max_pivot_index][swap_col]
-                m[max_pivot_index][swap_col] = temp
-            end
+            local temp = m[pivot_row]
+            m[pivot_row] = m[max_pivot_index]
+            m[max_pivot_index] = temp
 
-            -- normalize pivot row
-            local factor = m[pivot_row][curr_col]
-            for normalize_col = curr_col, num_cols do
-                m[pivot_row][normalize_col] = m[pivot_row][normalize_col] / factor
-            end
-
-            -- find nonzero cols in this row for the elimination step
+            -- find nonzero cols in this row for the elimination step and normalize
             local nonzero_pivot_cols = {}
+            local factor = m[pivot_row][curr_col]
+            m[pivot_row][curr_col] = m[pivot_row][curr_col] / factor
             for update_col = curr_col+1, num_cols do
                 local curr_pivot_col_value = m[pivot_row][update_col]
                 if curr_pivot_col_value ~= 0 then
+                    curr_pivot_col_value = curr_pivot_col_value / factor
+                    m[pivot_row][update_col] = curr_pivot_col_value
                     nonzero_pivot_cols[update_col] = curr_pivot_col_value
                 end
             end
@@ -1028,15 +1018,6 @@ function matrix_engine.insert(orig_table, value)
     if not found then
         table.insert(orig_table, value)
     end
-end
-
--- Shallowly and naively copys the base level of the given table
-function matrix_engine.shallowcopy(table)
-    local copy = {}
-    for key, value in pairs(table) do
-        copy[key] = value
-    end
-    return copy
 end
 
 return matrix_engine

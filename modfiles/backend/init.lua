@@ -210,6 +210,7 @@ local function handle_configuration_change()
         for district in storage.players[index].realm:iterator() do
             district.needs_refresh = true
             for factory in district:iterator() do
+                factory.simplex_basis = nil
                 solver.update(player, factory)
             end
         end

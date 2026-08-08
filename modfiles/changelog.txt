@@ -2,10 +2,16 @@
 Version: 0.00.00
 Date: 00. 00. 0000
   Features:
+    - Added a simplex-based solver. It can solve factories containing loops without any configuration, but with the downside of sometimes coming to an undesirable solution. That makes it sit between the existing sequential and 'matrix' solvers, with advantages from both. The latter still exists and works in the same way as before, but is now referred to as the 'Gaussian' solver. Thanks to vapopescu for undertaking this huge project! (#778)
     - Implemented backwards and forwards buttons for the main interface (#69)
   Changes:
     - Inactive recipes now clearly indicate the reason for not being active
+    - Planting recipes are now restricted to locations that actually allow them (#811) (Thanks vapopescu!)
+    - Improved the performance of the Gaussian (matrix) solver (#812) (Thanks vapopescu!)
   Bugfixes:
+    - Fixed rocket science plans not showing up correctly with Space Exploration (#640)
+    - Fixed a crash when numbers in the GUI got very large (#809)
+    - Fixed some migration-related crashes (#789)
 
 ---------------------------------------------------------------------------------------------------
 Version: 2.1.10

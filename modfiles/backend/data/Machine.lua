@@ -148,13 +148,15 @@ function Machine:uses_effects()
     return self.proto.effect_receiver.uses_module_effects
 end
 
----@param proto FPModulePrototype
+---@param proto FPModulePrototype | FPPackedPrototype
 ---@return boolean
 function Machine:allows_module(proto)
-    return not self.proto.simplified and
-           lib.effects.is_compatible(self.proto--[[@as FPMachinePrototype]], proto) and
-           not self.parent.recipe.proto.simplified and
-           lib.effects.is_compatible(self.parent.recipe.proto--[[@as FPRecipePrototype]], proto)
+    local recipe_proto = self.parent.recipe.proto
+    if self.proto.simplified or recipe_proto.simplified or proto.simplified then return false end
+    local module_proto = proto  ---@as FPModulePrototype
+
+    return lib.effects.is_compatible(self.proto--[[@as FPMachinePrototype]], module_proto) and
+           lib.effects.is_compatible(recipe_proto--[[@as FPRecipePrototype]], module_proto)
 end
 
 

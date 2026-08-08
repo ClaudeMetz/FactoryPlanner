@@ -3,13 +3,25 @@ set -e
 
 FACTORIO=${FACTORIO:-/opt/factorio/bin/x64/factorio}
 WORKSPACE=${GITHUB_WORKSPACE:-.}
+# Usage: run.sh <save-create | worlds | world <name> [case-filter]>
+# The case filter is a Lua pattern matched against case names; filtered runs
+# report failures with full stack tracebacks
 TEST=${1:-save-create}
+WORLD=${2:-}
+CASES=${3:-}
+
+# Worlds run on a save rather than a fresh map, since the tests need an actual player,
+# which only a save can carry. It contains no mods, so adding factoryplanner to it runs
+# the mod's on_init, which is where the tests are called from
+SAVE=$WORKSPACE/tests/test.zip
 
 # The mod targets the experimental branch, so track 'latest' rather than 'stable'
 DOWNLOAD=https://factorio.com/get-download/latest/headless/linux64
 
 TMPDIR=$(mktemp -d)
 trap "rm -rf $TMPDIR" EXIT
+
+RED=$'\033[31m'; GREEN=$'\033[32m'; BOLD=$'\033[1m'; RESET=$'\033[0m'
 
 installed_version() {
   $FACTORIO --version 2>/dev/null | sed -n '1s/^Version: \([0-9][0-9.]*\).*/\1/p'
@@ -44,36 +56,92 @@ update_factorio() {
   return 0
 }
 
-run_tests() {
-  local name=$1
-  cp -r $WORKSPACE/tests/$name $TMPDIR/mods/tests-$name
-  $FACTORIO --mod-directory $TMPDIR/mods --create $TMPDIR/$name-map.zip 2>&1 | tee $TMPDIR/factorio.log
-  if [ ${PIPESTATUS[0]} -ne 0 ] || grep -q "Error" $TMPDIR/factorio.log; then
-    echo "Mod error during test run"
+# Runs a single world: a fresh mod directory, then one load of the save with the test
+# mod active. Benchmark mode loads, runs a tick and exits, which is all the tests need
+run_world() {
+  local world_file=$1
+  local cases=$2
+  local world=$(basename $world_file .lua)
+  local mods=$TMPDIR/mods-$world
+  local logfile=$TMPDIR/$world.log
+
+  mkdir -p $mods
+  cp -r $WORKSPACE/modfiles $mods/factoryplanner
+  cp -r $WORKSPACE/tests/mod $mods/factoryplanner-test
+  # The active world is baked into the test mod copy at a canonical path,
+  # along with the case filter (a Lua pattern; empty runs everything)
+  cp $world_file $mods/factoryplanner-test/world.lua
+  printf 'return "%s"\n' "$cases" > $mods/factoryplanner-test/filter.lua
+
+  # Pin the full mod set so runs don't depend on the installation's defaults
+  cat > $mods/mod-list.json << EOF
+{
+    "mods": [
+        { "name": "base", "enabled": true },
+        { "name": "recycler", "enabled": true },
+        { "name": "space-age", "enabled": false },
+        { "name": "quality", "enabled": false },
+        { "name": "elevated-rails", "enabled": false },
+        { "name": "factoryplanner", "enabled": true },
+        { "name": "factoryplanner-test", "enabled": true }
+    ]
+}
+EOF
+
+  local exit_code=0
+  $FACTORIO --mod-directory $mods --benchmark $SAVE --benchmark-ticks 1 > $logfile 2>&1 || exit_code=$?
+
+  # Only the report blocks the test mod logs are shown; the rest of the game log
+  # is noise unless something actually broke
+  echo "${BOLD}$world${RESET}"
+  sed -n '/FPTEST_REPORT$/,/FPTEST_REPORT_END$/{/FPTEST_REPORT/!p;}' $logfile \
+    | sed "s/✓/${GREEN}✓${RESET}/; s/✗/${RED}✗${RESET}/"
+
+  if [ $exit_code -ne 0 ] || grep -q "Error" $logfile; then
+    sed 's/^/  | /' $logfile
+    echo "  ${RED}Mod error during test run${RESET}"
+    return 1
+  elif ! grep -q "tests_passed\|tests_failed" $logfile; then
+    sed 's/^/  | /' $logfile
+    echo "  ${RED}Tests did not run${RESET}"
+    return 1
+  fi
+  ! grep -q "tests_failed\|setup_failed" $logfile
+}
+
+# Runs every world in sequence, reporting all failures rather than stopping at the first
+run_worlds() {
+  local failed=""
+  for world_file in $WORKSPACE/tests/worlds/*.lua; do
+    run_world $world_file || failed="$failed $(basename $world_file .lua)"
+  done
+
+  if [ -n "$failed" ]; then
+    echo "${RED}Failed worlds:$failed${RESET}"
     exit 1
   fi
-  if ! grep -q "tests_passed\|tests_failed" $TMPDIR/factorio.log; then
-    echo "Tests did not run"
-    exit 1
-  fi
-  if grep -q "tests_failed\|setup_failed" $TMPDIR/factorio.log; then
-    echo "Not all tests passed"
-    exit 1
-  fi
+  echo "${GREEN}All worlds passed${RESET}"
 }
 
 update_factorio
 
-mkdir -p $TMPDIR/mods
-cp -r $WORKSPACE/modfiles $TMPDIR/mods/factoryplanner
-
 case $TEST in
   save-create)
-    $FACTORIO --mod-directory $TMPDIR/mods --create $TMPDIR/test-map.zip 2>&1 | tee $TMPDIR/factorio.log
-    if [ ${PIPESTATUS[0]} -ne 0 ] || grep -q "Error" $TMPDIR/factorio.log; then
+    mkdir -p $TMPDIR/mods
+    cp -r $WORKSPACE/modfiles $TMPDIR/mods/factoryplanner
+    exit_code=0
+    $FACTORIO --mod-directory $TMPDIR/mods --create $TMPDIR/test-map.zip > $TMPDIR/factorio.log 2>&1 || exit_code=$?
+    if [ $exit_code -ne 0 ] || grep -q "Error" $TMPDIR/factorio.log; then
+      sed 's/^/  | /' $TMPDIR/factorio.log
+      echo "${RED}✗ save-create: mod error during map creation${RESET}"
       exit 1
     fi
+    echo "${GREEN}✓${RESET} save-create: map created without errors"
     ;;
-  generator) run_tests generator ;;
-  runtime)   run_tests runtime   ;;
+  worlds) run_worlds ;;
+  world)
+    world_file=$WORKSPACE/tests/worlds/$WORLD.lua
+    [ -f $world_file ] || { echo "Unknown world: $WORLD"; exit 1; }
+    run_world $world_file "$CASES"
+    ;;
 esac

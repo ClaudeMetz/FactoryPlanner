@@ -158,13 +158,35 @@ function _util.get_base_value(normal_quality_value)
     return normal_quality_value / prototypes.quality["normal"].default_multiplier
 end
 
--- Items are still name-keyed at this point in generation, before the final conversion to
--- id-keyed storage, so storage.prototypes.items can't be used with its regular (post-conversion) type here
+-- Items are still name-keyed at this point in generation, before the final conversion to id-keyed storage,
+-- so storage.prototypes.items can't be used with its regular (post-conversion) type here
 ---@param item_type "item" | "fluid"
 ---@return table<string, FPItemPrototype> members
 function _util.get_item_members(item_type)
     local named_items = storage.prototypes.items  ---@as NamedPrototypesWithCategory<FPItemPrototype>
     return named_items[item_type].members
+end
+
+-- Determines the recipes that the given silo can build its rocket parts with
+---@param silo_proto LuaEntityPrototype
+---@param recipes NamedPrototypes<FPRecipePrototype>
+---@return FPRecipePrototype[]
+function _util.silo_parts_recipes(silo_proto, recipes)
+    if silo_proto.fixed_recipe then
+        local recipe = recipes[silo_proto.fixed_recipe.name]
+        return (recipe and recipe.main_product) and {recipe} or {}
+    end
+
+    local categories = silo_proto.crafting_categories  ---@cast categories -nil
+    local parts_recipes = {}  ---@type FPRecipePrototype[]
+    for _, recipe in pairs(recipes) do
+        if recipe.main_product then
+            for category, _ in pairs(recipe.categories) do
+                if categories[category] then table.insert(parts_recipes, recipe); break end
+            end
+        end
+    end
+    return parts_recipes
 end
 
 -- Finds a sprite for the given entity prototype
@@ -239,6 +261,7 @@ function _util.format_effect_receiver(proto)
             uses_module_effects = false,
             uses_beacon_effects = false,
             uses_surface_effects = false,
+            uses_local_effects = false,
             consumption_limits = {low = -0.8, high = 1000},
             speed_limits = {low = -0.8, high = 1000},
             productivity_limits = {low = -0.8, high = 1000},

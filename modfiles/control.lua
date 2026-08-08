@@ -8,6 +8,9 @@ MAGIC_NUMBERS = {
     effect_precision = 10000,  -- The multiplier to turn module effects into integers (and back)
     formatting_precision = 4,  -- precision of decimal formatting in tooltips
     history_limit = 25,  -- maximum number of navigation history entries
+    minimum_energy = 0.001,  -- The lower-bound of the recipe energy property
+    simplex_update_threshold = 1e5,  -- The infinite norm threshold under which a Forrest-Tomlin update is considered stable
+    simplex_max_factorization_interval = 50,  -- The upper bound for the amount of iterations between refactorizations
 
     -- Some magic numbers to determine and calculate the dimensions of the main dialog
     frame_spacing = 12,  -- Spacing between the base frames in the main dialog
@@ -49,14 +52,19 @@ require("ui.event_handler")
 ---@alias ExportString string
 
 
--- Import test code to run within the mod's context
-local test_mods = {"tests-generator", "tests-runtime"}
-
-for _, mod in pairs(test_mods) do
-    if script.active_mods[mod] then
-        test_runner = require("__" .. mod .. "__.runner")
-        break  -- failsafe, one at a time
-    end
+-- Import test code to run within the mod's context. The data classes are handed
+-- over under their canonical require paths, since the test mod requiring them
+-- itself would load second copies, re-registering their metatables
+if script.active_mods["factoryplanner-test"] then
+    ---@diagnostic disable-next-line: unresolved-require
+    test_runner = require("__factoryplanner-test__.runner"){
+        District = require("backend.data.District"),
+        Factory = require("backend.data.Factory"),
+        TLProduct = require("backend.data.TLProduct"),
+        Line = require("backend.data.Line"),
+        Machine = require("backend.data.Machine"),
+        Fuel = require("backend.data.Fuel"),
+    }
 end
 
 -- Import screenshotter code if its scenario is active
