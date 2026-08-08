@@ -356,9 +356,9 @@ function simplex_engine.update_factory(factory_data, line_metadata_table, result
     local top_products = {}  ---@type SimplexItemSet
     local top_byproducts = {}  ---@type SimplexItemList
 
-    local product_result = structures.class.init()
-    local byproduct_result = structures.class.init()
-    local ingredient_result = structures.class.init()
+    local product_result = {}  ---@type SolverMap
+    local byproduct_result = {}  ---@type SolverMap
+    local ingredient_result = {}  ---@type SolverMap
 
     for _, product in pairs(factory_data.top_floor.products) do
         top_products[structures.pack_item(product)] = true
@@ -369,17 +369,17 @@ function simplex_engine.update_factory(factory_data, line_metadata_table, result
         for item_key, amount in pairs(result.floor_results[factory_data.top_floor.id].products) do
             if top_products[item_key] then
                 -- Update product amount
-                structures.class.add(product_result, structures.unpack_item(item_key, amount))
+                structures.map.add(product_result, structures.unpack_item(item_key, amount))
             else
                 -- Add to byproducts
                 top_byproducts[item_key] = amount
-                structures.class.add(byproduct_result, structures.unpack_item(item_key, amount))
+                structures.map.add(byproduct_result, structures.unpack_item(item_key, amount))
             end
         end
 
         -- Update the ingredients
         for item_key, amount in pairs(result.floor_results[factory_data.top_floor.id].ingredients) do
-            structures.class.add(ingredient_result, structures.unpack_item(item_key, amount))
+            structures.map.add(ingredient_result, structures.unpack_item(item_key, amount))
         end
     end
 
@@ -388,9 +388,9 @@ function simplex_engine.update_factory(factory_data, line_metadata_table, result
     solver.set_factory_result{
         player_index = factory_data.player_index,
         factory_id = factory_data.factory_id,
-        Product = product_result,
-        Byproduct = byproduct_result,
-        Ingredient = ingredient_result,
+        products = product_result,
+        byproducts = byproduct_result,
+        ingredients = ingredient_result,
         simplex_basis = result and result.basis
     }
 end
@@ -430,9 +430,9 @@ function simplex_engine.update_floor(player_index, floor_data, scale_factor, byp
                 floor_id = floor_data.id,
                 line_id = line_object_data.id,
                 machine_amount = floor_machines,
-                Product = product_result,
-                Byproduct = byproduct_result,
-                Ingredient = ingredient_result
+                products = product_result,
+                byproducts = byproduct_result,
+                ingredients = ingredient_result
             }
 
             machine_amount = machine_amount + floor_machines
@@ -491,9 +491,9 @@ function simplex_engine.update_line(player_index, floor_id, line_data, scale_fac
         floor_id = floor_id,
         machine_amount = machine_amount,
         production_ratio = production_ratio,
-        Product = product_result,
-        Byproduct = byproduct_result,
-        Ingredient = ingredient_result,
+        products = product_result,
+        byproducts = byproduct_result,
+        ingredients = ingredient_result,
         fuel_amount = fuel_amount,
     }
 
@@ -504,35 +504,35 @@ end
 ---@param products SimplexItemList
 ---@param byproducts SimplexItemList
 ---@param ingredients SimplexItemList
----@return SolverClass products
----@return SolverClass byproducts
----@return SolverClass ingredients
+---@return SolverMap products
+---@return SolverMap byproducts
+---@return SolverMap ingredients
 ---@return SimplexItemList floor_byproducts
 function simplex_engine.update_line_object_common(machine_amount, products, byproducts, ingredients)
     local floor_byproducts = {}  ---@type SimplexItemList
 
-    local product_result = structures.class.init()
-    local byproduct_result = structures.class.init()
-    local ingredient_result = structures.class.init()
+    local product_result = {}  ---@type SolverMap
+    local byproduct_result = {}  ---@type SolverMap
+    local ingredient_result = {}  ---@type SolverMap
 
     -- Update the products and byproducts
     for item_key, v in pairs(products) do
         local amount = v * machine_amount
         local item = structures.unpack_item(item_key, amount)
         if not byproducts[item_key] then
-            structures.class.add(product_result, item)
+            structures.map.add(product_result, item)
         else
             -- Add as byproduct
             local min_amount = math.min(byproducts[item_key], amount)
             item.amount = min_amount
-            structures.class.add(byproduct_result, item)
+            structures.map.add(byproduct_result, item)
             floor_byproducts[item_key] = min_amount
 
             -- Calculate item remainder
             local product_amount = solver.util.safe_sub(amount, min_amount)
             if product_amount > 0 then
                 item.amount = product_amount
-                structures.class.add(product_result, item)
+                structures.map.add(product_result, item)
             end
 
             -- Calculate byproduct remainder
@@ -546,7 +546,7 @@ function simplex_engine.update_line_object_common(machine_amount, products, bypr
         local amount = v * machine_amount
         local item = structures.unpack_item(item_key, amount)
 
-        structures.class.add(ingredient_result, item)
+        structures.map.add(ingredient_result, item)
     end
 
     return product_result, byproduct_result, ingredient_result, floor_byproducts
