@@ -201,19 +201,19 @@ end
 ---@param floor_data FloorData
 ---@return LineMetadataTable
 function simplex_engine.get_floor_metadata(floor_data)
-    local line_data_table = {}  ---@type LineMetadataTable
+    local line_metadata_table = {}  ---@type LineMetadataTable
 
     for _, line_object_data in pairs(floor_data.lines) do
         if line_object_data.subfloor then
             local subfloor_data = simplex_engine.get_floor_metadata(line_object_data.subfloor)
-            if subfloor_data then line_data_table = solver.util.table.union(line_data_table, subfloor_data) end
+            if subfloor_data then line_metadata_table = solver.util.table.union(line_metadata_table, subfloor_data) end
         else
-            local line_data = simplex_engine.get_line_metadata(line_object_data, floor_data.id)
-            if line_data then line_data_table[line_data.line_id] = line_data end
+            local line_metadata = simplex_engine.get_line_metadata(line_object_data, floor_data.id)
+            if line_metadata then line_metadata_table[line_metadata.line_id] = line_metadata end
         end
     end
 
-    return line_data_table
+    return line_metadata_table
 end
 
 --- Applies all effects on the machine of the line and returns how many
