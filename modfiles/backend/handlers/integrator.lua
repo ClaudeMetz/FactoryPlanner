@@ -186,6 +186,25 @@ function integrator.initialize()
 end
 
 
+-- Collects the per-force integrations for a force that didn't exist at the last collection
+---@param force_index ForceIndex
+function integrator.collect_force(force_index)
+    if interfaces == nil then seek_provided_interfaces() end
+
+    for name, _ in pairs(force_scoped) do
+        storage.integrations[name][force_index] = call_providers(name, force_index)
+    end
+end
+
+-- Drops what was collected for a force that doesn't exist anymore
+---@param force_index ForceIndex
+function integrator.forget_force(force_index)
+    for name, _ in pairs(force_scoped) do
+        storage.integrations[name][force_index] = nil
+    end
+end
+
+
 -- Collects the named integration again, and runs appropriate updates if necessary
 ---@param integration string
 function integrator.invalidate(integration)

@@ -272,6 +272,25 @@ listeners.game = {
         storage.players[event.player_index] = nil
     end),
 
+    on_force_created = (function(event)
+        integrator.collect_force(event.force.index)
+    end),
+    on_forces_merged = (function(event)
+        integrator.forget_force(event.source_index)
+
+        -- Players brought along keep factories built against the force they left
+        local running_tick = game.tick + 1  ---@type MapTick?
+        for _, player in pairs(event.destination.players) do
+            local realm = lib.globals.player_table(player).realm
+            running_tick = realm:refresh_lines(player, running_tick)
+        end
+    end),
+    on_player_changed_force = (function(event)
+        local player = game.get_player(event.player_index)  ---@cast player -nil
+        local realm = lib.globals.player_table(player).realm
+        realm:refresh_lines(player, (game.tick + 1))
+    end),
+
     on_tick = lib.translator.on_tick
 }
 

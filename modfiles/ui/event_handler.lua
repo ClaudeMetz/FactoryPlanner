@@ -344,7 +344,10 @@ local game_events = {
     defines.events.on_tick,
     defines.events.on_singleplayer_init,
     defines.events.on_multiplayer_init,
-    defines.events.on_research_finished
+    defines.events.on_research_finished,
+    defines.events.on_force_created,
+    defines.events.on_forces_merged,
+    defines.events.on_player_changed_force
 }  ---@type defines.events[]
 
 ---@alias GameEventHandler fun(event: EventData)
