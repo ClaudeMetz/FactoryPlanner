@@ -880,55 +880,41 @@ function matrix_engine.to_reduced_row_echelon_form(m)
     if #m==0 then return m end
     local num_cols = #m[1]
 
-    -- set tolerance based on max value in matrix
-    local max_value = 0
-    for i = 1, num_rows do
-        for j = 1, num_cols do
-            if math.abs(m[i][j]) > max_value then
-                max_value = math.abs(m[i][j])
-            end
-        end
-    end
-    local tolerance = 1e-12 * max_value
-
+    local tolerance = 1e-12
     local pivot_row = 1
 
     for curr_col = 1, num_cols do
         -- find row with highest value in curr col as next pivot
         local max_pivot_index = pivot_row
-        local max_pivot_value = m[pivot_row][curr_col]
-        for curr_row = pivot_row+1, num_rows do -- does this need an if-wrapper?
+        local max_pivot_value = math.abs(m[pivot_row][curr_col])
+        for curr_row = pivot_row+1, num_rows do
             local curr_pivot_value = math.abs(m[curr_row][curr_col])
-            if math.abs(m[curr_row][curr_col]) > math.abs(max_pivot_value) then
+            if curr_pivot_value > max_pivot_value then
                 max_pivot_index = curr_row
                 max_pivot_value = curr_pivot_value
             end
         end
 
-        if math.abs(max_pivot_value) < tolerance then
+        if max_pivot_value < tolerance then
             -- if highest value is approximately zero, set this row and all rows below to zero
             for zero_row = pivot_row, num_rows do
                 m[zero_row][curr_col] = 0
             end
         else
             -- swap current row with highest value row
-            for swap_col = curr_col, num_cols do
-                local temp = m[pivot_row][swap_col]
-                m[pivot_row][swap_col] = m[max_pivot_index][swap_col]
-                m[max_pivot_index][swap_col] = temp
-            end
+            local temp = m[pivot_row]
+            m[pivot_row] = m[max_pivot_index]
+            m[max_pivot_index] = temp
 
-            -- normalize pivot row
-            local factor = m[pivot_row][curr_col]
-            for normalize_col = curr_col, num_cols do
-                m[pivot_row][normalize_col] = m[pivot_row][normalize_col] / factor
-            end
-
-            -- find nonzero cols in this row for the elimination step
+            -- find nonzero cols in this row for the elimination step and normalize
             local nonzero_pivot_cols = {}
+            local factor = m[pivot_row][curr_col]
+            m[pivot_row][curr_col] = m[pivot_row][curr_col] / factor
             for update_col = curr_col+1, num_cols do
                 local curr_pivot_col_value = m[pivot_row][update_col]
                 if curr_pivot_col_value ~= 0 then
+                    curr_pivot_col_value = curr_pivot_col_value / factor
+                    m[pivot_row][update_col] = curr_pivot_col_value
                     nonzero_pivot_cols[update_col] = curr_pivot_col_value
                 end
             end
@@ -1032,15 +1018,6 @@ function matrix_engine.insert(orig_table, value)
     if not found then
         table.insert(orig_table, value)
     end
-end
-
--- Shallowly and naively copys the base level of the given table
-function matrix_engine.shallowcopy(table)
-    local copy = {}
-    for key, value in pairs(table) do
-        copy[key] = value
-    end
-    return copy
 end
 
 return matrix_engine
