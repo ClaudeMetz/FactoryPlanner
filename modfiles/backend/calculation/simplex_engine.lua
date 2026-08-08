@@ -119,6 +119,13 @@ function simplex_engine.solve_floor(floor_data, line_metadata_table, level, prev
 
     local intermediates = solver.util.table.intersection(products, ingredients)  ---@type SimplexItemSet
 
+    -- Exclude top level products from the intermediates set
+    if level == 1 then
+        for _, item in pairs(floor_data.products) do
+            intermediates[solver.util.pack_item(item.name, item.type)] = nil
+        end
+    end
+
     -- Do not continue if the floor can't produce anything (sanity check)
     if not next(products) then return end
 
