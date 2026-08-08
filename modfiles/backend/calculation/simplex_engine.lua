@@ -43,7 +43,7 @@ local objective_vector = {
 ---@param key SolverItemKey
 ---@return number
 local function item_cost(key)
-    local item = solver.util.unpack_item(key)
+    local item = structures.unpack_item(key)
     if item.type == "fluid" then return objective_vector.fluid_modifier end
     if item.type == "entity" then return objective_vector.special_modifier end
     return 1
@@ -156,7 +156,7 @@ function simplex_engine.solve_floor(floor_data, line_metadata_table, level, prev
     if level == 1 then
         -- Add additional constraint to target products, so we get a bounded solution
         for _, item in pairs(floor_data.products) do  ---@cast item SolverItem
-            local item_key = solver.util.pack_item(item)
+            local item_key = structures.pack_item(item)
             local objective = item_cost(item_key) * objective_vector.target_product
             tableau:add_item_constraint(item_key, floor_data.id, "out", "<=", item.amount, objective)
         end
@@ -164,7 +164,7 @@ function simplex_engine.solve_floor(floor_data, line_metadata_table, level, prev
         -- Add additional constraint for limited ingredients
         -- @TODO: implement limited ingredients
         for _, item in pairs({}) do  ---@cast item SolverItem
-            local item_key = solver.util.pack_item(item)
+            local item_key = structures.pack_item(item)
             local objective = item_cost(item_key) * objective_vector.limited_ingredient
             tableau:add_item_constraint(item_key, floor_data.id, "in", "<=", item.amount, objective)
         end
@@ -235,13 +235,13 @@ function simplex_engine.get_line_metadata(line_data, floor_id)
     -- Get simple products
     for _, item in pairs(line_data.products) do
         local amount = total_crafts * solver.util.determine_prodded_amount(item, line_data.total_effects)
-        solver.util.table.add(products, solver.util.pack_item(item), amount)
+        solver.util.table.add(products, structures.pack_item(item), amount)
     end
 
     -- Get simple ingredients
     for _, item in pairs(line_data.ingredients) do
         local amount = item.amount * total_crafts * (item.type ~= "fluid" and line_data.resource_drain_rate or 1)
-        solver.util.table.add(ingredients, solver.util.pack_item(item), amount)
+        solver.util.table.add(ingredients, structures.pack_item(item), amount)
     end
 
     local power = 0.0
@@ -282,7 +282,7 @@ function simplex_engine.get_line_metadata(line_data, floor_id)
             type = line_data.fuel_proto.type,
             amount = 0
         }  ---@type SolverItem
-        local fuel_key = solver.util.pack_item(fuel)
+        local fuel_key = structures.pack_item(fuel)
         local fuel_as_ingredient = ingredients[fuel_key] or 0
         solver.util.table.add(ingredients, fuel_key, fuel_amount)
 
@@ -293,7 +293,7 @@ function simplex_engine.get_line_metadata(line_data, floor_id)
                 type = "item",
                 amount = 0
             }  ---@type SolverItem
-            local burnt_result_key = solver.util.pack_item(burnt_result)
+            local burnt_result_key = structures.pack_item(burnt_result)
             solver.util.table.add(products, burnt_result_key, fuel_amount)
         end
 
@@ -305,7 +305,7 @@ function simplex_engine.get_line_metadata(line_data, floor_id)
                 temperature = line_data.fuel_proto.spent_fluid.temperature,
                 amount = 0
             }  ---@type SolverItem
-            local spent_fluid_key = solver.util.pack_item(spent_fluid)
+            local spent_fluid_key = structures.pack_item(spent_fluid)
             local spent_fluid_amount = fuel_amount * line_data.fuel_proto.spent_fluid.amount
             solver.util.table.add(products, spent_fluid_key, spent_fluid_amount)
         end
@@ -319,17 +319,17 @@ function simplex_engine.get_line_metadata(line_data, floor_id)
     -- Add other special categories
     if power_amount > 0 then
         local item = { name = "custom-electric-power", type = "entity", amount = 0 }  ---@as SolverItem
-        local item_key = solver.util.pack_item(item)
+        local item_key = structures.pack_item(item)
         solver.util.table.add(ingredients, item_key, power_amount)
     end
     if heat_amount > 0 then
         local item = { name = "custom-heat-power", type = "entity", amount = 0 }  ---@as SolverItem
-        local item_key = solver.util.pack_item(item)
+        local item_key = structures.pack_item(item)
         solver.util.table.add(ingredients, item_key, heat_amount)
     end
     if line_data.pollutant_type and emissions ~= 0 then
         local item = { name = "custom-" .. line_data.pollutant_type, type = "entity", amount = 0 }  ---@as SolverItem
-        local item_key = solver.util.pack_item(item)
+        local item_key = structures.pack_item(item)
         if emissions > 0 then
             solver.util.table.add(products, item_key, emissions)
         else
@@ -361,7 +361,7 @@ function simplex_engine.update_factory(factory_data, line_metadata_table, result
     local ingredient_result = structures.class.init()
 
     for _, product in pairs(factory_data.top_floor.products) do
-        top_products[solver.util.pack_item(product)] = true
+        top_products[structures.pack_item(product)] = true
     end
 
     if result and result.floor_results[factory_data.top_floor.id] then
@@ -369,17 +369,17 @@ function simplex_engine.update_factory(factory_data, line_metadata_table, result
         for item_key, amount in pairs(result.floor_results[factory_data.top_floor.id].products) do
             if top_products[item_key] then
                 -- Update product amount
-                structures.class.add(product_result, solver.util.unpack_item(item_key, amount))
+                structures.class.add(product_result, structures.unpack_item(item_key, amount))
             else
                 -- Add to byproducts
                 top_byproducts[item_key] = amount
-                structures.class.add(byproduct_result, solver.util.unpack_item(item_key, amount))
+                structures.class.add(byproduct_result, structures.unpack_item(item_key, amount))
             end
         end
 
         -- Update the ingredients
         for item_key, amount in pairs(result.floor_results[factory_data.top_floor.id].ingredients) do
-            structures.class.add(ingredient_result, solver.util.unpack_item(item_key, amount))
+            structures.class.add(ingredient_result, structures.unpack_item(item_key, amount))
         end
     end
 
@@ -470,7 +470,7 @@ function simplex_engine.update_line(player_index, floor_id, line_data, scale_fac
                 amount = 0
             }  ---@type SolverItem
 
-            if item_key == solver.util.pack_item(fuel) then
+            if item_key == structures.pack_item(fuel) then
                 if data.fuel_ratio then
                     fuel_amount = machine_amount * amount * data.fuel_ratio
                     ingredients[item_key] = ingredients[item_key] * (1 - data.fuel_ratio)
@@ -518,7 +518,7 @@ function simplex_engine.update_line_object_common(machine_amount, products, bypr
     -- Update the products and byproducts
     for item_key, v in pairs(products) do
         local amount = v * machine_amount
-        local item = solver.util.unpack_item(item_key, amount)
+        local item = structures.unpack_item(item_key, amount)
         if not byproducts[item_key] then
             structures.class.add(product_result, item)
         else
@@ -544,7 +544,7 @@ function simplex_engine.update_line_object_common(machine_amount, products, bypr
     -- Update the ingredients
     for item_key, v in pairs(ingredients) do
         local amount = v * machine_amount
-        local item = solver.util.unpack_item(item_key, amount)
+        local item = structures.unpack_item(item_key, amount)
 
         structures.class.add(ingredient_result, item)
     end

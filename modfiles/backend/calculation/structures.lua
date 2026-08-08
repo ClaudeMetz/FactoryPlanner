@@ -1,7 +1,34 @@
-local structures = {
+local _structures = {
     aggregate = {},
     class = {}
 }
+
+---@alias SolverInputItem SolverItem | FPItemPrototype | SimpleItem | Ingredient | FormattedProduct | Fuel
+---@alias SolverItemKey string `<item.proto.type>/<item.proto.name>`
+
+local SEPARATOR = "/"
+
+---@param item SolverInputItem
+---@return SolverItemKey
+function _structures.pack_item(item)
+    local type = item.proto and item.proto.type or item.type
+    local name = item.proto and item.proto.name or item.name
+    return type .. SEPARATOR .. name
+end
+
+---@param item_key SolverItemKey
+---@param amount number?
+---@return SolverItem
+function _structures.unpack_item(item_key, amount)
+    local unpacked = lib.split_string(item_key, SEPARATOR)
+    local type = unpacked[1]  ---@as string
+    local name = unpacked[2]  ---@as string
+    return {
+        type = type,
+        name = name,
+        amount = amount or 0
+    }
+end
 
 ---@class SolverAggregate
 ---@field floor_id integer
@@ -14,14 +41,14 @@ local structures = {
 
 ---@param floor_id integer
 ---@return SolverAggregate
-function structures.aggregate.init(floor_id)
+function _structures.aggregate.init(floor_id)
     return {
         floor_id = floor_id,
         machine_amount = 0,
         production_ratio = nil,
-        Product = structures.class.init(),
-        Byproduct = structures.class.init(),
-        Ingredient = structures.class.init(),
+        Product = _structures.class.init(),
+        Byproduct = _structures.class.init(),
+        Ingredient = _structures.class.init(),
         known_byproducts = {item = {}, fluid = {}, entity = {}}
     }
 end
@@ -31,7 +58,7 @@ end
 ---@alias SolverSet table<ItemType, table<ItemName, true>>
 
 ---@return SolverClass
-function structures.class.init()
+function _structures.class.init()
     return {
         item = {},
         fluid = {},
@@ -39,12 +66,10 @@ function structures.class.init()
     }
 end
 
----@alias SolverInputItem SolverItem | FPItemPrototype | SimpleItem | Ingredient | FormattedProduct | Fuel
-
 ---@param class SolverClass
 ---@param item SolverInputItem
 ---@param amount number?
-function structures.class.add(class, item, amount)
+function _structures.class.add(class, item, amount)
     local type = (item.proto ~= nil) and item.proto.type or item.type
     local name = (item.proto ~= nil) and item.proto.name or item.name
     local amount_to_add = amount or item.amount or 0
@@ -57,8 +82,8 @@ end
 ---@param class SolverClass
 ---@param item SolverInputItem
 ---@param amount number?
-function structures.class.subtract(class, item, amount)
-    structures.class.add(class, item, -(amount or item.amount))
+function _structures.class.subtract(class, item, amount)
+    _structures.class.add(class, item, -(amount or item.amount))
 end
 
 
@@ -67,20 +92,20 @@ end
 ---@param class SolverClass
 ---@param depot SolverClass
 ---@param destination SolverClass
-function structures.class.balance_items(class, depot, destination)
-    for _, item in pairs(structures.class.list(class)) do
+function _structures.class.balance_items(class, depot, destination)
+    for _, item in pairs(_structures.class.list(class)) do
         local depot_amount = depot[item.type][item.name]  ---@type number
 
         if depot_amount ~= nil then  -- Use up depot items, if available
             if depot_amount >= item.amount then
-                structures.class.subtract(depot, item)
+                _structures.class.subtract(depot, item)
             else
-                structures.class.subtract(depot, item, depot_amount)
-                structures.class.add(destination, item, (item.amount - depot_amount))
+                _structures.class.subtract(depot, item, depot_amount)
+                _structures.class.add(destination, item, (item.amount - depot_amount))
             end
 
         else  -- add to destination if this item is not present in the depot
-            structures.class.add(destination, item)
+            _structures.class.add(destination, item)
         end
     end
 end
@@ -94,7 +119,7 @@ end
 
 ---@param class SolverClass
 ---@return SolverItem[]
-function structures.class.list(class)
+function _structures.class.list(class)
     local list = {}
     for type, items_of_type in pairs(class) do
         for name, amount in pairs(items_of_type) do
@@ -108,4 +133,4 @@ function structures.class.list(class)
     return list
 end
 
-return structures
+return _structures

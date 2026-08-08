@@ -3,31 +3,6 @@ local _util = {
     matrix = {},
 }
 
---- @alias SolverItemKey string `<item.proto.type>/<item.proto.name>`
-
-local SEPARATOR = "/"
-
----@param item SolverInputItem
----@return SolverItemKey
-function _util.pack_item(item)
-    local type = item.proto and item.proto.type or item.type
-    local name = item.proto and item.proto.name or item.name
-    return type .. SEPARATOR .. name
-end
-
----@param item_key SolverItemKey
----@param amount number?
----@return SolverItem
-function _util.unpack_item(item_key, amount)
-    local unpacked = lib.split_string(item_key, SEPARATOR)
-    local type = unpacked[1]  ---@as string
-    local name = unpacked[2]  ---@as string
-    return {
-        type = type,
-        name = name,
-        amount = amount or 0
-    }
-end
 
 ---Performs `a - b` while correcting floating point errors
 ---@param a number
