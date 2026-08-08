@@ -1,16 +1,19 @@
 ---@diagnostic disable
 
--- Test cases consist of a runtime check, which is run in the main mod's environment
+-- Unit tests for the lib formatters, one case per function, none of which need
+-- prototypes of their own. Small related cases like these share a file, with the
+-- world file naming each of them.
+
+local helpers = require("helpers")
 
 return {
-    testUtilFormatNumber = {
+    number = {
         check = function()
+            local c = helpers.collector()
             local function run(number, precision, expected, label)
                 local result = lib.format.number(number, precision)
-                if result ~= expected then
-                    error(string.format("FAIL [%s]: number(%g, %d) -> expected %q, got %q",
-                        label, number, precision, expected, result))
-                end
+                c.check(result == expected, string.format("[%s]: number(%g, %d) -> expected %q, got %q",
+                    label, number, precision, expected, result))
             end
 
             -- Large numbers use %d to avoid %g's scientific notation
@@ -48,22 +51,23 @@ return {
             run(1.234,  4, "1.234",   "4 sig figs")
             run(0.00009, 4, "≤0.0001", "tiny at precision 4")
             run(1.23e27, 4, "1.23e+27", "scientific at precision 4")
+
+            c.done()
         end
     },
 
-    testUtilFormatSIValue = {
+    SI_value = {
         check = function()
+            local c = helpers.collector()
             local function run(value, unit, precision, expected_num, expected_prefix, label)
                 local result = lib.format.SI_value(value, unit, precision)
                 local num_str, prefix = result[2], result[3]
                 local prefix_key = (type(prefix) == "table") and prefix[1] or prefix
 
-                if num_str ~= expected_num then
-                    error(string.format("FAIL [%s] number: expected %q, got %q", label, expected_num, num_str))
-                end
-                if prefix_key ~= expected_prefix then
-                    error(string.format("FAIL [%s] prefix: expected %q, got %q", label, expected_prefix, prefix_key))
-                end
+                c.check(num_str == expected_num,
+                    string.format("[%s] number: expected %q, got %q", label, expected_num, num_str))
+                c.check(prefix_key == expected_prefix,
+                    string.format("[%s] prefix: expected %q, got %q", label, expected_prefix, prefix_key))
             end
 
             -- Base scale (no prefix)
@@ -99,18 +103,19 @@ return {
 
             -- Emissions unit
             run(1500, "E/m", 3, "1.5 ", "fp.prefix_kilo", "1.5k E/m")
+
+            c.done()
         end
     },
 
-    testUtilFormatButtonNumber = {
+    button_number = {
         check = function()
+            local c = helpers.collector()
             local function run(input, expected, label)
                 local result = lib.format.button_number(input)
                 local success = math.abs(result - expected) <= 1e-9 * math.max(1, math.abs(expected))
-                if not success then
-                    error(string.format("FAIL [%s]: %.10g -> expected %.10g, got %.10g",
-                        label, input, expected, result))
-                end
+                c.check(success, string.format("[%s]: %.10g -> expected %.10g, got %.10g",
+                    label, input, expected, result))
             end
 
             -- Spec examples
@@ -174,6 +179,8 @@ return {
             run(2.345e15,  2.4e15,  "P 1-dec")
             run(2.345e18,  2.4e18,  "E 1-dec")
             run(234.5e18,  235e18,  "E 0-dec")
+
+            c.done()
         end
     }
 }
