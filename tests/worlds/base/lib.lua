@@ -1,13 +1,14 @@
 ---@diagnostic disable
 
--- Unit tests for the formatting utilities. No prototype dependencies, so this
--- world can move to nobase once the minimal world is proven in CI.
+-- Unit tests for the lib utilities, currently covering the formatters. No
+-- prototype dependencies, so this world can move to nobase once the minimal
+-- world is proven in CI.
 
 local helpers = require("helpers")
 
 return {
     cases = {
-        testUtilFormatNumber = {
+        testLibFormatNumber = {
             check = function()
                 local c = helpers.collector()
                 local function run(number, precision, expected, label)
@@ -56,7 +57,7 @@ return {
             end
         },
 
-        testUtilFormatSIValue = {
+        testLibFormatSIValue = {
             check = function()
                 local c = helpers.collector()
                 local function run(value, unit, precision, expected_num, expected_prefix, label)
@@ -108,7 +109,7 @@ return {
             end
         },
 
-        testUtilFormatButtonNumber = {
+        testLibFormatButtonNumber = {
             check = function()
                 local c = helpers.collector()
                 local function run(input, expected, label)
