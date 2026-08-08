@@ -3,6 +3,8 @@ on: [push, pull_request]
 jobs:
   save-create:
     runs-on: self-hosted
+    if: github.event_name == 'push'
+      || github.event.pull_request.head.repo.full_name != github.repository
     steps:
       - uses: actions/checkout@v5
       - name: Run save-create
@@ -10,6 +12,8 @@ jobs:
 
   world:
     runs-on: self-hosted
+    if: github.event_name == 'push'
+      || github.event.pull_request.head.repo.full_name != github.repository
     strategy:
       fail-fast: false
       matrix:
