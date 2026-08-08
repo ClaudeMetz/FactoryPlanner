@@ -229,7 +229,7 @@ function simplex_engine.get_line_metadata(line_data, floor_id)
 
     -- Get amount of crafts in 1 second
     local speed_multiplier = line_data.machine_speed * (1 + (line_data.total_effects.speed / MAGIC_NUMBERS.effect_precision))
-    local energy = (line_data.recipe_energy > MAGIC_NUMBERS.minimum_energy) and line_data.recipe_energy or MAGIC_NUMBERS.minimum_energy
+    local energy = math.max(line_data.recipe_energy, MAGIC_NUMBERS.minimum_energy)
     local total_crafts = speed_multiplier / energy
 
     -- Get simple products
@@ -244,20 +244,26 @@ function simplex_engine.get_line_metadata(line_data, floor_id)
         solver.util.table.add(ingredients, solver.util.pack_item(item.name, item.type), amount)
     end
 
-    -- Get power and emissions
-    local power, emissions = solver.util.determine_power_and_emissions(line_data, 1, total_crafts)
+    local power = 0.0
+    local emissions = 0.0
 
-    -- Get fuel/power/heat energy requirements
     local fuel_amount = 0.0
     local power_amount = 0.0
     local heat_amount = 0.0
-    if line_data.machine_proto.energy_type == "burner" and line_data.fuel_proto then
-        ---@cast line_data.machine_proto.burner -nil
-        fuel_amount = fuel_amount + solver.util.determine_fuel_amount(line_data, power, 1)
-    elseif line_data.machine_proto.energy_type == "electric" then
-        power_amount = power_amount + power
-    elseif line_data.machine_proto.energy_type == "heat" then
-        heat_amount = heat_amount + power
+
+    if energy > MAGIC_NUMBERS.minimum_energy then
+        -- Get power and emissions
+        power, emissions = solver.util.determine_power_and_emissions(line_data, 1, total_crafts)
+
+        -- Get fuel/power/heat energy requirements
+        if line_data.machine_proto.energy_type == "burner" and line_data.fuel_proto then
+            ---@cast line_data.machine_proto.burner -nil
+            fuel_amount = fuel_amount + solver.util.determine_fuel_amount(line_data, power, 1)
+        elseif line_data.machine_proto.energy_type == "electric" then
+            power_amount = power_amount + power
+        elseif line_data.machine_proto.energy_type == "heat" then
+            heat_amount = heat_amount + power
+        end
     end
 
     -- Get beacon power

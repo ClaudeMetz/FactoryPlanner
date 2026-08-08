@@ -455,6 +455,9 @@ function solver.set_line_result(result)
         if line.machine.fuel ~= nil then line.machine.fuel.amount = result.fuel_amount end
 
         line.production_ratio = result.production_ratio
+
+        -- Workaround for recipes with 0 energy
+        if line.recipe.proto.energy <= MAGIC_NUMBERS.minimum_energy then line.machine.amount = 0 end
     end
 
     if line.production_ratio == 0 then  ---@cast line Line
