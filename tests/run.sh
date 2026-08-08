@@ -3,14 +3,20 @@ set -e
 
 FACTORIO=${FACTORIO:-/opt/factorio/bin/x64/factorio}
 WORKSPACE=${GITHUB_WORKSPACE:-.}
+# Usage: run.sh <save-create | worlds | world <name> [case-filter]>
+# The case filter is a Lua pattern matched against case names; filtered runs
+# report failures with full stack tracebacks
 TEST=${1:-save-create}
 WORLD=${2:-}
+CASES=${3:-}
 
 # The mod targets the experimental branch, so track 'latest' rather than 'stable'
 DOWNLOAD=https://factorio.com/get-download/latest/headless/linux64
 
 TMPDIR=$(mktemp -d)
 trap "rm -rf $TMPDIR" EXIT
+
+RED=$'\033[31m'; GREEN=$'\033[32m'; BOLD=$'\033[1m'; RESET=$'\033[0m'
 
 installed_version() {
   $FACTORIO --version 2>/dev/null | sed -n '1s/^Version: \([0-9][0-9.]*\).*/\1/p'
@@ -48,6 +54,7 @@ update_factorio() {
 # Runs a single world: a fresh mod directory, then one map creation with the test mod active
 run_world() {
   local world_file=$1
+  local cases=$2
   local world=$(basename $world_file .lua)
   local mods=$TMPDIR/mods-$world
   local logfile=$TMPDIR/$world.log
@@ -55,8 +62,10 @@ run_world() {
   mkdir -p $mods
   cp -r $WORKSPACE/modfiles $mods/factoryplanner
   cp -r $WORKSPACE/tests/mod $mods/factoryplanner-test
-  # The active world is baked into the test mod copy at a canonical path
+  # The active world is baked into the test mod copy at a canonical path,
+  # along with the case filter (a Lua pattern; empty runs everything)
   cp $world_file $mods/factoryplanner-test/world.lua
+  printf 'return "%s"\n' "$cases" > $mods/factoryplanner-test/filter.lua
 
   # Whether the base game is enabled is encoded in the world file's parent directory
   local base_enabled=false
@@ -87,19 +96,23 @@ EOF
 
   local exit_code=0
   $FACTORIO --mod-directory $mods --create $TMPDIR/$world-map.zip > $logfile 2>&1 || exit_code=$?
-  sed "s/^/[$world] /" $logfile
+
+  # Only the report blocks the test mod logs are shown; the rest of the game log
+  # is noise unless something actually broke
+  echo "${BOLD}$world${RESET}"
+  sed -n '/FPTEST_REPORT$/,/FPTEST_REPORT_END$/{/FPTEST_REPORT/!p;}' $logfile \
+    | sed "s/✓/${GREEN}✓${RESET}/; s/✗/${RED}✗${RESET}/"
 
   if [ $exit_code -ne 0 ] || grep -q "Error" $logfile; then
-    echo "[$world] Mod error during test run"
+    sed 's/^/  | /' $logfile
+    echo "  ${RED}Mod error during test run${RESET}"
     return 1
   elif ! grep -q "tests_passed\|tests_failed" $logfile; then
-    echo "[$world] Tests did not run"
-    return 1
-  elif grep -q "tests_failed\|setup_failed" $logfile; then
-    echo "[$world] Not all tests passed"
+    sed 's/^/  | /' $logfile
+    echo "  ${RED}Tests did not run${RESET}"
     return 1
   fi
-  echo "[$world] All tests passed"
+  ! grep -q "tests_failed\|setup_failed" $logfile
 }
 
 # Runs every world in sequence, reporting all failures rather than stopping at the first
@@ -110,10 +123,10 @@ run_worlds() {
   done
 
   if [ -n "$failed" ]; then
-    echo "Failed worlds:$failed"
+    echo "${RED}Failed worlds:$failed${RESET}"
     exit 1
   fi
-  echo "All worlds passed"
+  echo "${GREEN}All worlds passed${RESET}"
 }
 
 update_factorio
@@ -122,14 +135,18 @@ case $TEST in
   save-create)
     mkdir -p $TMPDIR/mods
     cp -r $WORKSPACE/modfiles $TMPDIR/mods/factoryplanner
-    $FACTORIO --mod-directory $TMPDIR/mods --create $TMPDIR/test-map.zip 2>&1 | tee $TMPDIR/factorio.log
-    if [ ${PIPESTATUS[0]} -ne 0 ] || grep -q "Error" $TMPDIR/factorio.log; then
+    exit_code=0
+    $FACTORIO --mod-directory $TMPDIR/mods --create $TMPDIR/test-map.zip > $TMPDIR/factorio.log 2>&1 || exit_code=$?
+    if [ $exit_code -ne 0 ] || grep -q "Error" $TMPDIR/factorio.log; then
+      sed 's/^/  | /' $TMPDIR/factorio.log
+      echo "${RED}✗ save-create: mod error during map creation${RESET}"
       exit 1
     fi
+    echo "${GREEN}✓${RESET} save-create: map created without errors"
     ;;
   worlds) run_worlds ;;
   world)
     world_file=$(ls $WORKSPACE/tests/worlds/*/$WORLD.lua 2>/dev/null) || { echo "Unknown world: $WORLD"; exit 1; }
-    run_world $world_file
+    run_world $world_file "$CASES"
     ;;
 esac
