@@ -5,6 +5,7 @@ Date: 00. 00. 0000
     - Implemented backwards and forwards buttons for the main interface (#69)
   Changes:
     - Inactive recipes now clearly indicate the reason for not being active
+    - Planting recipes are now restricted to locations that actually allow them (#811) (Thanks vapopescu!)
   Bugfixes:
     - Fixed rocket science plans not showing up correctly with Space Exploration (#640)
     - Fixed a crash when numbers in the GUI got very large (#809)

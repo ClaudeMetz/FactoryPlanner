@@ -15,6 +15,12 @@ local generator = {
     qualities = {}
 }
 
+-- Data collected during recipe generation, reused by later generator stages
+local resource_deposits = {}  ---@type LuaEntityPrototype[]
+local rocket_parts = {}  ---@type table<string, boolean>
+local pumped_tiles = {}  ---@type LuaTilePrototype[]
+local tile_can_have_plant = {}  ---@type table<string, string[]>
+
 
 ---@class FPPrototype
 ---@field id integer
@@ -80,7 +86,7 @@ end
 ---@field enabling_technologies string[]?
 ---@field heat_capacity double?
 ---@field custom boolean
----@field location_resource boolean?
+---@field location_restricted boolean?
 ---@field enabled_from_the_start boolean
 ---@field hidden boolean
 ---@field order string
@@ -218,7 +224,7 @@ function generator.recipes.generate()
             recipe.allowed_effects = {speed=true, productivity=true, quality=true, consumption=true, pollution=true}
             recipe.productivity_recipe = (any_mining_productivity) and "custom-mining" or nil
             recipe.energy = (proto.infinite_resource) and 0 or proto.mineable_properties.mining_time
-            recipe.location_resource = true
+            recipe.location_restricted = true
 
             local ingredients = {{type="entity", name="custom-" .. proto.name, amount=1}--[[@as Ingredient]]}
 
@@ -233,6 +239,9 @@ function generator.recipes.generate()
 
             generator.util.format_recipe(recipe, products, main_product, ingredients)
             insert_prototype(recipes, recipe, nil)
+
+            -- Note the deposit so item generation can create its custom item
+            table.insert(resource_deposits, proto)
 
             ::incompatible_proto::
 
@@ -275,6 +284,17 @@ function generator.recipes.generate()
             recipe.order = proto.order
             recipe.categories = {["agricultural-tower"] = true}
             recipe.energy = proto.growth_ticks--[[@cast -nil]] / 60
+            recipe.location_restricted = true
+
+            -- Add the plant prototype name to the list of tiles it can be planted on
+            if proto.autoplace_specification then
+                for _, tile_restriction in pairs(proto.autoplace_specification.tile_restriction or {}) do
+                    if tile_restriction.first then
+                        tile_can_have_plant[tile_restriction.first] = tile_can_have_plant[tile_restriction.first] or {}
+                        table.insert(tile_can_have_plant[tile_restriction.first], proto.name)
+                    end
+                end
+            end
 
             -- Each craft releases the harvest emissions plus a full growth period of the plant's emissions
             recipe.emissions_per_craft = {}
@@ -304,7 +324,10 @@ function generator.recipes.generate()
                 local parts_product = recipe.main_product  ---@cast parts_product -nil
                 local disambiguator = (ambiguous) and ("-using-" .. recipe.name) or ""
                 local rocket_parts_ingredient = {type="item", name=parts_product.name,
-                    amount=proto.rocket_parts_required}  ---@as Ingredient
+                amount=proto.rocket_parts_required}  ---@as Ingredient
+
+                -- Mark rocket part items so item generation can make them non-hidden
+                rocket_parts[parts_product.name] = true
 
                 -- Add rocket launch product recipes
                 if not proto.launch_to_space_platforms then
@@ -396,6 +419,9 @@ function generator.recipes.generate()
             local fluid = proto.fluid  ---@cast fluid -nil
             pumped_fluids[fluid.name] = true
 
+            -- Note the tile so item generation can create its custom item
+            table.insert(pumped_tiles, proto)
+
             local recipe = custom_recipe()
             recipe.name = "impostor-" .. fluid.name .. "-tile"
             recipe.factoriopedia_id = {type="tile", name=proto.name}
@@ -404,7 +430,7 @@ function generator.recipes.generate()
             recipe.order = proto.order
             recipe.categories = {["offshore-pump"] = true}
             recipe.energy = 1
-            recipe.location_resource = true
+            recipe.location_restricted = true
 
             local products = {{type="fluid", name=fluid.name, amount=60,
                 temperature=fluid.default_temperature}--[[@as Product]]}
@@ -513,44 +539,30 @@ function generator.items.generate()
 
     -- Build custom items, representing in-world entities mostly
     local custom_items = {}  ---@type NamedPrototypes<CustomItemDetails>
-    local rocket_parts = {}  ---@type table<string, boolean>
 
-    for _, proto in pairs(prototypes.entity) do
-        if proto.type == "resource" and not proto.hidden then
-            local item_name = "custom-" .. proto.name
-            custom_items[item_name] = {
-                name = item_name,
-                localised_name = {"", proto.localised_name, " ", {"fp.deposit"}},
-                sprite = "entity/" .. proto.name,
-                hidden = true,
-                order = proto.order
-            }
-            generator.util.add_default_groups(custom_items[item_name])
-
-        -- Mark rocket silo part items here so they can be marked as non-hidden
-        elseif proto.type == "rocket-silo" and not proto.hidden then
-            for _, recipe in pairs(generator.util.silo_parts_recipes(proto, recipe_prototypes)) do
-                local parts_product = recipe.main_product  ---@cast parts_product -nil
-                rocket_parts[parts_product.name] = true
-            end
-        end
+    -- Deposits and lakes match the entities/tiles that recipe generation created recipes for
+    for _, proto in pairs(resource_deposits) do
+        local item_name = "custom-" .. proto.name
+        custom_items[item_name] = {
+            name = item_name,
+            localised_name = {"", proto.localised_name, " ", {"fp.deposit"}},
+            sprite = "entity/" .. proto.name,
+            hidden = true,
+            order = proto.order
+        }
+        generator.util.add_default_groups(custom_items[item_name])
     end
 
-    local pumped_fluids = {}
-    for _, proto in pairs(prototypes.tile) do
-        if proto.fluid and not pumped_fluids[proto.fluid.name] and not proto.hidden then
-            pumped_fluids[proto.fluid.name] = true
-
-            local item_name = "custom-" .. proto.name
-            custom_items[item_name] = {
-                name = item_name,
-                localised_name = {"", proto.localised_name, " ", {"fp.lake"}},
-                sprite = "tile/" .. proto.name,
-                hidden = true,
-                order = proto.order
-            }
-            generator.util.add_default_groups(custom_items[item_name])
-        end
+    for _, proto in pairs(pumped_tiles) do
+        local item_name = "custom-" .. proto.name
+        custom_items[item_name] = {
+            name = item_name,
+            localised_name = {"", proto.localised_name, " ", {"fp.lake"}},
+            sprite = "tile/" .. proto.name,
+            hidden = true,
+            order = proto.order
+        }
+        generator.util.add_default_groups(custom_items[item_name])
     end
 
     if script.feature_flags["space_travel"] then
@@ -1636,13 +1648,20 @@ function generator.locations.generate()
                 end
             end
 
-            -- Check for fluid tiles that can be extracted with offshore pumps
             local tile_autoplace = proto.map_gen_settings.autoplace_settings.tile
             if tile_autoplace then
                 for key, _ in pairs(tile_autoplace.settings or {}) do
+                    -- Check for fluid tiles that can be extracted with offshore pumps
                     if prototypes.tile[key] and prototypes.tile[key].fluid then
                         local recipe_key = "impostor-" .. prototypes.tile[key].fluid.name .. "-tile"
                         resource_recipes[recipe_key] = true
+                    end
+
+                    -- Check for natural tiles that plants can grow on
+                    if tile_can_have_plant[key] then
+                        for _, plant in pairs(tile_can_have_plant[key]) do
+                            resource_recipes["impostor-" .. plant] = true
+                        end
                     end
                 end
             end
