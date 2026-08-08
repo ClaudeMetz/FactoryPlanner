@@ -9,6 +9,10 @@ function _format.number(number, precision)
     if number < 10 ^ -precision then
         return "≤" .. ("%." .. precision .. "g"):format(10 ^ -precision)
     end
+    if number >= 1e15 then
+        -- Past 2^53 doubles can't represent consecutive integers, and %d rejects them entirely
+        return ("%." .. precision .. "g"):format(number)
+    end
     if number >= 10 ^ precision then
         return ("%d"):format(number)  -- %g uses scientific notation here, avoid it
     end
@@ -39,6 +43,8 @@ function _format.SI_value(value, unit, precision)
         scale_counter = math.max(0, math.floor(math.log(value, 10) / 3))  -- /3 because SI prefixes are powers of 1000
         -- Values that round to 1000 would produce scientific notation in %g
         if value / (1000 ^ scale_counter) > 999 then scale_counter = scale_counter + 1 end
+        -- Beyond the largest prefix, drop to the base unit, which formats as scientific notation
+        if scale_counter > #prefixes - 1 then scale_counter = 0 end
     end
 
     value = value / (1000 ^ scale_counter)

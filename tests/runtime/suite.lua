@@ -18,6 +18,12 @@ return {
             run(9999,  3, "9999",  "4 digit")
             run(12345, 3, "12345", "5 digit")
 
+            -- Past 1e15, %d can't represent the value, so scientific notation takes over
+            run(999999999999999, 3, "999999999999999", "just under scientific threshold")
+            run(1e15,   3, "1e+15",   "scientific threshold")
+            run(1.5e27, 3, "1.5e+27", "sig figs in scientific notation")
+            run(1e27,   3, "1e+27",   "past the largest SI prefix")
+
             -- Normal range: 3 sig figs via %g
             run(999,  3, "999",  "just under 1k")
             run(123,  3, "123",  "3 digit")
@@ -41,6 +47,7 @@ return {
             run(9999,   4, "9999",    "4 digit at precision 4")
             run(1.234,  4, "1.234",   "4 sig figs")
             run(0.00009, 4, "≤0.0001", "tiny at precision 4")
+            run(1.23e27, 4, "1.23e+27", "scientific at precision 4")
         end
     },
 
@@ -77,6 +84,14 @@ return {
             run(1e6,   "W", 3, "1 ",   "fp.prefix_mega", "1MW")
             run(1.5e6, "W", 3, "1.5 ", "fp.prefix_mega", "1.5MW")
             run(1e9,   "W", 3, "1 ",   "fp.prefix_giga", "1GW")
+
+            -- Yotta is the last prefix, past it the base unit is used with scientific notation
+            run(1e24,     "W", 3, "1 ",         "fp.prefix_yotta", "1YW")
+            run(9.99e26,  "W", 3, "999 ",       "fp.prefix_yotta", "999YW")
+            run(9.993e26, "W", 3, "9.99e+26 ",  "",                "would-be 1000YW -> scientific")
+            run(1e27,     "W", 3, "1e+27 ",     "",                "1e27W")
+            run(1e45,     "W", 3, "1e+45 ",     "",                "1e45W")
+            run(-1e27,    "W", 3, "-1e+27 ",    "",                "negative scientific")
 
             -- Negative values
             run(-500,  "W", 3, "-500 ", "",               "-500W")
