@@ -182,13 +182,13 @@ end
 
 ---@param player LuaPlayer
 ---@return boolean changed
-function Floor:refresh_recipes(player)
+function Floor:refresh_lines(player)
     local changed = false
     for line in self:iterator() do
         if line.class == "Floor" then  ---@cast line Floor
-            changed = line:refresh_recipes(player) or changed
+            changed = line:refresh_lines(player) or changed
         else  ---@cast line Line
-            changed = line:refresh_recipe(player) or changed
+            changed = line:refresh_line(player) or changed
         end
     end
     return changed

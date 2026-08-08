@@ -121,6 +121,27 @@ function Machine:update_mod_effects(force)
     end
 end
 
+--- Migrates to the machine that stands in for this one, if the force has one. Needs a player
+--- rather than a force because swapping the machine can require picking a new fuel.
+---@param player LuaPlayer
+---@return boolean substituted
+function Machine:apply_substitution(player)
+    local force = player.force  --[[@as LuaForce]]
+    local substitutions = storage.integrations.machine_substitutions[force.index]
+    local replacement = (substitutions) and substitutions[self.proto.name] or nil
+    if replacement == nil then return false end
+
+    local proto = prototyper.util.find("machines", replacement, self.proto.combined_category)  ---@as FPMachinePrototype?
+
+    if proto and self.parent:is_machine_compatible(proto) then
+        self.parent:change_machine_to_proto(player, proto)
+    else  -- a stand-in that can't run this recipe is no better than one FP doesn't know about
+        self.parent:change_machine_to_default(player)
+    end
+
+    return true
+end
+
 ---@return boolean
 function Machine:uses_effects()
     ---@cast self.proto FPMachinePrototype
@@ -287,7 +308,8 @@ function Machine:paste(object, player)
     if object.class == "Machine" then  ---@cast object Machine
         local corresponding_proto = prototyper.util.find("machines", object.proto.name, self.proto.combined_category)  ---@as FPMachinePrototype?
 
-        if corresponding_proto == nil or not self.parent:is_machine_compatible(corresponding_proto) then
+        if corresponding_proto == nil or not self.parent:is_machine_compatible(corresponding_proto)
+                or not lib.is_machine_available(player.force--[[@as LuaForce]], corresponding_proto) then
             return false, "incompatible"
         end
 

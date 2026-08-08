@@ -108,6 +108,7 @@ end
 function Line:change_machine_by_action(player, action, current_proto)
     local current_machine_proto = current_proto or self.machine.proto  ---@as FPMachinePrototype
     local category_id = current_machine_proto.category_id
+    local force = player.force  --[[@as LuaForce]]
 
     ---@param new_machine_id integer
     ---@return boolean success
@@ -115,7 +116,8 @@ function Line:change_machine_by_action(player, action, current_proto)
         -- Assume a match while inside the upgrade/downgrade loop
         current_machine_proto = prototyper.util.find("machines", new_machine_id, category_id) ---@as FPMachinePrototype
 
-        if self:is_machine_compatible(current_machine_proto) then
+        if self:is_machine_compatible(current_machine_proto)
+                and lib.is_machine_available(force, current_machine_proto) then
             self:change_machine_to_proto(player, current_machine_proto)
             return true
         end
@@ -147,7 +149,8 @@ function Line:change_machine_to_default(player)
 
     local success = false
     -- If the default is applicable, just set it straight away
-    if self:is_machine_compatible(default_proto) then
+    if self:is_machine_compatible(default_proto)
+            and lib.is_machine_available(player.force--[[@as LuaForce]], default_proto) then
         self:change_machine_to_proto(player, default_proto)
         success = true
     -- Otherwise, go up, then down the category to find an alternative
@@ -164,15 +167,26 @@ end
 
 ---@param player LuaPlayer
 ---@return boolean changed
-function Line:refresh_recipe(player)
-    if self.recipe:apply_substitution(player.force--[[@as LuaForce]]) then
+function Line:refresh_line(player)
+    local force = player.force  --[[@as LuaForce]]
+    local changed = false
+
+    if self.recipe:apply_substitution(force) then
         -- The replacement can have moved categories or disallow modules, which needs repairing here
         if not self:validate(player) then self:repair(player) end
-        return true
+        changed = true
+    elseif self.recipe.proto.simplified then
+        return false  -- a recipe FP doesn't know about tells us nothing about the machine either
+    else
+        changed = self.recipe:refresh_availability(force)
     end
 
-    if self.recipe.proto.simplified then return false end
-    return self.recipe:refresh_availability(player.force--[[@as LuaForce]])
+    -- Goes after the recipe, since a substituted one can have replaced the machine already
+    if not self.machine.proto.simplified then
+        changed = self.machine:apply_substitution(player) or changed
+    end
+
+    return changed
 end
 
 
@@ -230,14 +244,15 @@ function Line:summarize_effects()
 end
 
 
+---@param force LuaForce
 ---@return PrototypeFilter filter
-function Line:compile_machine_filter()
+function Line:compile_machine_filter(force)
     local compatible_machines = {}
 
     local machine_category = prototyper.util.find("machines", nil, self.machine.proto.combined_category)  ---@as NamedCategory<FPMachinePrototype>
 
     for _, machine_proto in pairs(machine_category.members) do
-        if self:is_machine_compatible(machine_proto) then
+        if self:is_machine_compatible(machine_proto) and lib.is_machine_available(force, machine_proto) then
             table.insert(compatible_machines, machine_proto.name)
         end
     end

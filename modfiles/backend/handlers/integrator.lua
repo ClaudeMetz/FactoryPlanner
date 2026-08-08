@@ -6,6 +6,7 @@ integrator = {}
 ---@field machine_effects table<ForceIndex, table<string, IntegerModuleEffects>>
 ---@field overwrite_recipe_picker table<ForceIndex, table<string, boolean>>
 ---@field recipe_substitutions table<ForceIndex, table<string, string>>
+---@field machine_substitutions table<ForceIndex, table<string, string>>
 
 -- ** LOCAL UTIL **
 ---@param table Any?
@@ -121,6 +122,9 @@ function handlers.recipe_substitutions(dataset, storage_table)
     end
 end
 
+-- Machine substitutions have the exact same shape, so they are read the same way
+handlers.machine_substitutions = handlers.recipe_substitutions
+
 ---@param dataset Any
 ---@param storage_table table
 function handlers.overwrite_recipe_picker(dataset, storage_table)
@@ -154,6 +158,7 @@ end
 local force_scoped = {
     machine_effects = true,
     recipe_substitutions = true,
+    machine_substitutions = true,
     overwrite_recipe_picker = true
 }
 
@@ -176,6 +181,7 @@ end
 function integrator.initialize()
     integrator.collect("machine_effects")
     integrator.collect("recipe_substitutions")
+    integrator.collect("machine_substitutions")
     integrator.collect("overwrite_recipe_picker")
 end
 
@@ -193,12 +199,14 @@ function integrator.invalidate(integration)
             offset = offset + 2
         end
 
-    elseif integration == "recipe_substitutions" or integration == "overwrite_recipe_picker" then
-        -- Both of these can change which recipes are available, which the walk re-derives
+    elseif integration == "recipe_substitutions"
+            or integration == "overwrite_recipe_picker"
+            or integration == "machine_substitutions" then
+        -- These change which recipes/machines are available, so refresh all lines
         local running_tick = game.tick + 1  ---@type MapTick?
         for _, player in pairs(game.players) do
             local realm = lib.globals.player_table(player).realm
-            running_tick = realm:refresh_recipes(player, running_tick)
+            running_tick = realm:refresh_lines(player, running_tick)
         end
     end
 end

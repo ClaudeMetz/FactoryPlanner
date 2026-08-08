@@ -108,7 +108,7 @@ local function refresh_player_table(player)
     player_table.clipboard = nil
 
     -- Apply substitutions that were just pulled in, as they won't get an invalidation event
-    player_table.realm:refresh_recipes(player)
+    player_table.realm:refresh_lines(player)
 
     player_table.realm:validate(player)
 end

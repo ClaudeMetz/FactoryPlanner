@@ -14,6 +14,7 @@ Note that this compatibility interface is currently very limited, but I'm open t
   - [`machine_effects`](#machine_effects)
   - [`overwrite_recipe_picker`](#overwrite_recipe_picker)
   - [`recipe_substitutions`](#recipe_substitutions)
+  - [`machine_substitutions`](#machine_substitutions)
 
 ## Runtime integrations
 
@@ -164,6 +165,36 @@ remote.add_interface("fp-integration-example-mod", {
         return {
             version = 1,
             substitutions = { ["iron-gear-wheel"] = "iron-gear-wheel-improved" }
+        }
+    end)
+})
+```
+
+### `machine_substitutions`
+
+**Current version:** `1`, available from `2.1.11`
+
+This integration allows mods to tell Factory Planner that they replaced one machine with another by scripting, which it has no way of noticing otherwise. Factory Planner hides the replaced machines from the machine picker, and migrates any existing production line using one over to its replacement, keeping the line's quality, limit, modules and beacon wherever they still apply.
+
+This integration is collected per-force, so it's passed a force index and should return what currently applies to that force. Call [`invalidate`](#invalidate) whenever that changes.
+
+The integration expects a table called `substitutions`, which maps the name of a machine the force can't use right now to the name of the one that stands in for it. A machine mapping to itself is ignored.
+
+Unlike recipes, machines have no state of their own that Factory Planner could go by, so it treats every machine it knows about as usable unless this integration says otherwise. That means the mapping has to be exhaustive: every machine that shouldn't be offered needs to appear as a key, including ones belonging to upgrades the force hasn't unlocked at all. Anything left out stays selectable.
+
+Substitutions are applied in a single step, they are not followed transitively. Undoing a replacement is done by returning the reverse mapping, which migrates the affected lines back the same way. Note that this is not an undo: a module or beacon that the replacement didn't allow is gone for good. If the replacement can't be used for a line's recipe at all, that line falls back to the user's default machine instead.
+
+#### Example
+
+```lua
+remote.add_interface("fp-integration-example-mod", {
+    machine_substitutions = (function(force_index)
+        return {
+            version = 1,
+            substitutions = {
+                ["assembling-machine-2"] = "assembling-machine-2-improved",
+                ["assembling-machine-2-specialized"] = "assembling-machine-2-improved"
+            }
         }
     end)
 })
