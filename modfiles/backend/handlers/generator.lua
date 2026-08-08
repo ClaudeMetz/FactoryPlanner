@@ -15,6 +15,10 @@ local generator = {
     qualities = {}
 }
 
+-- Data collected during recipe generation, reused by later generator stages
+local resource_deposits = {}  ---@type LuaEntityPrototype[]
+local rocket_parts = {}  ---@type table<string, boolean>
+local pumped_tiles = {}  ---@type LuaTilePrototype[]
 local tile_can_have_plant = {}  ---@type table<string, string[]>
 
 
@@ -236,6 +240,9 @@ function generator.recipes.generate()
             generator.util.format_recipe(recipe, products, main_product, ingredients)
             insert_prototype(recipes, recipe, nil)
 
+            -- Note the deposit so item generation can create its custom item
+            table.insert(resource_deposits, proto)
+
             ::incompatible_proto::
 
         -- Add offshore pump recipes based on fixed fluids
@@ -317,7 +324,10 @@ function generator.recipes.generate()
                 local parts_product = recipe.main_product  ---@cast parts_product -nil
                 local disambiguator = (ambiguous) and ("-using-" .. recipe.name) or ""
                 local rocket_parts_ingredient = {type="item", name=parts_product.name,
-                    amount=proto.rocket_parts_required}  ---@as Ingredient
+                amount=proto.rocket_parts_required}  ---@as Ingredient
+
+                -- Mark rocket part items so item generation can make them non-hidden
+                rocket_parts[parts_product.name] = true
 
                 -- Add rocket launch product recipes
                 if not proto.launch_to_space_platforms then
@@ -408,6 +418,9 @@ function generator.recipes.generate()
         if proto.fluid and not pumped_fluids[proto.fluid.name] and not proto.hidden then
             local fluid = proto.fluid  ---@cast fluid -nil
             pumped_fluids[fluid.name] = true
+
+            -- Note the tile so item generation can create its custom item
+            table.insert(pumped_tiles, proto)
 
             local recipe = custom_recipe()
             recipe.name = "impostor-" .. fluid.name .. "-tile"
@@ -526,44 +539,30 @@ function generator.items.generate()
 
     -- Build custom items, representing in-world entities mostly
     local custom_items = {}  ---@type NamedPrototypes<CustomItemDetails>
-    local rocket_parts = {}  ---@type table<string, boolean>
 
-    for _, proto in pairs(prototypes.entity) do
-        if proto.type == "resource" and not proto.hidden then
-            local item_name = "custom-" .. proto.name
-            custom_items[item_name] = {
-                name = item_name,
-                localised_name = {"", proto.localised_name, " ", {"fp.deposit"}},
-                sprite = "entity/" .. proto.name,
-                hidden = true,
-                order = proto.order
-            }
-            generator.util.add_default_groups(custom_items[item_name])
-
-        -- Mark rocket silo part items here so they can be marked as non-hidden
-        elseif proto.type == "rocket-silo" and not proto.hidden then
-            for _, recipe in pairs(generator.util.silo_parts_recipes(proto, recipe_prototypes)) do
-                local parts_product = recipe.main_product  ---@cast parts_product -nil
-                rocket_parts[parts_product.name] = true
-            end
-        end
+    -- Deposits and lakes match the entities/tiles that recipe generation created recipes for
+    for _, proto in pairs(resource_deposits) do
+        local item_name = "custom-" .. proto.name
+        custom_items[item_name] = {
+            name = item_name,
+            localised_name = {"", proto.localised_name, " ", {"fp.deposit"}},
+            sprite = "entity/" .. proto.name,
+            hidden = true,
+            order = proto.order
+        }
+        generator.util.add_default_groups(custom_items[item_name])
     end
 
-    local pumped_fluids = {}
-    for _, proto in pairs(prototypes.tile) do
-        if proto.fluid and not pumped_fluids[proto.fluid.name] and not proto.hidden then
-            pumped_fluids[proto.fluid.name] = true
-
-            local item_name = "custom-" .. proto.name
-            custom_items[item_name] = {
-                name = item_name,
-                localised_name = {"", proto.localised_name, " ", {"fp.lake"}},
-                sprite = "tile/" .. proto.name,
-                hidden = true,
-                order = proto.order
-            }
-            generator.util.add_default_groups(custom_items[item_name])
-        end
+    for _, proto in pairs(pumped_tiles) do
+        local item_name = "custom-" .. proto.name
+        custom_items[item_name] = {
+            name = item_name,
+            localised_name = {"", proto.localised_name, " ", {"fp.lake"}},
+            sprite = "tile/" .. proto.name,
+            hidden = true,
+            order = proto.order
+        }
+        generator.util.add_default_groups(custom_items[item_name])
     end
 
     if script.feature_flags["space_travel"] then
