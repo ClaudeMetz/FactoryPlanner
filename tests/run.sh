@@ -10,6 +10,11 @@ TEST=${1:-save-create}
 WORLD=${2:-}
 CASES=${3:-}
 
+# Worlds run on a save rather than a fresh map, since the tests need an actual player,
+# which only a save can carry. It contains no mods, so adding factoryplanner to it runs
+# the mod's on_init, which is where the tests are called from
+SAVE=$WORKSPACE/tests/test.zip
+
 # The mod targets the experimental branch, so track 'latest' rather than 'stable'
 DOWNLOAD=https://factorio.com/get-download/latest/headless/linux64
 
@@ -51,7 +56,8 @@ update_factorio() {
   return 0
 }
 
-# Runs a single world: a fresh mod directory, then one map creation with the test mod active
+# Runs a single world: a fresh mod directory, then one load of the save with the test
+# mod active. Benchmark mode loads, runs a tick and exits, which is all the tests need
 run_world() {
   local world_file=$1
   local cases=$2
@@ -83,7 +89,7 @@ run_world() {
 EOF
 
   local exit_code=0
-  $FACTORIO --mod-directory $mods --create $TMPDIR/$world-map.zip > $logfile 2>&1 || exit_code=$?
+  $FACTORIO --mod-directory $mods --benchmark $SAVE --benchmark-ticks 1 > $logfile 2>&1 || exit_code=$?
 
   # Only the report blocks the test mod logs are shown; the rest of the game log
   # is noise unless something actually broke

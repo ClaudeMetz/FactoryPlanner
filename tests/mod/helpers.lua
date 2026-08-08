@@ -69,14 +69,4 @@ function helpers.check_machine(c, name, expected)
     return proto
 end
 
--- Map creation runs without any players, so solver tests get a stand-in: a real
--- player table built by the mod's own reload, and an object carrying the only
--- two fields the solver path reads off a LuaPlayer
-function helpers.stub_player()
-    storage.players[1] = {}
-    lib.preferences.reload(storage.players[1])
-
-    return { index = 1, force = game.forces["player"] }
-end
-
 return helpers

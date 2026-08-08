@@ -106,7 +106,7 @@ return {
 
     check = function(context)
         local c = helpers.collector()
-        local player = helpers.stub_player()
+        local player = game.players[1]
 
         local factory = build_factory(context.classes, player,
             {"test-solver-gear", "test-solver-plate"})
