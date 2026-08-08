@@ -67,24 +67,12 @@ run_world() {
   cp $world_file $mods/factoryplanner-test/world.lua
   printf 'return "%s"\n' "$cases" > $mods/factoryplanner-test/filter.lua
 
-  # Whether the base game is enabled is encoded in the world file's parent directory
-  local base_enabled=false
-  [ "$(basename $(dirname $world_file))" = "base" ] && base_enabled=true
-
-  if [ $base_enabled = true ]; then
-    # The replacement freeplay scenario is only for no-base runs; base brings its own
-    rm -r $mods/factoryplanner-test/scenarios
-  else
-    # The shipped dependency on base is relaxed so that it can be disabled for the test run
-    sed -i.bak 's/"base >= /"? base >= /' $mods/factoryplanner/info.json
-    rm $mods/factoryplanner/info.json.bak
-  fi
-
   # Pin the full mod set so runs don't depend on the installation's defaults
   cat > $mods/mod-list.json << EOF
 {
     "mods": [
-        { "name": "base", "enabled": $base_enabled },
+        { "name": "base", "enabled": true },
+        { "name": "recycler", "enabled": true },
         { "name": "space-age", "enabled": false },
         { "name": "quality", "enabled": false },
         { "name": "elevated-rails", "enabled": false },
@@ -118,7 +106,7 @@ EOF
 # Runs every world in sequence, reporting all failures rather than stopping at the first
 run_worlds() {
   local failed=""
-  for world_file in $WORKSPACE/tests/worlds/*/*.lua; do
+  for world_file in $WORKSPACE/tests/worlds/*.lua; do
     run_world $world_file || failed="$failed $(basename $world_file .lua)"
   done
 
@@ -146,7 +134,8 @@ case $TEST in
     ;;
   worlds) run_worlds ;;
   world)
-    world_file=$(ls $WORKSPACE/tests/worlds/*/$WORLD.lua 2>/dev/null) || { echo "Unknown world: $WORLD"; exit 1; }
+    world_file=$WORKSPACE/tests/worlds/$WORLD.lua
+    [ -f $world_file ] || { echo "Unknown world: $WORLD"; exit 1; }
     run_world $world_file "$CASES"
     ;;
 esac

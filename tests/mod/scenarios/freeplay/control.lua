@@ -1,2 +1,0 @@
--- The engine looks for a scenario named "freeplay" when creating a map, which
--- the base mod normally provides. This one does nothing beyond existing.

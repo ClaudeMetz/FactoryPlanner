@@ -48,10 +48,19 @@ require("ui.event_handler")
 ---@alias ExportString string
 
 
--- Import test code to run within the mod's context
+-- Import test code to run within the mod's context. The data classes are handed
+-- over under their canonical require paths, since the test mod requiring them
+-- itself would load second copies, re-registering their metatables
 if script.active_mods["factoryplanner-test"] then
     ---@diagnostic disable-next-line: unresolved-require
-    test_runner = require("__factoryplanner-test__.runner")
+    test_runner = require("__factoryplanner-test__.runner"){
+        District = require("backend.data.District"),
+        Factory = require("backend.data.Factory"),
+        TLProduct = require("backend.data.TLProduct"),
+        Line = require("backend.data.Line"),
+        Machine = require("backend.data.Machine"),
+        Fuel = require("backend.data.Fuel"),
+    }
 end
 
 -- Import screenshotter code if its scenario is active

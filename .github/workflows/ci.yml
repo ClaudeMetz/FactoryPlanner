@@ -14,7 +14,7 @@ jobs:
       fail-fast: false
       matrix:
         # Every file in tests/worlds needs an entry here
-        world: [minimal, vanilla, lib]
+        world: [vanilla, lib, generator, solver]
     steps:
       - uses: actions/checkout@v5
       - name: Run ${{ matrix.world }}

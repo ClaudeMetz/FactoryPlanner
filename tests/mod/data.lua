@@ -2,9 +2,6 @@
 
 lib = require("__factoryplanner__.util.lib")
 
--- Without the base mod, the engine-required prototypes have to come from somewhere
-if not mods["base"] then require("scaffold") end
-
 -- run.sh bakes the active world file into this mod copy as world.lua, and the
 -- case filter as filter.lua; an empty filter matches every case
 local world = require("world")
