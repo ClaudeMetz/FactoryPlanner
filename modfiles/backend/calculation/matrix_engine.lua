@@ -727,7 +727,7 @@ function matrix_engine.get_line_aggregate(line_data, player_index, floor_id, mac
     local speed_multiplier = 1 + (total_effects.speed / MAGIC_NUMBERS.effect_precision)
     local energy = line_data.recipe_energy
     -- hacky workaround for recipes with zero energy - this really messes up the matrix
-    if energy==0 then energy=0.000001 end
+    energy = math.max(energy, MAGIC_NUMBERS.minimum_energy)
     local time_per_craft = energy / (line_data.machine_speed * speed_multiplier)
     local total_crafts = machine_amount * (1 / time_per_craft)
     line_aggregate.production_ratio = total_crafts
@@ -756,45 +756,49 @@ function matrix_engine.get_line_aggregate(line_data, player_index, floor_id, mac
 
     -- Determine power (including potential fuel needs) and emissions
     local fuel_proto = line_data.fuel_proto
-    local power, emissions = solver.util.determine_power_and_emissions(line_data, machine_amount, total_crafts)
+    local power, emissions = 0, 0
 
     local fuel, fuel_amount = nil, nil
-    if machine_proto.energy_type == "burner" then
-        local burner = machine_proto.burner
-        fuel_amount = solver.util.determine_fuel_amount(line_data, power, machine_amount)
+    if energy > MAGIC_NUMBERS.minimum_energy then
+        power, emissions = solver.util.determine_power_and_emissions(line_data, machine_amount, total_crafts)
 
-        fuel = {type=fuel_proto.type, name=line_data.fuel_name, amount=fuel_amount}
-        structures.class.add(line_aggregate.Ingredient, fuel)
+        if machine_proto.energy_type == "burner" then
+            local burner = machine_proto.burner
+            fuel_amount = solver.util.determine_fuel_amount(line_data, power, machine_amount)
 
-        if fuel_proto.burnt_result then
-            add_product({
-                type="item",
-                name=fuel_proto.burnt_result,
-                amount=fuel_amount
-            })
-        end
+            fuel = {type=fuel_proto.type, name=line_data.fuel_name, amount=fuel_amount}
+            structures.class.add(line_aggregate.Ingredient, fuel)
 
-        if burner.produces_spent_fluid then
-            local spent_fluid = burner.spent_fluid or fuel_proto.spent_fluid
-            if spent_fluid then
+            if fuel_proto.burnt_result then
                 add_product({
-                    type="fluid",
-                    name=lib.temperature.name_with(spent_fluid.name, spent_fluid.temperature),
-                    amount=fuel_amount * spent_fluid.amount
+                    type="item",
+                    name=fuel_proto.burnt_result,
+                    amount=fuel_amount
                 })
             end
+
+            if burner.produces_spent_fluid then
+                local spent_fluid = burner.spent_fluid or fuel_proto.spent_fluid
+                if spent_fluid then
+                    add_product({
+                        type="fluid",
+                        name=lib.temperature.name_with(spent_fluid.name, spent_fluid.temperature),
+                        amount=fuel_amount * spent_fluid.amount
+                    })
+                end
+            end
+
+            power = 0  -- set power to 0 when fuel is used
+
+        elseif machine_proto.energy_type == "heat" then
+            local heat_item = {type="entity", name="custom-heat-power", amount=power}
+            structures.class.add(line_aggregate.Ingredient, heat_item)
+
+            power = 0  -- set power to 0 when heat is used
+
+        elseif machine_proto.energy_type == "void" then
+            power = 0  -- set power to 0 while still polluting
         end
-
-        power = 0  -- set power to 0 when fuel is used
-
-    elseif machine_proto.energy_type == "heat" then
-        local heat_item = {type="entity", name="custom-heat-power", amount=power}
-        structures.class.add(line_aggregate.Ingredient, heat_item)
-
-        power = 0  -- set power to 0 when heat is used
-
-    elseif machine_proto.energy_type == "void" then
-        power = 0  -- set power to 0 while still polluting
     end
 
     power = power + (line_data.beacon_power or 0)

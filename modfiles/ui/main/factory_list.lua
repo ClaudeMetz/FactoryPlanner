@@ -331,7 +331,7 @@ function factory_list.add_factory(player, name, item_proto)
         name = icon .. translated_name
     end
 
-    local factory = Factory.init(name, preferences.prefer_matrix_solver)
+    local factory = Factory.init(name, preferences.default_solver)
 
     local district = lib.context.get(player, "District")  ---@as District
     district:insert(factory)

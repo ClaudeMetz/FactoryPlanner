@@ -24,6 +24,7 @@ local _context = {}
 ---@field floors table<ObjectID, ObjectID> FactoryID -> FloorID
 
 ---@alias ContextObject (District | Factory | Floor)
+---@alias ContextObjectClass "District" | "Factory" | "Floor"
 
 ---@param player_table PlayerTable
 function _context.init(player_table)
@@ -43,7 +44,7 @@ end
 
 --- Gets the given object type by going up the hierarchy from the current context
 ---@param player LuaPlayer
----@param class string
+---@param class ContextObjectClass
 ---@return ContextObject?
 function _context.get(player, class)
     local object_id = lib.globals.player_table(player).context.object_id

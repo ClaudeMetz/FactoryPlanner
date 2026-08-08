@@ -154,18 +154,15 @@ local function handle_convert_subfloor(player)
 end
 
 ---@param player LuaPlayer
----@param event EventData.on_gui_switch_state_changed
-local function handle_solver_change(player, _, event)
+---@param tags ChangeSolverTags
+local function handle_solver_change(player, tags, _)
     local factory = lib.context.get(player, "Factory")  ---@as Factory
-    local new_solver = (event.element.switch_state == "left") and "traditional" or "matrix"
+    if factory.solver == tags.solver then return end
 
-    if new_solver == "matrix" then
-        factory.matrix_solver_active = true
-    else
-        factory.matrix_solver_active = false
-        factory.matrix_free_items = {}  -- reset could be avoided
-        factory.linearly_dependant = false
-    end
+    factory.solver = tags.solver
+    factory.matrix_free_items = {}  -- reset could be avoided
+    factory.linearly_dependant = false
+    factory.simplex_basis = nil
 
     main_dialog.toggle_districts_view(player, true)
     solver.update(player)
@@ -246,9 +243,10 @@ local function refresh_production_box(player)
 
     production_box_elements.solver_flow.visible = factory_valid
     if factory_valid then  ---@cast factory -nil
-        local switch_state = (factory.matrix_solver_active) and "right" or "left"
-        production_box_elements.solver_choice_switch.switch_state = switch_state
-        production_box_elements.solver_choice_switch.enabled = (not factory.archived)
+        for _, button in pairs(production_box_elements.solver_table.children) do
+            button.toggled = (button.tags--[[@as ChangeSolverTags]].solver == factory.solver)
+            button.enabled = (not factory.archived)
+        end
     end
 
     production_box_elements.utility_dialog_button.enabled = factory_valid
@@ -278,7 +276,7 @@ local function refresh_production_box(player)
     refresh_paste_button(player)
 
     ui_state.main_elements.solver_frame.visible = false
-    if any_lines_present and factory--[[@cast -nil]].matrix_solver_active then
+    if any_lines_present and factory--[[@cast -nil]].solver == "gaussian" then
         refresh_solver_frame(player)
     end
 end
@@ -342,14 +340,23 @@ local function build_production_box(player)
 
     local flow_solver = flow_production.add{type="flow", direction="horizontal"}
     flow_solver.style.horizontal_spacing = 12
-    flow_solver.style.margin = {4, 8, 0, 0}
+    flow_solver.style.margin = {2, 8, 0, 0}
+    flow_solver.style.vertical_align = "center"
     main_elements.production_box["solver_flow"] = flow_solver
     flow_solver.add{type="label", caption={"fp.info_label", {"fp.solver_choice"}}, style="bold_label",
         tooltip={"fp.solver_choice_tt"}}
-    local switch_solver_choice = flow_solver.add{type="switch",
-        right_label_caption={"fp.solver_choice_matrix"}, left_label_caption={"fp.solver_choice_traditional"},
-        tags={mod="fp", on_gui_switch_state_changed="solver_choice_changed"}}
-    main_elements.production_box["solver_choice_switch"] = switch_solver_choice
+
+    local table_solvers = flow_solver.add{type="table", column_count=#solver.choices}
+    table_solvers.style.horizontal_spacing = 0
+    main_elements.production_box["solver_table"] = table_solvers
+
+    for _, name in pairs(solver.choices) do
+        ---@class ChangeSolverTags
+        ---@field solver SolverName
+        local tags = {mod="fp", on_gui_click="change_solver", solver=name}
+        table_solvers.add{type="button", tags=tags, caption={"fp.solver_" .. name},
+            tooltip={"fp.solver_" .. name .. "_tt"}, style="fp_button_push", mouse_button_filter={"left"}}
+    end
 
 
     -- Main scrollpane
@@ -462,11 +469,9 @@ listeners.gui = {
         {
             name = "switch_matrix_item",
             handler = switch_matrix_item
-        }
-    },
-    on_gui_switch_state_changed = {
+        },
         {
-            name = "solver_choice_changed",
+            name = "change_solver",
             handler = handle_solver_change
         }
     }
