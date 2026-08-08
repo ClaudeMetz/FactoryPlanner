@@ -1,10 +1,7 @@
-local util = require("__core__.lualib.util")
-
 local _util = {
     table = {},
     matrix = {},
 }
-
 
 --- @alias SolverItemKey string `<item.proto.type>/<item.proto.name>`
 
@@ -21,7 +18,7 @@ end
 ---@param amount number?
 ---@return SolverItem
 function _util.unpack_item(item_key, amount)
-    local unpacked = util.split(item_key, SEPARATOR)
+    local unpacked = lib.split_string(item_key, SEPARATOR)
     local type = unpacked[1]  ---@as string
     local name = unpacked[2]  ---@as string
     return {

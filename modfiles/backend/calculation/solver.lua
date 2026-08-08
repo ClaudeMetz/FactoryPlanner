@@ -17,7 +17,7 @@ solver = {
 ---@param line LineObject
 local function set_blank_line(player, floor, line)
     local blank_class = structures.class.init()
-    solver.set_line_result{
+    solver.set_line_result {
         player_index = player.index,
         floor_id = floor.id,
         line_id = line.id,

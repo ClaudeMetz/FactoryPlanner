@@ -756,8 +756,7 @@ function matrix_engine.get_line_aggregate(line_data, player_index, floor_id, mac
 
     -- Determine power (including potential fuel needs) and emissions
     local fuel_proto = line_data.fuel_proto
-    local power = 0.0
-    local emissions = 0.0
+    local power, emissions = 0, 0
 
     local fuel, fuel_amount = nil, nil
     if energy > MAGIC_NUMBERS.minimum_energy then

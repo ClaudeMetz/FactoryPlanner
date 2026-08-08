@@ -24,7 +24,7 @@ local _context = {}
 ---@field floors table<ObjectID, ObjectID> FactoryID -> FloorID
 
 ---@alias ContextObject (District | Factory | Floor)
----@alias ContextObjectClass ("District" | "Factory" | "Floor")
+---@alias ContextObjectClass "District" | "Factory" | "Floor"
 
 ---@param player_table PlayerTable
 function _context.init(player_table)
