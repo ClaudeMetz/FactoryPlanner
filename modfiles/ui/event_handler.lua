@@ -206,11 +206,10 @@ local function handle_gui_event(event)
         action_table.handler(player, tags, event)  -- gets event as third parameter
     end
 
-    -- Only refresh messages if the event wasn't a hover event
-    if event_name ~= "on_gui_hover" and event_name ~= "on_gui_leave" then lib.messages.refresh(player) end
-
-    -- The navigation buttons need to reflect the entry that was just added
-    if lib.context.record(player) then lib.gui.run_refresh(player, "title_bar") end
+    if event_name ~= "on_gui_hover" and event_name ~= "on_gui_leave" then
+        lib.messages.refresh(player)
+        if lib.context.record(player) then lib.gui.run_refresh(player, "title_bar") end
+    end
 end
 
 script.on_event(gui_events, handle_gui_event)
@@ -326,8 +325,7 @@ local function handle_player_event(event)
         registered_handler(player, event)  -- send actual event
     end
 
-    -- Only refresh messages if this event was a keyboard shortcut
-    if event.input_name then
+    if event.input_name then  -- only for keyboard shortcut events
         lib.messages.refresh(player)
         if lib.context.record(player) then lib.gui.run_refresh(player, "title_bar") end
     end
