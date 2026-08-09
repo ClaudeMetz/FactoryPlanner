@@ -378,7 +378,7 @@ function matrix_engine.run_matrix_solver(factory_data, check_linear_dependence)
     end
 
     local function set_line_results(prefix, floor)
-        local floor_aggregate = structures.aggregate.init(factory_data.player_index, floor.id)
+        local floor_aggregate = structures.aggregate.init(floor.id)
         for i, line in ipairs(floor.lines) do
             local line_key = prefix.."_"..i
             local line_aggregate = nil
@@ -387,7 +387,7 @@ function matrix_engine.run_matrix_solver(factory_data, check_linear_dependence)
                  -- want the j-th entry in the last column (output of row-reduction)
                 local machine_amount = matrix[col_num][#columns.values+1]
                 if machine_amount < 0 then machine_amount = 0 end
-                line_aggregate = matrix_engine.get_line_aggregate(line, factory_data.player_index, floor.id,
+                line_aggregate = matrix_engine.get_line_aggregate(line, floor.id,
                     machine_amount, factory_metadata, free_variables)
             else
                 line_aggregate = set_line_results(prefix.."_"..i, line.subfloor)
@@ -417,7 +417,6 @@ function matrix_engine.run_matrix_solver(factory_data, check_linear_dependence)
                 and 0 or line_aggregate.machine_amount
 
             solver.set_line_result {
-                player_index = factory_data.player_index,
                 floor_id = floor.id,
                 line_id = line.id,
                 machine_amount = machine_amount,
@@ -454,7 +453,7 @@ function matrix_engine.run_matrix_solver(factory_data, check_linear_dependence)
         required_amount[key] = product.amount
     end
 
-    local main_aggregate = structures.aggregate.init(factory_data.player_index, 1)
+    local main_aggregate = structures.aggregate.init(1)
     for _, item in ipairs(structures.map.list(total)) do
         local key = matrix_engine.get_item_key(item.type, item.name)
         local req = required_amount[key] or 0
@@ -529,8 +528,7 @@ function matrix_engine.get_factory_metadata(factory_data)
         local item_key = matrix_engine.get_item_key(product.type, product.name)
         desired_outputs[item_key] = true
     end
-    local lines_metadata = matrix_engine.get_lines_metadata(factory_data.top_floor.lines,
-        factory_data.player_index)
+    local lines_metadata = matrix_engine.get_lines_metadata(factory_data.top_floor.lines)
     local line_inputs = lines_metadata.line_inputs
     local line_outputs = lines_metadata.line_outputs
     local unproduced_outputs = matrix_engine.set_diff(desired_outputs, line_outputs)
@@ -547,20 +545,20 @@ function matrix_engine.get_factory_metadata(factory_data)
     }
 end
 
-function matrix_engine.get_lines_metadata(lines, player_index)
+function matrix_engine.get_lines_metadata(lines)
     local line_recipes = {}
     local line_inputs = {}
     local line_outputs = {}
     for _, line in pairs(lines) do
         if line.subfloor ~= nil then
-            local floor_metadata = matrix_engine.get_lines_metadata(line.subfloor.lines, player_index)
+            local floor_metadata = matrix_engine.get_lines_metadata(line.subfloor.lines)
             for _, subfloor_line_recipe in pairs(floor_metadata.line_recipes) do
                 table.insert(line_recipes, subfloor_line_recipe)
             end
             line_inputs = matrix_engine.union_sets(line_inputs, floor_metadata.line_inputs)
             line_outputs = matrix_engine.union_sets(line_outputs, floor_metadata.line_outputs)
         else
-            local line_aggregate = matrix_engine.get_line_aggregate(line, player_index, 1, 1)
+            local line_aggregate = matrix_engine.get_line_aggregate(line, 1, 1)
             matrix_engine.consolidate(line_aggregate)
             for _, item in pairs(structures.map.list(line_aggregate.ingredients)) do
                 local item_key = matrix_engine.get_item_key(item.type, item.name)
@@ -620,7 +618,7 @@ function matrix_engine.get_matrix(factory_data, rows, columns)
             local line = floor.lines[line_table_id]
 
             -- use amounts for 1 building as matrix entries
-            local line_aggregate = matrix_engine.get_line_aggregate(line, factory_data.player_index,
+            local line_aggregate = matrix_engine.get_line_aggregate(line,
                 floor.id, 1)
 
             -- Beacons draw the same power however many machines the line ends up needing, so that
@@ -712,8 +710,8 @@ function matrix_engine.get_matrix(factory_data, rows, columns)
     }
 end
 
-function matrix_engine.get_line_aggregate(line_data, player_index, floor_id, machine_amount, factory_metadata, free_variables)
-    local line_aggregate = structures.aggregate.init(player_index, floor_id)
+function matrix_engine.get_line_aggregate(line_data, floor_id, machine_amount, factory_metadata, free_variables)
+    local line_aggregate = structures.aggregate.init(floor_id)
     line_aggregate.machine_amount = machine_amount
     -- the index in the factory_data.top_floor.lines table can be different from the line_id!
     local total_effects = line_data.total_effects
