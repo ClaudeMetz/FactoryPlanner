@@ -18,6 +18,7 @@ local dev_export_string = "eNrtWUtv2zAM/i8+R0WdrTvk2MNOGzBsuw2BIct0KlQPV5KzBln++
 ---@field compact_elements table
 ---@field calculator_elements table<string, LuaGuiElement>
 ---@field last_selected_picker_group integer?
+---@field held_object_id ObjectID?
 ---@field tooltips table
 ---@field modal_dialog_type ModalDialogType?
 ---@field modal_data ModalData?
@@ -42,6 +43,7 @@ local function reset_ui_state(player_table)
         compact_elements = {},
         calculator_elements = {},
         last_selected_picker_group = nil,
+        held_object_id = nil,
         tooltips = {},
 
         modal_dialog_type = nil,

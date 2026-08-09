@@ -185,6 +185,9 @@ local function handle_gui_event(event)
     -- Check if rate limiting allows this action to proceed
     if lib.actions.rate_limited(player, event.tick, action_name, action_table.timeout) then return end
 
+    local ui_state = lib.globals.ui_state(player)
+    local previous_held_object_id = ui_state.held_object_id
+
     -- Special modifier handling for on_gui_click if configured
     if event_name == "on_gui_click" and action_table.actions then
         local click_event = event  ---@as EventData.on_gui_click
@@ -208,6 +211,8 @@ local function handle_gui_event(event)
 
     if event_name ~= "on_gui_hover" and event_name ~= "on_gui_leave" then
         lib.messages.refresh(player)
+        -- A held object is dropped by any action that didn't change it itself
+        if ui_state.held_object_id == previous_held_object_id then ui_state.held_object_id = nil end
         if lib.context.record(player) then lib.gui.run_refresh(player, "title_bar") end
     end
 end
@@ -320,13 +325,13 @@ local function handle_player_event(event)
     -- If a special handler is set, it needs to return true before proceeding with the registered handlers
     if event_handlers.special_handler and event_handlers.special_handler(event) == false then return end
 
-    ::player_created::
     for _, registered_handler in pairs(event_handlers.registered_handlers) do
         registered_handler(player, event)  -- send actual event
     end
 
     if event.input_name then  -- only for keyboard shortcut events
         lib.messages.refresh(player)
+        lib.globals.ui_state(player).held_object_id = nil
         if lib.context.record(player) then lib.gui.run_refresh(player, "title_bar") end
     end
 end
