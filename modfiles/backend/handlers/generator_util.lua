@@ -315,12 +315,24 @@ function _util.get_boiler_conversions(proto)
     local input, output  ---@type LuaFluidBoxPrototype, LuaFluidBoxPrototype
 
     for _, fluid_box in pairs(proto.fluidbox_prototypes) do
-        -- A fluid energy source puts its own boxes in this list, where they could pass for the input
-        if source == nil or (fluid_box ~= source.fluid_box and fluid_box ~= source.output_fluid_box) then
-            if fluid_box.production_type == "input-output" or fluid_box.production_type == "input" then
-                input = fluid_box
-            elseif fluid_box.production_type == "output" then
-                output = fluid_box
+        local uses_pipes = false
+        for _, pipe_connection in pairs(fluid_box.pipe_connections) do
+            for _, category in pairs(pipe_connection.connection_category) do
+                if category == "default" then
+                    uses_pipes = true
+                    break
+                end
+            end
+        end
+
+        if uses_pipes then
+            -- A fluid energy source puts its own boxes in this list, where they could pass for the input
+            if source == nil or (fluid_box ~= source.fluid_box and fluid_box ~= source.output_fluid_box) then
+                if fluid_box.production_type == "input-output" or fluid_box.production_type == "input" then
+                    input = fluid_box
+                elseif fluid_box.production_type == "output" then
+                    output = fluid_box
+                end
             end
         end
     end
