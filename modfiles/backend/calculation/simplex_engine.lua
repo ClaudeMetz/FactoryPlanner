@@ -276,7 +276,10 @@ function simplex_engine.get_line_metadata(line_data, floor_id)
 
     -- Add fuel to the ingredients
     local fuel_ratio = nil
-    if line_data.fuel_proto then  ---@cast line_data.fuel_name -nil
+    local burner = line_data.machine_proto.burner
+    if burner then
+        ---@cast line_data.fuel_proto -nil
+        ---@cast line_data.fuel_name -nil
         local fuel_key = solver.util.pack_item( line_data.fuel_name, line_data.fuel_proto.type)
         local fuel_as_ingredient = ingredients[fuel_key] or 0
         solver.util.table.add(ingredients, fuel_key, fuel_amount)
@@ -288,12 +291,13 @@ function simplex_engine.get_line_metadata(line_data, floor_id)
         end
 
         -- Add spent fluid
-        if line_data.fuel_proto.spent_fluid then
-            local spent_fluid_name = line_data.fuel_proto.spent_fluid.name
-            local spent_fluid_temperature = line_data.fuel_proto.spent_fluid.temperature
+        local spent_fluid = burner.produces_spent_fluid and (burner.spent_fluid or line_data.fuel_proto.spent_fluid)
+        if spent_fluid then
+            local spent_fluid_name = spent_fluid.name
+            local spent_fluid_temperature = spent_fluid.temperature
             local spent_fluid_key = solver.util.pack_item(
                     lib.temperature.name_with(spent_fluid_name, spent_fluid_temperature), "fluid")
-            local spent_fluid_amount = fuel_amount * line_data.fuel_proto.spent_fluid.amount
+            local spent_fluid_amount = fuel_amount * spent_fluid.amount
             solver.util.table.add(products, spent_fluid_key, spent_fluid_amount)
         end
 
