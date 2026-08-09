@@ -60,6 +60,14 @@ function District:remove(factory)
 end
 
 ---@param factory Factory
+---@param relative_object Factory
+---@param direction NeighbourDirection
+function District:move(factory, relative_object, direction)
+    self:_remove(factory)
+    self:_insert(factory, relative_object, direction)
+end
+
+---@param factory Factory
 ---@param direction NeighbourDirection
 ---@param spots integer?
 function District:shift(factory, direction, spots)
