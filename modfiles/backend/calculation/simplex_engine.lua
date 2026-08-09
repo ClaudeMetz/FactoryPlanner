@@ -276,8 +276,8 @@ function simplex_engine.get_line_metadata(line_data, floor_id)
 
     -- Add fuel to the ingredients
     local fuel_ratio = nil
-    if line_data.fuel_proto then
-        local fuel_key = solver.util.pack_item( line_data.fuel_proto.name, line_data.fuel_proto.type)
+    if line_data.fuel_proto then  ---@cast line_data.fuel_name -nil
+        local fuel_key = solver.util.pack_item( line_data.fuel_name, line_data.fuel_proto.type)
         local fuel_as_ingredient = ingredients[fuel_key] or 0
         solver.util.table.add(ingredients, fuel_key, fuel_amount)
 
@@ -446,9 +446,9 @@ function simplex_engine.update_line(player_index, floor_id, line_data, scale_fac
     local fuel_amount = 0.0
 
     -- Update the fuel
-    if line_data.fuel_proto then
+    if line_data.fuel_proto then  ---@cast line_data.fuel_name -nil
         for item_key, amount in pairs(ingredients) do
-            if item_key == solver.util.pack_item(line_data.fuel_proto.name,line_data.fuel_proto.type) then
+            if item_key == solver.util.pack_item(line_data.fuel_name,line_data.fuel_proto.type) then
                 if data.fuel_ratio then
                     fuel_amount = machine_amount * amount * data.fuel_ratio
                     ingredients[item_key] = ingredients[item_key] * (1 - data.fuel_ratio)
