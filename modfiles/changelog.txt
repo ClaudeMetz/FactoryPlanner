@@ -5,6 +5,7 @@ Date: 00. 00. 0000
   Changes:
     - Changed factory reordering to a pick-up-and-move model (#816)
   Bugfixes:
+    - Fixed that boiler recipes wouldn't calculate machine amounts
 
 ---------------------------------------------------------------------------------------------------
 Version: 2.1.11
