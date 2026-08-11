@@ -2,130 +2,129 @@ local _topological_sort = {}
 
 ---@class SortNode
 ---@field id ObjectID
----@field products table<SolverItemKey, integer>
----@field ingredients table<SolverItemKey, integer>
----@field visited integer?
+---@field products table<SolverItemKey, true>
+---@field ingredients table<SolverItemKey, true>
+---@field edges SortEdge[]
+---@field visited boolean?
+---@field explored boolean?
 
 ---@class SortEdge
 ---@field item_key SolverItemKey
----@field cost number
----@field source_node_id integer
+---@field src integer
+---@field dst integer
 
-
+--- Returns the reverse topological order of the lines in the given floor.
+--- Treat lines as nodes and items as `product -> ingredient` edges
 ---@param floor Floor
 ---@return ObjectID[]
 function _topological_sort.sort_floor(floor)
     -- Collect the products/ingredients on each line
-    local line_nodes = {}  ---@type table<integer, SortNode>
+    local nodes = {}  ---@type table<integer, SortNode>
     for line_object in floor:iterator() do
-        local line_node = { id = line_object.id, products = {}, ingredients = {} }  ---@type SortNode
+        local node = {
+            id = line_object.id,
+            products = {},
+            ingredients = {},
+            edges = {}
+        }  ---@type SortNode
+
         if line_object.class == "Floor" then
-            local product_index = 1
             for _, item in pairs(line_object.products) do
                 local item_key = solver.util.pack_item(item.proto.name, item.proto.type)
-                line_node.products[item_key] = product_index
-                product_index = product_index + 1
+                node.products[item_key] = true
             end
             for _, item in pairs(line_object.byproducts) do
                 local item_key = solver.util.pack_item(item.proto.name, item.proto.type)
-                line_node.products[item_key] = product_index
-                product_index = product_index + 1
+                node.products[item_key] = true
             end
-            local ingredient_index = 1
             for _, item in pairs(line_object.ingredients) do
                 local item_key = solver.util.pack_item(item.proto.name, item.proto.type)
-                line_node.ingredients[item_key] = ingredient_index
-                ingredient_index = ingredient_index + 1
+                node.ingredients[item_key] = true
             end
         elseif line_object.class == "Line" then
-            local product_index = 1
             for _, item in pairs(line_object.recipe.products) do
                 local item_key = solver.util.pack_item(item.name, item.type)
-                line_node.products[item_key] = product_index
-                product_index = product_index + 1
+                node.products[item_key] = true
             end
-            local ingredient_index = 1
             for _, item in pairs(line_object.recipe.ingredients) do
                 local item_name = line_object.recipe:get_name_with_temperature(item)
                 local item_key = solver.util.pack_item(item_name, item.type)
-                line_node.ingredients[item_key] = ingredient_index
-                ingredient_index = ingredient_index + 1
+                node.ingredients[item_key] = true
             end
 
             -- TODO: add fuel, power, heat, pollution
         end
 
-        table.insert(line_nodes, line_node)
+        table.insert(nodes, node)
+    end
+
+    -- Generate the graph
+    for index, node in pairs(nodes) do
+        for item_key, _ in pairs(node.products) do
+            for neighbor_index, neighbor_node in pairs(nodes) do
+                if neighbor_index ~= index and neighbor_node.ingredients[item_key] then
+                    local edge = {
+                        item_key = item_key,
+                        src = index,
+                        dst = neighbor_index
+                    }  ---@as SortEdge
+
+                    table.insert(node.edges, edge)
+                end
+            end
+        end
     end
 
     local order = {}   ---@type ObjectID[]
     local cycled_items = {}   ---@type table<SolverItemKey, true>
-    local iteration = 1
 
-    --- Treat lines as nodes and items as `product -> ingredient` edges
     ---@param index integer
     ---@param path SortEdge[]
     ---@return SortEdge? cycling_edge
     local function depth_first_search(index, path)
-        local node = line_nodes[index]
+        local node = nodes[index]
 
-        if not node.visited then
-            node.visited = iteration  -- mark as visited
-        elseif node.visited < iteration then
-            return  -- already sorted
-        else -- loop detected
-            local weakest_edge = {item_key = "", cost = 0, source_node_id = 0}  ---@type SortEdge
+        if node.explored then
+            return
+        elseif node.visited then  -- loop detected
+            local cycling_edge  ---@type SortEdge
             for i = #path, 1, -1 do
                 local edge = path[i]
-                if edge.cost > weakest_edge.cost then weakest_edge = edge end
-                if edge.source_node_id == node.id then break end
-            end
 
-            cycled_items[weakest_edge.item_key] = true
-            return weakest_edge
-        end
+                -- If this cycle contains an item that was looped before, prefer to break it there
+                if cycled_items[edge.item_key] then cycling_edge = edge end
 
-
-        -- Visit all the neighbours (depth first)
-        for item_key, product_index in pairs(node.products) do
-            for neighbor_index, neighbor_node in pairs(line_nodes) do
-                if neighbor_index ~= index then
-                    local ingredient_index = neighbor_node.ingredients[item_key]
-                    if ingredient_index then
-                        local edge = { item_key = item_key, cost = 0.0, source_node_id = node.id }  ---@as SortEdge
-
-                        -- Calculate the cost heuristic for this edge
-                        -- Assume no more than 1000 products/ingredients per floor
-                        if cycled_items[item_key] then
-                            edge.cost = 1e6
-                        else
-                            edge.cost = product_index * 1000 + ingredient_index
-                        end
-
-                        table.insert(path, edge)
-                        local cycling_edge = depth_first_search(neighbor_index, path)
-                        table.remove(path)
-
-                        -- In the case of cycling, break the cycle on the selected edge
-                        if cycling_edge and cycling_edge ~= edge then
-                            node.visited = nil
-                            return cycling_edge
-                        end
-                    end
+                if edge.src == index then  -- reached the start of the cycle
+                    cycling_edge = cycling_edge or edge
+                    cycled_items[cycling_edge.item_key] = true
+                    return cycling_edge
                 end
             end
         end
 
-        -- All the neighbors (if any, excuding cycles) have been added to the sorted list
-        -- Add this node as well
+        -- Visit all the neighbours (depth first)
+        node.visited = true
+        for _, edge in pairs(node.edges) do
+            if not cycled_items[edge.item_key] then
+                table.insert(path, edge)
+                local cycling_edge = depth_first_search(edge.dst, path)
+                table.remove(path)
+
+                -- In the case of cycling, break the cycle on the selected edge
+                if cycling_edge and cycling_edge ~= edge then
+                    node.visited = nil
+                    return cycling_edge
+                end
+            end
+        end
+
+        -- Add this node after all neighbors were explored
         table.insert(order, node.id)
+        node.explored = true
     end
 
-    for index, node in pairs(line_nodes) do
-        if not node.visited then
-            depth_first_search(index, {})
-            iteration = iteration + 1
-        end
+    for index, node in pairs(nodes) do
+        if not node.explored then depth_first_search(index, {}) end
     end
 
     return order
