@@ -111,9 +111,6 @@ local function handle_floor_recipe_click(player, tags, action)
     if action == "copy" then
         lib.clipboard.copy(player, line)
 
-    elseif action == "paste" then
-        lib.clipboard.paste(player, line)
-
     elseif action == "toggle" then
         line.active = not line.active
         solver.update(player)
@@ -413,7 +410,6 @@ listeners.gui = {
             name = "act_on_floor_recipe",
             actions_table = {
                 copy = {shortcut="shift-right"},
-                paste = {shortcut="shift-left", limitations={archive_open=false}},
                 toggle = {shortcut="control-left", limitations={archive_open=false}},
                 factoriopedia = {shortcut="alt-left"}
             },
