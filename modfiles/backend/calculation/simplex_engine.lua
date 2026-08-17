@@ -178,8 +178,8 @@ function simplex_engine.solve_floor(floor_data, line_metadata_table, level, prev
         end
         for _, line_object_data in pairs(floor_data.lines) do
             if line_object_data.subfloor then
-                local top_line_data = line_object_data.subfloor.lines[1]  ---@as LineData?
-                if top_line_data and top_line_data.machine_limit.limit then
+                local top_line_data = line_object_data.subfloor.lines[1]
+                if top_line_data and top_line_data.machine_limit and top_line_data.machine_limit.limit then
                     local type = top_line_data.machine_limit.force_limit and "==" or "<="
                     tableau:add_line_constraint(line_object_data.id, type, top_line_data.machine_limit.limit, objective_vector.machine_limit)
                 end
