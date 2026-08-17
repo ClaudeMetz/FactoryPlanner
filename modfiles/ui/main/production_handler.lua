@@ -27,6 +27,15 @@ local function handle_line_move_click(player, tags, event)
     lib.gui.run_refresh(player, "production")
 end
 
+---@return Floor
+local function create_subfloor(line)
+    local subfloor = Floor.init(line.parent.level + 1)
+    line.parent:replace(line, subfloor)
+    line.next, line.previous = nil, nil
+    subfloor:insert(line)
+    return subfloor
+end
+
 
 -- Handles any line recipe, with or without subfloor
 ---@param player LuaPlayer
@@ -49,12 +58,7 @@ local function handle_line_recipe_click(player, tags, action)
                 return
             end
 
-            local subfloor = Floor.init(line.parent.level + 1)
-            line.parent:replace(line, subfloor)
-            line.next, line.previous = nil, nil
-            subfloor:insert(line)
-
-            new_context = subfloor
+            new_context = create_subfloor(line)
             solver.update(player)
         end
 
@@ -65,7 +69,14 @@ local function handle_line_recipe_click(player, tags, action)
         lib.clipboard.copy(player, line)  -- use actual line
 
     elseif action == "paste" then
-        lib.clipboard.paste(player, line)  -- use actual line
+        if line.class == "Line" then
+            local subfloor = create_subfloor(line)
+            if not lib.clipboard.paste(player, subfloor) then
+                subfloor.parent:replace(subfloor, line)
+            end
+        else
+            lib.clipboard.paste(player, line)
+        end
 
     elseif action == "toggle" then
         relevant_line.active = not relevant_line.active
