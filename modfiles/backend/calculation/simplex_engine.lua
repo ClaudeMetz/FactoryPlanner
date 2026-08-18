@@ -119,13 +119,6 @@ function simplex_engine.solve_floor(floor_data, line_metadata_table, level, prev
 
     local intermediates = solver.util.table.intersection(products, ingredients)  ---@type SimplexItemSet
 
-    -- Exclude top level products from the intermediates set
-    if level == 1 then
-        for _, item in pairs(floor_data.products) do
-            intermediates[solver.util.pack_item(item.name, item.type)] = nil
-        end
-    end
-
     -- Do not continue if the floor can't produce anything (sanity check)
     if not next(products) then return end
 
@@ -145,11 +138,16 @@ function simplex_engine.solve_floor(floor_data, line_metadata_table, level, prev
         end
     end
 
-    -- Add slack variables for cycled intermediates
+    -- Add exporty slack variables for intermediates
+    for item_key, _ in pairs(intermediates) do
+        local c = item_cost(item_key)
+        tableau:add_item_variable(item_key, floor_data.id, "out", c * objective_vector.intermediate_out)
+    end
+
+    -- Add import slack variables for cycled intermediates
     for item_key, _ in pairs(cycled_intermediates) do
         local c = item_cost(item_key)
         tableau:add_item_variable(item_key, floor_data.id, "in", c * objective_vector.intermediate_in)
-        tableau:add_item_variable(item_key, floor_data.id, "out", c * objective_vector.intermediate_out)
     end
 
     -- Add slack variables for ingredients
