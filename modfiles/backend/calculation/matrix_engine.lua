@@ -238,13 +238,13 @@ function matrix_engine.get_linear_dependence_data(factory_data, matrix_metadata)
             free_keys[key] = free_item
         end
 
-    for col_name, _ in pairs(linearly_dependent_cols) do
-        local col_split_str = lib.split_string(col_name, "_")
-        if col_split_str[1] == "recipe" then
-            local recipe_key = col_split_str[2]
-            linearly_dependent_recipes[recipe_key] = true
-        else -- "item"
-            local item_key = col_split_str[2].."_"..col_split_str[3]
+        for col_name, _ in pairs(linearly_dependent_cols) do
+            local col_split_str = lib.split_string(col_name, "_")
+            if col_split_str[1] == "recipe" then
+                local recipe_key = col_split_str[2]
+                linearly_dependent_recipes[recipe_key] = true
+            else -- "item"
+                local item_key = col_split_str[2].."_"..col_split_str[3]
                 if free_keys[item_key] then
                     linearly_dependent_free_items[item_key] = true
                 end
