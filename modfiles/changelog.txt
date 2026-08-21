@@ -3,7 +3,10 @@ Version: 0.00.00
 Date: 00. 00. 0000
   Features:
   Changes:
+    - Changed factory reordering to a pick-up-and-move model (#816)
   Bugfixes:
+    - Fixed that setting an intermediate product as a factory product would not have its demand satisfied (#834) (Thanks vapopescu!)
+    - Fixed that boiler recipes wouldn't calculate machine amounts
 
 ---------------------------------------------------------------------------------------------------
 Version: 2.1.11
