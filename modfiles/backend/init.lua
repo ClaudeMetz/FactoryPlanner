@@ -7,7 +7,7 @@ require("backend.handlers.defaults")
 require("backend.handlers.integrator")
 require("backend.handlers.interface")
 
-local dev_export_string = "eNrdVkuPnDAM/i85DyMew/PYQ0+tVKnHaoRCMLNRE8KGsO1oxH+vA8wUmJ3VrratdssJG3+2P9sxORH42ShtcqnKFgzJTqSgLZCM+Ft368VkQ0oougMtaWNAT/oA1SDggRooHU25aOeASvACZZSirYvyfUcFN8eFCWVG6WMjaF1fvHrWuG0oA4ceZin0Z3sOGOfbiTBBWxvx4+gFUTWVFvCBtpyhWIgOGs1rg1YnhNfKWCjBT41WZccMf8CM8kLVfLSY1Ev/X0bliDLKFmcKhOSZ0YhmDuOaddwaMSzHweaTEW5A2tJRQ3NzbGBStZYgl43gFYeSZEZ30NsKV7yGMi8slErV1dadhvuOa1RPmszbRssnTkI3dXdhmEau60VRGke70EviII5TP42SOOw3z2HDkYlzAKqdH3cA4h9QcbdJsHxSP9yFvh+nieu6SbBLEt8P0yBKkjTaJbsAuew3xKgmr4RS2mZ/GYNBsSE4kJh85uEb5rBs5SfUDIkw3kD+rHbOGY+4G5zPI6Xqs/mosQFLhXGziooWNoTauYMRhzDQDGozjLrnuhsiKbuzac6ofZ5U1z3D7yALJHpwJpwTLBv3m1S7YjMBbtCZjutVkWqlJRUrV6Mxv+WrUsgxF1xiRSfauGg6Afm0bC5EB+1XsIUfLZb9G78/dhKrijMONTs6I87xV2W4GKyrMIX560U4D73f73sUmZISrEzI/Hg+PaHDEcV1aeDNT2Zr0LNTdbqmQ6BZL1oJwuDIvqV5rDq7NGbbpBs24DoaU3S1GNkdSM6uMrD+Ho3ev2j2T/0Ts7LaeP7LN971yn93685btUPT6q3N1p/q93+zG8Z/Ev5m3816eFUL98PGf+rCihfg76+8sFrpZfcim+i+/wV3PxDb"
+local dev_export_string = "eNrtWUtv2zAM/i8+R0WdrTvk2MNOGzBsuw2BIct0KlQPV5KzBln++0jLbu08ihVt1yb1LSYpkh/5mabjdQK3lXUh07bwEJLZOsm5h2SWTM/Ss3SaTBJQsOQBCua4VL6vKbkI1q0qxY0B12lS1DgQK6HuZWR9U3Mlw6ov8hUXwPiiF2/TuZWAsX6tE6G4p6ifYzA8ZbimA5fcS0FOrFo2kTzc1GCC5Aqlmgcnb7PSAWQygEYXa/SdqxoqJ03IPOrNohUbGyhcggcrZ4taBLnEXLPcGhktWvEwp59fvkVxPBcs1a9Nr/NjDfNCgkGgiPYaLQVWc0FQZgllhpKCB56FVQWtyBMsqSslSwlFMguuBsyhgFIaKLKcjnJtaxOaWt/U0qG4lczSzXySBFtlpbLWUUp3NWwEkwQ7CgoN8Rc6HGL6gpLYQUn53Cu+R8ljkPZxRYcHkN276MyjhMJhPSpwPNQOmm5RISzmOCu58jBJODULoiv0BE4gCRpOpefnRARxRZB6SL62ol0oqAedY1EWrD3HPgw7JhwvA+q30LXWB+C11M+2wxnrdMPWvqtoLA/5Ki0CzJTUMnSY8d6tFWTt/XuHspH+AOJItBg2Ouof6CfdASye3K5C32S7Em2oFy9ER/ePmzlxIgcurOkX4DJKdgHmnaIfLQr/Y97TZ2+crwDH9P6ONbrXbtU0tkpYrYGuExz3T5k8+GgSOMYFK2tneDMtxpHz1kYOlu85e75nOp122/9EllvNFwaCFP4UebC1mUyfZzOhjXWcCac/E6Sj3RPvjVNZOtOx24e77QOAYvjWGY5y8vuAnnsbS39J06DeWp/LmgZyb1LT9R5UVsmClVHZp+4VaCl28iDDvTlsXn2OjMQaibWHWPOnUYsXS24Evp4J6UQtw7izvsMnV1sVg2+sIw3eLw2ErbADTPD8ZN5d05EAj9kzdGXxae1Y9wfW7t+oR7JxANcMzCKqewQ4DOwodg7CNQRUqhrXkCvggZVSBbx9O6N/2j4GfcFSf7rYvAkC5lYq9psTnvSCIQMiLIYJvhAhkyYaluDiRalJwMANexhl7E51bLQUlh/121VHusi3II/z6WfL0l9ZB6yqdTVsx7bqNB519M3moe/wipvrV/gOT1eP+8pN0Oabv0gxb7I="
 
 ---@class UIStateTable
 ---@field main_dialog_dimensions DisplayResolution?
@@ -18,6 +18,7 @@ local dev_export_string = "eNrdVkuPnDAM/i85DyMew/PYQ0+tVKnHaoRCMLNRE8KGsO1oxH+vA
 ---@field compact_elements table
 ---@field calculator_elements table<string, LuaGuiElement>
 ---@field last_selected_picker_group integer?
+---@field held_object_id ObjectID?
 ---@field tooltips table
 ---@field modal_dialog_type ModalDialogType?
 ---@field modal_data ModalData?
@@ -42,6 +43,7 @@ local function reset_ui_state(player_table)
         compact_elements = {},
         calculator_elements = {},
         last_selected_picker_group = nil,
+        held_object_id = nil,
         tooltips = {},
 
         modal_dialog_type = nil,
