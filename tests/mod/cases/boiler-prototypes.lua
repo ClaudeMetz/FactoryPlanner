@@ -15,7 +15,8 @@
 --
 -- Machine speed is the boiler's energy consumption in watts. The energy a recipe needs is worked
 -- out per unit as (goal - input temperature) * heat_capacity, so it depends on the temperature
--- picked for the ingredient, which is why the recipes themselves carry an energy of 0.
+-- picked for the ingredient, and the solver replaces the recipe's own energy with it. That energy
+-- is still a placeholder 1 rather than 0, as recipes without any energy get no machines at all.
 --
 -- Coverage:
 --   separate pipe, in and out filtered      cold 15-100 -> steam 165, 5 out per 1 in
@@ -298,8 +299,8 @@ return {
                 "baseline: expected 5 steam out per cold in")
             c.check(baseline.products[1].temperature == 165,
                 "baseline: expected steam at exactly 165")
-            c.check(baseline.energy == 0,
-                "baseline: expected energy 0, left to the solver")
+            c.check(baseline.energy == 1,
+                "baseline: expected placeholder energy 1, replaced by the solver")
         end
 
         -- Different modes achieving the same conversion share a recipe
