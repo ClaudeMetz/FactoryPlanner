@@ -138,11 +138,16 @@ function simplex_engine.solve_floor(floor_data, line_metadata_table, level, prev
         end
     end
 
-    -- Add slack variables for cycled intermediates
+    -- Add exporty slack variables for intermediates
+    for item_key, _ in pairs(intermediates) do
+        local c = item_cost(item_key)
+        tableau:add_item_variable(item_key, floor_data.id, "out", c * objective_vector.intermediate_out)
+    end
+
+    -- Add import slack variables for cycled intermediates
     for item_key, _ in pairs(cycled_intermediates) do
         local c = item_cost(item_key)
         tableau:add_item_variable(item_key, floor_data.id, "in", c * objective_vector.intermediate_in)
-        tableau:add_item_variable(item_key, floor_data.id, "out", c * objective_vector.intermediate_out)
     end
 
     -- Add slack variables for ingredients
@@ -158,15 +163,15 @@ function simplex_engine.solve_floor(floor_data, line_metadata_table, level, prev
         for _, item in pairs(floor_data.products) do  ---@cast item SolverItem
             local item_key = solver.util.pack_item(item.name, item.type)
             local objective = item_cost(item_key) * objective_vector.target_product
-            tableau:add_item_constraint(item_key, floor_data.id, "out", "<=", item.amount, objective)
+            tableau:add_item_constraint(item_key, floor_data.id, "out", "==", item.amount, objective)
         end
 
         -- Add additional constraint for limited ingredients
-        -- @TODO: implement limited ingredients
+        -- TODO: implement limited ingredients
         for _, item in pairs({}) do  ---@cast item SolverItem
             local item_key = solver.util.pack_item(item.name, item.type)
             local objective = item_cost(item_key) * objective_vector.limited_ingredient
-            tableau:add_item_constraint(item_key, floor_data.id, "in", "<=", item.amount, objective)
+            tableau:add_item_constraint(item_key, floor_data.id, "in", "==", item.amount, objective)
         end
 
         -- Add aditional constraint for machine limits
