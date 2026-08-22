@@ -212,7 +212,7 @@ end
 function Factory:pack(full)
     local blueprint_strings = {}
     for index = 1, #self.blueprints_inventory do
-        local item = self.blueprints_inventory[index]
+        local item = self.blueprints_inventory[index]  ---@as LuaItemStack
         if item.valid_for_read then
             blueprint_strings[index] = item.export_stack()
         end
