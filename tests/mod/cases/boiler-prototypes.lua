@@ -15,7 +15,8 @@
 --
 -- Machine speed is the boiler's energy consumption in watts. The energy a recipe needs is worked
 -- out per unit as (goal - input temperature) * heat_capacity, so it depends on the temperature
--- picked for the ingredient, which is why the recipes themselves carry an energy of 0.
+-- picked for the ingredient, and the solver replaces the recipe's own energy with it. That energy
+-- is still a placeholder 1 rather than 0, as recipes without any energy get no machines at all.
 --
 -- Coverage:
 --   separate pipe, in and out filtered      cold 15-100 -> steam 165, 5 out per 1 in
@@ -27,6 +28,8 @@
 --   heat in place, box caps the maximum     wide 0-300 -> wide 300, shares the separate pipe one
 --   heat in place, unfiltered input         one recipe per fluid that can be heated at all
 --   heat in place, mode left unspecified    defaults to this mode rather than being ignored
+--   an input no pipe can connect to         internal to the entity, so no recipe at all
+--   an output no pipe can connect to        still read, since only the input has to be reachable
 --   a fluid that can never be heated        max_temperature equal to default, so never offered
 --   a parameter and a hidden fluid          heatable, but neither may ever be offered either
 
@@ -249,6 +252,25 @@ return {
                 output_fluid_box = output_box()
             }),
 
+            -- Its input only takes a connection category of its own, which no pipe carries. That
+            -- makes it a part of some larger entity that the player can never feed, so it must
+            -- produce no recipes at all, not one per fluid like the unfiltered boilers above
+            test_boiler("test-boiler-special-input", {
+                fluid_box = input_box{pipe_connections = {{flow_direction = "input-output",
+                    direction = defines.direction.west, position = {-1, 0.5},
+                    connection_category = "test-boil-special"}}}
+            }),
+
+            -- The other way around: pipes reach the input, only the output is special. That output
+            -- is still what comes out, so this ends up doing the very same conversion as the
+            -- baseline boiler and shares its recipe, rather than putting out its input fluid
+            test_boiler("test-boiler-special-output", {
+                output_fluid_box = output_box{filter = "test-boil-steam",
+                    pipe_connections = {{flow_direction = "output",
+                        direction = defines.direction.east, position = {1, 0.5},
+                        connection_category = "test-boil-special"}}}
+            }),
+
             -- Says nothing about its mode, which makes it heat in place rather than being skipped
             -- for the target temperature it consequently doesn't have
             test_boiler("test-boiler-no-mode", {
@@ -266,7 +288,7 @@ return {
 
         -- Every boiler in its own category, at its energy consumption as speed
         local boilers = {"separate", "twin", "fluid-burner", "same-fluid", "open",
-            "inside", "inside-capped", "inside-open", "no-mode"}
+            "inside", "inside-capped", "inside-open", "no-mode", "special-output"}
         for _, suffix in ipairs(boilers) do
             local name = "test-boiler-" .. suffix
             helpers.check_machine(c, name, {category = "boiler-" .. name, speed = 1500000})
@@ -292,14 +314,15 @@ return {
 
         local baseline = check_recipe("impostor-boil-test-boil-cold-15-100-test-boil-steam-165",
             {"boiler-test-boiler-separate", "boiler-test-boiler-twin",
-             "boiler-test-boiler-fluid-burner", "boiler-test-boiler-open"})
+             "boiler-test-boiler-fluid-burner", "boiler-test-boiler-open",
+             "boiler-test-boiler-special-output"})
         if baseline then
             c.check(helpers.approx(baseline.products[1].amount, 5),
                 "baseline: expected 5 steam out per cold in")
             c.check(baseline.products[1].temperature == 165,
                 "baseline: expected steam at exactly 165")
-            c.check(baseline.energy == 0,
-                "baseline: expected energy 0, left to the solver")
+            c.check(baseline.energy == 1,
+                "baseline: expected placeholder energy 1, replaced by the solver")
         end
 
         -- Different modes achieving the same conversion share a recipe
@@ -311,8 +334,15 @@ return {
         check_recipe("impostor-boil-test-boil-cold-15-100-test-boil-cold-100",
             {"boiler-test-boiler-no-mode"})
 
+        -- A boiler no pipe can feed is a part of a bigger entity, and offers nothing on its own,
+        -- which takes its machine with it. Its unfiltered input would otherwise boil every fluid
+        c.check(helpers.find_machine("test-boiler-special-input") == nil,
+            "unreachable input: machine must not be offered")
+
         -- Fluids that must never be offered anywhere
         for _, recipe_proto in pairs(storage.prototypes.recipes) do
+            c.check(recipe_proto.categories["boiler-test-boiler-special-input"] == nil,
+                "unreachable input: recipe offered anyway: " .. recipe_proto.name)
             c.check(not recipe_proto.name:find("test%-boil%-parameter"),
                 "parameter fluid offered: " .. recipe_proto.name)
             c.check(not recipe_proto.name:find("test%-boil%-hidden"),
@@ -320,6 +350,11 @@ return {
             c.check(not recipe_proto.name:find("^impostor%-boil%-test%-boil%-hot%-.*steam"),
                 "already-hot fluid boiled to steam: " .. recipe_proto.name)
         end
+        -- An unreachable output is still the fluid that comes out, so the boiler above must not
+        -- have fallen back to putting out its own input fluid instead
+        c.check(find("recipes", "impostor-boil-test-boil-cold-15-100-test-boil-cold-165") == nil,
+            "unreachable output: fell back to the input fluid")
+
         -- The flat fluid has no room above its default temperature
         c.check(find("recipes", "impostor-boil-test-boil-flat-25-25-test-boil-flat-25") == nil,
             "flat fluid must not be heatable in place")

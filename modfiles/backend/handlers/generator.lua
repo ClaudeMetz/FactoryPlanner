@@ -390,7 +390,7 @@ function generator.recipes.generate()
                     boiler_recipe.sprite = "fluid/" .. output_proto.name
                     boiler_recipe.order = input_proto.order .. "-" .. output_proto.order
                     boiler_recipe.categories = {}
-                    boiler_recipe.energy = 0  -- treated separately by solver
+                    boiler_recipe.energy = 1  -- treated separately by solver anyways
                     boiler_recipe.heat_capacity = input_proto.heat_capacity
 
                     local ingredients = {{type="fluid", name=input_proto.name, amount=1,

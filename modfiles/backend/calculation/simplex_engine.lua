@@ -138,11 +138,16 @@ function simplex_engine.solve_floor(floor_data, line_metadata_table, level, prev
         end
     end
 
-    -- Add slack variables for cycled intermediates
+    -- Add exporty slack variables for intermediates
+    for item_key, _ in pairs(intermediates) do
+        local c = item_cost(item_key)
+        tableau:add_item_variable(item_key, floor_data.id, "out", c * objective_vector.intermediate_out)
+    end
+
+    -- Add import slack variables for cycled intermediates
     for item_key, _ in pairs(cycled_intermediates) do
         local c = item_cost(item_key)
         tableau:add_item_variable(item_key, floor_data.id, "in", c * objective_vector.intermediate_in)
-        tableau:add_item_variable(item_key, floor_data.id, "out", c * objective_vector.intermediate_out)
     end
 
     -- Add slack variables for ingredients
@@ -158,15 +163,15 @@ function simplex_engine.solve_floor(floor_data, line_metadata_table, level, prev
         for _, item in pairs(floor_data.products) do  ---@cast item SolverItem
             local item_key = structures.pack_item(item)
             local objective = item_cost(item_key) * objective_vector.target_product
-            tableau:add_item_constraint(item_key, floor_data.id, "out", "<=", item.amount, objective)
+            tableau:add_item_constraint(item_key, floor_data.id, "out", "==", item.amount, objective)
         end
 
         -- Add additional constraint for limited ingredients
-        -- @TODO: implement limited ingredients
+        -- TODO: implement limited ingredients
         for _, item in pairs({}) do  ---@cast item SolverItem
             local item_key = structures.pack_item(item)
             local objective = item_cost(item_key) * objective_vector.limited_ingredient
-            tableau:add_item_constraint(item_key, floor_data.id, "in", "<=", item.amount, objective)
+            tableau:add_item_constraint(item_key, floor_data.id, "in", "==", item.amount, objective)
         end
 
         -- Add aditional constraint for machine limits
@@ -178,8 +183,8 @@ function simplex_engine.solve_floor(floor_data, line_metadata_table, level, prev
         end
         for _, line_object_data in pairs(floor_data.lines) do
             if line_object_data.subfloor then
-                local top_line_data = line_object_data.subfloor.lines[1]  ---@as LineData?
-                if top_line_data and top_line_data.machine_limit.limit then
+                local top_line_data = line_object_data.subfloor.lines[1]
+                if top_line_data and top_line_data.machine_limit and top_line_data.machine_limit.limit then
                     local type = top_line_data.machine_limit.force_limit and "==" or "<="
                     tableau:add_line_constraint(line_object_data.id, type, top_line_data.machine_limit.limit, objective_vector.machine_limit)
                 end
@@ -276,7 +281,10 @@ function simplex_engine.get_line_metadata(line_data, floor_id)
 
     -- Add fuel to the ingredients
     local fuel_ratio = nil
-    if line_data.fuel_proto then
+    local burner = line_data.machine_proto.burner
+    if burner then
+        ---@cast line_data.fuel_proto -nil
+        ---@cast line_data.fuel_name -nil
         local fuel = {
             name = line_data.fuel_proto.name,
             type = line_data.fuel_proto.type,
@@ -298,15 +306,16 @@ function simplex_engine.get_line_metadata(line_data, floor_id)
         end
 
         -- Add spent fluid
-        if line_data.fuel_proto.spent_fluid then
+        local spent_fluid = burner.produces_spent_fluid and (burner.spent_fluid or line_data.fuel_proto.spent_fluid)
+        if spent_fluid then
             local spent_fluid = {
-                name = line_data.fuel_proto.spent_fluid.name,
+                name = spent_fluid.name,
                 type = "fluid",
-                temperature = line_data.fuel_proto.spent_fluid.temperature,
+                temperature = spent_fluid.temperature,
                 amount = 0
             }  ---@type SolverItem
             local spent_fluid_key = structures.pack_item(spent_fluid)
-            local spent_fluid_amount = fuel_amount * line_data.fuel_proto.spent_fluid.amount
+            local spent_fluid_amount = fuel_amount * spent_fluid.amount
             solver.util.table.add(products, spent_fluid_key, spent_fluid_amount)
         end
 
@@ -462,7 +471,7 @@ function simplex_engine.update_line(player_index, floor_id, line_data, scale_fac
     local fuel_amount = 0.0
 
     -- Update the fuel
-    if line_data.fuel_proto then
+    if line_data.fuel_proto then  ---@cast line_data.fuel_name -nil
         for item_key, amount in pairs(ingredients) do
             local fuel = {
                 name = line_data.fuel_proto.name,

@@ -393,7 +393,7 @@ end
 local function handle_blueprint_inventory_change(player, _, event)
     -- Most actions are disabled, leaving only transfer actions, which are fine
     -- Just need to make sure only blueprints and blueprint books are stored
-    local item = event.element.inventory--[[@cast -nil]][event.slot]
+    local item = event.element.inventory--[[@cast -nil]][event.slot]  ---@as LuaItemStack
     if not item.valid_for_read then return end
 
     if not item.is_blueprint and not item.is_blueprint_book then
