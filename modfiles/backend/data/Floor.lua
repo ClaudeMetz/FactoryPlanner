@@ -1,6 +1,7 @@
 local Object = require("backend.data.Object")
 local Line = require("backend.data.Line")
 local SimpleItem = require("backend.data.SimpleItem")
+local topological_sort = require("backend.calculation.topological_sort")
 
 ---@alias LineObject Line | Floor
 ---@alias LineParent Factory | Floor
@@ -99,6 +100,23 @@ end
 ---@return number count
 function Floor:count(filter, pivot, direction)
     return self:_count(filter, pivot, direction)
+end
+
+function Floor:sort()
+    local sorted_floor = topological_sort.sort_floor(self)
+
+    -- Sanity check
+    if #sorted_floor ~= self:count() then return end
+
+    -- Pop the line objects from this floor
+    local line_objects = {}  ---@type table<ObjectID, LineObject>
+    for line_object in self:iterator() do
+        line_objects[line_object.id] = line_object
+        self:remove(line_object, true)
+    end
+
+    -- Orderly push the line objects back in this floor
+    for _, line_id in ipairs(sorted_floor) do self:insert(line_objects[line_id]) end
 end
 
 

@@ -129,6 +129,14 @@ local function toggle_fold_out_subfloors(player)
 end
 
 ---@param player LuaPlayer
+local function handle_sort_floor(player)
+    local floor = lib.context.get(player, "Floor")  ---@as Floor
+    floor:sort()
+    solver.update(player)
+    lib.gui.run_refresh(player, "all")
+end
+
+---@param player LuaPlayer
 local function handle_convert_subfloor(player)
     local floor = lib.context.get(player, "Floor")  ---@as Floor
     local first_product = floor.products[1]  ---@as SimpleItem always one at least
@@ -330,6 +338,13 @@ local function build_production_box(player)
     button_fold_out_subfloors.style.margin = {2, 0, 0, 16}
     main_elements.production_box["fold_out_subfloors_button"] = button_fold_out_subfloors
 
+    -- TODO: (therenas) - make a nice icon
+    local button_sort_floor = flow_production.add{type="sprite-button", sprite="",
+        tooltip={"fp.button_sort_floor_tt"}, tags={mod="fp", on_gui_click="sort_floor"},
+        style="fp_sprite-button_rounded_icon", mouse_button_filter={"left"}}
+    button_sort_floor.style.top_margin = 2
+    main_elements.production_box["sort_floor_button"] = button_sort_floor
+
     local button_convert_subfloor = flow_production.add{type="sprite-button", sprite="utility/export_slot",
         tooltip={"fp.convert_subfloor_tt"}, tags={mod="fp", on_gui_click="convert_subfloor"},
         style="fp_sprite-button_rounded_icon", mouse_button_filter={"left"}}
@@ -446,6 +461,10 @@ listeners.gui = {
         {
             name = "toggle_fold_out_subfloors",
             handler = toggle_fold_out_subfloors
+        },
+        {
+            name = "sort_floor",
+            handler = handle_sort_floor
         },
         {
             name = "convert_subfloor",
