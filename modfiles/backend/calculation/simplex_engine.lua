@@ -286,7 +286,7 @@ function simplex_engine.get_line_metadata(line_data, floor_id)
         ---@cast line_data.fuel_proto -nil
         ---@cast line_data.fuel_name -nil
         local fuel = {
-            name = line_data.fuel_proto.name,
+            name = line_data.fuel_name,
             type = line_data.fuel_proto.type,
             amount = 0
         }  ---@type SolverItem
@@ -308,13 +308,12 @@ function simplex_engine.get_line_metadata(line_data, floor_id)
         -- Add spent fluid
         local spent_fluid = burner.produces_spent_fluid and (burner.spent_fluid or line_data.fuel_proto.spent_fluid)
         if spent_fluid then
-            local spent_fluid = {
-                name = spent_fluid.name,
+            local spent_fluid_item = {
+                name = lib.temperature.name_with(spent_fluid.name, spent_fluid.temperature),
                 type = "fluid",
-                temperature = spent_fluid.temperature,
                 amount = 0
             }  ---@type SolverItem
-            local spent_fluid_key = structures.pack_item(spent_fluid)
+            local spent_fluid_key = structures.pack_item(spent_fluid_item)
             local spent_fluid_amount = fuel_amount * spent_fluid.amount
             solver.util.table.add(products, spent_fluid_key, spent_fluid_amount)
         end
@@ -474,7 +473,7 @@ function simplex_engine.update_line(player_index, floor_id, line_data, scale_fac
     if line_data.fuel_proto then  ---@cast line_data.fuel_name -nil
         for item_key, amount in pairs(ingredients) do
             local fuel = {
-                name = line_data.fuel_proto.name,
+                name = line_data.fuel_name,
                 type = line_data.fuel_proto.type,
                 amount = 0
             }  ---@type SolverItem
