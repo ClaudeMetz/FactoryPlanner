@@ -4,6 +4,7 @@ Date: 00. 00. 0000
   Features:
   Changes:
     - Changed factory reordering to a pick-up-and-move model (#816)
+    - Improved Simplex solver to find a solution in more situations (#828) (Thanks vapopescu!)
   Bugfixes:
     - Fixed that the simplex solver would not satisfy demand if an intermediate prouct is also a factory product (#834) (Thanks vapopescu!)
     - Fixed that the simplex solver would not fulfill fluid fuel demand (#817) (Thanks vapopescu!)
