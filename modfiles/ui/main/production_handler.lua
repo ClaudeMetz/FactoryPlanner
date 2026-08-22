@@ -27,8 +27,9 @@ local function handle_line_move_click(player, tags, event)
     lib.gui.run_refresh(player, "production")
 end
 
+---@param line Line
 ---@return Floor
-local function create_subfloor(line)
+local function convert_line_to_subfloor(line)
     local subfloor = Floor.init(line.parent.level + 1)
     line.parent:replace(line, subfloor)
     line.next, line.previous = nil, nil
@@ -58,7 +59,7 @@ local function handle_line_recipe_click(player, tags, action)
                 return
             end
 
-            new_context = create_subfloor(line)
+            new_context = convert_line_to_subfloor(line)
             solver.update(player)
         end
 
@@ -70,7 +71,7 @@ local function handle_line_recipe_click(player, tags, action)
 
     elseif action == "paste" then
         if line.class == "Line" then
-            local subfloor = create_subfloor(line)
+            local subfloor = convert_line_to_subfloor(line)
             if not lib.clipboard.paste(player, subfloor) then
                 subfloor.parent:replace(subfloor, line)
             end
