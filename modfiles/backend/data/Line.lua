@@ -2,6 +2,7 @@ local Object = require("backend.data.Object")
 local Recipe = require("backend.data.Recipe")
 local Machine = require("backend.data.Machine")
 local Beacon = require("backend.data.Beacon")
+local SimpleItem = require("backend.data.SimpleItem")
 
 ---@class Line: Object, ObjectMethods
 ---@field class "Line"
@@ -356,9 +357,9 @@ function Line:pack(full)
         beacon = self.beacon and self.beacon:pack(full),
         comment = self.comment,
 
-        products = (full) and interface.pack_items(self.products) or nil,
-        byproducts = (full) and interface.pack_items(self.byproducts) or nil,
-        ingredients = (full) and interface.pack_items(self.ingredients) or nil,
+        products = (full) and SimpleItem.pack_items(self.products) or nil,
+        byproducts = (full) and SimpleItem.pack_items(self.byproducts) or nil,
+        ingredients = (full) and SimpleItem.pack_items(self.ingredients) or nil,
     }
 end
 
