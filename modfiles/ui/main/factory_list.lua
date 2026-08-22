@@ -24,6 +24,19 @@ end
 
 
 ---@param player LuaPlayer
+local function toggle_archive(player, _, _)
+    local factory = lib.context.get(player, "Factory")  ---@as Factory
+    local archive_open = (factory) and factory.archived or false
+    local district = (factory) and factory.parent or lib.context.get(player, "District")
+    local filter = {archived=not archive_open}
+    local new_factory = district:find(filter)
+
+    main_dialog.toggle_districts_view(player, true)
+    lib.context.set(player, new_factory or district, true)
+    lib.gui.run_refresh(player, "all")
+end
+
+---@param player LuaPlayer
 ---@param to_archive boolean
 local function change_factory_archived(player, to_archive)
     local factory = lib.context.get(player, "Factory")  ---@as Factory
@@ -81,13 +94,15 @@ end
 
 
 ---@param player LuaPlayer
----@param tags MoveFactoryTags
----@param event EventData.on_gui_click
-local function handle_move_factory_click(player, tags, event)
-    local factory = OBJECT_INDEX[tags.factory_id]  ---@as Factory
-    local spots_to_shift = (event.control) and 5 or ((not event.shift) and 1 or nil)
-    factory.parent:shift(factory, tags.direction, spots_to_shift)
+---@param tags PlaceFactoryTags
+local function place_factory(player, tags, _)
+    local ui_state = lib.globals.ui_state(player)
+    local held_factory = OBJECT_INDEX[ui_state.held_object_id]  ---@as Factory
+    local relative_factory = OBJECT_INDEX[tags.factory_id]  ---@as Factory
 
+    relative_factory.parent:move(held_factory, relative_factory, tags.direction)
+
+    ui_state.held_object_id = nil
     lib.gui.run_refresh(player, "factory_list")
 end
 
@@ -134,31 +149,25 @@ local function refresh_factory_list(player)
     if selected_factory ~= nil then  -- only need to run this if any factory exists
         local search_term = helpers.multilingual_to_lower(main_elements.factory_list["search_textfield"].text)
         local attach_factory_products = player_table.preferences.attach_factory_products
+        local held_factory = OBJECT_INDEX[player_table.ui_state.held_object_id]  ---@as Factory?
+        if held_factory and held_factory.class ~= "Factory" then held_factory = nil end
         local filter = {archived = archived}  ---@type ObjectFilter
-        local move_button_width = 20
+        local button_width = 20
 
         ---@param flow LuaGuiElement
         ---@param direction "previous" | "next"
         ---@param factory Factory
-        local function create_move_button(flow, direction, factory)
-            local enabled = (search_term == "" and factory.parent:find(filter, factory[direction], direction) ~= nil)
-            local endpoint = (direction == "next") and {"fp.bottom"} or {"fp.top"}
-            local up_down = (direction == "next") and "down" or "up"
-            local move_tooltip = (enabled) and {"", {"fp.move_object", {"fp.pl_factory", 1}, {"fp." .. up_down}},
-                {"fp.move_object_instructions", endpoint}} or ""
+        local function create_place_button(flow, direction, factory)
+            local sprite = (direction == "next") and "fp_arrow_down" or "fp_arrow_up"
 
-            ---@class MoveFactoryTags
+            ---@class PlaceFactoryTags
             ---@field direction "previous" | "next"
             ---@field factory_id ObjectID
-            ---@field context "factory_list"
-            local tags = {mod="fp", on_gui_click="move_factory", direction=direction, factory_id=factory.id,
-                on_gui_hover="set_tooltip", context="factory_list"}
-            local move_button = flow.add{type="sprite-button", tags=tags, enabled=enabled,
-                sprite="fp_arrow_" .. up_down, mouse_button_filter={"left"},
-                raise_hover_events=true, style="fp_sprite-button_move"}
-            move_button.style.size = {move_button_width, 12}
-            move_button.style.padding = -2
-            tooltips.factory_list[move_button.index] = move_tooltip
+            local tags = {mod="fp", on_gui_click="place_factory", direction=direction, factory_id=factory.id}
+            local place_button = flow.add{type="sprite-button", tags=tags, tooltip={"fp.factory_place_" .. direction},
+                sprite=sprite, mouse_button_filter={"left"}, style="fp_sprite-button_move"}
+            place_button.style.size = {button_width, 12}
+            place_button.style.padding = -2
         end
 
         for factory in selected_factory.parent:iterator(filter) do
@@ -172,11 +181,23 @@ local function refresh_factory_list(player)
                 local button_flow = listbox.add{type="flow", direction="horizontal"}
                 button_flow.style.horizontal_spacing = 0
 
-                local move_flow = button_flow.add{type="flow", direction="vertical"}
-                move_flow.style.vertical_spacing = 0
-                move_flow.style.padding = {2, 0}
-                create_move_button(move_flow, "previous", factory)
-                create_move_button(move_flow, "next", factory)
+                if held_factory == nil or held_factory.id == factory.id then
+                    ---@class PickUpFactoryTags
+                    ---@field factory_id ObjectID
+                    local tags = {mod="fp", on_gui_click="pick_up_factory", factory_id=factory.id}
+                    local toggled = (held_factory and held_factory.id == factory.id)
+                    local pick_up_button = button_flow.add{type="sprite-button", tags=tags,
+                        tooltip={"fp.factory_pick_up"}, toggled=toggled, sprite="fp_pick_up",
+                        mouse_button_filter={"left"}, style="fp_sprite-button_move"}
+                    pick_up_button.style.size = {button_width, 28}
+                    pick_up_button.style.padding = 0
+                else
+                    local place_flow = button_flow.add{type="flow", direction="vertical"}
+                    place_flow.style.vertical_spacing = 0
+                    place_flow.style.padding = {2, 0}
+                    create_place_button(place_flow, "previous", factory)
+                    create_place_button(place_flow, "next", factory)
+                end
 
                 ---@class ActOnFactoryTags
                 ---@field factory_id ObjectID
@@ -186,7 +207,7 @@ local function refresh_factory_list(player)
                 local factory_button = button_flow.add{type="button", tags=tags, caption=caption, toggled=selected,
                     style="list_box_item", mouse_button_filter={"left-and-right"}, raise_hover_events=true}
                 factory_button.style.padding = {0, 12, 0, 4}
-                factory_button.style.width = MAGIC_NUMBERS.list_width - move_button_width
+                factory_button.style.width = MAGIC_NUMBERS.list_width - button_width
                 tooltips.factory_list[factory_button.index] = tooltip
             end
         end
@@ -301,7 +322,7 @@ local function build_factory_list(player)
     flow_search.style.padding = {0, 4, 0, 12}
     flow_search.style.vertical_align = "center"
 
-    flow_search.add{type="label", caption={"fp.search"}, tooltip={"fp.factory_search_tt"}}
+    flow_search.add{type="label", caption={"fp.search"}}
     flow_search.add{type="empty-widget", style="fflib_horizontal_pusher"}
     local textfield_search = flow_search.add{type="textfield", style="search_popup_textfield",
         tags={mod="fp", on_gui_text_changed="factory_searchfield"}}
@@ -376,17 +397,7 @@ listeners.gui = {
     on_gui_click = {
         {
             name = "toggle_archive",
-            handler = function(player, _, _)
-                local factory = lib.context.get(player, "Factory")  ---@as Factory
-                local archive_open = (factory) and factory.archived or false
-                local district = (factory) and factory.parent or lib.context.get(player, "District")
-                local filter = {archived=not archive_open}
-                local new_factory = district:find(filter)
-
-                main_dialog.toggle_districts_view(player, true)
-                lib.context.set(player, new_factory or district, true)
-                lib.gui.run_refresh(player, "all")
-            end
+            handler = toggle_archive
         },
         {
             name = "archive_factory",
@@ -423,9 +434,19 @@ listeners.gui = {
             handler = factory_list.delete_factory
         },
         {
-            name = "move_factory",
+            name = "place_factory",
             timeout = 10,
-            handler = handle_move_factory_click
+            handler = place_factory
+        },
+        {
+            name = "pick_up_factory",
+            handler = function(player, tags, _)
+                ---@cast tags PickUpFactoryTags
+                local ui_state = lib.globals.ui_state(player)
+                ui_state.held_object_id = (tags.factory_id ~= ui_state.held_object_id)
+                    and tags.factory_id or nil
+                lib.gui.run_refresh(player, "factory_list")
+            end
         },
         {
             name = "act_on_factory",
