@@ -7,10 +7,14 @@ Note that this compatibility interface is currently very limited, but I'm open t
 ## Index
 
 - [Runtime integrations](#runtime-integrations)
-  - [`overwrite_recipe_picker`](#overwrite_recipe_picker)
+  - [`invalidate`](#invalidate)
 - [Static integrations](#static-integrations)
   - [`recycling_recipes`](#recycling_recipes)
   - [`compacting_recipes`](#compacting_recipes)
+  - [`machine_effects`](#machine_effects)
+  - [`overwrite_recipe_picker`](#overwrite_recipe_picker)
+  - [`recipe_substitutions`](#recipe_substitutions)
+  - [`machine_substitutions`](#machine_substitutions)
 
 ## Runtime integrations
 
@@ -18,22 +22,22 @@ A runtime integration can be used at any time in the [lifecycle](https://lua-api
 
 All runtime integrations require a `version` integer to be included to indicate the format used. The individual integration docs below indicate which version they describe. They also indicate the first release of Factory Planner that the interface became available on.
 
-Note that anything configured through runtime integrations is reset [on_configuration_changed](https://lua-api.factorio.com/latest/classes/LuaBootstrap.html#on_configuration_changed), and thus needs to be setup again afterwards.
+### `invalidate`
 
-### `overwrite_recipe_picker`
+**Current version:** `1`, available from `2.1.11`
 
-**Current version:** `1`, available from `2.1.3`
+Some static integrations are collected per-force, which means Factory Planner needs to know when a mod's per-force state changed. There's no way for it to notice this on its own, so mods managing such state by scripting are required to call this. It carries no data itself, it only prompts Factory Planner to read that static integration again.
 
-This integration enables overwriting Factory Planner's decision tree for determining whether a recipe is able to be chosen in the recipe picker. It runs various checks for whether a recipe is actually usable, but it makes sense to overwrite this in some cases where recipes or technologies are managed by scripting.
+The integration expects the name of the `integration` that went stale. Only one can be named at a time, so a mod that changed several of them calls this once for each.
 
-The integration expects a table called `recipes`, which maps recipe names to either `true` (always show) or `false` (never show). Writing `nil` removes a previously configured recipe from the list.
+This does not need to be repeated after [on_configuration_changed](https://lua-api.factorio.com/latest/classes/LuaBootstrap.html#on_configuration_changed), because Factory Planner re-reads all per-force integrations at that point regardless.
 
 #### Example
 
 ```lua
-remote.call("fp-integration", "overwrite_recipe_picker", {
+remote.call("fp-integration", "invalidate", {
     version = 1,
-    recipes = { ["fast-transport-belt"] = true }
+    integration = "machine_effects"
 })
 ```
 
@@ -84,6 +88,113 @@ remote.add_interface("fp-integration-example-mod", {
         return {
             version = 1,
             recipes = {"landfill"}
+        }
+    end)
+})
+```
+
+### `machine_effects`
+
+**Current version:** `1`, available from `2.1.11`
+
+This integration allows mods to tell Factory Planner about effects they apply to a machine outside of the module system, which it has no way of seeing otherwise. A hidden module inserted into a hidden beacon next to every machine of a given type is the typical case. Factory Planner treats these as an addition to the machine's base effects, meaning they are subject to the machine's effect limits and are shown to the user as machine effects.
+
+This integration is collected per-force, so it's passed a force index and should return what currently applies to that force. Call [`invalidate`](#invalidate) whenever that changes.
+
+The integration expects a table called `effects`, which maps machine names to a table of effects. These are given as floats, in the same format that a module prototype's effects use. Any effect that's left out counts as zero.
+
+#### Example
+
+```lua
+remote.add_interface("fp-integration-example-mod", {
+    machine_effects = (function(force_index)
+        return {
+            version = 1,
+            effects = {
+                ["assembling-machine-2"] = {speed = 0.5, productivity = 0.1}
+            }
+        }
+    end)
+})
+```
+
+### `overwrite_recipe_picker`
+
+**Current version:** `1`, available from `2.1.11`
+
+This integration enables overwriting Factory Planner's decision tree for determining whether a recipe is able to be chosen in the recipe picker. It runs various checks for whether a recipe is actually usable, but it makes sense to overwrite this in some cases where recipes or technologies are managed by scripting.
+
+This integration is collected per-force, so it's passed a force index and should return what currently applies to that force. Call [`invalidate`](#invalidate) whenever that changes.
+
+The integration expects a table called `recipes`, which maps recipe names to either `true` (always show) or `false` (never show). Any recipe that's left out is judged by Factory Planner's own checks.
+
+Existing production lines using a recipe that is hidden this way are not removed; they are marked as blocked and excluded from the calculation until their recipe becomes obtainable again.
+
+#### Example
+
+```lua
+remote.add_interface("fp-integration-example-mod", {
+    overwrite_recipe_picker = (function(force_index)
+        return {
+            version = 1,
+            recipes = { ["fast-transport-belt"] = true }
+        }
+    end)
+})
+```
+
+### `recipe_substitutions`
+
+**Current version:** `1`, available from `2.1.11`
+
+This integration allows mods to tell Factory Planner that they replaced one recipe with another by scripting, which it has no way of noticing otherwise. Factory Planner hides the replaced recipes from the recipe picker, and migrates any existing production line using one over to its replacement, keeping the line's machine, modules, beacon and fluid temperatures wherever they still apply.
+
+This integration is collected per-force, so it's passed a force index and should return what currently applies to that force. Call [`invalidate`](#invalidate) whenever that changes.
+
+The integration expects a table called `substitutions`, which maps the name of a recipe the force can't obtain right now to the name of the one that stands in for it. Any recipe that's left out is judged by Factory Planner's own checks. A recipe mapping to itself is ignored.
+
+A recipe that appears as a replacement must never also appear as one being replaced. Substitutions are applied in a single step, they are not followed transitively.
+
+Undoing a replacement is done by returning the reverse mapping, which migrates the affected lines back the same way. Note that this is not an undo: a module that the replacement didn't allow is gone for good, as is a machine that had to be swapped out along with it.
+
+#### Example
+
+```lua
+remote.add_interface("fp-integration-example-mod", {
+    recipe_substitutions = (function(force_index)
+        return {
+            version = 1,
+            substitutions = { ["iron-gear-wheel"] = "iron-gear-wheel-improved" }
+        }
+    end)
+})
+```
+
+### `machine_substitutions`
+
+**Current version:** `1`, available from `2.1.11`
+
+This integration allows mods to tell Factory Planner that they replaced one machine with another by scripting, which it has no way of noticing otherwise. Factory Planner hides the replaced machines from the machine picker, and migrates any existing production line using one over to its replacement, keeping the line's quality, limit, modules and beacon wherever they still apply.
+
+This integration is collected per-force, so it's passed a force index and should return what currently applies to that force. Call [`invalidate`](#invalidate) whenever that changes.
+
+The integration expects a table called `substitutions`, which maps the name of a machine the force can't use right now to the name of the one that stands in for it. A machine mapping to itself is ignored.
+
+Unlike recipes, machines have no state of their own that Factory Planner could go by, so it treats every machine it knows about as usable unless this integration says otherwise. That means the mapping has to be exhaustive: every machine that shouldn't be offered needs to appear as a key, including ones belonging to upgrades the force hasn't unlocked at all. Anything left out stays selectable.
+
+Substitutions are applied in a single step, they are not followed transitively. Undoing a replacement is done by returning the reverse mapping, which migrates the affected lines back the same way. Note that this is not an undo: a module or beacon that the replacement didn't allow is gone for good. If the replacement can't be used for a line's recipe at all, that line falls back to the user's default machine instead.
+
+#### Example
+
+```lua
+remote.add_interface("fp-integration-example-mod", {
+    machine_substitutions = (function(force_index)
+        return {
+            version = 1,
+            substitutions = {
+                ["assembling-machine-2"] = "assembling-machine-2-improved",
+                ["assembling-machine-2-specialized"] = "assembling-machine-2-improved"
+            }
         }
     end)
 })

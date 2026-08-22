@@ -196,6 +196,20 @@ function Factory:schedule_solver_update(desired_tick, player)
 end
 
 
+---@param player LuaPlayer
+---@param starting_tick MapTick?
+---@return MapTick? running_tick
+function Factory:refresh_lines(player, starting_tick)
+    if not self.top_floor:refresh_lines(player) then return starting_tick end
+
+    self:validate(player)  -- lines only repair themselves, validity is determined from here
+    if not starting_tick then return nil end  -- callers that re-solve on their own pass no tick
+
+    self:schedule_solver_update(starting_tick, player)
+    return starting_tick + MAGIC_NUMBERS.factory_solver_update_delay
+end
+
+
 ---@class PackedFactory: PackedObject
 ---@field class "Factory"
 ---@field name string
