@@ -12,6 +12,7 @@ Date: 00. 00. 0000
     - Fixed an issue with boiler recipes for complex modded machines (#819) (Thanks vapopescu!)
     - Fixed an issue when pasting over a fluid ingredient that doesn't have a temperature set (#820) (Thanks vapopescu!)
     - Fixed a crash when using machine limits with the Simplex solver (#827) (Thanks vapopescu!)
+    - Fixed a few GUI issues with the compact dialog (#823)
     - Fixed that boiler recipes wouldn't calculate machine amounts
 
 ---------------------------------------------------------------------------------------------------

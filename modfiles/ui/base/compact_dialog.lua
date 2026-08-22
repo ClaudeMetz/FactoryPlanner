@@ -1,4 +1,23 @@
--- The main GUI parts for the compact dialog
+-- ** UTIL **
+---@param player LuaPlayer
+---@return integer width
+---@return integer maximal_height
+local function get_compact_frame_dimensions(player)
+    local scaled_resolution = lib.gui.calculate_scaled_resolution(player)
+    local compact_width_percentage = lib.globals.preferences(player).compact_width_percentage
+    local width = scaled_resolution.width * (compact_width_percentage / 100)  ---@as integer
+    local maximal_height = scaled_resolution.height * 0.8  ---@as integer
+    return width, maximal_height
+end
+
+---@param player LuaPlayer
+---@param frame LuaGuiElement
+local function set_compact_frame_location(player, frame)
+    local scale = player.display_scale  ---@as integer
+    frame.location = {x = 10 * scale, y = 63 * scale}
+end
+
+
 ---@param floor Floor
 ---@param frame_width int32
 ---@return integer
@@ -107,7 +126,8 @@ local function add_checkmark_button(parent_flow, line, relevant_line)
     ---@class CheckmarkCompactLineTags
     ---@field line_id ObjectID
     local tags = {mod="fp", on_gui_checked_state_changed="checkmark_compact_line", line_id=line.id}
-    parent_flow.add{type="checkbox", tags=tags, state=relevant_line.done, mouse_button_filter={"left"}}
+    local checkbox = parent_flow.add{type="checkbox", tags=tags, state=relevant_line.done, mouse_button_filter={"left"}}
+    checkbox.style.left_margin = 8
 end
 
 ---@param parent_flow LuaGuiElement
@@ -554,7 +574,11 @@ local function build_compact_factory(player)
     -- Flow navigation
     local flow_navigation = subheader.add{type="flow", direction="horizontal"}
     flow_navigation.style.vertical_align = "center"
-    flow_navigation.style.margin = {4, 4, 4, 8}
+    flow_navigation.style.margin = 4
+
+    -- This is necessary to work around scrolling/squashing issues
+    local width, _ = get_compact_frame_dimensions(player)
+    flow_navigation.style.width = width - 40
 
     local label_name = flow_navigation.add{type="label"}
     label_name.style.font = "heading-2"
@@ -562,7 +586,7 @@ local function build_compact_factory(player)
     compact_elements["name_label"] = label_name
 
     local label_level = flow_navigation.add{type="label"}
-    label_level.style.margin = {0, 6, 0, 6}
+    label_level.style.margin = {0, 6}
     compact_elements["level_label"] = label_level
 
     ---@class ChangeCompactFloorTags
@@ -584,6 +608,7 @@ local function build_compact_factory(player)
         tooltip={"fp.compact_toggle_ingredients"}, tags={mod="fp", on_gui_click="toggle_compact_ingredients"},
         style="fp_sprite-button_rounded_icon", mouse_button_filter={"left"}}
     button_ingredients.style.padding = 0
+    button_ingredients.style.left_margin = 8
     compact_elements["ingredient_toggle"] = button_ingredients
 
     -- Ingredients frame
@@ -604,7 +629,7 @@ local function build_compact_factory(player)
     table_production.vertical_centering = false
     table_production.style.horizontal_spacing = 12
     table_production.style.vertical_spacing = 8
-    table_production.style.padding = {4, 8}
+    table_production.style.padding = {4, 0}
     compact_elements["production_table"] = table_production
 
     refresh_compact_factory(player)
@@ -876,24 +901,6 @@ factory_listeners.player = {
 }
 
 
--- ** UTIL **
--- Set frame dimensions in a relative way, taking player resolution and scaling into account
----@param player LuaPlayer
----@param frame LuaGuiElement
-local function set_compact_frame_dimensions(player, frame)
-    local scaled_resolution = lib.gui.calculate_scaled_resolution(player)
-    local compact_width_percentage = lib.globals.preferences(player).compact_width_percentage
-    frame.style.width = scaled_resolution.width * (compact_width_percentage / 100)  ---@as integer
-    frame.style.maximal_height = scaled_resolution.height * 0.8  ---@as integer
-end
-
----@param player LuaPlayer
----@param frame LuaGuiElement
-local function set_compact_frame_location(player, frame)
-    local scale = player.display_scale  ---@as integer
-    frame.location = {x = 10 * scale, y = 63 * scale}
-end
-
 
 -- ** TOP LEVEL **
 compact_dialog = {}
@@ -918,9 +925,12 @@ function compact_dialog.rebuild(player, default_visibility)
 
     local frame_compact_dialog = player.gui.screen.add{type="frame", direction="vertical",
         visible=interface_visible, name="fp_frame_compact_dialog"}
-    set_compact_frame_location(player, frame_compact_dialog)
-    set_compact_frame_dimensions(player, frame_compact_dialog)
     ui_state.compact_elements["compact_frame"] = frame_compact_dialog
+
+    local width, maximal_height = get_compact_frame_dimensions(player)
+    frame_compact_dialog.style.width = width
+    frame_compact_dialog.style.maximal_height = maximal_height
+    set_compact_frame_location(player, frame_compact_dialog)
 
     -- Title bar
     local flow_title_bar = frame_compact_dialog.add{type="flow", direction="horizontal", style="frame_header_flow",
