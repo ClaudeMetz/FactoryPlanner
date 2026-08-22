@@ -314,6 +314,10 @@ function SimplexTableau:solve(previous_basis)
     local last_factorization = iterations
     local needs_factorization = false
 
+    -- Keep track of the iterations in which variables enter the basis
+    local last_considered = {}  ---@type table<VariableKey, integer>
+    for key, _ in pairs(self.cols) do last_considered[key] = 0 end
+
     local function refactorize()
         local b_matrix = {}  ---@type number[][]
         for j = 1, #self.matrix do
@@ -373,6 +377,7 @@ function SimplexTableau:solve(previous_basis)
         end
 
         if entering_index == 0 then return solution_reached() end
+        last_considered[non_basic[entering_index]] = iterations
 
         -- Compute the coefficients of the entering variable
         local entering_column = self.cols[non_basic[entering_index]]  ---@type integer
@@ -380,15 +385,15 @@ function SimplexTableau:solve(previous_basis)
 
         -- Select the basis with the smallest ratio as the leaving variable
         local leaving_index = 0
-        min = 2.0^1023
+        min = math.huge
         for i = 1, #d_vector do
             if d_vector[i] > MAGIC_NUMBERS.margin_of_error then
                 local ratio = x_vector[i]--[[@cast -nil]] / d_vector[i]
                 if ratio < min then
                     leaving_index = i
                     min = ratio
-                elseif ratio == min and self.cols[basic[i]] < self.cols[basic[leaving_index]] then
-                    -- Choose the lower variable intex to prevent cycling
+                elseif ratio == min and last_considered[basic[i]] < last_considered[basic[leaving_index]] then
+                    -- Choose the oldest variable in the basis to prevent cycling
                     leaving_index = i
                 end
             end

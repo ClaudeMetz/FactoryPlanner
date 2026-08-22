@@ -65,4 +65,28 @@ function SimpleItem:paste(object)
     end
 end
 
-return {init = init}
+---@class PackedSimpleItem
+---@field class "SimpleItem"
+---@field proto FPPackedPrototype
+---@field amount number
+
+---@return PackedSimpleItem
+function SimpleItem:pack()
+    return {
+        class = self.class,
+        proto = prototyper.util.simplify_prototype(self.proto, "type"),
+        amount = self.amount
+    }
+end
+
+-- Helper functions to pack up Floor or Line products, byproducts and ingredients
+---@param items SimpleItem[]
+---@return PackedSimpleItem[]
+local function pack_items(items)
+    local packed_items = {}  ---@type PackedSimpleItem[]
+    for _, item in ipairs(items) do table.insert(packed_items, item:pack()) end
+    return packed_items
+end
+
+
+return {init = init, pack_items = pack_items}
