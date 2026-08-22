@@ -264,7 +264,7 @@ function Floor:paste(object)
             return false, "recipe_irrelevant"  -- found no use for the recipe's products
         end
 
-        self.parent:replace(self, object--[[@as LineObject]])
+        self:insert(object--[[@as LineObject]])
         return true, nil
     else
         return false, "incompatible_class"

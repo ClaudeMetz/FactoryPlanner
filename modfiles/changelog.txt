@@ -4,9 +4,10 @@ Date: 00. 00. 0000
   Features:
   Changes:
     - Changed factory reordering to a pick-up-and-move model (#816)
+    - Pasting a line onto another line now puts it onto its subfloor if compatible (#831) (Thanks vapopescu!)
     - Improved Simplex solver to find a solution in more situations (#828) (Thanks vapopescu!)
   Bugfixes:
-    - Fixed that the simplex solver would not satisfy demand if an intermediate prouct is also a factory product (#834) (Thanks vapopescu!)
+    - Fixed that the simplex solver would not satisfy demand if an intermediate product is also a factory product (#834) (Thanks vapopescu!)
     - Fixed that the simplex solver would not fulfill fluid fuel demand (#817) (Thanks vapopescu!)
     - Fixed an issue with boiler recipes for complex modded machines (#819) (Thanks vapopescu!)
     - Fixed an issue when pasting over a fluid ingredient that doesn't have a temperature set (#820) (Thanks vapopescu!)
