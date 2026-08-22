@@ -16,16 +16,15 @@ solver = {
 ---@param floor Floor
 ---@param line LineObject
 local function set_blank_line(player, floor, line)
-    local blank_class = structures.class.init()
     solver.set_line_result {
         player_index = player.index,
         floor_id = floor.id,
         line_id = line.id,
         machine_amount = 0,
         production_ratio = (line.class == "Line") and 0 or nil,
-        Product = blank_class,
-        Byproduct = blank_class,
-        Ingredient = blank_class,
+        products = {},
+        byproducts = {},
+        ingredients = {},
         fuel_amount = 0
     }
 end
@@ -46,14 +45,12 @@ end
 ---@param player LuaPlayer
 ---@param factory Factory
 local function set_blank_factory(player, factory)
-    local blank_class = structures.class.init()
-
     solver.set_factory_result {
         player_index = player.index,
         factory_id = factory.id,
-        Product = blank_class,
-        Byproduct = blank_class,
-        Ingredient = blank_class,
+        products = {},
+        byproducts = {},
+        ingredients = {},
         matrix_free_items = factory.matrix_free_items  ---@as FPItemPrototype[]
     }
 
@@ -226,11 +223,11 @@ end
 
 ---@param object LineObject
 ---@param item_category SolverItemCategory
----@param item_results SolverClass
+---@param item_results SolverMap
 local function update_object_items(object, item_category, item_results)
     local item_list = {}
 
-    for _, item_result in pairs(structures.class.list(item_results)) do
+    for _, item_result in pairs(structures.map.list(item_results)) do
         local item_proto = prototyper.util.find("items", item_result.name, item_result.type)  ---@as FPItemPrototype
 
         -- Floor items keep their temperature, since they can't be configured from there
@@ -264,24 +261,25 @@ end
 
 ---@param floor Floor
 local function update_ingredient_satisfaction(floor)
-    local ingredient_deficit = structures.class.init()
+    local ingredient_deficit = {}  ---@type SolverMap
     for _, item in pairs(floor.ingredients) do
         if floor.level == 1 then item.satisfied_amount = 0 end
-        structures.class.add(ingredient_deficit, item, item.amount - (item.satisfied_amount or 0))
+        structures.map.add(ingredient_deficit, item, item.amount - (item.satisfied_amount or 0))
     end
 
     ---@param item SimpleItem | Fuel
     ---@param item_name string
     local function calculate_satisfation(item, item_name)
         ---@cast item.proto -FPPackedPrototype
-        local unsatisfied_amount = ingredient_deficit[item.proto.type][item_name] ---@as number?
+        local solver_item = { name = item_name, type = item.proto.type, amount = 0 }  ---@type SolverItem
+        local unsatisfied_amount = ingredient_deficit[structures.pack_item(solver_item)] ---@as number?
         local deficit = math.min(unsatisfied_amount or 0, item.amount)
 
         item.satisfied_amount = item.amount - deficit
         if item.satisfied_amount < MAGIC_NUMBERS.margin_of_error then item.satisfied_amount = 0 end
 
         if deficit > 0 then
-            structures.class.subtract(ingredient_deficit, {name = item_name, type = item.proto.type, amount = deficit})
+            structures.map.subtract(ingredient_deficit, solver_item, deficit)
         end
     end
 
@@ -403,9 +401,9 @@ end
 ---@field factory_id ObjectID
 ---@field matrix_free_items FPItemPrototype[]?
 ---@field simplex_basis table<ConstraintKey, VariableKey>?
----@field Product SolverClass
----@field Byproduct SolverClass
----@field Ingredient SolverClass
+---@field products SolverMap
+---@field byproducts SolverMap
+---@field ingredients SolverMap
 
 --- Updates the active factories top-level data with the given result
 ---@param result FactoryResult
@@ -418,12 +416,12 @@ function solver.set_factory_result(result)
     factory.simplex_basis = result.simplex_basis or {}
 
     for product in factory:iterator() do
-        local product_result_amount = result.Product[product.proto.type][product.proto.name] or 0
+        local product_result_amount = result.products[structures.pack_item(product)]
         product.amount = product_result_amount or 0
     end
 
-    update_object_items(factory.top_floor, "byproducts", result.Byproduct)
-    update_object_items(factory.top_floor, "ingredients", result.Ingredient)
+    update_object_items(factory.top_floor, "byproducts", result.byproducts)
+    update_object_items(factory.top_floor, "ingredients", result.ingredients)
 
     -- Determine satisfaction-amounts for all line ingredients
     local player = game.players[result.player_index]
@@ -433,14 +431,13 @@ function solver.set_factory_result(result)
 end
 
 ---@class LineResult
----@field player_index uint32
 ---@field floor_id ObjectID
 ---@field line_id ObjectID
 ---@field machine_amount number
 ---@field production_ratio number?
----@field Product SolverClass
----@field Byproduct SolverClass
----@field Ingredient SolverClass
+---@field products SolverMap
+---@field byproducts SolverMap
+---@field ingredients SolverMap
 ---@field fuel_amount number?
 
 --- Updates the given line of the given floor of the active factory
@@ -465,9 +462,9 @@ function solver.set_line_result(result)
         line.byproducts = {}
         set_zeroed_items(line, "ingredients", line.recipe.ingredients)
     else
-        update_object_items(line, "products", result.Product)
-        update_object_items(line, "byproducts", result.Byproduct)
-        update_object_items(line, "ingredients", result.Ingredient)
+        update_object_items(line, "products", result.products)
+        update_object_items(line, "byproducts", result.byproducts)
+        update_object_items(line, "ingredients", result.ingredients)
     end
 end
 
