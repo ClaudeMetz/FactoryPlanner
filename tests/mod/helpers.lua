@@ -30,7 +30,7 @@ end
 -- Machines are filed under combined category names, so a lookup by the original
 -- category only works when some recipe uses exactly that one. Scanning by name
 -- sidesteps that; the proto's own .category field carries the original category.
-local function find_machine(name)
+function helpers.find_machine(name)
     for _, category in pairs(storage.prototypes.machines) do
         for _, member in pairs(category.members) do
             if member.name == name then return member end
@@ -40,7 +40,7 @@ end
 
 -- Checks one machine's category, speed, fuel category, and further burner fields
 function helpers.check_machine(c, name, expected)
-    local proto = find_machine(name)
+    local proto = helpers.find_machine(name)
     if not proto then
         c.check(false, name .. ": machine missing entirely")
         return nil

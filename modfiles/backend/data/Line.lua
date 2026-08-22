@@ -2,6 +2,7 @@ local Object = require("backend.data.Object")
 local Recipe = require("backend.data.Recipe")
 local Machine = require("backend.data.Machine")
 local Beacon = require("backend.data.Beacon")
+local SimpleItem = require("backend.data.SimpleItem")
 
 ---@class Line: Object, ObjectMethods
 ---@field class "Line"
@@ -273,11 +274,11 @@ function Line:get_surface_compatibility()
         local recipe = check_compatibility(properties, self.recipe.proto.surface_conditions)
         local machine = check_compatibility(properties, self.machine.proto.surface_conditions)
 
-        -- Only allow resources found on this location
+        --[[ -- Only allow resources found on this location
         if object.location_proto.resource_recipes and self.recipe.proto.location_restricted
                 and not object.location_proto.resource_recipes[self.recipe.proto.name] then
             recipe = false
-        end
+        end ]]
 
         self.surface_compatibility = {recipe=recipe, machine=machine, overall=(recipe and machine)}
     end
@@ -356,9 +357,9 @@ function Line:pack(full)
         beacon = self.beacon and self.beacon:pack(full),
         comment = self.comment,
 
-        products = (full) and interface.pack_items(self.products) or nil,
-        byproducts = (full) and interface.pack_items(self.byproducts) or nil,
-        ingredients = (full) and interface.pack_items(self.ingredients) or nil,
+        products = (full) and SimpleItem.pack_items(self.products) or nil,
+        byproducts = (full) and SimpleItem.pack_items(self.byproducts) or nil,
+        ingredients = (full) and SimpleItem.pack_items(self.ingredients) or nil,
     }
 end
 

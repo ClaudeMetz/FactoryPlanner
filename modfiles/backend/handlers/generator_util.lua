@@ -300,6 +300,19 @@ function _util.format_effect_receiver(proto)
 end
 
 
+---@param fluid_box LuaFluidBoxPrototype
+---@return boolean
+local function connects_to_pipes(fluid_box)
+    for _, connection in pairs(fluid_box.pipe_connections) do
+        for _, category in pairs(connection.connection_category) do
+            -- This avoids catching internal-only connection for multi-part machines
+            -- It could drop legit pipe categories, but I don't know of any such cases
+            if category == "default" then return true end
+        end
+    end
+    return false
+end
+
 ---@class BoilerConversion
 ---@field input LuaFluidPrototype
 ---@field output LuaFluidPrototype
@@ -318,7 +331,8 @@ function _util.get_boiler_conversions(proto)
         -- A fluid energy source puts its own boxes in this list, where they could pass for the input
         if source == nil or (fluid_box ~= source.fluid_box and fluid_box ~= source.output_fluid_box) then
             if fluid_box.production_type == "input-output" or fluid_box.production_type == "input" then
-                input = fluid_box
+                -- An input nothing can be piped into makes the boiler unusable
+                if connects_to_pipes(fluid_box) then input = fluid_box end
             elseif fluid_box.production_type == "output" then
                 output = fluid_box
             end

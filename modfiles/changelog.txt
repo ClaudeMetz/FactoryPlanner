@@ -3,7 +3,15 @@ Version: 0.00.00
 Date: 00. 00. 0000
   Features:
   Changes:
+    - Changed factory reordering to a pick-up-and-move model (#816)
+    - Improved Simplex solver to find a solution in more situations (#828) (Thanks vapopescu!)
   Bugfixes:
+    - Fixed that the simplex solver would not satisfy demand if an intermediate prouct is also a factory product (#834) (Thanks vapopescu!)
+    - Fixed that the simplex solver would not fulfill fluid fuel demand (#817) (Thanks vapopescu!)
+    - Fixed an issue with boiler recipes for complex modded machines (#819) (Thanks vapopescu!)
+    - Fixed an issue when pasting over a fluid ingredient that doesn't have a temperature set (#820) (Thanks vapopescu!)
+    - Fixed a crash when using machine limits with the Simplex solver (#827) (Thanks vapopescu!)
+    - Fixed that boiler recipes wouldn't calculate machine amounts
 
 ---------------------------------------------------------------------------------------------------
 Version: 2.1.11

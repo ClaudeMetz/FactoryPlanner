@@ -1,5 +1,6 @@
 local Object = require("backend.data.Object")
 local Line = require("backend.data.Line")
+local SimpleItem = require("backend.data.SimpleItem")
 
 ---@alias LineObject Line | Floor
 ---@alias LineParent Factory | Floor
@@ -286,9 +287,9 @@ function Floor:pack(full)
         level = self.level,
         lines = self:_pack(full),
 
-        products = (full) and interface.pack_items(self.products) or nil,
-        byproducts = (full) and interface.pack_items(self.byproducts) or nil,
-        ingredients = (full) and interface.pack_items(self.ingredients) or nil,
+        products = (full) and SimpleItem.pack_items(self.products) or nil,
+        byproducts = (full) and SimpleItem.pack_items(self.byproducts) or nil,
+        ingredients = (full) and SimpleItem.pack_items(self.ingredients) or nil,
     }
 end
 
