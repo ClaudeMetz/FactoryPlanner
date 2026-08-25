@@ -2329,8 +2329,7 @@ Date: 13. 08. 2019
   Features:
     - Added a button to manually refresh the production table
   Changes:
-    - Vastly improved the performance of the item and recipe picker-dialogs (mostly relevant for heavily modded games)
-      Initial opening sped up fivefold, subsequent openings sped up twelvefold
+    - Vastly improved the performance of the item and recipe picker-dialogs (mostly relevant for heavily modded games). Initial opening sped up fivefold, subsequent openings sped up twelvefold
   Bugfixes:
     - Fixed bug where item/recipe categories overlapped sometimes
     - Fixed mining productivity not applying to mining with fluids
@@ -2458,8 +2457,7 @@ Version: 0.17.27
 Date: 06. 07. 2019
   Features:
     - Added support for modules and beacons! (might cause crashes)
-    - Added a tutorial mode, which informs you of all the possible interactions in the
-      tooltips of various buttons. You can toggle it in the tutorial-window
+    - Added a tutorial mode, which informs you of all the possible interactions in the tooltips of various buttons. You can toggle it in the tutorial-window
   Changes:
     - Changing the view (items/s, belts, etc) now applies to top-level-items too
     - Improved the tooltips in various places
