@@ -880,7 +880,7 @@ function matrix_engine.to_reduced_row_echelon_form(m)
     if #m==0 then return m end
     local num_cols = #m[1]
 
-    local tolerance = 1e-12
+    local tolerance = MAGIC_NUMBERS.matrix_tolerance
     local pivot_row = 1
 
     for curr_col = 1, num_cols do

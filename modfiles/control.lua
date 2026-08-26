@@ -8,7 +8,11 @@ MAGIC_NUMBERS = {
     effect_precision = 10000,  -- The multiplier to turn module effects into integers (and back)
     formatting_precision = 4,  -- precision of decimal formatting in tooltips
     history_limit = 25,  -- maximum number of navigation history entries
+
+    -- Solver-specific magic numbers
     minimum_energy = 0.001,  -- The lower-bound of the recipe energy property
+    matrix_tolerance = 1e-12,  -- The tolerance value for the RREF pivot check
+    simplex_tolerance = 1e-10,  -- The tolerance for the variable entering/exitting comparisons
     simplex_update_threshold = 1e5,  -- The infinite norm threshold under which a Forrest-Tomlin update is considered stable
     simplex_max_factorization_interval = 50,  -- The upper bound for the amount of iterations between refactorizations
 
