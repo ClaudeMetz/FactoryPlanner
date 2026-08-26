@@ -73,10 +73,11 @@ end
 
 
 ---@param line LineObject
+---@param relative_object LineObject
 ---@param direction NeighbourDirection
----@param spots integer?
-function Floor:shift(line, direction, spots)
-    self:_shift(line, direction, spots)
+function Floor:move(line, relative_object, direction)
+    self:_remove(line)
+    self:_insert(line, relative_object, direction)
 end
 
 

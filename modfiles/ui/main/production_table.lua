@@ -7,14 +7,21 @@
 ---@field player LuaPlayer
 ---@field tooltips table
 ---@field district District
+---@field held_line LineObject?
 
 ---@param player LuaPlayer
 ---@param factory Factory
 ---@return ProductionTableMetadata
 local function generate_metadata(player, factory)
     local preferences = lib.globals.preferences(player)
-    local tooltips = lib.globals.ui_state(player).tooltips
+    local ui_state = lib.globals.ui_state(player)
+    local tooltips = ui_state.tooltips
     tooltips.production_table = {}
+
+    -- The held object is shared with the factory list, which holds factories
+    local held_object = OBJECT_INDEX[ui_state.held_object_id]  ---@as Object?
+    local held_line = (held_object and held_object.class ~= "Factory")
+        and held_object or nil  ---@as LineObject?
 
     local metadata = {
         archive_open = factory.archived,
@@ -23,7 +30,8 @@ local function generate_metadata(player, factory)
         fold_out_subfloors = preferences.fold_out_subfloors,
         player = player,
         tooltips = tooltips.production_table,
-        district = factory.parent
+        district = factory.parent,
+        held_line = held_line
     }
     return metadata
 end
@@ -42,42 +50,51 @@ local builders = {}
 ---@param parent_flow LuaGuiElement
 ---@param metadata ProductionTableMetadata
 function builders.move(line, parent_flow, metadata)
+    local held_line = metadata.held_line
+    local button_width = 18
+    -- The line defining a subfloor can neither be moved, nor be placed relative to
+    local first_subfloor_line = (line.parent.level > 1 and line.previous == nil)
+    -- Only a line held on this very floor can be placed relative to this one
+    local placeable = (held_line ~= nil and held_line ~= line
+        and held_line.parent == line.parent and not first_subfloor_line)
+
     ---@param flow LuaGuiElement
     ---@param direction "previous" | "next"
-    ---@param first_subfloor_line boolean
-    local function create_move_button(flow, direction, first_subfloor_line)
-        local enabled = not (first_subfloor_line or metadata.archive_open)
-        if direction == "next" and line.next == nil then enabled = false
-        elseif direction == "previous" then
-            if line.previous == nil then enabled = false
-            elseif line.parent.level > 1 and line.previous == line.parent.first then enabled = false end
-        end
-
-        local endpoint = (direction == "next") and {"fp.bottom"} or {"fp.top"}
+    local function create_place_button(flow, direction)
         local up_down = (direction == "next") and "down" or "up"
-        local move_tooltip = (enabled) and {"", {"fp.move_object", {"fp.pl_recipe", 1}, {"fp." .. up_down}},
-            {"fp.move_object_instructions", endpoint}} or ""
 
-        ---@class MoveLineTags
+        ---@class PlaceLineTags
         ---@field direction "previous" | "next"
         ---@field line_id ObjectID
-        ---@field context "production_table"
-        local tags = {mod="fp", on_gui_click="move_line", direction=direction, line_id=line.id,
-            on_gui_hover="set_tooltip", context="production_table"}
-        local button = flow.add{type="sprite-button", tags=tags, style="fp_sprite-button_move", enabled=enabled,
-            sprite="fp_arrow_" .. up_down, mouse_button_filter={"left"}, raise_hover_events=true}
-        button.style.size = {18, 14}
+        local tags = {mod="fp", on_gui_click="place_line", direction=direction, line_id=line.id}
+        local tooltip = {"fp.place_object_" .. direction, {"fp.pl_recipe", 1}}
+        local button = flow.add{type="sprite-button", tags=tags, style="fp_sprite-button_move",
+            tooltip=tooltip, sprite="fp_arrow_" .. up_down, mouse_button_filter={"left"}}
+        button.style.size = {button_width, 14}
         button.style.padding = -1
-        metadata.tooltips[button.index] = move_tooltip
     end
 
-    local move_flow = parent_flow.add{type="flow", direction="vertical"}
-    move_flow.style.vertical_spacing = 0
-    move_flow.style.top_padding = 2
+    if placeable then
+        local place_flow = parent_flow.add{type="flow", direction="vertical"}
+        place_flow.style.vertical_spacing = 0
+        place_flow.style.top_padding = 2
+        create_place_button(place_flow, "previous")
+        create_place_button(place_flow, "next")
+    else
+        parent_flow.style.vertical_align = "center"
+        local held = (held_line == line)
 
-    local first_subfloor_line = (line.parent.level > 1 and line.previous == nil)
-    create_move_button(move_flow, "previous", first_subfloor_line)
-    create_move_button(move_flow, "next", first_subfloor_line)
+        ---@class PickUpLineTags
+        ---@field line_id ObjectID
+        local tags = {mod="fp", on_gui_click="pick_up_line", line_id=line.id}
+        local enabled = not (first_subfloor_line or metadata.archive_open)
+        local tooltip = (enabled) and {"fp.pick_up_object", {"fp.pl_recipe", 1}} or nil
+        local button = parent_flow.add{type="sprite-button", tags=tags, style="fp_sprite-button_move",
+            tooltip=tooltip, enabled=enabled, toggled=held, sprite="fp_pick_up",
+            mouse_button_filter={"left"}}
+        button.style.size = {button_width, 22}
+        button.style.padding = -1
+    end
 end
 
 ---@param line LineObject
