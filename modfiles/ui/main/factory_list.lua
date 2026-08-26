@@ -150,19 +150,16 @@ local function refresh_factory_list(player)
         local search_term = helpers.multilingual_to_lower(main_elements.factory_list["search_textfield"].text)
         local attach_factory_products = player_table.preferences.attach_factory_products
         local held_factory = lib.gui.held_object(player, "factory_list")  ---@as Factory?
-        local first_shown_factory = nil  ---@type Factory?
+        local passed_held = false
         local filter = {archived = archived}  ---@type ObjectFilter
         local button_width = 20
 
-        -- The top of the list is the only spot no factory can be placed relative to
-        local place_top_flow = (held_factory ~= nil) and listbox.add{type="flow"} or nil
-
         for factory in selected_factory.parent:iterator(filter) do
+            if factory == held_factory then passed_held = true end
             local selected = (selected_factory.id == factory.id)
             local matched = (string.find(helpers.multilingual_to_lower(factory.name), search_term, 1, true) ~= nil)
 
             if matched or selected then  -- always show selected factory
-                first_shown_factory = first_shown_factory or factory
                 local button_flow = listbox.add{type="flow", direction="horizontal"}
                 button_flow.style.horizontal_spacing = 0
 
@@ -170,12 +167,15 @@ local function refresh_factory_list(player)
                 local move_button  ---@type LuaGuiElement
 
                 if placeable then
+                    -- Buttons above the held factory place it above their row, ones below place below
                     ---@class PlaceFactoryTags
                     ---@field direction "previous" | "next"
                     ---@field factory_id ObjectID
-                    local tags = {mod="fp", on_gui_click="place_factory", direction="next", factory_id=factory.id}
+                    local tags = {mod="fp", on_gui_click="place_factory",
+                        direction=(passed_held) and "next" or "previous", factory_id=factory.id}
                     move_button = button_flow.add{type="sprite-button", tags=tags,
-                        tooltip={"fp.place_object_below", {"fp.pl_factory", 1}}, sprite="fp_arrow_down",
+                        tooltip={"fp.place_object_" .. ((passed_held) and "below" or "above"), {"fp.pl_factory", 1}},
+                        sprite=(passed_held) and "fp_arrow_down" or "fp_arrow_up",
                         mouse_button_filter={"left"}, style="fp_sprite-button_move"}
                     move_button.style.padding = 2
                 else
@@ -203,18 +203,6 @@ local function refresh_factory_list(player)
                 factory_button.style.width = MAGIC_NUMBERS.list_width - button_width
                 tooltips.factory_list[factory_button.index] = tooltip
             end
-        end
-
-        if place_top_flow and first_shown_factory and held_factory ~= first_shown_factory then
-            local tags = {mod="fp", on_gui_click="place_factory", direction="previous",
-                factory_id=first_shown_factory.id}
-            local top_entry = place_top_flow.add{type="button", tags=tags, style="list_box_item",
-                caption={"fp.place_object_top"}, mouse_button_filter={"left"}}
-            top_entry.style.font = "default-bold"
-            top_entry.style.width = MAGIC_NUMBERS.list_width
-            -- Matching the row height means picking up shifts the list by exactly one entry
-            top_entry.style.height = MAGIC_NUMBERS.list_element_height
-            top_entry.style.horizontal_align = "center"
         end
     end
 

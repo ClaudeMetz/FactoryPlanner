@@ -8,6 +8,7 @@
 ---@field tooltips table
 ---@field district District
 ---@field held_line LineObject?
+---@field passed_held boolean
 
 ---@param player LuaPlayer
 ---@param factory Factory
@@ -28,7 +29,8 @@ local function generate_metadata(player, factory)
         player = player,
         tooltips = tooltips.production_table,
         district = factory.parent,
-        held_line = held_line
+        held_line = held_line,
+        passed_held = false
     }
     return metadata
 end
@@ -48,22 +50,29 @@ local builders = {}
 ---@param metadata ProductionTableMetadata
 function builders.move(line, parent_flow, metadata)
     local held_line = metadata.held_line
+    if line == held_line then metadata.passed_held = true end
     local button_width = 18
-    -- The line defining a subfloor can't be moved itself, but can be placed below
+    -- The line defining a subfloor can't be moved itself, and the spot below it
+    -- is covered by the following line's place-above button
     local first_subfloor_line = (line.parent.level > 1 and line.previous == nil)
-    -- Only a line held on this very floor can be placed below this one
-    local placeable = (held_line ~= nil and held_line.parent == line.parent and held_line ~= line)
+    -- Only a line held on this very floor can be placed relative to this one
+    local placeable = (held_line ~= nil and held_line.parent == line.parent
+        and held_line ~= line and not first_subfloor_line)
 
     parent_flow.style.vertical_align = "center"
     local button  ---@type LuaGuiElement
 
     if placeable then
+        -- Buttons above the held line place it above their row, ones below place below
+        local passed_held = metadata.passed_held
         ---@class PlaceLineTags
         ---@field direction "previous" | "next"
         ---@field line_id ObjectID
-        local tags = {mod="fp", on_gui_click="place_line", direction="next", line_id=line.id}
+        local tags = {mod="fp", on_gui_click="place_line",
+            direction=(passed_held) and "next" or "previous", line_id=line.id}
         button = parent_flow.add{type="sprite-button", tags=tags, style="fp_sprite-button_move",
-            tooltip={"fp.place_object_below", {"fp.pl_recipe", 1}}, sprite="fp_arrow_down",
+            tooltip={"fp.place_object_" .. ((passed_held) and "below" or "above"), {"fp.pl_recipe", 1}},
+            sprite=(passed_held) and "fp_arrow_down" or "fp_arrow_up",
             mouse_button_filter={"left"}}
         button.style.size = {button_width, button_width}  -- square, to set it apart
         button.style.padding = 1
@@ -680,28 +689,12 @@ local function refresh_production_table(player)
     -- Generates some data that is relevant to several different builders
     local metadata = generate_metadata(player, factory)
 
-    local held_line = metadata.held_line
-    local place_at_top = (held_line ~= nil and held_line.parent == floor
-        and floor.level == 1 and held_line ~= floor.first)
-
     -- Column headers
     for index, column_data in ipairs(production_columns) do
-        if column_data.name == "move" and place_at_top then
-            -- Add the 'place at the top' button to the table header
-            local tags = {mod="fp", on_gui_click="place_line", direction="previous",
-                line_id=floor.first--[[@cast -nil]].id}
-            local top_button = table_production.add{type="sprite-button", tags=tags,
-                tooltip={"fp.place_object_top"}, sprite="fp_arrow_down",
-                mouse_button_filter={"left"}, style="fp_sprite-button_move"}
-            top_button.style.size = {18, 18}
-            top_button.style.padding = 1
-            top_button.style.bottom_margin = 6
-        else
-            local caption = (column_data.tooltip) and {"", column_data.caption, "[img=info]"} or column_data.caption
-            local label_column = table_production.add{type="label", caption=caption, tooltip=column_data.tooltip,
-                style="bold_label"}
-            label_column.style.bottom_margin = 6
-        end
+        local caption = (column_data.tooltip) and {"", column_data.caption, "[img=info]"} or column_data.caption
+        local label_column = table_production.add{type="label", caption=caption, tooltip=column_data.tooltip,
+            style="bold_label"}
+        label_column.style.bottom_margin = 6
         table_production.style.column_alignments[index] = column_data.alignment
     end
 
