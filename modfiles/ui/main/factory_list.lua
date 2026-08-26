@@ -149,56 +149,48 @@ local function refresh_factory_list(player)
     if selected_factory ~= nil then  -- only need to run this if any factory exists
         local search_term = helpers.multilingual_to_lower(main_elements.factory_list["search_textfield"].text)
         local attach_factory_products = player_table.preferences.attach_factory_products
-        local held_factory = OBJECT_INDEX[player_table.ui_state.held_object_id]  ---@as Factory?
         -- The held object is shared with the production table, which holds lines
+        local held_factory = OBJECT_INDEX[player_table.ui_state.held_object_id]  ---@as Factory?
         if held_factory and held_factory.class ~= "Factory" then held_factory = nil end
+        local first_shown_factory = nil  ---@type Factory?
         local filter = {archived = archived}  ---@type ObjectFilter
         local button_width = 20
 
-        ---@param flow LuaGuiElement
-        ---@param direction "previous" | "next"
-        ---@param factory Factory
-        local function create_place_button(flow, direction, factory)
-            local sprite = (direction == "next") and "fp_arrow_down" or "fp_arrow_up"
-
-            ---@class PlaceFactoryTags
-            ---@field direction "previous" | "next"
-            ---@field factory_id ObjectID
-            local tags = {mod="fp", on_gui_click="place_factory", direction=direction, factory_id=factory.id}
-            local tooltip = {"fp.place_object_" .. direction, {"fp.pl_factory", 1}}
-            local place_button = flow.add{type="sprite-button", tags=tags, tooltip=tooltip,
-                sprite=sprite, mouse_button_filter={"left"}, style="fp_sprite-button_move"}
-            place_button.style.size = {button_width, 12}
-            place_button.style.padding = -2
-        end
+        -- The top of the list is the only spot no factory can be placed relative to
+        local place_top_flow = (held_factory ~= nil) and listbox.add{type="flow"} or nil
 
         for factory in selected_factory.parent:iterator(filter) do
             local selected = (selected_factory.id == factory.id)
             local matched = (string.find(helpers.multilingual_to_lower(factory.name), search_term, 1, true) ~= nil)
 
             if matched or selected then  -- always show selected factory
+                first_shown_factory = first_shown_factory or factory
                 local button_flow = listbox.add{type="flow", direction="horizontal"}
                 button_flow.style.horizontal_spacing = 0
 
-                if held_factory ~= nil and held_factory ~= factory then
-                    local place_flow = button_flow.add{type="flow", direction="vertical"}
-                    place_flow.style.vertical_spacing = 0
-                    place_flow.style.padding = {2, 0}
-                    create_place_button(place_flow, "previous", factory)
-                    create_place_button(place_flow, "next", factory)
-                else
-                    local held = (held_factory == factory)
+                local placeable = (held_factory ~= nil and held_factory ~= factory)
+                local move_button  ---@type LuaGuiElement
 
+                if placeable then
+                    ---@class PlaceFactoryTags
+                    ---@field direction "previous" | "next"
+                    ---@field factory_id ObjectID
+                    local tags = {mod="fp", on_gui_click="place_factory", direction="next", factory_id=factory.id}
+                    move_button = button_flow.add{type="sprite-button", tags=tags,
+                        tooltip={"fp.place_object_below", {"fp.pl_factory", 1}}, sprite="fp_arrow_down",
+                        mouse_button_filter={"left"}, style="fp_sprite-button_move"}
+                    move_button.style.padding = 2
+                else
                     ---@class PickUpFactoryTags
                     ---@field factory_id ObjectID
                     local tags = {mod="fp", on_gui_click="pick_up_factory", factory_id=factory.id}
-                    local pickup_tooltip = {"fp.pick_up_object", {"fp.pl_factory", 1}}
-                    local pick_up_button = button_flow.add{type="sprite-button", tags=tags,
-                        tooltip=pickup_tooltip, toggled=held, sprite="fp_pick_up",
-                        mouse_button_filter={"left"}, style="fp_sprite-button_move"}
-                    pick_up_button.style.size = {button_width, 28}
-                    pick_up_button.style.padding = 0
+                    move_button = button_flow.add{type="sprite-button", tags=tags,
+                        tooltip={"fp.pick_up_object", {"fp.pl_factory", 1}}, toggled=(held_factory == factory),
+                        sprite="fp_pick_up", mouse_button_filter={"left"}, style="fp_sprite-button_move"}
+                    move_button.style.padding = 0
                 end
+
+                move_button.style.size = {button_width, 28}
 
                 ---@class ActOnFactoryTags
                 ---@field factory_id ObjectID
@@ -213,6 +205,17 @@ local function refresh_factory_list(player)
                 factory_button.style.width = MAGIC_NUMBERS.list_width - button_width
                 tooltips.factory_list[factory_button.index] = tooltip
             end
+        end
+
+        if place_top_flow and first_shown_factory and held_factory ~= first_shown_factory then
+            local tags = {mod="fp", on_gui_click="place_factory", direction="previous",
+                factory_id=first_shown_factory.id}
+            local top_entry = place_top_flow.add{type="button", tags=tags, style="list_box_item",
+                caption={"fp.place_object_top"}, mouse_button_filter={"left"}}
+            top_entry.style.width = MAGIC_NUMBERS.list_width
+            -- Matching the row height means picking up shifts the list by exactly one entry
+            top_entry.style.height = MAGIC_NUMBERS.list_element_height
+            top_entry.style.horizontal_align = "center"
         end
     end
 

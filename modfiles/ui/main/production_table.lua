@@ -52,45 +52,32 @@ local builders = {}
 function builders.move(line, parent_flow, metadata)
     local held_line = metadata.held_line
     local button_width = 18
-    -- The line defining a subfloor can neither be moved, nor be placed relative to
+    -- The line defining a subfloor can't be moved itself, but can be placed below
     local first_subfloor_line = (line.parent.level > 1 and line.previous == nil)
-    -- Only a line held on this very floor can be placed relative to this one
-    local placeable = (held_line ~= nil and held_line ~= line
-        and held_line.parent == line.parent and not first_subfloor_line)
+    -- Only a line held on this very floor can be placed below this one
+    local placeable = (held_line ~= nil and held_line.parent == line.parent and held_line ~= line)
 
-    ---@param flow LuaGuiElement
-    ---@param direction "previous" | "next"
-    local function create_place_button(flow, direction)
-        local up_down = (direction == "next") and "down" or "up"
+    parent_flow.style.vertical_align = "center"
+    local button  ---@type LuaGuiElement
 
+    if placeable then
         ---@class PlaceLineTags
         ---@field direction "previous" | "next"
         ---@field line_id ObjectID
-        local tags = {mod="fp", on_gui_click="place_line", direction=direction, line_id=line.id}
-        local tooltip = {"fp.place_object_" .. direction, {"fp.pl_recipe", 1}}
-        local button = flow.add{type="sprite-button", tags=tags, style="fp_sprite-button_move",
-            tooltip=tooltip, sprite="fp_arrow_" .. up_down, mouse_button_filter={"left"}}
-        button.style.size = {button_width, 14}
-        button.style.padding = -1
-    end
-
-    if placeable then
-        local place_flow = parent_flow.add{type="flow", direction="vertical"}
-        place_flow.style.vertical_spacing = 0
-        place_flow.style.top_padding = 2
-        create_place_button(place_flow, "previous")
-        create_place_button(place_flow, "next")
+        local tags = {mod="fp", on_gui_click="place_line", direction="next", line_id=line.id}
+        button = parent_flow.add{type="sprite-button", tags=tags, style="fp_sprite-button_move",
+            tooltip={"fp.place_object_below", {"fp.pl_recipe", 1}}, sprite="fp_arrow_down",
+            mouse_button_filter={"left"}}
+        button.style.size = {button_width, button_width}  -- square, to set it apart
+        button.style.padding = 1
     else
-        parent_flow.style.vertical_align = "center"
-        local held = (held_line == line)
-
         ---@class PickUpLineTags
         ---@field line_id ObjectID
         local tags = {mod="fp", on_gui_click="pick_up_line", line_id=line.id}
         local enabled = not (first_subfloor_line or metadata.archive_open)
         local tooltip = (enabled) and {"fp.pick_up_object", {"fp.pl_recipe", 1}} or nil
-        local button = parent_flow.add{type="sprite-button", tags=tags, style="fp_sprite-button_move",
-            tooltip=tooltip, enabled=enabled, toggled=held, sprite="fp_pick_up",
+        button = parent_flow.add{type="sprite-button", tags=tags, style="fp_sprite-button_move",
+            tooltip=tooltip, enabled=enabled, toggled=(held_line == line), sprite="fp_pick_up",
             mouse_button_filter={"left"}}
         button.style.size = {button_width, 22}
         button.style.padding = -1
@@ -693,20 +680,36 @@ local function refresh_production_table(player)
     table_production.style.horizontal_spacing = 12
     table_production.style.padding = {6, 0, 0, 12}
 
+    -- Generates some data that is relevant to several different builders
+    local metadata = generate_metadata(player, factory)
+
+    local held_line = metadata.held_line
+    local place_at_top = (held_line ~= nil and held_line.parent == floor
+        and floor.level == 1 and held_line ~= floor.first)
+
     -- Column headers
     for index, column_data in ipairs(production_columns) do
-        local caption = (column_data.tooltip) and {"", column_data.caption, "[img=info]"} or column_data.caption
-        local label_column = table_production.add{type="label", caption=caption, tooltip=column_data.tooltip,
-            style="bold_label"}
-        label_column.style.bottom_margin = 6
+        if column_data.name == "move" and place_at_top then
+            -- Add the 'place at the top' button to the table header
+            local tags = {mod="fp", on_gui_click="place_line", direction="previous",
+                line_id=floor.first--[[@cast -nil]].id}
+            local top_button = table_production.add{type="sprite-button", tags=tags,
+                tooltip={"fp.place_object_top"}, sprite="fp_arrow_down",
+                mouse_button_filter={"left"}, style="fp_sprite-button_move"}
+            top_button.style.size = {18, 18}
+            top_button.style.padding = 1
+            top_button.style.bottom_margin = 6
+        else
+            local caption = (column_data.tooltip) and {"", column_data.caption, "[img=info]"} or column_data.caption
+            local label_column = table_production.add{type="label", caption=caption, tooltip=column_data.tooltip,
+                style="bold_label"}
+            label_column.style.bottom_margin = 6
+        end
         table_production.style.column_alignments[index] = column_data.alignment
     end
 
     -- Add pusher to make sure the table takes all available space
     table_production.add{type="empty-widget", style="fflib_horizontal_pusher"}
-
-    -- Generates some data that is relevant to several different builders
-    local metadata = generate_metadata(player, factory)
 
     -- Production lines
     ---@param render_floor Floor
