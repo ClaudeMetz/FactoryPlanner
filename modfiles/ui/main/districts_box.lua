@@ -157,7 +157,8 @@ end
 ---@param district District
 ---@param location_items LocalisedString[]
 ---@param held_district District?
-local function build_district_frame(player, district, location_items, held_district)
+---@param passed_held boolean
+local function build_district_frame(player, district, location_items, held_district, passed_held)
     district:refresh()  -- refreshes its data if necessary
 
     local elements = lib.globals.main_elements(player).districts_box
@@ -171,12 +172,15 @@ local function build_district_frame(player, district, location_items, held_distr
     local move_button  ---@type LuaGuiElement
 
     if held_district ~= nil and held_district ~= district then
+        -- Buttons above the held district place it above their frame, ones below place below
         ---@class PlaceDistrictTags
         ---@field direction "previous" | "next"
         ---@field district_id ObjectID
-        local tags = {mod="fp", on_gui_click="place_district", direction="next", district_id=district.id}
+        local tags = {mod="fp", on_gui_click="place_district",
+            direction=(passed_held) and "next" or "previous", district_id=district.id}
         move_button = subheader.add{type="sprite-button", tags=tags,
-            tooltip={"fp.place_object_below", {"fp.pl_district", 1}}, sprite="fp_arrow_down",
+            tooltip={"fp.place_object_" .. ((passed_held) and "below" or "above"), {"fp.pl_district", 1}},
+            sprite=(passed_held) and "fp_arrow_down" or "fp_arrow_up",
             mouse_button_filter={"left"}, style="fp_sprite-button_move"}
         move_button.style.padding = 1
     else
@@ -301,33 +305,12 @@ local function refresh_districts_box(player)
     end
 
     local held_district = lib.gui.held_object(player, "districts_box")  ---@as District?
-
-    -- Add stand-in frame to allow placing district at the top
-    local first_district = player_table.realm.first
-    if held_district ~= nil and held_district ~= first_district then
-        local window_frame = main_flow.add{type="frame", direction="vertical", style="inside_shallow_frame"}
-        local top_frame = window_frame.add{type="frame", direction="horizontal",
-            style="deep_frame_in_shallow_frame"}
-        top_frame.style.horizontally_stretchable = true
-        top_frame.style.padding = 4
-
-        local top_flow = top_frame.add{type="flow", direction="horizontal"}
-        top_flow.style.vertical_align = "center"
-
-        local tags = {mod="fp", on_gui_click="place_district", direction="previous",
-            district_id=first_district.id}
-        local top_button = top_flow.add{type="sprite-button", tags=tags, sprite="fp_arrow_down",
-            mouse_button_filter={"left"}, style="fp_sprite-button_move"}
-        top_button.style.size = {20, 28}
-        top_button.style.margin = {0, 8, 0, 2}
-        top_button.style.padding = 1
-
-        top_flow.add{type="label", caption={"fp.place_object_top"}, style="bold_label"}
-    end
+    local passed_held = false
 
     lib.globals.ui_state(player).tooltips.districts_box = {}
     for district in player_table.realm:iterator() do
-        build_district_frame(player, district, location_items, held_district)
+        if district == held_district then passed_held = true end
+        build_district_frame(player, district, location_items, held_district, passed_held)
     end
 end
 
