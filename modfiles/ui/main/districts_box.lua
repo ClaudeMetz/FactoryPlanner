@@ -300,9 +300,7 @@ local function refresh_districts_box(player)
         table.insert(location_items, {"", "[img=" .. proto.sprite .. "] ", proto.localised_name})
     end
 
-    -- The held object is shared with the factory list and production table
-    local held_district = OBJECT_INDEX[player_table.ui_state.held_object_id]  ---@as District?
-    if held_district and held_district.class ~= "District" then held_district = nil end
+    local held_district = lib.gui.held_object(player, "districts_box")  ---@as District?
 
     -- Add stand-in frame to allow placing district at the top
     local first_district = player_table.realm.first

@@ -149,9 +149,7 @@ local function refresh_factory_list(player)
     if selected_factory ~= nil then  -- only need to run this if any factory exists
         local search_term = helpers.multilingual_to_lower(main_elements.factory_list["search_textfield"].text)
         local attach_factory_products = player_table.preferences.attach_factory_products
-        -- The held object is shared with the production table, which holds lines
-        local held_factory = OBJECT_INDEX[player_table.ui_state.held_object_id]  ---@as Factory?
-        if held_factory and held_factory.class ~= "Factory" then held_factory = nil end
+        local held_factory = lib.gui.held_object(player, "factory_list")  ---@as Factory?
         local first_shown_factory = nil  ---@type Factory?
         local filter = {archived = archived}  ---@type ObjectFilter
         local button_width = 20
