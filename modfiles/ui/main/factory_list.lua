@@ -101,8 +101,8 @@ local function place_factory(player, tags, _)
     local relative_factory = OBJECT_INDEX[tags.factory_id]  ---@as Factory
 
     relative_factory.parent:move(held_factory, relative_factory, tags.direction)
+    ui_state.held_object_id = nil  -- consume the held object
 
-    ui_state.held_object_id = nil
     lib.gui.run_refresh(player, "factory_list")
 end
 
@@ -150,6 +150,7 @@ local function refresh_factory_list(player)
         local search_term = helpers.multilingual_to_lower(main_elements.factory_list["search_textfield"].text)
         local attach_factory_products = player_table.preferences.attach_factory_products
         local held_factory = OBJECT_INDEX[player_table.ui_state.held_object_id]  ---@as Factory?
+        -- The held object is shared with the production table, which holds lines
         if held_factory and held_factory.class ~= "Factory" then held_factory = nil end
         local filter = {archived = archived}  ---@type ObjectFilter
         local button_width = 20
@@ -164,7 +165,8 @@ local function refresh_factory_list(player)
             ---@field direction "previous" | "next"
             ---@field factory_id ObjectID
             local tags = {mod="fp", on_gui_click="place_factory", direction=direction, factory_id=factory.id}
-            local place_button = flow.add{type="sprite-button", tags=tags, tooltip={"fp.factory_place_" .. direction},
+            local tooltip = {"fp.place_object_" .. direction, {"fp.pl_factory", 1}}
+            local place_button = flow.add{type="sprite-button", tags=tags, tooltip=tooltip,
                 sprite=sprite, mouse_button_filter={"left"}, style="fp_sprite-button_move"}
             place_button.style.size = {button_width, 12}
             place_button.style.padding = -2
@@ -175,28 +177,27 @@ local function refresh_factory_list(player)
             local matched = (string.find(helpers.multilingual_to_lower(factory.name), search_term, 1, true) ~= nil)
 
             if matched or selected then  -- always show selected factory
-                local caption, info_tooltip = factory:tostring(attach_factory_products, false)
-                local tooltip = {"", info_tooltip, "\n", MODIFIER_ACTIONS["act_on_factory"].tooltip}
-
                 local button_flow = listbox.add{type="flow", direction="horizontal"}
                 button_flow.style.horizontal_spacing = 0
 
-                if held_factory == nil or held_factory.id == factory.id then
-                    ---@class PickUpFactoryTags
-                    ---@field factory_id ObjectID
-                    local tags = {mod="fp", on_gui_click="pick_up_factory", factory_id=factory.id}
-                    local toggled = (held_factory and held_factory.id == factory.id)
-                    local pick_up_button = button_flow.add{type="sprite-button", tags=tags,
-                        tooltip={"fp.factory_pick_up"}, toggled=toggled, sprite="fp_pick_up",
-                        mouse_button_filter={"left"}, style="fp_sprite-button_move"}
-                    pick_up_button.style.size = {button_width, 28}
-                    pick_up_button.style.padding = 0
-                else
+                if held_factory ~= nil and held_factory ~= factory then
                     local place_flow = button_flow.add{type="flow", direction="vertical"}
                     place_flow.style.vertical_spacing = 0
                     place_flow.style.padding = {2, 0}
                     create_place_button(place_flow, "previous", factory)
                     create_place_button(place_flow, "next", factory)
+                else
+                    local held = (held_factory == factory)
+
+                    ---@class PickUpFactoryTags
+                    ---@field factory_id ObjectID
+                    local tags = {mod="fp", on_gui_click="pick_up_factory", factory_id=factory.id}
+                    local pickup_tooltip = {"fp.pick_up_object", {"fp.pl_factory", 1}}
+                    local pick_up_button = button_flow.add{type="sprite-button", tags=tags,
+                        tooltip=pickup_tooltip, toggled=held, sprite="fp_pick_up",
+                        mouse_button_filter={"left"}, style="fp_sprite-button_move"}
+                    pick_up_button.style.size = {button_width, 28}
+                    pick_up_button.style.padding = 0
                 end
 
                 ---@class ActOnFactoryTags
@@ -204,6 +205,8 @@ local function refresh_factory_list(player)
                 ---@field context "factory_list"
                 local tags = {mod="fp", on_gui_click="act_on_factory", factory_id=factory.id,
                     on_gui_hover="set_tooltip", context="factory_list"}
+                local caption, info_tooltip = factory:tostring(attach_factory_products, false)
+                local tooltip = {"", info_tooltip, "\n", MODIFIER_ACTIONS["act_on_factory"].tooltip}
                 local factory_button = button_flow.add{type="button", tags=tags, caption=caption, toggled=selected,
                     style="list_box_item", mouse_button_filter={"left-and-right"}, raise_hover_events=true}
                 factory_button.style.padding = {0, 12, 0, 4}

@@ -3,6 +3,7 @@ Version: 0.00.00
 Date: 00. 00. 0000
   Features:
   Changes:
+    - Changed recipe reordering to pick-up-and-move, same as factories
   Bugfixes:
     - Fixed that the simplex solver ignored machine limits (#846) (Thanks vapopescu!)
 

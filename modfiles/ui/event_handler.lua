@@ -122,6 +122,20 @@ local mouse_click_map = {
     [defines.mouse_button_type.middle] = "middle"
 }
 
+-- Drops the given object if it's still held, refreshing the list that was displaying it
+---@param player LuaPlayer
+---@param object_id ObjectID?
+local function drop_held_object(player, object_id)
+    if object_id == nil then return end
+    local held_object = OBJECT_INDEX[object_id]  ---@as Object
+
+    local ui_state = lib.globals.ui_state(player)
+    if ui_state.held_object_id == object_id then ui_state.held_object_id = nil end
+
+    local trigger = (held_object.class == "Factory") and "factory_list" or "production_table"
+    lib.gui.run_refresh(player, trigger)
+end
+
 ---@param event EventData.on_gui_click
 ---@return string
 local function convert_click_to_string(event)
@@ -172,6 +186,7 @@ local function handle_gui_event(event)
     -- The event table actually contains its identifier, not its name
     local event_name = script.get_event_name(event.name)  ---@as string
     local action_name = tags[event_name]  ---@as string?
+    local hover_event = (event_name == "on_gui_hover" or event_name == "on_gui_leave")
 
     -- If a special handler is set, it needs to return true before proceeding with the registered handlers
     local special_handler = special_gui_handlers[event_name]
@@ -185,8 +200,7 @@ local function handle_gui_event(event)
     -- Check if rate limiting allows this action to proceed
     if lib.actions.rate_limited(player, event.tick, action_name, action_table.timeout) then return end
 
-    local ui_state = lib.globals.ui_state(player)
-    local previous_held_object_id = ui_state.held_object_id
+    local previous_held_id = lib.globals.ui_state(player).held_object_id
 
     -- Special modifier handling for on_gui_click if configured
     if event_name == "on_gui_click" and action_table.actions then
@@ -209,10 +223,10 @@ local function handle_gui_event(event)
         action_table.handler(player, tags, event)  -- gets event as third parameter
     end
 
-    if event_name ~= "on_gui_hover" and event_name ~= "on_gui_leave" then
+    if not hover_event then
         lib.messages.refresh(player)
-        -- A held object is dropped by any action that didn't change it itself
-        if ui_state.held_object_id == previous_held_object_id then ui_state.held_object_id = nil end
+        -- Any action drops the object it started out with, unless it picked it up itself
+        drop_held_object(player, previous_held_id)
         if lib.context.record(player) then lib.gui.run_refresh(player, "title_bar") end
     end
 end
@@ -331,7 +345,7 @@ local function handle_player_event(event)
 
     if event.input_name then  -- only for keyboard shortcut events
         lib.messages.refresh(player)
-        lib.globals.ui_state(player).held_object_id = nil
+        drop_held_object(player, lib.globals.ui_state(player).held_object_id)
         if lib.context.record(player) then lib.gui.run_refresh(player, "title_bar") end
     end
 end
