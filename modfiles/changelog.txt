@@ -6,6 +6,7 @@ Date: 00. 00. 0000
     - Changed recipe reordering to pick-up-and-move, same as factories
   Bugfixes:
     - Fixed that the simplex solver ignored machine limits (#846) (Thanks vapopescu!)
+    - Fixed that beacons requiring no power still consumed electricity
 
 ---------------------------------------------------------------------------------------------------
 Version: 2.1.12

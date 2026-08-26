@@ -1522,8 +1522,8 @@ function generator.beacons.generate()
             local built_by_item_name = (proto.items_to_place_this) and
                 proto.items_to_place_this[1]--[[@cast -nil]].name or nil
 
-            local max_usage = generator.util.get_base_value(proto.get_max_energy_usage())
-            local energy_usage = proto.energy_usage or max_usage or 0
+            local electric_source = proto.electric_energy_source_prototype
+            local energy_usage = (electric_source) and (proto.energy_usage or 0) or 0
 
             ---@diagnostic disable-next-line: missing-fields
             local beacon = {
