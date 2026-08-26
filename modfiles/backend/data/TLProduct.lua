@@ -77,7 +77,7 @@ function TLProduct:paste(object)
         if object.class == "Fuel" then  -- need an Item prototype here, not Fuel
             proto = prototyper.util.find("items", object:get_name_with_temperature(), object.proto.type)  ---@as FPItemPrototype
         else
-            proto = object.proto  ---@as FPItemPrototype | FPPackedPrototype
+            proto = prototyper.util.validate_prototype_object(object.proto, "type")  ---@as FPItemPrototype | FPPackedPrototype
         end
 
         if proto.simplified then return false, "incompatible" end
