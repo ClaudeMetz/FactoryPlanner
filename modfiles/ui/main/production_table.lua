@@ -18,10 +18,7 @@ local function generate_metadata(player, factory)
     local tooltips = ui_state.tooltips
     tooltips.production_table = {}
 
-    -- The held object is shared with the factory list, which holds factories
-    local held_object = OBJECT_INDEX[ui_state.held_object_id]  ---@as Object?
-    local held_line = (held_object and held_object.class ~= "Factory")
-        and held_object or nil  ---@as LineObject?
+    local held_line = lib.gui.held_object(player, "production_table")  ---@as LineObject?
 
     local metadata = {
         archive_open = factory.archived,
