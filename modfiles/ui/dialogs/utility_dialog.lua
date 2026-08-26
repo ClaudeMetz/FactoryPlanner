@@ -55,6 +55,24 @@ local function add_utility_box(player, modal_elements, parent_name, type, show_t
 end
 
 
+-- Sums up what the crafting queue will still add to the inventory
+---@param player LuaPlayer
+---@return table<string, integer>
+local function queued_craft_amounts(player)
+    local amounts = {}  ---@type table<string, integer>
+    for _, entry in pairs(player.crafting_queue or {}) do
+        if not entry.prerequisite then  -- prerequisites are transitory, so ignore
+            for _, product in pairs(prototypes.recipe[entry.recipe].products) do
+                -- Products without a fixed amount are random, so they can't be counted on
+                local amount = (product.type == "item") and (product.amount or 0) * entry.count--[[@as integer]] or 0
+                if amount > 0 then amounts[product.name] = (amounts[product.name] or 0) + amount end
+            end
+        end
+    end
+    return amounts
+end
+
+
 local utility_structures = {}
 
 ---@param player LuaPlayer
@@ -109,7 +127,8 @@ function utility_structures.components(player, modal_data)
         local component_row = modal_elements["components_" .. type .. "_flow"]
         component_row.clear()
 
-        local main_inventory = (player.character) and player.character.get_main_inventory() or nil
+        local main_inventory = player.get_main_inventory()
+        local queued_amounts = queued_craft_amounts(player)
         local frame_components = component_row.add{type="frame", direction="horizontal", style="fp_frame_light_slots"}
         local table_components = frame_components.add{type="table", column_count=10, style="filter_slot_table"}
 
@@ -121,6 +140,10 @@ function utility_structures.components(player, modal_data)
                 local amount_in_inventory = (main_inventory) and main_inventory.get_item_count(item_id) or 0
                 local missing_amount = required_amount - amount_in_inventory
 
+                -- Handcrafting always produces normal quality, so it can't satisfy any other one
+                local normal_quality = (quality_proto.name == "normal")
+                local amount_queued = (normal_quality) and queued_amounts[proto.name] or 0
+
                 if missing_amount > 0 then
                     table.insert(modal_data.missing_items, {
                         name = proto.name,
@@ -130,20 +153,26 @@ function utility_structures.components(player, modal_data)
                     })
                 end
 
+                -- Queued crafts count towards the demand, since they'll arrive on their own
+                local amount_covered = amount_in_inventory + amount_queued
                 local button_style = nil
-                if amount_in_inventory == 0 then button_style = "fflib_slot_button_red"
-                elseif missing_amount > 0 then button_style = "fflib_slot_button_yellow"
+                if amount_covered == 0 then button_style = "fflib_slot_button_red"
+                elseif amount_covered < required_amount then button_style = "fflib_slot_button_yellow"
                 else button_style = "fflib_slot_button_green" end
 
                 local title_line = (not quality_proto.always_show) and {"fp.tt_title", proto.localised_name}
                     or {"fp.tt_title_with_note", proto.localised_name, quality_proto.rich_text}
-                local tooltip = {"fp.components_needed_tt", title_line, amount_in_inventory, required_amount}
+                local queued_line = (amount_queued > 0) and {"fp.components_queued_tt", amount_queued} or ""
+                local handcraft_line = (normal_quality) and {"fp.components_handcraft_tt"} or ""
+                local tooltip = {"", {"fp.components_needed_tt", title_line, amount_in_inventory, required_amount},
+                    queued_line, handcraft_line}
 
                 ---@class UtilityCraftItemsTags
                 ---@field item_name string
-                ---@field missing_amount integer
+                ---@field quality string
+                ---@field required_amount integer
                 local tags = {mod="fp", on_gui_click="utility_craft_items", item_name=proto.name,
-                    missing_amount=missing_amount}
+                    quality=quality_proto.name, required_amount=required_amount}
                 table_components.add{type="sprite-button", tags=tags, sprite=("item/" .. proto.name),
                     number=required_amount, tooltip=tooltip, quality=quality_proto.name, style=button_style,
                     mouse_button_filter={"left-and-right"}}
@@ -342,40 +371,75 @@ local function handle_item_request(player, _, _)
     end
 end
 
+-- Collects the recipes producing the given item that the player could craft by hand, in a stable order
+---@param player LuaPlayer
+---@param item FPItemPrototype
+---@return FPRecipePrototype[]
+local function handcraftable_recipes(player, item)
+    local candidates = {}  ---@type FPRecipePrototype[]
+    local force_recipes = player.force--[[@as LuaForce]].recipes
+
+    for recipe_id, _ in pairs(RECIPE_MAPS["produce"][item.category_id][item.id] or {}) do
+        local recipe = prototyper.util.find("recipes", recipe_id, nil)  ---@as FPRecipePrototype
+        local force_recipe = (not recipe.custom) and force_recipes[recipe.name] or nil
+        -- Custom recipes have no actual prototype, so they can't be crafted at all
+        if force_recipe and force_recipe.enabled and not force_recipe.prototype.hidden_from_player_crafting then
+            table.insert(candidates, recipe)
+        end
+    end
+
+    table.sort(candidates, function(a, b)
+        local a_main = (a.main_product ~= nil and a.main_product.name == item.name)
+        local b_main = (b.main_product ~= nil and b.main_product.name == item.name)
+        if a_main ~= b_main then return a_main end
+        return a.order < b.order
+    end)
+
+    return candidates
+end
+
 ---@param player LuaPlayer
 ---@param tags UtilityCraftItemsTags
 ---@param event EventData.on_gui_click
 local function handle_item_handcraft(player, tags, event)
     local fly_text = lib.cursor.create_flying_text
-    if not player.character then fly_text(player, {"fp.utility_crafting_no_character"}); return end
+    local main_inventory = player.get_main_inventory()
+    if not main_inventory then fly_text(player, {"fp.utility_crafting_no_inventory"}); return end
 
     local permissions = player.permission_group
     local forbidden = (permissions and not permissions.allows_action(defines.input_action.craft))
     if forbidden then fly_text(player, {"fp.utility_no_crafting"}); return end
 
-    local desired_amount = (event.button == defines.mouse_button_type.right) and 5 or 1
-    local amount_to_craft = math.min(desired_amount, tags.missing_amount)  ---@type integer
+    -- Handcrafting can only ever produce normal quality
+    if tags.quality ~= "normal" then fly_text(player, {"fp.utility_no_quality_crafting"}); return end
 
-    if amount_to_craft <= 0 then fly_text(player, {"fp.utility_no_demand"}); return end
+    -- Determine the demand at click-time, since both inventory and queue move around
+    local item_id = {name=tags.item_name, quality="normal"}  ---@type ItemIDAndQualityIDPair
+    local outstanding = tags.required_amount - main_inventory.get_item_count(item_id)
+        - (queued_craft_amounts(player)[tags.item_name] or 0)
+    if outstanding <= 0 then fly_text(player, {"fp.utility_no_demand"}); return end
+
+    -- Mirror the vanilla crafting controls of craft (1), craft-5 and craft-all
+    local amount_to_craft = outstanding  ---@type integer
+    if event.button == defines.mouse_button_type.right then amount_to_craft = math.min(5, outstanding)
+    elseif not event.shift then amount_to_craft = math.min(1, outstanding) end
+    amount_to_craft = math.min(amount_to_craft, 2^31 - 1)  -- amounts can get arbitrarily large
 
     local item = prototyper.util.find("items", tags.item_name, "item")  ---@as FPItemPrototype
     if not item then fly_text(player, {"fp.utility_no_recipes"}); return end
-    local recipes = RECIPE_MAPS["produce"][item.category_id][item.id]
-    if not recipes then fly_text(player, {"fp.utility_no_recipes"}); return end
+    local candidates = handcraftable_recipes(player, item)
+    if not next(candidates) then fly_text(player, {"fp.utility_no_recipes"}); return end
 
-    for recipe_id, _ in pairs(recipes) do
-        local recipe = prototyper.util.find("recipes", recipe_id, nil)  ---@as FPRecipePrototype
-        local craftable_amount = player.get_craftable_count(recipe.name--[[@as RecipeID]])
-
-        if craftable_amount > 0 then
-            local crafted_amount = math.min(amount_to_craft, craftable_amount)
-            player.begin_crafting{count=crafted_amount, recipe=recipe.name--[[@as RecipeID]], silent=true}
-            amount_to_craft = amount_to_craft - crafted_amount
-            return
-        end
+    -- Let the game figure out whether a recipe can actually be crafted, so intermediates work like vanilla
+    local crafted_amount = 0
+    for _, recipe in ipairs(candidates) do  -- ipairs to actually respect the order they were sorted into
+        local started = player.begin_crafting{count=amount_to_craft,
+            recipe=recipe.name--[[@as RecipeID]], silent=true}
+        crafted_amount, amount_to_craft = crafted_amount + started, amount_to_craft - started
+        if amount_to_craft <= 0 then break end
     end
 
-    fly_text(player, {"fp.utility_no_resources"})  -- if the loop doesn't return, it didn't craft
+    if crafted_amount == 0 then fly_text(player, {"fp.utility_no_resources"}) end
 end
 
 ---@param player LuaPlayer
