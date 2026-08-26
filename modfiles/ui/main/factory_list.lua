@@ -212,6 +212,7 @@ local function refresh_factory_list(player)
                 factory_id=first_shown_factory.id}
             local top_entry = place_top_flow.add{type="button", tags=tags, style="list_box_item",
                 caption={"fp.place_object_top"}, mouse_button_filter={"left"}}
+            top_entry.style.font = "default-bold"
             top_entry.style.width = MAGIC_NUMBERS.list_width
             -- Matching the row height means picking up shifts the list by exactly one entry
             top_entry.style.height = MAGIC_NUMBERS.list_element_height

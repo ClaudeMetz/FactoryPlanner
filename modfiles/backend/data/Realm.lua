@@ -42,10 +42,11 @@ function Realm:remove(district)
 end
 
 ---@param district District
+---@param relative_object District
 ---@param direction NeighbourDirection
----@param spots integer?
-function Realm:shift(district, direction, spots)
-    self:_shift(district, direction, spots)
+function Realm:move(district, relative_object, direction)
+    self:_remove(district)
+    self:_insert(district, relative_object, direction)
 end
 
 
