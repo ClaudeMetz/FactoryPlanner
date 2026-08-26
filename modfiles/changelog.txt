@@ -4,6 +4,7 @@ Date: 00. 00. 0000
   Features:
   Changes:
   Bugfixes:
+    - Fixed that the simplex solver ignored machine limits (#846) (Thanks vapopescu!)
 
 ---------------------------------------------------------------------------------------------------
 Version: 2.1.12
