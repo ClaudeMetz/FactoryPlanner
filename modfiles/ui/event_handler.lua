@@ -132,8 +132,9 @@ local function drop_held_object(player, object_id)
     local ui_state = lib.globals.ui_state(player)
     if ui_state.held_object_id == object_id then ui_state.held_object_id = nil end
 
-    local trigger = (held_object.class == "Factory") and "factory_list" or "production_table"
-    lib.gui.run_refresh(player, trigger)
+    local triggers = {District = "districts_box", Factory = "factory_list",
+        Floor = "production_table", Line = "production_table"}
+    lib.gui.run_refresh(player, triggers[held_object.class]--[[@cast -nil]])
 end
 
 ---@param event EventData.on_gui_click

@@ -3,8 +3,8 @@ Version: 0.00.00
 Date: 00. 00. 0000
   Features:
   Changes:
-    - Simplify pick-up-and-move behavior to only offer 'place below' buttons
-    - Changed recipe reordering to pick-up-and-move, same as factories
+    - Changed recipe and district reordering to pick-up-and-move, same as factories
+    - Simplified pick-up-and-move behavior to only offer 'place below' buttons
     - The District location dropdown now sorts them alphabetically (#824)
   Bugfixes:
     - Fixed that the simplex solver ignored machine limits (#846) (Thanks vapopescu!)

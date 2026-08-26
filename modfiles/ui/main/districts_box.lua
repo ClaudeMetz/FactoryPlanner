@@ -156,7 +156,8 @@ end
 ---@param player LuaPlayer
 ---@param district District
 ---@param location_items LocalisedString[]
-local function build_district_frame(player, district, location_items)
+---@param held_district District?
+local function build_district_frame(player, district, location_items, held_district)
     district:refresh()  -- refreshes its data if necessary
 
     local elements = lib.globals.main_elements(player).districts_box
@@ -166,30 +167,33 @@ local function build_district_frame(player, district, location_items)
     local subheader = window_frame.add{type="frame", direction="horizontal", style="subheader_frame"}
     subheader.style.top_padding = 6
 
-    -- Interaction buttons
-    ---@param flow LuaGuiElement
-    ---@param direction "previous" | "next"
-    local function create_move_button(flow, direction)
-        local enabled = (direction == "next" and district.next ~= nil) or
-            (direction == "previous" and district.previous ~= nil)
-        local up_down = (direction == "next") and "down" or "up"
-        local tooltip = {"", {"fp.move_object", {"fp.pl_district", 1}, {"fp." .. up_down}}}
+    -- Interaction button
+    local move_button  ---@type LuaGuiElement
 
-        ---@class MoveDistrictTags
+    if held_district ~= nil and held_district ~= district then
+        ---@class PlaceDistrictTags
         ---@field direction "previous" | "next"
         ---@field district_id ObjectID
-        local tags = {mod="fp", on_gui_click="move_district", direction=direction, district_id=district.id}
-        local move_button = flow.add{type="sprite-button", tags=tags, enabled=enabled, sprite="fp_arrow_" .. up_down,
-            style="fp_sprite-button_move", tooltip=tooltip, mouse_button_filter={"left"}}
-        move_button.style.size = {18, 14}
+        local tags = {mod="fp", on_gui_click="place_district", direction="next", district_id=district.id}
+        move_button = subheader.add{type="sprite-button", tags=tags,
+            tooltip={"fp.place_object_below", {"fp.pl_district", 1}}, sprite="fp_arrow_down",
+            mouse_button_filter={"left"}, style="fp_sprite-button_move"}
+        move_button.style.padding = 1
+    else
+        local movable = (district.parent:count() > 1)
+
+        ---@class PickUpDistrictTags
+        ---@field district_id ObjectID
+        local tags = {mod="fp", on_gui_click="pick_up_district", district_id=district.id}
+        move_button = subheader.add{type="sprite-button", tags=tags, enabled=movable,
+            tooltip=(movable) and {"fp.pick_up_object", {"fp.pl_district", 1}} or nil,
+            toggled=(held_district == district), sprite="fp_pick_up",
+            mouse_button_filter={"left"}, style="fp_sprite-button_move"}
         move_button.style.padding = -1
     end
 
-    local move_flow = subheader.add{type="flow", direction="vertical"}
-    move_flow.style.vertical_spacing = 0
-    move_flow.style.left_margin = 2
-    create_move_button(move_flow, "previous")
-    create_move_button(move_flow, "next")
+    move_button.style.size = {20, 28}
+    move_button.style.left_margin = 2
 
     local selected = lib.context.get(player, "District")--[[@as District]].id == district.id
     local selection_caption = (selected) and {"fp.u_selected"} or {"fp.u_select"}
@@ -296,9 +300,36 @@ local function refresh_districts_box(player)
         table.insert(location_items, {"", "[img=" .. proto.sprite .. "] ", proto.localised_name})
     end
 
+    -- The held object is shared with the factory list and production table
+    local held_district = OBJECT_INDEX[player_table.ui_state.held_object_id]  ---@as District?
+    if held_district and held_district.class ~= "District" then held_district = nil end
+
+    -- Add stand-in frame to allow placing district at the top
+    local first_district = player_table.realm.first
+    if held_district ~= nil and held_district ~= first_district then
+        local window_frame = main_flow.add{type="frame", direction="vertical", style="inside_shallow_frame"}
+        local top_frame = window_frame.add{type="frame", direction="horizontal",
+            style="deep_frame_in_shallow_frame"}
+        top_frame.style.horizontally_stretchable = true
+        top_frame.style.padding = 4
+
+        local top_flow = top_frame.add{type="flow", direction="horizontal"}
+        top_flow.style.vertical_align = "center"
+
+        local tags = {mod="fp", on_gui_click="place_district", direction="previous",
+            district_id=first_district.id}
+        local top_button = top_flow.add{type="sprite-button", tags=tags, sprite="fp_arrow_down",
+            mouse_button_filter={"left"}, style="fp_sprite-button_move"}
+        top_button.style.size = {20, 28}
+        top_button.style.margin = {0, 8, 0, 2}
+        top_button.style.padding = 1
+
+        top_flow.add{type="label", caption={"fp.place_object_top"}, style="bold_label"}
+    end
+
     lib.globals.ui_state(player).tooltips.districts_box = {}
     for district in player_table.realm:iterator() do
-        build_district_frame(player, district, location_items)
+        build_district_frame(player, district, location_items, held_district)
     end
 end
 
@@ -324,15 +355,27 @@ local listeners = {}  ---@type ListenerDefinitions
 listeners.gui = {
     on_gui_click = {
         {
-            name = "move_district",
+            name = "place_district",
             timeout = 10,
-            handler = function(player, tags, event)
-                ---@cast tags MoveDistrictTags
-                ---@cast event EventData.on_gui_click
-                local district = OBJECT_INDEX[tags.district_id]  ---@as District
-                local spots_to_shift = (event.control) and 5 or ((not event.shift) and 1 or nil)
-                district.parent:shift(district, tags.direction, spots_to_shift)
+            handler = function(player, tags, _)
+                ---@cast tags PlaceDistrictTags
+                local ui_state = lib.globals.ui_state(player)
+                local held_district = OBJECT_INDEX[ui_state.held_object_id]  ---@as District
+                local relative_district = OBJECT_INDEX[tags.district_id]  ---@as District
 
+                relative_district.parent:move(held_district, relative_district, tags.direction)
+                ui_state.held_object_id = nil  -- consume the held object
+
+                lib.gui.run_refresh(player, "districts_box")
+            end
+        },
+        {
+            name = "pick_up_district",
+            handler = function(player, tags, _)
+                ---@cast tags PickUpDistrictTags
+                local ui_state = lib.globals.ui_state(player)
+                ui_state.held_object_id = (tags.district_id ~= ui_state.held_object_id)
+                    and tags.district_id or nil
                 lib.gui.run_refresh(player, "districts_box")
             end
         },
