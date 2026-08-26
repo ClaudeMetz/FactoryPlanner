@@ -1522,8 +1522,8 @@ function generator.beacons.generate()
             local built_by_item_name = (proto.items_to_place_this) and
                 proto.items_to_place_this[1]--[[@cast -nil]].name or nil
 
-            local max_usage = generator.util.get_base_value(proto.get_max_energy_usage())
-            local energy_usage = proto.energy_usage or max_usage or 0
+            local electric_source = proto.electric_energy_source_prototype
+            local energy_usage = (electric_source) and (proto.energy_usage or 0) or 0
 
             ---@diagnostic disable-next-line: missing-fields
             local beacon = {
@@ -1709,6 +1709,22 @@ function generator.locations.generate()
 
     return locations
 end
+
+-- Nauvis and the universal location come first, the rest is sorted alphabetically
+local location_order = {nauvis = 1, universal = 2}
+
+---@param a FPLocationPrototype
+---@param b FPLocationPrototype
+---@return boolean
+function generator.locations.sorting_function(a, b)
+    local a_order, b_order = location_order[a.name] or 3, location_order[b.name] or 3
+    if a_order < b_order then return true
+    elseif a_order > b_order then return false end
+    if a.name < b.name then return true
+    elseif a.name > b.name then return false end
+    return false
+end
+
 
 ---@class FPQualityPrototype: FPPrototype
 ---@field data_type "qualities"

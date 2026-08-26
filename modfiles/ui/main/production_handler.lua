@@ -4,24 +4,15 @@ local SimpleItem = require("backend.data.SimpleItem")
 
 -- ** LOCAL UTIL **
 ---@param player LuaPlayer
----@param tags MoveLineTags
----@param event EventData.on_gui_click
-local function handle_line_move_click(player, tags, event)
-    local line = OBJECT_INDEX[tags.line_id]  ---@type Line
-    local floor = line.parent
+---@param tags PlaceLineTags
+local function place_line(player, tags, _)
+    local ui_state = lib.globals.ui_state(player)
+    local held_line = OBJECT_INDEX[ui_state.held_object_id]  ---@as LineObject
+    local relative_line = OBJECT_INDEX[tags.line_id]  ---@as LineObject
+    local floor = relative_line.parent  ---@as Floor
 
-    local spots_to_shift = (event.control) and 5 or ((not event.shift) and 1 or nil)
-    if floor.level > 1 and tags.direction == "previous" then
-        local spots_to_top = 0
-        for previous_line in floor:iterator(nil, line.previous, "previous") do
-            if previous_line.id ~= floor.first--[[@cast -nil]].id then
-                spots_to_top = spots_to_top + 1
-            end
-        end
-        spots_to_shift = (spots_to_shift == nil) and spots_to_top
-            or math.min(spots_to_shift--[[@cast -nil]], spots_to_top)
-    end
-    floor:shift(line, tags.direction, spots_to_shift)
+    floor:move(held_line, relative_line, tags.direction)
+    ui_state.held_object_id = nil  -- consume the held object
 
     solver.update(player)
     lib.gui.run_refresh(player, "production")
@@ -392,8 +383,19 @@ local listeners = {}  ---@type ListenerDefinitions
 listeners.gui = {
     on_gui_click = {
         {
-            name = "move_line",
-            handler = handle_line_move_click
+            name = "place_line",
+            timeout = 10,
+            handler = place_line
+        },
+        {
+            name = "pick_up_line",
+            handler = function(player, tags, _)
+                ---@cast tags PickUpLineTags
+                local ui_state = lib.globals.ui_state(player)
+                ui_state.held_object_id = (tags.line_id ~= ui_state.held_object_id)
+                    and tags.line_id or nil
+                lib.gui.run_refresh(player, "production_table")
+            end
         },
         {
             name = "act_on_line_recipe",
