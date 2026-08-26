@@ -163,7 +163,7 @@ function simplex_engine.solve_floor(floor_data, line_metadata_table, level, prev
         for _, item in pairs(floor_data.products) do  ---@cast item SolverItem
             local item_key = solver.util.pack_item(item.name, item.type)
             local objective = item_cost(item_key) * objective_vector.target_product
-            tableau:add_item_constraint(item_key, floor_data.id, "out", "==", item.amount, objective)
+            tableau:add_item_constraint(item_key, floor_data.id, "out", "<=", item.amount, objective)
         end
 
         -- Add additional constraint for limited ingredients
@@ -171,14 +171,14 @@ function simplex_engine.solve_floor(floor_data, line_metadata_table, level, prev
         for _, item in pairs({}) do  ---@cast item SolverItem
             local item_key = solver.util.pack_item(item.name, item.type)
             local objective = item_cost(item_key) * objective_vector.limited_ingredient
-            tableau:add_item_constraint(item_key, floor_data.id, "in", "==", item.amount, objective)
+            tableau:add_item_constraint(item_key, floor_data.id, "in", "<=", item.amount, objective)
         end
 
         -- Add aditional constraint for machine limits
-        for line_id, line_metadata in pairs(relevant_line_metadata) do
+        for _, line_metadata in pairs(relevant_line_metadata) do
             if line_metadata.machine_limit then
                 local type = line_metadata.machine_force_limit and "==" or "<="
-                tableau:add_line_constraint(line_id, type, line_metadata.machine_limit, objective_vector.machine_limit)
+                tableau:add_line_constraint(line_metadata.line_id, type, line_metadata.machine_limit, objective_vector.machine_limit)
             end
         end
         for _, line_object_data in pairs(floor_data.lines) do
