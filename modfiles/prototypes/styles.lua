@@ -119,6 +119,21 @@ styles["fp_sprite-button_group_tab"] = {
     padding = 1
 }
 
+styles["fp_scroll-pane_group_tabs"] = {
+    type = "scroll_pane_style",
+    parent = "naked_scroll_pane",
+    background_graphical_set = deep_slot_background_tiling(71, 76),
+    scrollbars_go_outside = true,  -- so the tabs don't need to squish to make room
+    vertically_squashable = "off",  -- so the dialog can't collapse the tabs when it runs out of height
+    padding = 0
+}
+
+styles["fp_scroll-pane_group_tabs_scrolling"] = {
+    type = "scroll_pane_style",
+    parent = "fp_scroll-pane_group_tabs",
+    background_graphical_set = deep_slot_background_tiling(69, 76)
+}
+
 -- frame_action_button but correct
 styles["fp_button_frame"] = {
     type = "button_style",

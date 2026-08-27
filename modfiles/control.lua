@@ -30,6 +30,7 @@ MAGIC_NUMBERS = {
     recipes_per_row = 6,  -- Number of recipes per row in the recipe picker
     items_per_row = 10,  -- Number of items per row in the item picker
     groups_per_row = 6,  -- Number of groups in a row in the item picker
+    group_max_rows = 3,  -- Maximum number of group rows shown in the item picker before scrolling
     blueprint_limit = 12,  -- Maxmimum number of blueprints allowed per factory
     module_dialog_element_width = 440,  -- Width of machine and beacon dialog elements
     titlebar_label_width = 130,  -- Width of the 'Factory Planner' titlebar label
