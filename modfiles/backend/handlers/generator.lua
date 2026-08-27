@@ -195,17 +195,13 @@ function generator.recipes.generate()
             if first_generator == nil or proto.name < first_generator then first_generator = proto.name end
         end
 
-        -- Recipes fixed to machines are duplicated with a special category
+        -- Recipes fixed to machines are given a special category
         if proto.crafting_categories and proto.energy_usage and proto.fixed_recipe then
             local recipe = recipes[proto.fixed_recipe.name]
             if recipe ~= nil then
-                local category = proto.name .. "-using-" .. recipe.name
-                local recipe_copy = lib.flib.deep_copy(recipe)
-                recipe_copy.name = recipe.name .. "-for-" .. proto.name
-                recipe_copy.categories = {[category] = true}
-                recipe_copy.factoriopedia_id = {type="recipe", name=recipe.name}
-                recipe_copy.custom = true
-                insert_prototype(recipes, recipe_copy, nil)
+                local category = "impostor-fixed-" .. recipe.name
+                recipe.categories = recipe.categories or {}
+                recipe.categories[category] = true
             end
         end
 
@@ -1012,7 +1008,7 @@ function generator.machines.generate()
 
             if proto.fixed_recipe then  -- fixed recipe machines get their own category
                 if recipe_prototypes[proto.fixed_recipe.name] ~= nil then
-                    local category = proto.name .. "-using-" .. proto.fixed_recipe.name
+                    local category = "impostor-fixed-" .. proto.fixed_recipe.name
                     local machine = generate_category_entry(category, proto, "crafter")
                     if machine then insert_machine(machine) end
                 end
