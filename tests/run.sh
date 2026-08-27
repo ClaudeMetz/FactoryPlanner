@@ -3,6 +3,9 @@ set -e
 
 FACTORIO=${FACTORIO:-/opt/factorio/bin/x64/factorio}
 WORKSPACE=${GITHUB_WORKSPACE:-.}
+# Every game launch goes through the wrapper, which gives this worktree a write-data
+# directory of its own so runs from several worktrees don't lock each other out
+RUN=$WORKSPACE/tests/factorio.sh
 # Usage: run.sh <save-create | worlds | world <name> [case-filter]>
 # The case filter is a Lua pattern matched against case names; filtered runs
 # report failures with full stack tracebacks
@@ -89,7 +92,7 @@ run_world() {
 EOF
 
   local exit_code=0
-  $FACTORIO --mod-directory $mods --benchmark $SAVE --benchmark-ticks 1 > $logfile 2>&1 || exit_code=$?
+  $RUN --mod-directory $mods --benchmark $SAVE --benchmark-ticks 1 > $logfile 2>&1 || exit_code=$?
 
   # Only the report blocks the test mod logs are shown; the rest of the game log
   # is noise unless something actually broke
@@ -130,7 +133,7 @@ case $TEST in
     mkdir -p $TMPDIR/mods
     cp -r $WORKSPACE/modfiles $TMPDIR/mods/factoryplanner
     exit_code=0
-    $FACTORIO --mod-directory $TMPDIR/mods --create $TMPDIR/test-map.zip > $TMPDIR/factorio.log 2>&1 || exit_code=$?
+    $RUN --mod-directory $TMPDIR/mods --create $TMPDIR/test-map.zip > $TMPDIR/factorio.log 2>&1 || exit_code=$?
     if [ $exit_code -ne 0 ] || grep -q "Error" $TMPDIR/factorio.log; then
       sed 's/^/  | /' $TMPDIR/factorio.log
       echo "${RED}✗ save-create: mod error during map creation${RESET}"
