@@ -5,6 +5,7 @@ Date: 00. 00. 0000
   Changes:
     - Changed recipe and district reordering to pick-up-and-move, same as factories
     - Simplified pick-up-and-move behavior to only offer 'place below' buttons
+    - Adjusted the factory list UI, moving search to be toggled by a dedicated button
     - Improved utility dialog handcrafting behavior: It can now 'craft all', takes the current queue into account, and presents a clearer UI (#337)
     - The District location dropdown now sorts them alphabetically (#824)
   Bugfixes:

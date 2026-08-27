@@ -74,16 +74,17 @@ local function add_factory(player, _, event)
 end
 
 ---@param player LuaPlayer
----@param event EventData.on_gui_click
-local function duplicate_factory(player, _, event)
+---@param factory Factory
+local function duplicate_factory(player, factory)
     -- Move out of empty floors to avoid orphaned subfloors in the clone
-    local current_floor = lib.context.get(player, "Floor")  ---@as Floor
-    if current_floor:count() == 1 then lib.context.ascend_floors(player, "up") end
+    if lib.context.get(player, "Factory") == factory then
+        local current_floor = lib.context.get(player, "Floor")  ---@as Floor
+        if current_floor:count() == 1 then lib.context.ascend_floors(player, "up") end
+    end
 
-    local factory = lib.context.get(player, "Factory")  ---@as Factory
     local clone = factory:clone(player)
     clone.archived = false  -- always clone as unarchived
-    local pivot = (event.shift and not factory.archived) and factory or nil
+    local pivot = (not factory.archived) and factory or nil
     factory.parent:insert(clone, pivot, "next")
 
     solver.update(player, clone)
@@ -122,6 +123,10 @@ local function handle_factory_click(player, tags, action)
         lib.gui.run_refresh(player, "all")
 
         lib.gui.open_dialog(player, {dialog="factory", modal_data={factory_id=selected_factory.id}})
+
+    elseif action == "duplicate" then
+        if selected_factory.valid then duplicate_factory(player, selected_factory)
+        else lib.cursor.create_flying_text(player, {"fp.factory_invalid_duplicate"}) end
 
     elseif action == "delete" then
         lib.context.set(player, selected_factory)
@@ -239,12 +244,39 @@ local function refresh_factory_list(player)
         and {"fp.action_add_factory_by_product"} or {"fp.action_add_factory_by_name"}
 
     factory_list_elements.edit_button.enabled = (factory_exists)
-    factory_list_elements.duplicate_button.enabled = (selected_factory ~= nil and selected_factory.valid)
 
     factory_list_elements.delete_button.enabled = (factory_exists)
     local delay_in_minutes = math.floor(MAGIC_NUMBERS.factory_deletion_delay / 3600)
     factory_list_elements.delete_button.tooltip = (archived)
         and {"fp.action_delete_factory"} or {"fp.action_trash_factory", delay_in_minutes}
+
+    factory_list_elements.search_button.enabled = (factory_exists)
+    if not factory_exists then  -- close a search that has nothing left to filter
+        factory_list_elements.search_button.toggled = false
+        factory_list_elements.search_flow.visible = false
+        factory_list_elements.search_textfield.text = ""
+    end
+end
+
+---@param player LuaPlayer
+local function toggle_factory_search(player)
+    -- Guards against the hotkey being used while the search button is disabled
+    if lib.context.get(player, "Factory") == nil then return end
+
+    local factory_list_elements = lib.globals.ui_state(player).main_elements.factory_list
+    local search_flow = factory_list_elements.search_flow
+    local textfield_search = factory_list_elements.search_textfield
+
+    local search_open = not search_flow.visible
+    search_flow.visible = search_open
+    factory_list_elements.search_button.toggled = search_open
+
+    if search_open then
+        textfield_search.focus()
+    elseif textfield_search.text ~= "" then  -- reset the filter when closing
+        textfield_search.text = ""
+        refresh_factory_list(player)
+    end
 end
 
 ---@param player LuaPlayer
@@ -256,7 +288,7 @@ local function build_factory_list(player)
     local frame_vertical = parent_flow.add{type="frame", direction="vertical", style="inside_deep_frame"}
     local row_count = lib.globals.preferences(player).factory_list_rows
     frame_vertical.style.height = (row_count * MAGIC_NUMBERS.list_element_height) +
-        MAGIC_NUMBERS.subheader_height + MAGIC_NUMBERS.search_footer_height
+        MAGIC_NUMBERS.subheader_height
 
     local subheader = frame_vertical.add{type="frame", direction="horizontal", style="subheader_frame"}
 
@@ -292,14 +324,31 @@ local function build_factory_list(player)
         mouse_button_filter={"left"}}
     main_elements.factory_list["edit_button"] = button_edit
 
-    local button_duplicate = subheader.add{type="sprite-button", tags={mod="fp", on_gui_click="duplicate_factory"},
-        sprite="utility/clone", tooltip={"fp.action_duplicate_factory"}, style="tool_button",
-        mouse_button_filter={"left"}}
-    main_elements.factory_list["duplicate_button"] = button_duplicate
-
     local button_delete = subheader.add{type="sprite-button", tags={mod="fp", on_gui_click="delete_factory"},
         sprite="utility/trash", style="tool_button_red", mouse_button_filter={"left"}}
     main_elements.factory_list["delete_button"] = button_delete
+
+    subheader.add{type="empty-widget", style="fflib_horizontal_pusher"}
+
+    local button_search = subheader.add{type="sprite-button", tags={mod="fp", on_gui_click="toggle_factory_search"},
+        sprite="utility/search_icon", tooltip={"fp.action_search_factories"}, style="tool_button",
+        mouse_button_filter={"left"}}
+    main_elements.factory_list["search_button"] = button_search
+
+
+    local flow_search = frame_vertical.add{type="flow", direction="horizontal", visible=false}
+    flow_search.style.height = MAGIC_NUMBERS.list_element_height
+    flow_search.style.padding = {0, 4, 0, 12}
+    flow_search.style.vertical_align = "center"
+    main_elements.factory_list["search_flow"] = flow_search
+
+    flow_search.add{type="label", caption={"fp.search"}}
+    flow_search.add{type="empty-widget", style="fflib_horizontal_pusher"}
+    local textfield_search = flow_search.add{type="textfield", style="search_popup_textfield",
+        tags={mod="fp", on_gui_text_changed="factory_searchfield"}}
+    textfield_search.style.size = {230, 24}
+    main_elements.factory_list["search_textfield"] = textfield_search
+
 
     -- This is not really a list-box, but it imitates one and allows additional features
     local listbox_factories = frame_vertical.add{type="scroll-pane", style="list_box_under_subheader_scroll_pane"}
@@ -309,18 +358,6 @@ local function build_factory_list(player)
     local flow_factories = listbox_factories.add{type="flow", direction="vertical"}
     flow_factories.style.vertical_spacing = 0
     main_elements.factory_list["factory_listbox"] = flow_factories
-
-    local flow_search = frame_vertical.add{type="flow", direction="horizontal"}
-    flow_search.style.height = MAGIC_NUMBERS.search_footer_height
-    flow_search.style.padding = {0, 4, 0, 12}
-    flow_search.style.vertical_align = "center"
-
-    flow_search.add{type="label", caption={"fp.search"}}
-    flow_search.add{type="empty-widget", style="fflib_horizontal_pusher"}
-    local textfield_search = flow_search.add{type="textfield", style="search_popup_textfield",
-        tags={mod="fp", on_gui_text_changed="factory_searchfield"}}
-    textfield_search.style.width = 230
-    main_elements.factory_list["search_textfield"] = textfield_search
 
     refresh_factory_list(player)
 end
@@ -393,6 +430,10 @@ listeners.gui = {
             handler = toggle_archive
         },
         {
+            name = "toggle_factory_search",
+            handler = toggle_factory_search
+        },
+        {
             name = "archive_factory",
             timeout = 10,
             handler = function(player, _, _)
@@ -418,10 +459,6 @@ listeners.gui = {
             end
         },
         {
-            name = "duplicate_factory",
-            handler = duplicate_factory
-        },
-        {
             name = "delete_factory",
             timeout = 10,
             handler = factory_list.delete_factory
@@ -444,8 +481,9 @@ listeners.gui = {
         {
             name = "act_on_factory",
             actions_table = {
-                select = {shortcut="left", limitations={}},
+                select = {shortcut="left", show=true},
                 edit = {shortcut="control-left"},
+                duplicate = {shortcut="shift-left"},
                 delete = {shortcut="control-right"}
             },
             handler = handle_factory_click
@@ -460,6 +498,9 @@ listeners.gui = {
 }  ---@as GUIListenerDefinition
 
 listeners.player = {
+    fp_focus_searchfield = function(player, _)
+        if main_dialog.is_in_focus(player) then toggle_factory_search(player) end
+    end,
     build_gui_element = function(player, event)
         ---@cast event BuildGUIElementEventData
         if event.trigger == "main_dialog" then
