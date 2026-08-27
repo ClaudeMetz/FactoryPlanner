@@ -55,6 +55,7 @@ function _clipboard.paste(player, target)
             clone:validate(player)
         else
             clone = lib.flib.shallow_copy(clip.packed_object)  ---@as SimpleItem
+            clone.proto = prototyper.util.validate_prototype_object(clone.proto, "type")  ---@as FPItemPrototype
         end
         local success, error = target:paste(clone, player)
 
