@@ -81,9 +81,17 @@ local function add_item_picker(parent_flow, player)
     modal_elements["warning_label"] = label_warning
 
     -- Item picker (optimized for performance, so not everything is done in the obvious way)
-    local groups_per_row = MAGIC_NUMBERS.groups_per_row
-    local table_item_groups = parent_flow.add{type="table", column_count=groups_per_row}
-    table_item_groups.style.width = 71 * groups_per_row
+    local groups_per_row, items_per_row = MAGIC_NUMBERS.groups_per_row, MAGIC_NUMBERS.items_per_row
+    local tabs_width = 71 * groups_per_row
+
+    -- Adjusted when this is actually supposed to scroll
+    local scroll_pane_groups = parent_flow.add{type="scroll-pane", style="fp_scroll-pane_group_tabs",
+        horizontal_scroll_policy="never"}
+    scroll_pane_groups.style.width = tabs_width
+    scroll_pane_groups.style.maximal_height = MAGIC_NUMBERS.group_max_rows * 76
+
+    local table_item_groups = scroll_pane_groups.add{type="table", column_count=groups_per_row}
+    table_item_groups.style.width = tabs_width
     table_item_groups.style.horizontal_spacing = 0
     table_item_groups.style.vertical_spacing = 0
 
@@ -101,7 +109,6 @@ local function add_item_picker(parent_flow, player)
         end
     end
 
-    local items_per_row = MAGIC_NUMBERS.items_per_row
     local current_item_rows, max_item_rows = 0, 0
     local current_items_in_table_count = 0
     for _, item_proto in ipairs(SORTED_ITEMS) do
@@ -206,6 +213,17 @@ local function add_item_picker(parent_flow, player)
     current_item_rows = current_item_rows + math.ceil(current_items_in_table_count / items_per_row)
     max_item_rows = math.max(current_item_rows, max_item_rows)
     frame_filters.style.natural_height = max_item_rows * 40 + (2*12)
+
+    -- Narrow the tabs down when they scroll, so the scrollbar lines up
+    local group_rows = math.ceil(#modal_elements.groups / groups_per_row)
+    if group_rows > MAGIC_NUMBERS.group_max_rows then
+        local scrolling_width = items_per_row * 40 + 12
+        scroll_pane_groups.style = "fp_scroll-pane_group_tabs_scrolling"
+        local scroll_pane_style = scroll_pane_groups.style  ---@as LuaStyle
+        scroll_pane_style.width = scrolling_width
+        scroll_pane_style.maximal_height = MAGIC_NUMBERS.group_max_rows * 76
+        table_item_groups.style.width = scrolling_width
+    end
 
     -- Select the previously selected item group if possible
     local group_to_select, previous_selection = 1, player_table.ui_state.last_selected_picker_group

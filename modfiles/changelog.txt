@@ -11,7 +11,8 @@ Date: 00. 00. 0000
   Bugfixes:
     - Fixed that the simplex solver ignored machine limits (#846) (Thanks vapopescu!)
     - Fixed that some items couldn't be pasted as factory products (Thanks vapopescu!)
-    - Fixed that beacons requiring no power still consumed electricity
+    - Fixed a large amount of recipe groups taking up all the space in the item picker (#851)
+    - Fixed beacons requiring no power still consumed electricity
 
 ---------------------------------------------------------------------------------------------------
 Version: 2.1.12
