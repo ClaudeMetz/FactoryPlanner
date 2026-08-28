@@ -109,10 +109,10 @@ local function refresh_player_table(player)
     player_table.translation_tables = nil
     player_table.clipboard = nil
 
+    player_table.realm:validate(player)
+
     -- Apply substitutions that were just pulled in, as they won't get an invalidation event
     player_table.realm:refresh_lines(player)
-
-    player_table.realm:validate(player)
 end
 
 
