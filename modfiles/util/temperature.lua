@@ -12,6 +12,14 @@ function _temperature.name_with(name, temperature)
     return name .. "|" .. temperature
 end
 
+---@param name string with temperature
+---@return string
+---@return float
+function _temperature.name_split(name)
+    local chunks = lib.split_string(name, "|")
+    return chunks[1]--[[@as string]], chunks[2]  ---@as float
+end
+
 --- An exclusive bound rejects the bound itself. Fuels burned for their heat need this on their
 --- minimum, as a fluid at its default temperature carries no usable heat, and recipes reheating
 --- a fluid need it on their maximum, as one going in that hot would only cancel the product out
