@@ -24,8 +24,8 @@ local simplex_engine = {}
 -- The objective function is maximized, so positive values indicate a score,
 -- and negative values indicate a cost
 local objective_vector = {
-    target_product = 1e15,
-    target_machine = 1e15,
+    target_product = 1e9,
+    target_machine = 1e9,
     limited_ingredient = 0,
     product = 0,
     ingredient = -0.001,
@@ -320,7 +320,7 @@ function simplex_engine.get_line_metadata(line_data, floor_id)
         solver.util.table.add(ingredients, item_key, power_amount)
     end
     if heat_amount > 0 then
-        local item_key = solver.util.pack_item("custom-heat-power", "entity")
+        local item_key = solver.util.pack_item("custom-heating-power", "entity")
         solver.util.table.add(ingredients, item_key, heat_amount)
     end
     if line_data.pollutant_type and emissions ~= 0 then
