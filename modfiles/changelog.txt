@@ -12,6 +12,7 @@ Date: 00. 00. 0000
     - Fixed that the simplex solver ignored machine limits (#846) (Thanks vapopescu!)
     - Fixed that some items couldn't be pasted as factory products (Thanks vapopescu!)
     - Fixed a large amount of recipe groups taking up all the space in the item picker (#851)
+    - Fixed showing products whose only available recipe is self-recycling
     - Fixed beacons requiring no power still consumed electricity
 
 ---------------------------------------------------------------------------------------------------
