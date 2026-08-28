@@ -26,9 +26,9 @@ if [ -f "$USERDATA/config/config.ini" ]; then
   cp "$USERDATA/player-data.json" $INSTANCE/
   sed "s|^write-data=.*|write-data=$INSTANCE|" "$USERDATA/config/config.ini" > $CONFIG
 else
-  # No read-data entry, so the game deduces it from the executable like it does
-  # without a config; the system path it would use instead is for distro installs
-  printf '[path]\nwrite-data=%s\n' $INSTANCE > $CONFIG
+  # Passing -c makes the game default read-data to the distro path (/usr/share),
+  # so spell out the executable-relative path it would deduce without a config
+  printf '[path]\nread-data=__PATH__executable__/../../data\nwrite-data=%s\n' $INSTANCE > $CONFIG
 fi
 
 exec $FACTORIO -c $CONFIG "$@"
