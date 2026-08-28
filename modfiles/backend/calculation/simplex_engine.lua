@@ -45,7 +45,7 @@ local objective_vector = {
 local function item_cost(key)
     local item = solver.util.unpack_item(key)
     if item.type == "fluid" then return objective_vector.fluid_modifier end
-    if item.type == "entity" and (item.name == "custom-electric-power" or item.name == "custom-heat-power") then
+    if item.type == "entity" and lib.is_special_power_item(item.name) then
         return objective_vector.energy_modifier
     end
     return 1
