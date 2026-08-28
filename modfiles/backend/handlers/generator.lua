@@ -200,8 +200,8 @@ function generator.recipes.generate()
             local recipe = recipes[proto.fixed_recipe.name]
             if recipe ~= nil then
                 local category = "impostor-fixed-" .. recipe.name
-                recipe.categories = recipe.categories or {}
                 recipe.categories[category] = true
+                recipe.enabled_from_the_start = true
             end
         end
 
