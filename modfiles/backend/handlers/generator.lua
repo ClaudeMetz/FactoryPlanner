@@ -187,6 +187,7 @@ function generator.recipes.generate()
     local first_generator = nil  ---@type string?
     local pumped_fixed_fluids = {}  ---@type table<string, boolean>
     local boiler_recipes = {}  ---@type table<string, FPRecipePrototype>
+    local silo_recipes = {}  ---@type table<string, FPRecipePrototype>
 
     local entity_filter = {{filter="hidden", invert=true}}
     for _, proto in pairs(prototypes.get_entity_filtered(entity_filter)) do
@@ -313,17 +314,13 @@ function generator.recipes.generate()
 
         elseif proto.type == "rocket-silo" then
             local parts_recipes = generator.util.silo_parts_recipes(proto, recipes)
-            -- Silos that can build several kinds of part need one recipe per part
-            local ambiguous = (#parts_recipes > 1)
-            -- Each silo is its own machine category, so recipes only offer silos
-            --   that match their parts requirement
             local category = "launch-rocket-" .. proto.name
 
             for _, recipe in pairs(parts_recipes) do
                 local parts_product = recipe.main_product  ---@cast parts_product -nil
-                local disambiguator = (ambiguous) and ("-using-" .. recipe.name) or ""
+                local suffix = "-from-" .. proto.rocket_parts_required .. "-" .. parts_product.name
                 local rocket_parts_ingredient = {type="item", name=parts_product.name,
-                amount=proto.rocket_parts_required}  ---@as Ingredient
+                    amount=proto.rocket_parts_required}  ---@as Ingredient
 
                 -- Mark rocket part items so item generation can make them non-hidden
                 rocket_parts[parts_product.name] = true
@@ -331,41 +328,60 @@ function generator.recipes.generate()
                 -- Add rocket launch product recipes
                 if not proto.launch_to_space_platforms then
                     for item_name, products in pairs(launch_products) do
-                        local main_product = prototypes.item[products[1].name]
+                        local name = "impostor-launch-" .. item_name .. suffix
+                        local launch_recipe = silo_recipes[name]
 
-                        local launch_recipe = custom_recipe()
-                        launch_recipe.name = "impostor-launch-" .. item_name
-                            .. "-from-" .. proto.name .. disambiguator
-                        launch_recipe.factoriopedia_id = {type="entity", name=proto.name}
-                        launch_recipe.localised_name = {"", main_product.localised_name, " ", {"fp.launch_recipe"}}
-                        launch_recipe.sprite = "item/" .. main_product.name
-                        launch_recipe.order = main_product.order
-                        launch_recipe.categories = {[category] = true}
-                        launch_recipe.energy = 1
+                        if launch_recipe == nil then
+                            local main_product = prototypes.item[products[1].name]
 
-                        local ingredients = {lib.flib.deep_copy(rocket_parts_ingredient),
-                            {type="item", name=item_name, amount=1}}
-                        generator.util.format_recipe(launch_recipe, products, products[1], ingredients)
-                        -- Some items are only launched for their script effects, returning nothing
-                        if next(launch_recipe.products) then insert_prototype(recipes, launch_recipe, nil) end
+                            launch_recipe = custom_recipe()
+                            launch_recipe.name = name
+                            launch_recipe.factoriopedia_id = {type="item", name=item_name}
+                            launch_recipe.localised_name = {"", main_product.localised_name, " ", {"fp.launch_recipe"}}
+                            launch_recipe.sprite = "item/" .. main_product.name
+                            launch_recipe.order = main_product.order
+                            launch_recipe.categories = {}
+                            launch_recipe.energy = 1
+
+                            local ingredients = {lib.flib.deep_copy(rocket_parts_ingredient),
+                                {type="item", name=item_name, amount=1}}
+                            generator.util.format_recipe(launch_recipe, products, products[1], ingredients)
+                            -- Some items are only launched for their script effects, returning nothing
+                            if not next(launch_recipe.products) then goto next_launch_product end
+
+                            silo_recipes[name] = launch_recipe
+                            insert_prototype(recipes, launch_recipe, nil)
+                        end
+
+                        launch_recipe.categories[category] = true
+                        ::next_launch_product::
                     end
                 end
 
                 -- Add convenience recipe to build whole rocket instead of parts
                 if script.feature_flags["space_travel"] then
-                    local rocket_recipe = custom_recipe()
-                    rocket_recipe.name = "impostor-" .. proto.name .. "-rocket" .. disambiguator
-                    rocket_recipe.factoriopedia_id = {type="entity", name=proto.name}
-                    rocket_recipe.localised_name = {"", proto.localised_name, " ", {"fp.launch_recipe"}}
-                    rocket_recipe.sprite = "fp_silo_rocket"
-                    rocket_recipe.order = recipe.order .. "-" .. proto.order
-                    rocket_recipe.categories = {[category] = true}
-                    rocket_recipe.energy = 1
+                    local name = "impostor-rocket" .. suffix
+                    local rocket_recipe = silo_recipes[name]
 
-                    local rocket_products = {{type="entity", name="custom-silo-rocket", amount=1}--[[@as Product]]}
-                    local ingredients = {lib.flib.deep_copy(rocket_parts_ingredient)}
-                    generator.util.format_recipe(rocket_recipe, rocket_products, rocket_products[1], ingredients)
-                    insert_prototype(recipes, rocket_recipe, nil)
+                    if rocket_recipe == nil then
+                        rocket_recipe = custom_recipe()
+                        rocket_recipe.name = name
+                        rocket_recipe.factoriopedia_id = {type="item", name=parts_product.name}
+                        rocket_recipe.localised_name = {"", {"entity-name.rocket"}, " ", {"fp.launch_recipe"}}
+                        rocket_recipe.sprite = "fp_silo_rocket"
+                        rocket_recipe.order = recipe.order .. "-" .. proto.order
+                        rocket_recipe.categories = {}
+                        rocket_recipe.energy = 1
+
+                        local rocket_products = {{type="entity", name="custom-silo-rocket", amount=1}--[[@as Product]]}
+                        local ingredients = {lib.flib.deep_copy(rocket_parts_ingredient)}
+                        generator.util.format_recipe(rocket_recipe, rocket_products, rocket_products[1], ingredients)
+
+                        silo_recipes[name] = rocket_recipe
+                        insert_prototype(recipes, rocket_recipe, nil)
+                    end
+
+                    rocket_recipe.categories[category] = true
                 end
             end
 
