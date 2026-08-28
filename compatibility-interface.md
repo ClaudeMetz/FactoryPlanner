@@ -24,7 +24,7 @@ All runtime integrations require a `version` integer to be included to indicate 
 
 ### `invalidate`
 
-**Current version:** `1`, available from `2.1.11`
+**Current version:** `1`, available from `2.1.13`
 
 Some static integrations are collected per-force, which means Factory Planner needs to know when a mod's per-force state changed. There's no way for it to notice this on its own, so mods managing such state by scripting are required to call this. It carries no data itself, it only prompts Factory Planner to read that static integration again.
 
@@ -95,7 +95,7 @@ remote.add_interface("fp-integration-example-mod", {
 
 ### `machine_effects`
 
-**Current version:** `1`, available from `2.1.11`
+**Current version:** `1`, available from `2.1.13`
 
 This integration allows mods to tell Factory Planner about effects they apply to a machine outside of the module system, which it has no way of seeing otherwise. A hidden module inserted into a hidden beacon next to every machine of a given type is the typical case. Factory Planner treats these as an addition to the machine's base effects, meaning they are subject to the machine's effect limits and are shown to the user as machine effects.
 
@@ -120,7 +120,7 @@ remote.add_interface("fp-integration-example-mod", {
 
 ### `overwrite_recipe_picker`
 
-**Current version:** `1`, available from `2.1.11`
+**Current version:** `1`, available from `2.1.13`
 
 This integration enables overwriting Factory Planner's decision tree for determining whether a recipe is able to be chosen in the recipe picker. It runs various checks for whether a recipe is actually usable, but it makes sense to overwrite this in some cases where recipes or technologies are managed by scripting.
 
@@ -145,7 +145,7 @@ remote.add_interface("fp-integration-example-mod", {
 
 ### `recipe_substitutions`
 
-**Current version:** `1`, available from `2.1.11`
+**Current version:** `1`, available from `2.1.13`
 
 This integration allows mods to tell Factory Planner that they replaced one recipe with another by scripting, which it has no way of noticing otherwise. Factory Planner hides the replaced recipes from the recipe picker, and migrates any existing production line using one over to its replacement, keeping the line's machine, modules, beacon and fluid temperatures wherever they still apply.
 
@@ -172,7 +172,7 @@ remote.add_interface("fp-integration-example-mod", {
 
 ### `machine_substitutions`
 
-**Current version:** `1`, available from `2.1.11`
+**Current version:** `1`, available from `2.1.13`
 
 This integration allows mods to tell Factory Planner that they replaced one machine with another by scripting, which it has no way of noticing otherwise. Factory Planner hides the replaced machines from the machine picker, and migrates any existing production line using one over to its replacement, keeping the line's quality, limit, modules and beacon wherever they still apply.
 
