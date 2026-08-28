@@ -18,15 +18,17 @@ for dir in $INSTANCES/*/; do
   printf '%s\n' "$WORKTREES" | grep -qxF "$(basename $dir)" || rm -rf "$dir"
 done
 
-if [ ! -f $CONFIG ]; then
-  mkdir -p $INSTANCE/config
-  USERDATA=${FACTORIO_USERDATA:-$HOME/Library/Application Support/factorio}
-  if [ -f "$USERDATA/config/config.ini" ]; then
-    cp "$USERDATA/player-data.json" $INSTANCE/
-    sed "s|^write-data=.*|write-data=$INSTANCE|" "$USERDATA/config/config.ini" > $CONFIG
-  else
-    printf '[path]\nread-data=__PATH__system-read-data__\nwrite-data=%s\n' $INSTANCE > $CONFIG
-  fi
+# Written fresh on every launch, so the instance follows the real config, and so
+# no instance keeps an outdated one around
+mkdir -p $INSTANCE/config
+USERDATA=${FACTORIO_USERDATA:-$HOME/Library/Application Support/factorio}
+if [ -f "$USERDATA/config/config.ini" ]; then
+  cp "$USERDATA/player-data.json" $INSTANCE/
+  sed "s|^write-data=.*|write-data=$INSTANCE|" "$USERDATA/config/config.ini" > $CONFIG
+else
+  # No read-data entry, so the game deduces it from the executable like it does
+  # without a config; the system path it would use instead is for distro installs
+  printf '[path]\nwrite-data=%s\n' $INSTANCE > $CONFIG
 fi
 
 exec $FACTORIO -c $CONFIG "$@"
