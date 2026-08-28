@@ -13,6 +13,7 @@ Date: 00. 00. 0000
     - Fixed recipes tied to specific machines not sharing their internal categories (#854) (Thanks vapopescu!)
     - Fixed that some items couldn't be pasted as factory products (Thanks vapopescu!)
     - Fixed a large amount of recipe groups taking up all the space in the item picker (#851)
+    - Fixed rocket silo recipes sometimes showing incompatible silos as viable machines
     - Fixed showing products whose only available recipe is self-recycling
     - Fixed beacons requiring no power still consumed electricity
 

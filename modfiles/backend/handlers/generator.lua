@@ -315,6 +315,9 @@ function generator.recipes.generate()
             local parts_recipes = generator.util.silo_parts_recipes(proto, recipes)
             -- Silos that can build several kinds of part need one recipe per part
             local ambiguous = (#parts_recipes > 1)
+            -- Each silo is its own machine category, so recipes only offer silos
+            --   that match their parts requirement
+            local category = "launch-rocket-" .. proto.name
 
             for _, recipe in pairs(parts_recipes) do
                 local parts_product = recipe.main_product  ---@cast parts_product -nil
@@ -337,7 +340,7 @@ function generator.recipes.generate()
                         launch_recipe.localised_name = {"", main_product.localised_name, " ", {"fp.launch_recipe"}}
                         launch_recipe.sprite = "item/" .. main_product.name
                         launch_recipe.order = main_product.order
-                        launch_recipe.categories = {["launch-rocket"] = true}
+                        launch_recipe.categories = {[category] = true}
                         launch_recipe.energy = 1
 
                         local ingredients = {lib.flib.deep_copy(rocket_parts_ingredient),
@@ -356,7 +359,7 @@ function generator.recipes.generate()
                     rocket_recipe.localised_name = {"", proto.localised_name, " ", {"fp.launch_recipe"}}
                     rocket_recipe.sprite = "fp_silo_rocket"
                     rocket_recipe.order = recipe.order .. "-" .. proto.order
-                    rocket_recipe.categories = {["launch-rocket"] = true}
+                    rocket_recipe.categories = {[category] = true}
                     rocket_recipe.energy = 1
 
                     local rocket_products = {{type="entity", name="custom-silo-rocket", amount=1}--[[@as Product]]}
@@ -1003,7 +1006,7 @@ function generator.machines.generate()
         if proto.crafting_categories and proto.energy_usage ~= nil then
             -- Silo launch recipes use a separate machine
             if proto.type == "rocket-silo" then
-                local machine = generate_category_entry("launch-rocket", proto, "launcher")
+                local machine = generate_category_entry("launch-rocket-" .. proto.name, proto, "launcher")
                 if machine then
                     -- speed and energy_usage will be wrong here, but are determined
                     -- dynamically later on depending on quality
