@@ -458,8 +458,8 @@ end
 ---@field order string
 ---@field valid boolean
 
--- Generates a table imitating LuaGroup to avoid lua-cpp bridging
----@param group LuaGroup | ItemGroup
+-- Generates a table imitating the group to avoid lua-cpp bridging
+---@param group LuaItemGroup | LuaItemSubGroup | ItemGroup
 ---@return ItemGroup group_table
 function _util.generate_group_table(group)
     return {name=group.name, localised_name=group.localised_name, order=group.order, valid=true}
