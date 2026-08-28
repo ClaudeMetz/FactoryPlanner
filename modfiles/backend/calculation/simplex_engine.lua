@@ -24,8 +24,8 @@ local simplex_engine = {}
 -- The objective function is maximized, so positive values indicate a score,
 -- and negative values indicate a cost
 local objective_vector = {
-    target_product = 1e9,
-    target_machine = 1e9,
+    target_product = 1e15,
+    target_machine = 1e15,
     limited_ingredient = 0,
     product = 0,
     ingredient = -0.001,
@@ -36,7 +36,7 @@ local objective_vector = {
 
     machine_limit = 0,
     fluid_modifier = 0.01,
-    special_modifier = 1e-12,
+    energy_modifier = 1e-9,
 }
 
 
@@ -45,7 +45,9 @@ local objective_vector = {
 local function item_cost(key)
     local item = solver.util.unpack_item(key)
     if item.type == "fluid" then return objective_vector.fluid_modifier end
-    if item.type == "entity" then return objective_vector.special_modifier end
+    if item.type == "entity" and (item.name == "custom-electric-power" or item.name == "custom-heat-power") then
+        return objective_vector.energy_modifier
+    end
     return 1
 end
 
