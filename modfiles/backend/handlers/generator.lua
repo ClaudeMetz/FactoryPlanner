@@ -631,6 +631,15 @@ function generator.items.generate()
     local fluid_has_temperature = {}
     -- Extract items from recipes and note whether they are ever used as a product
     for _, recipe_proto in pairs(recipe_prototypes) do
+        local ingredient_amounts = {}  ---@type table<string, number>
+        for _, ingredient in pairs(recipe_proto.ingredients) do
+            -- Recipe picker needs to deal with fluids, as their temperature needs configuration
+            if ingredient.type == "item" then
+                local amount = ingredient_amounts[ingredient.name] or 0
+                ingredient_amounts[ingredient.name] = amount + ingredient.amount
+            end
+        end
+
         for _, item_category in pairs({"products", "ingredients"}) do
             for _, item_data in pairs(recipe_proto[item_category]) do
                 local type_data = relevant_items[item_data.type]
@@ -643,7 +652,9 @@ function generator.items.generate()
                     }
                 end
 
-                if item_category == "products" then
+                -- Make sure the recipe actually net-produces the item
+                local ingredient_amount = ingredient_amounts[item_data.name] or 0
+                if item_category == "products" and item_data.amount > ingredient_amount then
                     type_data[item_data.name].ingredient_only = false
                 end
 
