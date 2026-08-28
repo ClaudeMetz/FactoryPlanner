@@ -110,6 +110,9 @@ local function refresh_player_table(player)
     player_table.clipboard = nil
 
     player_table.realm:validate(player)
+
+    -- Apply substitutions that were just pulled in, as they won't get an invalidation event
+    player_table.realm:refresh_lines(player)
 end
 
 
@@ -163,6 +166,7 @@ local function global_init()
     -- Table containing all integration data collected from other mods
     storage.integrations = {}  ---@diagnostic disable-line: missing-fields
     prototyper.build()  -- Generate all relevant prototypes and save them in storage
+    integrator.initialize()  -- Collect the integration data that generation doesn't cover
     run_on_load(true)  -- Run loader which creates useful indexes of prototype data
     generate_object_index()  -- This just initializes the OBJECT_INDEX variable
 
@@ -191,6 +195,7 @@ local function handle_configuration_change()
     storage.prototypes = {}  ---@diagnostic disable-line: missing-fields
     storage.integrations = {}  ---@diagnostic disable-line: missing-fields
     prototyper.build()
+    integrator.initialize()
     run_on_load(true)
 
     migrator.migrate_global(migrations)
@@ -268,6 +273,25 @@ listeners.game = {
     end),
     on_player_removed = (function(event)
         storage.players[event.player_index] = nil
+    end),
+
+    on_force_created = (function(event)
+        integrator.collect_force(event.force.index)
+    end),
+    on_forces_merged = (function(event)
+        integrator.forget_force(event.source_index)
+
+        -- Players brought along keep factories built against the force they left
+        local running_tick = game.tick + 1  ---@type MapTick?
+        for _, player in pairs(event.destination.players) do
+            local realm = lib.globals.player_table(player).realm
+            running_tick = realm:refresh_lines(player, running_tick)
+        end
+    end),
+    on_player_changed_force = (function(event)
+        local player = game.get_player(event.player_index)  ---@cast player -nil
+        local realm = lib.globals.player_table(player).realm
+        realm:refresh_lines(player, (game.tick + 1))
     end),
 
     on_tick = lib.translator.on_tick

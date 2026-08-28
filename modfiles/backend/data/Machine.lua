@@ -12,6 +12,7 @@ local ModuleSet = require("backend.data.ModuleSet")
 ---@field fuel Fuel?
 ---@field module_set ModuleSet
 ---@field amount number
+---@field mod_effects IntegerModuleEffects?
 ---@field total_effects IntegerModuleEffects
 ---@field effects_tooltip LocalisedString
 local Machine = Object.methods()
@@ -37,6 +38,7 @@ local function init(parent, proto)
         module_set = nil, -- set below
 
         amount = 0,
+        mod_effects = nil,
         total_effects = nil,
         effects_tooltip = "",
 
@@ -90,13 +92,54 @@ end
 function Machine:summarize_effects()
     ---@cast self.proto FPMachinePrototype
     local module_effects = self.module_set:get_effects()
-    local machine_effects = self.proto.effect_receiver.base_effect
+
+    -- Effects that mods apply outside of the module system count as base effects
+    local base_effect = self.proto.effect_receiver.base_effect
+    local machine_effects = (self.mod_effects)
+        and lib.effects.sparse_merge({base_effect, self.mod_effects}) or base_effect
 
     self.total_effects = lib.effects.merge({module_effects, machine_effects})
     self.effects_tooltip = lib.effects.format(module_effects,
-        {machine_effects=machine_effects, recipe_effects=self.parent.recipe.effects})
+        {machine_effects=machine_effects, recipe_effects=self.parent.recipe.productivity_effects})
 
     self.parent:summarize_effects()
+end
+
+--- Called when the solver runs because it's the most convenient spot for it
+---@param force LuaForce
+---@return boolean changed
+function Machine:update_mod_effects(force)
+    local force_effects = storage.integrations.machine_effects[force.index]
+    local effects = force_effects and force_effects[self.proto.name] or nil
+
+    -- This is a comparison by identity knowingly, as the integrator table isn't modified
+    if effects == self.mod_effects then
+        return false
+    else
+        self.mod_effects = effects
+        return true
+    end
+end
+
+--- Migrates to the machine that stands in for this one, if the force has one. Needs a player
+--- rather than a force because swapping the machine can require picking a new fuel.
+---@param player LuaPlayer
+---@return boolean substituted
+function Machine:apply_substitution(player)
+    local force = player.force  --[[@as LuaForce]]
+    local substitutions = storage.integrations.machine_substitutions[force.index]
+    local replacement = (substitutions) and substitutions[self.proto.name] or nil
+    if replacement == nil then return false end
+
+    local proto = prototyper.util.find("machines", replacement, self.proto.combined_category)  ---@as FPMachinePrototype?
+
+    if proto and self.parent:is_machine_compatible(proto) then
+        self.parent:change_machine_to_proto(player, proto)
+    else  -- a stand-in that can't run this recipe is no better than one FP doesn't know about
+        self.parent:change_machine_to_default(player)
+    end
+
+    return true
 end
 
 ---@return boolean
@@ -267,7 +310,8 @@ function Machine:paste(object, player)
     if object.class == "Machine" then  ---@cast object Machine
         local corresponding_proto = prototyper.util.find("machines", object.proto.name, self.proto.combined_category)  ---@as FPMachinePrototype?
 
-        if corresponding_proto == nil or not self.parent:is_machine_compatible(corresponding_proto) then
+        if corresponding_proto == nil or not self.parent:is_machine_compatible(corresponding_proto)
+                or not lib.is_machine_available(player.force--[[@as LuaForce]], corresponding_proto) then
             return false, "incompatible"
         end
 

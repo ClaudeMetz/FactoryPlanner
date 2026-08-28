@@ -89,7 +89,7 @@ end
 function _lib.recipe_picker_overwrite(force, recipe)
     local overwrite = nil  ---@type boolean?
 
-    local overwrites = storage.integrations.overwrite_recipe_picker
+    local overwrites = storage.integrations.overwrite_recipe_picker[force.index]
     if overwrites then overwrite = overwrites[recipe.name] end
 
     if overwrite == nil then  -- fall back to the base game's visibility override
@@ -99,7 +99,7 @@ function _lib.recipe_picker_overwrite(force, recipe)
     return overwrite
 end
 
--- Determines whether the given force can obtain the given recipe at all.
+
 ---@param force LuaForce
 ---@param recipe FPRecipePrototype
 ---@return boolean available
@@ -109,6 +109,10 @@ function _lib.is_recipe_available(force, recipe)
 
     local force_recipe = force.recipes[recipe.name]
     if force_recipe == nil then return false end
+
+    -- A recipe that another one stands in for can't be obtained anymore, no matter its own state
+    local substitutions = storage.integrations.recipe_substitutions[force.index]
+    if substitutions and substitutions[recipe.name] then return false end
 
     -- A mod overwriting the picker knows better than the recipe's own state, either way
     local overwrite = _lib.recipe_picker_overwrite(force, recipe)
@@ -128,6 +132,14 @@ function _lib.is_recipe_available(force, recipe)
     end
 
     return false
+end
+
+---@param force LuaForce
+---@param machine FPMachinePrototype
+---@return boolean available
+function _lib.is_machine_available(force, machine)
+    local substitutions = storage.integrations.machine_substitutions[force.index]
+    return not (substitutions and substitutions[machine.name])
 end
 
 

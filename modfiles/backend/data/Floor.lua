@@ -182,6 +182,21 @@ function Floor:any_lines_not_marked_done()
 end
 
 
+---@param player LuaPlayer
+---@return boolean changed
+function Floor:refresh_lines(player)
+    local changed = false
+    for line in self:iterator() do
+        if line.class == "Floor" then  ---@cast line Floor
+            changed = line:refresh_lines(player) or changed
+        else  ---@cast line Line
+            changed = line:refresh_line(player) or changed
+        end
+    end
+    return changed
+end
+
+
 ---@param object LineObject
 ---@return boolean compatible
 function Floor:check_product_compatibility(object)

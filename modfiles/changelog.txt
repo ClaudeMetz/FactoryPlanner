@@ -2,6 +2,7 @@
 Version: 0.00.00
 Date: 00. 00. 0000
   Features:
+    - Added full support for Pyanodons TURDs, meaning automated recipe/machine substitutions and applied machine effects. Requires Pyanodons Alien Life version 3.1.3 or later. (#610)
   Changes:
     - Changed recipe and district reordering to pick-up-and-move, same as factories
     - Simplified pick-up-and-move behavior to only offer 'place below' buttons

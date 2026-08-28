@@ -48,6 +48,19 @@ function _effects.merge(effect_tables)
     return effects
 end
 
+-- Merges without filling in the effects that none of the given tables contain
+---@param effect_tables IntegerModuleEffects[]
+---@return IntegerModuleEffects
+function _effects.sparse_merge(effect_tables)
+    local effects = {}
+    for _, effect_table in pairs(effect_tables) do
+        for name, effect in pairs(effect_table) do
+            effects[name] = (effects[name] or 0) + effect  -- doesn't create decimals
+        end
+    end
+    return effects
+end
+
 
 ---@param effect IntegerEffectValue
 ---@param bounds IntegerEffectValueRange
