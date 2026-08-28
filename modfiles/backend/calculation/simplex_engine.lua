@@ -36,7 +36,7 @@ local objective_vector = {
 
     machine_limit = 0,
     fluid_modifier = 0.01,
-    special_modifier = 1e-12,
+    energy_modifier = 1e-9,
 }
 
 
@@ -45,7 +45,9 @@ local objective_vector = {
 local function item_cost(key)
     local item = solver.util.unpack_item(key)
     if item.type == "fluid" then return objective_vector.fluid_modifier end
-    if item.type == "entity" then return objective_vector.special_modifier end
+    if item.type == "entity" and lib.is_special_power_item(item.name) then
+        return objective_vector.energy_modifier
+    end
     return 1
 end
 
@@ -318,7 +320,7 @@ function simplex_engine.get_line_metadata(line_data, floor_id)
         solver.util.table.add(ingredients, item_key, power_amount)
     end
     if heat_amount > 0 then
-        local item_key = solver.util.pack_item("custom-heat-power", "entity")
+        local item_key = solver.util.pack_item("custom-heating-power", "entity")
         solver.util.table.add(ingredients, item_key, heat_amount)
     end
     if line_data.pollutant_type and emissions ~= 0 then
