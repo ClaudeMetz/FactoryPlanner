@@ -67,6 +67,17 @@ function simplex_engine.solve(factory_data)
 
     -- Update GUI
     simplex_engine.update_factory(factory_data, line_metadata_table, result)
+
+    -- Handle non-success codes
+    if result then
+        if result.state == "in-progress" then
+            lib.messages.raise(player, "error", {"fp.error_simplex_aborted"}, 1)
+        elseif result.state == "unbounded" then
+            lib.messages.raise(player, "error", {"fp.error_simplex_unbounded_solution"}, 1)
+        elseif result.state == "no-solution" then
+            lib.messages.raise(player, "error", {"fp.error_simplex_no_solution"}, 1)
+        end
+    end
 end
 
 ---@param floor_data FloorData
