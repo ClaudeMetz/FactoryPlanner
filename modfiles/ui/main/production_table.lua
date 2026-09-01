@@ -585,7 +585,7 @@ function builders.ingredients(line, parent_flow, metadata)
         local name_line, temperature_line = {"", {"fp.tt_title", proto.localised_name}}, ""
         if proto.type == "fluid" and line.class ~= "Floor" then
             local temperature_data = line.recipe.temperature_data[proto.name]   -- exists for any fluid ingredient
-            table.insert(name_line--[[@as table]], temperature_data.annotation)
+            if temperature_data then table.insert(name_line--[[@as table]], temperature_data.annotation) end
 
             local temperature = line.recipe:get_temperature(proto)
             if temperature == nil then
