@@ -290,7 +290,7 @@ local function add_item_flow(line, relevant_line, item_category, button_color, m
 
                 if type == "fluid" and item_category == "ingredients" and line.class ~= "Floor" then
                     local temperature_data = line.recipe.temperature_data[proto.name]
-                    table.insert(name_line, temperature_data.annotation)
+                    if temperature_data then table.insert(name_line, temperature_data.annotation) end
 
                     local temperature = line.recipe:get_temperature(proto)
                     if temperature == nil then
