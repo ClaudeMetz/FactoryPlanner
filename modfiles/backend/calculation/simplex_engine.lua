@@ -257,6 +257,7 @@ function simplex_engine.get_line_metadata(line_data, floor_id)
     local fuel_amount = 0.0
     local power_amount = 0.0
     local heat_amount = 0.0
+    local heating_amount = 0.0
 
     if energy > MAGIC_NUMBERS.minimum_energy then
         -- Get power and emissions
@@ -278,7 +279,7 @@ function simplex_engine.get_line_metadata(line_data, floor_id)
 
     -- Get heat requirements (frozen surfaces e.g. Aquillo)
     if line_data.entities_require_heating then
-        heat_amount = heat_amount + line_data.machine_proto.heating_energy
+        heating_amount = line_data.machine_proto.heating_energy
     end
 
     -- Add fuel to the ingredients
@@ -320,8 +321,12 @@ function simplex_engine.get_line_metadata(line_data, floor_id)
         solver.util.table.add(ingredients, item_key, power_amount)
     end
     if heat_amount > 0 then
-        local item_key = solver.util.pack_item("custom-heating-power", "entity")
+        local item_key = solver.util.pack_item("custom-heat-power", "entity")
         solver.util.table.add(ingredients, item_key, heat_amount)
+    end
+    if heating_amount > 0 then
+        local item_key = solver.util.pack_item("custom-heating-power", "entity")
+        solver.util.table.add(ingredients, item_key, heating_amount)
     end
     if line_data.pollutant_type and emissions ~= 0 then
         local item_key = solver.util.pack_item("custom-" .. line_data.pollutant_type, "entity")
