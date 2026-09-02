@@ -17,8 +17,7 @@ local simplex_engine = {}
 ---@field total_crafts number?
 ---@field machine_limit number?
 ---@field machine_force_limit boolean?
----@field fuel_ratio number?  -- how much of an ingredient is for fuel
----@field heating_ratio number?  -- how much of the heat power is used for self-heating
+---@field fuel_ratio number?  how much of an ingredient is for fuel (treat as 1 if nil)
 
 
 -- @TODO: Move this to a better place. Maybe let the user configure it
@@ -278,15 +277,12 @@ function simplex_engine.get_line_metadata(line_data, floor_id)
     power_amount = power_amount + (line_data.beacon_power or 0)
 
     -- Get heat requirements (frozen surfaces e.g. Aquillo)
-    local heating_ratio = nil  ---@type number?
     if line_data.entities_require_heating then
-        local heating = line_data.machine_proto.heating_energy
-        heat_amount = heat_amount + heating
-        heating_ratio = heating / heat_amount
+        heat_amount = heat_amount + line_data.machine_proto.heating_energy
     end
 
     -- Add fuel to the ingredients
-    local fuel_ratio = nil  ---@type number?
+    local fuel_ratio = nil
     local burner = line_data.machine_proto.burner
     if burner then
         ---@cast line_data.fuel_proto -nil
@@ -315,8 +311,6 @@ function simplex_engine.get_line_metadata(line_data, floor_id)
         -- Handle special case where fuel is also an ingredient
         if fuel_as_ingredient > 0 then
             fuel_ratio = fuel_amount / (fuel_amount + fuel_as_ingredient)
-        else
-            fuel_ratio = 1.0
         end
     end
 
@@ -326,7 +320,7 @@ function simplex_engine.get_line_metadata(line_data, floor_id)
         solver.util.table.add(ingredients, item_key, power_amount)
     end
     if heat_amount > 0 then
-        local item_key = solver.util.pack_item("custom-heat-power", "entity")
+        local item_key = solver.util.pack_item("custom-heating-power", "entity")
         solver.util.table.add(ingredients, item_key, heat_amount)
     end
     if line_data.pollutant_type and emissions ~= 0 then
@@ -346,8 +340,7 @@ function simplex_engine.get_line_metadata(line_data, floor_id)
         total_crafts = total_crafts,
         machine_limit = line_data.machine_limit.limit,
         machine_force_limit = line_data.machine_limit.force_limit,
-        fuel_ratio = fuel_ratio,
-        heating_ratio = heating_ratio
+        fuel_ratio = fuel_ratio
     }  ---@type LineMetadata
 end
 
@@ -465,37 +458,16 @@ function simplex_engine.update_line(player_index, floor_id, line_data, scale_fac
 
     -- Update the fuel
     if line_data.fuel_proto then  ---@cast line_data.fuel_name -nil
-        local item_key = solver.util.pack_item(line_data.fuel_name,line_data.fuel_proto.type)
-        local item_amount = ingredients[item_key]
-        if item_amount then
-            if data.fuel_ratio and data.fuel_ratio < 1 - MAGIC_NUMBERS.margin_of_error then
-                fuel_amount = machine_amount * item_amount * data.fuel_ratio
-                ingredients[item_key] = item_amount * (1 - data.fuel_ratio)
-            else
-                fuel_amount = machine_amount * item_amount
-                ingredients[item_key] = nil
+        for item_key, amount in pairs(ingredients) do
+            if item_key == solver.util.pack_item(line_data.fuel_name,line_data.fuel_proto.type) then
+                if data.fuel_ratio then
+                    fuel_amount = machine_amount * amount * data.fuel_ratio
+                    ingredients[item_key] = ingredients[item_key] * (1 - data.fuel_ratio)
+                else
+                    fuel_amount = machine_amount * amount
+                    ingredients[item_key] = nil
+                end
             end
-        end
-    end
-
-    -- Update the heating
-    if line_data.entities_require_heating then
-        local heat_key = solver.util.pack_item("custom-heat-power", "entity")
-        local heating_key = solver.util.pack_item("custom-heating-power", "entity")
-        local heat_amount = ingredients[heat_key]
-
-        if heat_amount then
-            local heating_amount = 0.0
-
-            if data.heating_ratio and data.heating_ratio < 1 - MAGIC_NUMBERS.margin_of_error then
-                heating_amount = machine_amount * heat_amount * data.heating_ratio
-                ingredients[heat_key] = heat_amount * (1 - data.heating_ratio)
-            else
-                heating_amount = machine_amount * heat_amount
-                ingredients[heat_key] = nil
-            end
-
-            solver.util.table.add(ingredients, heating_key, heating_amount)
         end
     end
 
