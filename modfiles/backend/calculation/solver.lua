@@ -143,6 +143,8 @@ local function generate_floor_data(player, factory, floor, calculate_emissions)
         lines = {}
     }  ---@type FloorData
 
+    local relevant_line_active = true
+
     for line in floor:iterator() do
         local line_data = { id = line.id }
 
@@ -155,7 +157,8 @@ local function generate_floor_data(player, factory, floor, calculate_emissions)
             if line:get_blocker() ~= nil then
                 -- Useless lines don't need to run through the solver
                 set_blank_line(player, floor, line)
-            else
+                if line == floor.first and floor.level > 1 then relevant_line_active = false end
+            elseif relevant_line_active then
                 local machine = line.machine
                 local recipe_proto = line.recipe.proto  ---@as FPRecipePrototype
 
@@ -204,6 +207,8 @@ local function generate_floor_data(player, factory, floor, calculate_emissions)
                 end
 
                 table.insert(floor_data.lines, line_data)
+            else
+                set_blank_line(player, floor, line)
             end
         end
     end
