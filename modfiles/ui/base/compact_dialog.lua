@@ -148,8 +148,7 @@ local function add_recipe_button(parent_flow, line, relevant_line, metadata)
     end
 
     local recipe_proto = relevant_line.recipe.proto
-    local tooltip = {"", {"fp.tt_title", recipe_proto.localised_name}, note,
-        "\n", metadata.action_tooltips["act_on_compact_recipe"]}
+    local tooltip = {"", {"fp.tt_title", recipe_proto.localised_name}, note}
 
     ---@class ActOnCompactRecipeTags
     ---@field line_id ObjectID
@@ -171,7 +170,7 @@ local function add_modules_flow(parent_flow, line, module_set, metadata)
         local title_line = (not quality_proto.always_show) and {"fp.tt_title", module.proto.localised_name}
             or {"fp.tt_title_with_note", module.proto.localised_name, quality_proto.rich_text}
         local number_line = {"", "\n", module.amount, " ", {"fp.pl_module", module.amount}}
-        local tooltip = {"", title_line, number_line, "\n", metadata.action_tooltips["act_on_compact_module"]}
+        local tooltip = {"", title_line, number_line}
         local style = (line.done) and "fflib_slot_button_default_grayscale_small" or "fflib_slot_button_default_small"
 
         ---@class ActOnCompactModuleTags
@@ -198,7 +197,7 @@ local function add_machine_flow(parent_flow, line, metadata)
         local title_line = (not quality_proto.always_show) and {"fp.tt_title", machine_proto.localised_name}
             or {"fp.tt_title_with_note", machine_proto.localised_name, quality_proto.rich_text}
         local amount, tooltip_line = lib.format.machine_amount(machine.amount, true)
-        local tooltip = {"", title_line, tooltip_line, "\n", metadata.action_tooltips["act_on_compact_machine"]}
+        local tooltip = {"", title_line, tooltip_line}
         local style = (line.done) and "fflib_slot_button_default_grayscale_small" or "fflib_slot_button_default_small"
 
         ---@class ActOnCompactMachineTags
@@ -226,7 +225,7 @@ local function add_beacon_flow(parent_flow, line, metadata)
         local title_line = (not quality_proto.always_show) and {"fp.tt_title", beacon_proto.localised_name}
             or {"fp.tt_title_with_note", beacon_proto.localised_name, quality_proto.rich_text}
         local number_line = {"", "\n", beacon.amount, " ", {"fp.pl_beacon", beacon.amount}}
-        local tooltip = {"", title_line, number_line, "\n", metadata.action_tooltips["act_on_compact_beacon"]}
+        local tooltip = {"", title_line, number_line}
         local style = (line.done) and "fflib_slot_button_default_grayscale_small" or "fflib_slot_button_default_small"
 
         ---@class ActOnCompactBeaconTags
@@ -261,7 +260,7 @@ local function add_item_flow(line, relevant_line, item_category, button_color, m
         local amount, number_tooltip = nil, nil
         button_color = (relevant_line.done) and "default_grayscale" or button_color
         local name_line = {"", {"fp.tt_title", {"", proto.localised_name}}}
-        local action_line, temperature_line = "", ""  ---@type LocalisedString, LocalisedString
+        local temperature_line = ""  ---@type LocalisedString
 
         ---@class ActOnCompactItemTags
         ---@field line_id ObjectID
@@ -286,7 +285,6 @@ local function add_item_flow(line, relevant_line, item_category, button_color, m
                 button_color = (relevant_line.done) and "disabled_grayscale" or "disabled"
             else
                 tags.on_gui_click = "act_on_compact_item"
-                action_line = {"", "\n", metadata.action_tooltips["act_on_compact_item"]}
 
                 if type == "fluid" and item_category == "ingredients" and line.class ~= "Floor" then
                     local temperature_data = line.recipe.temperature_data[proto.name]
@@ -304,7 +302,7 @@ local function add_item_flow(line, relevant_line, item_category, button_color, m
         end
 
         local number_line = (number_tooltip) and {"", "\n", number_tooltip} or ""
-        local tooltip = {"", name_line, temperature_line, number_line, action_line}
+        local tooltip = {"", name_line, temperature_line, number_line}
         local style = "fflib_slot_button_" .. button_color .. "_small"
 
         local button = item_table.add{type="sprite-button", tags=tags, sprite=proto.sprite, number=amount,
@@ -374,8 +372,7 @@ local function add_item_flow(line, relevant_line, item_category, button_color, m
 
         style = (relevant_line.done) and "fflib_slot_button_default_grayscale_small" or style
         local number_line = (number_tooltip) and {"", "\n", number_tooltip} or ""
-        local tooltip = {"", name_line, temperature_line, number_line, "\n",
-            metadata.action_tooltips["act_on_compact_item"]}
+        local tooltip = {"", name_line, temperature_line, number_line}
 
         ---@class ActOnCompactFuelTags
         ---@field fuel_id ObjectID
@@ -402,6 +399,7 @@ end
 local function refresh_compact_header(player, factory)
     local player_table = lib.globals.player_table(player)
     local compact_elements = player_table.ui_state.compact_elements
+    local tooltips = player_table.ui_state.tooltips.compact_dialog
 
     local attach_factory_products = player_table.preferences.attach_factory_products
     compact_elements.name_label.caption = factory:tostring(attach_factory_products, true)
@@ -432,11 +430,9 @@ local function refresh_compact_header(player, factory)
     local item_buttons = compact_elements.item_buttons
     local show_floor_items = player_table.preferences.show_floor_items
     local relevant_floor = (show_floor_items) and current_floor or factory.top_floor
-    local action_tooltip = MODIFIER_ACTIONS["act_on_compact_ingredient"].tooltip
 
     for index, ingredient in pairs(relevant_floor.ingredients) do
         local amount, number_tooltip = nil, nil
-        local action_line = ""  ---@type LocalisedString
 
         ---@class ActOnCompactIngredientTags
         ---@field floor_id ObjectID
@@ -453,17 +449,16 @@ local function refresh_compact_header(player, factory)
             if amount == -1 then goto skip_ingredient end  -- an amount of -1 means it was below the margin of error
 
             tags.on_gui_click = "act_on_compact_ingredient"
-            action_line = {"", "\n", action_tooltip}
         end
 
         local style = "fflib_slot_button_default"
         local number_line = (number_tooltip) and {"", "\n", number_tooltip} or ""  ---@type LocalisedString
-        local tooltip = {"", {"fp.tt_title", ingredient.proto.localised_name}, number_line, action_line}
+        local tooltip = {"", {"fp.tt_title", ingredient.proto.localised_name}, number_line}
 
-        local button = table_items.add{type="sprite-button", tags=tags, number=amount, tooltip=tooltip,
+        local button = table_items.add{type="sprite-button", tags=tags, number=amount,
             sprite=ingredient.proto.sprite, style=style, mouse_button_filter={"left-and-right"},
             raise_hover_events=true}
-        player_table.ui_state.tooltips[button.index] = tooltip
+        tooltips[button.index] = tooltip
 
         local type, name = ingredient.proto.type, ingredient.proto.name
         item_buttons[type] = item_buttons[type] or {}
@@ -495,19 +490,11 @@ local function refresh_compact_production(player)
     ---@field parent LuaGuiElement
     ---@field column_counts CompactColumnCounts
     ---@field tooltips table
-    ---@field action_tooltips table
     local metadata = {
         player = player,
         parent = production_table,
         column_counts = column_counts,
-        tooltips = ui_state.tooltips.compact_dialog,
-        action_tooltips = {
-            act_on_compact_recipe = MODIFIER_ACTIONS["act_on_compact_recipe"].tooltip,
-            act_on_compact_module = MODIFIER_ACTIONS["act_on_compact_module"].tooltip,
-            act_on_compact_machine = MODIFIER_ACTIONS["act_on_compact_machine"].tooltip,
-            act_on_compact_beacon = MODIFIER_ACTIONS["act_on_compact_beacon"].tooltip,
-            act_on_compact_item = MODIFIER_ACTIONS["act_on_compact_item"].tooltip
-        }
+        tooltips = ui_state.tooltips.compact_dialog
     }
 
     for line in floor:iterator() do -- build the individual lines

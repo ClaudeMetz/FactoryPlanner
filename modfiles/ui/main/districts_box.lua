@@ -113,14 +113,13 @@ local function build_items_flow(player, parent, district)
         ---@field item_id ObjectID
         ---@field context "districts_box"
         local tags = {mod="fp", item_id=item.id, on_gui_hover="set_tooltip", context="districts_box"}
-        local action_line = nil
+
         local diff_number, amount_tooltip = nil, nil
         local total_tooltip = nil
 
         if item.proto.type == "entity" and item.proto.special then
             if item.overall == "consumption" then
                 tags.on_gui_click = "act_on_district_special_ingredient"
-                action_line = {"", "\n", MODIFIER_ACTIONS["act_on_district_special_ingredient"].tooltip}
             end
 
             diff_number = lib.format.button_number(item.abs_diff)
@@ -129,7 +128,6 @@ local function build_items_flow(player, parent, district)
         else
             local action = (item.overall == "production") and "act_on_district_product" or "act_on_district_ingredient"
             tags.on_gui_click = action
-            action_line = {"", "\n", MODIFIER_ACTIONS[action].tooltip}
 
             diff_number, amount_tooltip = item_views.process_item(player, item.proto, item.abs_diff, nil)
             _, total_tooltip = item_views.process_item(player, item.proto, total_amount, nil)
@@ -141,7 +139,7 @@ local function build_items_flow(player, parent, district)
         local title_line = {"fp.tt_title", item.proto.localised_name}
         local diff_line = {"fp.item_amount_" .. item.overall, amount_tooltip}
         local total_line = {"fp.item_amount_total", total_tooltip}
-        local tooltip = {"", title_line, diff_line, total_line, action_line}
+        local tooltip = {"", title_line, diff_line, total_line}
 
         local button = relevant_table.add{type="sprite-button", number=diff_number, style=style,
             sprite=item.proto.sprite, tags=tags, raise_hover_events=true, mouse_button_filter={"left-and-right"}}

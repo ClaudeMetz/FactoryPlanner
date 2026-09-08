@@ -88,7 +88,7 @@ local function refresh_item_box(player, factory, show_floor_items, item_category
             else style = "fflib_slot_button_yellow" end
 
             local tooltip = {"", {"fp.tt_title", product.proto.localised_name}, "\n", number_tooltip,
-                satisfaction_line, "\n", MODIFIER_ACTIONS[action].tooltip}
+                satisfaction_line}
 
             local tags = {mod="fp", on_gui_click=action, item_category=item_category, item_id=product.id,
                 on_gui_hover="set_tooltip", context="item_boxes"}  ---@type HandleItemBoxClickTags
@@ -125,8 +125,7 @@ local function refresh_item_box(player, factory, show_floor_items, item_category
             end
 
             local style = (item_category == "byproduct") and "fflib_slot_button_red" or "fflib_slot_button_default"
-            local tooltip = {"", {"fp.tt_title", item.proto.localised_name}, "\n", number_tooltip,
-                "\n", MODIFIER_ACTIONS[action].tooltip}
+            local tooltip = {"", {"fp.tt_title", item.proto.localised_name}, "\n", number_tooltip}
 
             local tags = {mod="fp", on_gui_click=action, item_category=item_category, item_id=item.id, item_index=index,
                 on_gui_hover="set_tooltip", context="item_boxes"}  ---@type HandleItemBoxClickTags

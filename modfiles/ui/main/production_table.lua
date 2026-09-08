@@ -135,7 +135,7 @@ function builders.recipe(line, parent_flow, metadata, indent)
         or {"fp.tt_title_with_note", recipe_proto.localised_name, note}
     local action = (first_subfloor_line) and "act_on_floor_recipe" or "act_on_line_recipe"
     local effects_section = (line.class == "Line") and format_effects_tooltip(relevant_line.effects_tooltip) or ""
-    local tooltip = {"", first_line, status_line, effects_section, "\n", MODIFIER_ACTIONS[action].tooltip}
+    local tooltip = {"", first_line, status_line, effects_section}
     local style = "fflib_slot_button_" .. color .. variant
 
     ---@class ActOnLineObjectRecipe
@@ -178,8 +178,7 @@ local function add_module_flow(parent_flow, module_set, metadata)
         local title_line = (not quality_proto.always_show) and {"fp.tt_title", module.proto.localised_name}
             or {"fp.tt_title_with_note", module.proto.localised_name, quality_proto.rich_text}
         local number_line = {"", "\n", module.amount, " ", {"fp.pl_module", module.amount}}
-        local tooltip = {"", title_line, number_line, format_effects_tooltip(module.effects_tooltip),
-            "\n", MODIFIER_ACTIONS["act_on_line_module"].tooltip}
+        local tooltip = {"", title_line, number_line, format_effects_tooltip(module.effects_tooltip)}
 
         ---@class ActOnLineModuleTags
         ---@field module_id ObjectID
@@ -237,8 +236,7 @@ function builders.machine(line, parent_flow, metadata)
         if note ~= nil then table.insert(tooltip_line--[[@as table]], {"", " - ", note}) end
         local title_line = (not quality_proto.always_show) and {"fp.tt_title", machine_proto.localised_name}
             or {"fp.tt_title_with_note", machine_proto.localised_name, quality_proto.rich_text}
-        local tooltip = {"", title_line, tooltip_line, format_effects_tooltip(machine.effects_tooltip),
-            "\n", MODIFIER_ACTIONS["act_on_line_machine"].tooltip}
+        local tooltip = {"", title_line, tooltip_line, format_effects_tooltip(machine.effects_tooltip)}
 
         ---@class ActOnLineMachineTags
         ---@field machine_id ObjectID
@@ -280,8 +278,7 @@ function builders.beacon(line, parent_flow, metadata)
         if beacon.total_amount then table.insert(number_line, {"", " - ", {"fp.in_total", beacon.total_amount}}) end
         local effectivity = ("%.2f"):format(beacon:overall_effectivity() * 100):gsub("%.?0+$", "")
         local effectivity_line = {"", "\n", {"fp.transmission_percentage", effectivity}}
-        local tooltip = {"", title_line, number_line, effectivity_line, format_effects_tooltip(beacon.effects_tooltip),
-            "\n", MODIFIER_ACTIONS["act_on_line_beacon"].tooltip}
+        local tooltip = {"", title_line, number_line, effectivity_line, format_effects_tooltip(beacon.effects_tooltip)}
 
         ---@class ActOnLineBeaconTags
         ---@field beacon_id ObjectID
@@ -330,9 +327,7 @@ local function add_catalysts(line, parent_flow, category, metadata)
         end
 
         local number_line = (number_tooltip) and {"", "\n", number_tooltip} or ""
-        local action_line = {"", "\n", MODIFIER_ACTIONS[action_name].tooltip}
-
-        local tooltip = {"", name_line, temperature_line, number_line, action_line}
+        local tooltip = {"", name_line, temperature_line, number_line}
         local tags = {mod="fp", on_gui_click=action_name, on_gui_hover="set_tooltip",
             context="production_table", line_id=line.id, item_index=index}
 
@@ -362,7 +357,7 @@ function builders.products(line, parent_flow, metadata)
 
         local relevant_flow = nil
         local style = "fflib_slot_button_default_small"
-        local priority_line, action_tooltip = "", nil  ---@type LocalisedString, LocalisedString?
+        local priority_line = ""  ---@type LocalisedString
         local amount, number_tooltip = nil, nil
         local tags = {mod="fp", on_gui_hover="set_tooltip", context="production_table"}
 
@@ -373,7 +368,6 @@ function builders.products(line, parent_flow, metadata)
             number_tooltip = lib.format.special_tooltip(proto.name, product.amount)
         else
             relevant_flow = items_flow
-            action_tooltip = {"", "\n", MODIFIER_ACTIONS["act_on_line_product"].tooltip}
 
             if line.class ~= "Floor" and metadata.solver == "sequential"
                     and line.recipe.priority_item == proto then
@@ -393,7 +387,7 @@ function builders.products(line, parent_flow, metadata)
 
         local name_line = {"fp.tt_title", proto.localised_name}
         local number_line = (number_tooltip) and {"", "\n", number_tooltip} or ""
-        local tooltip = {"", name_line, priority_line, number_line, action_tooltip}
+        local tooltip = {"", name_line, priority_line, number_line}
 
         local button = relevant_flow.add{type="sprite-button", sprite=proto.sprite, style=style,
             tags=tags, number=amount, mouse_button_filter={"left-and-right"}, raise_hover_events=true}
@@ -439,7 +433,7 @@ function builders.byproducts(line, parent_flow, metadata)
         end
 
         local number_line = (number_tooltip) and {"", "\n", number_tooltip} or ""
-        local tooltip = {"", {"fp.tt_title", proto.localised_name}, number_line, "\n", MODIFIER_ACTIONS[action].tooltip}
+        local tooltip = {"", {"fp.tt_title", proto.localised_name}, number_line}
 
         local tags = {mod="fp", on_gui_click=action, line_id=line.id, item_index=index,
             on_gui_hover="set_tooltip", context="production_table"}
@@ -496,8 +490,7 @@ local function add_fuel(line, parent_flow, metadata)
     end
 
     local number_line = (number_tooltip) and {"", "\n", number_tooltip} or ""
-    local tooltip = {"", name_line, temperature_line, performance_line, number_line, satisfaction_line,
-        "\n", MODIFIER_ACTIONS["act_on_line_fuel"].tooltip}
+    local tooltip = {"", name_line, temperature_line, performance_line, number_line, satisfaction_line}
 
     ---@class ActOnLineFuelTags
     ---@field fuel_id ObjectID
@@ -522,8 +515,7 @@ local function add_special_ingredient(line, parent_flow, metadata, item, index)
     end
 
     local number_line = {"", "\n", lib.format.special_tooltip(item.proto.name, item.amount)}
-    local tooltip = {"", {"fp.tt_title", item.proto.localised_name}, number_line, satisfaction_line,
-        "\n", MODIFIER_ACTIONS["act_on_line_special_ingredient"].tooltip}
+    local tooltip = {"", {"fp.tt_title", item.proto.localised_name}, number_line, satisfaction_line}
 
     local button_number = lib.format.button_number(item.amount)
     local tags = {mod="fp", on_gui_click="act_on_line_special_ingredient", item_category="ingredient", line_id=line.id,
@@ -601,7 +593,6 @@ function builders.ingredients(line, parent_flow, metadata)
         local tags = {mod="fp", on_gui_hover="set_tooltip", context="production_table"}
 
         if proto.type ~= "entity" then
-            table.insert(tooltip, {"", "\n", MODIFIER_ACTIONS["act_on_line_ingredient"].tooltip})
             tags.on_gui_click = "act_on_line_ingredient"
             tags.line_id = line.id
             tags.item_index = index

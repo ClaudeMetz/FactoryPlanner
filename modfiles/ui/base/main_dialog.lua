@@ -181,10 +181,21 @@ end
 ---@param element LuaGuiElement
 function main_dialog.set_tooltip(player, element)
     local ui_state = lib.globals.ui_state(player)
+    -- Split into contexts so they can be cleared when the GUI is rebuilt
     local tooltips = ui_state.tooltips[element.tags.context]
     if tooltips[element.index] ~= nil then
-        element.tooltip = tooltips[element.index]
+        local tooltip = tooltips[element.index]
         tooltips[element.index] = nil
+
+        -- Add actions tooltip if applicable
+        local handler_name = element.tags.on_gui_click  ---@as string?
+        local action_table = handler_name and MODIFIER_ACTIONS[handler_name] or nil
+        if action_table and action_table.actions then
+            local action_tooltip = lib.actions.generate_tooltip(action_table.actions)
+            tooltip = {"", tooltip, "\n", action_tooltip}
+        end
+
+        element.tooltip = tooltip
     end
 end
 

@@ -200,8 +200,7 @@ local function refresh_factory_list(player)
                 ---@field context "factory_list"
                 local tags = {mod="fp", on_gui_click="act_on_factory", factory_id=factory.id,
                     on_gui_hover="set_tooltip", context="factory_list"}
-                local caption, info_tooltip = factory:tostring(attach_factory_products, false)
-                local tooltip = {"", info_tooltip, "\n", MODIFIER_ACTIONS["act_on_factory"].tooltip}
+                local caption, tooltip = factory:tostring(attach_factory_products, false)
                 local factory_button = button_flow.add{type="button", tags=tags, caption=caption, toggled=selected,
                     style="list_box_item", mouse_button_filter={"left-and-right"}, raise_hover_events=true}
                 factory_button.style.padding = {0, 12, 0, 4}

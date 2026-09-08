@@ -105,7 +105,6 @@ for _, listener in pairs(event_listeners) do
                         action_table.shortcuts[modifier_action.shortcut] = action_details
                     end
                 end
-                action_table.tooltip = lib.actions.generate_tooltip(action_table.actions)
             end
 
             if MODIFIER_ACTIONS[action.name] then error("Duplicate action: " .. action.name) end
@@ -149,7 +148,6 @@ end
 ---@field handler GUIEventHandler | GUIActionEventHandler
 ---@field actions GUIActionTable[]
 ---@field shortcuts table<string, GUIActionTable>
----@field tooltip LocalisedString
 ---@field timeout MapTick
 
 ---@class GUIActionTable
