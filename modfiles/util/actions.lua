@@ -1,30 +1,6 @@
 local _actions = {}
 
----@alias ActionLimitations { archive_open: boolean?, sequential_solver: boolean? }
----@alias ActiveLimitations { archive_open: boolean, sequential_solver: boolean }
 ---@alias ActionList table<string, string>
-
----@param player LuaPlayer
----@return ActiveLimitations
-function _actions.current_limitations(player)
-    local factory = lib.context.get(player, "Factory")  ---@as Factory?
-    return {
-        archive_open = (factory ~= nil) and factory.archived or false,
-        sequential_solver = (factory ~= nil) and factory.solver == "sequential" or false
-    }
-end
-
----@param action_limitations ActionLimitations
----@param active_limitations ActiveLimitations
----@return boolean
-function _actions.allowed(action_limitations, active_limitations)
-    -- If a particular limitation is nil, it indicates that the action is allowed regardless
-    -- If it is non-nil, it needs to match the current state of the limitation exactly
-    for limitation_name, limitation in pairs(action_limitations) do
-        if active_limitations[limitation_name] ~= limitation then return false end
-    end
-    return true
-end
 
 -- Returns whether rate limiting is active for the given action, stopping it from proceeding
 -- This is essentially to prevent duplicate commands in quick succession, enabled by lag

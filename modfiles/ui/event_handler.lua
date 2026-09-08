@@ -78,7 +78,6 @@ end)
 
 ---@class GUIActionDefinition
 ---@field shortcut string?
----@field limitations ActionLimitations?
 ---@field core boolean?
 
 ---@param definitions table<string, GUIActionDefinition>
@@ -89,7 +88,6 @@ local function compile_actions(definitions)
     for name, definition in pairs(definitions) do
         local action = {
             name = name,
-            limitations = definition.limitations or {},
             shortcut_string = lib.actions.shortcut_string(definition.shortcut),
             core = definition.core
         }  ---@type GUIAction
@@ -159,7 +157,6 @@ end
 
 ---@class GUIAction
 ---@field name string
----@field limitations ActionLimitations
 ---@field shortcut_string LocalisedString?
 ---@field core boolean?
 
@@ -218,10 +215,7 @@ local function handle_gui_event(event)
             local modifier_action = registered_handler.shortcuts--[[@cast -nil]][click]
             if not modifier_action then return end  -- meaning the used modifiers do not have an associated action
 
-            local active_limitations = lib.actions.current_limitations(player)
-            if lib.actions.allowed(modifier_action.limitations, active_limitations) then
-                registered_handler.handler(player, tags, modifier_action.name)
-            end
+            registered_handler.handler(player, tags, modifier_action.name)
         end
     else
         registered_handler.handler(player, tags, event)  -- gets event as third parameter

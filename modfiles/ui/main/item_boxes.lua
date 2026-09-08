@@ -327,13 +327,13 @@ listeners.gui = {
         {
             name = "act_on_top_level_product",
             actions_table = {
-                add_recipe = {shortcut="left", limitations={archive_open=false}, core=true},
-                edit = {shortcut="control-left", limitations={archive_open=false}, core=true},
-                delete = {shortcut="control-right", limitations={archive_open=false}},
-                move_left = {limitations={archive_open=false}},
-                move_right = {limitations={archive_open=false}},
+                add_recipe = {shortcut="left", core=true},
+                edit = {shortcut="control-left", core=true},
+                delete = {shortcut="control-right"},
+                move_left = {},
+                move_right = {},
                 copy = {shortcut="shift-right"},
-                paste = {shortcut="shift-left", limitations={archive_open=false}},
+                paste = {shortcut="shift-left"},
                 put_into_cursor = {shortcut="alt-right"},
                 factoriopedia = {shortcut="alt-left"}
             },
@@ -342,11 +342,11 @@ listeners.gui = {
         {
             name = "act_on_top_level_special_product",
             actions_table = {
-                add_recipe = {shortcut="left", limitations={archive_open=false}, core=true},
-                edit = {shortcut="control-left", limitations={archive_open=false}, core=true},
-                delete = {shortcut="control-right", limitations={archive_open=false}},
-                move_left = {limitations={archive_open=false}},
-                move_right = {limitations={archive_open=false}}
+                add_recipe = {shortcut="left", core=true},
+                edit = {shortcut="control-left", core=true},
+                delete = {shortcut="control-right"},
+                move_left = {},
+                move_right = {}
             },
             handler = handle_item_button_click
         },
@@ -362,7 +362,7 @@ listeners.gui = {
         {
             name = "act_on_floor_byproduct",
             actions_table = {
-                add_recipe = {shortcut="left", limitations={archive_open=false}, core=true},
+                add_recipe = {shortcut="left", core=true},
                 copy = {shortcut="shift-right"},
                 put_into_cursor = {shortcut="alt-right"},
                 factoriopedia = {shortcut="alt-left"}
@@ -372,7 +372,7 @@ listeners.gui = {
         {
             name = "act_on_floor_ingredient",
             actions_table = {
-                add_recipe = {shortcut="left", limitations={archive_open=false}, core=true},
+                add_recipe = {shortcut="left", core=true},
                 copy = {shortcut="shift-right"},
                 put_into_cursor = {shortcut="alt-right"},
                 factoriopedia = {shortcut="alt-left"}
@@ -382,7 +382,7 @@ listeners.gui = {
         {
             name = "act_on_floor_special",
             actions_table = {
-                add_recipe = {shortcut="left", limitations={archive_open=false}, core=true}
+                add_recipe = {shortcut="left", core=true}
             },
             handler = handle_item_button_click
         },

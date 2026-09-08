@@ -402,9 +402,9 @@ listeners.gui = {
             actions_table = {
                 open_subfloor = {shortcut="left", core=true},  -- does its own archive check
                 copy = {shortcut="shift-right"},
-                paste = {shortcut="shift-left", limitations={archive_open=false}},
-                toggle = {shortcut="control-left", limitations={archive_open=false}},
-                delete = {shortcut="control-right", limitations={archive_open=false}},
+                paste = {shortcut="shift-left"},
+                toggle = {shortcut="control-left"},
+                delete = {shortcut="control-right"},
                 factoriopedia = {shortcut="alt-left"}
             },
             handler = handle_line_recipe_click
@@ -413,7 +413,7 @@ listeners.gui = {
             name = "act_on_floor_recipe",
             actions_table = {
                 copy = {shortcut="shift-right"},
-                toggle = {shortcut="control-left", limitations={archive_open=false}},
+                toggle = {shortcut="control-left"},
                 factoriopedia = {shortcut="alt-left"}
             },
             handler = handle_floor_recipe_click
@@ -421,9 +421,9 @@ listeners.gui = {
         {
             name = "act_on_line_machine",
             actions_table = {
-                edit = {shortcut="left", limitations={archive_open=false}, core=true},
+                edit = {shortcut="left", core=true},
                 copy = {shortcut="shift-right"},
-                paste = {shortcut="shift-left", limitations={archive_open=false}},
+                paste = {shortcut="shift-left"},
                 put_into_cursor = {shortcut="alt-right"},
                 factoriopedia = {shortcut="alt-left"}
             },
@@ -436,10 +436,10 @@ listeners.gui = {
         {
             name = "act_on_line_beacon",
             actions_table = {
-                edit = {shortcut="left", limitations={archive_open=false}, core=true},
+                edit = {shortcut="left", core=true},
                 copy = {shortcut="shift-right"},
-                paste = {shortcut="shift-left", limitations={archive_open=false}},
-                delete = {shortcut="control-right", limitations={archive_open=false}},
+                paste = {shortcut="shift-left"},
+                delete = {shortcut="control-right"},
                 put_into_cursor = {shortcut="alt-right"},
                 factoriopedia = {shortcut="alt-left"}
             },
@@ -452,10 +452,10 @@ listeners.gui = {
         {
             name = "act_on_line_module",
             actions_table = {
-                edit = {shortcut="left", limitations={archive_open=false}, core=true},
+                edit = {shortcut="left", core=true},
                 copy = {shortcut="shift-right"},
-                paste = {shortcut="shift-left", limitations={archive_open=false}},
-                delete = {shortcut="control-right", limitations={archive_open=false}},
+                paste = {shortcut="shift-left"},
+                delete = {shortcut="control-right"},
                 factoriopedia = {shortcut="alt-left"}
             },
             handler = handle_module_click
@@ -463,7 +463,7 @@ listeners.gui = {
         {
             name = "act_on_line_product",
             actions_table = {
-                prioritize = {shortcut="control-right", limitations={archive_open=false, sequential_solver=true}},
+                prioritize = {shortcut="control-right"},
                 copy = {shortcut="shift-right"},
                 put_into_cursor = {shortcut="alt-right"},
                 factoriopedia = {shortcut="alt-left"}
@@ -477,8 +477,8 @@ listeners.gui = {
         {
             name = "act_on_line_byproduct",
             actions_table = {
-                add_recipe_to_end = {shortcut="left", limitations={archive_open=false}, core=true},
-                add_recipe_below = {limitations={archive_open=false}},
+                add_recipe_to_end = {shortcut="left", core=true},
+                add_recipe_below = {},
                 copy = {shortcut="shift-right"},
                 put_into_cursor = {shortcut="alt-right"},
                 factoriopedia = {shortcut="alt-left"}
@@ -492,8 +492,8 @@ listeners.gui = {
         {
             name = "act_on_line_special_byproduct",
             actions_table = {
-                add_recipe_to_end = {shortcut="left", limitations={archive_open=false}, core=true},
-                add_recipe_below = {limitations={archive_open=false}}
+                add_recipe_to_end = {shortcut="left", core=true},
+                add_recipe_below = {}
             },
             handler = function(player, tags, action)
                 ---@cast tags ActOnLineItem
@@ -504,12 +504,12 @@ listeners.gui = {
         {
             name = "act_on_line_ingredient",
             actions_table = {
-                add_recipe_to_end = {shortcut="left", limitations={archive_open=false}, core=true},
-                add_recipe_below = {limitations={archive_open=false}},
-                edit_temperature = {shortcut="control-left", limitations={archive_open=false}, core=true},
-                prioritize = {shortcut="control-right", limitations={archive_open=false, sequential_solver=true}},
+                add_recipe_to_end = {shortcut="left", core=true},
+                add_recipe_below = {},
+                edit_temperature = {shortcut="control-left", core=true},
+                prioritize = {shortcut="control-right"},
                 copy = {shortcut="shift-right"},
-                paste = {shortcut="shift-left", limitations={archive_open=false}},
+                paste = {shortcut="shift-left"},
                 put_into_cursor = {shortcut="alt-right"},
                 factoriopedia = {shortcut="alt-left"}
             },
@@ -524,9 +524,9 @@ listeners.gui = {
             -- since that is what decides whether it cancels with its peer product at all
             name = "act_on_line_catalyst_ingredient",
             actions_table = {
-                edit_temperature = {shortcut="control-left", limitations={archive_open=false}, core=true},
+                edit_temperature = {shortcut="control-left", core=true},
                 copy = {shortcut="shift-right"},
-                paste = {shortcut="shift-left", limitations={archive_open=false}},
+                paste = {shortcut="shift-left"},
                 put_into_cursor = {shortcut="alt-right"},
                 factoriopedia = {shortcut="alt-left"}
             },
@@ -552,12 +552,12 @@ listeners.gui = {
         {
             name = "act_on_line_fuel",
             actions_table = {
-                add_recipe_to_end = {shortcut="left", limitations={archive_open=false}, core=true},
-                add_recipe_below = {limitations={archive_open=false}},
-                edit_temperature = {shortcut="control-left", limitations={archive_open=false}, core=true},
-                edit_fuel = {limitations={archive_open=false}},
+                add_recipe_to_end = {shortcut="left", core=true},
+                add_recipe_below = {},
+                edit_temperature = {shortcut="control-left", core=true},
+                edit_fuel = {},
                 copy = {shortcut="shift-right"},
-                paste = {shortcut="shift-left", limitations={archive_open=false}},
+                paste = {shortcut="shift-left"},
                 put_into_cursor = {shortcut="alt-right"},
                 factoriopedia = {shortcut="alt-left"}
             },
@@ -566,8 +566,8 @@ listeners.gui = {
         {
             name = "act_on_line_special_ingredient",
             actions_table = {
-                add_recipe_to_end = {shortcut="left", limitations={archive_open=false}, core=true},
-                add_recipe_below = {limitations={archive_open=false}}
+                add_recipe_to_end = {shortcut="left", core=true},
+                add_recipe_below = {}
             },
             handler = function(player, tags, action)
                 ---@cast tags ActOnLineItem
