@@ -433,7 +433,7 @@ listeners.gui = {
         {
             name = "act_on_district_ingredient",
             actions_table = {
-                create_factory = {shortcut="left", show=true},
+                create_factory = {shortcut="left", core=true},
                 copy = {shortcut="shift-right"},
                 put_into_cursor = {shortcut="alt-right"},
                 factoriopedia = {shortcut="alt-left"}
@@ -443,7 +443,7 @@ listeners.gui = {
         {
             name = "act_on_district_special_ingredient",
             actions_table = {
-                create_factory = {shortcut="left", show=true}
+                create_factory = {shortcut="left", core=true}
             },
             handler = handle_item_button_click
         }

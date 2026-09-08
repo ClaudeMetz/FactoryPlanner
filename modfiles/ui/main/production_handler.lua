@@ -400,7 +400,7 @@ listeners.gui = {
         {
             name = "act_on_line_recipe",
             actions_table = {
-                open_subfloor = {shortcut="left", show=true},  -- does its own archive check
+                open_subfloor = {shortcut="left", core=true},  -- does its own archive check
                 copy = {shortcut="shift-right"},
                 paste = {shortcut="shift-left", limitations={archive_open=false}},
                 toggle = {shortcut="control-left", limitations={archive_open=false}},
@@ -421,7 +421,7 @@ listeners.gui = {
         {
             name = "act_on_line_machine",
             actions_table = {
-                edit = {shortcut="left", limitations={archive_open=false}, show=true},
+                edit = {shortcut="left", limitations={archive_open=false}, core=true},
                 copy = {shortcut="shift-right"},
                 paste = {shortcut="shift-left", limitations={archive_open=false}},
                 put_into_cursor = {shortcut="alt-right"},
@@ -436,7 +436,7 @@ listeners.gui = {
         {
             name = "act_on_line_beacon",
             actions_table = {
-                edit = {shortcut="left", limitations={archive_open=false}, show=true},
+                edit = {shortcut="left", limitations={archive_open=false}, core=true},
                 copy = {shortcut="shift-right"},
                 paste = {shortcut="shift-left", limitations={archive_open=false}},
                 delete = {shortcut="control-right", limitations={archive_open=false}},
@@ -452,7 +452,7 @@ listeners.gui = {
         {
             name = "act_on_line_module",
             actions_table = {
-                edit = {shortcut="left", limitations={archive_open=false}, show=true},
+                edit = {shortcut="left", limitations={archive_open=false}, core=true},
                 copy = {shortcut="shift-right"},
                 paste = {shortcut="shift-left", limitations={archive_open=false}},
                 delete = {shortcut="control-right", limitations={archive_open=false}},
@@ -477,7 +477,7 @@ listeners.gui = {
         {
             name = "act_on_line_byproduct",
             actions_table = {
-                add_recipe_to_end = {shortcut="left", limitations={archive_open=false}, show=true},
+                add_recipe_to_end = {shortcut="left", limitations={archive_open=false}, core=true},
                 add_recipe_below = {limitations={archive_open=false}},
                 copy = {shortcut="shift-right"},
                 put_into_cursor = {shortcut="alt-right"},
@@ -492,7 +492,7 @@ listeners.gui = {
         {
             name = "act_on_line_special_byproduct",
             actions_table = {
-                add_recipe_to_end = {shortcut="left", limitations={archive_open=false}, show=true},
+                add_recipe_to_end = {shortcut="left", limitations={archive_open=false}, core=true},
                 add_recipe_below = {limitations={archive_open=false}}
             },
             handler = function(player, tags, action)
@@ -504,9 +504,9 @@ listeners.gui = {
         {
             name = "act_on_line_ingredient",
             actions_table = {
-                add_recipe_to_end = {shortcut="left", limitations={archive_open=false}, show=true},
+                add_recipe_to_end = {shortcut="left", limitations={archive_open=false}, core=true},
                 add_recipe_below = {limitations={archive_open=false}},
-                edit_temperature = {shortcut="control-left", limitations={archive_open=false}, show=true},
+                edit_temperature = {shortcut="control-left", limitations={archive_open=false}, core=true},
                 prioritize = {shortcut="control-right", limitations={archive_open=false, sequential_solver=true}},
                 copy = {shortcut="shift-right"},
                 paste = {shortcut="shift-left", limitations={archive_open=false}},
@@ -524,7 +524,7 @@ listeners.gui = {
             -- since that is what decides whether it cancels with its peer product at all
             name = "act_on_line_catalyst_ingredient",
             actions_table = {
-                edit_temperature = {shortcut="control-left", limitations={archive_open=false}, show=true},
+                edit_temperature = {shortcut="control-left", limitations={archive_open=false}, core=true},
                 copy = {shortcut="shift-right"},
                 paste = {shortcut="shift-left", limitations={archive_open=false}},
                 put_into_cursor = {shortcut="alt-right"},
@@ -552,9 +552,9 @@ listeners.gui = {
         {
             name = "act_on_line_fuel",
             actions_table = {
-                add_recipe_to_end = {shortcut="left", limitations={archive_open=false}, show=true},
+                add_recipe_to_end = {shortcut="left", limitations={archive_open=false}, core=true},
                 add_recipe_below = {limitations={archive_open=false}},
-                edit_temperature = {shortcut="control-left", limitations={archive_open=false}, show=true},
+                edit_temperature = {shortcut="control-left", limitations={archive_open=false}, core=true},
                 edit_fuel = {limitations={archive_open=false}},
                 copy = {shortcut="shift-right"},
                 paste = {shortcut="shift-left", limitations={archive_open=false}},
@@ -566,7 +566,7 @@ listeners.gui = {
         {
             name = "act_on_line_special_ingredient",
             actions_table = {
-                add_recipe_to_end = {shortcut="left", limitations={archive_open=false}, show=true},
+                add_recipe_to_end = {shortcut="left", limitations={archive_open=false}, core=true},
                 add_recipe_below = {limitations={archive_open=false}}
             },
             handler = function(player, tags, action)

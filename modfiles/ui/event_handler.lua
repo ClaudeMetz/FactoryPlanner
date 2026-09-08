@@ -79,7 +79,7 @@ end)
 ---@class GUIActionDefinition
 ---@field shortcut string?
 ---@field limitations ActionLimitations?
----@field show boolean?
+---@field core boolean?
 
 ---@param definitions table<string, GUIActionDefinition>
 ---@return GUIAction[] actions
@@ -91,7 +91,7 @@ local function compile_actions(definitions)
             name = name,
             limitations = definition.limitations or {},
             shortcut_string = lib.actions.shortcut_string(definition.shortcut),
-            show = definition.show
+            core = definition.core
         }  ---@type GUIAction
         table.insert(actions, action)
 
@@ -161,7 +161,7 @@ end
 ---@field name string
 ---@field limitations ActionLimitations
 ---@field shortcut_string LocalisedString?
----@field show boolean?
+---@field core boolean?
 
 ---@class GUIEventData: EventData
 ---@field player_index PlayerIndex

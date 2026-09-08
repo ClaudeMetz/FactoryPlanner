@@ -74,7 +74,7 @@ end
 function _actions.generate_tooltip(actions)
     local tooltip, any_hidden = {""}, false
     for _, action in pairs(actions) do
-        if action.show then
+        if action.core then
             table.insert(tooltip, {"fp.action_line", action.shortcut_string, {"fp.action_" .. action.name}})
         else
             any_hidden = true

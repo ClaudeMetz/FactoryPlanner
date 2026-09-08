@@ -480,7 +480,7 @@ listeners.gui = {
         {
             name = "act_on_factory",
             actions_table = {
-                select = {shortcut="left", show=true},
+                select = {shortcut="left", core=true},
                 edit = {shortcut="control-left"},
                 duplicate = {shortcut="shift-left"},
                 delete = {shortcut="control-right"}
