@@ -38,7 +38,7 @@ MAGIC_NUMBERS = {
 }
 
 -- Handlers saved in a central location for access via name
-MODIFIER_ACTIONS = {}  ---@type table<string, GUIEventTable>
+GUI_HANDLERS = {}  ---@type table<string, RegisteredGUIHandler>
 GLOBAL_HANDLERS = {}  ---@type table<string, function>
 
 lib = require('util.lib')

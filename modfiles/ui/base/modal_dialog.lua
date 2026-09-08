@@ -244,7 +244,7 @@ end
 ---@param player LuaPlayer
 ---@param menu_tags Tags
 ---@param handler string
----@param actions GUIActionTable[]
+---@param actions GUIAction[]
 ---@param location GuiLocation
 function modal_dialog.open_context_menu(player, menu_tags, handler, actions, location)
     local ui_state = lib.globals.ui_state(player)
@@ -436,7 +436,7 @@ listeners.gui = {
             handler = function(player, tags, _)
                 ---@cast tags ChooseContextActionTags
                 modal_dialog.close_context_menu(player)
-                MODIFIER_ACTIONS[tags.handler].handler(player, tags.tags, tags.action)
+                GUI_HANDLERS[tags.handler].handler(player, tags.tags, tags.action)
             end
         },
         {

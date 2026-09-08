@@ -189,9 +189,9 @@ function main_dialog.set_tooltip(player, element)
 
         -- Add actions tooltip if applicable
         local handler_name = element.tags.on_gui_click  ---@as string?
-        local action_table = handler_name and MODIFIER_ACTIONS[handler_name] or nil
-        if action_table and action_table.actions then
-            local action_tooltip = lib.actions.generate_tooltip(action_table.actions)
+        local registered_handler = handler_name and GUI_HANDLERS[handler_name] or nil
+        if registered_handler and registered_handler.actions then
+            local action_tooltip = lib.actions.generate_tooltip(registered_handler.actions)
             tooltip = {"", tooltip, "\n", action_tooltip}
         end
 

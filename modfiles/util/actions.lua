@@ -69,7 +69,7 @@ function _actions.shortcut_string(shortcut)
     return {"fp.action_click", modifier_string}
 end
 
----@param actions GUIActionTable[]
+---@param actions GUIAction[]
 ---@return LocalisedString
 function _actions.generate_tooltip(actions)
     local tooltip, any_hidden = {""}, false

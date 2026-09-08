@@ -19,7 +19,7 @@ local event_listener_names = {
 ---@field dialog ModalDialogEvent?
 ---@field global table<string, fun(...)>?
 
----@alias GUIListenerDefinition table<string, GUIEventDefinition[]>
+---@alias GUIListenerDefinition table<string, GUIHandlerDefinition[]>
 
 local event_listeners = {}  ---@type ListenerDefinitions[]
 for _, listener_path in ipairs(event_listener_names) do
@@ -67,7 +67,7 @@ special_gui_handlers.on_gui_confirmed = (function(_, player, action_name)
     return false
 end)
 
----@class GUIEventDefinition
+---@class GUIHandlerDefinition
 ---@field name string
 ---@field handler GUIEventHandler | GUIActionEventHandler
 ---@field actions_table table<string, GUIActionDefinition>?
@@ -81,34 +81,41 @@ end)
 ---@field limitations ActionLimitations?
 ---@field show boolean?
 
--- Compile and format the list of GUI actions
+---@param definitions table<string, GUIActionDefinition>
+---@return GUIAction[] actions
+---@return table<string, GUIAction> shortcuts
+local function compile_actions(definitions)
+    local actions, shortcuts = {}, {}
+    for name, definition in pairs(definitions) do
+        local action = {
+            name = name,
+            limitations = definition.limitations or {},
+            shortcut_string = lib.actions.shortcut_string(definition.shortcut),
+            show = definition.show
+        }  ---@type GUIAction
+        table.insert(actions, action)
+
+        if definition.shortcut then shortcuts[definition.shortcut] = action end
+    end
+    return actions, shortcuts
+end
+
+-- Register GUI handlers, compiling modifier actions once
 for _, listener in pairs(event_listeners) do
     if not listener.gui then goto continue end
-    for event_name, actions in pairs(listener.gui) do
-        for _, action in pairs(actions) do
-            local timeout = action.timeout or gui_timeouts[event_name]  -- can be nil
-            local action_table = {handler = action.handler, timeout = timeout}
+    for event_name, definitions in pairs(listener.gui) do
+        for _, definition in pairs(definitions) do
+            local registered_handler = {
+                handler = definition.handler,
+                timeout = definition.timeout or gui_timeouts[event_name]
+            }  ---@type RegisteredGUIHandler
 
-            if event_name == "on_gui_click" and action.actions_table then
-                action_table.actions, action_table.shortcuts = {}, {}
-                -- Transform actions table into a more useable form
-                for action_name, modifier_action in pairs(action.actions_table) do
-                    local action_details = {
-                        name = action_name,
-                        limitations = modifier_action.limitations or {},
-                        shortcut_string = lib.actions.shortcut_string(modifier_action.shortcut),
-                        show = modifier_action.show
-                    }
-                    table.insert(action_table.actions, action_details)
-
-                    if modifier_action.shortcut then
-                        action_table.shortcuts[modifier_action.shortcut] = action_details
-                    end
-                end
+            if event_name == "on_gui_click" and definition.actions_table then
+                registered_handler.actions, registered_handler.shortcuts = compile_actions(definition.actions_table)
             end
 
-            if MODIFIER_ACTIONS[action.name] then error("Duplicate action: " .. action.name) end
-            MODIFIER_ACTIONS[action.name] = action_table
+            if GUI_HANDLERS[definition.name] then error("Duplicate handler: " .. definition.name) end
+            GUI_HANDLERS[definition.name] = registered_handler
         end
     end
     ::continue::
@@ -144,16 +151,16 @@ local function convert_click_to_string(event)
     return modifier_click
 end
 
----@class GUIEventTable
+---@class RegisteredGUIHandler
 ---@field handler GUIEventHandler | GUIActionEventHandler
----@field actions GUIActionTable[]
----@field shortcuts table<string, GUIActionTable>
----@field timeout MapTick
+---@field actions GUIAction[]?
+---@field shortcuts table<string, GUIAction>?
+---@field timeout MapTick?
 
----@class GUIActionTable
+---@class GUIAction
 ---@field name string
 ---@field limitations ActionLimitations
----@field shortcut_string LocalisedString
+---@field shortcut_string LocalisedString?
 ---@field show boolean?
 
 ---@class GUIEventData: EventData
@@ -192,32 +199,32 @@ local function handle_gui_event(event)
     -- Special handlers need to run even without an action handler, so we
     -- wait until this point to check whether there is an associated action
     if not action_name then return end  -- meaning this event type has no action on this element
-    local action_table = MODIFIER_ACTIONS[action_name] or {}
+    local registered_handler = GUI_HANDLERS[action_name] or {}
 
     -- Check if rate limiting allows this action to proceed
-    if lib.actions.rate_limited(player, event.tick, action_name, action_table.timeout) then return end
+    if lib.actions.rate_limited(player, event.tick, action_name, registered_handler.timeout) then return end
 
     local previous_held_id = lib.globals.ui_state(player).held_object_id
 
     -- Special modifier handling for on_gui_click if configured
-    if event_name == "on_gui_click" and action_table.actions then
+    if event_name == "on_gui_click" and registered_handler.actions then
         local click_event = event  ---@as EventData.on_gui_click
         local click = convert_click_to_string(click_event)
 
         if click == "right" then
             modal_dialog.open_context_menu(player, tags, action_name,
-                action_table.actions, click_event.cursor_display_location)
+                registered_handler.actions, click_event.cursor_display_location)
         else
-            local modifier_action = action_table.shortcuts[click]
+            local modifier_action = registered_handler.shortcuts--[[@cast -nil]][click]
             if not modifier_action then return end  -- meaning the used modifiers do not have an associated action
 
             local active_limitations = lib.actions.current_limitations(player)
             if lib.actions.allowed(modifier_action.limitations, active_limitations) then
-                action_table.handler(player, tags, modifier_action.name)
+                registered_handler.handler(player, tags, modifier_action.name)
             end
         end
     else
-        action_table.handler(player, tags, event)  -- gets event as third parameter
+        registered_handler.handler(player, tags, event)  -- gets event as third parameter
     end
 
     if not hover_event then
