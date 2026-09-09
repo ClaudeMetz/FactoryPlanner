@@ -1,6 +1,16 @@
 local _actions = {}
 
 ---@alias ActionList table<string, string>
+---@alias GUIActionFlags table<string, boolean?>
+---@alias GUIActionCondition fun(flags: GUIActionFlags): boolean?
+
+-- Predicates inspect button identity only; absent flags are falsy.
+---@param action GUIAction
+---@param flags GUIActionFlags?
+---@return boolean?
+function _actions.is_visible(action, flags)
+    return action.show == nil or action.show(flags or {})
+end
 
 -- Returns whether rate limiting is active for the given action, stopping it from proceeding
 -- This is essentially to prevent duplicate commands in quick succession, enabled by lag
@@ -46,18 +56,21 @@ function _actions.shortcut_string(shortcut)
 end
 
 ---@param actions GUIAction[]
+---@param flags GUIActionFlags?
 ---@return LocalisedString
-function _actions.generate_tooltip(actions)
-    local tooltip, any_hidden = {""}, false
+function _actions.generate_tooltip(actions, flags)
+    local tooltip, any_non_core = {""}, false
     for _, action in pairs(actions) do
-        if action.core then
-            table.insert(tooltip, {"fp.action_line", action.shortcut_string, {"fp.action_" .. action.name}})
-        else
-            any_hidden = true
+        if lib.actions.is_visible(action, flags) then
+            if action.core then
+                table.insert(tooltip, {"fp.action_line", action.shortcut_string, {"fp.action_" .. action.name}})
+            else
+                any_non_core = true
+            end
         end
     end
 
-    if any_hidden then table.insert(tooltip, {"fp.action_all"}) end
+    if any_non_core then table.insert(tooltip, {"fp.action_all"}) end
 
     return tooltip
 end

@@ -135,11 +135,12 @@ end
 ---@param relevant_line Line
 ---@param metadata CompactMetadata
 local function add_recipe_button(parent_flow, line, relevant_line, metadata)
-    local style = (line.class == "Floor") and "fflib_slot_button_blue_small" or "fflib_slot_button_default_small"
+    local flags = { subfloor = (line.class == "Floor") }
+    local style = (flags.subfloor) and "fflib_slot_button_blue_small" or "fflib_slot_button_default_small"
 
     local note = ""  ---@type LocalisedString
     if relevant_line.done then
-        if line.class == "Floor" and line--[[@as Floor]]:any_lines_not_marked_done() then
+        if flags.subfloor and line--[[@as Floor]]:any_lines_not_marked_done() then
             style = "fflib_slot_button_orange_small"
             note = {"fp.lines_not_marked_done"}
         else
@@ -153,8 +154,9 @@ local function add_recipe_button(parent_flow, line, relevant_line, metadata)
     ---@class ActOnCompactRecipeTags
     ---@field line_id ObjectID
     ---@field context "compact_dialog"
+    ---@field flags GUIActionFlags
     local tags = {mod="fp", on_gui_click="act_on_compact_recipe", line_id=line.id, on_gui_hover="set_tooltip",
-        context="compact_dialog"}
+        context="compact_dialog", flags=flags}
     local button = parent_flow.add{type="sprite-button", tags=tags, sprite=recipe_proto.sprite, style=style,
         mouse_button_filter={"left-and-right"}, raise_hover_events=true}
     metadata.tooltips[button.index] = tooltip
@@ -256,6 +258,10 @@ local function add_item_flow(line, relevant_line, item_category, button_color, m
     local first_special_index = nil  -- place for fuel to slot in
     for index, item in pairs(line[item_category]) do
         local proto, type = item.proto, item.proto.type
+        local flags = {
+            entity = (type == "entity"),
+            special = (type == "entity" and proto.special)
+        }
 
         local amount, number_tooltip = nil, nil
         button_color = (relevant_line.done) and "default_grayscale" or button_color
@@ -267,26 +273,25 @@ local function add_item_flow(line, relevant_line, item_category, button_color, m
         ---@field item_category "products" | "byproducts" | "ingredients"
         ---@field item_index integer
         ---@field context "compact_dialog"
-        local tags = {mod="fp", line_id=line.id, item_category=item_category, item_index=index,
-            on_gui_hover="hover_compact_item", on_gui_leave="leave_compact_item", context="compact_dialog"}
+        ---@field flags GUIActionFlags
+        local tags = {mod="fp", on_gui_click="act_on_compact_item", line_id=line.id, item_category=item_category, item_index=index,
+            on_gui_hover="hover_compact_item", on_gui_leave="leave_compact_item", context="compact_dialog", flags=flags}
 
-        if type == "entity" and proto.special then
+        if flags.special then
             amount = lib.format.button_number(item.amount)
             number_tooltip = lib.format.special_tooltip(proto.name, item.amount)
             if not relevant_line.done and item_category == "ingredients" then button_color = "cyan" end
             first_special_index = first_special_index or index
         else
             -- items/s/machine does not make sense for lines with subfloors, show items/s instead
-            local machine_amount = (line.class == "Line") and line.machine.amount or nil
+            local machine_amount = (line.class == "Line") and line--[[@as Line]].machine.amount or nil
             amount, number_tooltip = item_views.process_item(metadata.player, proto, item.amount, machine_amount)
             if amount == -1 then goto skip_item end  -- an amount of -1 means it was below the margin of error
 
-            if type == "entity" then
+            if flags.entity then
                 button_color = (relevant_line.done) and "disabled_grayscale" or "disabled"
             else
-                tags.on_gui_click = "act_on_compact_item"
-
-                if type == "fluid" and item_category == "ingredients" and line.class ~= "Floor" then
+                if type == "fluid" and item_category == "ingredients" and line.class ~= "Floor" then  ---@cast line Line
                     local temperature_data = line.recipe.temperature_data[proto.name]
                     table.insert(name_line, temperature_data.annotation)
 
@@ -433,22 +438,22 @@ local function refresh_compact_header(player, factory)
 
     for index, ingredient in pairs(relevant_floor.ingredients) do
         local amount, number_tooltip = nil, nil
+        local flags = { special = (ingredient.proto.type == "entity" and ingredient.proto.special) }
 
         ---@class ActOnCompactIngredientTags
         ---@field floor_id ObjectID
         ---@field item_index integer
         ---@field context "compact_dialog"
-        local tags = {mod="fp", floor_id=relevant_floor.id, item_index=index, on_gui_hover="hover_compact_item",
-            on_gui_leave="leave_compact_item", context="compact_dialog"}
+        ---@field flags GUIActionFlags
+        local tags = {mod="fp", on_gui_click="act_on_compact_ingredient", floor_id=relevant_floor.id, item_index=index,
+            on_gui_hover="hover_compact_item", on_gui_leave="leave_compact_item", context="compact_dialog", flags=flags}
 
-        if ingredient.proto.type == "entity" and ingredient.proto.special then
+        if flags.special then
             amount = lib.format.button_number(ingredient.amount)
             number_tooltip = lib.format.special_tooltip(ingredient.proto.name, ingredient.amount)
         else
             amount, number_tooltip = item_views.process_item(player, ingredient.proto, ingredient.amount, nil)
             if amount == -1 then goto skip_ingredient end  -- an amount of -1 means it was below the margin of error
-
-            tags.on_gui_click = "act_on_compact_ingredient"
         end
 
         local style = "fflib_slot_button_default"
@@ -654,10 +659,8 @@ local function handle_recipe_click(player, tags, action)
     local relevant_line = (line.class == "Floor") and line.first or line
 
     if action == "open_subfloor" then
-        if line.class == "Floor" then
-            lib.context.set(player, line--[[@as Floor]])
-            refresh_compact_factory(player)
-        end
+        lib.context.set(player, line--[[@as Floor]])
+        refresh_compact_factory(player)
     elseif action == "factoriopedia" then
         local proto = relevant_line--[[@as Line]].recipe.proto  ---@as FPRecipePrototype
         player.open_factoriopedia_gui(lib.get_factoriopedia_proto("recipe", proto.name, proto))
@@ -720,13 +723,11 @@ local function handle_item_click(player, tags, action)
     end
 
     if action == "put_into_cursor" then
-        if item.proto.type == "entity" then return end
         lib.cursor.handle_item_click(player, item.proto, item.amount)
 
     elseif action == "factoriopedia" then
         local name = item.proto.name
-        if item.proto.type == "entity" then name = name:gsub("custom%-", "")
-        elseif item.proto.temperature then name = item.proto.base_name--[[@as string]] end
+        if item.proto.temperature then name = item.proto.base_name--[[@as string]] end
         player.open_factoriopedia_gui(prototypes[item.proto.type][name])
     end
 end
@@ -765,6 +766,24 @@ end
 -- ** EVENTS **
 local factory_listeners = {}  ---@type ListenerDefinitions
 
+---@param flags GUIActionFlags
+---@return boolean?
+local function has_subfloor(flags)
+    return flags.subfloor
+end
+
+---@param flags GUIActionFlags
+---@return boolean
+local function is_non_entity_item(flags)
+    return not flags.entity
+end
+
+---@param flags GUIActionFlags
+---@return boolean
+local function is_regular_item(flags)
+    return not flags.special
+end
+
 factory_listeners.gui = {
     on_gui_click = {
         {
@@ -789,15 +808,15 @@ factory_listeners.gui = {
         {
             name = "act_on_compact_ingredient",
             actions_table = {
-                put_into_cursor = {shortcut="left", core=true},
-                factoriopedia = {shortcut="alt-left", core=true}
+                put_into_cursor = {shortcut="left", core=true, show=is_regular_item},
+                factoriopedia = {shortcut="alt-left", core=true, show=is_regular_item}
             },
             handler = handle_ingredient_click
         },
         {
             name = "act_on_compact_recipe",
             actions_table = {
-                open_subfloor = {shortcut="left", core=true},
+                open_subfloor = {shortcut="left", core=true, show=has_subfloor},
                 factoriopedia = {shortcut="alt-left", core=true}
             },
             handler = handle_recipe_click
@@ -828,8 +847,8 @@ factory_listeners.gui = {
         {
             name = "act_on_compact_item",
             actions_table = {
-                put_into_cursor = {shortcut="left", core=true},
-                factoriopedia = {shortcut="alt-left", core=true}
+                put_into_cursor = {shortcut="left", core=true, show=is_non_entity_item},
+                factoriopedia = {shortcut="alt-left", core=true, show=is_non_entity_item}
             },
             handler = handle_item_click
         }

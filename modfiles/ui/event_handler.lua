@@ -79,6 +79,7 @@ end)
 ---@class GUIActionDefinition
 ---@field shortcut string?
 ---@field core boolean?
+---@field show GUIActionCondition?
 
 ---@param definitions table<string, GUIActionDefinition>
 ---@return GUIAction[] actions
@@ -89,7 +90,8 @@ local function compile_actions(definitions)
         local action = {
             name = name,
             shortcut_string = lib.actions.shortcut_string(definition.shortcut),
-            core = definition.core
+            core = definition.core,
+            show = definition.show
         }  ---@type GUIAction
         table.insert(actions, action)
 
@@ -159,6 +161,7 @@ end
 ---@field name string
 ---@field shortcut_string LocalisedString?
 ---@field core boolean?
+---@field show GUIActionCondition?
 
 ---@class GUIEventData: EventData
 ---@field player_index PlayerIndex
@@ -178,7 +181,7 @@ local function handle_gui_event(event)
 
     -- Close an open context menu on any GUI click
     if event.name == defines.events.on_gui_click and
-            not tags.on_gui_click ~= "choose_context_action" then
+            tags.on_gui_click ~= "choose_context_action" then
         modal_dialog.close_context_menu(player)
     end
 
@@ -214,6 +217,7 @@ local function handle_gui_event(event)
         else
             local modifier_action = registered_handler.shortcuts--[[@cast -nil]][click]
             if not modifier_action then return end  -- meaning the used modifiers do not have an associated action
+            if not lib.actions.is_visible(modifier_action, tags.flags--[[@as GUIActionFlags?]]) then return end
 
             registered_handler.handler(player, tags, modifier_action.name)
         end

@@ -109,26 +109,25 @@ local function build_items_flow(player, parent, district)
         local relevant_table = (item.overall == "production") and prod_table or ingr_table
         local total_amount = item[item.overall].amount
 
+        local flags = {
+            ingredient = (item.overall == "consumption"),
+            special = (item.proto.type == "entity" and item.proto.special)
+        }
         ---@class HandleItemButtonClickTags
         ---@field item_id ObjectID
         ---@field context "districts_box"
-        local tags = {mod="fp", item_id=item.id, on_gui_hover="set_tooltip", context="districts_box"}
+        ---@field flags GUIActionFlags
+        local tags = {mod="fp", item_id=item.id, on_gui_click="act_on_district_item",
+            on_gui_hover="set_tooltip", context="districts_box", flags=flags}
 
         local diff_number, amount_tooltip = nil, nil
         local total_tooltip = nil
 
-        if item.proto.type == "entity" and item.proto.special then
-            if item.overall == "consumption" then
-                tags.on_gui_click = "act_on_district_special_ingredient"
-            end
-
+        if flags.special then
             diff_number = lib.format.button_number(item.abs_diff)
             amount_tooltip = lib.format.special_tooltip(item.proto.name, item.abs_diff)
             total_tooltip = lib.format.special_tooltip(item.proto.name, total_amount)
         else
-            local action = (item.overall == "production") and "act_on_district_product" or "act_on_district_ingredient"
-            tags.on_gui_click = action
-
             diff_number, amount_tooltip = item_views.process_item(player, item.proto, item.abs_diff, nil)
             _, total_tooltip = item_views.process_item(player, item.proto, total_amount, nil)
         end
@@ -331,6 +330,18 @@ end
 -- ** EVENTS **
 local listeners = {}  ---@type ListenerDefinitions
 
+---@param flags GUIActionFlags
+---@return boolean?
+local function is_ingredient(flags)
+    return flags.ingredient
+end
+
+---@param flags GUIActionFlags
+---@return boolean
+local function is_regular_item(flags)
+    return not flags.special
+end
+
 listeners.gui = {
     on_gui_click = {
         {
@@ -422,28 +433,12 @@ listeners.gui = {
             end
         },
         {
-            name = "act_on_district_product",
+            name = "act_on_district_item",
             actions_table = {
+                create_factory = {shortcut="left", core=true, show=is_ingredient},
                 copy = {shortcut="shift-right"},
-                put_into_cursor = {shortcut="alt-right"},
-                factoriopedia = {shortcut="alt-left"}
-            },
-            handler = handle_item_button_click
-        },
-        {
-            name = "act_on_district_ingredient",
-            actions_table = {
-                create_factory = {shortcut="left", core=true},
-                copy = {shortcut="shift-right"},
-                put_into_cursor = {shortcut="alt-right"},
-                factoriopedia = {shortcut="alt-left"}
-            },
-            handler = handle_item_button_click
-        },
-        {
-            name = "act_on_district_special_ingredient",
-            actions_table = {
-                create_factory = {shortcut="left", core=true}
+                put_into_cursor = {shortcut="alt-right", show=is_regular_item},
+                factoriopedia = {shortcut="alt-left", show=is_regular_item}
             },
             handler = handle_item_button_click
         }

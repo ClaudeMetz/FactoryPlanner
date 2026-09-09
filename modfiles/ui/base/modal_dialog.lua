@@ -257,8 +257,11 @@ function modal_dialog.open_context_menu(player, menu_tags, handler, actions, loc
     button_flow.style.vertical_spacing = 0
 
     local action_counter = 0
+    local flags = menu_tags.flags  ---@as GUIActionFlags?
 
     for _, action in pairs(actions) do
+        if not lib.actions.is_visible(action, flags) then goto continue end
+
         ---@class ChooseContextActionTags
         ---@field tags Tags
         ---@field handler string
@@ -277,7 +280,15 @@ function modal_dialog.open_context_menu(player, menu_tags, handler, actions, loc
         flow.add{type="label", caption=action.shortcut_string}
 
         action_counter = action_counter + 1
+        ::continue::
     end
+
+    if action_counter == 0 then
+        frame_modal_dialog.destroy()
+        ui_state.context_menu = nil
+        return
+    end
+
     local dialog_height = action_counter * 28
     button_flow.style.height = dialog_height
 
@@ -432,7 +443,15 @@ listeners.gui = {
             handler = function(player, tags, _)
                 ---@cast tags ChooseContextActionTags
                 modal_dialog.close_context_menu(player)
-                GUI_HANDLERS[tags.handler].handler(player, tags.tags, tags.action)
+                local registered_handler = GUI_HANDLERS[tags.handler]
+                for _, action in pairs(registered_handler.actions--[[@cast -nil]]) do
+                    if action.name == tags.action then
+                        if lib.actions.is_visible(action, tags.tags.flags--[[@as GUIActionFlags?]]) then
+                            registered_handler.handler(player, tags.tags, tags.action)
+                        end
+                        break
+                    end
+                end
             end
         },
         {

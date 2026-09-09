@@ -93,27 +93,6 @@ local function handle_line_recipe_click(player, tags, action)
     end
 end
 
--- Handles the defining recipe of a floor (ie. first one of a subfloor)
----@param player LuaPlayer
----@param tags ActOnLineObjectRecipe
----@param action string
-local function handle_floor_recipe_click(player, tags, action)
-    local line = OBJECT_INDEX[tags.line_id]  ---@as Line
-
-    if action == "copy" then
-        lib.clipboard.copy(player, line)
-
-    elseif action == "toggle" then
-        line.active = not line.active
-        solver.update(player)
-        lib.gui.run_refresh(player, "production")
-
-    elseif action == "factoriopedia" then
-        local proto = line.recipe.proto  ---@as FPRecipePrototype
-        player.open_factoriopedia_gui(lib.get_factoriopedia_proto("recipe", proto.name, proto))
-    end
-end
-
 ---@param player LuaPlayer
 ---@param tags ActOnLineMachineTags
 ---@param action string
@@ -242,23 +221,11 @@ end
 ---@param action string
 local function handle_item_click(player, tags, action)
     local line = OBJECT_INDEX[tags.line_id]  ---@as LineObject
-    local item_list = (tags.catalyst) and line--[[@as Line]].recipe.catalysts or line
+    local item_list = (tags.flags.catalyst) and line--[[@as Line]].recipe.catalysts or line
     local item = item_list[tags.item_category .. "s"][tags.item_index]
 
-    if action == "prioritize" then
-        if line.class ~= "Line" then
-            lib.cursor.create_flying_text(player, {"fp.can_only_edit_line_items"})
-            return
-        end  ---@cast line Line
-
-        -- A byproduct recipe's throughput is defined by its ingredients, a normal one's by its products
+    if action == "prioritize" then  ---@cast line Line
         local consuming = (line.recipe.production_type == "consume")
-        if tags.item_category ~= ((consuming) and "ingredient" or "product") then
-            local message = (consuming) and {"fp.warning_prioritize_ingredient"}
-                or {"fp.warning_prioritize_product"}
-            lib.messages.raise(player, "warning", message, 1)
-            return
-        end
 
         local proto = item.proto
         -- Ingredients are kept under their base name, so the temperature needs adding back on
@@ -289,14 +256,7 @@ local function handle_item_click(player, tags, action)
             add_after_line_id=add_after_line_id, production_type=production_type,
             category_id=proto.category_id, product_id=proto.id}})
 
-    elseif action == "edit_temperature" then
-        if item.proto.type ~= "fluid" then
-            lib.cursor.create_flying_text(player, {"fp.can_only_edit_fluids"})
-            return
-        elseif line.class ~= "Line" then
-            lib.cursor.create_flying_text(player, {"fp.can_only_edit_line_items"})
-            return
-        end  ---@cast line Line
+    elseif action == "edit_temperature" then  ---@cast line Line
         if #line.recipe.temperature_data[item.proto.name].applicable_values == 1 then
             lib.cursor.create_flying_text(player, {"fp.can_only_edit_multiple_choices"})
             return
@@ -316,8 +276,6 @@ local function handle_item_click(player, tags, action)
         lib.clipboard.copy(player, copyable_item)
 
     elseif action == "paste" then
-        if line.class ~= "Line" then return end
-        if tags.item_category ~= "ingredient" then return end
         lib.clipboard.paste(player, item)
 
     elseif action == "put_into_cursor" then
@@ -351,11 +309,6 @@ local function handle_fuel_click(player, tags, action)
             category_id=proto.category_id, product_id=proto.id}})
 
     elseif action == "edit_temperature" then
-        if fuel.proto.type ~= "fluid" then
-            lib.cursor.create_flying_text(player, {"fp.can_only_edit_fluids"})
-            return
-        end
-
         lib.gui.open_dialog(player, {dialog="item", modal_data={fuel_id=fuel.id,
             category_id=fuel.proto.category_id, name=fuel.proto.name}})
 
@@ -380,6 +333,51 @@ end
 -- ** EVENTS **
 local listeners = {}  ---@type ListenerDefinitions
 
+---@param flags GUIActionFlags
+---@return boolean
+local function is_regular_recipe(flags)
+    return not flags.defining_recipe
+end
+
+---@param flags GUIActionFlags
+---@return boolean?
+local function can_add_item_recipe(flags)
+    return not flags.product and not flags.catalyst
+        and (not flags.entity or flags.special)
+end
+
+---@param flags GUIActionFlags
+---@return boolean
+local function is_non_entity(flags)
+    return not flags.entity
+end
+
+---@param flags GUIActionFlags
+---@return boolean?
+local function is_line_ingredient(flags)
+    return flags.ingredient and not flags.entity and not flags.subfloor
+end
+
+---@param flags GUIActionFlags
+---@return boolean?
+local function can_edit_item_temperature(flags)
+    return flags.fluid and flags.ingredient and not flags.subfloor
+end
+
+---@param flags GUIActionFlags
+---@return boolean?
+local function can_prioritize_item(flags)
+    if flags.entity or flags.catalyst or flags.subfloor then return false end
+    if flags.consuming then return flags.ingredient end
+    return flags.product
+end
+
+---@param flags GUIActionFlags
+---@return boolean?
+local function is_fluid(flags)
+    return flags.fluid
+end
+
 listeners.gui = {
     on_gui_click = {
         {
@@ -400,23 +398,14 @@ listeners.gui = {
         {
             name = "act_on_line_recipe",
             actions_table = {
-                open_subfloor = {shortcut="left", core=true},  -- does its own archive check
+                open_subfloor = {shortcut="left", core=true, show=is_regular_recipe},
                 copy = {shortcut="shift-right"},
-                paste = {shortcut="shift-left"},
+                paste = {shortcut="shift-left", show=is_regular_recipe},
                 toggle = {shortcut="control-left"},
-                delete = {shortcut="control-right"},
+                delete = {shortcut="control-right", show=is_regular_recipe},
                 factoriopedia = {shortcut="alt-left"}
             },
             handler = handle_line_recipe_click
-        },
-        {
-            name = "act_on_floor_recipe",
-            actions_table = {
-                copy = {shortcut="shift-right"},
-                toggle = {shortcut="control-left"},
-                factoriopedia = {shortcut="alt-left"}
-            },
-            handler = handle_floor_recipe_click
         },
         {
             name = "act_on_line_machine",
@@ -461,100 +450,25 @@ listeners.gui = {
             handler = handle_module_click
         },
         {
-            name = "act_on_line_product",
+            name = "act_on_line_item",
             actions_table = {
-                prioritize = {shortcut="control-right"},
+                add_recipe_to_end = {shortcut="left", core=true, show=can_add_item_recipe},
+                add_recipe_below = {show=can_add_item_recipe},
+                edit_temperature = {shortcut="control-left", core=true, show=can_edit_item_temperature},
+                prioritize = {shortcut="control-right", show=can_prioritize_item},
                 copy = {shortcut="shift-right"},
-                put_into_cursor = {shortcut="alt-right"},
-                factoriopedia = {shortcut="alt-left"}
+                paste = {shortcut="shift-left", show=is_line_ingredient},
+                put_into_cursor = {shortcut="alt-right", show=is_non_entity},
+                factoriopedia = {shortcut="alt-left", show=is_non_entity}
             },
-            handler = function(player, tags, action)
-                ---@cast tags ActOnLineItem
-                tags.item_category = "product"
-                handle_item_click(player, tags, action--[[@as string]])
-            end
-        },
-        {
-            name = "act_on_line_byproduct",
-            actions_table = {
-                add_recipe_to_end = {shortcut="left", core=true},
-                add_recipe_below = {},
-                copy = {shortcut="shift-right"},
-                put_into_cursor = {shortcut="alt-right"},
-                factoriopedia = {shortcut="alt-left"}
-            },
-            handler = function(player, tags, action)
-                ---@cast tags ActOnLineItem
-                tags.item_category = "byproduct"
-                handle_item_click(player, tags, action--[[@as string]])
-            end
-        },
-        {
-            name = "act_on_line_special_byproduct",
-            actions_table = {
-                add_recipe_to_end = {shortcut="left", core=true},
-                add_recipe_below = {}
-            },
-            handler = function(player, tags, action)
-                ---@cast tags ActOnLineItem
-                tags.item_category = "byproduct"
-                handle_item_click(player, tags, action--[[@as string]])
-            end
-        },
-        {
-            name = "act_on_line_ingredient",
-            actions_table = {
-                add_recipe_to_end = {shortcut="left", core=true},
-                add_recipe_below = {},
-                edit_temperature = {shortcut="control-left", core=true},
-                prioritize = {shortcut="control-right"},
-                copy = {shortcut="shift-right"},
-                paste = {shortcut="shift-left"},
-                put_into_cursor = {shortcut="alt-right"},
-                factoriopedia = {shortcut="alt-left"}
-            },
-            handler = function(player, tags, action)
-                ---@cast tags ActOnLineItem
-                tags.item_category = "ingredient"
-                handle_item_click(player, tags, action--[[@as string]])
-            end
-        },
-        {
-            -- The catalyst an ingredient was reduced to still needs to offer its temperature,
-            -- since that is what decides whether it cancels with its peer product at all
-            name = "act_on_line_catalyst_ingredient",
-            actions_table = {
-                edit_temperature = {shortcut="control-left", core=true},
-                copy = {shortcut="shift-right"},
-                paste = {shortcut="shift-left"},
-                put_into_cursor = {shortcut="alt-right"},
-                factoriopedia = {shortcut="alt-left"}
-            },
-            handler = function(player, tags, action)
-                ---@cast tags ActOnLineItem
-                tags.item_category, tags.catalyst = "ingredient", true
-                handle_item_click(player, tags, action--[[@as string]])
-            end
-        },
-        {
-            name = "act_on_line_catalyst_product",
-            actions_table = {
-                copy = {shortcut="shift-right"},
-                put_into_cursor = {shortcut="alt-right"},
-                factoriopedia = {shortcut="alt-left"}
-            },
-            handler = function(player, tags, action)
-                ---@cast tags ActOnLineItem
-                tags.item_category, tags.catalyst = "product", true
-                handle_item_click(player, tags, action--[[@as string]])
-            end
+            handler = handle_item_click
         },
         {
             name = "act_on_line_fuel",
             actions_table = {
                 add_recipe_to_end = {shortcut="left", core=true},
                 add_recipe_below = {},
-                edit_temperature = {shortcut="control-left", core=true},
+                edit_temperature = {shortcut="control-left", core=true, show=is_fluid},
                 edit_fuel = {},
                 copy = {shortcut="shift-right"},
                 paste = {shortcut="shift-left"},
@@ -562,18 +476,6 @@ listeners.gui = {
                 factoriopedia = {shortcut="alt-left"}
             },
             handler = handle_fuel_click
-        },
-        {
-            name = "act_on_line_special_ingredient",
-            actions_table = {
-                add_recipe_to_end = {shortcut="left", core=true},
-                add_recipe_below = {}
-            },
-            handler = function(player, tags, action)
-                ---@cast tags ActOnLineItem
-                tags.item_category = "ingredient"
-                handle_item_click(player, tags, action--[[@as string]])
-            end
         }
     },
     on_gui_checked_state_changed = {

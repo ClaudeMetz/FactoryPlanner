@@ -133,7 +133,6 @@ function builders.recipe(line, parent_flow, metadata, indent)
     local recipe_proto = relevant_line.recipe.proto
     local first_line = (note == nil) and {"fp.tt_title", recipe_proto.localised_name}
         or {"fp.tt_title_with_note", recipe_proto.localised_name, note}
-    local action = (first_subfloor_line) and "act_on_floor_recipe" or "act_on_line_recipe"
     local effects_section = (line.class == "Line") and format_effects_tooltip(relevant_line.effects_tooltip) or ""
     local tooltip = {"", first_line, status_line, effects_section}
     local style = "fflib_slot_button_" .. color .. variant
@@ -141,8 +140,9 @@ function builders.recipe(line, parent_flow, metadata, indent)
     ---@class ActOnLineObjectRecipe
     ---@field line_id ObjectID
     ---@field context "production_table"
-    local tags = {mod="fp", on_gui_click=action, line_id=line.id, on_gui_hover="set_tooltip",
-        context="production_table"}
+    ---@field flags GUIActionFlags
+    local tags = {mod="fp", on_gui_click="act_on_line_recipe", line_id=line.id, on_gui_hover="set_tooltip",
+        context="production_table", flags={defining_recipe=first_subfloor_line}}
     local button = parent_flow.add{type="sprite-button", tags = tags, sprite=recipe_proto.sprite, style=style,
         mouse_button_filter={"left-and-right"}, raise_hover_events=true}
     metadata.tooltips[button.index] = tooltip
@@ -299,6 +299,42 @@ function builders.beacon(line, parent_flow, metadata)
     end
 end
 
+
+---@class ActOnLineItem
+---@field line_id ObjectID
+---@field item_index integer
+---@field context "production_table"
+---@field item_category ItemCategory
+---@field flags GUIActionFlags
+
+---@param line LineObject
+---@param proto FPItemPrototype
+---@param category ItemCategory
+---@param index integer
+---@param catalyst boolean?
+---@return Tags
+local function item_action_tags(line, proto, category, index, catalyst)
+    return {
+        mod = "fp",
+        on_gui_click = "act_on_line_item",
+        on_gui_hover = "set_tooltip",
+        context = "production_table",
+        line_id = line.id,
+        item_index = index,
+        item_category = category,
+        flags = {
+            product = (category == "product"),
+            ingredient = (category == "ingredient"),
+            special = (proto.type == "entity" and proto.special),
+            entity = (proto.type == "entity"),
+            fluid = (proto.type == "fluid"),
+            subfloor = (line.class == "Floor"),
+            consuming = (line.class == "Line" and line--[[@as Line]].recipe.production_type == "consume"),
+            catalyst = catalyst
+        }
+    }
+end
+
 ---@param line LineObject
 ---@param parent_flow LuaGuiElement
 ---@param category "products" | "ingredients"
@@ -306,7 +342,7 @@ end
 local function add_catalysts(line, parent_flow, category, metadata)
     if line.class == "Floor" then return end  ---@cast line Line
 
-    local action_name = "act_on_line_catalyst_" .. string.sub(category, 1, -2)
+    local item_category = string.sub(category, 1, -2)  ---@as ItemCategory
 
     for index, item in pairs(line.recipe.catalysts[category]) do
         local proto = item.proto
@@ -328,8 +364,7 @@ local function add_catalysts(line, parent_flow, category, metadata)
 
         local number_line = (number_tooltip) and {"", "\n", number_tooltip} or ""
         local tooltip = {"", name_line, temperature_line, number_line}
-        local tags = {mod="fp", on_gui_click=action_name, on_gui_hover="set_tooltip",
-            context="production_table", line_id=line.id, item_index=index}
+        local tags = item_action_tags(line, proto, item_category, index, true)
 
         local button = parent_flow.add{type="sprite-button", sprite=proto.sprite, tags=tags,
             number=amount, style="fflib_slot_button_blue_small",
@@ -337,13 +372,6 @@ local function add_catalysts(line, parent_flow, category, metadata)
         metadata.tooltips[button.index] = tooltip
     end
 end
-
----@class ActOnLineItem
----@field line_id ObjectID
----@field item_index integer
----@field context "production_table"
----@field item_category ItemCategory
----@field catalyst boolean
 
 ---@param line LineObject
 ---@param parent_flow LuaGuiElement
@@ -359,7 +387,7 @@ function builders.products(line, parent_flow, metadata)
         local style = "fflib_slot_button_default_small"
         local priority_line = ""  ---@type LocalisedString
         local amount, number_tooltip = nil, nil
-        local tags = {mod="fp", on_gui_hover="set_tooltip", context="production_table"}
+        local tags = item_action_tags(line, proto, "product", index)
 
         if proto.type == "entity" and proto.special then
             relevant_flow = special_flow
@@ -379,10 +407,6 @@ function builders.products(line, parent_flow, metadata)
             local machine_amount = (line.class ~= "Floor") and line.machine.amount or nil
             amount, number_tooltip = item_views.process_item(metadata.player, proto, product.amount, machine_amount)
             if amount == -1 then goto skip_product end  -- an amount of -1 means it was below the margin of error
-
-            tags.on_gui_click = "act_on_line_product"
-            tags.line_id = line.id
-            tags.item_index = index
         end
 
         local name_line = {"fp.tt_title", proto.localised_name}
@@ -413,18 +437,15 @@ function builders.byproducts(line, parent_flow, metadata)
         local proto = byproduct.proto
 
         local relevant_flow = nil
-        local action = nil
         local amount, number_tooltip = nil, nil
 
         if proto.type == "entity" and proto.special then
             relevant_flow = special_flow
-            action = "act_on_line_special_byproduct"
 
             amount = lib.format.button_number(byproduct.amount)
             number_tooltip = lib.format.special_tooltip(proto.name, byproduct.amount)
         else
             relevant_flow = items_flow
-            action = "act_on_line_byproduct"
 
             -- items/s/machine does not make sense for lines with subfloors, show items/s instead
             local machine_amount = (line.class ~= "Floor") and line.machine.amount or nil
@@ -435,8 +456,7 @@ function builders.byproducts(line, parent_flow, metadata)
         local number_line = (number_tooltip) and {"", "\n", number_tooltip} or ""
         local tooltip = {"", {"fp.tt_title", proto.localised_name}, number_line}
 
-        local tags = {mod="fp", on_gui_click=action, line_id=line.id, item_index=index,
-            on_gui_hover="set_tooltip", context="production_table"}
+        local tags = item_action_tags(line, proto, "byproduct", index)
         local button = relevant_flow.add{type="sprite-button", tags=tags, sprite=proto.sprite, number=amount,
             style="fflib_slot_button_red_small", mouse_button_filter={"left-and-right"}, raise_hover_events=true}
         metadata.tooltips[button.index] = tooltip
@@ -494,9 +514,10 @@ local function add_fuel(line, parent_flow, metadata)
 
     ---@class ActOnLineFuelTags
     ---@field fuel_id ObjectID
+    ---@field flags GUIActionFlags
     ---@field context "production_table"
     local tags = {mod="fp", on_gui_click="act_on_line_fuel", fuel_id=fuel.id, on_gui_hover="set_tooltip",
-        context="production_table"}
+        context="production_table", flags={fluid=(fuel.proto.type == "fluid")}}
     -- Insert this before special ingredients, ie. index 1
     local button = parent_flow.add{type="sprite-button", tags=tags, sprite=fuel.proto.sprite, style=style,
         number=amount, mouse_button_filter={"left-and-right"}, raise_hover_events=true, index=1}
@@ -518,8 +539,7 @@ local function add_special_ingredient(line, parent_flow, metadata, item, index)
     local tooltip = {"", {"fp.tt_title", item.proto.localised_name}, number_line, satisfaction_line}
 
     local button_number = lib.format.button_number(item.amount)
-    local tags = {mod="fp", on_gui_click="act_on_line_special_ingredient", item_category="ingredient", line_id=line.id,
-        item_index=index, on_gui_hover="set_tooltip", context="production_table"}
+    local tags = item_action_tags(line, item.proto, "ingredient", index)
     local button = parent_flow.add{type="sprite-button", tags=tags, sprite=item.proto.sprite, number=button_number,
         style="fflib_slot_button_cyan_small", mouse_button_filter={"left-and-right"}, raise_hover_events=true}
     metadata.tooltips[button.index] = tooltip
@@ -549,9 +569,7 @@ function builders.ingredients(line, parent_flow, metadata)
         local style = "fflib_slot_button_green_small"
         local satisfaction_line = ""  ---@type LocalisedString
 
-        if proto.type == "entity" then
-            style = "fflib_slot_button_disabled_small"
-        elseif metadata.ingredient_satisfaction and ingredient.amount > 0 then
+        if proto.type ~= "entity" and metadata.ingredient_satisfaction and ingredient.amount > 0 then
             local sat_line, percentage_string = lib.gui.calculate_satisfaction(
                 ingredient.satisfied_amount or 0, ingredient.amount)
             satisfaction_line = sat_line
@@ -590,13 +608,7 @@ function builders.ingredients(line, parent_flow, metadata)
 
         local number_line = (number_tooltip) and {"", "\n", number_tooltip} or ""
         local tooltip = {"", name_line, temperature_line, priority_line, number_line, satisfaction_line}
-        local tags = {mod="fp", on_gui_hover="set_tooltip", context="production_table"}
-
-        if proto.type ~= "entity" then
-            tags.on_gui_click = "act_on_line_ingredient"
-            tags.line_id = line.id
-            tags.item_index = index
-        end
+        local tags = item_action_tags(line, proto, "ingredient", index)
 
         local button = items_flow.add{type="sprite-button", sprite=proto.sprite, style=style,
             tags=tags, number=amount, mouse_button_filter={"left-and-right"}, raise_hover_events=true}
