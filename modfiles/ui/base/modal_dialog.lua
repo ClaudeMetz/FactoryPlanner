@@ -268,8 +268,10 @@ function modal_dialog.open_context_menu(player, menu_tags, handler, actions, loc
         ---@field action string
         local tags = {mod="fp", on_gui_click="choose_context_action", tags=menu_tags,
             handler=handler, action=action.name}
+        local enabled, warning = lib.actions.is_enabled(action, flags)
         local button = button_flow.add{type="button", tags=tags, style="list_box_item",
-            mouse_button_filter={"left"}}
+            mouse_button_filter={"left"}, enabled=enabled,
+            tooltip=warning and {"fp.warning_with_icon", warning} or nil}
         button.style.width = MAGIC_NUMBERS.context_menu_width
 
         local flow = button.add{type="flow", direction="horizontal"}
@@ -444,14 +446,7 @@ listeners.gui = {
                 ---@cast tags ChooseContextActionTags
                 modal_dialog.close_context_menu(player)
                 local registered_handler = GUI_HANDLERS[tags.handler]
-                for _, action in pairs(registered_handler.actions--[[@cast -nil]]) do
-                    if action.name == tags.action then
-                        if lib.actions.is_visible(action, tags.tags.flags--[[@as GUIActionFlags?]]) then
-                            registered_handler.handler(player, tags.tags, tags.action)
-                        end
-                        break
-                    end
-                end
+                registered_handler.handler(player, tags.tags, tags.action)
             end
         },
         {

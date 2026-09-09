@@ -29,6 +29,7 @@ local generator = {
 
 -- Data collected during recipe generation, reused by later generator stages
 local resource_deposits = {}  ---@type LuaEntityPrototype[]
+local first_generator = nil  ---@type string?
 local rocket_parts = {}  ---@type table<string, boolean>
 local pumped_tiles = {}  ---@type LuaTilePrototype[]
 local tile_can_have_plant = {}  ---@type table<string, string[]>
@@ -42,7 +43,7 @@ local research_groups = nil  ---@type {group: ItemGroup, subgroup: ItemGroup}?
 ---@field name string
 ---@field localised_name LocalisedString
 ---@field sprite SpritePath
----@field factoriopedia_id { type: FactoriopediaIDType, name: string}?
+---@field factoriopedia_id FPFactoriopediaID?
 
 ---@class FPPrototypeWithCategory: FPPrototype
 ---@field category_id integer
@@ -202,7 +203,6 @@ function generator.recipes.generate()
         end
     end
 
-    local first_generator = nil  ---@type string?
     local pumped_fixed_fluids = {}  ---@type table<string, boolean>
     local boiler_recipes = {}  ---@type table<string, FPRecipePrototype>
     local silo_recipes = {}  ---@type table<string, FPRecipePrototype>
@@ -595,8 +595,6 @@ function generator.recipes.generate()
     if first_generator ~= nil then
         local electricity_recipe = custom_recipe()
         electricity_recipe.name = "impostor-electricity"
-        -- No single entity defines this, so just pick the first one for Factoriopedia
-        electricity_recipe.factoriopedia_id = {type="entity", name=first_generator}
         electricity_recipe.localised_name = {"fp.electric_power"}
         electricity_recipe.sprite = "fp_electric_power"
         electricity_recipe.order = "z-a"
@@ -651,6 +649,7 @@ end
 
 ---@class CustomItemDetails
 ---@field name string
+---@field factoriopedia_id FPFactoriopediaID?
 ---@field localised_name LocalisedString
 ---@field sprite SpritePath
 ---@field hidden boolean
@@ -674,6 +673,7 @@ function generator.items.generate()
         local item_name = "custom-" .. proto.name
         custom_items[item_name] = {
             name = item_name,
+            factoriopedia_id = {type="entity", name=proto.name},
             localised_name = {"", proto.localised_name, " ", {"fp.deposit"}},
             sprite = "entity/" .. proto.name,
             hidden = true,
@@ -686,6 +686,7 @@ function generator.items.generate()
         local item_name = "custom-" .. proto.name
         custom_items[item_name] = {
             name = item_name,
+            factoriopedia_id = {type="tile", name=proto.name},
             localised_name = {"", proto.localised_name, " ", {"fp.lake"}},
             sprite = "tile/" .. proto.name,
             hidden = true,
@@ -695,9 +696,13 @@ function generator.items.generate()
     end
 
     if script.feature_flags["space_travel"] then
-        -- Only need one rocket item for all silos/recipes
+        -- Only need one rocket item for all silos/recipes, which means it only gets a
+        -- Factoriopedia entry if every silo builds its rocket from the same parts
+        local parts_name = next(rocket_parts)
+        if parts_name and next(rocket_parts, parts_name) then parts_name = nil end
         local rocket_recipe = {
             name = "custom-silo-rocket",
+            factoriopedia_id = (parts_name) and {type="item", name=parts_name} or nil,
             localised_name = {"", {"entity-name.rocket"}, " ", {"fp.launch_recipe"}},
             sprite = "fp_silo_rocket",
             hidden = false,
@@ -731,9 +736,7 @@ function generator.items.generate()
         order = "z-c1",
         special = true
     }
-    local electricity_recipe = recipe_prototypes["impostor-electricity"]
-    local factoriopedia_id = (electricity_recipe) and electricity_recipe.factoriopedia_id or nil
-    generator.util.add_entity_groups(electric_power, (factoriopedia_id) and factoriopedia_id.name or nil)
+    generator.util.add_entity_groups(electric_power, first_generator)
     custom_items["custom-electric-power"] = electric_power
 
     custom_items["custom-heat-power"] = {
@@ -882,6 +885,7 @@ function generator.items.generate()
             }
 
             if type == "entity" then
+                item.factoriopedia_id = proto.factoriopedia_id
                 item.sprite = proto.sprite
                 item.group = proto.group
                 item.subgroup = proto.subgroup

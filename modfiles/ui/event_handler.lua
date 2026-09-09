@@ -80,6 +80,7 @@ end)
 ---@field shortcut string?
 ---@field core boolean?
 ---@field show GUIActionCondition?
+---@field enable GUIActionEnableCondition?
 
 ---@param definitions table<string, GUIActionDefinition>
 ---@return GUIAction[] actions
@@ -91,7 +92,8 @@ local function compile_actions(definitions)
             name = name,
             shortcut_string = lib.actions.shortcut_string(definition.shortcut),
             core = definition.core,
-            show = definition.show
+            show = definition.show,
+            enable = definition.enable
         }  ---@type GUIAction
         table.insert(actions, action)
 
@@ -114,7 +116,7 @@ for _, listener in pairs(event_listeners) do
                 registered_handler.actions, registered_handler.shortcuts = compile_actions(definition.actions_table)
             end
 
-            if GUI_HANDLERS[definition.name] then error("Duplicate handler: " .. definition.name) end
+            assert(not GUI_HANDLERS[definition.name], "Duplicate handler: " .. definition.name)
             GUI_HANDLERS[definition.name] = registered_handler
         end
     end
@@ -162,6 +164,7 @@ end
 ---@field shortcut_string LocalisedString?
 ---@field core boolean?
 ---@field show GUIActionCondition?
+---@field enable GUIActionEnableCondition?
 
 ---@class GUIEventData: EventData
 ---@field player_index PlayerIndex
@@ -218,6 +221,8 @@ local function handle_gui_event(event)
             local modifier_action = registered_handler.shortcuts--[[@cast -nil]][click]
             if not modifier_action then return end  -- meaning the used modifiers do not have an associated action
             if not lib.actions.is_visible(modifier_action, tags.flags--[[@as GUIActionFlags?]]) then return end
+            local enabled, warning = lib.actions.is_enabled(modifier_action, tags.flags--[[@as GUIActionFlags?]])
+            if not enabled then if warning then lib.cursor.create_flying_text(player, warning) end return end
 
             registered_handler.handler(player, tags, modifier_action.name)
         end

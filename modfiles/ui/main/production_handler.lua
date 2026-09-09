@@ -38,18 +38,8 @@ local function handle_line_recipe_click(player, tags, action)
     local relevant_line = (line.class == "Floor") and line.first or line
 
     if action == "open_subfloor" then
-        if relevant_line.recipe.production_type == "consume" then
-            lib.messages.raise(player, "error", {"fp.error_no_subfloor_on_byproduct_recipes"}, 1)
-            return
-        end
-
         local new_context = line  ---@as LineObject
         if line.class == "Line" then
-            if lib.context.get(player, "Factory")--[[@as Factory]].archived then
-                lib.messages.raise(player, "error", {"fp.error_no_new_subfloors_in_archive"}, 1)
-                return
-            end
-
             new_context = convert_line_to_subfloor(line)
             solver.update(player)
         end
@@ -89,7 +79,7 @@ local function handle_line_recipe_click(player, tags, action)
 
     elseif action == "factoriopedia" then
         local proto = relevant_line.recipe.proto  ---@as FPRecipePrototype
-        player.open_factoriopedia_gui(lib.get_factoriopedia_proto("recipe", proto.name, proto))
+        player.open_factoriopedia_gui(lib.get_factoriopedia_proto(proto))
     end
 end
 
@@ -114,7 +104,7 @@ local function handle_machine_click(player, tags, action)
         lib.clipboard.paste(player, machine)
 
     elseif action == "factoriopedia" then
-        player.open_factoriopedia_gui(prototypes["entity"][machine.proto.name])
+        player.open_factoriopedia_gui(lib.get_factoriopedia_proto(machine.proto))
     end
 end
 
@@ -161,7 +151,7 @@ local function handle_beacon_click(player, tags, action)
         lib.gui.run_refresh(player, "production")
 
     elseif action == "factoriopedia" then
-        player.open_factoriopedia_gui(prototypes["entity"][beacon.proto.name])
+        player.open_factoriopedia_gui(lib.get_factoriopedia_proto(beacon.proto))
     end
 end
 
@@ -212,7 +202,7 @@ local function handle_module_click(player, tags, action)
         lib.gui.run_refresh(player, "production")
 
     elseif action == "factoriopedia" then
-        player.open_factoriopedia_gui(prototypes["item"][module.proto.name])
+        player.open_factoriopedia_gui(lib.get_factoriopedia_proto(module.proto))
     end
 end
 
@@ -257,11 +247,6 @@ local function handle_item_click(player, tags, action)
             category_id=proto.category_id, product_id=proto.id}})
 
     elseif action == "edit_temperature" then  ---@cast line Line
-        if #line.recipe.temperature_data[item.proto.name].applicable_values == 1 then
-            lib.cursor.create_flying_text(player, {"fp.can_only_edit_multiple_choices"})
-            return
-        end
-
         lib.gui.open_dialog(player, {dialog="item", modal_data={recipe_id=line.recipe.id,
             category_id=item.proto.category_id, name=item.proto.name}})
 
@@ -282,9 +267,7 @@ local function handle_item_click(player, tags, action)
         lib.cursor.handle_item_click(player, item.proto, item.amount)
 
     elseif action == "factoriopedia" then
-        local name = item.proto.name
-        if item.proto.temperature then name = item.proto.base_name end
-        player.open_factoriopedia_gui(prototypes[item.proto.type][name])
+        player.open_factoriopedia_gui(lib.get_factoriopedia_proto(item.proto))
     end
 end
 
@@ -325,7 +308,7 @@ local function handle_fuel_click(player, tags, action)
         lib.cursor.handle_item_click(player, fuel.proto--[[@as FPFuelPrototype]], fuel.amount)
 
     elseif action == "factoriopedia" then
-        player.open_factoriopedia_gui(prototypes[fuel.proto.type][fuel.proto.name])
+        player.open_factoriopedia_gui(lib.get_factoriopedia_proto(fuel.proto))
     end
 end
 
@@ -341,32 +324,20 @@ end
 
 ---@param flags GUIActionFlags
 ---@return boolean?
-local function can_add_item_recipe(flags)
+local function show_add_item_recipe(flags)
     return not flags.product and not flags.catalyst
         and (not flags.entity or flags.special)
 end
 
 ---@param flags GUIActionFlags
----@return boolean
-local function is_non_entity(flags)
-    return not flags.entity
-end
-
----@param flags GUIActionFlags
 ---@return boolean?
-local function is_line_ingredient(flags)
-    return flags.ingredient and not flags.entity and not flags.subfloor
-end
-
----@param flags GUIActionFlags
----@return boolean?
-local function can_edit_item_temperature(flags)
+local function show_item_temperature(flags)
     return flags.fluid and flags.ingredient and not flags.subfloor
 end
 
 ---@param flags GUIActionFlags
 ---@return boolean?
-local function can_prioritize_item(flags)
+local function show_prioritize_item(flags)
     if flags.entity or flags.catalyst or flags.subfloor then return false end
     if flags.consuming then return flags.ingredient end
     return flags.product
@@ -376,6 +347,40 @@ end
 ---@return boolean?
 local function is_fluid(flags)
     return flags.fluid
+end
+
+---@param flags GUIActionFlags
+---@return boolean
+---@return LocalisedString? warning
+local function can_paste_recipe(flags)
+    if flags.defining_recipe then return false, {"fp.subfloor_defining_recipe_paste"} end
+    return lib.actions.can_edit_factory(flags)
+end
+
+---@param flags GUIActionFlags
+---@return boolean
+---@return LocalisedString? warning
+local function can_delete_recipe(flags)
+    if flags.defining_recipe then return false, {"fp.subfloor_defining_recipe_delete"} end
+    return lib.actions.can_edit_factory(flags)
+end
+
+---@param flags GUIActionFlags
+---@return boolean
+---@return LocalisedString? warning
+local function can_open_subfloor(flags)
+    if flags.consuming then return false, {"fp.subfloor_consuming_recipe"} end
+    if flags.archived and not flags.subfloor then return false, {"fp.subfloor_archived_factory"} end
+    return true
+end
+
+---@param flags GUIActionFlags
+---@return boolean
+---@return LocalisedString? warning
+local function can_prioritize(flags)
+    if flags.archived then return false, {"fp.factory_archived_edit"} end
+    if not flags.sequential then return false, {"fp.prioritize_requires_sequential"} end
+    return true
 end
 
 listeners.gui = {
@@ -398,22 +403,22 @@ listeners.gui = {
         {
             name = "act_on_line_recipe",
             actions_table = {
-                open_subfloor = {shortcut="left", core=true, show=is_regular_recipe},
+                open_subfloor = {shortcut="left", core=true, show=is_regular_recipe, enable=can_open_subfloor},
                 copy = {shortcut="shift-right"},
-                paste = {shortcut="shift-left", show=is_regular_recipe},
-                toggle = {shortcut="control-left"},
-                delete = {shortcut="control-right", show=is_regular_recipe},
-                factoriopedia = {shortcut="alt-left"}
+                paste = {shortcut="shift-left", enable=can_paste_recipe},
+                toggle = {shortcut="control-left", enable=lib.actions.can_edit_factory},
+                delete = {shortcut="control-right", enable=can_delete_recipe},
+                factoriopedia = {shortcut="alt-left", enable=lib.actions.can_open_factoriopedia}
             },
             handler = handle_line_recipe_click
         },
         {
             name = "act_on_line_machine",
             actions_table = {
-                edit = {shortcut="left", core=true},
+                edit = {shortcut="left", core=true, enable=lib.actions.can_edit_factory},
                 copy = {shortcut="shift-right"},
-                paste = {shortcut="shift-left"},
-                put_into_cursor = {shortcut="alt-right"},
+                paste = {shortcut="shift-left", enable=lib.actions.can_edit_factory},
+                put_into_cursor = {shortcut="alt-right", enable=lib.actions.can_put_into_cursor},
                 factoriopedia = {shortcut="alt-left"}
             },
             handler = handle_machine_click
@@ -425,11 +430,11 @@ listeners.gui = {
         {
             name = "act_on_line_beacon",
             actions_table = {
-                edit = {shortcut="left", core=true},
+                edit = {shortcut="left", core=true, enable=lib.actions.can_edit_factory},
                 copy = {shortcut="shift-right"},
-                paste = {shortcut="shift-left"},
-                delete = {shortcut="control-right"},
-                put_into_cursor = {shortcut="alt-right"},
+                paste = {shortcut="shift-left", enable=lib.actions.can_edit_factory},
+                delete = {shortcut="control-right", enable=lib.actions.can_edit_factory},
+                put_into_cursor = {shortcut="alt-right", enable=lib.actions.can_put_into_cursor},
                 factoriopedia = {shortcut="alt-left"}
             },
             handler = handle_beacon_click
@@ -441,10 +446,10 @@ listeners.gui = {
         {
             name = "act_on_line_module",
             actions_table = {
-                edit = {shortcut="left", core=true},
+                edit = {shortcut="left", core=true, enable=lib.actions.can_edit_factory},
                 copy = {shortcut="shift-right"},
-                paste = {shortcut="shift-left"},
-                delete = {shortcut="control-right"},
+                paste = {shortcut="shift-left", enable=lib.actions.can_edit_factory},
+                delete = {shortcut="control-right", enable=lib.actions.can_edit_factory},
                 factoriopedia = {shortcut="alt-left"}
             },
             handler = handle_module_click
@@ -452,26 +457,26 @@ listeners.gui = {
         {
             name = "act_on_line_item",
             actions_table = {
-                add_recipe_to_end = {shortcut="left", core=true, show=can_add_item_recipe},
-                add_recipe_below = {show=can_add_item_recipe},
-                edit_temperature = {shortcut="control-left", core=true, show=can_edit_item_temperature},
-                prioritize = {shortcut="control-right", show=can_prioritize_item},
+                add_recipe_to_end = {shortcut="left", core=true, show=show_add_item_recipe, enable=lib.actions.can_add_recipe},
+                add_recipe_below = {show=show_add_item_recipe, enable=lib.actions.can_add_recipe},
+                edit_temperature = {shortcut="control-left", core=true, show=show_item_temperature, enable=lib.actions.can_edit_temperature},
+                prioritize = {shortcut="control-right", show=show_prioritize_item, enable=can_prioritize},
                 copy = {shortcut="shift-right"},
-                paste = {shortcut="shift-left", show=is_line_ingredient},
-                put_into_cursor = {shortcut="alt-right", show=is_non_entity},
-                factoriopedia = {shortcut="alt-left", show=is_non_entity}
+                paste = {shortcut="shift-left", show=show_item_temperature, enable=lib.actions.can_edit_temperature},
+                put_into_cursor = {shortcut="alt-right", enable=lib.actions.can_put_into_cursor},
+                factoriopedia = {shortcut="alt-left", enable=lib.actions.can_open_factoriopedia}
             },
             handler = handle_item_click
         },
         {
             name = "act_on_line_fuel",
             actions_table = {
-                add_recipe_to_end = {shortcut="left", core=true},
-                add_recipe_below = {},
-                edit_temperature = {shortcut="control-left", core=true, show=is_fluid},
-                edit_fuel = {},
+                add_recipe_to_end = {shortcut="left", core=true, enable=lib.actions.can_add_recipe},
+                add_recipe_below = {enable=lib.actions.can_add_recipe},
+                edit_temperature = {shortcut="control-left", core=true, show=is_fluid, enable=lib.actions.can_edit_temperature},
+                edit_fuel = {enable=lib.actions.can_edit_factory},
                 copy = {shortcut="shift-right"},
-                paste = {shortcut="shift-left"},
+                paste = {shortcut="shift-left", enable=lib.actions.can_edit_factory},
                 put_into_cursor = {shortcut="alt-right"},
                 factoriopedia = {shortcut="alt-left"}
             },

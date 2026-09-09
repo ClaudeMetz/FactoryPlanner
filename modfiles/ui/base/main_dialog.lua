@@ -193,7 +193,8 @@ function main_dialog.set_tooltip(player, element)
         local handler_name = tags.on_gui_click  ---@as string?
         local registered_handler = handler_name and GUI_HANDLERS[handler_name] or nil
         if registered_handler and registered_handler.actions then
-            local action_tooltip = lib.actions.generate_tooltip(registered_handler.actions, tags.flags--[[@as GUIActionFlags?]])
+            local action_tooltip = lib.actions.generate_tooltip(registered_handler.actions,
+                tags.flags--[[@as GUIActionFlags?]])
             if #action_tooltip > 1 then tooltip = {"", tooltip, "\n", action_tooltip} end
         end
 

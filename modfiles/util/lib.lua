@@ -146,16 +146,34 @@ end
 
 
 ---@alias FactoriopediaIDType "item" | "fluid" | "recipe" | "entity" | "tile" | "space-location" | "ammo-category" | "space-connection" | "asteroid-chunk" | "virtual-signal" | "surface"
+---@alias FPFactoriopediaID {type: FactoriopediaIDType, name: string}
 
----@param type FactoriopediaIDType
----@param name string
----@param proto FPPrototype?
----@return LuaPrototypeBase
-function _lib.get_factoriopedia_proto(type, name, proto)
-    local fp_id = proto and proto.factoriopedia_id or nil
+-- Custom items and recipes need an explicit mapping; normal entries use their own prototype.
+---@param proto FPPrototype | FPPackedPrototype
+---@return FactoriopediaID?
+function _lib.get_factoriopedia_proto(proto)
+    if proto.simplified then return nil end
+    ---@cast proto FPPrototype
+    local fp_id = proto.factoriopedia_id
+    if fp_id then return prototypes[fp_id.type][fp_id.name] end
 
-    if fp_id then return prototypes[fp_id.type][fp_id.name]
-    else return prototypes[type][name] end
+    if proto.data_type == "items" then
+        ---@cast proto FPItemPrototype
+        if proto.type == "entity" then return nil end
+        return prototypes[proto.type][proto.base_name or proto.name]
+    elseif proto.data_type == "recipes" then
+        ---@cast proto FPRecipePrototype
+        if proto.custom then return nil end
+        return prototypes.recipe[proto.name]
+    elseif proto.data_type == "fuels" then
+        ---@cast proto FPFuelPrototype
+        return prototypes[proto.type][proto.name]
+    elseif proto.data_type == "modules" then
+        return prototypes.item[proto.name]
+    elseif proto.data_type == "machines" or proto.data_type == "beacons" then
+        return prototypes.entity[proto.name]
+    end
+    return nil
 end
 
 

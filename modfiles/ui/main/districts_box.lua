@@ -40,11 +40,6 @@ local function handle_item_button_click(player, tags, action)
     local item = OBJECT_INDEX[tags.item_id]  ---@as DistrictItem
 
     if action == "create_factory" then  -- only on net ingredients
-        if item.proto.ingredient_only then
-            lib.cursor.create_flying_text(player, {"fp.item_has_no_recipes"})
-            return
-        end
-
         local factory = factory_list.add_factory(player, nil, item.proto)
         local top_level_item = TLProduct.init(item.proto)
         top_level_item.required_amount = item.abs_diff
@@ -62,8 +57,7 @@ local function handle_item_button_click(player, tags, action)
         lib.cursor.handle_item_click(player, item.proto, item.abs_diff)
 
     elseif action == "factoriopedia" then
-        local name = (item.proto.temperature) and item.proto.base_name or item.proto.name
-        player.open_factoriopedia_gui(prototypes[item.proto.type][name])
+        player.open_factoriopedia_gui(lib.get_factoriopedia_proto(item.proto))
     end
 end
 
@@ -109,9 +103,13 @@ local function build_items_flow(player, parent, district)
         local relevant_table = (item.overall == "production") and prod_table or ingr_table
         local total_amount = item[item.overall].amount
 
+        local special = (item.proto.type == "entity" and item.proto.special)
         local flags = {
             ingredient = (item.overall == "consumption"),
-            special = (item.proto.type == "entity" and item.proto.special)
+            special = special,
+            cursor = not special,
+            ingredient_only = item.proto.ingredient_only,
+            factoriopedia = (lib.get_factoriopedia_proto(item.proto) ~= nil)
         }
         ---@class HandleItemButtonClickTags
         ---@field item_id ObjectID
@@ -336,12 +334,6 @@ local function is_ingredient(flags)
     return flags.ingredient
 end
 
----@param flags GUIActionFlags
----@return boolean
-local function is_regular_item(flags)
-    return not flags.special
-end
-
 listeners.gui = {
     on_gui_click = {
         {
@@ -435,10 +427,10 @@ listeners.gui = {
         {
             name = "act_on_district_item",
             actions_table = {
-                create_factory = {shortcut="left", core=true, show=is_ingredient},
+                create_factory = {shortcut="left", core=true, show=is_ingredient, enable=lib.actions.can_add_recipe},
                 copy = {shortcut="shift-right"},
-                put_into_cursor = {shortcut="alt-right", show=is_regular_item},
-                factoriopedia = {shortcut="alt-left", show=is_regular_item}
+                put_into_cursor = {shortcut="alt-right", enable=lib.actions.can_put_into_cursor},
+                factoriopedia = {shortcut="alt-left", enable=lib.actions.can_open_factoriopedia}
             },
             handler = handle_item_button_click
         }

@@ -125,8 +125,7 @@ local function handle_factory_click(player, tags, action)
         lib.gui.open_dialog(player, {dialog="factory", modal_data={factory_id=selected_factory.id}})
 
     elseif action == "duplicate" then
-        if selected_factory.valid then duplicate_factory(player, selected_factory)
-        else lib.cursor.create_flying_text(player, {"fp.factory_invalid_duplicate"}) end
+        duplicate_factory(player, selected_factory)
 
     elseif action == "delete" then
         lib.context.set(player, selected_factory)
@@ -195,11 +194,12 @@ local function refresh_factory_list(player)
 
                 move_button.style.size = {button_width, 28}
 
+                local flags = {valid=factory.valid, archived=factory.archived}
                 ---@class ActOnFactoryTags
                 ---@field factory_id ObjectID
                 ---@field context "factory_list"
                 local tags = {mod="fp", on_gui_click="act_on_factory", factory_id=factory.id,
-                    on_gui_hover="set_tooltip", context="factory_list"}
+                    on_gui_hover="set_tooltip", context="factory_list", flags=flags}
                 local caption, tooltip = factory:tostring(attach_factory_products, false)
                 local factory_button = button_flow.add{type="button", tags=tags, caption=caption, toggled=selected,
                     style="list_box_item", mouse_button_filter={"left-and-right"}, raise_hover_events=true}
@@ -422,6 +422,18 @@ end
 -- ** EVENTS **
 local listeners = {}  ---@type ListenerDefinitions
 
+---@param flags GUIActionFlags
+---@return boolean
+---@return LocalisedString? warning
+local function can_duplicate_factory(flags)
+    if not flags.valid then
+        return false, {"fp.factory_invalid_duplicate"}
+    elseif flags.archived then
+        return false, {"fp.factory_archived_duplicate"}
+    end
+    return true
+end
+
 listeners.gui = {
     on_gui_click = {
         {
@@ -482,7 +494,7 @@ listeners.gui = {
             actions_table = {
                 select = {shortcut="left", core=true},
                 edit = {shortcut="control-left"},
-                duplicate = {shortcut="shift-left"},
+                duplicate = {shortcut="shift-left", enable=can_duplicate_factory},
                 delete = {shortcut="control-right"}
             },
             handler = handle_factory_click
