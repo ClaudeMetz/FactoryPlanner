@@ -40,11 +40,6 @@ local function handle_item_button_click(player, tags, action)
     local item = OBJECT_INDEX[tags.item_id]  ---@as DistrictItem
 
     if action == "create_factory" then  -- only on net ingredients
-        if item.proto.ingredient_only then
-            lib.cursor.create_flying_text(player, {"fp.item_has_no_recipes"})
-            return
-        end
-
         local factory = factory_list.add_factory(player, nil, item.proto)
         local top_level_item = TLProduct.init(item.proto)
         top_level_item.required_amount = item.abs_diff
@@ -58,12 +53,14 @@ local function handle_item_button_click(player, tags, action)
         local copyable_item = SimpleItem.init(nil, item.proto, item.abs_diff)
         lib.clipboard.copy(player, copyable_item)
 
-    elseif action == "put_into_cursor" then
-        lib.cursor.handle_item_click(player, item.proto, item.abs_diff)
+    elseif action == "pipette" then
+        lib.cursor.pipette_item(player, item.proto)
+
+    elseif action == "put_into_combinator" then
+        lib.cursor.put_into_combinator(player, item.proto, item.abs_diff)
 
     elseif action == "factoriopedia" then
-        local name = (item.proto.temperature) and item.proto.base_name or item.proto.name
-        player.open_factoriopedia_gui(prototypes[item.proto.type][name])
+        player.open_factoriopedia_gui(lib.get_factoriopedia_proto(item.proto))
     end
 end
 
@@ -109,28 +106,29 @@ local function build_items_flow(player, parent, district)
         local relevant_table = (item.overall == "production") and prod_table or ingr_table
         local total_amount = item[item.overall].amount
 
+        local special = (item.proto.type == "entity" and item.proto.special)
+        local flags = {
+            ingredient = (item.overall == "consumption"),
+            special = special,
+            cursor = (item.proto.type ~= "entity"),
+            ingredient_only = item.proto.ingredient_only,
+            factoriopedia = (lib.get_factoriopedia_proto(item.proto) ~= nil)
+        }
         ---@class HandleItemButtonClickTags
         ---@field item_id ObjectID
         ---@field context "districts_box"
-        local tags = {mod="fp", item_id=item.id, on_gui_hover="set_tooltip", context="districts_box"}
-        local action_line = nil
+        ---@field flags GUIActionFlags
+        local tags = {mod="fp", item_id=item.id, on_gui_click="act_on_district_item",
+            on_gui_hover="set_tooltip", context="districts_box", flags=flags}
+
         local diff_number, amount_tooltip = nil, nil
         local total_tooltip = nil
 
-        if item.proto.type == "entity" and item.proto.special then
-            if item.overall == "consumption" then
-                tags.on_gui_click = "act_on_district_special_ingredient"
-                action_line = {"", "\n", MODIFIER_ACTIONS["act_on_district_special_ingredient"].tooltip}
-            end
-
+        if flags.special then
             diff_number = lib.format.button_number(item.abs_diff)
             amount_tooltip = lib.format.special_tooltip(item.proto.name, item.abs_diff)
             total_tooltip = lib.format.special_tooltip(item.proto.name, total_amount)
         else
-            local action = (item.overall == "production") and "act_on_district_product" or "act_on_district_ingredient"
-            tags.on_gui_click = action
-            action_line = {"", "\n", MODIFIER_ACTIONS[action].tooltip}
-
             diff_number, amount_tooltip = item_views.process_item(player, item.proto, item.abs_diff, nil)
             _, total_tooltip = item_views.process_item(player, item.proto, total_amount, nil)
         end
@@ -141,7 +139,7 @@ local function build_items_flow(player, parent, district)
         local title_line = {"fp.tt_title", item.proto.localised_name}
         local diff_line = {"fp.item_amount_" .. item.overall, amount_tooltip}
         local total_line = {"fp.item_amount_total", total_tooltip}
-        local tooltip = {"", title_line, diff_line, total_line, action_line}
+        local tooltip = {"", title_line, diff_line, total_line}
 
         local button = relevant_table.add{type="sprite-button", number=diff_number, style=style,
             sprite=item.proto.sprite, tags=tags, raise_hover_events=true, mouse_button_filter={"left-and-right"}}
@@ -333,6 +331,12 @@ end
 -- ** EVENTS **
 local listeners = {}  ---@type ListenerDefinitions
 
+---@param flags GUIActionFlags
+---@return boolean?
+local function is_ingredient(flags)
+    return flags.ingredient
+end
+
 listeners.gui = {
     on_gui_click = {
         {
@@ -424,28 +428,13 @@ listeners.gui = {
             end
         },
         {
-            name = "act_on_district_product",
+            name = "act_on_district_item",
             actions_table = {
+                create_factory = {shortcut="left", core=true, show=is_ingredient, enable=lib.actions.can_add_recipe},
                 copy = {shortcut="shift-right"},
-                put_into_cursor = {shortcut="alt-right"},
-                factoriopedia = {shortcut="alt-left"}
-            },
-            handler = handle_item_button_click
-        },
-        {
-            name = "act_on_district_ingredient",
-            actions_table = {
-                create_factory = {shortcut="left", show=true},
-                copy = {shortcut="shift-right"},
-                put_into_cursor = {shortcut="alt-right"},
-                factoriopedia = {shortcut="alt-left"}
-            },
-            handler = handle_item_button_click
-        },
-        {
-            name = "act_on_district_special_ingredient",
-            actions_table = {
-                create_factory = {shortcut="left", show=true}
+                pipette = {input="pipette", enable=lib.actions.can_pipette},
+                put_into_combinator = {input="put_into_combinator", enable=lib.actions.can_put_into_combinator},
+                factoriopedia = {shortcut="alt-left", enable=lib.actions.can_open_factoriopedia}
             },
             handler = handle_item_button_click
         }

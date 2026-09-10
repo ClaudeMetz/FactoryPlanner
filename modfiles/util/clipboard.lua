@@ -24,7 +24,8 @@ local _clipboard = {}
 -- Copies the given object into the player's clipboard as a packed object
 ---@param player LuaPlayer
 ---@param object CopyableObject
-function _clipboard.copy(player, object)
+---@param cut boolean? Whether the object is about to be removed
+function _clipboard.copy(player, object, cut)
     local player_table = lib.globals.player_table(player)
     player_table.clipboard = {
         class = object.class,
@@ -32,7 +33,8 @@ function _clipboard.copy(player, object)
         parent = object.parent  -- just used for unpacking, will remain a reference even if deleted elsewhere
     }  ---@as ClipboardEntry
 
-    lib.cursor.create_flying_text(player, {"fp.copied_into_clipboard", {"fp.pu_" .. object.class:lower(), 1}})
+    local message = (cut) and "fp.cut_into_clipboard" or "fp.copied_into_clipboard"
+    lib.cursor.create_flying_text(player, {message, {"fp.pu_" .. object.class:lower(), 1}})
     lib.gui.run_refresh(player, "paste_button")
 end
 

@@ -37,8 +37,8 @@ SimplexTableau.__index = SimplexTableau
 
 ---@class SimplexFloorResult
 ---@field floor_id ObjectID
----@field products SimplexItemList
----@field ingredients SimplexItemList
+---@field products SolverMap
+---@field ingredients SolverMap
 
 
 local SEPARATOR = ";"
@@ -110,7 +110,7 @@ function SimplexTableau:add_line_variable(line_data)
 
     local col_index = self:_add_column(line_key)
 
-    ---@param items SimplexItemList
+    ---@param items SolverMap
     ---@param sign 1 | -1
     local function add_rows(items, sign)
         for item, value in pairs(items) do

@@ -1,30 +1,90 @@
 local _actions = {}
 
----@alias ActionLimitations { archive_open: boolean?, sequential_solver: boolean? }
----@alias ActiveLimitations { archive_open: boolean, sequential_solver: boolean }
 ---@alias ActionList table<string, string>
+---@alias GUIActionFlags table<string, boolean?>
+---@alias GUIActionCondition fun(flags: GUIActionFlags): boolean?
+---@alias GUIActionEnableCondition fun(flags: GUIActionFlags): boolean?, LocalisedString?
 
----@param player LuaPlayer
----@return ActiveLimitations
-function _actions.current_limitations(player)
-    local factory = lib.context.get(player, "Factory")  ---@as Factory?
-    return {
-        archive_open = (factory ~= nil) and factory.archived or false,
-        sequential_solver = (factory ~= nil) and factory.solver == "sequential" or false
-    }
+
+---@param action GUIAction
+---@param flags GUIActionFlags?
+---@return boolean?
+function _actions.is_visible(action, flags)
+    return action.show == nil or action.show(flags or {})
 end
 
----@param action_limitations ActionLimitations
----@param active_limitations ActiveLimitations
+---@param action GUIAction
+---@param flags GUIActionFlags?
 ---@return boolean
-function _actions.allowed(action_limitations, active_limitations)
-    -- If a particular limitation is nil, it indicates that the action is allowed regardless
-    -- If it is non-nil, it needs to match the current state of the limitation exactly
-    for limitation_name, limitation in pairs(action_limitations) do
-        if active_limitations[limitation_name] ~= limitation then return false end
-    end
+---@return LocalisedString? warning
+function _actions.is_enabled(action, flags)
+    if action.enable == nil then return true end
+    local enabled, warning = action.enable(flags or {})
+    if enabled then return true end
+    return false, warning
+end
+
+
+-- Shared availability checks; cursor and factoriopedia flags describe whether the action has a target.
+---@param flags GUIActionFlags
+---@return boolean
+---@return LocalisedString? warning
+function _actions.can_edit_factory(flags)
+    if flags.archived then return false, {"fp.factory_archived_edit"} end
     return true
 end
+
+---@param flags GUIActionFlags
+---@return boolean
+---@return LocalisedString? warning
+function _actions.can_pipette(flags)
+    if not flags.cursor then return false, {"fp.pipette_unavailable"} end
+    return true
+end
+
+---@param flags GUIActionFlags
+---@return boolean
+---@return LocalisedString? warning
+function _actions.can_put_into_combinator(flags)
+    if not flags.cursor then return false, {"fp.put_into_combinator_unavailable"} end
+    return true
+end
+
+---@param flags GUIActionFlags
+---@return boolean
+---@return LocalisedString? warning
+function _actions.can_set_filter(flags)
+    if not flags.cursor then return false, {"fp.set_filter_unavailable"} end
+    return true
+end
+
+---@param flags GUIActionFlags
+---@return boolean
+---@return LocalisedString? warning
+function _actions.can_open_factoriopedia(flags)
+    if not flags.factoriopedia then return false, {"fp.no_factoriopedia_entry"} end
+    return true
+end
+
+---@param flags GUIActionFlags
+---@return boolean
+---@return LocalisedString? warning
+function _actions.can_edit_temperature(flags)
+    if flags.archived then return false, {"fp.factory_archived_edit"} end
+    if not flags.multiple_temperatures then return false, {"fp.only_one_available_option"} end
+    return true
+end
+
+---@param flags GUIActionFlags
+---@return boolean
+---@return LocalisedString? warning
+function _actions.can_add_recipe(flags)
+    if flags.archived then return false, {"fp.factory_archived_edit"} end
+    if flags.wrong_floor then return false, {"fp.item_recipe_wrong_floor"} end
+    if flags.ingredient_only and not flags.byproduct then return false, {"fp.item_has_no_recipes"} end
+    return true
+end
+
 
 -- Returns whether rate limiting is active for the given action, stopping it from proceeding
 -- This is essentially to prevent duplicate commands in quick succession, enabled by lag
@@ -69,19 +129,22 @@ function _actions.shortcut_string(shortcut)
     return {"fp.action_click", modifier_string}
 end
 
----@param actions GUIActionTable[]
+---@param actions GUIAction[]
+---@param flags GUIActionFlags?
 ---@return LocalisedString
-function _actions.generate_tooltip(actions)
-    local tooltip, any_hidden = {""}, false
+function _actions.generate_tooltip(actions, flags)
+    local tooltip, show_context_hint = {""}, false
     for _, action in pairs(actions) do
-        if action.show then
-            table.insert(tooltip, {"fp.action_line", action.shortcut_string, {"fp.action_" .. action.name}})
-        else
-            any_hidden = true
+        if lib.actions.is_visible(action, flags) then
+            if action.core and lib.actions.is_enabled(action, flags) then
+                table.insert(tooltip, {"fp.action_line", action.binding_string, {"fp.action_" .. action.name}})
+            else
+                show_context_hint = true
+            end
         end
     end
 
-    if any_hidden then table.insert(tooltip, {"fp.action_all"}) end
+    if show_context_hint then table.insert(tooltip, {"fp.action_all"}) end
 
     return tooltip
 end

@@ -287,9 +287,14 @@ function utility_structures.productivity_boni(player, modal_data)
     local force_recipes = player.force.recipes
     for recipe_name, _ in pairs(PRODUCTIVITY_RECIPES) do
         if not force_recipes[recipe_name] or force_recipes[recipe_name].enabled then
-            local caption = (recipe_name == "custom-mining")
-                and {"", "[img=utility/mining_drill_productivity_bonus_modifier_icon]  ", {"fp.mining_recipes"}}
-                or {"", "[recipe=" .. recipe_name .. "]  ", prototypes.recipe[recipe_name].localised_name}
+            local caption
+            if recipe_name == "custom-mining" then
+                caption = {"", "[img=utility/mining_drill_productivity_bonus_modifier_icon]  ", {"fp.mining_recipes"}}
+            elseif recipe_name == "custom-research" then
+                caption = {"", "[img=utility/laboratory_productivity_modifier_icon]  ", {"fp.research_recipes"}}
+            else
+                caption = {"", "[recipe=" .. recipe_name .. "]  ", prototypes.recipe[recipe_name].localised_name}
+            end
             table.add{type="label", caption=caption}.style.width = 250
 
             local recipe_productivity = lib.get_recipe_productivity(player.force, recipe_name)

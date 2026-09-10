@@ -16,7 +16,7 @@ local function determine_producing_ratio(line_data, aggregate, demanded_products
     ---@param product FormattedProduct
     ---@return number
     local function demanded_ratio(product)
-        local demand = aggregate.Ingredient[product.type][product.name]
+        local demand = aggregate.ingredients[structures.pack_item(product)]
         local prodded_amount = solver.util.determine_prodded_amount(product, line_data.total_effects)
         return (demand * (line_data.percentage / 100)) / prodded_amount
     end
@@ -57,7 +57,7 @@ local function determine_consuming_ratio(line_data, aggregate, ingredients)
     local production_ratio = 0  ---@type number
 
     for _, ingredient in pairs(ingredients) do
-        local available = aggregate.Byproduct[ingredient.type][ingredient.name]  ---@type number?
+        local available = aggregate.byproducts[structures.pack_item( ingredient)]  ---@type number?
 
         if priority_proto ~= nil then
             -- The priority ingredient paces the line by itself, importing the others as needed
@@ -68,7 +68,7 @@ local function determine_consuming_ratio(line_data, aggregate, ingredients)
 
         elseif available == nil then
             -- Avoid importing additional ingredients if they are a consumed byproduct further up
-            if aggregate.known_byproducts[ingredient.type][ingredient.name] then return 0 end
+            if aggregate.known_byproducts[structures.pack_item(ingredient)] then return 0 end
 
         else  -- stay within every byproduct's availability, so take the lowest ratio
             local ratio = available_ratio(ingredient, available)
@@ -94,7 +94,7 @@ local function update_line(line_data, aggregate, looped_fuel)
     -- Split the recipe's products by whether this floor has a demand for them
     local demanded_products, byproducts = {}, {}
     for _, product in pairs(line_data.products) do
-        local demanded = (aggregate.Ingredient[product.type][product.name] ~= nil)
+        local demanded = (aggregate.ingredients[structures.pack_item(product)] ~= nil)
         table.insert((demanded) and demanded_products or byproducts, product)
     end
 
@@ -104,7 +104,7 @@ local function update_line(line_data, aggregate, looped_fuel)
     if looped_fuel == nil and fuel_proto ~= nil then  -- don't loop if this already is the loop
         for _, product in pairs(line_data.products) do
             if product.type == fuel_proto.type and product.name == line_data.fuel_name then
-                if aggregate.Ingredient[product.type][product.name] == nil then
+                if aggregate.ingredients[structures.pack_item(product)] == nil then
                     fuel_byproduct = product
                 elseif not consuming then  -- bumping demand is pointless for a consuming line
                     fuel_demanded = true
@@ -148,18 +148,19 @@ local function update_line(line_data, aggregate, looped_fuel)
         ---@cast machine_proto.burner -nil
 
         local fuel_name = line_data.fuel_name  ---@as string
+        local fuel_item = { name = fuel_name, type = fuel_proto.type, amount = 0 }  ---@type SolverItem
+        local fuel_key = structures.pack_item(fuel_item)
         fuel_amount = solver.util.determine_fuel_amount(line_data, power, machine_amount)
 
         -- Handle recipes producing their own machine's fuel as a main product
         if production_ratio > 0 and fuel_demanded then
-            local ingredient_class = aggregate.Ingredient[fuel_proto.type]
-            local initial_demand = ingredient_class[fuel_name]
+            local initial_demand = aggregate.ingredients[fuel_key]
             local ratio = fuel_amount / initial_demand
 
             if ratio + MAGIC_NUMBERS.margin_of_error < 1 then  -- a ratio >= 1 means this can't outproduce itself
                 -- Need a lot of precision here, hence the exponent of 20
                 local bumped_demand = initial_demand * ((1 - ratio ^ 20) / (1 - ratio))
-                ingredient_class[fuel_name] = bumped_demand
+                aggregate.ingredients[fuel_key] = bumped_demand
 
                 -- Run line with fuel amount bumped to account for own consumption
                 update_line(line_data, aggregate, bumped_demand - initial_demand)
@@ -172,15 +173,14 @@ local function update_line(line_data, aggregate, looped_fuel)
         local outstanding_amount = fuel_amount - (looped_fuel or 0)
 
         -- Fuel first draws on the byproducts of this floor, including from this line
-        local available_amount = aggregate.Byproduct[fuel_proto.type][fuel_name] or 0
+        local available_amount = aggregate.byproducts[fuel_key] or 0
         if fuel_byproduct ~= nil then  -- consuming it shouldn't affect production
             available_amount = available_amount + determine_amount_with_productivity(fuel_byproduct)
         end
         local drawn_amount = math.min(outstanding_amount, available_amount)  ---@as number
 
-        local fuel_item = {type=fuel_proto.type, name=fuel_name, amount=drawn_amount}  ---@type SolverItem
-        structures.class.subtract(aggregate.Byproduct, fuel_item)  -- subtract from floor
-        structures.class.add(aggregate.Ingredient, fuel_item, outstanding_amount - drawn_amount)
+        structures.map.subtract(aggregate.byproducts, fuel_item, drawn_amount)  -- subtract from floor
+        structures.map.add(aggregate.ingredients, fuel_item, outstanding_amount - drawn_amount)
         -- Fuel itself is set via a special amount variable on the line itself
 
         if fuel_proto.burnt_result then
@@ -234,7 +234,7 @@ local function update_line(line_data, aggregate, looped_fuel)
         local emission_item = {type="entity", name=emission_name,
             amount=math.abs(emissions)--[[@as number]], constant=true}
         if emissions > 0 then
-            local demanded = (aggregate.Ingredient["entity"][emission_name] ~= nil)
+            local demanded = (aggregate.ingredients[structures.pack_item(emission_item)] ~= nil)
             table.insert((demanded) and demanded_products or byproducts, emission_item)
         elseif emissions < 0 then
             table.insert(ingredients, emission_item)
@@ -242,37 +242,37 @@ local function update_line(line_data, aggregate, looped_fuel)
     end
 
     -- Determine byproducts
-    local Byproduct = structures.class.init()
+    local line_byproducts = {}  ---@type SolverMap
     for _, byproduct in pairs(byproducts) do
         local byproduct_amount = (byproduct.constant) and byproduct.amount
             or determine_amount_with_productivity(byproduct)
 
-        structures.class.add(Byproduct, byproduct, byproduct_amount)
-        structures.class.add(aggregate.Byproduct, byproduct, byproduct_amount)
-        aggregate.known_byproducts[byproduct.type][byproduct.name] = true
+        structures.map.add(line_byproducts, byproduct, byproduct_amount)
+        structures.map.add(aggregate.byproducts, byproduct, byproduct_amount)
+        aggregate.known_byproducts[structures.pack_item(byproduct)] = true
     end
 
     -- Determine products
-    local Product = structures.class.init()
+    local line_products = {}  ---@type SolverMap
     for _, product in ipairs(demanded_products) do
         local product_amount = (product.constant) and product.amount
             or determine_amount_with_productivity(product)
-        local product_demand = aggregate.Ingredient[product.type][product.name] or 0
+        local product_demand = aggregate.ingredients[structures.pack_item(product)] or 0
 
         if product_amount > product_demand then
             local overflow_amount = product_amount - product_demand
-            structures.class.add(Byproduct, product, overflow_amount)
-            structures.class.add(aggregate.Byproduct, product, overflow_amount)
-            aggregate.known_byproducts[product.type][product.name] = true
+            structures.map.add(line_byproducts, product, overflow_amount)
+            structures.map.add(aggregate.byproducts, product, overflow_amount)
+            aggregate.known_byproducts[structures.pack_item(product)] = true
             product_amount = product_demand  -- desired amount
         end
 
-        structures.class.add(Product, product, product_amount)
-        structures.class.subtract(aggregate.Ingredient, product, product_amount)
+        structures.map.add(line_products, product, product_amount)
+        structures.map.subtract(aggregate.ingredients, product, product_amount)
     end
 
     -- Determine ingredients
-    local Ingredient = structures.class.init()
+    local line_ingredients = {}  ---@type SolverMap
     for _, ingredient in pairs(ingredients) do
         local ingredient_amount = (ingredient.constant) and ingredient.amount
             or ingredient.amount * production_ratio
@@ -280,16 +280,16 @@ local function update_line(line_data, aggregate, looped_fuel)
             ingredient_amount = ingredient_amount * line_data.resource_drain_rate
         end
 
-        structures.class.add(Ingredient, ingredient, ingredient_amount)
+        structures.map.add(line_ingredients, ingredient, ingredient_amount)
 
         -- Reduce line-byproducts and -ingredients so only the net amounts remain
-        local byproduct_amount = Byproduct[ingredient.type][ingredient.name]  ---@as number?
+        local byproduct_amount = line_byproducts[structures.pack_item(ingredient)]  ---@as number?
         if byproduct_amount ~= nil then
-            structures.class.subtract(Byproduct, ingredient, ingredient_amount)
-            structures.class.subtract(Ingredient, ingredient, byproduct_amount)
+            structures.map.subtract(line_byproducts, ingredient, ingredient_amount)
+            structures.map.subtract(line_ingredients, ingredient, byproduct_amount)
         end
     end
-    structures.class.balance_items(Ingredient, aggregate.Byproduct, aggregate.Ingredient)
+    structures.map.balance_items(line_ingredients, aggregate.byproducts, aggregate.ingredients)
 
     -- Add the integer machine count to the aggregate so it can be displayed on the origin_line
     aggregate.machine_amount = aggregate.machine_amount + math.ceil(machine_amount - MAGIC_NUMBERS.margin_of_error)
@@ -297,14 +297,13 @@ local function update_line(line_data, aggregate, looped_fuel)
 
     -- Update the actual line with the calculated results
     solver.set_line_result {
-        player_index = aggregate.player_index,
         floor_id = aggregate.floor_id,
         line_id = line_data.id,
         machine_amount = machine_amount,
         production_ratio = production_ratio,
-        Product = Product,
-        Byproduct = Byproduct,
-        Ingredient = Ingredient,
+        products = line_products,
+        byproducts = line_byproducts,
+        ingredients = line_ingredients,
         fuel_amount = fuel_amount
     }
 end
@@ -313,50 +312,47 @@ end
 ---@param floor_data FloorData
 ---@param aggregate SolverAggregate
 local function update_floor(floor_data, aggregate)
-    local desired_products = structures.class.list(aggregate.Ingredient)
+    local desired_products = structures.map.list(aggregate.ingredients)
 
     for _, line_data in ipairs(floor_data.lines) do
         local subfloor = line_data.subfloor
         if subfloor ~= nil then
             -- Determine the products that are relevant for this subfloor
-            local subfloor_aggregate = structures.aggregate.init(aggregate.player_index, subfloor.id)
+            local subfloor_aggregate = structures.aggregate.init(subfloor.id)
            for _, product in pairs(line_data.products) do
-                local ingredient_amount = aggregate.Ingredient[product.type][product.name]  ---@type number?
+                local ingredient_amount = aggregate.ingredients[structures.pack_item(product)]  ---@type number?
                 if ingredient_amount then
-                    structures.class.add(subfloor_aggregate.Ingredient, product, ingredient_amount)
+                    structures.map.add(subfloor_aggregate.ingredients, product, ingredient_amount)
                 end
             end
 
-            local floor_products = structures.class.list(subfloor_aggregate.Ingredient)
+            local floor_products = structures.map.list(subfloor_aggregate.ingredients)
             update_floor(subfloor, subfloor_aggregate)  -- updates aggregate
 
             for _, desired_product in pairs(floor_products) do
-                local ingredient_amount = aggregate.Product[desired_product.type][desired_product.name] or 0
+                local ingredient_amount = aggregate.products[structures.pack_item(desired_product)] or 0
                 local produced_amount = desired_product.amount - ingredient_amount
-                structures.class.subtract(aggregate.Ingredient, desired_product, produced_amount)
+                structures.map.subtract(aggregate.ingredients, desired_product, produced_amount)
             end
 
-            structures.class.balance_items(subfloor_aggregate.Ingredient, aggregate.Byproduct, aggregate.Ingredient)
+            structures.map.balance_items(subfloor_aggregate.ingredients, aggregate.byproducts, aggregate.ingredients)
             -- Byproducts coming out of a subfloor are consumable on this floor like any other
-            for type, items_of_type in pairs(subfloor_aggregate.Byproduct) do
-                for name, _ in pairs(items_of_type) do
-                    aggregate.known_byproducts[type][name] = true
-                end
+            for item_key, _ in pairs(subfloor_aggregate.byproducts) do
+                aggregate.known_byproducts[item_key] = true
             end
-            structures.class.balance_items(subfloor_aggregate.Byproduct, aggregate.Product, aggregate.Byproduct)
+            structures.map.balance_items(subfloor_aggregate.byproducts, aggregate.products, aggregate.byproducts)
 
             aggregate.machine_amount = aggregate.machine_amount + subfloor_aggregate.machine_amount
 
             -- Update the parent line of the subfloor with the results from the subfloor aggregate
             solver.set_line_result {
-                player_index = aggregate.player_index,
                 floor_id = aggregate.floor_id,
                 line_id = line_data.id,
                 machine_amount = subfloor_aggregate.machine_amount,
                 production_ratio = nil,
-                Product = subfloor_aggregate.Product,
-                Byproduct = subfloor_aggregate.Byproduct,
-                Ingredient = subfloor_aggregate.Ingredient,
+                products = subfloor_aggregate.products,
+                byproducts = subfloor_aggregate.byproducts,
+                ingredients = subfloor_aggregate.ingredients,
                 fuel_amount = nil
             }
         else
@@ -367,9 +363,9 @@ local function update_floor(floor_data, aggregate)
 
     -- Desired products that aren't ingredients anymore have been produced
     for _, desired_product in pairs(desired_products) do
-        local ingredient_amount = aggregate.Ingredient[desired_product.type][desired_product.name] or 0
+        local ingredient_amount = aggregate.ingredients[structures.pack_item(desired_product)] or 0
         local produced_amount = desired_product.amount - ingredient_amount
-        structures.class.add(aggregate.Product, desired_product, produced_amount)
+        structures.map.add(aggregate.products, desired_product, produced_amount)
     end
 end
 
@@ -378,26 +374,26 @@ end
 ---@param factory_data FactoryData
 function sequential_engine.update_factory(factory_data)
     -- Initialize aggregate with the top level items
-    local aggregate = structures.aggregate.init(factory_data.player_index, 1)
+    local aggregate = structures.aggregate.init(1)
     for _, product in pairs(factory_data.top_floor.products) do
-        structures.class.add(aggregate.Ingredient, product)
+        structures.map.add(aggregate.ingredients, product)
     end
 
     update_floor(factory_data.top_floor, aggregate)  -- updates aggregate
 
     -- Remove any top level items that are still ingredients, meaning unproduced
     for _, product in pairs(factory_data.top_floor.products) do
-        local ingredient_amount = aggregate.Ingredient[product.type][product.name] or 0  ---@type number
-        structures.class.subtract(aggregate.Ingredient, product, ingredient_amount)
+        local ingredient_amount = aggregate.ingredients[structures.pack_item(product)] or 0  ---@type number
+        structures.map.subtract(aggregate.ingredients, product, ingredient_amount)
     end
 
     -- Fuels are combined with ingredients for top-level purposes
     solver.set_factory_result {
         player_index = factory_data.player_index,
         factory_id = factory_data.factory_id,
-        Product = aggregate.Product,
-        Byproduct = aggregate.Byproduct,
-        Ingredient = aggregate.Ingredient
+        products = aggregate.products,
+        byproducts = aggregate.byproducts,
+        ingredients = aggregate.ingredients
     }
 end
 
