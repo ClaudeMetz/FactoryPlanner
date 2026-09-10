@@ -60,6 +60,7 @@ end
 ---@return table<string, integer>
 local function queued_craft_amounts(player)
     local amounts = {}  ---@type table<string, integer>
+    if player.physical_controller_type ~= defines.controllers.character then return {} end
     for _, entry in pairs(player.crafting_queue or {}) do
         if not entry.prerequisite then  -- prerequisites are transitory, so ignore
             for _, product in pairs(prototypes.recipe[entry.recipe].products) do
