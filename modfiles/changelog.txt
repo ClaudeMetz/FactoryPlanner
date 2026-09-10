@@ -2,6 +2,7 @@
 Version: 0.00.00
 Date: 00. 00. 0000
   Features:
+    - Added research planning, which can solve for the labs and science packs needed for a given SPM
   Changes:
   Bugfixes:
 

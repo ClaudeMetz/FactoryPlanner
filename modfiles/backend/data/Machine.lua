@@ -174,6 +174,8 @@ function Machine:get_speed()
         return speed * self.quality_proto.default_multiplier
     elseif category == "launcher" then
         return LAUNCHER_DATA[self.proto.name][self.quality_proto.name].speed
+    elseif category == "lab" then
+        return speed * self.quality_proto.lab_research_speed_multiplier
     else  -- "crafter"
         return speed * self.proto.crafting_speed_quality_multiplier[self.quality_proto.name]
     end
@@ -195,7 +197,7 @@ function Machine:get_energy_usage()
         return LAUNCHER_DATA[self.proto.name][self.quality_proto.name].energy_usage
     elseif not self.proto.quality_affects_energy_usage then
         return energy_usage
-    else  -- "crafter"
+    else  -- "crafter" | "lab"
         return energy_usage * self.proto.energy_usage_quality_multiplier[self.quality_proto.name]
     end
 end
@@ -209,6 +211,9 @@ function Machine:get_resource_drain_rate()
 
     if self.proto.prototype_category == "mining_drill" then
         return resource_drain_rate * self.quality_proto.mining_drill_resource_drain_multiplier
+    elseif self.proto.prototype_category == "lab" and self.proto.uses_quality_drain_modifier then
+        return math.max(resource_drain_rate
+            * self.quality_proto.science_pack_drain_multiplier, 0.01)
     else  -- "crafter" | "launcher" | "boiler" | "offshore_pump" | "generator" | nil
         return resource_drain_rate
     end
@@ -228,6 +233,8 @@ function Machine:get_module_limit()
         return limit
     elseif category == "mining_drill" then
         return limit + self.quality_proto.mining_drill_module_slots_bonus
+    elseif category == "lab" then
+        return limit + self.quality_proto.lab_module_slots_bonus
     else  -- "crafter" | "launcher"
         return limit + self.proto.module_slots_quality_bonus[self.quality_proto.name]
     end

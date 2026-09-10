@@ -15,11 +15,25 @@ local generator = {
     qualities = {}
 }
 
+---@class ResearchSet
+---@field category string
+---@field pack_set table<string, boolean>
+---@field pack_count integer
+---@field lab_name string
+---@field costs table<string, ResearchCost>
+
+---@class ResearchCost
+---@field ticks double
+---@field suffix string
+---@field amounts table<string, uint>
+
 -- Data collected during recipe generation, reused by later generator stages
 local resource_deposits = {}  ---@type LuaEntityPrototype[]
 local rocket_parts = {}  ---@type table<string, boolean>
 local pumped_tiles = {}  ---@type LuaTilePrototype[]
 local tile_can_have_plant = {}  ---@type table<string, string[]>
+local research_sets = {}  ---@type table<string, ResearchSet>
+local research_groups = nil  ---@type {group: ItemGroup, subgroup: ItemGroup}?
 
 
 ---@class FPPrototype
@@ -117,6 +131,8 @@ function generator.recipes.generate()
     local researchable_recipes = {}  ---@type table<string, string[]>
     local productivity_recipes = {}  ---@type table<string, boolean>
     local any_mining_productivity = false
+    local any_lab_productivity = false
+
     local tech_filter = {{filter="hidden", invert=true}, {filter="has-effects", mode="and"}}
     for _, tech_proto in pairs(prototypes.get_technology_filtered(tech_filter)) do
         for _, effect in pairs(tech_proto.effects) do
@@ -128,6 +144,8 @@ function generator.recipes.generate()
                 productivity_recipes[effect.recipe] = true
             elseif effect.type == "mining-drill-productivity-bonus" then
                 any_mining_productivity = true
+            elseif effect.type == "laboratory-productivity" then
+                any_lab_productivity = true
             end
         end
     end
@@ -188,6 +206,7 @@ function generator.recipes.generate()
     local pumped_fixed_fluids = {}  ---@type table<string, boolean>
     local boiler_recipes = {}  ---@type table<string, FPRecipePrototype>
     local silo_recipes = {}  ---@type table<string, FPRecipePrototype>
+    local lab_sets = {}  ---@type {inputs: table<string, boolean>, name: string, order: string}[]
 
     local entity_filter = {{filter="hidden", invert=true}}
     for _, proto in pairs(prototypes.get_entity_filtered(entity_filter)) do
@@ -424,6 +443,11 @@ function generator.recipes.generate()
 
                 boiler_recipe.categories[category] = true
             end
+
+        elseif proto.type == "lab" then
+            local input_set = {}
+            for _, pack_name in pairs(proto.lab_inputs--[[@cast -nil]]) do input_set[pack_name] = true end
+            table.insert(lab_sets, {inputs = input_set, name = proto.name, order = proto.order})
         end
     end
 
@@ -476,8 +500,98 @@ function generator.recipes.generate()
         end
     end
 
+    -- Add research pseudo-recipes: one per lab input set and cost bucket
+    local science_subgroup = prototypes.item_subgroup["science-pack"]
+    research_groups = (science_subgroup ~= nil) and {
+        group = generator.util.generate_group_table(science_subgroup.group),
+        subgroup = {name = "fp_research", localised_name = {"fp.research_recipes"},
+            order = science_subgroup.order .. "-b", valid = true}
+    } or nil
+
+    -- Sorted so the first lab of an input set is the one picturing its recipes
+    table.sort(lab_sets, function(a, b)
+        if a.order < b.order then return true
+        elseif a.order > b.order then return false
+        elseif a.name < b.name then return true
+        elseif a.name > b.name then return false end
+        return false
+    end)
+
+    for _, lab_set in pairs(lab_sets) do
+        local pack_names = {}
+        for pack_name, _ in pairs(lab_set.inputs) do table.insert(pack_names, pack_name) end
+        table.sort(pack_names)  -- keeps category name stable even if display order changes
+        local category = "research-" .. table.concat(pack_names, "-")
+
+        if #pack_names > 0 and research_sets[category] == nil then
+            research_sets[category] = {category = category, pack_set = lab_set.inputs,
+                pack_count = #pack_names, lab_name = lab_set.name, costs = {}}
+        end
+    end
+
+    -- Technologies accumulate into a bucket of every set that accepts their packs;
+    -- sets no technology matches are dropped along with their machine category
+    for _, tech_proto in pairs(prototypes.get_technology_filtered({{filter="hidden", invert=true}})) do
+        local cost = generator.util.research_cost(tech_proto)
+        if cost ~= nil then
+            for _, set in pairs(research_sets) do
+                local accepted = true
+                for pack_name, _ in pairs(cost.amounts) do
+                    if not set.pack_set[pack_name] then accepted = false; break end
+                end
+
+                if accepted then
+                    local bucket = set.costs[cost.key]
+                    if bucket == nil then
+                        bucket = {ticks = cost.ticks, suffix = cost.suffix, amounts = {}}
+                        set.costs[cost.key] = bucket
+                    end
+                    for pack_name, amount in pairs(cost.amounts) do
+                        bucket.amounts[pack_name] = amount
+                    end
+                end
+            end
+        end
+    end
+    for category, set in pairs(research_sets) do
+        if next(set.costs) == nil then research_sets[category] = nil end
+    end
+
+    for _, set in pairs(research_sets) do
+        for _, cost in pairs(set.costs) do
+            local ingredients = {}  ---@type Ingredient[]
+            for pack_name, amount in pairs(cost.amounts) do
+                table.insert(ingredients, {type="item", name=pack_name, amount=amount})
+            end
+            generator.util.sort_by_item_order(ingredients)
+
+            local value, unit = generator.util.research_time(cost.ticks)
+            local recipe = custom_recipe()
+            recipe.name = "impostor-" .. set.category .. "-" .. cost.ticks .. cost.suffix
+            recipe.localised_name = {"fp.research_recipe", #ingredients, value, unit}
+            recipe.sprite = "entity/" .. set.lab_name  ---@type SpritePath
+            if not helpers.is_valid_sprite_path(recipe.sprite) then recipe.sprite = "fp_research" end
+            -- Smaller sets first, then by ascending research time
+            recipe.order = string.format("%02d-%s-%08d", set.pack_count, set.category, cost.ticks)
+                .. cost.suffix
+            recipe.categories = {[set.category] = true}
+            recipe.allowed_effects = {speed=true, productivity=true, quality=true,
+                consumption=true, pollution=true}
+            recipe.productivity_recipe = (any_lab_productivity) and "custom-research" or nil
+            recipe.energy = cost.ticks / 60  -- research_unit_energy is given in ticks
+
+            local products = {{type="entity", name="custom-research-" .. cost.ticks, amount=1}--[[@as Product]]}
+            generator.util.format_recipe(recipe, products, products[1], ingredients)
+            if research_groups then
+                recipe.group = research_groups.group
+                recipe.subgroup = research_groups.subgroup
+            end  -- keeps the default groups otherwise
+            insert_prototype(recipes, recipe, nil)
+        end
+    end
+
     -- Add the recipe that power generating machines run. There is only one of it, since what
-    -- differs between those machines is their fuel, which is configured on the machine itself.
+    -- differs between those machines is their fuel, configured on the machine itself.
     if first_generator ~= nil then
         local electricity_recipe = custom_recipe()
         electricity_recipe.name = "impostor-electricity"
@@ -642,6 +756,32 @@ function generator.items.generate()
     }
     generator.util.add_default_groups(custom_items["custom-heating-power"])
 
+    -- One research item per observed time, so a production goal names the time it's for
+    local research_times = {}  ---@type table<double, boolean>
+    for _, set in pairs(research_sets) do
+        for _, cost in pairs(set.costs) do research_times[cost.ticks] = true end
+    end
+
+    for ticks, _ in pairs(research_times) do
+        local value, unit = generator.util.research_time(ticks)
+        local item = {
+            name = "custom-research-" .. ticks,
+            localised_name = {"fp.research_product", value, unit},
+            -- Composed at data stage, absent if techs are changed in final-fixes
+            sprite = "fp_research_" .. ticks,  ---@type SpritePath
+            hidden = false,
+            order = "z-d-" .. string.format("%08d", ticks)
+        }
+        if not helpers.is_valid_sprite_path(item.sprite) then item.sprite = "fp_research" end
+        if research_groups then
+            item.group = research_groups.group
+            item.subgroup = research_groups.subgroup
+        else
+            generator.util.add_default_groups(item)
+        end
+        custom_items[item.name] = item
+    end
+
     local relevant_items = {item={}, fluid={}, entity={}}
     local fluid_has_temperature = {}
     -- Extract items from recipes and note whether they are ever used as a product
@@ -789,6 +929,7 @@ end
 ---@field module_slots_quality_bonus table<QualityID, uint16>
 ---@field surface_conditions SurfaceCondition[]
 ---@field resource_drain_rate number?
+---@field uses_quality_drain_modifier boolean?
 ---@field uses_force_mining_productivity_bonus boolean?
 ---@field heating_energy double
 
@@ -810,7 +951,7 @@ end
 ---@field maximum_temperature float?
 
 ---@alias EmissionsMap table<string, double>
----@alias PrototypeCategory ("crafter" | "launcher" | "mining_drill" | "boiler" | "offshore_pump" | "generator")
+---@alias PrototypeCategory ("crafter" | "launcher" | "mining_drill" | "boiler" | "offshore_pump" | "generator" | "lab")
 
 ---@return NamedPrototypesWithCategory<FPMachinePrototype>
 function generator.machines.generate()
@@ -1057,6 +1198,27 @@ function generator.machines.generate()
                     machine.speed = proto.mining_speed
                     machine.resource_drain_rate = proto.resource_drain_rate_percent--[[@cast -nil]] / 100
                     insert_machine(machine)
+                end
+            end
+
+        elseif proto.type == "lab" then
+            local input_set = {}
+            for _, pack_name in pairs(proto.lab_inputs--[[@cast -nil]]) do input_set[pack_name] = true end
+
+            for _, set in pairs(research_sets) do
+                local all_inputs = true
+                for pack_name, _ in pairs(set.pack_set) do
+                    if not input_set[pack_name] then all_inputs = false; break end
+                end
+                if all_inputs then
+                    local machine = generate_category_entry(set.category, proto, "lab")
+                    if machine then
+                        -- Normal quality's lab_research_speed_multiplier is always 1, so this is the base speed
+                        machine.speed = proto.get_researching_speed("normal")--[[@cast -nil]]
+                        machine.resource_drain_rate = proto.science_pack_drain_rate_percent--[[@cast -nil]] / 100
+                        machine.uses_quality_drain_modifier = proto.uses_quality_drain_modifier
+                        insert_machine(machine)
+                    end
                 end
             end
 
@@ -1760,8 +1922,11 @@ end
 ---@field default_multiplier double
 ---@field beacon_power_usage_multiplier double
 ---@field mining_drill_resource_drain_multiplier double
+---@field lab_research_speed_multiplier double
+---@field science_pack_drain_multiplier float
 ---@field beacon_module_slots_bonus uint16
 ---@field mining_drill_module_slots_bonus uint16
+---@field lab_module_slots_bonus uint16
 ---@field module_multipliers table<ModuleEffectName, float>
 
 ---@return NamedPrototypes<FPQualityPrototype>
@@ -1784,8 +1949,11 @@ function generator.qualities.generate()
                     default_multiplier = proto.default_multiplier,
                     beacon_power_usage_multiplier = proto.beacon_power_usage_multiplier,
                     mining_drill_resource_drain_multiplier = proto.mining_drill_resource_drain_multiplier,
+                    lab_research_speed_multiplier = proto.lab_research_speed_multiplier,
+                    science_pack_drain_multiplier = proto.science_pack_drain_multiplier,
                     beacon_module_slots_bonus = proto.beacon_module_slots_bonus,
                     mining_drill_module_slots_bonus = proto.mining_drill_module_slots_bonus,
+                    lab_module_slots_bonus = proto.lab_module_slots_bonus,
                     module_multipliers = {
                         consumption = proto.module_consumption_multiplier,
                         speed = proto.module_speed_multiplier,

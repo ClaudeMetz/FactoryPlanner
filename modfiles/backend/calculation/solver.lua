@@ -190,6 +190,12 @@ local function generate_floor_data(player, factory, floor, calculate_emissions)
                 line_data.fuel_performance, line_data.wasted_share = machine:get_fuel_performance()
                 line_data.machine_speed = machine:get_speed() * line_data.fuel_performance
 
+                -- Lab speed bonus is multiplicative, not additive to effects
+                if machine.proto.prototype_category == "lab" then
+                    line_data.machine_speed = line_data.machine_speed
+                        * (1 + force.laboratory_speed_modifier)
+                end
+
                 if machine.proto.prototype_category == "boiler" then
                     local goal_temperature = recipe_proto.products[1]--[[@cast -nil]].temperature  ---@as float
                     local input_temperature = line.recipe:get_temperature(
