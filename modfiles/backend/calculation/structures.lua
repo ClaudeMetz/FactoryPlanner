@@ -71,9 +71,7 @@ function _structures.map.add(map, item, amount)
     local amount_to_add = amount or item.amount or 0
 
     map[key] = (map[key] or 0) + amount_to_add
-    if map[key] < MAGIC_NUMBERS.margin_of_error and map[key] > -MAGIC_NUMBERS.margin_of_error then
-        map[key] = nil
-    end
+    if map[key] == 0 then map[key] = nil end
 end
 
 ---@param map SolverMap
