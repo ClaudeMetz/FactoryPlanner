@@ -494,14 +494,15 @@ function matrix_engine.consolidate(aggregate)
     -- Items cannot be both products or byproducts, but they can be both ingredients and fuels.
     -- In the case that an item appears as an output, an ingredient, and a fuel, delete from fuel first.
     local function compare_maps(input_map, output_map)
-        for _, output_item in pairs(structures.map.list(aggregate[output_map])) do
-            local input_amount = aggregate[input_map][structures.pack_item(output_item)] or 0
-            local net_amount = output_item.amount - input_amount
+        for item_key, output_amount in pairs(aggregate[output_map]) do
+            local output_item = structures.unpack_item(item_key, output_amount)
+            local input_amount = aggregate[input_map][item_key] or 0
+            local net_amount = output_amount - input_amount
 
             -- Solving leaves a relative error behind, so the leftover of an item that actually
             -- cancels out is proportional to how much of it flows. A fixed margin can't catch
             -- that across amounts as far apart as items and power, so this scales with the flow.
-            local scale = math.max(math.abs(output_item.amount), math.abs(input_amount))
+            local scale = math.max(math.abs(output_amount), math.abs(input_amount))
             local cancels_out = math.abs(net_amount) < scale * MAGIC_NUMBERS.margin_of_error
 
             if cancels_out then  -- take both sides down to nothing, rather than leaving the rest
