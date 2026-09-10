@@ -12,12 +12,10 @@ solver = {
 }
 
 -- ** LOCAL UTIL **
----@param player LuaPlayer
 ---@param floor Floor
 ---@param line LineObject
-local function set_blank_line(player, floor, line)
+local function set_blank_line(floor, line)
     solver.set_line_result {
-        player_index = player.index,
         floor_id = floor.id,
         line_id = line.id,
         machine_amount = 0,
@@ -29,15 +27,14 @@ local function set_blank_line(player, floor, line)
     }
 end
 
----@param player LuaPlayer
 ---@param floor Floor
-local function set_blank_floor(player, floor)
+local function set_blank_floor(floor)
     for line in floor:iterator() do
         if line.class == "Floor" then
-            set_blank_line(player, floor, line)
-            set_blank_floor(player, line)
+            set_blank_line(floor, line)
+            set_blank_floor(line)
         else
-            set_blank_line(player, floor, line)
+            set_blank_line(floor, line)
         end
     end
 end
@@ -54,7 +51,7 @@ local function set_blank_factory(player, factory)
         matrix_free_items = factory.matrix_free_items  ---@as FPItemPrototype[]
     }
 
-    set_blank_floor(player, factory.top_floor)
+    set_blank_floor(factory.top_floor)
 end
 
 
@@ -151,7 +148,7 @@ local function generate_floor_data(player, factory, floor, calculate_emissions)
         else  ---@cast line Line
             if line:get_blocker() ~= nil then
                 -- Useless lines don't need to run through the solver
-                set_blank_line(player, floor, line)
+                set_blank_line(floor, line)
             else
                 local machine = line.machine
                 local recipe_proto = line.recipe.proto  ---@as FPRecipePrototype
