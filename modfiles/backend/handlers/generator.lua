@@ -1789,6 +1789,7 @@ end
 ---@class FPLocationPrototype: FPPrototype
 ---@field data_type "locations"
 ---@field tooltip LocalisedString
+---@field is_planet boolean
 ---@field surface_properties SurfaceProperties?
 ---@field pollutant_type string?
 ---@field resource_recipes table<string, true>?
@@ -1865,6 +1866,7 @@ function generator.locations.generate()
             localised_name = proto.localised_name,
             sprite = sprite,
             tooltip = tooltip,
+            is_planet = (category == "space-location" and proto.type == "planet"),
             surface_properties = surface_properties,
             pollutant_type = (category == "space-location" and proto.pollutant_type)
                 and proto.pollutant_type.name or nil,
@@ -1892,6 +1894,7 @@ function generator.locations.generate()
             localised_name = {"fp.universal_location"},
             sprite = "fp_universal_planet",
             tooltip = {"fp.universal_location_tt"},
+            is_planet = false,
             surface_properties = nil,  -- accepts all machines and recipes
             pollutant_type = nil,  -- no pollution produced
             resource_recipes = nil  -- no restrictions on mined resources
@@ -1902,19 +1905,26 @@ function generator.locations.generate()
     return locations
 end
 
--- Nauvis and the universal location come first, the rest is sorted alphabetically
-local location_order = {nauvis = 1, universal = 2}
+-- Nauvis comes first, then planets and other locations alphabetically, with universal last
+---@param proto FPLocationPrototype
+---@return integer
+local function location_priority(proto)
+    if proto.name == "nauvis" then return 1 end
+    if proto.name == "universal" then return 4 end
+    return proto.is_planet and 2 or 3
+end
 
 ---@param a FPLocationPrototype
 ---@param b FPLocationPrototype
 ---@return boolean
 function generator.locations.sorting_function(a, b)
-    local a_order, b_order = location_order[a.name] or 3, location_order[b.name] or 3
-    if a_order < b_order then return true
-    elseif a_order > b_order then return false end
-    if a.name < b.name then return true
-    elseif a.name > b.name then return false end
-    return false
+    local a_priority = location_priority(a)
+    local b_priority = location_priority(b)
+
+    if a_priority ~= b_priority then
+        return a_priority < b_priority
+    end
+    return a.name < b.name
 end
 
 
