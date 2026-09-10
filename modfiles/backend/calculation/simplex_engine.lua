@@ -5,15 +5,13 @@ local util = require("__core__.lualib.util")
 --- Matrix solver based on the simplex method
 local simplex_engine = {}
 
----@alias SimplexItemList table<SolverItemKey, number>
----@alias SimplexItemSet table<SolverItemKey, true>
 ---@alias LineMetadataTable table<ObjectID, LineMetadata>
 
 ---@class LineMetadata
 ---@field line_id ObjectID
 ---@field floor_id ObjectID
----@field products SimplexItemList
----@field ingredients SimplexItemList
+---@field products SolverMap
+---@field ingredients SolverMap
 ---@field total_crafts number?
 ---@field machine_limit number?
 ---@field machine_force_limit boolean?
@@ -77,9 +75,9 @@ end
 ---@return SimplexResult?
 function simplex_engine.solve_floor(floor_data, line_metadata_table, level, previous_basis, cache_invalid_map)
     local relevant_line_metadata = {}  ---@type LineMetadata[]
-    local products = {}  ---@type SimplexItemSet
-    local ingredients = {}  ---@type SimplexItemSet
-    local cycled_intermediates = {}  ---@type SimplexItemSet
+    local products = {}  ---@type SolverSet
+    local ingredients = {}  ---@type SolverSet
+    local cycled_intermediates = {}  ---@type SolverSet
     local cache_invalid = cache_invalid_map[floor_data.id]
     local result  ---@type SimplexResult?
 
@@ -119,7 +117,7 @@ function simplex_engine.solve_floor(floor_data, line_metadata_table, level, prev
         end
     end
 
-    local intermediates = solver.util.table.intersection(products, ingredients)  ---@type SimplexItemSet
+    local intermediates = solver.util.table.intersection(products, ingredients)  ---@type SolverSet
 
     -- Do not continue if the floor can't produce anything (sanity check)
     if not next(products) then return end
@@ -231,8 +229,8 @@ end
 ---@param floor_id ObjectID
 ---@return LineMetadata?
 function simplex_engine.get_line_metadata(line_data, floor_id)
-    local products = {}  ---@type SimplexItemList
-    local ingredients = {}  ---@type SimplexItemList
+    local products = {}  ---@type SolverMap
+    local ingredients = {}  ---@type SolverMap
 
     -- Get amount of crafts in 1 second
     local speed_multiplier = line_data.machine_speed * (1 + (line_data.total_effects.speed / MAGIC_NUMBERS.effect_precision))
@@ -362,8 +360,8 @@ end
 ---@param line_metadata_table LineMetadataTable
 ---@param result SimplexResult?
 function simplex_engine.update_factory(factory_data, line_metadata_table, result)
-    local top_products = {}  ---@type SimplexItemSet
-    local top_byproducts = {}  ---@type SimplexItemList
+    local top_products = {}  ---@type SolverSet
+    local top_byproducts = {}  ---@type SolverMap
 
     local product_result = {}  ---@type SolverMap
     local byproduct_result = {}  ---@type SolverMap
@@ -407,7 +405,7 @@ end
 ---@param player_index integer
 ---@param floor_data FloorData
 ---@param scale_factor number
----@param byproducts SimplexItemList
+---@param byproducts SolverMap
 ---@param line_metadata_table LineMetadataTable
 ---@param result SimplexResult?
 ---@return integer machine_amount
@@ -455,7 +453,7 @@ end
 ---@param floor_id ObjectID
 ---@param line_data LineData
 ---@param scale_factor number
----@param byproducts SimplexItemList
+---@param byproducts SolverMap
 ---@param line_metadata_table LineMetadataTable
 ---@param result SimplexLineResult?
 ---@return number machine_amount
@@ -510,15 +508,15 @@ function simplex_engine.update_line(player_index, floor_id, line_data, scale_fac
 end
 
 ---@param machine_amount number
----@param products SimplexItemList
----@param byproducts SimplexItemList
----@param ingredients SimplexItemList
+---@param products SolverMap
+---@param byproducts SolverMap
+---@param ingredients SolverMap
 ---@return SolverMap products
 ---@return SolverMap byproducts
 ---@return SolverMap ingredients
----@return SimplexItemList floor_byproducts
+---@return SolverMap floor_byproducts
 function simplex_engine.update_line_object_common(machine_amount, products, byproducts, ingredients)
-    local floor_byproducts = {}  ---@type SimplexItemList
+    local floor_byproducts = {}  ---@type SolverMap
 
     local product_result = {}  ---@type SolverMap
     local byproduct_result = {}  ---@type SolverMap
