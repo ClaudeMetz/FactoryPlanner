@@ -332,12 +332,15 @@ function simplex_engine.get_line_metadata(line_data, floor_id)
         solver.util.table.add(ingredients, item_key, power_amount)
     end
     if heat_amount > 0 then
-        local item = { name = "custom-heat-power", type = "entity", amount = 0 }  ---@as SolverItem        local item_key = structures.pack_item(item)
+        local item = { name = "custom-heat-power", type = "entity", amount = 0 }  ---@as SolverItem
+        local item_key = structures.pack_item(item)
         solver.util.table.add(ingredients, item_key, heat_amount)
     end
     if heating_amount > 0 then
         local item = { name = "custom-heating-power", type = "entity", amount = 0 }  ---@as SolverItem
-        local item_key = structures.pack_item(item)    end
+        local item_key = structures.pack_item(item)
+        solver.util.table.add(ingredients, item_key, heating_amount)
+    end
     if line_data.pollutant_type and emissions ~= 0 then
         local item = { name = "custom-" .. line_data.pollutant_type, type = "entity", amount = 0 }  ---@as SolverItem
         local item_key = structures.pack_item(item)
