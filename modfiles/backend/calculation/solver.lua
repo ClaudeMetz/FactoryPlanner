@@ -171,8 +171,10 @@ local function generate_floor_data(player, factory, floor, calculate_emissions)
                 line_data.pollutant_type = (calculate_emissions) and factory.parent.location_proto.pollutant_type or nil
                 line_data.entities_require_heating = factory.parent.location_proto.entities_require_heating
 
-                -- Effects - update line with recipe effects here if applicable
-                line.recipe:update_effects(player.force--[[@as LuaForce]], factory)
+                local force = player.force  ---@as LuaForce
+                local mod_changed = machine:update_mod_effects(force)
+                local recipe_changed = line.recipe:update_effects(force, factory)
+                if mod_changed or recipe_changed then machine:summarize_effects() end
                 line_data.total_effects = line.total_effects
 
                 if machine.fuel ~= nil then
@@ -184,6 +186,12 @@ local function generate_floor_data(player, factory, floor, calculate_emissions)
                 -- The machine needs to potentially run slower if fuel is insufficient
                 line_data.fuel_performance, line_data.wasted_share = machine:get_fuel_performance()
                 line_data.machine_speed = machine:get_speed() * line_data.fuel_performance
+
+                -- Lab speed bonus is multiplicative, not additive to effects
+                if machine.proto.prototype_category == "lab" then
+                    line_data.machine_speed = line_data.machine_speed
+                        * (1 + force.laboratory_speed_modifier)
+                end
 
                 if machine.proto.prototype_category == "boiler" then
                     local goal_temperature = recipe_proto.products[1]--[[@cast -nil]].temperature  ---@as float
@@ -478,6 +486,12 @@ listeners.global = {
         local player = game.get_player(metadata.player_index)  ---@as LuaPlayer
         local factory = OBJECT_INDEX[metadata.factory_id]
         solver.update(player, factory)
+
+        -- Scheduled updates run without user interaction, so the interface needs a refresh
+        if lib.context.get(player, "Factory") == factory then
+            local compact_view = lib.globals.ui_state(player).compact_view
+            lib.gui.run_refresh(player, (compact_view) and "compact_factory" or "production")
+        end
     end
 }
 

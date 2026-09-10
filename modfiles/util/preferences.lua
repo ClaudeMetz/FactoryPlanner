@@ -205,27 +205,27 @@ function _preferences.import(player, export_string)
 
     if not pcall(function()
         local et = export_table
-        if et.timescale ~= 1 and et.timescale ~= 60 then error() end
-        if type(et.pause_on_interface) ~= "boolean" then error() end
-        if type(et.compact_ingredients) ~= "boolean" then error() end
-        if type(et.fold_out_subfloors) ~= "boolean" then error() end
-        if not verify_range(et.products_per_row, _preferences.products_per_row_options) then error() end
-        if not verify_range(et.factory_list_rows, _preferences.factory_list_rows_options) then error() end
-        if not verify_range(et.compact_width_percentage, _preferences.compact_width_percentages) then error() end
-        if type(et.show_gui_button) ~= "boolean" then error() end
-        if type(et.attach_factory_products) ~= "boolean" then error() end
-        if type(et.skip_factory_naming) ~= "boolean" then error() end
-        if not verify_option(et.default_solver, solver.choices) then error() end
-        if type(et.show_floor_items) ~= "boolean" then error() end
-        if type(et.ingredient_satisfaction) ~= "boolean" then error() end
-        if type(et.calculate_emissions) ~= "boolean" then error() end
-        if type(et.ignore_barreling_recipes) ~= "boolean" then error() end
-        if type(et.ignore_recycling_recipes) ~= "boolean" then error() end
-        if type(et.done_column) ~= "boolean" then error() end
-        if type(et.percentage_column) ~= "boolean" then error() end
-        if type(et.line_comment_column) ~= "boolean" then error() end
-        if et.belts_or_lanes ~= "belts" and et.belts_or_lanes ~= "lanes" then error() end
-        if not verify_range(et.belt_stack, _preferences.belt_stack_options) then error() end
+        assert(verify_option(et.timescale, {1, 60}))
+        assert(type(et.pause_on_interface) == "boolean")
+        assert(type(et.compact_ingredients) == "boolean")
+        assert(type(et.fold_out_subfloors) == "boolean")
+        assert(verify_range(et.products_per_row, _preferences.products_per_row_options))
+        assert(verify_range(et.factory_list_rows, _preferences.factory_list_rows_options))
+        assert(verify_range(et.compact_width_percentage, _preferences.compact_width_percentages))
+        assert(type(et.show_gui_button) == "boolean")
+        assert(type(et.attach_factory_products) == "boolean")
+        assert(type(et.skip_factory_naming) == "boolean")
+        assert(verify_option(et.default_solver, solver.choices))
+        assert(type(et.show_floor_items) == "boolean")
+        assert(type(et.ingredient_satisfaction) == "boolean")
+        assert(type(et.calculate_emissions) == "boolean")
+        assert(type(et.ignore_barreling_recipes) == "boolean")
+        assert(type(et.ignore_recycling_recipes) == "boolean")
+        assert(type(et.done_column) == "boolean")
+        assert(type(et.percentage_column) == "boolean")
+        assert(type(et.line_comment_column) == "boolean")
+        assert(verify_option(et.belts_or_lanes, {"belts", "lanes"}))
+        assert(verify_range(et.belt_stack, _preferences.belt_stack_options))
     end) then return "unpacking_failure" end
 
     -- All good, overwrite preferences

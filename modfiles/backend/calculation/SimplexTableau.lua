@@ -368,7 +368,7 @@ function SimplexTableau:solve(previous_basis)
         -- Add a minimum margin for extra safety
         -- If there is so little score left to maximize, then the solution is pretty close to optimal anyway
         local entering_index = 0
-        local min = -MAGIC_NUMBERS.margin_of_error
+        local min = -MAGIC_NUMBERS.simplex_tolerance
         for j = 1, #non_basic do
             if c_non_basic[j] < min then
                 entering_index = j
@@ -387,7 +387,7 @@ function SimplexTableau:solve(previous_basis)
         local leaving_index = 0
         min = math.huge
         for i = 1, #d_vector do
-            if d_vector[i] > MAGIC_NUMBERS.margin_of_error then
+            if d_vector[i] > MAGIC_NUMBERS.simplex_tolerance then
                 local ratio = x_vector[i]--[[@cast -nil]] / d_vector[i]
                 if ratio < min then
                     leaving_index = i

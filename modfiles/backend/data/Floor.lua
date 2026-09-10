@@ -73,10 +73,11 @@ end
 
 
 ---@param line LineObject
+---@param relative_object LineObject
 ---@param direction NeighbourDirection
----@param spots integer?
-function Floor:shift(line, direction, spots)
-    self:_shift(line, direction, spots)
+function Floor:move(line, relative_object, direction)
+    self:_remove(line)
+    self:_insert(line, relative_object, direction)
 end
 
 
@@ -178,6 +179,21 @@ function Floor:any_lines_not_marked_done()
         end
     end
     return false
+end
+
+
+---@param player LuaPlayer
+---@return boolean changed
+function Floor:refresh_lines(player)
+    local changed = false
+    for line in self:iterator() do
+        if line.class == "Floor" then  ---@cast line Floor
+            changed = line:refresh_lines(player) or changed
+        else  ---@cast line Line
+            changed = line:refresh_line(player) or changed
+        end
+    end
+    return changed
 end
 
 

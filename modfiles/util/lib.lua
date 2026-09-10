@@ -76,6 +76,8 @@ function _lib.get_recipe_productivity(force, recipe_name)
     local bonus = nil
     if recipe_name == "custom-mining" then
         bonus = force.mining_drill_productivity_bonus
+    elseif recipe_name == "custom-research" then
+        bonus = force.laboratory_productivity_bonus
     else
         bonus = force.recipes[recipe_name].productivity_bonus
     end
@@ -89,7 +91,7 @@ end
 function _lib.recipe_picker_overwrite(force, recipe)
     local overwrite = nil  ---@type boolean?
 
-    local overwrites = storage.integrations.overwrite_recipe_picker
+    local overwrites = storage.integrations.overwrite_recipe_picker[force.index]
     if overwrites then overwrite = overwrites[recipe.name] end
 
     if overwrite == nil then  -- fall back to the base game's visibility override
@@ -99,7 +101,7 @@ function _lib.recipe_picker_overwrite(force, recipe)
     return overwrite
 end
 
--- Determines whether the given force can obtain the given recipe at all.
+
 ---@param force LuaForce
 ---@param recipe FPRecipePrototype
 ---@return boolean available
@@ -109,6 +111,10 @@ function _lib.is_recipe_available(force, recipe)
 
     local force_recipe = force.recipes[recipe.name]
     if force_recipe == nil then return false end
+
+    -- A recipe that another one stands in for can't be obtained anymore, no matter its own state
+    local substitutions = storage.integrations.recipe_substitutions[force.index]
+    if substitutions and substitutions[recipe.name] then return false end
 
     -- A mod overwriting the picker knows better than the recipe's own state, either way
     local overwrite = _lib.recipe_picker_overwrite(force, recipe)
@@ -130,18 +136,44 @@ function _lib.is_recipe_available(force, recipe)
     return false
 end
 
+---@param force LuaForce
+---@param machine FPMachinePrototype
+---@return boolean available
+function _lib.is_machine_available(force, machine)
+    local substitutions = storage.integrations.machine_substitutions[force.index]
+    return not (substitutions and substitutions[machine.name])
+end
+
 
 ---@alias FactoriopediaIDType "item" | "fluid" | "recipe" | "entity" | "tile" | "space-location" | "ammo-category" | "space-connection" | "asteroid-chunk" | "virtual-signal" | "surface"
+---@alias FPFactoriopediaID {type: FactoriopediaIDType, name: string}
 
----@param type FactoriopediaIDType
----@param name string
----@param proto FPPrototype?
----@return LuaPrototypeBase
-function _lib.get_factoriopedia_proto(type, name, proto)
-    local fp_id = proto and proto.factoriopedia_id or nil
+-- Custom items and recipes need an explicit mapping; normal entries use their own prototype.
+---@param proto FPPrototype | FPPackedPrototype
+---@return FactoriopediaID?
+function _lib.get_factoriopedia_proto(proto)
+    if proto.simplified then return nil end
+    ---@cast proto FPPrototype
+    local fp_id = proto.factoriopedia_id
+    if fp_id then return prototypes[fp_id.type][fp_id.name] end
 
-    if fp_id then return prototypes[fp_id.type][fp_id.name]
-    else return prototypes[type][name] end
+    if proto.data_type == "items" then
+        ---@cast proto FPItemPrototype
+        if proto.type == "entity" then return nil end
+        return prototypes[proto.type][proto.base_name or proto.name]
+    elseif proto.data_type == "recipes" then
+        ---@cast proto FPRecipePrototype
+        if proto.custom then return nil end
+        return prototypes.recipe[proto.name]
+    elseif proto.data_type == "fuels" then
+        ---@cast proto FPFuelPrototype
+        return prototypes[proto.type][proto.name]
+    elseif proto.data_type == "modules" then
+        return prototypes.item[proto.name]
+    elseif proto.data_type == "machines" or proto.data_type == "beacons" then
+        return prototypes.entity[proto.name]
+    end
+    return nil
 end
 
 

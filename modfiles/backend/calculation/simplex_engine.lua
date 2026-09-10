@@ -36,7 +36,7 @@ local objective_vector = {
 
     machine_limit = 0,
     fluid_modifier = 0.01,
-    special_modifier = 1e-12,
+    energy_modifier = 1e-9,
 }
 
 
@@ -45,7 +45,9 @@ local objective_vector = {
 local function item_cost(key)
     local item = structures.unpack_item(key)
     if item.type == "fluid" then return objective_vector.fluid_modifier end
-    if item.type == "entity" then return objective_vector.special_modifier end
+    if item.type == "entity" and lib.is_special_power_item(item.name) then
+        return objective_vector.energy_modifier
+    end
     return 1
 end
 
@@ -163,7 +165,7 @@ function simplex_engine.solve_floor(floor_data, line_metadata_table, level, prev
         for _, item in pairs(floor_data.products) do  ---@cast item SolverItem
             local item_key = structures.pack_item(item)
             local objective = item_cost(item_key) * objective_vector.target_product
-            tableau:add_item_constraint(item_key, floor_data.id, "out", "==", item.amount, objective)
+            tableau:add_item_constraint(item_key, floor_data.id, "out", "<=", item.amount, objective)
         end
 
         -- Add additional constraint for limited ingredients
@@ -171,14 +173,14 @@ function simplex_engine.solve_floor(floor_data, line_metadata_table, level, prev
         for _, item in pairs({}) do  ---@cast item SolverItem
             local item_key = structures.pack_item(item)
             local objective = item_cost(item_key) * objective_vector.limited_ingredient
-            tableau:add_item_constraint(item_key, floor_data.id, "in", "==", item.amount, objective)
+            tableau:add_item_constraint(item_key, floor_data.id, "in", "<=", item.amount, objective)
         end
 
         -- Add aditional constraint for machine limits
-        for line_id, line_metadata in pairs(relevant_line_metadata) do
+        for _, line_metadata in pairs(relevant_line_metadata) do
             if line_metadata.machine_limit then
                 local type = line_metadata.machine_force_limit and "==" or "<="
-                tableau:add_line_constraint(line_id, type, line_metadata.machine_limit, objective_vector.machine_limit)
+                tableau:add_line_constraint(line_metadata.line_id, type, line_metadata.machine_limit, objective_vector.machine_limit)
             end
         end
         for _, line_object_data in pairs(floor_data.lines) do
@@ -331,8 +333,7 @@ function simplex_engine.get_line_metadata(line_data, floor_id)
         solver.util.table.add(ingredients, item_key, power_amount)
     end
     if heat_amount > 0 then
-        local item = { name = "custom-heat-power", type = "entity", amount = 0 }  ---@as SolverItem
-        local item_key = structures.pack_item(item)
+        local item = { name = "custom-heating-power", type = "entity", amount = 0 }  ---@as SolverItem        local item_key = structures.pack_item(item)
         solver.util.table.add(ingredients, item_key, heat_amount)
     end
     if line_data.pollutant_type and emissions ~= 0 then

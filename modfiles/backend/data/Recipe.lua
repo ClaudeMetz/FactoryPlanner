@@ -14,13 +14,14 @@ local SimpleItem = require("backend.data.SimpleItem")
 ---@field parent Line
 ---@field proto FPRecipePrototype | FPPackedPrototype
 ---@field production_type RecipeProductionType
+---@field available boolean
 ---@field priority_item (FPItemPrototype | FPPackedPrototype)?
 ---@field temperatures table<string, float>
 ---@field temperature_data table<string, TemperatureData>
 ---@field ingredients Ingredient[]
 ---@field products FormattedProduct[]
 ---@field catalysts RecipeCatalysts
----@field effects IntegerModuleEffects?
+---@field productivity_effects IntegerModuleEffects?
 local Recipe = Object.methods()
 Recipe.__index = Recipe
 script.register_metatable("Recipe", Recipe)
@@ -38,6 +39,7 @@ local function init(parent, proto, production_type)
     local object = Object.init({
         proto = this_proto,
         production_type = production_type or "produce",
+        available = true,
         priority_item = nil,
         temperatures = {},
 
@@ -45,7 +47,7 @@ local function init(parent, proto, production_type)
         ingredients = nil,
         products = nil,
         catalysts = nil,
-        effects = nil,
+        productivity_effects = nil,
 
         parent = parent
     }, "Recipe", Recipe)  ---@as Recipe
@@ -193,6 +195,49 @@ function Recipe:build_items()
 end
 
 
+--- Carries the configured temperatures over to the current proto, dropping any that don't apply
+function Recipe:migrate_temperatures()
+    ---@cast self.proto FPRecipePrototype
+    local previous_temperatures = self.temperatures
+    self.temperatures = {}
+
+    self:build_temperatures_data()
+
+    for _, ingredient in pairs(self.proto.ingredients) do
+        if ingredient.type == "fluid" then
+            local applicable_values = self.temperature_data[ingredient.name].applicable_values
+            local previous_temperature = previous_temperatures[ingredient.name]
+
+            if #applicable_values == 1 then
+                self.temperatures[ingredient.name] = applicable_values[1]
+            elseif previous_temperature ~= nil then
+                for _, temperature in pairs(applicable_values) do
+                    if temperature == previous_temperature then
+                        self.temperatures[ingredient.name] = previous_temperature
+                        break
+                    end
+                end
+            end
+        end
+    end
+
+    self:build_items()
+
+    -- A priority item the recipe doesn't have anymore would pace the line by an item it never sees
+    local priority_item = self.priority_item
+    if priority_item and not priority_item.simplified then
+        local consuming = (self.production_type == "consume")
+        self.priority_item = nil
+
+        -- Ingredients are kept under their base name, so the temperature needs adding back on
+        for _, item in pairs((consuming) and self.ingredients or self.products) do
+            local name = (consuming) and self:get_name_with_temperature(item) or item.name
+            if name == priority_item.name then self.priority_item = priority_item; break end
+        end
+    end
+end
+
+
 ---@param ingredient Ingredient | FPItemPrototype
 ---@return boolean
 function Recipe:is_temperature_configured(ingredient)
@@ -229,9 +274,38 @@ function Recipe:get_temperature(ingredient)
 end
 
 
+--- Migrates to the recipe that stands in for this one, if the force has one. The caller
+--- needs to validate afterwards, which is where the derived data is brought up to date.
+---@param force LuaForce
+---@return boolean substituted
+function Recipe:apply_substitution(force)
+    local substitutions = storage.integrations.recipe_substitutions[force.index]
+    local replacement = (substitutions) and substitutions[self.proto.name] or nil
+    if replacement == nil then return false end
+
+    local proto = prototyper.util.find("recipes", replacement, nil)  ---@as FPRecipePrototype?
+    if proto == nil then return false end  -- a recipe FP doesn't know about can't be used
+
+    self.proto = proto
+    self.productivity_effects = nil  -- the replacement might not have any at all
+    return true
+end
+
+--- Re-derives whether the force can currently obtain this recipe, which blocks the line if not
+---@param force LuaForce
+---@return boolean changed
+function Recipe:refresh_availability(force)
+    local recipe_proto = self.proto  --[[@as FPRecipePrototype]]
+    local previous = self.available
+    self.available = lib.is_recipe_available(force, recipe_proto)
+    return self.available ~= previous
+end
+
+
 --- Called when the solver runs because it's the most convenient spot for it
 ---@param force LuaForce
 ---@param factory Factory
+---@return boolean changed
 function Recipe:update_effects(force, factory)
     local machine_proto = self.parent.machine.proto
 
@@ -239,10 +313,15 @@ function Recipe:update_effects(force, factory)
     local drill = (machine_proto.prototype_category == "mining_drill")
     if drill and machine_proto.uses_force_mining_productivity_bonus then name = "custom-mining"
     elseif self.proto.productivity_recipe ~= nil then name = self.proto.productivity_recipe
-    else return end  -- no recipe effects for custom recipes
+    else return false end  -- no recipe effects for custom recipes
 
-    self.effects = {productivity = factory:get_productivity_bonus(force, name--[[@cast -nil]])}
-    self.parent.machine:summarize_effects()  -- update machine to update its tooltip
+    local productivity = factory:get_productivity_bonus(force, name--[[@cast -nil]])
+    if self.productivity_effects and self.productivity_effects.productivity == productivity then
+        return false
+    else
+        self.productivity_effects = {productivity = productivity}
+        return true
+    end
 end
 
 
@@ -287,11 +366,7 @@ function Recipe:validate(player)
     self.proto = prototyper.util.validate_prototype_object(self.proto, nil)  ---@as FPRecipePrototype | FPPackedPrototype
     self.valid = (not self.proto.simplified)
 
-    -- A recipe the force can't obtain at all is not valid, mirroring what the recipe picker offers
-    if self.valid then
-        local recipe_proto = self.proto  --[[@as FPRecipePrototype]]
-        self.valid = lib.is_recipe_available(player.force--[[@as LuaForce]], recipe_proto)
-    end
+    if self.valid then self:refresh_availability(player.force--[[@as LuaForce]]) end
 
     -- A priority item that doesn't exist anymore is simply dropped, it doesn't invalidate the recipe
     self.priority_item = (self.priority_item) and
@@ -299,32 +374,7 @@ function Recipe:validate(player)
     if self.priority_item and self.priority_item.simplified then self.priority_item = nil end
 
     -- An invalid temperature shouldn't invalidate the recipe
-    if self.valid then  ---@cast self.proto FPRecipePrototype
-        local previous_temperatures = self.temperatures
-        self.temperatures = {}
-
-        self:build_temperatures_data()
-
-        for _, ingredient in pairs(self.proto.ingredients) do
-            if ingredient.type == "fluid" then
-                local applicable_values = self.temperature_data[ingredient.name].applicable_values
-                local previous_temperature = previous_temperatures[ingredient.name]
-
-                if #applicable_values == 1 then
-                    self.temperatures[ingredient.name] = applicable_values[1]
-                elseif previous_temperature ~= nil then
-                    for _, temperature in pairs(applicable_values) do
-                        if temperature == previous_temperature then
-                            self.temperatures[ingredient.name] = previous_temperature
-                            break
-                        end
-                    end
-                end
-            end
-        end
-
-        self:build_items()
-    end
+    if self.valid then self:migrate_temperatures() end
 
     return self.valid
 end
@@ -332,7 +382,7 @@ end
 ---@param player LuaPlayer
 ---@return boolean success
 function Recipe:repair(player)
-    -- Neither a missing prototype nor a recipe the force can't obtain can be repaired
+    -- If the prototype is missing, the recipe is unrepairable
     return false
 end
 

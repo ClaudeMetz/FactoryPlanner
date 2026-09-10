@@ -179,7 +179,7 @@ local function add_machine_frame(parent_frame, player, line)
 
     local button_machine = flow_choices.add{type="choose-elem-button", elem_type="entity-with-quality",
         tags={mod="fp", on_gui_elem_changed="choose_machine"}, style="fp_sprite-button_inset",
-        elem_filters=line:compile_machine_filter()}
+        elem_filters=line:compile_machine_filter(player.force--[[@as LuaForce]])}
     button_machine.elem_value = line.machine:elem_value()
     modal_elements["machine_button"] = button_machine
 end
