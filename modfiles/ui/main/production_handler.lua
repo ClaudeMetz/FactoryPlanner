@@ -65,7 +65,9 @@ local function handle_line_recipe_click(player, tags, action)
         solver.update(player)
         lib.gui.run_refresh(player, "production")
 
-    elseif action == "delete" then
+    elseif action == "delete" or action == "cut" then
+        if action == "cut" then lib.clipboard.copy(player, line, true) end
+
         local floor = line.parent
         floor:remove(line, true)
 
@@ -145,7 +147,9 @@ local function handle_beacon_click(player, tags, action)
     elseif action == "paste" then
         lib.clipboard.paste(player, beacon)
 
-    elseif action == "delete" then
+    elseif action == "delete" or action == "cut" then
+        if action == "cut" then lib.clipboard.copy(player, beacon, true) end
+
         line:set_beacon(nil)
         solver.update(player)
         lib.gui.run_refresh(player, "production")
@@ -189,7 +193,9 @@ local function handle_module_click(player, tags, action)
     elseif action == "paste" then
         lib.clipboard.paste(player, module)
 
-    elseif action == "delete" then
+    elseif action == "delete" or action == "cut" then
+        if action == "cut" then lib.clipboard.copy(player, module, true) end
+
         local module_set = module.parent
         module_set:remove(module)
 
@@ -369,6 +375,14 @@ end
 ---@param flags GUIActionFlags
 ---@return boolean
 ---@return LocalisedString? warning
+local function can_cut_recipe(flags)
+    if flags.defining_recipe then return false, {"fp.subfloor_defining_recipe_cut"} end
+    return lib.actions.can_edit_factory(flags)
+end
+
+---@param flags GUIActionFlags
+---@return boolean
+---@return LocalisedString? warning
 local function can_delete_recipe(flags)
     if flags.defining_recipe then return false, {"fp.subfloor_defining_recipe_delete"} end
     return lib.actions.can_edit_factory(flags)
@@ -415,6 +429,7 @@ listeners.gui = {
                 open_subfloor = {shortcut="left", core=true, show=is_regular_recipe, enable=can_open_subfloor},
                 copy = {shortcut="shift-right"},
                 paste = {shortcut="shift-left", enable=can_paste_recipe},
+                cut = {shortcut="control-right", enable=can_cut_recipe},
                 toggle = {shortcut="control-left", enable=lib.actions.can_edit_factory},
                 delete = {input="delete", enable=can_delete_recipe},
                 factoriopedia = {shortcut="alt-left", enable=lib.actions.can_open_factoriopedia}
@@ -442,6 +457,7 @@ listeners.gui = {
                 edit = {shortcut="left", core=true, enable=lib.actions.can_edit_factory},
                 copy = {shortcut="shift-right"},
                 paste = {shortcut="shift-left", enable=lib.actions.can_edit_factory},
+                cut = {shortcut="control-right", enable=lib.actions.can_edit_factory},
                 delete = {input="delete", enable=lib.actions.can_edit_factory},
                 pipette = {input="pipette", enable=lib.actions.can_pipette},
                 factoriopedia = {shortcut="alt-left"}
@@ -458,6 +474,7 @@ listeners.gui = {
                 edit = {shortcut="left", core=true, enable=lib.actions.can_edit_factory},
                 copy = {shortcut="shift-right"},
                 paste = {shortcut="shift-left", enable=lib.actions.can_edit_factory},
+                cut = {shortcut="control-right", enable=lib.actions.can_edit_factory},
                 delete = {input="delete", enable=lib.actions.can_edit_factory},
                 pipette = {input="pipette"},
                 factoriopedia = {shortcut="alt-left"}

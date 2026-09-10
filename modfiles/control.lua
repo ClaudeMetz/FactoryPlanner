@@ -65,8 +65,11 @@ if script.active_mods["factoryplanner-test"] then
         District = require("backend.data.District"),
         Factory = require("backend.data.Factory"),
         TLProduct = require("backend.data.TLProduct"),
+        Floor = require("backend.data.Floor"),
         Line = require("backend.data.Line"),
         Machine = require("backend.data.Machine"),
+        Beacon = require("backend.data.Beacon"),
+        Module = require("backend.data.Module"),
         Fuel = require("backend.data.Fuel"),
     }
 end

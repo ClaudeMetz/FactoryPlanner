@@ -243,7 +243,12 @@ local function handle_item_button_click(player, tags, action)
     elseif action == "paste" then
         lib.clipboard.paste(player, item)
 
-    elseif action == "delete" then
+    elseif action == "delete" or action == "cut" then
+        if action == "cut" then
+            local copyable_item = SimpleItem.init(nil, item.proto--[[@as FPItemPrototype]], item.amount)
+            lib.clipboard.copy(player, copyable_item, true)
+        end
+
         lib.context.get(player, "Factory")--[[@as Factory]]:remove(item)
         solver.update(player)
         lib.gui.run_refresh(player, "all")  -- make sure product icons are updated
@@ -390,6 +395,7 @@ listeners.gui = {
                 move_right = {show=is_top_level_product, enable=can_move_right},
                 copy = {shortcut="shift-right"},
                 paste = {shortcut="shift-left", show=is_top_level_product, enable=lib.actions.can_edit_factory},
+                cut = {shortcut="control-right", show=is_top_level_product, enable=lib.actions.can_edit_factory},
                 pipette = {input="pipette", enable=lib.actions.can_pipette},
                 put_into_combinator = {input="put_into_combinator", enable=lib.actions.can_put_into_combinator},
                 factoriopedia = {shortcut="alt-left", enable=lib.actions.can_open_factoriopedia}
