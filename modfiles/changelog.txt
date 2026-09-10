@@ -5,6 +5,7 @@ Date: 00. 00. 0000
     - Added research planning, which can solve for the labs and science packs needed for a given SPM
   Changes:
     - Improved context menus to only show relevant actions, and explain why a certain action is unavailable (#635)
+    - Changed the shortcut for the 'Put into cursor' action to 'Q', and the 'Delete' action to 'Backspace'/'Delete'
   Bugfixes:
 
 ---------------------------------------------------------------------------------------------------

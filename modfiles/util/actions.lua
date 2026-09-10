@@ -121,7 +121,7 @@ function _actions.generate_tooltip(actions, flags)
     for _, action in pairs(actions) do
         if lib.actions.is_visible(action, flags) then
             if action.core and lib.actions.is_enabled(action, flags) then
-                table.insert(tooltip, {"fp.action_line", action.shortcut_string, {"fp.action_" .. action.name}})
+                table.insert(tooltip, {"fp.action_line", action.binding_string, {"fp.action_" .. action.name}})
             else
                 show_context_hint = true
             end

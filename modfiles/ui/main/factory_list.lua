@@ -495,7 +495,7 @@ listeners.gui = {
                 select = {shortcut="left", core=true},
                 edit = {shortcut="control-left"},
                 duplicate = {shortcut="shift-left", enable=can_duplicate_factory},
-                delete = {shortcut="control-right"}
+                delete = {input="delete"}
             },
             handler = handle_factory_click
         }

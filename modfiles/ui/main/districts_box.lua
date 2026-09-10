@@ -429,8 +429,8 @@ listeners.gui = {
             actions_table = {
                 create_factory = {shortcut="left", core=true, show=is_ingredient, enable=lib.actions.can_add_recipe},
                 copy = {shortcut="shift-right"},
-                put_into_cursor = {shortcut="alt-right", enable=lib.actions.can_put_into_cursor},
-                factoriopedia = {shortcut="alt-left", enable=lib.actions.can_open_factoriopedia}
+                factoriopedia = {shortcut="alt-left", enable=lib.actions.can_open_factoriopedia},
+                put_into_cursor = {input="put_into_cursor", enable=lib.actions.can_put_into_cursor}
             },
             handler = handle_item_button_click
         }

@@ -407,7 +407,7 @@ listeners.gui = {
                 copy = {shortcut="shift-right"},
                 paste = {shortcut="shift-left", enable=can_paste_recipe},
                 toggle = {shortcut="control-left", enable=lib.actions.can_edit_factory},
-                delete = {shortcut="control-right", enable=can_delete_recipe},
+                delete = {input="delete", enable=can_delete_recipe},
                 factoriopedia = {shortcut="alt-left", enable=lib.actions.can_open_factoriopedia}
             },
             handler = handle_line_recipe_click
@@ -418,8 +418,8 @@ listeners.gui = {
                 edit = {shortcut="left", core=true, enable=lib.actions.can_edit_factory},
                 copy = {shortcut="shift-right"},
                 paste = {shortcut="shift-left", enable=lib.actions.can_edit_factory},
-                put_into_cursor = {shortcut="alt-right", enable=lib.actions.can_put_into_cursor},
-                factoriopedia = {shortcut="alt-left"}
+                factoriopedia = {shortcut="alt-left"},
+                put_into_cursor = {input="put_into_cursor", enable=lib.actions.can_put_into_cursor}
             },
             handler = handle_machine_click
         },
@@ -433,9 +433,9 @@ listeners.gui = {
                 edit = {shortcut="left", core=true, enable=lib.actions.can_edit_factory},
                 copy = {shortcut="shift-right"},
                 paste = {shortcut="shift-left", enable=lib.actions.can_edit_factory},
-                delete = {shortcut="control-right", enable=lib.actions.can_edit_factory},
-                put_into_cursor = {shortcut="alt-right", enable=lib.actions.can_put_into_cursor},
-                factoriopedia = {shortcut="alt-left"}
+                delete = {input="delete", enable=lib.actions.can_edit_factory},
+                factoriopedia = {shortcut="alt-left"},
+                put_into_cursor = {input="put_into_cursor", enable=lib.actions.can_put_into_cursor}
             },
             handler = handle_beacon_click
         },
@@ -449,7 +449,7 @@ listeners.gui = {
                 edit = {shortcut="left", core=true, enable=lib.actions.can_edit_factory},
                 copy = {shortcut="shift-right"},
                 paste = {shortcut="shift-left", enable=lib.actions.can_edit_factory},
-                delete = {shortcut="control-right", enable=lib.actions.can_edit_factory},
+                delete = {input="delete", enable=lib.actions.can_edit_factory},
                 factoriopedia = {shortcut="alt-left"}
             },
             handler = handle_module_click
@@ -463,8 +463,8 @@ listeners.gui = {
                 prioritize = {shortcut="control-right", show=show_prioritize_item, enable=can_prioritize},
                 copy = {shortcut="shift-right"},
                 paste = {shortcut="shift-left", show=show_item_temperature, enable=lib.actions.can_edit_temperature},
-                put_into_cursor = {shortcut="alt-right", enable=lib.actions.can_put_into_cursor},
-                factoriopedia = {shortcut="alt-left", enable=lib.actions.can_open_factoriopedia}
+                factoriopedia = {shortcut="alt-left", enable=lib.actions.can_open_factoriopedia},
+                put_into_cursor = {input="put_into_cursor", enable=lib.actions.can_put_into_cursor}
             },
             handler = handle_item_click
         },
@@ -477,8 +477,8 @@ listeners.gui = {
                 edit_fuel = {enable=lib.actions.can_edit_factory},
                 copy = {shortcut="shift-right"},
                 paste = {shortcut="shift-left", enable=lib.actions.can_edit_factory},
-                put_into_cursor = {shortcut="alt-right"},
-                factoriopedia = {shortcut="alt-left"}
+                factoriopedia = {shortcut="alt-left"},
+                put_into_cursor = {input="put_into_cursor"}
             },
             handler = handle_fuel_click
         }

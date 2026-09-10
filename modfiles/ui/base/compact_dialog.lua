@@ -810,8 +810,8 @@ factory_listeners.gui = {
         {
             name = "act_on_compact_ingredient",
             actions_table = {
-                put_into_cursor = {shortcut="left", core=true, enable=lib.actions.can_put_into_cursor},
-                factoriopedia = {shortcut="alt-left", enable=lib.actions.can_open_factoriopedia}
+                factoriopedia = {shortcut="alt-left", enable=lib.actions.can_open_factoriopedia},
+                put_into_cursor = {input="put_into_cursor", core=true, enable=lib.actions.can_put_into_cursor}
             },
             handler = handle_ingredient_click
         },
@@ -833,24 +833,24 @@ factory_listeners.gui = {
         {
             name = "act_on_compact_machine",
             actions_table = {
-                put_into_cursor = {shortcut="left", core=true, enable=lib.actions.can_put_into_cursor},
-                factoriopedia = {shortcut="alt-left"}
+                factoriopedia = {shortcut="alt-left"},
+                put_into_cursor = {input="put_into_cursor", core=true, enable=lib.actions.can_put_into_cursor}
             },
             handler = handle_machine_click
         },
         {
             name = "act_on_compact_beacon",
             actions_table = {
-                put_into_cursor = {shortcut="left", core=true, enable=lib.actions.can_put_into_cursor},
-                factoriopedia = {shortcut="alt-left"}
+                factoriopedia = {shortcut="alt-left"},
+                put_into_cursor = {input="put_into_cursor", core=true, enable=lib.actions.can_put_into_cursor}
             },
             handler = handle_beacon_click
         },
         {
             name = "act_on_compact_item",
             actions_table = {
-                put_into_cursor = {shortcut="left", core=true, enable=lib.actions.can_put_into_cursor},
-                factoriopedia = {shortcut="alt-left", enable=lib.actions.can_open_factoriopedia}
+                factoriopedia = {shortcut="alt-left", enable=lib.actions.can_open_factoriopedia},
+                put_into_cursor = {input="put_into_cursor", core=true, enable=lib.actions.can_put_into_cursor}
             },
             handler = handle_item_click
         }

@@ -279,7 +279,7 @@ function modal_dialog.open_context_menu(player, menu_tags, handler, actions, loc
         flow.style.right_padding = 20
         flow.add{type="label", caption={"fp.tt_title", {"fp.action_" .. action.name}}, style="bold_label"}
         flow.add{type="empty-widget", style="fflib_horizontal_pusher"}
-        flow.add{type="label", caption=action.shortcut_string}
+        flow.add{type="label", caption=action.binding_string}
 
         action_counter = action_counter + 1
         ::continue::

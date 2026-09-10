@@ -382,13 +382,13 @@ listeners.gui = {
             actions_table = {
                 add_recipe = {shortcut="left", core=true, show=show_add_recipe, enable=lib.actions.can_add_recipe},
                 edit = {shortcut="control-left", core=true, show=is_top_level_product, enable=lib.actions.can_edit_factory},
-                delete = {shortcut="control-right", show=is_top_level_product, enable=lib.actions.can_edit_factory},
+                delete = {input="delete", show=is_top_level_product, enable=lib.actions.can_edit_factory},
                 move_left = {show=is_top_level_product, enable=can_move_left},
                 move_right = {show=is_top_level_product, enable=can_move_right},
                 copy = {shortcut="shift-right"},
                 paste = {shortcut="shift-left", show=is_top_level_product, enable=lib.actions.can_edit_factory},
-                put_into_cursor = {shortcut="alt-right", enable=lib.actions.can_put_into_cursor},
-                factoriopedia = {shortcut="alt-left", enable=lib.actions.can_open_factoriopedia}
+                factoriopedia = {shortcut="alt-left", enable=lib.actions.can_open_factoriopedia},
+                put_into_cursor = {input="put_into_cursor", enable=lib.actions.can_put_into_cursor}
             },
             handler = handle_item_button_click
         },

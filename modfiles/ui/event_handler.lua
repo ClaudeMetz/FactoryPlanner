@@ -78,19 +78,28 @@ end)
 
 ---@class GUIActionDefinition
 ---@field shortcut string?
+---@field input string?
 ---@field core boolean?
 ---@field show GUIActionCondition?
 ---@field enable GUIActionEnableCondition?
 
+local action_inputs = {}  ---@type table<string, boolean>
+
 ---@param definitions table<string, GUIActionDefinition>
 ---@return GUIAction[] actions
 ---@return table<string, GUIAction> shortcuts
+---@return table<string, GUIAction> inputs
 local function compile_actions(definitions)
-    local actions, shortcuts = {}, {}
+    local actions, shortcuts, inputs = {}, {}, {}
     for name, definition in pairs(definitions) do
+        assert(not (definition.shortcut and definition.input), "Action has both shortcut and input: " .. name)
+        local input = definition.input and ("fp_" .. definition.input)
+        -- Linked inputs use the vanilla control's binding, not their own empty binding.
+        local control = input and (prototypes.custom_input[input].linked_game_control or input)
         local action = {
             name = name,
-            shortcut_string = lib.actions.shortcut_string(definition.shortcut),
+            binding_string = control and {"fp.action_input", "__CONTROL__" .. control .. "__"}
+                or lib.actions.shortcut_string(definition.shortcut),
             core = definition.core,
             show = definition.show,
             enable = definition.enable
@@ -98,11 +107,12 @@ local function compile_actions(definitions)
         table.insert(actions, action)
 
         if definition.shortcut then shortcuts[definition.shortcut] = action end
+        if input then inputs[input] = action; action_inputs[input] = true end
     end
-    return actions, shortcuts
+    return actions, shortcuts, inputs
 end
 
--- Register GUI handlers, compiling modifier actions once
+-- Register GUI handlers, compiling action bindings once
 for _, listener in pairs(event_listeners) do
     if not listener.gui then goto continue end
     for event_name, definitions in pairs(listener.gui) do
@@ -113,7 +123,8 @@ for _, listener in pairs(event_listeners) do
             }  ---@type RegisteredGUIHandler
 
             if event_name == "on_gui_click" and definition.actions_table then
-                registered_handler.actions, registered_handler.shortcuts = compile_actions(definition.actions_table)
+                registered_handler.actions, registered_handler.shortcuts, registered_handler.inputs =
+                    compile_actions(definition.actions_table)
             end
 
             assert(not GUI_HANDLERS[definition.name], "Duplicate handler: " .. definition.name)
@@ -157,11 +168,12 @@ end
 ---@field handler GUIEventHandler | GUIActionEventHandler
 ---@field actions GUIAction[]?
 ---@field shortcuts table<string, GUIAction>?
+---@field inputs table<string, GUIAction>?
 ---@field timeout MapTick?
 
 ---@class GUIAction
 ---@field name string
----@field shortcut_string LocalisedString?
+---@field binding_string LocalisedString?
 ---@field core boolean?
 ---@field show GUIActionCondition?
 ---@field enable GUIActionEnableCondition?
@@ -169,6 +181,7 @@ end
 ---@class GUIEventData: EventData
 ---@field player_index PlayerIndex
 ---@field element LuaGuiElement?
+---@field input_name string?
 
 ---@param event GUIEventData
 local function handle_gui_event(event)
@@ -182,16 +195,24 @@ local function handle_gui_event(event)
 
     local tags = event.element.tags
 
-    -- Close an open context menu on any GUI click
-    if event.name == defines.events.on_gui_click and
-            tags.on_gui_click ~= "choose_context_action" then
+    -- Any GUI click outside a context action closes the menu, including clicks outside FP
+    if event.name == defines.events.on_gui_click and tags.on_gui_click ~= "choose_context_action" then
         modal_dialog.close_context_menu(player)
     end
 
-    if tags.mod ~= "fp" then return end
+    if tags.mod ~= "fp" then return end  -- now proceed only with own events
+
+    local input_action = nil  ---@type GUIAction?
+    if event.input_name then  -- custom input event on an action button
+        local handler = GUI_HANDLERS[tags.on_gui_click--[[@as string]]]
+        input_action = handler and handler.inputs and handler.inputs[event.input_name]
+        if not input_action then return end
+
+        modal_dialog.close_context_menu(player)  -- only close when actually proceeding
+    end
 
     -- The event table actually contains its identifier, not its name
-    local event_name = script.get_event_name(event.name)  ---@as string
+    local event_name = event.input_name and "on_gui_click" or script.get_event_name(event.name)  ---@as string
     local action_name = tags[event_name]  ---@as string?
     local hover_event = (event_name == "on_gui_hover" or event_name == "on_gui_leave")
 
@@ -209,22 +230,22 @@ local function handle_gui_event(event)
 
     local previous_held_id = lib.globals.ui_state(player).held_object_id
 
-    -- Special modifier handling for on_gui_click if configured
+    -- Click shortcuts and custom inputs share action dispatch
     if event_name == "on_gui_click" and registered_handler.actions then
         local click_event = event  ---@as EventData.on_gui_click
-        local click = convert_click_to_string(click_event)
+        local click = not event.input_name and convert_click_to_string(click_event) or nil
 
         if click == "right" then
             modal_dialog.open_context_menu(player, tags, action_name,
                 registered_handler.actions, click_event.cursor_display_location)
         else
-            local modifier_action = registered_handler.shortcuts--[[@cast -nil]][click]
-            if not modifier_action then return end  -- meaning the used modifiers do not have an associated action
-            if not lib.actions.is_visible(modifier_action, tags.flags--[[@as GUIActionFlags?]]) then return end
-            local enabled, warning = lib.actions.is_enabled(modifier_action, tags.flags--[[@as GUIActionFlags?]])
+            local action = input_action or registered_handler.shortcuts--[[@cast -nil]][click]
+            if not action then return end  -- no action associated with this binding
+            if not lib.actions.is_visible(action, tags.flags--[[@as GUIActionFlags?]]) then return end
+            local enabled, warning = lib.actions.is_enabled(action, tags.flags--[[@as GUIActionFlags?]])
             if not enabled then if warning then lib.cursor.create_flying_text(player, warning) end return end
 
-            registered_handler.handler(player, tags, modifier_action.name)
+            registered_handler.handler(player, tags, action.name)
         end
     else
         registered_handler.handler(player, tags, event)  -- gets event as third parameter
@@ -239,6 +260,7 @@ local function handle_gui_event(event)
 end
 
 script.on_event(gui_events, handle_gui_event)
+for input in pairs(action_inputs) do script.on_event(input, handle_gui_event) end
 
 
 -- ** PLAYER EVENTS **
