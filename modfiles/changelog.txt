@@ -9,6 +9,7 @@ Date: 00. 00. 0000
     - Improved context menus to only show relevant actions, and explain why a certain action is unavailable (#635)
     - Broke up the 'Put into cursor' action into vanilla 'Pipette' on the Q key and 'Put into combinator' on the C key (for items specifically). Changed the 'Delete' action keybind to 'Backspace'/'Delete'.
   Bugfixes:
+    - Fixed a crash in certain Pyanodons configurations (#859)
 
 ---------------------------------------------------------------------------------------------------
 Version: 2.1.13
