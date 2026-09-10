@@ -135,11 +135,16 @@ end
 ---@param relevant_line Line
 ---@param metadata CompactMetadata
 local function add_recipe_button(parent_flow, line, relevant_line, metadata)
-    local style = (line.class == "Floor") and "fflib_slot_button_blue_small" or "fflib_slot_button_default_small"
+    local recipe_proto = relevant_line.recipe.proto
+    local flags = {
+        subfloor = (line.class == "Floor"),
+        factoriopedia = (lib.get_factoriopedia_proto(recipe_proto) ~= nil)
+    }
+    local style = (flags.subfloor) and "fflib_slot_button_blue_small" or "fflib_slot_button_default_small"
 
     local note = ""  ---@type LocalisedString
     if relevant_line.done then
-        if line.class == "Floor" and line--[[@as Floor]]:any_lines_not_marked_done() then
+        if flags.subfloor and line--[[@as Floor]]:any_lines_not_marked_done() then
             style = "fflib_slot_button_orange_small"
             note = {"fp.lines_not_marked_done"}
         else
@@ -147,15 +152,14 @@ local function add_recipe_button(parent_flow, line, relevant_line, metadata)
         end
     end
 
-    local recipe_proto = relevant_line.recipe.proto
-    local tooltip = {"", {"fp.tt_title", recipe_proto.localised_name}, note,
-        "\n", metadata.action_tooltips["act_on_compact_recipe"]}
+    local tooltip = {"", {"fp.tt_title", recipe_proto.localised_name}, note}
 
     ---@class ActOnCompactRecipeTags
     ---@field line_id ObjectID
     ---@field context "compact_dialog"
+    ---@field flags GUIActionFlags
     local tags = {mod="fp", on_gui_click="act_on_compact_recipe", line_id=line.id, on_gui_hover="set_tooltip",
-        context="compact_dialog"}
+        context="compact_dialog", flags=flags}
     local button = parent_flow.add{type="sprite-button", tags=tags, sprite=recipe_proto.sprite, style=style,
         mouse_button_filter={"left-and-right"}, raise_hover_events=true}
     metadata.tooltips[button.index] = tooltip
@@ -171,7 +175,7 @@ local function add_modules_flow(parent_flow, line, module_set, metadata)
         local title_line = (not quality_proto.always_show) and {"fp.tt_title", module.proto.localised_name}
             or {"fp.tt_title_with_note", module.proto.localised_name, quality_proto.rich_text}
         local number_line = {"", "\n", module.amount, " ", {"fp.pl_module", module.amount}}
-        local tooltip = {"", title_line, number_line, "\n", metadata.action_tooltips["act_on_compact_module"]}
+        local tooltip = {"", title_line, number_line}
         local style = (line.done) and "fflib_slot_button_default_grayscale_small" or "fflib_slot_button_default_small"
 
         ---@class ActOnCompactModuleTags
@@ -198,14 +202,16 @@ local function add_machine_flow(parent_flow, line, metadata)
         local title_line = (not quality_proto.always_show) and {"fp.tt_title", machine_proto.localised_name}
             or {"fp.tt_title_with_note", machine_proto.localised_name, quality_proto.rich_text}
         local amount, tooltip_line = lib.format.machine_amount(machine.amount, true)
-        local tooltip = {"", title_line, tooltip_line, "\n", metadata.action_tooltips["act_on_compact_machine"]}
+        local tooltip = {"", title_line, tooltip_line}
         local style = (line.done) and "fflib_slot_button_default_grayscale_small" or "fflib_slot_button_default_small"
 
+        local flags = {cursor=lib.cursor.can_set_entity(machine_proto--[[@as FPMachinePrototype]])}
         ---@class ActOnCompactMachineTags
         ---@field line_id ObjectID
         ---@field context "compact_dialog"
+        ---@field flags GUIActionFlags
         local tags = {mod="fp", on_gui_click="act_on_compact_machine", line_id=line.id,
-            on_gui_hover="set_tooltip", context="compact_dialog"}
+            on_gui_hover="set_tooltip", context="compact_dialog", flags=flags}
         local button = machine_flow.add{type="sprite-button", tags=tags, sprite=machine_proto.sprite, number=amount,
             style=style, quality=quality_proto.name, mouse_button_filter={"left-and-right"}, raise_hover_events=true}
         metadata.tooltips[button.index] = tooltip
@@ -226,14 +232,16 @@ local function add_beacon_flow(parent_flow, line, metadata)
         local title_line = (not quality_proto.always_show) and {"fp.tt_title", beacon_proto.localised_name}
             or {"fp.tt_title_with_note", beacon_proto.localised_name, quality_proto.rich_text}
         local number_line = {"", "\n", beacon.amount, " ", {"fp.pl_beacon", beacon.amount}}
-        local tooltip = {"", title_line, number_line, "\n", metadata.action_tooltips["act_on_compact_beacon"]}
+        local tooltip = {"", title_line, number_line}
         local style = (line.done) and "fflib_slot_button_default_grayscale_small" or "fflib_slot_button_default_small"
 
+        local flags = {cursor=lib.cursor.can_set_entity(beacon_proto--[[@as FPBeaconPrototype]])}
         ---@class ActOnCompactBeaconTags
         ---@field line_id ObjectID
         ---@field context "compact_dialog"
+        ---@field flags GUIActionFlags
         local tags = {mod="fp", on_gui_click="act_on_compact_beacon", line_id=line.id,
-            on_gui_hover="set_tooltip", context="compact_dialog"}
+            on_gui_hover="set_tooltip", context="compact_dialog", flags=flags}
         local button = beacon_flow.add{type="sprite-button", tags=tags, sprite=beacon_proto.sprite, style=style,
             number=beacon.amount, quality=quality_proto.name, mouse_button_filter={"left-and-right"},
             raise_hover_events=true}
@@ -257,38 +265,42 @@ local function add_item_flow(line, relevant_line, item_category, button_color, m
     local first_special_index = nil  -- place for fuel to slot in
     for index, item in pairs(line[item_category]) do
         local proto, type = item.proto, item.proto.type
+        local flags = {
+            entity = (type == "entity"),
+            special = (type == "entity" and proto.special),
+            cursor = (type ~= "entity"),
+            factoriopedia = (lib.get_factoriopedia_proto(proto) ~= nil)
+        }
 
         local amount, number_tooltip = nil, nil
         button_color = (relevant_line.done) and "default_grayscale" or button_color
         local name_line = {"", {"fp.tt_title", {"", proto.localised_name}}}
-        local action_line, temperature_line = "", ""  ---@type LocalisedString, LocalisedString
+        local temperature_line = ""  ---@type LocalisedString
 
         ---@class ActOnCompactItemTags
         ---@field line_id ObjectID
         ---@field item_category "products" | "byproducts" | "ingredients"
         ---@field item_index integer
         ---@field context "compact_dialog"
-        local tags = {mod="fp", line_id=line.id, item_category=item_category, item_index=index,
-            on_gui_hover="hover_compact_item", on_gui_leave="leave_compact_item", context="compact_dialog"}
+        ---@field flags GUIActionFlags
+        local tags = {mod="fp", on_gui_click="act_on_compact_item", line_id=line.id, item_category=item_category, item_index=index,
+            on_gui_hover="hover_compact_item", on_gui_leave="leave_compact_item", context="compact_dialog", flags=flags}
 
-        if type == "entity" and proto.special then
+        if flags.special then
             amount = lib.format.button_number(item.amount)
             number_tooltip = lib.format.special_tooltip(proto.name, item.amount)
             if not relevant_line.done and item_category == "ingredients" then button_color = "cyan" end
             first_special_index = first_special_index or index
         else
             -- items/s/machine does not make sense for lines with subfloors, show items/s instead
-            local machine_amount = (line.class == "Line") and line.machine.amount or nil
+            local machine_amount = (line.class == "Line") and line--[[@as Line]].machine.amount or nil
             amount, number_tooltip = item_views.process_item(metadata.player, proto, item.amount, machine_amount)
             if amount == -1 then goto skip_item end  -- an amount of -1 means it was below the margin of error
 
-            if type == "entity" then
+            if flags.entity then
                 button_color = (relevant_line.done) and "disabled_grayscale" or "disabled"
             else
-                tags.on_gui_click = "act_on_compact_item"
-                action_line = {"", "\n", metadata.action_tooltips["act_on_compact_item"]}
-
-                if type == "fluid" and item_category == "ingredients" and line.class ~= "Floor" then
+                if type == "fluid" and item_category == "ingredients" and line.class ~= "Floor" then  ---@cast line Line
                     local temperature_data = line.recipe.temperature_data[proto.name]
                     table.insert(name_line, temperature_data.annotation)
 
@@ -304,7 +316,7 @@ local function add_item_flow(line, relevant_line, item_category, button_color, m
         end
 
         local number_line = (number_tooltip) and {"", "\n", number_tooltip} or ""
-        local tooltip = {"", name_line, temperature_line, number_line, action_line}
+        local tooltip = {"", name_line, temperature_line, number_line}
         local style = "fflib_slot_button_" .. button_color .. "_small"
 
         local button = item_table.add{type="sprite-button", tags=tags, sprite=proto.sprite, number=amount,
@@ -374,14 +386,15 @@ local function add_item_flow(line, relevant_line, item_category, button_color, m
 
         style = (relevant_line.done) and "fflib_slot_button_default_grayscale_small" or style
         local number_line = (number_tooltip) and {"", "\n", number_tooltip} or ""
-        local tooltip = {"", name_line, temperature_line, number_line, "\n",
-            metadata.action_tooltips["act_on_compact_item"]}
+        local tooltip = {"", name_line, temperature_line, number_line}
 
+        local flags = {cursor=true, factoriopedia=(lib.get_factoriopedia_proto(fuel.proto) ~= nil)}
         ---@class ActOnCompactFuelTags
         ---@field fuel_id ObjectID
         ---@field context "compact_dialog"
+        ---@field flags GUIActionFlags
         local tags = {mod="fp", on_gui_click="act_on_compact_item", fuel_id=fuel.id, on_gui_hover="hover_compact_item",
-            on_gui_leave="leave_compact_item", context="compact_dialog"}
+            on_gui_leave="leave_compact_item", context="compact_dialog", flags=flags}
 
         local button = item_table.add{type="sprite-button", tags=tags, sprite=fuel.proto.sprite, style=style,
             number=amount, mouse_button_filter={"left-and-right"}, raise_hover_events=true, index=first_special_index}
@@ -402,6 +415,7 @@ end
 local function refresh_compact_header(player, factory)
     local player_table = lib.globals.player_table(player)
     local compact_elements = player_table.ui_state.compact_elements
+    local tooltips = player_table.ui_state.tooltips.compact_dialog
 
     local attach_factory_products = player_table.preferences.attach_factory_products
     compact_elements.name_label.caption = factory:tostring(attach_factory_products, true)
@@ -432,38 +446,41 @@ local function refresh_compact_header(player, factory)
     local item_buttons = compact_elements.item_buttons
     local show_floor_items = player_table.preferences.show_floor_items
     local relevant_floor = (show_floor_items) and current_floor or factory.top_floor
-    local action_tooltip = MODIFIER_ACTIONS["act_on_compact_ingredient"].tooltip
 
     for index, ingredient in pairs(relevant_floor.ingredients) do
         local amount, number_tooltip = nil, nil
-        local action_line = ""  ---@type LocalisedString
+        local proto = ingredient.proto
+        local special = (proto.type == "entity" and proto.special)
+        local flags = {
+            special = special,
+            cursor = (proto.type ~= "entity"),
+            factoriopedia = (lib.get_factoriopedia_proto(proto) ~= nil)
+        }
 
         ---@class ActOnCompactIngredientTags
         ---@field floor_id ObjectID
         ---@field item_index integer
         ---@field context "compact_dialog"
-        local tags = {mod="fp", floor_id=relevant_floor.id, item_index=index, on_gui_hover="hover_compact_item",
-            on_gui_leave="leave_compact_item", context="compact_dialog"}
+        ---@field flags GUIActionFlags
+        local tags = {mod="fp", on_gui_click="act_on_compact_ingredient", floor_id=relevant_floor.id, item_index=index,
+            on_gui_hover="hover_compact_item", on_gui_leave="leave_compact_item", context="compact_dialog", flags=flags}
 
-        if ingredient.proto.type == "entity" and ingredient.proto.special then
+        if flags.special then
             amount = lib.format.button_number(ingredient.amount)
             number_tooltip = lib.format.special_tooltip(ingredient.proto.name, ingredient.amount)
         else
             amount, number_tooltip = item_views.process_item(player, ingredient.proto, ingredient.amount, nil)
             if amount == -1 then goto skip_ingredient end  -- an amount of -1 means it was below the margin of error
-
-            tags.on_gui_click = "act_on_compact_ingredient"
-            action_line = {"", "\n", action_tooltip}
         end
 
         local style = "fflib_slot_button_default"
         local number_line = (number_tooltip) and {"", "\n", number_tooltip} or ""  ---@type LocalisedString
-        local tooltip = {"", {"fp.tt_title", ingredient.proto.localised_name}, number_line, action_line}
+        local tooltip = {"", {"fp.tt_title", ingredient.proto.localised_name}, number_line}
 
-        local button = table_items.add{type="sprite-button", tags=tags, number=amount, tooltip=tooltip,
+        local button = table_items.add{type="sprite-button", tags=tags, number=amount,
             sprite=ingredient.proto.sprite, style=style, mouse_button_filter={"left-and-right"},
             raise_hover_events=true}
-        player_table.ui_state.tooltips[button.index] = tooltip
+        tooltips[button.index] = tooltip
 
         local type, name = ingredient.proto.type, ingredient.proto.name
         item_buttons[type] = item_buttons[type] or {}
@@ -495,19 +512,11 @@ local function refresh_compact_production(player)
     ---@field parent LuaGuiElement
     ---@field column_counts CompactColumnCounts
     ---@field tooltips table
-    ---@field action_tooltips table
     local metadata = {
         player = player,
         parent = production_table,
         column_counts = column_counts,
-        tooltips = ui_state.tooltips.compact_dialog,
-        action_tooltips = {
-            act_on_compact_recipe = MODIFIER_ACTIONS["act_on_compact_recipe"].tooltip,
-            act_on_compact_module = MODIFIER_ACTIONS["act_on_compact_module"].tooltip,
-            act_on_compact_machine = MODIFIER_ACTIONS["act_on_compact_machine"].tooltip,
-            act_on_compact_beacon = MODIFIER_ACTIONS["act_on_compact_beacon"].tooltip,
-            act_on_compact_item = MODIFIER_ACTIONS["act_on_compact_item"].tooltip
-        }
+        tooltips = ui_state.tooltips.compact_dialog
     }
 
     for line in floor:iterator() do -- build the individual lines
@@ -650,12 +659,17 @@ local function handle_ingredient_click(player, tags, action)
     local floor = OBJECT_INDEX[tags.floor_id]  ---@as Floor
     local item = floor.ingredients[tags.item_index]  ---@as SimpleItem
 
-    if action == "put_into_cursor" then
-        lib.cursor.handle_item_click(player, item.proto, item.amount)
+    if action == "pipette" then
+        lib.cursor.pipette_item(player, item.proto)
+
+    elseif action == "set_filter" then
+        lib.cursor.set_filter(player, item.proto)
+
+    elseif action == "put_into_combinator" then
+        lib.cursor.put_into_combinator(player, item.proto, item.amount)
 
     elseif action == "factoriopedia" then
-        local name = (item.proto.temperature) and item.proto.base_name or item.proto.name
-        player.open_factoriopedia_gui(prototypes[item.proto.type][name])
+        player.open_factoriopedia_gui(lib.get_factoriopedia_proto(item.proto))
     end
 end
 
@@ -667,13 +681,11 @@ local function handle_recipe_click(player, tags, action)
     local relevant_line = (line.class == "Floor") and line.first or line
 
     if action == "open_subfloor" then
-        if line.class == "Floor" then
-            lib.context.set(player, line--[[@as Floor]])
-            refresh_compact_factory(player)
-        end
+        lib.context.set(player, line--[[@as Floor]])
+        refresh_compact_factory(player)
     elseif action == "factoriopedia" then
         local proto = relevant_line--[[@as Line]].recipe.proto  ---@as FPRecipePrototype
-        player.open_factoriopedia_gui(lib.get_factoriopedia_proto("recipe", proto.name, proto))
+        player.open_factoriopedia_gui(lib.get_factoriopedia_proto(proto))
     end
 end
 
@@ -683,8 +695,11 @@ end
 local function handle_module_click(player, tags, action)
     local module = OBJECT_INDEX[tags.module_id]  ---@as Module
 
-    if action == "factoriopedia" then
-        player.open_factoriopedia_gui(prototypes["item"][module.proto.name])
+    if action == "pipette" then
+        player.pipette(prototypes.item[module.proto.name], module.quality_proto.name, true)
+
+    elseif action == "factoriopedia" then
+        player.open_factoriopedia_gui(lib.get_factoriopedia_proto(module.proto))
     end
 end
 
@@ -695,11 +710,11 @@ local function handle_machine_click(player, tags, action)
     local line = OBJECT_INDEX[tags.line_id]  ---@as Line
     -- We don't need to care about relevant lines here because this only gets called on lines without subfloor
 
-    if action == "put_into_cursor" then
+    if action == "pipette" then
         lib.cursor.set_entity(player, line, line.machine)
 
     elseif action == "factoriopedia" then
-        player.open_factoriopedia_gui(prototypes["entity"][line.machine.proto.name])
+        player.open_factoriopedia_gui(lib.get_factoriopedia_proto(line.machine.proto))
     end
 end
 
@@ -711,11 +726,11 @@ local function handle_beacon_click(player, tags, action)
     ---@cast line.beacon -nil
     -- We don't need to care about relevant lines here because this only gets called on lines without subfloor
 
-    if action == "put_into_cursor" then
+    if action == "pipette" then
         lib.cursor.set_entity(player, line, line.beacon)
 
     elseif action == "factoriopedia" then
-        player.open_factoriopedia_gui(prototypes["entity"][line.beacon.proto.name])
+        player.open_factoriopedia_gui(lib.get_factoriopedia_proto(line.beacon.proto))
     end
 end
 
@@ -732,15 +747,17 @@ local function handle_item_click(player, tags, action)
         ---@cast item.proto FPItemPrototype
     end
 
-    if action == "put_into_cursor" then
-        if item.proto.type == "entity" then return end
-        lib.cursor.handle_item_click(player, item.proto, item.amount)
+    if action == "pipette" then
+        lib.cursor.pipette_item(player, item.proto)
+
+    elseif action == "set_filter" then
+        lib.cursor.set_filter(player, item.proto)
+
+    elseif action == "put_into_combinator" then
+        lib.cursor.put_into_combinator(player, item.proto, item.amount)
 
     elseif action == "factoriopedia" then
-        local name = item.proto.name
-        if item.proto.type == "entity" then name = name:gsub("custom%-", "")
-        elseif item.proto.temperature then name = item.proto.base_name--[[@as string]] end
-        player.open_factoriopedia_gui(prototypes[item.proto.type][name])
+        player.open_factoriopedia_gui(lib.get_factoriopedia_proto(item.proto))
     end
 end
 
@@ -778,6 +795,12 @@ end
 -- ** EVENTS **
 local factory_listeners = {}  ---@type ListenerDefinitions
 
+---@param flags GUIActionFlags
+---@return boolean?
+local function has_subfloor(flags)
+    return flags.subfloor
+end
+
 factory_listeners.gui = {
     on_gui_click = {
         {
@@ -802,47 +825,52 @@ factory_listeners.gui = {
         {
             name = "act_on_compact_ingredient",
             actions_table = {
-                put_into_cursor = {shortcut="left", show=true},
-                factoriopedia = {shortcut="alt-left", show=true}
+                set_filter = {shortcut="left", core=true, enable=lib.actions.can_set_filter},
+                pipette = {input="pipette", enable=lib.actions.can_pipette},
+                put_into_combinator = {input="put_into_combinator", enable=lib.actions.can_put_into_combinator},
+                factoriopedia = {shortcut="alt-left", enable=lib.actions.can_open_factoriopedia}
             },
             handler = handle_ingredient_click
         },
         {
             name = "act_on_compact_recipe",
             actions_table = {
-                open_subfloor = {shortcut="left", show=true},
-                factoriopedia = {shortcut="alt-left", show=true}
+                open_subfloor = {shortcut="left", show=has_subfloor},
+                factoriopedia = {shortcut="alt-left", enable=lib.actions.can_open_factoriopedia}
             },
             handler = handle_recipe_click
         },
         {
             name = "act_on_compact_module",
             actions_table = {
-                factoriopedia = {shortcut="alt-left", show=true}
+                pipette = {input="pipette"},
+                factoriopedia = {shortcut="alt-left"}
             },
             handler = handle_module_click
         },
         {
             name = "act_on_compact_machine",
             actions_table = {
-                put_into_cursor = {shortcut="left", show=true},
-                factoriopedia = {shortcut="alt-left", show=true}
+                pipette = {input="pipette", enable=lib.actions.can_pipette},
+                factoriopedia = {shortcut="alt-left"}
             },
             handler = handle_machine_click
         },
         {
             name = "act_on_compact_beacon",
             actions_table = {
-                put_into_cursor = {shortcut="left", show=true},
-                factoriopedia = {shortcut="alt-left", show=true}
+                pipette = {input="pipette", enable=lib.actions.can_pipette},
+                factoriopedia = {shortcut="alt-left"}
             },
             handler = handle_beacon_click
         },
         {
             name = "act_on_compact_item",
             actions_table = {
-                put_into_cursor = {shortcut="left", show=true},
-                factoriopedia = {shortcut="alt-left", show=true}
+                set_filter = {shortcut="left", core=true, enable=lib.actions.can_set_filter},
+                pipette = {input="pipette", enable=lib.actions.can_pipette},
+                put_into_combinator = {input="put_into_combinator", enable=lib.actions.can_put_into_combinator},
+                factoriopedia = {shortcut="alt-left", enable=lib.actions.can_open_factoriopedia}
             },
             handler = handle_item_click
         }

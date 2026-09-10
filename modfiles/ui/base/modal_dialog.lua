@@ -244,7 +244,7 @@ end
 ---@param player LuaPlayer
 ---@param menu_tags Tags
 ---@param handler string
----@param actions GUIActionTable[]
+---@param actions GUIAction[]
 ---@param location GuiLocation
 function modal_dialog.open_context_menu(player, menu_tags, handler, actions, location)
     local ui_state = lib.globals.ui_state(player)
@@ -257,31 +257,40 @@ function modal_dialog.open_context_menu(player, menu_tags, handler, actions, loc
     button_flow.style.vertical_spacing = 0
 
     local action_counter = 0
-    local active_limitations = lib.actions.current_limitations(player)
+    local flags = menu_tags.flags  ---@as GUIActionFlags?
 
     for _, action in pairs(actions) do
-        if lib.actions.allowed(action.limitations, active_limitations) then
-            local caption = {"fp.tt_title", {"fp.action_" .. action.name}}
-            ---@class ChooseContextActionTags
-            ---@field tags Tags
-            ---@field handler string
-            ---@field action string
-            local tags = {mod="fp", on_gui_click="choose_context_action", tags=menu_tags,
-                handler=handler, action=action.name}
-            local button = button_flow.add{type="button", tags=tags, style="list_box_item",
-                mouse_button_filter={"left"}}
-            button.style.width = MAGIC_NUMBERS.context_menu_width
+        if not lib.actions.is_visible(action, flags) then goto continue end
 
-            local flow = button.add{type="flow", direction="horizontal"}
-            flow.style.width = MAGIC_NUMBERS.context_menu_width
-            flow.style.right_padding = 20
-            flow.add{type="label", caption=caption, style="bold_label"}
-            flow.add{type="empty-widget", style="fflib_horizontal_pusher"}
-            flow.add{type="label", caption=action.shortcut_string}
+        ---@class ChooseContextActionTags
+        ---@field tags Tags
+        ---@field handler string
+        ---@field action string
+        local tags = {mod="fp", on_gui_click="choose_context_action", tags=menu_tags,
+            handler=handler, action=action.name}
+        local enabled, warning = lib.actions.is_enabled(action, flags)
+        local button = button_flow.add{type="button", tags=tags, style="list_box_item",
+            mouse_button_filter={"left"}, enabled=enabled,
+            tooltip=warning and {"fp.warning_with_icon", warning} or nil}
+        button.style.width = MAGIC_NUMBERS.context_menu_width
 
-            action_counter = action_counter + 1
-        end
+        local flow = button.add{type="flow", direction="horizontal"}
+        flow.style.width = MAGIC_NUMBERS.context_menu_width
+        flow.style.right_padding = 20
+        flow.add{type="label", caption={"fp.tt_title", {"fp.action_" .. action.name}}, style="bold_label"}
+        flow.add{type="empty-widget", style="fflib_horizontal_pusher"}
+        flow.add{type="label", caption=action.binding_string}
+
+        action_counter = action_counter + 1
+        ::continue::
     end
+
+    if action_counter == 0 then
+        frame_modal_dialog.destroy()
+        ui_state.context_menu = nil
+        return
+    end
+
     local dialog_height = action_counter * 28
     button_flow.style.height = dialog_height
 
@@ -436,7 +445,8 @@ listeners.gui = {
             handler = function(player, tags, _)
                 ---@cast tags ChooseContextActionTags
                 modal_dialog.close_context_menu(player)
-                MODIFIER_ACTIONS[tags.handler].handler(player, tags.tags, tags.action)
+                local registered_handler = GUI_HANDLERS[tags.handler]
+                registered_handler.handler(player, tags.tags, tags.action)
             end
         },
         {
