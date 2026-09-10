@@ -466,21 +466,21 @@ function simplex_engine.update_line(floor_id, line_data, scale_factor, byproduct
 
     -- Update the fuel
     if line_data.fuel_proto then  ---@cast line_data.fuel_name -nil
-        for item_key, amount in pairs(ingredients) do
-            local fuel = {
-                name = line_data.fuel_name,
-                type = line_data.fuel_proto.type,
-                amount = 0
-            }  ---@type SolverItem
+        local fuel = {
+            name = line_data.fuel_name,
+            type = line_data.fuel_proto.type,
+            amount = 0
+        }  ---@type SolverItem
+        local fuel_key = structures.pack_item(fuel)
+        local amount = ingredients[fuel_key]
 
-            if item_key == structures.pack_item(fuel) then
-                if data.fuel_ratio then
-                    fuel_amount = machine_amount * amount * data.fuel_ratio
-                    ingredients[item_key] = ingredients[item_key] * (1 - data.fuel_ratio)
-                else
-                    fuel_amount = machine_amount * amount
-                    ingredients[item_key] = nil
-                end
+        if amount then
+            if data.fuel_ratio then
+                fuel_amount = machine_amount * amount * data.fuel_ratio
+                ingredients[fuel_key] = amount * (1 - data.fuel_ratio)
+            else
+                fuel_amount = machine_amount * amount
+                ingredients[fuel_key] = nil
             end
         end
     end
