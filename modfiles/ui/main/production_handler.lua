@@ -90,7 +90,7 @@ local function handle_machine_click(player, tags, action)
     local machine = OBJECT_INDEX[tags.machine_id]  ---@as Machine
     local line = machine.parent
 
-    if action == "put_into_cursor" then
+    if action == "pipette" then
         local success = lib.cursor.set_entity(player, line, machine)
         if success then main_dialog.toggle(player) end
 
@@ -132,7 +132,7 @@ local function handle_beacon_click(player, tags, action)
     local beacon = OBJECT_INDEX[tags.beacon_id]  ---@as Beacon
     local line = beacon.parent
 
-    if action == "put_into_cursor" then
+    if action == "pipette" then
         local success = lib.cursor.set_entity(player, line, beacon)
         if success then main_dialog.toggle(player) end
 
@@ -201,6 +201,9 @@ local function handle_module_click(player, tags, action)
         solver.update(player)
         lib.gui.run_refresh(player, "production")
 
+    elseif action == "pipette" then
+        player.pipette(prototypes.item[module.proto.name], module.quality_proto.name, true)
+
     elseif action == "factoriopedia" then
         player.open_factoriopedia_gui(lib.get_factoriopedia_proto(module.proto))
     end
@@ -263,8 +266,11 @@ local function handle_item_click(player, tags, action)
     elseif action == "paste" then
         lib.clipboard.paste(player, item)
 
-    elseif action == "put_into_cursor" then
-        lib.cursor.handle_item_click(player, item.proto, item.amount)
+    elseif action == "pipette" then
+        lib.cursor.pipette_item(player, item.proto)
+
+    elseif action == "put_into_combinator" then
+        lib.cursor.put_into_combinator(player, item.proto, item.amount)
 
     elseif action == "factoriopedia" then
         player.open_factoriopedia_gui(lib.get_factoriopedia_proto(item.proto))
@@ -304,8 +310,11 @@ local function handle_fuel_click(player, tags, action)
     elseif action == "paste" then
         lib.clipboard.paste(player, fuel)
 
-    elseif action == "put_into_cursor" then
-        lib.cursor.handle_item_click(player, fuel.proto--[[@as FPFuelPrototype]], fuel.amount)
+    elseif action == "pipette" then
+        lib.cursor.pipette_item(player, fuel.proto--[[@as FPFuelPrototype]])
+
+    elseif action == "put_into_combinator" then
+        lib.cursor.put_into_combinator(player, fuel.proto--[[@as FPFuelPrototype]], fuel.amount)
 
     elseif action == "factoriopedia" then
         player.open_factoriopedia_gui(lib.get_factoriopedia_proto(fuel.proto))
@@ -418,8 +427,8 @@ listeners.gui = {
                 edit = {shortcut="left", core=true, enable=lib.actions.can_edit_factory},
                 copy = {shortcut="shift-right"},
                 paste = {shortcut="shift-left", enable=lib.actions.can_edit_factory},
-                factoriopedia = {shortcut="alt-left"},
-                put_into_cursor = {input="put_into_cursor", enable=lib.actions.can_put_into_cursor}
+                pipette = {input="pipette", enable=lib.actions.can_pipette},
+                factoriopedia = {shortcut="alt-left"}
             },
             handler = handle_machine_click
         },
@@ -434,8 +443,8 @@ listeners.gui = {
                 copy = {shortcut="shift-right"},
                 paste = {shortcut="shift-left", enable=lib.actions.can_edit_factory},
                 delete = {input="delete", enable=lib.actions.can_edit_factory},
-                factoriopedia = {shortcut="alt-left"},
-                put_into_cursor = {input="put_into_cursor", enable=lib.actions.can_put_into_cursor}
+                pipette = {input="pipette", enable=lib.actions.can_pipette},
+                factoriopedia = {shortcut="alt-left"}
             },
             handler = handle_beacon_click
         },
@@ -450,6 +459,7 @@ listeners.gui = {
                 copy = {shortcut="shift-right"},
                 paste = {shortcut="shift-left", enable=lib.actions.can_edit_factory},
                 delete = {input="delete", enable=lib.actions.can_edit_factory},
+                pipette = {input="pipette"},
                 factoriopedia = {shortcut="alt-left"}
             },
             handler = handle_module_click
@@ -463,8 +473,9 @@ listeners.gui = {
                 prioritize = {shortcut="control-right", show=show_prioritize_item, enable=can_prioritize},
                 copy = {shortcut="shift-right"},
                 paste = {shortcut="shift-left", show=show_item_temperature, enable=lib.actions.can_edit_temperature},
-                factoriopedia = {shortcut="alt-left", enable=lib.actions.can_open_factoriopedia},
-                put_into_cursor = {input="put_into_cursor", enable=lib.actions.can_put_into_cursor}
+                pipette = {input="pipette", enable=lib.actions.can_pipette},
+                put_into_combinator = {input="put_into_combinator", enable=lib.actions.can_put_into_combinator},
+                factoriopedia = {shortcut="alt-left", enable=lib.actions.can_open_factoriopedia}
             },
             handler = handle_item_click
         },
@@ -477,8 +488,9 @@ listeners.gui = {
                 edit_fuel = {enable=lib.actions.can_edit_factory},
                 copy = {shortcut="shift-right"},
                 paste = {shortcut="shift-left", enable=lib.actions.can_edit_factory},
-                factoriopedia = {shortcut="alt-left"},
-                put_into_cursor = {input="put_into_cursor"}
+                pipette = {input="pipette", enable=lib.actions.can_pipette},
+                put_into_combinator = {input="put_into_combinator", enable=lib.actions.can_put_into_combinator},
+                factoriopedia = {shortcut="alt-left"}
             },
             handler = handle_fuel_click
         }

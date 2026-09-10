@@ -53,8 +53,11 @@ local function handle_item_button_click(player, tags, action)
         local copyable_item = SimpleItem.init(nil, item.proto, item.abs_diff)
         lib.clipboard.copy(player, copyable_item)
 
-    elseif action == "put_into_cursor" then
-        lib.cursor.handle_item_click(player, item.proto, item.abs_diff)
+    elseif action == "pipette" then
+        lib.cursor.pipette_item(player, item.proto)
+
+    elseif action == "put_into_combinator" then
+        lib.cursor.put_into_combinator(player, item.proto, item.abs_diff)
 
     elseif action == "factoriopedia" then
         player.open_factoriopedia_gui(lib.get_factoriopedia_proto(item.proto))
@@ -107,7 +110,7 @@ local function build_items_flow(player, parent, district)
         local flags = {
             ingredient = (item.overall == "consumption"),
             special = special,
-            cursor = not special,
+            cursor = (item.proto.type ~= "entity"),
             ingredient_only = item.proto.ingredient_only,
             factoriopedia = (lib.get_factoriopedia_proto(item.proto) ~= nil)
         }
@@ -429,8 +432,9 @@ listeners.gui = {
             actions_table = {
                 create_factory = {shortcut="left", core=true, show=is_ingredient, enable=lib.actions.can_add_recipe},
                 copy = {shortcut="shift-right"},
-                factoriopedia = {shortcut="alt-left", enable=lib.actions.can_open_factoriopedia},
-                put_into_cursor = {input="put_into_cursor", enable=lib.actions.can_put_into_cursor}
+                pipette = {input="pipette", enable=lib.actions.can_pipette},
+                put_into_combinator = {input="put_into_combinator", enable=lib.actions.can_put_into_combinator},
+                factoriopedia = {shortcut="alt-left", enable=lib.actions.can_open_factoriopedia}
             },
             handler = handle_item_button_click
         }

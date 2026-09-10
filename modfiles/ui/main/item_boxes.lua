@@ -79,7 +79,7 @@ local function refresh_item_box(player, factory, show_floor_items, item_category
                 top_level = true,
                 product = true,
                 special = special,
-                cursor = not special,
+                cursor = (product.proto.type ~= "entity"),
                 archived = factory.archived,
                 wrong_floor = wrong_floor,
                 ingredient_only = product.proto.ingredient_only,
@@ -136,7 +136,7 @@ local function refresh_item_box(player, factory, show_floor_items, item_category
                 top_level = false,
                 product = (item_category == "product"),
                 special = special,
-                cursor = not special,
+                cursor = (item.proto.type ~= "entity"),
                 archived = factory.archived,
                 wrong_floor = wrong_floor,
                 ingredient_only = item.proto.ingredient_only,
@@ -248,9 +248,12 @@ local function handle_item_button_click(player, tags, action)
         solver.update(player)
         lib.gui.run_refresh(player, "all")  -- make sure product icons are updated
 
-    elseif action == "put_into_cursor" then
+    elseif action == "pipette" then
+        lib.cursor.pipette_item(player, item.proto--[[@as FPItemPrototype]])
+
+    elseif action == "put_into_combinator" then
         local amount = (item.class == "TLProduct") and item:get_required_amount() or item.amount
-        lib.cursor.handle_item_click(player, item.proto--[[@as FPItemPrototype]], amount)
+        lib.cursor.put_into_combinator(player, item.proto--[[@as FPItemPrototype]], amount)
 
     elseif action == "factoriopedia" then
         local proto = item.proto  ---@as FPItemPrototype
@@ -387,8 +390,9 @@ listeners.gui = {
                 move_right = {show=is_top_level_product, enable=can_move_right},
                 copy = {shortcut="shift-right"},
                 paste = {shortcut="shift-left", show=is_top_level_product, enable=lib.actions.can_edit_factory},
-                factoriopedia = {shortcut="alt-left", enable=lib.actions.can_open_factoriopedia},
-                put_into_cursor = {input="put_into_cursor", enable=lib.actions.can_put_into_cursor}
+                pipette = {input="pipette", enable=lib.actions.can_pipette},
+                put_into_combinator = {input="put_into_combinator", enable=lib.actions.can_put_into_combinator},
+                factoriopedia = {shortcut="alt-left", enable=lib.actions.can_open_factoriopedia}
             },
             handler = handle_item_button_click
         },

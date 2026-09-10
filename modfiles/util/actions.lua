@@ -37,8 +37,24 @@ end
 ---@param flags GUIActionFlags
 ---@return boolean
 ---@return LocalisedString? warning
-function _actions.can_put_into_cursor(flags)
-    if not flags.cursor then return false, {"fp.put_into_cursor_unavailable"} end
+function _actions.can_pipette(flags)
+    if not flags.cursor then return false, {"fp.pipette_unavailable"} end
+    return true
+end
+
+---@param flags GUIActionFlags
+---@return boolean
+---@return LocalisedString? warning
+function _actions.can_put_into_combinator(flags)
+    if not flags.cursor then return false, {"fp.put_into_combinator_unavailable"} end
+    return true
+end
+
+---@param flags GUIActionFlags
+---@return boolean
+---@return LocalisedString? warning
+function _actions.can_set_filter(flags)
+    if not flags.cursor then return false, {"fp.set_filter_unavailable"} end
     return true
 end
 

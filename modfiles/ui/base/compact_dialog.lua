@@ -453,7 +453,7 @@ local function refresh_compact_header(player, factory)
         local special = (proto.type == "entity" and proto.special)
         local flags = {
             special = special,
-            cursor = not special,
+            cursor = (proto.type ~= "entity"),
             factoriopedia = (lib.get_factoriopedia_proto(proto) ~= nil)
         }
 
@@ -659,8 +659,14 @@ local function handle_ingredient_click(player, tags, action)
     local floor = OBJECT_INDEX[tags.floor_id]  ---@as Floor
     local item = floor.ingredients[tags.item_index]  ---@as SimpleItem
 
-    if action == "put_into_cursor" then
-        lib.cursor.handle_item_click(player, item.proto, item.amount)
+    if action == "pipette" then
+        lib.cursor.pipette_item(player, item.proto)
+
+    elseif action == "set_filter" then
+        lib.cursor.set_filter(player, item.proto)
+
+    elseif action == "put_into_combinator" then
+        lib.cursor.put_into_combinator(player, item.proto, item.amount)
 
     elseif action == "factoriopedia" then
         player.open_factoriopedia_gui(lib.get_factoriopedia_proto(item.proto))
@@ -689,7 +695,10 @@ end
 local function handle_module_click(player, tags, action)
     local module = OBJECT_INDEX[tags.module_id]  ---@as Module
 
-    if action == "factoriopedia" then
+    if action == "pipette" then
+        player.pipette(prototypes.item[module.proto.name], module.quality_proto.name, true)
+
+    elseif action == "factoriopedia" then
         player.open_factoriopedia_gui(lib.get_factoriopedia_proto(module.proto))
     end
 end
@@ -701,7 +710,7 @@ local function handle_machine_click(player, tags, action)
     local line = OBJECT_INDEX[tags.line_id]  ---@as Line
     -- We don't need to care about relevant lines here because this only gets called on lines without subfloor
 
-    if action == "put_into_cursor" then
+    if action == "pipette" then
         lib.cursor.set_entity(player, line, line.machine)
 
     elseif action == "factoriopedia" then
@@ -717,7 +726,7 @@ local function handle_beacon_click(player, tags, action)
     ---@cast line.beacon -nil
     -- We don't need to care about relevant lines here because this only gets called on lines without subfloor
 
-    if action == "put_into_cursor" then
+    if action == "pipette" then
         lib.cursor.set_entity(player, line, line.beacon)
 
     elseif action == "factoriopedia" then
@@ -738,8 +747,14 @@ local function handle_item_click(player, tags, action)
         ---@cast item.proto FPItemPrototype
     end
 
-    if action == "put_into_cursor" then
-        lib.cursor.handle_item_click(player, item.proto, item.amount)
+    if action == "pipette" then
+        lib.cursor.pipette_item(player, item.proto)
+
+    elseif action == "set_filter" then
+        lib.cursor.set_filter(player, item.proto)
+
+    elseif action == "put_into_combinator" then
+        lib.cursor.put_into_combinator(player, item.proto, item.amount)
 
     elseif action == "factoriopedia" then
         player.open_factoriopedia_gui(lib.get_factoriopedia_proto(item.proto))
@@ -810,15 +825,17 @@ factory_listeners.gui = {
         {
             name = "act_on_compact_ingredient",
             actions_table = {
-                factoriopedia = {shortcut="alt-left", enable=lib.actions.can_open_factoriopedia},
-                put_into_cursor = {input="put_into_cursor", core=true, enable=lib.actions.can_put_into_cursor}
+                set_filter = {shortcut="left", core=true, enable=lib.actions.can_set_filter},
+                pipette = {input="pipette", enable=lib.actions.can_pipette},
+                put_into_combinator = {input="put_into_combinator", enable=lib.actions.can_put_into_combinator},
+                factoriopedia = {shortcut="alt-left", enable=lib.actions.can_open_factoriopedia}
             },
             handler = handle_ingredient_click
         },
         {
             name = "act_on_compact_recipe",
             actions_table = {
-                open_subfloor = {shortcut="left", core=true, show=has_subfloor},
+                open_subfloor = {shortcut="left", show=has_subfloor},
                 factoriopedia = {shortcut="alt-left", enable=lib.actions.can_open_factoriopedia}
             },
             handler = handle_recipe_click
@@ -826,6 +843,7 @@ factory_listeners.gui = {
         {
             name = "act_on_compact_module",
             actions_table = {
+                pipette = {input="pipette"},
                 factoriopedia = {shortcut="alt-left"}
             },
             handler = handle_module_click
@@ -833,24 +851,26 @@ factory_listeners.gui = {
         {
             name = "act_on_compact_machine",
             actions_table = {
-                factoriopedia = {shortcut="alt-left"},
-                put_into_cursor = {input="put_into_cursor", core=true, enable=lib.actions.can_put_into_cursor}
+                pipette = {input="pipette", enable=lib.actions.can_pipette},
+                factoriopedia = {shortcut="alt-left"}
             },
             handler = handle_machine_click
         },
         {
             name = "act_on_compact_beacon",
             actions_table = {
-                factoriopedia = {shortcut="alt-left"},
-                put_into_cursor = {input="put_into_cursor", core=true, enable=lib.actions.can_put_into_cursor}
+                pipette = {input="pipette", enable=lib.actions.can_pipette},
+                factoriopedia = {shortcut="alt-left"}
             },
             handler = handle_beacon_click
         },
         {
             name = "act_on_compact_item",
             actions_table = {
-                factoriopedia = {shortcut="alt-left", enable=lib.actions.can_open_factoriopedia},
-                put_into_cursor = {input="put_into_cursor", core=true, enable=lib.actions.can_put_into_cursor}
+                set_filter = {shortcut="left", core=true, enable=lib.actions.can_set_filter},
+                pipette = {input="pipette", enable=lib.actions.can_pipette},
+                put_into_combinator = {input="put_into_combinator", enable=lib.actions.can_put_into_combinator},
+                factoriopedia = {shortcut="alt-left", enable=lib.actions.can_open_factoriopedia}
             },
             handler = handle_item_click
         }

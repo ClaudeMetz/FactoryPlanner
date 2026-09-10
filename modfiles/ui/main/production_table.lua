@@ -549,6 +549,7 @@ local function add_fuel(line, parent_flow, metadata)
 
     local item_proto = prototyper.util.find("items", fuel:get_name_with_temperature(), fuel.proto.type)  ---@as FPItemPrototype
     local flags = {
+        cursor = true,
         fluid = (fuel.proto.type == "fluid"),
         archived = metadata.archive_open,
         ingredient_only = (item_proto.ingredient_only and not (item_proto.type == "fluid" and item_proto.temperature == nil)),

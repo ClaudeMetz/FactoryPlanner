@@ -37,7 +37,7 @@ end
 function _cursor.set_entity(player, line, object)
     local entity_prototype = prototypes.entity[object.proto.name]
     if not _cursor.can_set_entity(object.proto--[[@as FPMachinePrototype | FPBeaconPrototype]]) then
-        _cursor.create_flying_text(player, {"fp.put_into_cursor_failed", entity_prototype.localised_name})
+        _cursor.create_flying_text(player, {"fp.pipette_failed", entity_prototype.localised_name})
         return false
     end
 
@@ -129,7 +129,7 @@ local function add_to_item_combinator(player, blueprint_entity, item_proto, amou
 
     do
         if not blueprint_entity then goto skip_cursor end
-        if not blueprint_entity.name == "constant-combinator" then goto skip_cursor end
+        if blueprint_entity.name ~= "constant-combinator" then goto skip_cursor end
 
         local control_behavior = blueprint_entity.control_behavior
         if not control_behavior then goto skip_cursor end
@@ -140,7 +140,7 @@ local function add_to_item_combinator(player, blueprint_entity, item_proto, amou
         local section = sections--[[@cast -nil]].sections--[[@cast -nil]][1]
         if section--[[@cast -nil]].group then goto skip_cursor end
 
-        for _, filter in pairs(section--[[@cast -nil]].filters--[[@cast -nil]]) do
+        for _, filter in pairs(section--[[@cast -nil]].filters or {}) do
             if item_proto.type == (filter.type or "item") and item_name == filter.name then
                 filter.count = filter.count + (amount * timescale)  ---@as int32
                 filter_matched = true
@@ -381,7 +381,7 @@ local function set_filter_on_pump(player, cursor_entity, item_proto)
         return
     end
 
-    local new_filter = item_proto.name
+    local new_filter = item_proto.base_name or item_proto.name
 
     if cursor_entity.type == "blueprint" then
         local blueprint_entity = cursor_entity.entity  ---@as BlueprintEntity
@@ -400,43 +400,6 @@ local function set_filter_on_pump(player, cursor_entity, item_proto)
     end
 end
 
-
----@param player LuaPlayer
----@param cursor_entity CursorEntityData
----@param item_proto FPItemPrototype | FPFuelPrototype
----@return boolean applicable
-local function set_filter(player, cursor_entity, item_proto)
-    if cursor_entity.type == "none" then return false end
-    local entity_proto  ---@type LuaEntityPrototype
-
-    if cursor_entity.type == "entity" then
-        ---@cast cursor_entity.entity LuaEntityPrototype
-        entity_proto = cursor_entity.entity
-    elseif cursor_entity.type == "blueprint" then
-        ---@cast cursor_entity.entity BlueprintEntity
-        entity_proto = prototypes.entity[cursor_entity.entity.name]
-    end  ---@cast entity_proto -nil
-
-    local type = entity_proto.type
-    if type == "inserter" or type == "loader" or type == "loader-1x1" then
-        set_filter_on_inserter(player, cursor_entity, item_proto)
-        return true
-    elseif type == "splitter" or type == "lane-splitter" then
-        set_filter_on_splitter(player, cursor_entity, item_proto)
-        return true
-    elseif type == "mining-drill" then
-        set_filter_on_mining_drill(player, cursor_entity, item_proto)
-        return true
-    elseif type == "asteroid-collector" then
-        set_filter_on_asteroid_collector(player, cursor_entity, item_proto)
-        return true
-    elseif type == "pump" then
-        set_filter_on_pump(player, cursor_entity, item_proto)
-        return true
-    end
-
-    return false
-end
 
 
 ---@param player LuaPlayer
@@ -483,12 +446,54 @@ end
 
 ---@param player LuaPlayer
 ---@param item_proto FPItemPrototype | FPFuelPrototype
----@param amount number
-function _cursor.handle_item_click(player, item_proto, amount)
+function _cursor.set_filter(player, item_proto)
     local cursor_entity = parse_cursor_entity(player)
+    if cursor_entity.type == "none" then
+        _cursor.create_flying_text(player, {"fp.no_filterable_cursor"})
+        return
+    end
+    local entity_proto  ---@type LuaEntityPrototype
 
-    local applicable = set_filter(player, cursor_entity, item_proto)
-    if applicable then return end
+    if cursor_entity.type == "entity" then
+        ---@cast cursor_entity.entity LuaEntityPrototype
+        entity_proto = cursor_entity.entity
+    elseif cursor_entity.type == "blueprint" then
+        ---@cast cursor_entity.entity BlueprintEntity
+        entity_proto = prototypes.entity[cursor_entity.entity.name]
+    end  ---@cast entity_proto -nil
+
+    local type = entity_proto.type
+    if type == "inserter" or type == "loader" or type == "loader-1x1" then
+        set_filter_on_inserter(player, cursor_entity, item_proto)
+    elseif type == "splitter" or type == "lane-splitter" then
+        set_filter_on_splitter(player, cursor_entity, item_proto)
+    elseif type == "mining-drill" then
+        set_filter_on_mining_drill(player, cursor_entity, item_proto)
+    elseif type == "asteroid-collector" then
+        set_filter_on_asteroid_collector(player, cursor_entity, item_proto)
+    elseif type == "pump" then
+        set_filter_on_pump(player, cursor_entity, item_proto)
+    else
+        _cursor.create_flying_text(player, {"fp.no_filterable_cursor"})
+    end
+end
+
+---@param player LuaPlayer
+---@param item_proto FPItemPrototype | FPFuelPrototype
+function _cursor.pipette_item(player, item_proto)
+    local name = item_proto.base_name or item_proto.name
+    local prototype = (item_proto.type == "item") and prototypes.item[name]
+        or (item_proto.type == "fluid") and prototypes.fluid[name] or nil
+    if not prototype then return end
+
+    player.pipette(prototype, "normal", true)
+end
+
+---@param player LuaPlayer
+---@param item_proto FPItemPrototype | FPFuelPrototype
+---@param amount number
+function _cursor.put_into_combinator(player, item_proto, amount)
+    local cursor_entity = parse_cursor_entity(player)
 
     local blueprint_entity = (cursor_entity.type == "blueprint") and cursor_entity.entity or nil
     add_to_item_combinator(player, blueprint_entity--[[@as BlueprintEntity?]], item_proto, amount)
