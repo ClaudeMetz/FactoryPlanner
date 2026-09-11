@@ -52,36 +52,6 @@ function matrix_engine.get_item_protos(item_set)
     return item_protos
 end
 
-function matrix_engine.print_rows(rows)
-    local s = 'ROWS\n'
-    for i, item_key in ipairs(rows.values) do
-        s = s..'ROW '..i..': '..item_key..'\n'
-    end
-    llog(s)
-end
-
-function matrix_engine.print_columns(columns)
-    local s = 'COLUMNS\n'
-    for i, k in ipairs(columns.values) do
-        local col_split_str = lib.split_string(k, "_")
-        if col_split_str[1]=="line" then
-            s = s..'COL '..i..': '..k..'\n'
-        else
-            local item_key = col_split_str[2]
-            s = s..'COL '..i..': '..item_key..'\n'
-        end
-    end
-    llog(s)
-end
-
-function matrix_engine.print_items_set(items)
-    local item_name_set = {}
-    for item_key, _ in pairs(items) do
-        item_name_set[item_key] = true
-    end
-    llog(item_name_set)
-end
-
 
 ---@class MatrixMetadata
 ---@field recipes integer[]
