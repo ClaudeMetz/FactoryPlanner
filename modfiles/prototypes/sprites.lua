@@ -56,3 +56,20 @@ data:extend{{
     filename = "__core__/graphics/icons/mip/expand-panel-black.png",
     size = 64, flags = {"gui-icon"}
 }}
+
+-- Technology effects draw their productivity badge over the base icon
+local utility_sprites = data.raw["utility-sprites"].default
+data:extend{{
+    type = "sprite", name = "fp_mining_productivity",
+    layers = {
+        table.deepcopy(utility_sprites.mining_drill_productivity_bonus_modifier_icon),
+        table.deepcopy(utility_sprites.mining_drill_productivity_bonus_modifier_constant)
+    }
+}, {
+    type = "sprite", name = "fp_research_productivity",
+    layers = {
+        {filename = "__base__/graphics/icons/lab.png", size = 64,
+            mipmap_count = 4, flags = {"gui-icon"}},
+        table.deepcopy(utility_sprites.laboratory_productivity_modifier_constant)
+    }
+}}
