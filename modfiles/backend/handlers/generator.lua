@@ -1003,6 +1003,9 @@ function generator.machines.generate()
         local sprite = generator.util.determine_entity_sprite(proto)
         if sprite == nil then return end
 
+        local speed = generator.util.get_base_value(proto.get_crafting_speed(),
+            proto.crafting_speed_quality_multiplier and proto.crafting_speed_quality_multiplier.normal)
+
         -- Determine data related to the energy source
         local energy_type, emissions_per_joule = "", {}  -- no emissions if no energy source is present
         local burner = nil  ---@type MachineBurner?
@@ -1131,7 +1134,7 @@ function generator.machines.generate()
             ingredient_limit = (proto.ingredient_count or 255),
             product_limit = (proto.max_item_product_count or 255),
             fluid_channels = {input = input_channels, output = output_channels},
-            speed = generator.util.get_base_value(proto.get_crafting_speed()),
+            speed = speed,
             crafting_speed_quality_multiplier = proto.crafting_speed_quality_multiplier,
             energy_type = energy_type,
             energy_usage = energy_usage,
@@ -1145,7 +1148,7 @@ function generator.machines.generate()
             effect_receiver = generator.util.format_effect_receiver(proto),
             allowed_effects = proto.allowed_effects,  -- can be nil
             allowed_module_categories = proto.allowed_module_categories,  -- can be nil
-            module_limit = (proto.module_inventory_size or 0),
+            module_limit = generator.util.get_base_module_limit(proto),
             quality_affects_module_slots = proto.quality_affects_module_slots,  -- can be nil
             module_slots_quality_bonus = proto.module_slots_quality_bonus,
             surface_conditions = proto.surface_conditions,
@@ -1176,6 +1179,7 @@ function generator.machines.generate()
                     machine.effect_receiver = generator.util.format_effect_receiver()
                     machine.allowed_effects = nil
                     machine.module_limit = 0
+                    machine.quality_affects_module_slots = false
 
                     insert_machine(machine)
                 end
@@ -1217,8 +1221,8 @@ function generator.machines.generate()
                 if all_inputs then
                     local machine = generate_category_entry(set.category, proto, "lab")
                     if machine then
-                        -- Normal quality's lab_research_speed_multiplier is always 1, so this is the base speed
-                        machine.speed = proto.get_researching_speed("normal")--[[@cast -nil]]
+                        machine.speed = generator.util.get_base_value(proto.get_researching_speed("normal"),
+                            prototypes.quality.normal.lab_research_speed_multiplier)--[[@cast -nil]]
                         machine.resource_drain_rate = proto.science_pack_drain_rate_percent--[[@cast -nil]] / 100
                         machine.uses_quality_drain_modifier = proto.uses_quality_drain_modifier
                         insert_machine(machine)
@@ -1728,7 +1732,7 @@ function generator.beacons.generate()
                 built_by_item_name = built_by_item_name,
                 allowed_effects = proto.allowed_effects,  -- can be nil
                 allowed_module_categories = proto.allowed_module_categories,  -- can be nil
-                module_limit = proto.module_inventory_size--[[@as uint16]],
+                module_limit = generator.util.get_base_module_limit(proto),
                 quality_affects_module_slots = proto.quality_affects_module_slots--[[@as boolean]],
                 effectivity = proto.distribution_effectivity--[[@as double]],
                 distribution_effectivity_bonus_per_quality_level =
