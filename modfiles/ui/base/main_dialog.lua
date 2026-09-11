@@ -14,7 +14,7 @@ local function determine_main_dimensions(player)
     local width = MAGIC_NUMBERS.list_width + boxes_width_1 + boxes_width_2 + ((2+3) * frame_spacing)
 
     local factory_list_height = (preferences.factory_list_rows * MAGIC_NUMBERS.list_element_height)
-        + MAGIC_NUMBERS.subheader_height + MAGIC_NUMBERS.search_footer_height
+        + MAGIC_NUMBERS.subheader_height
     local height = MAGIC_NUMBERS.title_bar_height + MAGIC_NUMBERS.district_info_height +
         factory_list_height + (3 * frame_spacing)
 
@@ -181,10 +181,24 @@ end
 ---@param element LuaGuiElement
 function main_dialog.set_tooltip(player, element)
     local ui_state = lib.globals.ui_state(player)
-    local tooltips = ui_state.tooltips[element.tags.context]
+    local tags = element.tags
+
+    -- Split into contexts so they can be cleared when the GUI is rebuilt
+    local tooltips = ui_state.tooltips[tags.context]
     if tooltips[element.index] ~= nil then
-        element.tooltip = tooltips[element.index]
+        local tooltip = tooltips[element.index]
         tooltips[element.index] = nil
+
+        -- Add actions tooltip if applicable
+        local handler_name = tags.on_gui_click  ---@as string?
+        local registered_handler = handler_name and GUI_HANDLERS[handler_name] or nil
+        if registered_handler and registered_handler.actions then
+            local action_tooltip = lib.actions.generate_tooltip(registered_handler.actions,
+                tags.flags--[[@as GUIActionFlags?]])
+            if #action_tooltip > 1 then tooltip = {"", tooltip, "\n", action_tooltip} end
+        end
+
+        element.tooltip = tooltip
     end
 end
 

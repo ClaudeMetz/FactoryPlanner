@@ -151,6 +151,55 @@ function _util.format_recipe(recipe_proto, products, main_product, ingredients)
 end
 
 
+-- Sorts items the way the game lists them, which for research recipes is the order
+-- technology costs are shown in
+---@param items RecipeItem[]
+function _util.sort_by_item_order(items)
+    table.sort(items, function(a, b)
+        local order_a, order_b = prototypes.item[a.name].order, prototypes.item[b.name].order
+        if order_a ~= order_b then return order_a < order_b end
+        return a.name < b.name
+    end)
+end
+
+-- Kept in sync with time_label(), which badges the same duration onto the icons
+---@param ticks double
+---@return number|string value
+---@return LocalisedString unit
+function _util.research_time(ticks)
+    local seconds = ticks / 60
+    if seconds >= 120 then
+        local minutes = seconds / 60
+        if minutes % 1 == 0 then return minutes, {"fp.unit_minute"} end
+        if (minutes * 10) % 1 == 0 then return string.format("%.1f", minutes), {"fp.unit_minute"} end
+    end
+    return seconds, {"fp.unit_second"}
+end
+
+-- The cost a research recipe models, or nil if the technology isn't researched in a
+-- lab with science packs. Its key merges costs unless an amount above 1 differs,
+-- which is what would tell them apart once padded with 1s across a lab's inputs.
+---@param tech_proto LuaTechnologyPrototype
+---@return { key: string, ticks: double, suffix: string, amounts: table<string, uint> }?
+function _util.research_cost(tech_proto)
+    local ingredients = tech_proto.research_unit_ingredients
+    local ticks = tech_proto.research_unit_energy
+    if tech_proto.research_trigger ~= nil or #ingredients == 0 or ticks <= 0 then return nil end
+
+    local amounts, above_one = {}, {}
+    for _, ingredient in pairs(ingredients) do
+        amounts[ingredient.name] = ingredient.amount
+        if ingredient.amount ~= 1 then table.insert(above_one, ingredient.name) end
+    end
+
+    table.sort(above_one)
+    local suffix = ""
+    for _, pack_name in ipairs(above_one) do
+        suffix = suffix .. "-" .. pack_name .. "-" .. amounts[pack_name]
+    end
+    return {key = ticks .. suffix, ticks = ticks, suffix = suffix, amounts = amounts}
+end
+
 ---@param normal_quality_value number?
 ---@return number? base_value
 function _util.get_base_value(normal_quality_value)
@@ -458,8 +507,8 @@ end
 ---@field order string
 ---@field valid boolean
 
--- Generates a table imitating LuaGroup to avoid lua-cpp bridging
----@param group LuaGroup | ItemGroup
+-- Generates a table imitating the group to avoid lua-cpp bridging
+---@param group LuaItemGroup | LuaItemSubGroup | ItemGroup
 ---@return ItemGroup group_table
 function _util.generate_group_table(group)
     return {name=group.name, localised_name=group.localised_name, order=group.order, valid=true}

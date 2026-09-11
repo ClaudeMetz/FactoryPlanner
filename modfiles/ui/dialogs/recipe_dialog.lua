@@ -240,6 +240,8 @@ local function create_filter_box(modal_data)
     local content_frame =  modal_data.modal_elements.content_frame
     local bordered_frame = content_frame.add{type="frame", direction="vertical", style="fp_frame_bordered_stretch"}
     bordered_frame.style.left_padding = 12
+    -- Keep the recipe group width when all groups are hidden or no recipes match the temperature
+    bordered_frame.style.minimal_width = MAGIC_NUMBERS.recipes_per_row * 40 + 64 + 16 + 8 + 16 + 8
 
     local table_filters = bordered_frame.add{type="table", column_count=2}
     table_filters.style.horizontal_spacing = 16

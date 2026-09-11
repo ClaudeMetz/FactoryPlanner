@@ -12,12 +12,10 @@ solver = {
 }
 
 -- ** LOCAL UTIL **
----@param player LuaPlayer
 ---@param floor Floor
 ---@param line LineObject
-local function set_blank_line(player, floor, line)
+local function set_blank_line(floor, line)
     solver.set_line_result {
-        player_index = player.index,
         floor_id = floor.id,
         line_id = line.id,
         machine_amount = 0,
@@ -29,15 +27,14 @@ local function set_blank_line(player, floor, line)
     }
 end
 
----@param player LuaPlayer
 ---@param floor Floor
-local function set_blank_floor(player, floor)
+local function set_blank_floor(floor)
     for line in floor:iterator() do
         if line.class == "Floor" then
-            set_blank_line(player, floor, line)
-            set_blank_floor(player, line)
+            set_blank_line(floor, line)
+            set_blank_floor(line)
         else
-            set_blank_line(player, floor, line)
+            set_blank_line(floor, line)
         end
     end
 end
@@ -54,7 +51,7 @@ local function set_blank_factory(player, factory)
         matrix_free_items = factory.matrix_free_items  ---@as FPItemPrototype[]
     }
 
-    set_blank_floor(player, factory.top_floor)
+    set_blank_floor(factory.top_floor)
 end
 
 
@@ -140,6 +137,8 @@ local function generate_floor_data(player, factory, floor, calculate_emissions)
         lines = {}
     }  ---@type FloorData
 
+    local relevant_line_active = true
+
     for line in floor:iterator() do
         local line_data = { id = line.id }
 
@@ -151,8 +150,9 @@ local function generate_floor_data(player, factory, floor, calculate_emissions)
         else  ---@cast line Line
             if line:get_blocker() ~= nil then
                 -- Useless lines don't need to run through the solver
-                set_blank_line(player, floor, line)
-            else
+                set_blank_line(floor, line)
+                if line == floor.first and floor.level > 1 then relevant_line_active = false end
+            elseif relevant_line_active then
                 local machine = line.machine
                 local recipe_proto = line.recipe.proto  ---@as FPRecipePrototype
 
@@ -171,8 +171,10 @@ local function generate_floor_data(player, factory, floor, calculate_emissions)
                 line_data.pollutant_type = (calculate_emissions) and factory.parent.location_proto.pollutant_type or nil
                 line_data.entities_require_heating = factory.parent.location_proto.entities_require_heating
 
-                -- Effects - update line with recipe effects here if applicable
-                line.recipe:update_effects(player.force--[[@as LuaForce]], factory)
+                local force = player.force  ---@as LuaForce
+                local mod_changed = machine:update_mod_effects(force)
+                local recipe_changed = line.recipe:update_effects(force, factory)
+                if mod_changed or recipe_changed then machine:summarize_effects() end
                 line_data.total_effects = line.total_effects
 
                 if machine.fuel ~= nil then
@@ -184,6 +186,12 @@ local function generate_floor_data(player, factory, floor, calculate_emissions)
                 -- The machine needs to potentially run slower if fuel is insufficient
                 line_data.fuel_performance, line_data.wasted_share = machine:get_fuel_performance()
                 line_data.machine_speed = machine:get_speed() * line_data.fuel_performance
+
+                -- Lab speed bonus is multiplicative, not additive to effects
+                if machine.proto.prototype_category == "lab" then
+                    line_data.machine_speed = line_data.machine_speed
+                        * (1 + force.laboratory_speed_modifier)
+                end
 
                 if machine.proto.prototype_category == "boiler" then
                     local goal_temperature = recipe_proto.products[1]--[[@cast -nil]].temperature  ---@as float
@@ -199,6 +207,8 @@ local function generate_floor_data(player, factory, floor, calculate_emissions)
                 end
 
                 table.insert(floor_data.lines, line_data)
+            else
+                set_blank_line(player, floor, line)
             end
         end
     end
@@ -478,6 +488,12 @@ listeners.global = {
         local player = game.get_player(metadata.player_index)  ---@as LuaPlayer
         local factory = OBJECT_INDEX[metadata.factory_id]
         solver.update(player, factory)
+
+        -- Scheduled updates run without user interaction, so the interface needs a refresh
+        if lib.context.get(player, "Factory") == factory then
+            local compact_view = lib.globals.ui_state(player).compact_view
+            lib.gui.run_refresh(player, (compact_view) and "compact_factory" or "production")
+        end
     end
 }
 

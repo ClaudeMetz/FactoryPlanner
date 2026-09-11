@@ -40,11 +40,6 @@ local function handle_item_button_click(player, tags, action)
     local item = OBJECT_INDEX[tags.item_id]  ---@as DistrictItem
 
     if action == "create_factory" then  -- only on net ingredients
-        if item.proto.ingredient_only then
-            lib.cursor.create_flying_text(player, {"fp.item_has_no_recipes"})
-            return
-        end
-
         local factory = factory_list.add_factory(player, nil, item.proto)
         local top_level_item = TLProduct.init(item.proto)
         top_level_item.required_amount = item.abs_diff
@@ -58,12 +53,14 @@ local function handle_item_button_click(player, tags, action)
         local copyable_item = SimpleItem.init(nil, item.proto, item.abs_diff)
         lib.clipboard.copy(player, copyable_item)
 
-    elseif action == "put_into_cursor" then
-        lib.cursor.handle_item_click(player, item.proto, item.abs_diff)
+    elseif action == "pipette" then
+        lib.cursor.pipette_item(player, item.proto)
+
+    elseif action == "put_into_combinator" then
+        lib.cursor.put_into_combinator(player, item.proto, item.abs_diff)
 
     elseif action == "factoriopedia" then
-        local name = (item.proto.temperature) and item.proto.base_name or item.proto.name
-        player.open_factoriopedia_gui(prototypes[item.proto.type][name])
+        player.open_factoriopedia_gui(lib.get_factoriopedia_proto(item.proto))
     end
 end
 
@@ -109,28 +106,29 @@ local function build_items_flow(player, parent, district)
         local relevant_table = (item.overall == "production") and prod_table or ingr_table
         local total_amount = item[item.overall].amount
 
+        local special = (item.proto.type == "entity" and item.proto.special)
+        local flags = {
+            ingredient = (item.overall == "consumption"),
+            special = special,
+            cursor = (item.proto.type ~= "entity"),
+            ingredient_only = item.proto.ingredient_only,
+            factoriopedia = (lib.get_factoriopedia_proto(item.proto) ~= nil)
+        }
         ---@class HandleItemButtonClickTags
         ---@field item_id ObjectID
         ---@field context "districts_box"
-        local tags = {mod="fp", item_id=item.id, on_gui_hover="set_tooltip", context="districts_box"}
-        local action_line = nil
+        ---@field flags GUIActionFlags
+        local tags = {mod="fp", item_id=item.id, on_gui_click="act_on_district_item",
+            on_gui_hover="set_tooltip", context="districts_box", flags=flags}
+
         local diff_number, amount_tooltip = nil, nil
         local total_tooltip = nil
 
-        if item.proto.type == "entity" and item.proto.special then
-            if item.overall == "consumption" then
-                tags.on_gui_click = "act_on_district_special_ingredient"
-                action_line = {"", "\n", MODIFIER_ACTIONS["act_on_district_special_ingredient"].tooltip}
-            end
-
+        if flags.special then
             diff_number = lib.format.button_number(item.abs_diff)
             amount_tooltip = lib.format.special_tooltip(item.proto.name, item.abs_diff)
             total_tooltip = lib.format.special_tooltip(item.proto.name, total_amount)
         else
-            local action = (item.overall == "production") and "act_on_district_product" or "act_on_district_ingredient"
-            tags.on_gui_click = action
-            action_line = {"", "\n", MODIFIER_ACTIONS[action].tooltip}
-
             diff_number, amount_tooltip = item_views.process_item(player, item.proto, item.abs_diff, nil)
             _, total_tooltip = item_views.process_item(player, item.proto, total_amount, nil)
         end
@@ -141,7 +139,7 @@ local function build_items_flow(player, parent, district)
         local title_line = {"fp.tt_title", item.proto.localised_name}
         local diff_line = {"fp.item_amount_" .. item.overall, amount_tooltip}
         local total_line = {"fp.item_amount_total", total_tooltip}
-        local tooltip = {"", title_line, diff_line, total_line, action_line}
+        local tooltip = {"", title_line, diff_line, total_line}
 
         local button = relevant_table.add{type="sprite-button", number=diff_number, style=style,
             sprite=item.proto.sprite, tags=tags, raise_hover_events=true, mouse_button_filter={"left-and-right"}}
@@ -156,7 +154,9 @@ end
 ---@param player LuaPlayer
 ---@param district District
 ---@param location_items LocalisedString[]
-local function build_district_frame(player, district, location_items)
+---@param held_district District?
+---@param passed_held boolean
+local function build_district_frame(player, district, location_items, held_district, passed_held)
     district:refresh()  -- refreshes its data if necessary
 
     local elements = lib.globals.main_elements(player).districts_box
@@ -166,30 +166,36 @@ local function build_district_frame(player, district, location_items)
     local subheader = window_frame.add{type="frame", direction="horizontal", style="subheader_frame"}
     subheader.style.top_padding = 6
 
-    -- Interaction buttons
-    ---@param flow LuaGuiElement
-    ---@param direction "previous" | "next"
-    local function create_move_button(flow, direction)
-        local enabled = (direction == "next" and district.next ~= nil) or
-            (direction == "previous" and district.previous ~= nil)
-        local up_down = (direction == "next") and "down" or "up"
-        local tooltip = {"", {"fp.move_object", {"fp.pl_district", 1}, {"fp." .. up_down}}}
+    -- Interaction button
+    local move_button  ---@type LuaGuiElement
 
-        ---@class MoveDistrictTags
+    if held_district ~= nil and held_district ~= district then
+        -- Buttons above the held district place it above their frame, ones below place below
+        ---@class PlaceDistrictTags
         ---@field direction "previous" | "next"
         ---@field district_id ObjectID
-        local tags = {mod="fp", on_gui_click="move_district", direction=direction, district_id=district.id}
-        local move_button = flow.add{type="sprite-button", tags=tags, enabled=enabled, sprite="fp_arrow_" .. up_down,
-            style="fp_sprite-button_move", tooltip=tooltip, mouse_button_filter={"left"}}
-        move_button.style.size = {18, 14}
+        local tags = {mod="fp", on_gui_click="place_district",
+            direction=(passed_held) and "next" or "previous", district_id=district.id}
+        move_button = subheader.add{type="sprite-button", tags=tags,
+            tooltip={"fp.place_object_" .. ((passed_held) and "below" or "above"), {"fp.pl_district", 1}},
+            sprite=(passed_held) and "fp_arrow_down" or "fp_arrow_up",
+            mouse_button_filter={"left"}, style="fp_sprite-button_move"}
+        move_button.style.padding = 1
+    else
+        local movable = (district.parent:count() > 1)
+
+        ---@class PickUpDistrictTags
+        ---@field district_id ObjectID
+        local tags = {mod="fp", on_gui_click="pick_up_district", district_id=district.id}
+        move_button = subheader.add{type="sprite-button", tags=tags, enabled=movable,
+            tooltip=(movable) and {"fp.pick_up_object", {"fp.pl_district", 1}} or nil,
+            toggled=(held_district == district), sprite="fp_pick_up",
+            mouse_button_filter={"left"}, style="fp_sprite-button_move"}
         move_button.style.padding = -1
     end
 
-    local move_flow = subheader.add{type="flow", direction="vertical"}
-    move_flow.style.vertical_spacing = 0
-    move_flow.style.left_margin = 2
-    create_move_button(move_flow, "previous")
-    create_move_button(move_flow, "next")
+    move_button.style.size = {20, 28}
+    move_button.style.left_margin = 2
 
     local selected = lib.context.get(player, "District")--[[@as District]].id == district.id
     local selection_caption = (selected) and {"fp.u_selected"} or {"fp.u_select"}
@@ -296,9 +302,13 @@ local function refresh_districts_box(player)
         table.insert(location_items, {"", "[img=" .. proto.sprite .. "] ", proto.localised_name})
     end
 
+    local held_district = lib.gui.held_object(player, "districts_box")  ---@as District?
+    local passed_held = false
+
     lib.globals.ui_state(player).tooltips.districts_box = {}
     for district in player_table.realm:iterator() do
-        build_district_frame(player, district, location_items)
+        if district == held_district then passed_held = true end
+        build_district_frame(player, district, location_items, held_district, passed_held)
     end
 end
 
@@ -321,18 +331,36 @@ end
 -- ** EVENTS **
 local listeners = {}  ---@type ListenerDefinitions
 
+---@param flags GUIActionFlags
+---@return boolean?
+local function is_ingredient(flags)
+    return flags.ingredient
+end
+
 listeners.gui = {
     on_gui_click = {
         {
-            name = "move_district",
+            name = "place_district",
             timeout = 10,
-            handler = function(player, tags, event)
-                ---@cast tags MoveDistrictTags
-                ---@cast event EventData.on_gui_click
-                local district = OBJECT_INDEX[tags.district_id]  ---@as District
-                local spots_to_shift = (event.control) and 5 or ((not event.shift) and 1 or nil)
-                district.parent:shift(district, tags.direction, spots_to_shift)
+            handler = function(player, tags, _)
+                ---@cast tags PlaceDistrictTags
+                local ui_state = lib.globals.ui_state(player)
+                local held_district = OBJECT_INDEX[ui_state.held_object_id]  ---@as District
+                local relative_district = OBJECT_INDEX[tags.district_id]  ---@as District
 
+                relative_district.parent:move(held_district, relative_district, tags.direction)
+                ui_state.held_object_id = nil  -- consume the held object
+
+                lib.gui.run_refresh(player, "districts_box")
+            end
+        },
+        {
+            name = "pick_up_district",
+            handler = function(player, tags, _)
+                ---@cast tags PickUpDistrictTags
+                local ui_state = lib.globals.ui_state(player)
+                ui_state.held_object_id = (tags.district_id ~= ui_state.held_object_id)
+                    and tags.district_id or nil
                 lib.gui.run_refresh(player, "districts_box")
             end
         },
@@ -400,28 +428,13 @@ listeners.gui = {
             end
         },
         {
-            name = "act_on_district_product",
+            name = "act_on_district_item",
             actions_table = {
+                create_factory = {shortcut="left", core=true, show=is_ingredient, enable=lib.actions.can_add_recipe},
                 copy = {shortcut="shift-right"},
-                put_into_cursor = {shortcut="alt-right"},
-                factoriopedia = {shortcut="alt-left"}
-            },
-            handler = handle_item_button_click
-        },
-        {
-            name = "act_on_district_ingredient",
-            actions_table = {
-                create_factory = {shortcut="left", show=true},
-                copy = {shortcut="shift-right"},
-                put_into_cursor = {shortcut="alt-right"},
-                factoriopedia = {shortcut="alt-left"}
-            },
-            handler = handle_item_button_click
-        },
-        {
-            name = "act_on_district_special_ingredient",
-            actions_table = {
-                create_factory = {shortcut="left", show=true}
+                pipette = {input="pipette", enable=lib.actions.can_pipette},
+                put_into_combinator = {input="put_into_combinator", enable=lib.actions.can_put_into_combinator},
+                factoriopedia = {shortcut="alt-left", enable=lib.actions.can_open_factoriopedia}
             },
             handler = handle_item_button_click
         }

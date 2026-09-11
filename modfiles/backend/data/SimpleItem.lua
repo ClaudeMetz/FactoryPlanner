@@ -38,6 +38,7 @@ function SimpleItem:paste(object)
         if not self.parent or self.parent.class ~= "Line" then
             return false, "incompatible"
         end
+        local line = self.parent  ---@as Line
         -- Only pasting on fluids is allowed
         if object.proto.type ~= "fluid" or self.proto.type ~= "fluid" then
             return false, "incompatible"
@@ -46,17 +47,17 @@ function SimpleItem:paste(object)
         if object.class == "SimpleItem" then  ---@cast object SimpleItem
             if object.proto.base_name ~= self.proto.name then return false, "incompatible" end
             if not object.proto.temperature then return false, "incompatible" end
-            if not self.parent.recipe:is_temperature_valid(self.proto, object.proto.temperature) then
+            if not line.recipe:is_temperature_valid(self.proto, object.proto.temperature) then
                 return false, "incompatible"
             end
-            self.parent.recipe:set_temperature(self.proto.name, object.proto.temperature)
+            line.recipe:set_temperature(self.proto.name, object.proto.temperature)
         else  ---@cast object Fuel
             if object.proto.name ~= self.proto.name then return false, "incompatible" end
             if not object.temperature then return false, "incompatible" end
-            if not self.parent.recipe:is_temperature_valid(self.proto, object.temperature) then
+            if not line.recipe:is_temperature_valid(self.proto, object.temperature) then
                 return false, "incompatible"
             end
-            self.parent.recipe:set_temperature(self.proto.name, object.temperature)
+            line.recipe:set_temperature(self.proto.name, object.temperature)
         end
 
         return true, nil

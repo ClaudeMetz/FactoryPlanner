@@ -109,6 +109,7 @@ end
 function Line:change_machine_by_action(player, action, current_proto)
     local current_machine_proto = current_proto or self.machine.proto  ---@as FPMachinePrototype
     local category_id = current_machine_proto.category_id
+    local force = player.force  --[[@as LuaForce]]
 
     ---@param new_machine_id integer
     ---@return boolean success
@@ -116,7 +117,8 @@ function Line:change_machine_by_action(player, action, current_proto)
         -- Assume a match while inside the upgrade/downgrade loop
         current_machine_proto = prototyper.util.find("machines", new_machine_id, category_id) ---@as FPMachinePrototype
 
-        if self:is_machine_compatible(current_machine_proto) then
+        if self:is_machine_compatible(current_machine_proto)
+                and lib.is_machine_available(force, current_machine_proto) then
             self:change_machine_to_proto(player, current_machine_proto)
             return true
         end
@@ -148,7 +150,8 @@ function Line:change_machine_to_default(player)
 
     local success = false
     -- If the default is applicable, just set it straight away
-    if self:is_machine_compatible(default_proto) then
+    if self:is_machine_compatible(default_proto)
+            and lib.is_machine_available(player.force--[[@as LuaForce]], default_proto) then
         self:change_machine_to_proto(player, default_proto)
         success = true
     -- Otherwise, go up, then down the category to find an alternative
@@ -160,6 +163,31 @@ function Line:change_machine_to_default(player)
 
     if success then self.machine.quality_proto = machine_default.quality end
     return success
+end
+
+
+---@param player LuaPlayer
+---@return boolean changed
+function Line:refresh_line(player)
+    local force = player.force  --[[@as LuaForce]]
+    local changed = false
+
+    if self.recipe:apply_substitution(force) then
+        -- The replacement can have moved categories or disallow modules, which needs repairing here
+        if not self:validate(player) then self:repair(player) end
+        changed = true
+    elseif self.recipe.proto.simplified then
+        return false  -- a recipe FP doesn't know about tells us nothing about the machine either
+    else
+        changed = self.recipe:refresh_availability(force)
+    end
+
+    -- Goes after the recipe, since a substituted one can have replaced the machine already
+    if not self.machine.proto.simplified then
+        changed = self.machine:apply_substitution(player) or changed
+    end
+
+    return changed
 end
 
 
@@ -206,7 +234,7 @@ function Line:summarize_effects()
     local merged_effects = lib.effects.merge({self.machine.total_effects, beacon_effects})
     local limited_effects, indications = lib.effects.limit(merged_effects, self.machine.proto.effect_receiver)
 
-    local limited_effects_plus = lib.effects.merge({limited_effects, self.recipe.effects})
+    local limited_effects_plus = lib.effects.merge({limited_effects, self.recipe.productivity_effects})
     -- These bounds are applied after normal limits and recipe effects
     local bounds = {low = 0, high = self.recipe.proto.maximum_productivity}
     limited_effects_plus["productivity"], indications["productivity"] =
@@ -217,14 +245,15 @@ function Line:summarize_effects()
 end
 
 
+---@param force LuaForce
 ---@return PrototypeFilter filter
-function Line:compile_machine_filter()
+function Line:compile_machine_filter(force)
     local compatible_machines = {}
 
     local machine_category = prototyper.util.find("machines", nil, self.machine.proto.combined_category)  ---@as NamedCategory<FPMachinePrototype>
 
     for _, machine_proto in pairs(machine_category.members) do
-        if self:is_machine_compatible(machine_proto) then
+        if self:is_machine_compatible(machine_proto) and lib.is_machine_available(force, machine_proto) then
             table.insert(compatible_machines, machine_proto.name)
         end
     end
@@ -286,12 +315,13 @@ function Line:get_surface_compatibility()
 end
 
 
----@alias LineBlocker "disabled" | "zero_percentage" | "incompatible_recipe" | "incompatible_machine" | "unconfigured_temperature"
+---@alias LineBlocker "disabled" | "unavailable_recipe" | "zero_percentage" | "incompatible_recipe" | "incompatible_machine" | "unconfigured_temperature"
 
 --- Returns why this line can't take part in the calculation, or nil if it can
 ---@return LineBlocker?
 function Line:get_blocker()
     if not self.active then return "disabled" end
+    if not self.recipe.available then return "unavailable_recipe" end
     if self.percentage == 0 then return "zero_percentage" end
 
     local compatibility = self:get_surface_compatibility()

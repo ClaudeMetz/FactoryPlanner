@@ -89,7 +89,7 @@ listeners.game = {
         for _, effect in pairs(event.research.prototype.effects) do
             if effect.type == "mining-drill-productivity-bonus"
                     or effect.type == "change-recipe-productivity" then
-                local offset = 0
+                local offset = 1
                 for _, player in pairs(game.players) do
                     local realm = lib.globals.player_table(player).realm
                     realm:schedule_solver_updates(game.tick + offset, player)

@@ -71,24 +71,22 @@ end
 ---@return boolean success
 ---@return string? error
 function TLProduct:paste(object)
-    -- TLProduct objects are converted to SimpleItems when copied, so they can't appear here
+    -- Copy and Cut store products as SimpleItems.
     if object.class == "SimpleItem" or object.class == "Fuel" then
-        local proto  ---@type FPItemPrototype | FPPackedPrototype
+        local proto
         if object.class == "Fuel" then  -- need an Item prototype here, not Fuel
-            proto = prototyper.util.find("items", object:get_name_with_temperature(), object.proto.type)  ---@as FPItemPrototype
+            proto = prototyper.util.find("items", object:get_name_with_temperature(), object.proto.type)
         else
-            proto = object.proto  ---@as FPItemPrototype | FPPackedPrototype
+            proto = object.proto
         end
-
-        if proto.simplified then return false, "incompatible" end
-        ---@cast proto -FPPackedPrototype
+        ---@cast proto FPItemPrototype
 
         -- The item picker doesn't offer these as products, so pasting shouldn't sneak them in
-        local item_proto = proto  ---@as FPItemPrototype
-        if item_proto.hidden or item_proto.ingredient_only then return false, "incompatible" end
+        if proto.hidden or proto.ingredient_only then return false, "incompatible" end
 
         -- Only allow pasting fluids with set temperatures
-        local temperature = object.temperature or object.proto--[[@as FPItemPrototype]].temperature or nil
+        local temperature = (object.class == "Fuel") and object.temperature
+            or proto.temperature
         if object.proto.type == "fluid" and not temperature then
             return false, "temperature_not_set"
         end
@@ -99,7 +97,7 @@ function TLProduct:paste(object)
             return false, "already_exists"
         end
 
-        local product = init(proto--[[@as FPItemPrototype]])  -- defined_by = "amount"
+        local product = init(proto)  -- defined_by = "amount"
         product.required_amount = object.amount
         self.parent:replace(self, product)
 
