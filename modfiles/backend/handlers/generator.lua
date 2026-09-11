@@ -27,14 +27,15 @@ local generator = {
 ---@field suffix string
 ---@field amounts table<string, uint>
 
--- Data collected during recipe generation, reused by later generator stages
-local resource_deposits = {}  ---@type LuaEntityPrototype[]
-local first_generator = nil  ---@type string?
-local rocket_parts = {}  ---@type table<string, boolean>
-local pumped_tiles = {}  ---@type LuaTilePrototype[]
-local tile_can_have_plant = {}  ---@type table<string, string[]>
-local research_sets = {}  ---@type table<string, ResearchSet>
-local research_groups = nil  ---@type {group: ItemGroup, subgroup: ItemGroup}?
+-- Data collected during recipe generation, reused by later stages of the same build
+---@class GeneratorContext
+---@field resource_deposits LuaEntityPrototype[]
+---@field first_generator string?
+---@field rocket_parts table<string, boolean>
+---@field pumped_tiles LuaTilePrototype[]
+---@field tile_can_have_plant table<string, string[]>
+---@field research_sets table<string, ResearchSet>
+---@field research_groups {group: ItemGroup, subgroup: ItemGroup}?
 
 
 ---@class FPPrototype
@@ -109,8 +110,9 @@ end
 ---@field subgroup ItemGroup
 ---@field tooltip LocalisedString?
 
+---@param context GeneratorContext
 ---@return NamedPrototypes<FPRecipePrototype>
-function generator.recipes.generate()
+function generator.recipes.generate(context)
     local recipes = {}   ---@type NamedPrototypes<FPRecipePrototype>
 
     ---@return FPRecipePrototype
@@ -212,7 +214,9 @@ function generator.recipes.generate()
     for _, proto in pairs(prototypes.get_entity_filtered(entity_filter)) do
         -- Note the alphabetically first power generating machine for the electricity recipe below
         if proto.type == "generator" or proto.type == "burner-generator" then
-            if first_generator == nil or proto.name < first_generator then first_generator = proto.name end
+            if context.first_generator == nil or proto.name < context.first_generator then
+                context.first_generator = proto.name
+            end
         end
 
         -- Recipes fixed to machines are given a special category
@@ -257,7 +261,7 @@ function generator.recipes.generate()
             insert_prototype(recipes, recipe, nil)
 
             -- Note the deposit so item generation can create its custom item
-            table.insert(resource_deposits, proto)
+            table.insert(context.resource_deposits, proto)
 
             ::incompatible_proto::
 
@@ -306,8 +310,9 @@ function generator.recipes.generate()
             if proto.autoplace_specification then
                 for _, tile_restriction in pairs(proto.autoplace_specification.tile_restriction or {}) do
                     if tile_restriction.first then
-                        tile_can_have_plant[tile_restriction.first] = tile_can_have_plant[tile_restriction.first] or {}
-                        table.insert(tile_can_have_plant[tile_restriction.first], proto.name)
+                        context.tile_can_have_plant[tile_restriction.first] =
+                            context.tile_can_have_plant[tile_restriction.first] or {}
+                        table.insert(context.tile_can_have_plant[tile_restriction.first], proto.name)
                     end
                 end
             end
@@ -342,7 +347,7 @@ function generator.recipes.generate()
                     amount=proto.rocket_parts_required}  ---@as Ingredient
 
                 -- Mark rocket part items so item generation can make them non-hidden
-                rocket_parts[parts_product.name] = true
+                context.rocket_parts[parts_product.name] = true
 
                 -- Add rocket launch product recipes
                 if not proto.launch_to_space_platforms then
@@ -459,7 +464,7 @@ function generator.recipes.generate()
             pumped_fluids[fluid.name] = true
 
             -- Note the tile so item generation can create its custom item
-            table.insert(pumped_tiles, proto)
+            table.insert(context.pumped_tiles, proto)
 
             local recipe = custom_recipe()
             recipe.name = "impostor-" .. fluid.name .. "-tile"
@@ -502,7 +507,7 @@ function generator.recipes.generate()
 
     -- Add research pseudo-recipes: one per lab input set and cost bucket
     local science_subgroup = prototypes.item_subgroup["science-pack"]
-    research_groups = (science_subgroup ~= nil) and {
+    context.research_groups = (science_subgroup ~= nil) and {
         group = generator.util.generate_group_table(science_subgroup.group),
         subgroup = {name = "fp_research", localised_name = {"fp.research_recipes"},
             order = science_subgroup.order .. "-b", valid = true}
@@ -523,8 +528,8 @@ function generator.recipes.generate()
         table.sort(pack_names)  -- keeps category name stable even if display order changes
         local category = "research-" .. table.concat(pack_names, "-")
 
-        if #pack_names > 0 and research_sets[category] == nil then
-            research_sets[category] = {category = category, pack_set = lab_set.inputs,
+        if #pack_names > 0 and context.research_sets[category] == nil then
+            context.research_sets[category] = {category = category, pack_set = lab_set.inputs,
                 pack_count = #pack_names, lab_name = lab_set.name, costs = {}}
         end
     end
@@ -534,7 +539,7 @@ function generator.recipes.generate()
     for _, tech_proto in pairs(prototypes.get_technology_filtered({{filter="hidden", invert=true}})) do
         local cost = generator.util.research_cost(tech_proto)
         if cost ~= nil then
-            for _, set in pairs(research_sets) do
+            for _, set in pairs(context.research_sets) do
                 local accepted = true
                 for pack_name, _ in pairs(cost.amounts) do
                     if not set.pack_set[pack_name] then accepted = false; break end
@@ -553,11 +558,11 @@ function generator.recipes.generate()
             end
         end
     end
-    for category, set in pairs(research_sets) do
-        if next(set.costs) == nil then research_sets[category] = nil end
+    for category, set in pairs(context.research_sets) do
+        if next(set.costs) == nil then context.research_sets[category] = nil end
     end
 
-    for _, set in pairs(research_sets) do
+    for _, set in pairs(context.research_sets) do
         for _, cost in pairs(set.costs) do
             local ingredients = {}  ---@type Ingredient[]
             for pack_name, amount in pairs(cost.amounts) do
@@ -582,9 +587,9 @@ function generator.recipes.generate()
 
             local products = {{type="entity", name="custom-research-" .. cost.ticks, amount=1}--[[@as Product]]}
             generator.util.format_recipe(recipe, products, products[1], ingredients)
-            if research_groups then
-                recipe.group = research_groups.group
-                recipe.subgroup = research_groups.subgroup
+            if context.research_groups then
+                recipe.group = context.research_groups.group
+                recipe.subgroup = context.research_groups.subgroup
             end  -- keeps the default groups otherwise
             insert_prototype(recipes, recipe, nil)
         end
@@ -592,7 +597,7 @@ function generator.recipes.generate()
 
     -- Add the recipe that power generating machines run. There is only one of it, since what
     -- differs between those machines is their fuel, configured on the machine itself.
-    if first_generator ~= nil then
+    if context.first_generator ~= nil then
         local electricity_recipe = custom_recipe()
         electricity_recipe.name = "impostor-electricity"
         electricity_recipe.localised_name = {"fp.electric_power"}
@@ -659,8 +664,9 @@ end
 ---@field group ItemGroup?
 ---@field subgroup ItemGroup?
 
+---@param context GeneratorContext
 ---@return NamedPrototypesWithCategory<FPItemPrototype>
-function generator.items.generate()
+function generator.items.generate(context)
     local items = {}   ---@type NamedPrototypesWithCategory<FPItemPrototype>
 
     local recipe_prototypes = storage.prototypes.recipes  ---@as NamedPrototypes<FPRecipePrototype>
@@ -669,7 +675,7 @@ function generator.items.generate()
     local custom_items = {}  ---@type NamedPrototypes<CustomItemDetails>
 
     -- Deposits and lakes match the entities/tiles that recipe generation created recipes for
-    for _, proto in pairs(resource_deposits) do
+    for _, proto in pairs(context.resource_deposits) do
         local item_name = "custom-" .. proto.name
         custom_items[item_name] = {
             name = item_name,
@@ -682,7 +688,7 @@ function generator.items.generate()
         generator.util.add_default_groups(custom_items[item_name])
     end
 
-    for _, proto in pairs(pumped_tiles) do
+    for _, proto in pairs(context.pumped_tiles) do
         local item_name = "custom-" .. proto.name
         custom_items[item_name] = {
             name = item_name,
@@ -698,8 +704,8 @@ function generator.items.generate()
     if script.feature_flags["space_travel"] then
         -- Only need one rocket item for all silos/recipes, which means it only gets a
         -- Factoriopedia entry if every silo builds its rocket from the same parts
-        local parts_name = next(rocket_parts)
-        if parts_name and next(rocket_parts, parts_name) then parts_name = nil end
+        local parts_name = next(context.rocket_parts)
+        if parts_name and next(context.rocket_parts, parts_name) then parts_name = nil end
         local rocket_recipe = {
             name = "custom-silo-rocket",
             factoriopedia_id = (parts_name) and {type="item", name=parts_name} or nil,
@@ -736,7 +742,7 @@ function generator.items.generate()
         order = "z-c1",
         special = true
     }
-    generator.util.add_entity_groups(electric_power, first_generator)
+    generator.util.add_entity_groups(electric_power, context.first_generator)
     custom_items["custom-electric-power"] = electric_power
 
     custom_items["custom-heat-power"] = {
@@ -761,7 +767,7 @@ function generator.items.generate()
 
     -- One research item per observed time, so a production goal names the time it's for
     local research_times = {}  ---@type table<double, boolean>
-    for _, set in pairs(research_sets) do
+    for _, set in pairs(context.research_sets) do
         for _, cost in pairs(set.costs) do research_times[cost.ticks] = true end
     end
 
@@ -776,9 +782,9 @@ function generator.items.generate()
             order = "z-d-" .. string.format("%08d", ticks)
         }
         if not helpers.is_valid_sprite_path(item.sprite) then item.sprite = "fp_research" end
-        if research_groups then
-            item.group = research_groups.group
-            item.subgroup = research_groups.subgroup
+        if context.research_groups then
+            item.group = context.research_groups.group
+            item.subgroup = context.research_groups.subgroup
         else
             generator.util.add_default_groups(item)
         end
@@ -873,7 +879,7 @@ function generator.items.generate()
                 localised_name = proto.localised_name,
                 sprite = (type .. "/" .. proto.name),
                 type = type,
-                hidden = (not rocket_parts[item_name]) and proto.hidden,
+                hidden = (not context.rocket_parts[item_name]) and proto.hidden,
                 stack_size = (type == "item") and proto.stack_size or nil,
                 weight = (type == "item") and proto.weight or nil,
                 temperature = item_details.temperature,
@@ -958,8 +964,9 @@ end
 ---@alias EmissionsMap table<string, double>
 ---@alias PrototypeCategory ("crafter" | "launcher" | "mining_drill" | "boiler" | "offshore_pump" | "generator" | "lab" | "container")
 
+---@param context GeneratorContext
 ---@return NamedPrototypesWithCategory<FPMachinePrototype>
-function generator.machines.generate()
+function generator.machines.generate(context)
     local machines = {}  ---@type NamedPrototypesWithCategory<FPMachinePrototype>
     local machine_categories = {}  -- temporary list to be combined later
 
@@ -1214,7 +1221,7 @@ function generator.machines.generate()
             local input_set = {}
             for _, pack_name in pairs(proto.lab_inputs--[[@cast -nil]]) do input_set[pack_name] = true end
 
-            for _, set in pairs(research_sets) do
+            for _, set in pairs(context.research_sets) do
                 local all_inputs = true
                 for pack_name, _ in pairs(set.pack_set) do
                     if not input_set[pack_name] then all_inputs = false; break end
@@ -1808,8 +1815,9 @@ end
 ---@alias SurfaceProperties table<string, double>
 
 -- Generates a table containing all 'places' with surface_conditions, like planets and platforms
+---@param context GeneratorContext
 ---@return NamedPrototypes<FPLocationPrototype>
-function generator.locations.generate()
+function generator.locations.generate(context)
     local locations = {}  ---@type NamedPrototypes<FPLocationPrototype>
 
     local property_prototypes = generate_surface_properties()
@@ -1861,8 +1869,8 @@ function generator.locations.generate()
                     end
 
                     -- Check for natural tiles that plants can grow on
-                    if tile_can_have_plant[key] then
-                        for _, plant in pairs(tile_can_have_plant[key]) do
+                    if context.tile_can_have_plant[key] then
+                        for _, plant in pairs(context.tile_can_have_plant[key]) do
                             resource_recipes["impostor-" .. plant] = true
                         end
                     end
