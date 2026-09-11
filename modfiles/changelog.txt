@@ -4,6 +4,7 @@ Date: 00. 00. 0000
   Features:
   Changes:
   Bugfixes:
+    - Fixed catalyst buttons in the compact dialogs not offering actions (#874)
 
 ---------------------------------------------------------------------------------------------------
 Version: 2.1.14

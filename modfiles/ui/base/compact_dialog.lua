@@ -335,8 +335,17 @@ local function add_item_flow(line, relevant_line, item_category, button_color, m
     ---@cast line Line
 
     if item_category == "products" or item_category == "ingredients" then
-        for _, item in pairs(line.recipe.catalysts[item_category]) do
+        for index, item in pairs(line.recipe.catalysts[item_category]) do
             local proto = item.proto
+            local flags = {
+                catalyst=true,
+                cursor=true,
+                factoriopedia=(lib.get_factoriopedia_proto(proto) ~= nil)
+            }
+            ---@type ActOnCompactItemTags
+            local tags = {mod="fp", on_gui_click="act_on_compact_item", line_id=line.id,
+                item_category=item_category, item_index=index, on_gui_hover="hover_compact_item",
+                on_gui_leave="leave_compact_item", context="compact_dialog", flags=flags}
 
             local amount, number_tooltip = item_views.process_item(metadata.player, proto,
                 (item.amount * line.production_ratio), line.machine.amount)
@@ -353,12 +362,18 @@ local function add_item_flow(line, relevant_line, item_category, button_color, m
             end
 
             local number_line = (number_tooltip) and {"", "\n", number_tooltip} or ""
+            local style = "fflib_slot_button_blue_small"
 
             -- Slots in ahead of the special items, which stay at the end alongside the fuel
-            item_table.add{type="sprite-button", sprite=proto.sprite, number=amount,
-                tooltip={"", name_line, temperature_line, number_line},
-                style="fflib_slot_button_blue_small", index=first_special_index}
+            local button = item_table.add{type="sprite-button", sprite=proto.sprite, number=amount, tags=tags,
+                style=style, index=first_special_index, mouse_button_filter={"left-and-right"}, raise_hover_events=true}
+            metadata.tooltips[button.index] = {"", name_line, temperature_line, number_line}
             if first_special_index then first_special_index = first_special_index + 1 end
+
+            local type, name = proto.type, line.recipe:get_name_with_temperature(proto)
+            item_buttons[type] = item_buttons[type] or {}
+            item_buttons[type][name] = item_buttons[type][name] or {}
+            table.insert(item_buttons[type][name], {button=button, proper_style=style, size="_small"})
         end
     end
 
@@ -467,22 +482,22 @@ local function refresh_compact_header(player, factory)
 
         if flags.special then
             amount = lib.format.button_number(ingredient.amount)
-            number_tooltip = lib.format.special_tooltip(ingredient.proto.name, ingredient.amount)
+            number_tooltip = lib.format.special_tooltip(proto.name, ingredient.amount)
         else
-            amount, number_tooltip = item_views.process_item(player, ingredient.proto, ingredient.amount, nil)
+            amount, number_tooltip = item_views.process_item(player, proto, ingredient.amount, nil)
             if amount == -1 then goto skip_ingredient end  -- an amount of -1 means it was below the margin of error
         end
 
         local style = "fflib_slot_button_default"
         local number_line = (number_tooltip) and {"", "\n", number_tooltip} or ""  ---@type LocalisedString
-        local tooltip = {"", {"fp.tt_title", ingredient.proto.localised_name}, number_line}
+        local tooltip = {"", {"fp.tt_title", proto.localised_name}, number_line}
 
         local button = table_items.add{type="sprite-button", tags=tags, number=amount,
-            sprite=ingredient.proto.sprite, style=style, mouse_button_filter={"left-and-right"},
+            sprite=proto.sprite, style=style, mouse_button_filter={"left-and-right"},
             raise_hover_events=true}
         tooltips[button.index] = tooltip
 
-        local type, name = ingredient.proto.type, ingredient.proto.name
+        local type, name = proto.type, proto.name
         item_buttons[type] = item_buttons[type] or {}
         item_buttons[type][name] = item_buttons[type][name] or {}
         table.insert(item_buttons[type][name], {button=button, proper_style=style, size=""})
@@ -739,11 +754,16 @@ end
 ---@param action string
 local function handle_item_click(player, tags, action)
     local item  ---@type SimpleItem | Fuel
+    local amount  ---@type number
     if tags.fuel_id then  ---@cast tags ActOnCompactFuelTags
         item = OBJECT_INDEX[tags.fuel_id]  ---@as Fuel
+        amount = item.amount
         ---@cast item.proto FPFuelPrototype
     else  ---@cast tags ActOnCompactItemTags
-        item = OBJECT_INDEX[tags.line_id][tags.item_category][tags.item_index]
+        local line = OBJECT_INDEX[tags.line_id]  ---@as LineObject
+        local item_list = (tags.flags.catalyst) and line--[[@as Line]].recipe.catalysts or line
+        item = item_list[tags.item_category]--[[@cast -nil]][tags.item_index]  ---@as SimpleItem
+        amount = item.amount * ((tags.flags.catalyst) and line--[[@as Line]].production_ratio or 1)
         ---@cast item.proto FPItemPrototype
     end
 
@@ -754,7 +774,7 @@ local function handle_item_click(player, tags, action)
         lib.cursor.filter_entity(player, item.proto)
 
     elseif action == "put_into_combinator" then
-        lib.cursor.put_into_combinator(player, item.proto, item.amount)
+        lib.cursor.put_into_combinator(player, item.proto, amount)
 
     elseif action == "factoriopedia" then
         player.open_factoriopedia_gui(lib.get_factoriopedia_proto(item.proto))
@@ -775,7 +795,8 @@ local function handle_hover_change(player, tags, event)
         type, name = fuel.proto.type, fuel:get_name_with_temperature()
     else  ---@cast tags ActOnCompactItemTags
         local line = OBJECT_INDEX[tags.line_id]  ---@type Line
-        local proto = line[tags.item_category][tags.item_index]--[[@cast -nil]].proto
+        local item_list = (tags.flags.catalyst) and line.recipe.catalysts or line
+        local proto = item_list[tags.item_category]--[[@cast -nil]][tags.item_index]--[[@cast -nil]].proto
         if line.class == "Line" and tags.item_category == "ingredients" then
             type, name = proto.type, line.recipe:get_name_with_temperature(proto)
         else

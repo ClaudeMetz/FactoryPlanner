@@ -222,6 +222,7 @@ local function handle_item_click(player, tags, action)
     local line = OBJECT_INDEX[tags.line_id]  ---@as LineObject
     local item_list = (tags.flags.catalyst) and line--[[@as Line]].recipe.catalysts or line
     local item = item_list[tags.item_category .. "s"][tags.item_index]
+    local amount = item.amount * ((tags.flags.catalyst) and line--[[@as Line]].production_ratio or 1)
 
     if action == "prioritize" then  ---@cast line Line
         local consuming = (line.recipe.production_type == "consume")
@@ -266,7 +267,7 @@ local function handle_item_click(player, tags, action)
             proto = prototyper.util.find("items", item_name, "fluid")
         end
 
-        local copyable_item = SimpleItem.init(nil, proto, item.amount)
+        local copyable_item = SimpleItem.init(nil, proto, amount)
         lib.clipboard.copy(player, copyable_item)
 
     elseif action == "paste" then
@@ -276,7 +277,7 @@ local function handle_item_click(player, tags, action)
         lib.cursor.pipette_item(player, item.proto)
 
     elseif action == "put_into_combinator" then
-        lib.cursor.put_into_combinator(player, item.proto, item.amount)
+        lib.cursor.put_into_combinator(player, item.proto, amount)
 
     elseif action == "factoriopedia" then
         player.open_factoriopedia_gui(lib.get_factoriopedia_proto(item.proto))
