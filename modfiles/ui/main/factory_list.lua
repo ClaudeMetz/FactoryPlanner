@@ -337,7 +337,7 @@ local function build_factory_list(player)
 
     local flow_search = frame_vertical.add{type="flow", direction="horizontal", visible=false}
     flow_search.style.height = MAGIC_NUMBERS.list_element_height
-    flow_search.style.padding = {0, 4, 0, 12}
+    flow_search.style.padding = {0, 12}
     flow_search.style.vertical_align = "center"
     main_elements.factory_list["search_flow"] = flow_search
 
@@ -345,7 +345,7 @@ local function build_factory_list(player)
     flow_search.add{type="empty-widget", style="fflib_horizontal_pusher"}
     local textfield_search = flow_search.add{type="textfield", style="search_popup_textfield",
         tags={mod="fp", on_gui_text_changed="factory_searchfield"}}
-    textfield_search.style.size = {230, 24}
+    textfield_search.style.size = {220, 24}
     main_elements.factory_list["search_textfield"] = textfield_search
 
 
