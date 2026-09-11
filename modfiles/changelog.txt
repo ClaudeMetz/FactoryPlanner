@@ -2,6 +2,13 @@
 Version: 0.00.00
 Date: 00. 00. 0000
   Features:
+  Changes:
+  Bugfixes:
+
+---------------------------------------------------------------------------------------------------
+Version: 2.1.14
+Date: 11. 09. 2026
+  Features:
     - Added research planning, which can solve for the labs and science packs needed for a given SPM
     - Added a 'Set filter' action to items in the compact dialog, allowing easy filter configuration for inserters, loaders, splitters, drills, pumps, and asteroid collectors
     - Added a 'Cut' action for recipes, beacons, modules, and top level products, accessed via Control + Right-click
