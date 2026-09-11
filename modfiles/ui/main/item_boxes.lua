@@ -237,7 +237,8 @@ local function handle_item_button_click(player, tags, action)
         lib.gui.run_refresh(player, "item_boxes")
 
     elseif action == "copy" then
-        local copyable_item = SimpleItem.init(nil, item.proto--[[@as FPItemPrototype]], item.amount)
+        local copyable_item = (item.class == "TLProduct") and item
+            or SimpleItem.init(nil, item.proto--[[@as FPItemPrototype]], item.amount)
         lib.clipboard.copy(player, copyable_item)
 
     elseif action == "paste" then
@@ -245,8 +246,7 @@ local function handle_item_button_click(player, tags, action)
 
     elseif action == "delete" or action == "cut" then
         if action == "cut" then
-            local copyable_item = SimpleItem.init(nil, item.proto--[[@as FPItemPrototype]], item.amount)
-            lib.clipboard.copy(player, copyable_item, true)
+            lib.clipboard.copy(player, item, true)
         end
 
         lib.context.get(player, "Factory")--[[@as Factory]]:remove(item)

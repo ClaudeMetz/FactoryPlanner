@@ -8,6 +8,7 @@ Date: 00. 00. 0000
   Changes:
     - Improved context menus to only show relevant actions, and explain why a certain action is unavailable (#635)
     - Broke up the 'Put into cursor' action into vanilla 'Pipette' on the Q key and 'Put into combinator' on the C key (for items specifically). Changed the 'Delete' action keybind to 'Backspace'/'Delete'.
+    - Copying or cutting top level products now preserves their full configuration
   Bugfixes:
     - Fixed that disabled recipes with subfloors would still contribute (#865) (Thanks vapopescu!)
     - Fixed a crash in the utility dialog when not using a player controller (#868) (Thanks vapopescu!)
