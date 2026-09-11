@@ -53,8 +53,8 @@ end
 ---@param flags GUIActionFlags
 ---@return boolean
 ---@return LocalisedString? warning
-function _actions.can_set_filter(flags)
-    if not flags.cursor then return false, {"fp.set_filter_unavailable"} end
+function _actions.can_filter_entity(flags)
+    if not flags.cursor then return false, {"fp.filter_entity_unavailable"} end
     return true
 end
 

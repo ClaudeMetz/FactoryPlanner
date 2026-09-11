@@ -10,7 +10,7 @@ Version: 2.1.14
 Date: 11. 09. 2026
   Features:
     - Added research planning, which can solve for the labs and science packs needed for a given SPM
-    - Added a 'Set filter' action to items in the compact dialog, allowing easy filter configuration for inserters, loaders, splitters, drills, pumps, and asteroid collectors
+    - Added a 'Filter entity' action to items in the compact dialog, allowing easy filter configuration for inserters, loaders, splitters, drills, pumps, and asteroid collectors
     - Added a 'Cut' action for recipes, beacons, modules, and top level products, accessed via Control + Right-click
   Changes:
     - Improved context menus to only show relevant actions, and explain why a certain action is unavailable (#635)
@@ -38,10 +38,10 @@ Date: 28. 08. 2026
     - Fixed recipes tied to specific machines not sharing their internal categories (#854) (Thanks vapopescu!)
     - Fixed that some items couldn't be pasted as factory products (Thanks vapopescu!)
     - Fixed special products not being solved for with the Simplex solver (#856) (Thanks vapopescu!)
-    - Fixed a large amount of recipe groups taking up all the space in the item picker (#851)
+    - Fixed a large number of recipe groups taking up all the space in the item picker (#851)
     - Fixed rocket silo recipes sometimes showing incompatible silos as viable machines
     - Fixed showing products whose only available recipe is self-recycling
-    - Fixed beacons requiring no power still consumed electricity
+    - Fixed that beacons requiring no power still consumed electricity
 
 ---------------------------------------------------------------------------------------------------
 Version: 2.1.12

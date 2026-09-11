@@ -662,8 +662,8 @@ local function handle_ingredient_click(player, tags, action)
     if action == "pipette" then
         lib.cursor.pipette_item(player, item.proto)
 
-    elseif action == "set_filter" then
-        lib.cursor.set_filter(player, item.proto)
+    elseif action == "filter_entity" then
+        lib.cursor.filter_entity(player, item.proto)
 
     elseif action == "put_into_combinator" then
         lib.cursor.put_into_combinator(player, item.proto, item.amount)
@@ -750,8 +750,8 @@ local function handle_item_click(player, tags, action)
     if action == "pipette" then
         lib.cursor.pipette_item(player, item.proto)
 
-    elseif action == "set_filter" then
-        lib.cursor.set_filter(player, item.proto)
+    elseif action == "filter_entity" then
+        lib.cursor.filter_entity(player, item.proto)
 
     elseif action == "put_into_combinator" then
         lib.cursor.put_into_combinator(player, item.proto, item.amount)
@@ -825,7 +825,7 @@ factory_listeners.gui = {
         {
             name = "act_on_compact_ingredient",
             actions_table = {
-                set_filter = {shortcut="left", core=true, enable=lib.actions.can_set_filter},
+                filter_entity = {shortcut="left", core=true, enable=lib.actions.can_filter_entity},
                 pipette = {input="pipette", enable=lib.actions.can_pipette},
                 put_into_combinator = {input="put_into_combinator", enable=lib.actions.can_put_into_combinator},
                 factoriopedia = {shortcut="alt-left", enable=lib.actions.can_open_factoriopedia}
@@ -867,7 +867,7 @@ factory_listeners.gui = {
         {
             name = "act_on_compact_item",
             actions_table = {
-                set_filter = {shortcut="left", core=true, enable=lib.actions.can_set_filter},
+                filter_entity = {shortcut="left", core=true, enable=lib.actions.can_filter_entity},
                 pipette = {input="pipette", enable=lib.actions.can_pipette},
                 put_into_combinator = {input="put_into_combinator", enable=lib.actions.can_put_into_combinator},
                 factoriopedia = {shortcut="alt-left", enable=lib.actions.can_open_factoriopedia}

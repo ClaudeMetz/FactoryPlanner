@@ -168,7 +168,7 @@ end
 ---@param player LuaPlayer
 ---@param cursor_entity CursorEntityData
 ---@param item_proto FPItemPrototype | FPFuelPrototype
-local function set_filter_on_inserter(player, cursor_entity, item_proto)
+local function filter_inserter(player, cursor_entity, item_proto)
     local entity_proto = (cursor_entity.type == "entity") and cursor_entity.entity
         or prototypes.entity[cursor_entity.entity--[[@cast -nil]].name]  ---@as LuaEntityPrototype
 
@@ -225,7 +225,7 @@ end
 ---@param player LuaPlayer
 ---@param cursor_entity CursorEntityData
 ---@param item_proto FPItemPrototype | FPFuelPrototype
-local function set_filter_on_splitter(player, cursor_entity, item_proto)
+local function filter_splitter(player, cursor_entity, item_proto)
     local entity_proto = (cursor_entity.type == "entity") and cursor_entity.entity
         or prototypes.entity[cursor_entity.entity--[[@cast -nil]].name]  ---@as LuaEntityPrototype
 
@@ -262,7 +262,7 @@ end
 ---@param player LuaPlayer
 ---@param cursor_entity CursorEntityData
 ---@param item_proto FPItemPrototype | FPFuelPrototype
-local function set_filter_on_mining_drill(player, cursor_entity, item_proto)
+local function filter_mining_drill(player, cursor_entity, item_proto)
     local entity_proto = (cursor_entity.type == "entity") and cursor_entity.entity
         or prototypes.entity[cursor_entity.entity--[[@cast -nil]].name]  ---@as LuaEntityPrototype
 
@@ -321,7 +321,7 @@ end
 ---@param player LuaPlayer
 ---@param cursor_entity CursorEntityData
 ---@param item_proto FPItemPrototype | FPFuelPrototype
-local function set_filter_on_asteroid_collector(player, cursor_entity, item_proto)
+local function filter_asteroid_collector(player, cursor_entity, item_proto)
     local entity_proto = (cursor_entity.type == "entity") and cursor_entity.entity
         or prototypes.entity[cursor_entity.entity--[[@cast -nil]].name]  ---@as LuaEntityPrototype
 
@@ -371,7 +371,7 @@ end
 ---@param player LuaPlayer
 ---@param cursor_entity CursorEntityData
 ---@param item_proto FPItemPrototype | FPFuelPrototype
-local function set_filter_on_pump(player, cursor_entity, item_proto)
+local function filter_pump(player, cursor_entity, item_proto)
     local entity_proto = (cursor_entity.type == "entity") and cursor_entity.entity
         or prototypes.entity[cursor_entity.entity--[[@cast -nil]].name]  ---@as LuaEntityPrototype
 
@@ -446,7 +446,7 @@ end
 
 ---@param player LuaPlayer
 ---@param item_proto FPItemPrototype | FPFuelPrototype
-function _cursor.set_filter(player, item_proto)
+function _cursor.filter_entity(player, item_proto)
     local cursor_entity = parse_cursor_entity(player)
     if cursor_entity.type == "none" then
         _cursor.create_flying_text(player, {"fp.no_filterable_cursor"})
@@ -464,15 +464,15 @@ function _cursor.set_filter(player, item_proto)
 
     local type = entity_proto.type
     if type == "inserter" or type == "loader" or type == "loader-1x1" then
-        set_filter_on_inserter(player, cursor_entity, item_proto)
+        filter_inserter(player, cursor_entity, item_proto)
     elseif type == "splitter" or type == "lane-splitter" then
-        set_filter_on_splitter(player, cursor_entity, item_proto)
+        filter_splitter(player, cursor_entity, item_proto)
     elseif type == "mining-drill" then
-        set_filter_on_mining_drill(player, cursor_entity, item_proto)
+        filter_mining_drill(player, cursor_entity, item_proto)
     elseif type == "asteroid-collector" then
-        set_filter_on_asteroid_collector(player, cursor_entity, item_proto)
+        filter_asteroid_collector(player, cursor_entity, item_proto)
     elseif type == "pump" then
-        set_filter_on_pump(player, cursor_entity, item_proto)
+        filter_pump(player, cursor_entity, item_proto)
     else
         _cursor.create_flying_text(player, {"fp.no_filterable_cursor"})
     end
