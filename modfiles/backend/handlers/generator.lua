@@ -915,6 +915,7 @@ end
 ---@field product_limit integer
 ---@field fluid_channels FluidChannels
 ---@field speed double
+---@field quality_affects_inventory_size boolean?
 ---@field crafting_speed_quality_multiplier table<QualityID, double>
 ---@field energy_type "burner" | "electric" | "heat" | "void"
 ---@field energy_usage double
@@ -955,7 +956,7 @@ end
 ---@field maximum_temperature float?
 
 ---@alias EmissionsMap table<string, double>
----@alias PrototypeCategory ("crafter" | "launcher" | "mining_drill" | "boiler" | "offshore_pump" | "generator" | "lab")
+---@alias PrototypeCategory ("crafter" | "launcher" | "mining_drill" | "boiler" | "offshore_pump" | "generator" | "lab" | "container")
 
 ---@return NamedPrototypesWithCategory<FPMachinePrototype>
 function generator.machines.generate()
@@ -1263,9 +1264,14 @@ function generator.machines.generate()
             end
 
         elseif proto.type == "container" then
-            local machine = generate_category_entry("purposeful-spoiling", proto, nil)
+            local machine = generate_category_entry("purposeful-spoiling", proto, "container")
             if machine then
                 machine.speed = proto.get_inventory_size(defines.inventory.chest) or 1
+                machine.quality_affects_inventory_size = proto.quality_affects_inventory_size
+                if machine.quality_affects_inventory_size then
+                    machine.speed = generator.util.get_base_value(machine.speed,
+                        prototypes.quality.normal.inventory_size_multiplier)--[[@cast -nil]]
+                end
                 machine.energy_usage = 0
                 insert_machine(machine)
             end
@@ -1938,6 +1944,7 @@ end
 ---@field always_show boolean
 ---@field level uint32
 ---@field default_multiplier double
+---@field inventory_size_multiplier double
 ---@field beacon_power_usage_multiplier double
 ---@field mining_drill_resource_drain_multiplier double
 ---@field lab_research_speed_multiplier double
@@ -1965,6 +1972,7 @@ function generator.qualities.generate()
                     always_show = proto.draw_sprite_by_default,
                     level = proto.level,
                     default_multiplier = proto.default_multiplier,
+                    inventory_size_multiplier = proto.inventory_size_multiplier,
                     beacon_power_usage_multiplier = proto.beacon_power_usage_multiplier,
                     mining_drill_resource_drain_multiplier = proto.mining_drill_resource_drain_multiplier,
                     lab_research_speed_multiplier = proto.lab_research_speed_multiplier,

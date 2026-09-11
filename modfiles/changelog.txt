@@ -12,6 +12,7 @@ Date: 00. 00. 0000
     - Fixed that disabled recipes with subfloors would still contribute (#865) (Thanks vapopescu!)
     - Fixed a crash in the utility dialog when not using a player controller (#868) (Thanks vapopescu!)
     - Fixed a crash in certain Pyanodons configurations (#859)
+    - Fixed that purposeful spoiling recipes didn't scale with chest quality
 
 ---------------------------------------------------------------------------------------------------
 Version: 2.1.13

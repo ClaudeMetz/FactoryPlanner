@@ -176,6 +176,9 @@ function Machine:get_speed()
         return LAUNCHER_DATA[self.proto.name][self.quality_proto.name].speed
     elseif category == "lab" then
         return speed * self.quality_proto.lab_research_speed_multiplier
+    elseif category == "container" then
+        return (self.proto.quality_affects_inventory_size)
+            and math.floor(speed * self.quality_proto.inventory_size_multiplier) or speed
     else  -- "crafter"
         return speed * self.proto.crafting_speed_quality_multiplier[self.quality_proto.name]
     end
@@ -189,7 +192,7 @@ function Machine:get_energy_usage()
     local energy_usage = self.proto.energy_usage
     local category = self.proto.prototype_category
 
-    if category == nil or category == "mining_drill" or category == "offshore_pump" then
+    if category == nil or category == "mining_drill" or category == "offshore_pump" or category == "container" then
         return energy_usage
     elseif category == "boiler" or category == "generator" then
         return energy_usage * self.quality_proto.default_multiplier
@@ -214,7 +217,7 @@ function Machine:get_resource_drain_rate()
     elseif self.proto.prototype_category == "lab" and self.proto.uses_quality_drain_modifier then
         return math.max(resource_drain_rate
             * self.quality_proto.science_pack_drain_multiplier, 0.01)
-    else  -- "crafter" | "launcher" | "boiler" | "offshore_pump" | "generator" | nil
+    else  -- "crafter" | "launcher" | "boiler" | "offshore_pump" | "generator" | "container" | nil
         return resource_drain_rate
     end
 end
@@ -227,7 +230,8 @@ function Machine:get_module_limit()
     local limit = self.proto.module_limit
     local category = self.proto.prototype_category
 
-    if category == nil or category == "boiler" or category == "offshore_pump" or category == "generator" then
+    if category == nil or category == "boiler" or category == "offshore_pump"
+        or category == "generator" or category == "container" then
         return limit
     elseif not self.proto.quality_affects_module_slots then
         return limit
