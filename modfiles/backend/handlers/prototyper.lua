@@ -100,11 +100,21 @@ end
 
 
 function prototyper.build()
+    local context = {
+        resource_deposits = {},
+        first_generator = nil,
+        rocket_parts = {},
+        pumped_tiles = {},
+        tile_can_have_plant = {},
+        research_sets = {},
+        research_groups = nil
+    }  ---@type GeneratorContext
+
     integrator.collect("recycling_recipes")
     integrator.collect("compacting_recipes")
 
     for data_type, _ in pairs(prototyper.data_types) do
-        storage.prototypes[data_type] = generator[data_type].generate()  ---@as AnyIndexedPrototypes
+        storage.prototypes[data_type] = generator[data_type].generate(context)  ---@as AnyIndexedPrototypes
     end
 
     -- Second pass to do some things that can't be done in the first pass due to the strict sequencing

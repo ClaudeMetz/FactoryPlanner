@@ -12,6 +12,7 @@ return {
         testLibFormatButtonNumber = formatters.button_number,
         testLibClipboardCopySnapshots = clipboard.copy_snapshots,
         testLibClipboardCopyProduct = clipboard.copy_product,
+        testLibClipboardProductItemCompatibility = clipboard.product_item_compatibility,
         testLibClipboardPasteOntoRecipe = clipboard.paste_onto_recipe,
         testLibClipboardPasteFailures = clipboard.paste_failures,
         testLibClipboardCutLineCollapsesSubfloor = clipboard.cut_line_collapses_subfloor,

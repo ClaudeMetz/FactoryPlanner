@@ -289,9 +289,9 @@ function utility_structures.productivity_boni(player, modal_data)
         if not force_recipes[recipe_name] or force_recipes[recipe_name].enabled then
             local caption
             if recipe_name == "custom-mining" then
-                caption = {"", "[img=utility/mining_drill_productivity_bonus_modifier_icon]  ", {"fp.mining_recipes"}}
+                caption = {"", "[img=fp_mining_productivity]  ", {"fp.mining_recipes"}}
             elseif recipe_name == "custom-research" then
-                caption = {"", "[img=utility/laboratory_productivity_modifier_icon]  ", {"fp.research_recipes"}}
+                caption = {"", "[img=fp_research_productivity]  ", {"fp.research_recipes"}}
             else
                 caption = {"", "[recipe=" .. recipe_name .. "]  ", prototypes.recipe[recipe_name].localised_name}
             end

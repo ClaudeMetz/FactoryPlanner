@@ -31,7 +31,7 @@ end
 ---@return boolean success
 ---@return string? error
 function SimpleItem:paste(object)
-    if object.class == "SimpleItem" or object.class == "Fuel" then
+    if object.class == "TLProduct" or object.class == "SimpleItem" or object.class == "Fuel" then
         ---@cast object.proto -nil
 
         -- Only pasting on a line item is allowed
@@ -44,7 +44,7 @@ function SimpleItem:paste(object)
             return false, "incompatible"
         end
 
-        if object.class == "SimpleItem" then  ---@cast object SimpleItem
+        if object.class ~= "Fuel" then  ---@cast object.proto FPItemPrototype
             if object.proto.base_name ~= self.proto.name then return false, "incompatible" end
             if not object.proto.temperature then return false, "incompatible" end
             if not line.recipe:is_temperature_valid(self.proto, object.proto.temperature) then

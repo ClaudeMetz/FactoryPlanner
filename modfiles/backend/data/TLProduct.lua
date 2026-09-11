@@ -71,8 +71,7 @@ end
 ---@return boolean success
 ---@return string? error
 function TLProduct:paste(object)
-    -- Copy and Cut store products as SimpleItems.
-    if object.class == "SimpleItem" or object.class == "Fuel" then
+    if object.class == "TLProduct" or object.class == "SimpleItem" or object.class == "Fuel" then
         local proto
         if object.class == "Fuel" then  -- need an Item prototype here, not Fuel
             proto = prototyper.util.find("items", object:get_name_with_temperature(), object.proto.type)
@@ -97,8 +96,13 @@ function TLProduct:paste(object)
             return false, "already_exists"
         end
 
-        local product = init(proto)  -- defined_by = "amount"
-        product.required_amount = object.amount
+        local product
+        if object.class == "TLProduct" then
+            product = object
+        else
+            product = init(proto)  -- defined_by = "amount"
+            product.required_amount = object.amount
+        end
         self.parent:replace(self, product)
 
         return true, nil

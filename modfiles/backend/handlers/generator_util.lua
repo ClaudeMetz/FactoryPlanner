@@ -201,10 +201,30 @@ function _util.research_cost(tech_proto)
 end
 
 ---@param normal_quality_value number?
+---@param normal_multiplier number?
 ---@return number? base_value
-function _util.get_base_value(normal_quality_value)
+function _util.get_base_value(normal_quality_value, normal_multiplier)
     if normal_quality_value == nil then return nil end
-    return normal_quality_value / prototypes.quality["normal"].default_multiplier
+    return normal_quality_value / (normal_multiplier or prototypes.quality["normal"].default_multiplier)
+end
+
+---@param proto LuaEntityPrototype
+---@return uint16
+function _util.get_base_module_limit(proto)
+    local limit = proto.module_inventory_size or 0
+    local normal_quality = prototypes.quality.normal
+
+    if not proto.quality_affects_module_slots then
+        return limit
+    elseif proto.type == "mining-drill" then
+        return limit - normal_quality.mining_drill_module_slots_bonus
+    elseif proto.type == "lab" then
+        return limit - normal_quality.lab_module_slots_bonus
+    elseif proto.type == "beacon" then
+        return limit - normal_quality.beacon_module_slots_bonus
+    else  -- crafting machines
+        return limit - proto.module_slots_quality_bonus.normal
+    end
 end
 
 -- Items are still name-keyed at this point in generation, before the final conversion to id-keyed storage,

@@ -52,10 +52,12 @@ return {
         end
         data:extend(packs)
 
-        -- Normal is changed only to give the drain tests a non-trivial multiplier.
+        -- Non-neutral normal modifiers expose baselines that already include quality.
         -- Other machine calculations use a synthetic FP-quality object at runtime,
         -- since Factorio rejects additional qualities with the feature flag disabled.
         data.raw.quality.normal.science_pack_drain_multiplier = 0.5
+        data.raw.quality.normal.lab_research_speed_multiplier = 1.5
+        data.raw.quality.normal.lab_module_slots_bonus = 2
 
         -- ** LABS **
 
@@ -365,6 +367,13 @@ return {
             local proto = lab_categories(name)[multi_category]
             if not proto then c.check(false, name .. ": missing machine"); return nil end
             local machine = context.classes.Machine.init({}, proto)
+            c.check(helpers.approx(machine:get_speed(),
+                    prototypes.entity[name].get_researching_speed("normal")),
+                name .. ": normal research multiplier was counted twice")
+            c.check(machine.proto.module_limit == 2,
+                name .. ": expected two raw module slots")
+            c.check(machine:get_module_limit() == prototypes.entity[name].module_inventory_size,
+                name .. ": normal module slot bonus was counted twice")
             machine.quality_proto = test_quality
             return machine
         end
@@ -386,8 +395,7 @@ return {
         if quality_lab_calculated then
             c.check(helpers.approx(quality_lab_calculated:get_resource_drain_rate(), 0.35),
                 "quality-drain lab: expected an above-floor drain rate of 0.35")
-            c.check(quality_lab_calculated:get_module_limit()
-                    == quality_lab_calculated.proto.module_limit + 3,
+            c.check(quality_lab_calculated:get_module_limit() == 5,
                 "quality-drain lab: expected three quality module slots")
         end
         if clamped_lab_calculated then
