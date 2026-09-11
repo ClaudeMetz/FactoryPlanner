@@ -1,18 +1,14 @@
 integrator = {}
 
 ---@class IntegrationsTable
----@field overwrite_recipe_picker table<string, boolean>
 ---@field recycling_recipes table<string, true>
 ---@field compacting_recipes table<string, true>
+---@field machine_effects table<ForceIndex, table<string, IntegerModuleEffects>>
+---@field overwrite_recipe_picker table<ForceIndex, table<string, boolean>>
+---@field recipe_substitutions table<ForceIndex, table<string, string>>
+---@field machine_substitutions table<ForceIndex, table<string, string>>
 
 -- ** LOCAL UTIL **
----@param name string
----@return table
-local function get_integration_table(name)
-    storage.integrations[name] = storage.integrations[name] or {}
-    return storage.integrations[name]
-end
-
 ---@param table Any?
 ---@param name string
 ---@return AnyBasic?
@@ -23,23 +19,21 @@ end
 
 -- ** RUNTIME INTEGRATIONS **
 
+-- Signals that a mod's data changed, prompting FP to collect it again
 ---@param dataset Any?
-local function overwrite_recipe_picker(dataset)
+local function invalidate(dataset)
     local version = get_table_value(dataset, "version")
-    local recipes = get_table_value(dataset, "recipes")
+    local integration = get_table_value(dataset, "integration")
 
-    if version == 1 and type(recipes) == "table" then
-        local storage_table = get_integration_table("overwrite_recipe_picker")
-
-        for recipe_name, value in pairs(recipes) do
-            storage_table[recipe_name] = value  -- nil equals removal
-        end
+    if version ~= 1 then return end
+    if integration ~= nil and type(integration) == "string" then
+        integrator.invalidate(integration)
     end
 end
 
 -- Push-based system, where mods can push integration data to FP at any time
 remote.add_interface("fp-integration", {
-    overwrite_recipe_picker = overwrite_recipe_picker
+    invalidate = invalidate
 })
 
 
@@ -90,17 +84,148 @@ function handlers.compacting_recipes(dataset, storage_table)
     end
 end
 
+---@param dataset Any
+---@param storage_table table
+function handlers.machine_effects(dataset, storage_table)
+    local version = get_table_value(dataset, "version")
+    local effects = get_table_value(dataset, "effects")
+
+    if version == 1 and type(effects) == "table" then
+        for machine_name, machine_effects in pairs(effects) do
+            if type(machine_effects) == "table" then
+                local formatted = {}
+                -- Only actual effects are kept, so the table stays sparse like a machine's own
+                for effect_name, value in pairs(machine_effects) do
+                    if lib.effects.blank[effect_name] ~= nil and type(value) == "number" and value ~= 0 then
+                        formatted[effect_name] = math.floor(value * MAGIC_NUMBERS.effect_precision + 1e-4)
+                    end
+                end
+                storage_table[machine_name] = formatted
+            end
+        end
+    end
+end
+
+---@param dataset Any
+---@param storage_table table
+function handlers.recipe_substitutions(dataset, storage_table)
+    local version = get_table_value(dataset, "version")
+    local substitutions = get_table_value(dataset, "substitutions")
+
+    if version == 1 and type(substitutions) == "table" then
+        for recipe_name, replacement_name in pairs(substitutions) do
+            -- A recipe standing in for itself would just make it permanently unobtainable
+            if type(replacement_name) == "string" and replacement_name ~= recipe_name then
+                storage_table[recipe_name] = replacement_name
+            end
+        end
+    end
+end
+
+-- Machine substitutions have the exact same shape, so they are read the same way
+handlers.machine_substitutions = handlers.recipe_substitutions
+
+---@param dataset Any
+---@param storage_table table
+function handlers.overwrite_recipe_picker(dataset, storage_table)
+    local version = get_table_value(dataset, "version")
+    local recipes = get_table_value(dataset, "recipes")
+
+    if version == 1 and type(recipes) == "table" then
+        for recipe_name, value in pairs(recipes) do
+            if type(value) == "boolean" then storage_table[recipe_name] = value end
+        end
+    end
+end
+
+
+---@param name string
+---@param force_index ForceIndex?
+---@return table
+local function call_providers(name, force_index)
+    local collected = {}
+    for interface, functions in pairs(interfaces--[[@cast -nil]]) do
+        if functions[name] then
+            ---@diagnostic disable-next-line: param-type-mismatch
+            local dataset = remote.call(interface, name, force_index)  ---@as Any
+            handlers[name]--[[@cast -nil]](dataset, collected)
+        end
+    end
+    return collected
+end
+
+-- Integrations that are collected once per force, instead of a single time
+local force_scoped = {
+    machine_effects = true,
+    recipe_substitutions = true,
+    machine_substitutions = true,
+    overwrite_recipe_picker = true
+}
+
 ---@param name string
 function integrator.collect(name)
     if interfaces == nil then seek_provided_interfaces() end
-    ---@cast interfaces Interfaces
 
-    local storage_table = get_integration_table(name)
-    for interface, functions in pairs(interfaces) do
-        if functions[name] then
-            ---@diagnostic disable-next-line: generic-constraint-mismatch
-            local dataset = remote.call(interface, name)  ---@as Any
-            handlers[name]--[[@cast -nil]](dataset, storage_table)
+    local collected = {}  ---@type table
+    if force_scoped[name] then
+        for _, force in pairs(game.forces) do
+            collected[force.index] = call_providers(name, force.index)
+        end
+    else
+        collected = call_providers(name, nil)
+    end
+
+    storage.integrations[name] = collected
+end
+
+function integrator.initialize()
+    integrator.collect("machine_effects")
+    integrator.collect("recipe_substitutions")
+    integrator.collect("machine_substitutions")
+    integrator.collect("overwrite_recipe_picker")
+end
+
+
+-- Collects the per-force integrations for a force that didn't exist at the last collection
+---@param force_index ForceIndex
+function integrator.collect_force(force_index)
+    if interfaces == nil then seek_provided_interfaces() end
+
+    for name, _ in pairs(force_scoped) do
+        storage.integrations[name][force_index] = call_providers(name, force_index)
+    end
+end
+
+-- Drops what was collected for a force that doesn't exist anymore
+---@param force_index ForceIndex
+function integrator.forget_force(force_index)
+    for name, _ in pairs(force_scoped) do
+        storage.integrations[name][force_index] = nil
+    end
+end
+
+
+-- Collects the named integration again, and runs appropriate updates if necessary
+---@param integration string
+function integrator.invalidate(integration)
+    integrator.collect(integration)
+
+    if integration == "machine_effects" then
+        local offset = 1
+        for _, player in pairs(game.players) do
+            local realm = lib.globals.player_table(player).realm
+            realm:schedule_solver_updates((game.tick + offset), player)
+            offset = offset + 2
+        end
+
+    elseif integration == "recipe_substitutions"
+            or integration == "overwrite_recipe_picker"
+            or integration == "machine_substitutions" then
+        -- These change which recipes/machines are available, so refresh all lines
+        local running_tick = game.tick + 1  ---@type MapTick?
+        for _, player in pairs(game.players) do
+            local realm = lib.globals.player_table(player).realm
+            running_tick = realm:refresh_lines(player, running_tick)
         end
     end
 end

@@ -149,6 +149,23 @@ function _gui.run_refresh(player, trigger)
 end
 
 
+_gui.held_object_triggers = {
+    District = "districts_box",
+    Factory = "factory_list",
+    Floor = "production_table",
+    Line = "production_table"
+}
+
+-- Returns the object the player is currently holding, if the given list is the one displaying it
+---@param player LuaPlayer
+---@param trigger RefreshGUITrigger
+---@return Object? held_object
+function _gui.held_object(player, trigger)
+    local held_object = OBJECT_INDEX[lib.globals.ui_state(player).held_object_id]  ---@as Object?
+    return (held_object and _gui.held_object_triggers[held_object.class] == trigger) and held_object or nil
+end
+
+
 ---@param player LuaPlayer
 ---@return DisplayResolution
 function _gui.calculate_scaled_resolution(player)

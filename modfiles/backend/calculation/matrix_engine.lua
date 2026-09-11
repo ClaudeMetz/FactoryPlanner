@@ -444,7 +444,7 @@ function matrix_engine.run_matrix_solver(factory_data, check_linear_dependence)
                 local machine_amount = matrix[col_num]--[[@cast -nil]][#columns.values+1]  ---@as number
                 if machine_amount < 0 then machine_amount = 0 end
                 line_aggregate = matrix_engine.get_line_aggregate(line, floor.id,
-                        machine_amount, factory_metadata, free_variables)
+                    machine_amount, factory_metadata, free_variables)
             else
                 line_aggregate = set_line_results(prefix.."_"..i, line.subfloor)
                 matrix_engine.consolidate(line_aggregate)
@@ -553,14 +553,15 @@ function matrix_engine.consolidate(aggregate)
     ---@param input_map "products" | "byproducts" | "ingredients"
     ---@param output_map "products" | "byproducts" | "ingredients"
     local function compare_maps(input_map, output_map)
-        for _, output_item in pairs(structures.map.list(aggregate[output_map])) do
-            local input_amount = aggregate[input_map][structures.pack_item(output_item)] or 0
-            local net_amount = output_item.amount - input_amount
+        for item_key, output_amount in pairs(aggregate[output_map]) do
+            local output_item = structures.unpack_item(item_key, output_amount)
+            local input_amount = aggregate[input_map][item_key] or 0
+            local net_amount = output_amount - input_amount
 
             -- Solving leaves a relative error behind, so the leftover of an item that actually
             -- cancels out is proportional to how much of it flows. A fixed margin can't catch
             -- that across amounts as far apart as items and power, so this scales with the flow.
-            local scale = math.max(math.abs(output_item.amount), math.abs(input_amount))
+            local scale = math.max(math.abs(output_amount), math.abs(input_amount))
             local cancels_out = math.abs(net_amount) < scale * MAGIC_NUMBERS.margin_of_error
 
             if cancels_out then  -- take both sides down to nothing, rather than leaving the rest
@@ -820,7 +821,7 @@ function matrix_engine.get_line_aggregate(line_data, floor_id, machine_amount, f
     ---@param amount number?
     local function add_product(product, amount)
         local item_key = matrix_engine.get_item_key(product.type, product.name)
-        if factory_metadata ~= nil and free_variables ~= nil and (factory_metadata.byproducts[item_key] or free_variables["item_"..item_key]) then
+        if factory_metadata and factory_metadata.byproducts[item_key] or free_variables and free_variables["item_"..item_key] then
            structures.map.add(line_aggregate.byproducts, product, amount)
         else
             structures.map.add(line_aggregate.products, product, amount)
@@ -851,7 +852,7 @@ function matrix_engine.get_line_aggregate(line_data, floor_id, machine_amount, f
             local burner = machine_proto.burner  ---@as MachineBurner
             fuel_amount = solver.util.determine_fuel_amount(line_data, power, machine_amount)
 
-            fuel = { type = fuel_proto.type, name = line_data.fuel_name, amount=fuel_amount }  ---@type SolverItem
+            fuel = {type=fuel_proto.type, name=line_data.fuel_name, amount=fuel_amount}  ---@type SolverItem
             structures.map.add(line_aggregate.ingredients, fuel)
 
             if fuel_proto.burnt_result then
@@ -976,7 +977,7 @@ function matrix_engine.to_reduced_row_echelon_form(m)
     if #m==0 then return m end
     local num_cols = #m[1]
 
-    local tolerance = 1e-12
+    local tolerance = MAGIC_NUMBERS.matrix_tolerance
     local pivot_row = 1
 
     for curr_col = 1, num_cols do

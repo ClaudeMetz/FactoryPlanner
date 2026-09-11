@@ -8,7 +8,11 @@ MAGIC_NUMBERS = {
     effect_precision = 10000,  -- The multiplier to turn module effects into integers (and back)
     formatting_precision = 4,  -- precision of decimal formatting in tooltips
     history_limit = 25,  -- maximum number of navigation history entries
+
+    -- Solver-specific magic numbers
     minimum_energy = 0.001,  -- The lower-bound of the recipe energy property
+    matrix_tolerance = 1e-12,  -- The tolerance value for the RREF pivot check
+    simplex_tolerance = 1e-10,  -- The tolerance for the variable entering/exitting comparisons
     simplex_update_threshold = 1e5,  -- The infinite norm threshold under which a Forrest-Tomlin update is considered stable
     simplex_max_factorization_interval = 50,  -- The upper bound for the amount of iterations between refactorizations
 
@@ -17,7 +21,6 @@ MAGIC_NUMBERS = {
     title_bar_height = 28,  -- Height of the main dialog title bar
     district_info_height = 36,
     subheader_height = 36,  -- Height of the factory list subheader
-    search_footer_height = 36,  -- Height of the factory list search footer
     list_width = 300,  -- Width of the factory list
     list_element_height = 28,  -- Height of an individual factory list element
     item_button_size = 40,  -- Size of item box buttons
@@ -27,6 +30,7 @@ MAGIC_NUMBERS = {
     recipes_per_row = 6,  -- Number of recipes per row in the recipe picker
     items_per_row = 10,  -- Number of items per row in the item picker
     groups_per_row = 6,  -- Number of groups in a row in the item picker
+    group_max_rows = 3,  -- Maximum number of group rows shown in the item picker before scrolling
     blueprint_limit = 12,  -- Maxmimum number of blueprints allowed per factory
     module_dialog_element_width = 440,  -- Width of machine and beacon dialog elements
     titlebar_label_width = 130,  -- Width of the 'Factory Planner' titlebar label
@@ -34,7 +38,7 @@ MAGIC_NUMBERS = {
 }
 
 -- Handlers saved in a central location for access via name
-MODIFIER_ACTIONS = {}  ---@type table<string, GUIEventTable>
+GUI_HANDLERS = {}  ---@type table<string, RegisteredGUIHandler>
 GLOBAL_HANDLERS = {}  ---@type table<string, function>
 
 lib = require('util.lib')
@@ -43,6 +47,7 @@ llog = require("util.llog")
 require("ui.event_handler")
 
 ---@alias PlayerIndex uint32
+---@alias ForceIndex uint8
 ---@alias VersionString string
 ---@alias ModToVersion table<string, VersionString>
 ---@alias AllowedEffects table<string, boolean>
@@ -60,8 +65,11 @@ if script.active_mods["factoryplanner-test"] then
         District = require("backend.data.District"),
         Factory = require("backend.data.Factory"),
         TLProduct = require("backend.data.TLProduct"),
+        Floor = require("backend.data.Floor"),
         Line = require("backend.data.Line"),
         Machine = require("backend.data.Machine"),
+        Beacon = require("backend.data.Beacon"),
+        Module = require("backend.data.Module"),
         Fuel = require("backend.data.Fuel"),
     }
 end

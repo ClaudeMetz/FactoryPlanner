@@ -28,9 +28,9 @@ end
 ---@param amount number?
 ---@return SolverItem
 function _structures.unpack_item(item_key, amount)
-    local unpacked = lib.split_string(item_key, SEPARATOR)
-    local type = unpacked[1]  ---@as string
-    local name = unpacked[2]  ---@as string
+    local separator_index = string.find(item_key, SEPARATOR, 1, true)  ---@as integer
+    local type = string.sub(item_key, 1, separator_index - 1)
+    local name = string.sub(item_key, separator_index + 1)
     local _, temperature = lib.temperature.name_split(name)
     return {
         type = type,
@@ -71,9 +71,7 @@ function _structures.map.add(map, item, amount)
     local amount_to_add = amount or item.amount or 0
 
     map[key] = (map[key] or 0) + amount_to_add
-    if map[key] < MAGIC_NUMBERS.margin_of_error and map[key] > -MAGIC_NUMBERS.margin_of_error then
-        map[key] = nil
-    end
+    if map[key] == 0 then map[key] = nil end
 end
 
 ---@param map SolverMap

@@ -42,10 +42,11 @@ function Realm:remove(district)
 end
 
 ---@param district District
+---@param relative_object District
 ---@param direction NeighbourDirection
----@param spots integer?
-function Realm:shift(district, direction, spots)
-    self:_shift(district, direction, spots)
+function Realm:move(district, relative_object, direction)
+    self:_remove(district)
+    self:_insert(district, relative_object, direction)
 end
 
 
@@ -84,6 +85,18 @@ function Realm:schedule_solver_updates(starting_tick, player)
         running_tick = district:schedule_solver_updates(running_tick, player)
         running_tick = running_tick + MAGIC_NUMBERS.factory_solver_update_delay
     end
+end
+
+
+---@param player LuaPlayer
+---@param starting_tick MapTick?
+---@return MapTick? running_tick
+function Realm:refresh_lines(player, starting_tick)
+    local running_tick = starting_tick
+    for district in self:iterator() do
+        running_tick = district:refresh_lines(player, running_tick)
+    end
+    return running_tick
 end
 
 
