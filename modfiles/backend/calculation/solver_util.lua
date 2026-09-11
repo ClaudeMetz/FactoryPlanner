@@ -1,5 +1,5 @@
 local _util = {
-    table = {},
+    set = {},
     matrix = {},
 }
 
@@ -89,61 +89,64 @@ function _util.determine_fuel_amount(line_data, power, machine_amount)
     return (power / burner.effectivity) / line_data.fuel_value--[[@as number]]
 end
 
---- Inserts a `value` at the end of the `table` with a given `key`.
---- If `key` already contains a value, the two are added together.
+--- Joins two or more sets together in a new result set (`L ∪ R`).
 ---@generic T
----@param table table<T, number>
----@param key T
----@param value number
----@return number value The new `value` stored at `key`
-function _util.table.add(table, key, value)
-    table[key] = table[key] ~= nil and table[key] + value or value
-    return table[key]
-end
-
---- Joins two tables together in a new result table (`L ∪ R`).
---- The contents of `left_table` are inserted first.
---- If the `right_table` contains a key that is already in the `left_table`,
---- then the value in the `right_table` will be present in the result.
----@generic T
----@param left_table T
----@param right_table T
----@return T result
-function _util.table.union(left_table, right_table)
+---@param t table<T, true>
+---@param ... table<T, true>
+---@return table<T, true>
+function _util.set.union(t, ...)
     local result = {}
-    for k, v in pairs(left_table) do result[k] = v end
-    for k, v in pairs(right_table) do result[k] = v end
+    for k, v in pairs(t) do result[k] = v end
+    for _, table in pairs({...}) do
+        for k, v in pairs(table) do
+            -- Preserve truthiness
+            result[k] = v or result[k]
+        end
+    end
     return result
 end
 
---- Returns the intersection of two tables (`L ∩ R`).
---- The result will contain the contents of the `left_table`,
---- whose keys are also present in the `right_table`.
+--- Returns the intersection of two or more sets (`L ∩ R`).
 ---@generic T
----@param left_table T
----@param right_table T
----@return T result_table
-function _util.table.intersection(left_table, right_table)
+---@param t table<T, true>
+---@param ... table<T, true>
+---@return table<T, true>
+function _util.set.intersection(t, ...)
     local result = {}
-    for k, v in pairs(left_table) do
-        -- Intentionally exclude both `nil` and `false` (preserve operation truthyness)
-        if right_table[k] then result[k] = v end
+    for k, v in pairs(t) do result[k] = v end
+    for _, table in pairs({...}) do
+        for k, v in pairs(result) do
+            -- Preserve truthiness
+            result[k] = v and table[k]
+        end
     end
 
     return result
 end
 
---- Subtracts the `right_table` from the `left_table` table in a new result table (`L ∖ R`).
---- The result will contain the contents of the `left_table`,
---- excluding the keys that are also present in the `right_table`.
----@param left_table table
----@param right_table table
----@return table result_table
-function _util.table.difference(left_table, right_table)
+--- Returns the total item count of one or more sets
+---@return integer
+function _util.set.count(...)
+    local count = 0
+    for _, set in pairs({...}) do
+        for _, _ in pairs(set) do count = count + 1 end
+    end
+    return count
+end
+
+--- Subtracts the sets on the right from the first input set in a new result set (`L ∖ R`).
+---@generic T
+---@param t table<T, true>
+---@param ... table<T, true>
+---@return table<T, true>
+function _util.set.difference(t, ...)
     local result = {}
-    for k, v in pairs(left_table) do
-        -- Intentionally exclude both `nil` and `false` (preserve operation truthyness)
-        if not right_table[k] then result[k] = v end
+    for k, v in pairs(t) do result[k] = v end
+    for _, table in pairs({...}) do
+        for k, _ in pairs(table) do
+            -- Preserve truthyness
+            if table[k] then result[k] = nil end
+        end
     end
 
     return result

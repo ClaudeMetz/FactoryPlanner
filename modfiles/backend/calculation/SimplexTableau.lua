@@ -204,7 +204,7 @@ function SimplexTableau:_add_constraint(key, type, limit, objective)
     self.solution[row_index] = limit
 
     -- Update the variable objective
-    solver.util.table.add(self.objective, var_col_index, -(objective or 0))  -- objective coefficient is opposite
+    self.objective[var_col_index] = (self.objective[var_col_index] or 0) - (objective or 0)  -- objective coefficient is opposite
 
     -- We are done for equality constraints
     if type == "==" then return end
