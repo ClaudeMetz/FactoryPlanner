@@ -208,7 +208,7 @@ local function generate_floor_data(player, factory, floor, calculate_emissions)
 
                 table.insert(floor_data.lines, line_data)
             else
-                set_blank_line(player, floor, line)
+                set_blank_line(floor, line)
             end
         end
     end
