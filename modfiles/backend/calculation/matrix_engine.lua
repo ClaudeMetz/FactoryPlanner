@@ -676,7 +676,7 @@ function matrix_engine.get_matrix(factory_data, rows, columns)
     end
 
     -- Power that lines draw regardless of their machine count, collected to be demanded below
-    local electric_power = { type = "entity", name = "custom-electric-power", amount = 0 }  ---@type SolverItem
+    local electric_power = {type="entity", name="custom-electric-power", amount=0}  ---@type SolverItem
     local constant_demand = 0.0
 
     -- loop over columns since it's easier to look up items for lines/free vars than vice-versa
