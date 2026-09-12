@@ -69,10 +69,7 @@ end
 ---@param factory_data FactoryData
 ---@return MatrixMetadata
 function matrix_engine.get_matrix_solver_metadata(factory_data)
-    local eliminated_items = {}  ---@type SolverSet
-    local free_items = {}  ---@type SolverSet
     local desired_outputs = {}
-
     for _, product in pairs(factory_data.top_floor.products) do
         local item_key = structures.pack_item(product)
         desired_outputs[item_key] = true
@@ -92,16 +89,15 @@ function matrix_engine.get_matrix_solver_metadata(factory_data)
     local free_variables = solver.util.set.union(raw_inputs, byproducts, unproduced_outputs)
     local intermediate_items = solver.util.set.difference(all_items, free_variables)
 
-    -- by default when a factory is updated, add any new variables to eliminated and let the user select free.
-    local free_items_list = factory_data.matrix_free_items
-    for _, free_item in ipairs(free_items_list) do
+    -- When a factory is updated, add any new variables to eliminated and let the user select free.
+    local free_items = {}  ---@type SolverSet
+    for _, free_item in ipairs(factory_data.matrix_free_items) do
         local item_key = structures.pack_item(free_item)
-        free_items[item_key] = true
+        -- Make sure that the picked free items are intermediates
+        if intermediate_items[item_key] then free_items[item_key] = true end
     end
-    -- make sure that any items that no longer exist are removed
-    free_items = solver.util.set.intersection(free_items, intermediate_items)
-    eliminated_items = solver.util.set.difference(intermediate_items, free_items)
 
+    local eliminated_items = solver.util.set.difference(intermediate_items, free_items)
     local num_rows = solver.util.set.count(raw_inputs, byproducts, eliminated_items, free_items)
     local num_cols = solver.util.set.count(recipes, raw_inputs, byproducts, free_items)
     local result = {
