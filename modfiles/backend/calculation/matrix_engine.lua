@@ -54,7 +54,7 @@ end
 
 
 ---@class MatrixMetadata
----@field recipes MatrixRecipeMap
+---@field recipe_map MatrixRecipeMap
 ---@field aggregate_map AggregateMap
 ---@field byproducts SolverSet
 ---@field unproduced_outputs SolverSet
@@ -99,9 +99,9 @@ function matrix_engine.get_matrix_solver_metadata(factory_data)
     local num_rows = solver.util.set.count(raw_inputs, byproducts, eliminated_items, free_items)
     local num_cols = solver.util.set.count(recipes, raw_inputs, byproducts, free_items)
     local result = {
-        recipes = recipes,
-        byproducts = byproducts,
+        recipe_map = recipes,
         aggregate_map = lines_metadata.line_aggregate_map,
+        byproducts = byproducts,
         unproduced_outputs = unproduced_outputs,
         all_items = all_items,
         eliminated_items = eliminated_items,
@@ -204,14 +204,8 @@ function matrix_engine.get_linear_dependence_data(matrix_metadata, floor_data)
         local col_name = columns.values[col]  ---@as string
         local col_split_str = lib.split_string(col_name, SEPARATOR)
         if col_split_str[1] == "line" then
-            local floor = floor_data
-            for i=2, #col_split_str-1 do
-                local line_table_id = col_split_str[i]  ---@as integer
-                floor = floor.lines[line_table_id]--[[@cast -nil]].subfloor  ---@as FloorData
-            end
-            local line_table_id = col_split_str[#col_split_str]  ---@as integer
-            local line = floor.lines[line_table_id]  ---@as LineData
-            local recipe_id = matrix_metadata.recipes[line.id]
+            local line_id = col_split_str[2]  ---@as integer
+            local recipe_id = matrix_metadata.recipe_map[line_id]
             linearly_dependent_variables["recipe"..SEPARATOR..recipe_id] = true
         else -- item
             linearly_dependent_variables[col_name] = true
@@ -277,22 +271,23 @@ function matrix_engine.get_matrix_data(matrix_metadata, floor_data)
     local all_items = matrix_metadata.all_items
     local rows = matrix_engine.get_mapping_struct(all_items)
 
-    -- storing the line keys as "line_(lines index 1)_(lines index 2)_..." for arbitrary depths of subfloors
-    local function get_line_names(prefix, lines)
+    -- Storing the line keys as "line;(lines id)"
+    ---@return table<string, true>
+    local function get_line_names(lines)
         local line_names = {}
-        for i, line in ipairs(lines) do
-            local line_key = prefix..SEPARATOR..i
+        for _, line in ipairs(lines) do
+            local line_key = "line"..SEPARATOR..line.id
             -- these are exclusive because only actual recipes are allowed to be inputs to the matrix solver
-            if line.subfloor == nil then
+            if line.subfloor == nil then  -- line
                 line_names[line_key] = true
-            else
-                local subfloor_line_names = get_line_names(line_key, line.subfloor.lines)
+            else  -- floor
+                local subfloor_line_names = get_line_names(line.subfloor.lines)
                 line_names = solver.util.set.union(line_names, subfloor_line_names)
             end
         end
         return line_names
     end
-    local line_names = get_line_names("line", floor_data.lines)
+    local line_names = get_line_names(floor_data.lines)
 
     local raw_free_variables = solver.util.set.union(matrix_metadata.raw_inputs, matrix_metadata.byproducts)  ---@as SolverSet
     local free_variables = {}  ---@type table<string, true>
@@ -331,12 +326,11 @@ function matrix_engine.run_matrix_solver(factory_data, matrix_metadata)
         matrix[idx][#columns.values+1] = matrix[idx][#columns.values+1] * scale_factor
     end
 
-    ---@param prefix string
     ---@param floor FloorData
-    local function set_line_results(prefix, floor)
+    local function set_line_results(floor)
         local floor_aggregate = structures.aggregate.init(floor.id)
         for i, line in ipairs(floor.lines) do
-            local line_key = prefix..SEPARATOR..i
+            local line_key = "line"..SEPARATOR..line.id
             local line_aggregate = nil
             if line.subfloor == nil then  ---@cast line LineData
                 local col_num = columns.map[line_key]
@@ -346,7 +340,7 @@ function matrix_engine.run_matrix_solver(factory_data, matrix_metadata)
                 line_aggregate = matrix_metadata.aggregate_map[line.id]
                 line_aggregate = matrix_engine.get_line_result_aggregate(line_aggregate, machine_amount, matrix_metadata, free_variables)
             else
-                line_aggregate = set_line_results(prefix..SEPARATOR..i, line.subfloor)
+                line_aggregate = set_line_results(line.subfloor)
                 matrix_engine.consolidate(line_aggregate)
             end
 
@@ -382,7 +376,7 @@ function matrix_engine.run_matrix_solver(factory_data, matrix_metadata)
         return floor_aggregate
     end
 
-    local top_floor_aggregate = set_line_results("line", factory_data.top_floor)
+    local top_floor_aggregate = set_line_results(factory_data.top_floor)
 
     -- Nets out items that are produced and consumed in equal amounts across the whole factory,
     -- while the amounts on both sides are still around to tell solver noise from a real leftover
@@ -553,23 +547,18 @@ function matrix_engine.get_matrix(matrix_metadata, floor_data, rows, columns)
             local row_num = rows.map[item_key]
             matrix[row_num]--[[@cast -nil]][col_num] = 1
         else -- "line"
-            local floor = floor_data
-            for i=2, #col_split_str-1 do
-                local line_table_id = col_split_str[i]  ---@as integer
-                floor = floor.lines[line_table_id]--[[@cast -nil]].subfloor  ---@as FloorData
-            end
-            local line_table_id = col_split_str[#col_split_str]  ---@as integer
-            local line = floor.lines[line_table_id]  ---@as LineData
+            local line_id = col_split_str[2]  ---@as integer
+            local beacon_power = nil
 
             -- use amounts for 1 building as matrix entries
-            local line_aggregate = matrix_metadata.aggregate_map[line.id]
+            local line_aggregate = matrix_metadata.aggregate_map[line_id]
 
             -- Beacons draw the same power however many machines the line ends up needing, so that
             -- part of it can't be expressed per building. It only depends on how the line is
             -- configured though, so it's known upfront and can be demanded of the factory directly.
-            if line.beacon_power and line.beacon_power > 0 then
-                structures.map.subtract(line_aggregate.ingredients, electric_power, line.beacon_power)
-                constant_demand = constant_demand + line.beacon_power
+            if beacon_power and beacon_power > 0 then
+                structures.map.subtract(line_aggregate.ingredients, electric_power, beacon_power)
+                constant_demand = constant_demand + beacon_power
             end
 
             matrix_engine.consolidate(line_aggregate)
