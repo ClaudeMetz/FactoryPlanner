@@ -203,7 +203,7 @@ function matrix_engine.get_linear_dependence_data(matrix_metadata, floor_data)
 
     for col, _ in pairs(linearly_dependent_cols) do  ---@cast col integer
         local col_name = columns.values[col]  ---@as string
-        local col_split_str = lib.split_string(col_name, "_")
+        local col_split_str = lib.split_string(col_name, SEPARATOR)
         if col_split_str[1] == "line" then
             local floor = floor_data
             for i=2, #col_split_str-1 do
@@ -282,7 +282,7 @@ function matrix_engine.get_matrix_data(matrix_metadata, floor_data)
     local function get_line_names(prefix, lines)
         local line_names = {}
         for i, line in ipairs(lines) do
-            local line_key = prefix.."_"..i
+            local line_key = prefix..SEPARATOR..i
             -- these are exclusive because only actual recipes are allowed to be inputs to the matrix solver
             if line.subfloor == nil then
                 line_names[line_key] = true
@@ -297,8 +297,8 @@ function matrix_engine.get_matrix_data(matrix_metadata, floor_data)
 
     local raw_free_variables = solver.util.set.union(matrix_metadata.raw_inputs, matrix_metadata.byproducts)  ---@as SolverSet
     local free_variables = {}  ---@type table<string, true>
-    for key, _ in pairs(raw_free_variables) do free_variables["item_" .. key] = true end
-    for key, _ in pairs(matrix_free_items) do free_variables["item_" .. key] = true end
+    for key, _ in pairs(raw_free_variables) do free_variables["item"..SEPARATOR..key] = true end
+    for key, _ in pairs(matrix_free_items) do free_variables["item"..SEPARATOR..key] = true end
     local col_set = solver.util.set.union(line_names, free_variables)
     local columns = matrix_engine.get_mapping_struct(col_set)
     local matrix, free_variable_scale_factors = matrix_engine.get_matrix(matrix_metadata, floor_data, rows, columns)
@@ -337,7 +337,7 @@ function matrix_engine.run_matrix_solver(factory_data, matrix_metadata)
     local function set_line_results(prefix, floor)
         local floor_aggregate = structures.aggregate.init(floor.id)
         for i, line in ipairs(floor.lines) do
-            local line_key = prefix.."_"..i
+            local line_key = prefix..SEPARATOR..i
             local line_aggregate = nil
             if line.subfloor == nil then  ---@cast line LineData
                 local col_num = columns.map[line_key]
@@ -347,7 +347,7 @@ function matrix_engine.run_matrix_solver(factory_data, matrix_metadata)
                 line_aggregate = matrix_metadata.aggregate_map[line.id]
                 line_aggregate = matrix_engine.get_line_result_aggregate(line_aggregate, machine_amount, matrix_metadata, free_variables)
             else
-                line_aggregate = set_line_results(prefix.."_"..i, line.subfloor)
+                line_aggregate = set_line_results(prefix..SEPARATOR..i, line.subfloor)
                 matrix_engine.consolidate(line_aggregate)
             end
 
@@ -546,7 +546,7 @@ function matrix_engine.get_matrix(matrix_metadata, floor_data, rows, columns)
     -- loop over columns since it's easier to look up items for lines/free vars than vice-versa
     for col_num=1, #columns.values do
         local col_str = columns.values[col_num]
-        local col_split_str = lib.split_string(col_str, "_")
+        local col_split_str = lib.split_string(col_str, SEPARATOR)
         local col_type = col_split_str[1]
         -- note this string "item" is an internal matrix-solver convention and is unrelated to item types
         if col_type == "item" then
@@ -774,7 +774,7 @@ function matrix_engine.get_line_result_aggregate(line_aggregate, machine_amount,
     aggregate.production_ratio = aggregate.production_ratio and aggregate.production_ratio * machine_amount
 
     for item_key, item_amount in pairs(aggregate.products) do
-        if matrix_metadata.byproducts[item_key] or free_variables["item_"..item_key] then
+        if matrix_metadata.byproducts[item_key] or free_variables["item"..SEPARATOR..item_key] then
            aggregate.byproducts[item_key] = item_amount * machine_amount
            aggregate.products[item_key] = nil
         else
