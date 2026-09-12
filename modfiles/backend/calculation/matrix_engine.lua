@@ -54,9 +54,9 @@ end
 
 
 ---@class MatrixMetadata
----@field recipe_map MatrixRecipeMap
----@field aggregate_map AggregateMap
----@field beacon_power_map BeaconPowerMap
+---@field recipe_map table<ObjectID, string>  -- recipe_id
+---@field aggregate_map table<ObjectID, SolverAggregateWithFuel>
+---@field beacon_power_map table<ObjectID, double>
 ---@field byproducts SolverSet
 ---@field unproduced_outputs SolverSet
 ---@field all_items SolverSet
@@ -75,10 +75,31 @@ function matrix_engine.get_matrix_solver_metadata(factory_data)
         desired_outputs[item_key] = true
     end
 
-    local lines_metadata = matrix_engine.get_lines_metadata(factory_data.top_floor.lines, factory_data.top_floor.id)
-    local line_inputs = lines_metadata.line_inputs
-    local line_outputs = lines_metadata.line_outputs
-    local recipes = lines_metadata.line_recipes
+    local line_inputs = {}
+    local line_outputs = {}
+    local recipe_map = {}
+    local aggregate_map = {}
+    local beacon_power_map = {}
+
+    ---@param lines (LineData | SubfloorLineData)[]
+    local function get_lines_metadata(lines, floor_id)
+
+        for _, line in pairs(lines) do
+            if line.subfloor ~= nil then
+                get_lines_metadata(line.subfloor.lines, line.subfloor.id)
+            else  ---@cast line LineData
+                local line_aggregate = matrix_engine.get_line_aggregate(line, floor_id, 1)
+                matrix_engine.consolidate(line_aggregate)
+                for item_key, _ in pairs(line_aggregate.ingredients) do line_inputs[item_key] = true end
+                for item_key, _ in  pairs(line_aggregate.products) do line_outputs[item_key] = true end
+                recipe_map[line.id] = line.recipe_proto.name
+                aggregate_map[line.id] = line_aggregate
+                beacon_power_map[line.id] = line.beacon_power
+            end
+        end
+    end
+
+    get_lines_metadata(factory_data.top_floor.lines, factory_data.top_floor.id)
 
     local all_items = solver.util.set.union(line_inputs, line_outputs)
     local raw_inputs = solver.util.set.difference(line_inputs, line_outputs)
@@ -98,11 +119,11 @@ function matrix_engine.get_matrix_solver_metadata(factory_data)
 
     local eliminated_items = solver.util.set.difference(intermediate_items, free_items)
     local num_rows = solver.util.set.count(raw_inputs, byproducts, eliminated_items, free_items)
-    local num_cols = solver.util.set.count(recipes, raw_inputs, byproducts, free_items)
+    local num_cols = solver.util.set.count(recipe_map, raw_inputs, byproducts, free_items)
     local result = {
-        recipe_map = recipes,
-        aggregate_map = lines_metadata.line_aggregate_map,
-        beacon_power_map = lines_metadata.line_beacon_power_map,
+        recipe_map = recipe_map,
+        aggregate_map = aggregate_map,
+        beacon_power_map = beacon_power_map,
         byproducts = byproducts,
         unproduced_outputs = unproduced_outputs,
         all_items = all_items,
@@ -469,53 +490,6 @@ function matrix_engine.consolidate(aggregate)
     end
     compare_maps("ingredients", "products")
     compare_maps("ingredients", "byproducts")
-end
-
----@alias MatrixRecipeMap table<ObjectID, string>  -- recipe_id
----@alias AggregateMap table<ObjectID, SolverAggregateWithFuel>
----@alias BeaconPowerMap table<ObjectID, double>
-
----@class MatrixLineMetadata
----@field line_recipes MatrixRecipeMap
----@field line_inputs SolverSet
----@field line_outputs SolverSet
----@field line_aggregate_map AggregateMap
----@field line_beacon_power_map BeaconPowerMap
-
----@param lines (LineData | SubfloorLineData)[]
----@return MatrixLineMetadata
-function matrix_engine.get_lines_metadata(lines, floor_id)
-    local line_recipes = {}
-    local line_inputs = {}
-    local line_outputs = {}
-    local line_aggregate_map = {}
-    local line_beacon_power_map = {}
-
-    for _, line in pairs(lines) do
-        if line.subfloor ~= nil then  ---@cast line SubfloorLineData
-            local floor_metadata = matrix_engine.get_lines_metadata(line.subfloor.lines, line.subfloor.id)
-            for k, v in pairs(floor_metadata.line_recipes) do line_recipes[k] = v end
-            line_inputs = solver.util.set.union(line_inputs, floor_metadata.line_inputs)
-            line_outputs = solver.util.set.union(line_outputs, floor_metadata.line_outputs)
-            for k, v in pairs(floor_metadata.line_aggregate_map) do line_aggregate_map[k] = v end
-            for k, v in pairs(floor_metadata.line_beacon_power_map) do line_beacon_power_map[k] = v end
-        else  ---@cast line LineData
-            local line_aggregate = matrix_engine.get_line_aggregate(line, floor_id, 1)
-            matrix_engine.consolidate(line_aggregate)
-            for item_key, _ in pairs(line_aggregate.ingredients) do line_inputs[item_key] = true end
-            for item_key, _ in  pairs(line_aggregate.products) do line_outputs[item_key] = true end
-            line_recipes[line.id] = line.recipe_proto.name
-            line_aggregate_map[line.id] = line_aggregate
-            line_beacon_power_map[line.id] = line.beacon_power
-        end
-    end
-    return {
-        line_recipes = line_recipes,
-        line_inputs = line_inputs,
-        line_outputs = line_outputs,
-        line_aggregate_map = line_aggregate_map,
-        line_beacon_power_map = line_beacon_power_map
-    }
 end
 
 ---@param matrix_metadata MatrixMetadata
