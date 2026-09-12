@@ -58,8 +58,11 @@ end
 ---@field ingredients SolverSet
 ---@field products SolverSet
 ---@field byproducts SolverSet
+---@field unproduced_outputs SolverSet
+---@field all_items SolverSet
 ---@field eliminated_items SolverSet
 ---@field free_items SolverSet
+---@field raw_inputs SolverSet
 ---@field num_rows integer
 ---@field num_cols integer
 
@@ -95,8 +98,11 @@ function matrix_engine.get_matrix_solver_metadata(factory_data)
         ingredients = raw_inputs,
         products = produced_outputs,
         byproducts = byproducts,
+        unproduced_outputs = unproduced_outputs,
+        all_items = all_items,
         eliminated_items = eliminated_items,
         free_items = free_items,
+        raw_inputs = raw_inputs,
         num_rows = num_rows,
         num_cols = num_cols
     }  ---@type MatrixMetadata
@@ -154,7 +160,7 @@ function matrix_engine.solve(factory_data)
 
         if matrix_metadata.num_rows == matrix_metadata.num_cols
                 and #linear_dependence_data.linearly_dependent_recipes == 0 then
-            matrix_engine.run_matrix_solver(factory_data, false)
+            matrix_engine.run_matrix_solver(factory_data, matrix_metadata, false)
             factory.linear_dependence_data = nil
         else
             solver.set_blank_factory(player, factory)  -- reset factory by blanking everything
@@ -181,7 +187,7 @@ function matrix_engine.get_linear_dependence_data(factory_data, matrix_metadata)
     local linearly_dependent_free_items = {}  ---@type SolverSet
     local allowed_free_items = {}  ---@type SolverSet
 
-    local linearly_dependent_cols = matrix_engine.run_matrix_solver(factory_data, true)
+    local linearly_dependent_cols = matrix_engine.run_matrix_solver(factory_data, matrix_metadata, true)
     ---@cast linearly_dependent_cols -nil
     if next(linearly_dependent_cols) ~= nil then
         local free_items = matrix_metadata.free_items
@@ -235,9 +241,7 @@ end
 function matrix_engine.get_matrix_data(factory_data)
     local matrix_metadata = matrix_engine.get_matrix_solver_metadata(factory_data)
     local matrix_free_items = matrix_metadata.free_items
-
-    local factory_metadata = matrix_engine.get_factory_metadata(factory_data)
-    local all_items = factory_metadata.all_items
+    local all_items = matrix_metadata.all_items
     local rows = matrix_engine.get_mapping_struct(all_items)
 
     -- storing the line keys as "line_(lines index 1)_(lines index 2)_..." for arbitrary depths of subfloors
@@ -257,7 +261,7 @@ function matrix_engine.get_matrix_data(factory_data)
     end
     local line_names = get_line_names("line", factory_data.top_floor.lines)
 
-    local raw_free_variables = solver.util.set.union(factory_metadata.raw_inputs, factory_metadata.byproducts)  ---@as SolverSet
+    local raw_free_variables = solver.util.set.union(matrix_metadata.raw_inputs, matrix_metadata.byproducts)  ---@as SolverSet
     local free_variables = {}  ---@type table<string, true>
     for key, _ in pairs(raw_free_variables) do free_variables["item_" .. key] = true end
     for key, _ in pairs(matrix_free_items) do free_variables["item_" .. key] = true end
@@ -276,11 +280,10 @@ function matrix_engine.get_matrix_data(factory_data)
 end
 
 ---@param factory_data FactoryData
+---@param matrix_metadata MatrixMetadata
 ---@param check_linear_dependence boolean
 ---@return table<string, true>?
-function matrix_engine.run_matrix_solver(factory_data, check_linear_dependence)
-    -- run through get_matrix_solver_metadata to check against recipe changes
-    local factory_metadata = matrix_engine.get_factory_metadata(factory_data)
+function matrix_engine.run_matrix_solver(factory_data, matrix_metadata, check_linear_dependence)
     local matrix_data = matrix_engine.get_matrix_data(factory_data)
     local matrix = matrix_data.matrix
     local columns = matrix_data.columns
@@ -331,7 +334,7 @@ function matrix_engine.run_matrix_solver(factory_data, check_linear_dependence)
                 local machine_amount = matrix[col_num]--[[@cast -nil]][#columns.values+1]  ---@as number
                 if machine_amount < 0 then machine_amount = 0 end
                 line_aggregate = matrix_engine.get_line_aggregate(line, floor.id,
-                    machine_amount, factory_metadata, free_variables)
+                    machine_amount, matrix_metadata, free_variables)
             else
                 line_aggregate = set_line_results(prefix.."_"..i, line.subfloor)
                 matrix_engine.consolidate(line_aggregate)
@@ -410,7 +413,7 @@ function matrix_engine.run_matrix_solver(factory_data, check_linear_dependence)
     -- set products for unproduced items
     for _, product in pairs(factory_data.top_floor.products) do
         local item_key = structures.pack_item(product)
-        if not factory_metadata.unproduced_outputs[item_key] then
+        if not matrix_metadata.unproduced_outputs[item_key] then
             structures.map.add(main_aggregate.products, product)
         end
     end
@@ -672,10 +675,10 @@ end
 ---@param line_data LineData
 ---@param floor_id ObjectID
 ---@param machine_amount number
----@param factory_metadata FactoryMetadata?
+---@param matrix_metadata MatrixMetadata?
 ---@param free_variables table<string, true>?
 ---@return SolverAggregateWithFuel
-function matrix_engine.get_line_aggregate(line_data, floor_id, machine_amount, factory_metadata, free_variables)
+function matrix_engine.get_line_aggregate(line_data, floor_id, machine_amount, matrix_metadata, free_variables)
     local line_aggregate = structures.aggregate.init(floor_id)  ---@type SolverAggregateWithFuel
     line_aggregate.machine_amount = machine_amount
     -- the index in the factory_data.top_floor.lines table can be different from the line_id!
@@ -693,7 +696,7 @@ function matrix_engine.get_line_aggregate(line_data, floor_id, machine_amount, f
     ---@param amount number?
     local function add_product(product, amount)
         local item_key = structures.pack_item(product)
-        if factory_metadata and factory_metadata.byproducts[item_key] or free_variables and free_variables["item_"..item_key] then
+        if matrix_metadata and matrix_metadata.byproducts[item_key] or free_variables and free_variables["item_"..item_key] then
            structures.map.add(line_aggregate.byproducts, product, amount)
         else
             structures.map.add(line_aggregate.products, product, amount)
