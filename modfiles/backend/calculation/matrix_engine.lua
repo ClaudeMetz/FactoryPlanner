@@ -71,13 +71,23 @@ end
 function matrix_engine.get_matrix_solver_metadata(factory_data)
     local eliminated_items = {}  ---@type SolverSet
     local free_items = {}  ---@type SolverSet
-    local factory_metadata = matrix_engine.get_factory_metadata(factory_data)
-    local recipes = factory_metadata.recipes
-    local all_items = factory_metadata.all_items
-    local raw_inputs = factory_metadata.raw_inputs
-    local byproducts = factory_metadata.byproducts
-    local unproduced_outputs = factory_metadata.unproduced_outputs
-    local produced_outputs = solver.util.set.difference(factory_metadata.desired_outputs, unproduced_outputs)
+    local desired_outputs = {}
+
+    for _, product in pairs(factory_data.top_floor.products) do
+        local item_key = structures.pack_item(product)
+        desired_outputs[item_key] = true
+    end
+
+    local lines_metadata = matrix_engine.get_lines_metadata(factory_data.top_floor.lines)
+    local line_inputs = lines_metadata.line_inputs
+    local line_outputs = lines_metadata.line_outputs
+    local recipes = lines_metadata.line_recipes
+
+    local unproduced_outputs = solver.util.set.difference(desired_outputs, line_outputs)
+    local all_items = solver.util.set.union(line_inputs, line_outputs)
+    local raw_inputs = solver.util.set.difference(line_inputs, line_outputs)
+    local byproducts = solver.util.set.difference(solver.util.set.difference(line_outputs, line_inputs), desired_outputs)
+    local produced_outputs = solver.util.set.difference(desired_outputs, unproduced_outputs)
     local free_variables = solver.util.set.union(raw_inputs, byproducts, unproduced_outputs)
     local intermediate_items = solver.util.set.difference(all_items, free_variables)
 
@@ -463,40 +473,6 @@ function matrix_engine.consolidate(aggregate)
     end
     compare_maps("ingredients", "products")
     compare_maps("ingredients", "byproducts")
-end
-
----@class FactoryMetadata
----@field recipes integer[]
----@field desired_outputs table<SolverItemKey, true>
----@field all_items table<SolverItemKey, true>
----@field raw_inputs table<SolverItemKey, true>
----@field byproducts table<SolverItemKey, true>
----@field unproduced_outputs table<SolverItemKey, true>
-
--- finds inputs and outputs for each line and desired outputs
----@param factory_data FactoryData
----@return FactoryMetadata
-function matrix_engine.get_factory_metadata(factory_data)
-    local desired_outputs = {}
-    for _, product in pairs(factory_data.top_floor.products) do
-        local item_key = structures.pack_item(product)
-        desired_outputs[item_key] = true
-    end
-    local lines_metadata = matrix_engine.get_lines_metadata(factory_data.top_floor.lines)
-    local line_inputs = lines_metadata.line_inputs
-    local line_outputs = lines_metadata.line_outputs
-    local unproduced_outputs = solver.util.set.difference(desired_outputs, line_outputs)
-    local all_items = solver.util.set.union(line_inputs, line_outputs)
-    local raw_inputs = solver.util.set.difference(line_inputs, line_outputs)
-    local byproducts = solver.util.set.difference(solver.util.set.difference(line_outputs, line_inputs), desired_outputs)
-    return {
-        recipes = lines_metadata.line_recipes,
-        desired_outputs = desired_outputs,
-        all_items = all_items,
-        raw_inputs = raw_inputs,
-        byproducts = byproducts,
-        unproduced_outputs = unproduced_outputs
-    }  ---@type FactoryMetadata
 end
 
 ---@class MatrixLineMetadata
