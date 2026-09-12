@@ -56,10 +56,8 @@ end
 
 ---@class MatrixMetadata
 ---@field recipes MatrixRecipeMap
----@field ingredients SolverSet
----@field products SolverSet
----@field byproducts SolverSet
 ---@field aggregate_map AggregateMap
+---@field byproducts SolverSet
 ---@field unproduced_outputs SolverSet
 ---@field all_items SolverSet
 ---@field eliminated_items SolverSet
@@ -87,7 +85,6 @@ function matrix_engine.get_matrix_solver_metadata(factory_data)
     local raw_outputs = solver.util.set.difference(line_outputs, line_inputs)
     local byproducts = solver.util.set.difference(raw_outputs, desired_outputs)
     local unproduced_outputs = solver.util.set.difference(desired_outputs, line_outputs)
-    local produced_outputs = solver.util.set.difference(desired_outputs, unproduced_outputs)
     local free_variables = solver.util.set.union(raw_inputs, byproducts, unproduced_outputs)
     local intermediate_items = solver.util.set.difference(all_items, free_variables)
 
@@ -104,8 +101,6 @@ function matrix_engine.get_matrix_solver_metadata(factory_data)
     local num_cols = solver.util.set.count(recipes, raw_inputs, byproducts, free_items)
     local result = {
         recipes = recipes,
-        ingredients = raw_inputs,
-        products = produced_outputs,
         byproducts = byproducts,
         aggregate_map = lines_metadata.line_aggregate_map,
         unproduced_outputs = unproduced_outputs,
