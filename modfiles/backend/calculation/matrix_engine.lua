@@ -349,8 +349,8 @@ function matrix_engine.run_matrix_solver(factory_data, matrix_metadata)
                  -- want the j-th entry in the last column (output of row-reduction)
                 local machine_amount = matrix[col_num]--[[@cast -nil]][#columns.values+1]  ---@as number
                 if machine_amount < 0 then machine_amount = 0 end
-                line_aggregate = matrix_engine.get_line_aggregate(line, floor.id,
-                    machine_amount, matrix_metadata, free_variables)
+                line_aggregate = matrix_metadata.aggregate_map[line.id]
+                line_aggregate = matrix_engine.get_line_result_aggregate(line_aggregate, machine_amount, matrix_metadata, free_variables)
             else
                 line_aggregate = set_line_results(prefix.."_"..i, line.subfloor)
                 matrix_engine.consolidate(line_aggregate)
@@ -368,7 +368,7 @@ function matrix_engine.run_matrix_solver(factory_data, matrix_metadata)
 
             -- remove fuel from Ingredient for display only
             if line_aggregate.fuel then
-                structures.map.subtract(line_aggregate.ingredients, line_aggregate.fuel, line_aggregate.fuel_amount)
+                structures.map.subtract(line_aggregate.ingredients, line_aggregate.fuel)
             end
 
             -- need to call consolidate before set_line_result to net any non-fuel catalysts for display
@@ -382,7 +382,7 @@ function matrix_engine.run_matrix_solver(factory_data, matrix_metadata)
                 products = line_aggregate.products,
                 byproducts = line_aggregate.byproducts,
                 ingredients = line_aggregate.ingredients,
-                fuel_amount = line_aggregate.fuel_amount
+                fuel_amount = line_aggregate.fuel and line_aggregate.fuel.amount
             }
         end
         return floor_aggregate
@@ -659,16 +659,13 @@ function matrix_engine.get_matrix(matrix_metadata, floor_data, rows, columns)
 end
 
 ---@class SolverAggregateWithFuel : SolverAggregate
----@field fuel SolverItem
----@field fuel_amount number
+---@field fuel SolverItem?
 
 ---@param line_data LineData
 ---@param floor_id ObjectID
 ---@param machine_amount number
----@param matrix_metadata MatrixMetadata?
----@param free_variables table<string, true>?
 ---@return SolverAggregateWithFuel
-function matrix_engine.get_line_aggregate(line_data, floor_id, machine_amount, matrix_metadata, free_variables)
+function matrix_engine.get_line_aggregate(line_data, floor_id, machine_amount)
     local line_aggregate = structures.aggregate.init(floor_id)  ---@type SolverAggregateWithFuel
     line_aggregate.machine_amount = machine_amount
     local total_effects = line_data.total_effects
@@ -681,20 +678,9 @@ function matrix_engine.get_line_aggregate(line_data, floor_id, machine_amount, m
     local total_crafts = machine_amount * (1 / time_per_craft)
     line_aggregate.production_ratio = total_crafts
 
-    ---@param product SolverItem | FormattedProduct
-    ---@param amount number?
-    local function add_product(product, amount)
-        local item_key = structures.pack_item(product)
-        if matrix_metadata and matrix_metadata.byproducts[item_key] or free_variables and free_variables["item_"..item_key] then
-           structures.map.add(line_aggregate.byproducts, product, amount)
-        else
-            structures.map.add(line_aggregate.products, product, amount)
-        end
-    end
-
     for _, product in pairs(line_data.products) do
         local prodded_amount = solver.util.determine_prodded_amount(product, total_effects)
-        add_product(product, prodded_amount * total_crafts)
+        structures.map.add(line_aggregate.products, product, prodded_amount * total_crafts)
     end
 
     for _, ingredient in pairs(line_data.ingredients) do
@@ -720,7 +706,7 @@ function matrix_engine.get_line_aggregate(line_data, floor_id, machine_amount, m
             structures.map.add(line_aggregate.ingredients, fuel)
 
             if fuel_proto.burnt_result then
-                add_product({
+                structures.map.add(line_aggregate.products, {
                     type = "item",
                     name = fuel_proto.burnt_result,
                     amount = fuel_amount
@@ -730,7 +716,7 @@ function matrix_engine.get_line_aggregate(line_data, floor_id, machine_amount, m
             if burner.produces_spent_fluid then
                 local spent_fluid = burner.spent_fluid or fuel_proto.spent_fluid
                 if spent_fluid then
-                    add_product({
+                    structures.map.add(line_aggregate.products, {
                         type="fluid",
                         name=lib.temperature.name_with(spent_fluid.name, spent_fluid.temperature),
                         amount=fuel_amount * spent_fluid.amount
@@ -769,7 +755,7 @@ function matrix_engine.get_line_aggregate(line_data, floor_id, machine_amount, m
         local emission_item = {type="entity", name=emission_name, amount=math.abs(emissions)}
 
         if emissions > 0 then
-            add_product(emission_item)
+            structures.map.add(line_aggregate.products, emission_item)
         elseif emissions < 0 then
             structures.map.add(line_aggregate.ingredients, emission_item)
         end
@@ -777,9 +763,38 @@ function matrix_engine.get_line_aggregate(line_data, floor_id, machine_amount, m
 
     -- needed for interface.set_line_result
     line_aggregate.fuel = fuel
-    line_aggregate.fuel_amount = fuel_amount
 
     return line_aggregate
+end
+
+---@param line_aggregate SolverAggregateWithFuel
+---@param machine_amount number
+---@param matrix_metadata MatrixMetadata
+---@param free_variables table<string, true>
+---@return SolverAggregateWithFuel
+function matrix_engine.get_line_result_aggregate(line_aggregate, machine_amount, matrix_metadata, free_variables)
+    local aggregate = lib.flib.deep_copy(line_aggregate)
+
+    -- Metadata aggregates assumed a machine amount of 1, so we just need to multiply by the solved machine amount to get the result
+    aggregate.machine_amount = machine_amount
+    aggregate.production_ratio = aggregate.production_ratio and aggregate.production_ratio * machine_amount
+
+    for item_key, item_amount in pairs(aggregate.products) do
+        if matrix_metadata.byproducts[item_key] or free_variables["item_"..item_key] then
+           aggregate.byproducts[item_key] = item_amount * machine_amount
+           aggregate.products[item_key] = nil
+        else
+           aggregate.products[item_key] = item_amount * machine_amount
+        end
+    end
+
+    for item_key, item_amount in pairs(aggregate.ingredients) do
+        aggregate.ingredients[item_key] = item_amount * machine_amount
+    end
+
+    if aggregate.fuel then aggregate.fuel.amount = aggregate.fuel.amount * machine_amount end
+
+    return aggregate
 end
 
 ---@class MappingStruct
