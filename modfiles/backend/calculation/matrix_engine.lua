@@ -143,7 +143,7 @@ function matrix_engine.solve(factory_data)
     local matrix_metadata = matrix_engine.get_matrix_solver_metadata(factory_data)
 
     if matrix_metadata.num_rows ~= 0 then  -- don't run calculations if the factory has no lines
-        local linear_dependence_data = matrix_engine.get_linear_dependence_data(factory_data, matrix_metadata)
+        local linear_dependence_data = matrix_engine.get_linear_dependence_data(matrix_metadata, factory_data.top_floor)
 
         -- In the case of linearly dependent free items, we remove it automatically if there's only one option.
         -- Otherwise we present the user with a choice to remove problematic free items in the production box.
@@ -162,7 +162,7 @@ function matrix_engine.solve(factory_data)
             -- Redo all these since we've changed the factory
             factory_data = solver.generate_factory_data(player, factory)
             matrix_metadata = matrix_engine.get_matrix_solver_metadata(factory_data)
-            linear_dependence_data = matrix_engine.get_linear_dependence_data(factory_data, matrix_metadata)
+            linear_dependence_data = matrix_engine.get_linear_dependence_data(matrix_metadata, factory_data.top_floor)
         end
 
         if matrix_metadata.num_rows == matrix_metadata.num_cols
@@ -184,10 +184,10 @@ end
 ---@field allowed_free_items FPItemPrototype[]
 ---@field num_needed_free_items integer
 
----@param factory_data FactoryData
+---@param floor_data FloorData
 ---@param matrix_metadata MatrixMetadata
 ---@return LinearDependanceData
-function matrix_engine.get_linear_dependence_data(factory_data, matrix_metadata)
+function matrix_engine.get_linear_dependence_data(matrix_metadata, floor_data)
     local num_rows = matrix_metadata.num_rows
     local num_cols = matrix_metadata.num_cols
 
@@ -195,7 +195,7 @@ function matrix_engine.get_linear_dependence_data(factory_data, matrix_metadata)
     local linearly_dependent_free_items = {}  ---@type SolverSet
     local allowed_free_items = {}  ---@type SolverSet
 
-    local matrix_data = matrix_engine.get_matrix_data(matrix_metadata, factory_data.top_floor)
+    local matrix_data = matrix_engine.get_matrix_data(matrix_metadata, floor_data)
     local matrix = matrix_data.matrix
     local columns = matrix_data.columns
     matrix_engine.to_reduced_row_echelon_form(matrix)
@@ -207,7 +207,7 @@ function matrix_engine.get_linear_dependence_data(factory_data, matrix_metadata)
         local col_name = columns.values[col]  ---@as string
         local col_split_str = lib.split_string(col_name, "_")
         if col_split_str[1] == "line" then
-            local floor = factory_data.top_floor
+            local floor = floor_data
             for i=2, #col_split_str-1 do
                 local line_table_id = col_split_str[i]  ---@as integer
                 floor = floor.lines[line_table_id]--[[@cast -nil]].subfloor  ---@as FloorData
@@ -237,7 +237,7 @@ function matrix_engine.get_linear_dependence_data(factory_data, matrix_metadata)
     end
     -- check which eliminated items could be made free while still retaining linear independence
     if next(linearly_dependent_variables) == nil and num_cols < num_rows then
-        local ld_matrix_data = matrix_engine.get_matrix_data(matrix_metadata, factory_data.top_floor)
+        local ld_matrix_data = matrix_engine.get_matrix_data(matrix_metadata, floor_data)
         local items = ld_matrix_data.rows  -- when transposed becomes columns
 
         local t_matrix = matrix_engine.transpose(ld_matrix_data.matrix)
@@ -548,16 +548,17 @@ function matrix_engine.get_matrix(floor_data, rows, columns)
             local row_num = rows.map[item_key]
             matrix[row_num]--[[@cast -nil]][col_num] = 1
         else -- "line"
+            local floor = floor_data
             for i=2, #col_split_str-1 do
                 local line_table_id = col_split_str[i]  ---@as integer
-                floor_data = floor_data.lines[line_table_id]--[[@cast -nil]].subfloor  ---@as FloorData
+                floor = floor.lines[line_table_id]--[[@cast -nil]].subfloor  ---@as FloorData
             end
             local line_table_id = col_split_str[#col_split_str]  ---@as integer
-            local line = floor_data.lines[line_table_id]  ---@as LineData
+            local line = floor.lines[line_table_id]  ---@as LineData
 
             -- use amounts for 1 building as matrix entries
             local line_aggregate = matrix_engine.get_line_aggregate(line,
-                floor_data.id, 1)
+                floor.id, 1)
 
             -- Beacons draw the same power however many machines the line ends up needing, so that
             -- part of it can't be expressed per building. It only depends on how the line is
@@ -659,7 +660,6 @@ end
 function matrix_engine.get_line_aggregate(line_data, floor_id, machine_amount, matrix_metadata, free_variables)
     local line_aggregate = structures.aggregate.init(floor_id)  ---@type SolverAggregateWithFuel
     line_aggregate.machine_amount = machine_amount
-    -- the index in the factory_data.top_floor.lines table can be different from the line_id!
     local total_effects = line_data.total_effects
     local machine_proto = line_data.machine_proto
     local speed_multiplier = 1 + (total_effects.speed / MAGIC_NUMBERS.effect_precision)
