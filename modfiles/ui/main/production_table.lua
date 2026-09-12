@@ -609,7 +609,12 @@ function builders.ingredients(line, parent_flow, metadata)
             ingredient.amount, machine_amount)
         if amount == -1 then goto skip_ingredient end  -- an amount of -1 means it was below the margin of error
 
-        local style = "fflib_slot_button_green_small"
+        local style  ---@type string
+        if proto.type ~= "entity" then
+            style = "fflib_slot_button_green_small"
+        else
+            style = "fflib_slot_button_disabled_small"
+        end
         local satisfaction_line = ""  ---@type LocalisedString
 
         if proto.type ~= "entity" and metadata.ingredient_satisfaction and ingredient.amount > 0 then
