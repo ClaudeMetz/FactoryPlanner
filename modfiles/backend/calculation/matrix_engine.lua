@@ -29,7 +29,7 @@ local structures = require("backend.calculation.structures")
 local util = require("__core__.lualib.util")
 
 local matrix_engine = {}
-
+local SEPARATOR = ";"
 
 ---@param recipe_set table<integer, true>
 function matrix_engine.get_recipe_protos(recipe_set)
@@ -55,7 +55,7 @@ end
 
 
 ---@class MatrixMetadata
----@field recipes integer[]
+---@field recipes MatrixRecipeMap
 ---@field ingredients SolverSet
 ---@field products SolverSet
 ---@field byproducts SolverSet
@@ -217,8 +217,8 @@ function matrix_engine.get_linear_dependence_data(matrix_metadata, floor_data)
             end
             local line_table_id = col_split_str[#col_split_str]  ---@as integer
             local line = floor.lines[line_table_id]  ---@as LineData
-            local recipe_id = line.recipe_proto.id
-            linearly_dependent_variables["recipe_"..recipe_id] = true
+            local recipe_id = matrix_metadata.recipes[line.id]
+            linearly_dependent_variables["recipe"..SEPARATOR..recipe_id] = true
         else -- item
             linearly_dependent_variables[col_name] = true
         end
@@ -228,7 +228,7 @@ function matrix_engine.get_linear_dependence_data(matrix_metadata, floor_data)
         local free_items = matrix_metadata.free_items
 
         for col_name, _ in pairs(linearly_dependent_variables) do
-            local col_split_str = lib.split_string(col_name, "_")
+            local col_split_str = lib.split_string(col_name, SEPARATOR)
             if col_split_str[1] == "recipe" then
                 local recipe_key = col_split_str[2]  ---@as integer
                 linearly_dependent_recipes[recipe_key] = true
@@ -481,10 +481,11 @@ function matrix_engine.consolidate(aggregate)
     compare_maps("ingredients", "byproducts")
 end
 
+---@alias MatrixRecipeMap table<ObjectID, string>  -- recipe_id
 ---@alias AggregateMap table<ObjectID, SolverAggregateWithFuel>
 
 ---@class MatrixLineMetadata
----@field line_recipes integer[]  -- recipe_ids
+---@field line_recipes MatrixRecipeMap
 ---@field line_inputs SolverSet
 ---@field line_outputs SolverSet
 ---@field line_aggregate_map AggregateMap
@@ -500,9 +501,7 @@ function matrix_engine.get_lines_metadata(lines, floor_id)
     for _, line in pairs(lines) do
         if line.subfloor ~= nil then  ---@cast line SubfloorLineData
             local floor_metadata = matrix_engine.get_lines_metadata(line.subfloor.lines, line.subfloor.id)
-            for _, subfloor_line_recipe in pairs(floor_metadata.line_recipes) do
-                table.insert(line_recipes, subfloor_line_recipe)
-            end
+            for k, v in pairs(floor_metadata.line_recipes) do line_recipes[k] = v end
             line_inputs = solver.util.set.union(line_inputs, floor_metadata.line_inputs)
             line_outputs = solver.util.set.union(line_outputs, floor_metadata.line_outputs)
             for k, v in pairs(floor_metadata.line_aggregate_map) do line_aggregate_map[k] = v end
@@ -511,7 +510,7 @@ function matrix_engine.get_lines_metadata(lines, floor_id)
             matrix_engine.consolidate(line_aggregate)
             for item_key, _ in pairs(line_aggregate.ingredients) do line_inputs[item_key] = true end
             for item_key, _ in  pairs(line_aggregate.products) do line_outputs[item_key] = true end
-            table.insert(line_recipes, line.recipe_proto.id)
+            line_recipes[line.id] = line.recipe_proto.name
             line_aggregate_map[line.id] = line_aggregate
         end
     end
