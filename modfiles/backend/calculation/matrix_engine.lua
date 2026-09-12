@@ -83,10 +83,11 @@ function matrix_engine.get_matrix_solver_metadata(factory_data)
     local line_outputs = lines_metadata.line_outputs
     local recipes = lines_metadata.line_recipes
 
-    local unproduced_outputs = solver.util.set.difference(desired_outputs, line_outputs)
     local all_items = solver.util.set.union(line_inputs, line_outputs)
     local raw_inputs = solver.util.set.difference(line_inputs, line_outputs)
-    local byproducts = solver.util.set.difference(solver.util.set.difference(line_outputs, line_inputs), desired_outputs)
+    local raw_outputs = solver.util.set.difference(line_outputs, line_inputs)
+    local byproducts = solver.util.set.difference(raw_outputs, desired_outputs)
+    local unproduced_outputs = solver.util.set.difference(desired_outputs, line_outputs)
     local produced_outputs = solver.util.set.difference(desired_outputs, unproduced_outputs)
     local free_variables = solver.util.set.union(raw_inputs, byproducts, unproduced_outputs)
     local intermediate_items = solver.util.set.difference(all_items, free_variables)
@@ -98,7 +99,7 @@ function matrix_engine.get_matrix_solver_metadata(factory_data)
         free_items[item_key] = true
     end
     -- make sure that any items that no longer exist are removed
-    free_items = solver.util.set.intersection(free_items, intermediate_items)  ---@type table<SolverItemKey, true>
+    free_items = solver.util.set.intersection(free_items, intermediate_items)
     eliminated_items = solver.util.set.difference(intermediate_items, free_items)
 
     local num_rows = solver.util.set.count(raw_inputs, byproducts, eliminated_items, free_items)
