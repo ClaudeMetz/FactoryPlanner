@@ -172,13 +172,13 @@ function matrix_engine.solve(factory_data)
         if matrix_metadata.num_rows == matrix_metadata.num_cols
                 and #linear_dependence_data.linearly_dependent_recipes == 0 then
             matrix_engine.run_matrix_solver(factory_data, matrix_metadata)
-            factory.linear_dependence_data = nil
         else
             solver.set_blank_factory(player, factory)  -- reset factory by blanking everything
-            factory.linear_dependence_data = linear_dependence_data
         end
+        factory.linear_dependence_data = linear_dependence_data
     else  -- reset top level items
         solver.set_blank_factory(player, factory)
+        factory.linear_dependence_data = nil
     end
 end
 
@@ -186,6 +186,7 @@ end
 ---@field linearly_dependent_recipes FPRecipePrototype[]
 ---@field linearly_dependent_free_items FPItemPrototype[]
 ---@field allowed_free_items FPItemPrototype[]
+---@field num_needed_free_items integer
 
 ---@param factory_data FactoryData
 ---@param matrix_metadata MatrixMetadata
@@ -255,10 +256,14 @@ function matrix_engine.get_linear_dependence_data(factory_data, matrix_metadata)
         end
     end
 
+    local num_chosen_free_items = 0
+    for _, _ in pairs(matrix_metadata.free_items) do num_chosen_free_items = num_chosen_free_items + 1 end
+
     local result = {
         linearly_dependent_recipes = matrix_engine.get_recipe_protos(linearly_dependent_recipes),
         linearly_dependent_free_items = matrix_engine.get_item_protos(linearly_dependent_free_items),
-        allowed_free_items = matrix_engine.get_item_protos(allowed_free_items)
+        allowed_free_items = matrix_engine.get_item_protos(allowed_free_items),
+        num_needed_free_items = num_rows - num_cols + num_chosen_free_items
     }  ---@type LinearDependanceData
     return result
 end

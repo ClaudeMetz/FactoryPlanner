@@ -21,11 +21,8 @@ local function refresh_solver_frame(player)
     local solver_flow = main_elements.solver_flow  ---@as LuaGuiElement
     solver_flow.clear()
 
-    local factory_data = solver.generate_factory_data(player, factory)
-    local matrix_metadata = matrix_engine.get_matrix_solver_metadata(factory_data)
-    if matrix_metadata.num_rows == 0 then return end  -- skip if there are no active lines
-    local free_items = matrix_engine.get_item_protos(matrix_metadata.free_items)
-    local num_needed_free_items = matrix_metadata.num_rows - matrix_metadata.num_cols + #free_items
+    local free_items = factory.matrix_free_items  ---@as FPItemPrototype[]
+    local num_needed_free_items = factory.linear_dependence_data and factory.linear_dependence_data.num_needed_free_items or 0
 
     ---@param flow LuaGuiElement
     ---@param status "unrestricted" | "constrained"
@@ -100,7 +97,7 @@ local function refresh_solver_frame(player)
 
         local flow_unrestricted = solver_flow.add{type="flow", direction="horizontal"}
         build_unrestricted_item_button_flow(flow_unrestricted, "unrestricted", "green", free_items)
-        item_count = item_count + #matrix_metadata.free_items
+        item_count = item_count + #free_items
 
         if needs_choice then  ---@cast factory.linear_dependence_data -nil
             local flow_constrained = solver_flow.add{type="flow", direction="horizontal"}
