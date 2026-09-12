@@ -17,7 +17,7 @@ local TLProduct = require("backend.data.TLProduct")
 ---@field productivity_boni table<string, IntegerEffectValue>
 ---@field first TLProduct?
 ---@field top_floor Floor
----@field linearly_dependant boolean?
+---@field linear_dependence_data LinearDependanceData?
 ---@field tick_of_deletion uint?
 ---@field tick_of_solver_update uint?
 ---@field last_valid_modset ModToVersion?
@@ -44,7 +44,7 @@ local function init(name, solver_name)
         first = nil,
         top_floor = Floor.init(1),
 
-        linearly_dependant = false,
+        linear_dependence_data = nil,
         tick_of_deletion = nil,
         tick_of_solver_update = nil,
         last_valid_modset = nil

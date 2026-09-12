@@ -155,10 +155,10 @@ function matrix_engine.solve(factory_data)
         if matrix_metadata.num_rows == matrix_metadata.num_cols
                 and #linear_dependence_data.linearly_dependent_recipes == 0 then
             matrix_engine.run_matrix_solver(factory_data, false)
-            factory.linearly_dependant = nil
+            factory.linear_dependence_data = nil
         else
             solver.set_blank_factory(player, factory)  -- reset factory by blanking everything
-            factory.linearly_dependant = true
+            factory.linear_dependence_data = linear_dependence_data
         end
     else  -- reset top level items
         solver.set_blank_factory(player, factory)
