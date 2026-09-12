@@ -171,7 +171,7 @@ function matrix_engine.solve(factory_data)
 
         if matrix_metadata.num_rows == matrix_metadata.num_cols
                 and #linear_dependence_data.linearly_dependent_recipes == 0 then
-            matrix_engine.run_matrix_solver(factory_data, matrix_metadata, false)
+            matrix_engine.run_matrix_solver(factory_data, matrix_metadata)
             factory.linear_dependence_data = nil
         else
             solver.set_blank_factory(player, factory)  -- reset factory by blanking everything
@@ -198,12 +198,36 @@ function matrix_engine.get_linear_dependence_data(factory_data, matrix_metadata)
     local linearly_dependent_free_items = {}  ---@type SolverSet
     local allowed_free_items = {}  ---@type SolverSet
 
-    local linearly_dependent_cols = matrix_engine.run_matrix_solver(factory_data, matrix_metadata, true)
-    ---@cast linearly_dependent_cols -nil
-    if next(linearly_dependent_cols) ~= nil then
+    local matrix_data = matrix_engine.get_matrix_data(matrix_metadata, factory_data.top_floor)
+    local matrix = matrix_data.matrix
+    local columns = matrix_data.columns
+    matrix_engine.to_reduced_row_echelon_form(matrix)
+
+    local linearly_dependent_cols = matrix_engine.find_linearly_dependent_cols(matrix, true)
+    local linearly_dependent_variables = {}  ---@type table<string, true>
+
+    for col, _ in pairs(linearly_dependent_cols) do  ---@cast col integer
+        local col_name = columns.values[col]  ---@as string
+        local col_split_str = lib.split_string(col_name, "_")
+        if col_split_str[1] == "line" then
+            local floor = factory_data.top_floor
+            for i=2, #col_split_str-1 do
+                local line_table_id = col_split_str[i]  ---@as integer
+                floor = floor.lines[line_table_id]--[[@cast -nil]].subfloor  ---@as FloorData
+            end
+            local line_table_id = col_split_str[#col_split_str]  ---@as integer
+            local line = floor.lines[line_table_id]  ---@as LineData
+            local recipe_id = line.recipe_proto.id
+            linearly_dependent_variables["recipe_"..recipe_id] = true
+        else -- item
+            linearly_dependent_variables[col_name] = true
+        end
+    end
+
+    if next(linearly_dependent_variables) ~= nil then
         local free_items = matrix_metadata.free_items
 
-        for col_name, _ in pairs(linearly_dependent_cols) do
+        for col_name, _ in pairs(linearly_dependent_variables) do
             local col_split_str = lib.split_string(col_name, "_")
             if col_split_str[1] == "recipe" then
                 local recipe_key = col_split_str[2]  ---@as integer
@@ -215,11 +239,11 @@ function matrix_engine.get_linear_dependence_data(factory_data, matrix_metadata)
         end
     end
     -- check which eliminated items could be made free while still retaining linear independence
-    if next(linearly_dependent_cols) == nil and num_cols < num_rows then
-        local matrix_data = matrix_engine.get_matrix_data(matrix_metadata, factory_data.top_floor)
-        local items = matrix_data.rows  -- when transposed becomes columns
+    if next(linearly_dependent_variables) == nil and num_cols < num_rows then
+        local ld_matrix_data = matrix_engine.get_matrix_data(matrix_metadata, factory_data.top_floor)
+        local items = ld_matrix_data.rows  -- when transposed becomes columns
 
-        local t_matrix = matrix_engine.transpose(matrix_data.matrix)
+        local t_matrix = matrix_engine.transpose(ld_matrix_data.matrix)
         table.remove(t_matrix)
         matrix_engine.to_reduced_row_echelon_form(t_matrix)
         local t_linearly_dependent = matrix_engine.find_linearly_dependent_cols(t_matrix, false)
@@ -292,9 +316,8 @@ end
 
 ---@param factory_data FactoryData
 ---@param matrix_metadata MatrixMetadata
----@param check_linear_dependence boolean
 ---@return table<string, true>?
-function matrix_engine.run_matrix_solver(factory_data, matrix_metadata, check_linear_dependence)
+function matrix_engine.run_matrix_solver(factory_data, matrix_metadata)
     local matrix_data = matrix_engine.get_matrix_data(matrix_metadata, factory_data.top_floor)
     local matrix = matrix_data.matrix
     local columns = matrix_data.columns
@@ -303,28 +326,6 @@ function matrix_engine.run_matrix_solver(factory_data, matrix_metadata, check_li
     local free_variable_scale_factors = matrix_data.free_variable_scale_factors
 
     matrix_engine.to_reduced_row_echelon_form(matrix)
-    if check_linear_dependence then
-        local linearly_dependent_cols = matrix_engine.find_linearly_dependent_cols(matrix, true)
-        local linearly_dependent_variables = {}  ---@type table<string, true>
-        for col, _ in pairs(linearly_dependent_cols) do  ---@cast col integer
-            local col_name = columns.values[col]  ---@as string
-            local col_split_str = lib.split_string(col_name, "_")
-            if col_split_str[1] == "line" then
-                local floor = factory_data.top_floor
-                for i=2, #col_split_str-1 do
-                    local line_table_id = col_split_str[i]  ---@as integer
-                    floor = floor.lines[line_table_id]--[[@cast -nil]].subfloor  ---@as FloorData
-                end
-                local line_table_id = col_split_str[#col_split_str]  ---@as integer
-                local line = floor.lines[line_table_id]  ---@as LineData
-                local recipe_id = line.recipe_proto.id
-                linearly_dependent_variables["recipe_"..recipe_id] = true
-            else -- item
-                linearly_dependent_variables[col_name] = true
-            end
-        end
-        return linearly_dependent_variables
-    end
 
     -- rescale ouput column based on free variable scale factors
     for idx, scale_factor in pairs(free_variable_scale_factors) do
