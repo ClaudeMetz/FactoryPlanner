@@ -26,7 +26,6 @@ If a recipe has loops, typically the user needs to make voids or free variables.
 --]]
 
 local structures = require("backend.calculation.structures")
-local util = require("__core__.lualib.util")
 
 local matrix_engine = {}
 local SEPARATOR = ";"
