@@ -782,23 +782,6 @@ function matrix_engine.get_line_aggregate(line_data, floor_id, machine_amount, m
     return line_aggregate
 end
 
-function matrix_engine.print_matrix(m)
-    local s = ""
-    s = s.."{\n"
-    for _, row in ipairs(m) do
-        s = s.."  {"
-        for j,col in ipairs(row) do
-            s = s..(col)
-            if j<#row then
-                s = s.." "
-            end
-        end
-        s = s.."}\n"
-    end
-    s = s.."}"
-    llog(s)
-end
-
 ---@class MappingStruct
 ---@field values string[]
 ---@field map table<string, integer>
