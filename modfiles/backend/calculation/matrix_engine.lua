@@ -26,6 +26,7 @@ If a recipe has loops, typically the user needs to make voids or free variables.
 --]]
 
 local structures = require("backend.calculation.structures")
+local util = require("__core__.lualib.util")
 
 local matrix_engine = {}
 
@@ -58,6 +59,7 @@ end
 ---@field ingredients SolverSet
 ---@field products SolverSet
 ---@field byproducts SolverSet
+---@field aggregate_map AggregateMap
 ---@field unproduced_outputs SolverSet
 ---@field all_items SolverSet
 ---@field eliminated_items SolverSet
@@ -75,7 +77,7 @@ function matrix_engine.get_matrix_solver_metadata(factory_data)
         desired_outputs[item_key] = true
     end
 
-    local lines_metadata = matrix_engine.get_lines_metadata(factory_data.top_floor.lines)
+    local lines_metadata = matrix_engine.get_lines_metadata(factory_data.top_floor.lines, factory_data.top_floor.id)
     local line_inputs = lines_metadata.line_inputs
     local line_outputs = lines_metadata.line_outputs
     local recipes = lines_metadata.line_recipes
@@ -105,6 +107,7 @@ function matrix_engine.get_matrix_solver_metadata(factory_data)
         ingredients = raw_inputs,
         products = produced_outputs,
         byproducts = byproducts,
+        aggregate_map = lines_metadata.line_aggregate_map,
         unproduced_outputs = unproduced_outputs,
         all_items = all_items,
         eliminated_items = eliminated_items,
@@ -303,7 +306,7 @@ function matrix_engine.get_matrix_data(matrix_metadata, floor_data)
     for key, _ in pairs(matrix_free_items) do free_variables["item_" .. key] = true end
     local col_set = solver.util.set.union(line_names, free_variables)
     local columns = matrix_engine.get_mapping_struct(col_set)
-    local matrix, free_variable_scale_factors = matrix_engine.get_matrix(floor_data, rows, columns)
+    local matrix, free_variable_scale_factors = matrix_engine.get_matrix(matrix_metadata, floor_data, rows, columns)
 
     return {
         matrix = matrix,
@@ -478,46 +481,55 @@ function matrix_engine.consolidate(aggregate)
     compare_maps("ingredients", "byproducts")
 end
 
+---@alias AggregateMap table<ObjectID, SolverAggregateWithFuel>
+
 ---@class MatrixLineMetadata
----@field line_recipes integer[] recipe_ids
----@field line_inputs table<SolverItemKey, true>
----@field line_outputs table<SolverItemKey, true>
+---@field line_recipes integer[]  -- recipe_ids
+---@field line_inputs SolverSet
+---@field line_outputs SolverSet
+---@field line_aggregate_map AggregateMap
 
 ---@param lines (LineData | SubfloorLineData)[]
 ---@return MatrixLineMetadata
-function matrix_engine.get_lines_metadata(lines)
+function matrix_engine.get_lines_metadata(lines, floor_id)
     local line_recipes = {}
     local line_inputs = {}
     local line_outputs = {}
+    local line_aggregate_map = {}
+
     for _, line in pairs(lines) do
         if line.subfloor ~= nil then  ---@cast line SubfloorLineData
-            local floor_metadata = matrix_engine.get_lines_metadata(line.subfloor.lines)
+            local floor_metadata = matrix_engine.get_lines_metadata(line.subfloor.lines, line.subfloor.id)
             for _, subfloor_line_recipe in pairs(floor_metadata.line_recipes) do
                 table.insert(line_recipes, subfloor_line_recipe)
             end
             line_inputs = solver.util.set.union(line_inputs, floor_metadata.line_inputs)
             line_outputs = solver.util.set.union(line_outputs, floor_metadata.line_outputs)
+            for k, v in pairs(floor_metadata.line_aggregate_map) do line_aggregate_map[k] = v end
         else  ---@cast line LineData
-            local line_aggregate = matrix_engine.get_line_aggregate(line, 1, 1)
+            local line_aggregate = matrix_engine.get_line_aggregate(line, floor_id, 1)
             matrix_engine.consolidate(line_aggregate)
             for item_key, _ in pairs(line_aggregate.ingredients) do line_inputs[item_key] = true end
             for item_key, _ in  pairs(line_aggregate.products) do line_outputs[item_key] = true end
             table.insert(line_recipes, line.recipe_proto.id)
+            line_aggregate_map[line.id] = line_aggregate
         end
     end
     return {
         line_recipes = line_recipes,
         line_inputs = line_inputs,
-        line_outputs = line_outputs
+        line_outputs = line_outputs,
+        line_aggregate_map = line_aggregate_map
     }
 end
 
+---@param matrix_metadata MatrixMetadata
 ---@param floor_data FloorData
 ---@param rows MappingStruct
 ---@param columns MappingStruct
 ---@return number[][]
 ---@return number[]
-function matrix_engine.get_matrix(floor_data, rows, columns)
+function matrix_engine.get_matrix(matrix_metadata, floor_data, rows, columns)
     -- Returns the matrix to be solved.
     -- Format is a list of lists, where outer lists are rows and inner lists are columns.
     -- Rows are items and columns are recipes (or pseudo-recipes in the case of free items).
@@ -557,8 +569,7 @@ function matrix_engine.get_matrix(floor_data, rows, columns)
             local line = floor.lines[line_table_id]  ---@as LineData
 
             -- use amounts for 1 building as matrix entries
-            local line_aggregate = matrix_engine.get_line_aggregate(line,
-                floor.id, 1)
+            local line_aggregate = matrix_metadata.aggregate_map[line.id]
 
             -- Beacons draw the same power however many machines the line ends up needing, so that
             -- part of it can't be expressed per building. It only depends on how the line is
