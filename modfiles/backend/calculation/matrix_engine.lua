@@ -56,6 +56,7 @@ end
 ---@class MatrixMetadata
 ---@field recipe_map MatrixRecipeMap
 ---@field aggregate_map AggregateMap
+---@field beacon_power_map BeaconPowerMap
 ---@field byproducts SolverSet
 ---@field unproduced_outputs SolverSet
 ---@field all_items SolverSet
@@ -101,6 +102,7 @@ function matrix_engine.get_matrix_solver_metadata(factory_data)
     local result = {
         recipe_map = recipes,
         aggregate_map = lines_metadata.line_aggregate_map,
+        beacon_power_map = lines_metadata.line_beacon_power_map,
         byproducts = byproducts,
         unproduced_outputs = unproduced_outputs,
         all_items = all_items,
@@ -338,7 +340,7 @@ function matrix_engine.run_matrix_solver(factory_data, matrix_metadata)
                 local machine_amount = matrix[col_num]--[[@cast -nil]][#columns.values+1]  ---@as number
                 if machine_amount < 0 then machine_amount = 0 end
                 line_aggregate = matrix_metadata.aggregate_map[line.id]
-                line_aggregate = matrix_engine.get_line_result_aggregate(line_aggregate, machine_amount, matrix_metadata, free_variables)
+                line_aggregate = matrix_engine.get_line_result_aggregate(line_aggregate, line.id, machine_amount, matrix_metadata, free_variables)
             else
                 line_aggregate = set_line_results(line.subfloor)
                 matrix_engine.consolidate(line_aggregate)
@@ -471,12 +473,14 @@ end
 
 ---@alias MatrixRecipeMap table<ObjectID, string>  -- recipe_id
 ---@alias AggregateMap table<ObjectID, SolverAggregateWithFuel>
+---@alias BeaconPowerMap table<ObjectID, double>
 
 ---@class MatrixLineMetadata
 ---@field line_recipes MatrixRecipeMap
 ---@field line_inputs SolverSet
 ---@field line_outputs SolverSet
 ---@field line_aggregate_map AggregateMap
+---@field line_beacon_power_map BeaconPowerMap
 
 ---@param lines (LineData | SubfloorLineData)[]
 ---@return MatrixLineMetadata
@@ -485,6 +489,7 @@ function matrix_engine.get_lines_metadata(lines, floor_id)
     local line_inputs = {}
     local line_outputs = {}
     local line_aggregate_map = {}
+    local line_beacon_power_map = {}
 
     for _, line in pairs(lines) do
         if line.subfloor ~= nil then  ---@cast line SubfloorLineData
@@ -493,6 +498,7 @@ function matrix_engine.get_lines_metadata(lines, floor_id)
             line_inputs = solver.util.set.union(line_inputs, floor_metadata.line_inputs)
             line_outputs = solver.util.set.union(line_outputs, floor_metadata.line_outputs)
             for k, v in pairs(floor_metadata.line_aggregate_map) do line_aggregate_map[k] = v end
+            for k, v in pairs(floor_metadata.line_beacon_power_map) do line_beacon_power_map[k] = v end
         else  ---@cast line LineData
             local line_aggregate = matrix_engine.get_line_aggregate(line, floor_id, 1)
             matrix_engine.consolidate(line_aggregate)
@@ -500,13 +506,15 @@ function matrix_engine.get_lines_metadata(lines, floor_id)
             for item_key, _ in  pairs(line_aggregate.products) do line_outputs[item_key] = true end
             line_recipes[line.id] = line.recipe_proto.name
             line_aggregate_map[line.id] = line_aggregate
+            line_beacon_power_map[line.id] = line.beacon_power
         end
     end
     return {
         line_recipes = line_recipes,
         line_inputs = line_inputs,
         line_outputs = line_outputs,
-        line_aggregate_map = line_aggregate_map
+        line_aggregate_map = line_aggregate_map,
+        line_beacon_power_map = line_beacon_power_map
     }
 end
 
@@ -548,7 +556,7 @@ function matrix_engine.get_matrix(matrix_metadata, floor_data, rows, columns)
             matrix[row_num]--[[@cast -nil]][col_num] = 1
         else -- "line"
             local line_id = col_split_str[2]  ---@as integer
-            local beacon_power = nil
+            local beacon_power = matrix_metadata.beacon_power_map[line_id]
 
             -- use amounts for 1 building as matrix entries
             local line_aggregate = matrix_metadata.aggregate_map[line_id]
@@ -557,11 +565,8 @@ function matrix_engine.get_matrix(matrix_metadata, floor_data, rows, columns)
             -- part of it can't be expressed per building. It only depends on how the line is
             -- configured though, so it's known upfront and can be demanded of the factory directly.
             if beacon_power and beacon_power > 0 then
-                structures.map.subtract(line_aggregate.ingredients, electric_power, beacon_power)
                 constant_demand = constant_demand + beacon_power
             end
-
-            matrix_engine.consolidate(line_aggregate)
 
             for item_key, amount in pairs(line_aggregate.products) do
                 ---@diagnostic disable: need-check-nil
@@ -719,7 +724,8 @@ function matrix_engine.get_line_aggregate(line_data, floor_id, machine_amount)
         end
     end
 
-    power = power + (line_data.beacon_power or 0)
+    -- Beacon power is non-linear, so it's calculated separately
+    -- power = power + (line_data.beacon_power or 0)
 
     if power > 0 then
         local electric_item = {type="entity", name="custom-electric-power", amount=power}
@@ -750,11 +756,12 @@ function matrix_engine.get_line_aggregate(line_data, floor_id, machine_amount)
 end
 
 ---@param line_aggregate SolverAggregateWithFuel
+---@param line_id ObjectID
 ---@param machine_amount number
 ---@param matrix_metadata MatrixMetadata
 ---@param free_variables table<string, true>
 ---@return SolverAggregateWithFuel
-function matrix_engine.get_line_result_aggregate(line_aggregate, machine_amount, matrix_metadata, free_variables)
+function matrix_engine.get_line_result_aggregate(line_aggregate, line_id, machine_amount, matrix_metadata, free_variables)
     local aggregate = lib.flib.deep_copy(line_aggregate)
 
     -- Metadata aggregates assumed a machine amount of 1, so we just need to multiply by the solved machine amount to get the result
@@ -775,6 +782,12 @@ function matrix_engine.get_line_result_aggregate(line_aggregate, machine_amount,
     end
 
     if aggregate.fuel then aggregate.fuel.amount = aggregate.fuel.amount * machine_amount end
+
+    local beacon_power = matrix_metadata.beacon_power_map[line_id]
+    if beacon_power then
+        local power_item = {type="entity", name="custom-electric-power", amount=beacon_power}
+        structures.map.add(aggregate.ingredients, power_item)
+    end
 
     return aggregate
 end

@@ -113,7 +113,7 @@ end
 ---@field pollutant_type string?
 ---@field entities_require_heating boolean
 ---@field total_effects IntegerModuleEffects
----@field beacon_power double
+---@field beacon_power double?
 ---@field fuel_proto AnyFPFuelPrototype?
 ---@field fuel_name string?
 ---@field fuel_value number?
