@@ -14,7 +14,7 @@ solver = {
 -- ** LOCAL UTIL **
 ---@param floor Floor
 ---@param line LineObject
-local function set_blank_line(floor, line)
+function solver.set_blank_line(floor, line)
     solver.set_line_result {
         floor_id = floor.id,
         line_id = line.id,
@@ -28,20 +28,20 @@ local function set_blank_line(floor, line)
 end
 
 ---@param floor Floor
-local function set_blank_floor(floor)
+function solver.set_blank_floor(floor)
     for line in floor:iterator() do
         if line.class == "Floor" then
-            set_blank_line(floor, line)
-            set_blank_floor(line)
+            solver.set_blank_line(floor, line)
+            solver.set_blank_floor(line)
         else
-            set_blank_line(floor, line)
+            solver.set_blank_line(floor, line)
         end
     end
 end
 
 ---@param player LuaPlayer
 ---@param factory Factory
-local function set_blank_factory(player, factory)
+function solver.set_blank_factory(player, factory)
     solver.set_factory_result {
         player_index = player.index,
         factory_id = factory.id,
@@ -51,7 +51,7 @@ local function set_blank_factory(player, factory)
         matrix_free_items = factory.matrix_free_items  ---@as FPItemPrototype[]
     }
 
-    set_blank_floor(factory.top_floor)
+    solver.set_blank_floor(factory.top_floor)
 end
 
 
@@ -150,7 +150,7 @@ local function generate_floor_data(player, factory, floor, calculate_emissions)
         else  ---@cast line Line
             if line:get_blocker() ~= nil then
                 -- Useless lines don't need to run through the solver
-                set_blank_line(floor, line)
+                solver.set_blank_line(floor, line)
                 if line == floor.first and floor.level > 1 then relevant_line_active = false end
             elseif relevant_line_active then
                 local machine = line.machine
@@ -208,7 +208,7 @@ local function generate_floor_data(player, factory, floor, calculate_emissions)
 
                 table.insert(floor_data.lines, line_data)
             else
-                set_blank_line(floor, line)
+                solver.set_blank_line(floor, line)
             end
         end
     end
@@ -332,42 +332,7 @@ function solver.update(player, factory)
             simplex_engine.solve(factory_data)
 
         else  -- "gaussian"
-            local matrix_metadata = matrix_engine.get_matrix_solver_metadata(factory_data)
-
-            if matrix_metadata.num_rows ~= 0 then  -- don't run calculations if the factory has no lines
-                local linear_dependence_data = matrix_engine.get_linear_dependence_data(factory_data, matrix_metadata)
-
-                -- In the case of linearly dependent free items, we remove it automatically if there's only one option.
-                -- Otherwise we present the user with a choice to remove problematic free items in the production box.
-                local num_ld_free_items, last_ld_free_item = 0, nil
-                for _, ld_free_item in pairs(linear_dependence_data.linearly_dependent_free_items) do
-                    num_ld_free_items = num_ld_free_items + 1
-                    last_ld_free_item = ld_free_item
-                end
-                if num_ld_free_items == 1 then  ---@cast last_ld_free_item FPItemPrototype
-                    for index, item in pairs(factory.matrix_free_items) do
-                        if item.type == last_ld_free_item.type and item.name == last_ld_free_item.name then
-                            table.remove(factory.matrix_free_items, index)
-                            break
-                        end
-                    end
-                    -- Redo all these since we've changed the factory
-                    factory_data = solver.generate_factory_data(player, factory)
-                    matrix_metadata = matrix_engine.get_matrix_solver_metadata(factory_data)
-                    linear_dependence_data = matrix_engine.get_linear_dependence_data(factory_data, matrix_metadata)
-                end
-
-                if matrix_metadata.num_rows == matrix_metadata.num_cols
-                        and #linear_dependence_data.linearly_dependent_recipes == 0 then
-                    matrix_engine.run_matrix_solver(factory_data, false)
-                    factory.linearly_dependant = false
-                else
-                    set_blank_factory(player, factory)  -- reset factory by blanking everything
-                    factory.linearly_dependant = true
-                end
-            else  -- reset top level items
-                set_blank_factory(player, factory)
-            end
+            matrix_engine.solve(factory_data)
         end
     end
 end
