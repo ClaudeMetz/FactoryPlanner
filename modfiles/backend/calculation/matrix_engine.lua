@@ -76,9 +76,9 @@ function matrix_engine.get_matrix_solver_metadata(factory_data)
     local line_outputs = {}
     local line_count = 0
 
-    for _, line_aggregate in pairs(factory_data.line_data) do
-        for item_key, _ in pairs(line_aggregate.ingredients) do line_inputs[item_key] = true end
-        for item_key, _ in  pairs(line_aggregate.products) do line_outputs[item_key] = true end
+    for _, line_data in pairs(factory_data.line_data_map) do
+        for item_key, _ in pairs(line_data.ingredients) do line_inputs[item_key] = true end
+        for item_key, _ in  pairs(line_data.products) do line_outputs[item_key] = true end
         line_count = line_count + 1
     end
 
@@ -206,7 +206,7 @@ function matrix_engine.get_linear_dependence_data(factory_data, matrix_metadata)
         local col_split_str = lib.split_string(col_name, SEPARATOR)
         if col_split_str[1] == "line" then
             local line_id = col_split_str[2]  ---@as integer
-            local recipe_name = factory_data.line_data[line_id].recipe_name
+            local recipe_name = factory_data.line_data_map[line_id].recipe_name
             linearly_dependent_variables["recipe"..SEPARATOR..recipe_name] = true
         else -- item
             linearly_dependent_variables[col_name] = true
@@ -339,7 +339,7 @@ function matrix_engine.run_matrix_solver(factory_data, matrix_metadata)
                  -- want the j-th entry in the last column (output of row-reduction)
                 local machine_amount = matrix[col_num]--[[@cast -nil]][#columns.values+1]  ---@as number
                 if machine_amount < 0 then machine_amount = 0 end
-                line_aggregate = factory_data.line_data[line.id]
+                line_aggregate = factory_data.line_data_map[line.id]
                 line_aggregate = matrix_engine.get_line_result_aggregate(line_aggregate, line.id, machine_amount, matrix_metadata, free_variables)
             else
                 line_aggregate = set_line_results(line.subfloor)
@@ -508,10 +508,10 @@ function matrix_engine.get_matrix(factory_data, rows, columns)
             matrix[row_num]--[[@cast -nil]][col_num] = 1
         else -- "line"
             local line_id = col_split_str[2]  ---@as integer
-            local beacon_power = factory_data.line_data[line_id].beacon_power
+            local beacon_power = factory_data.line_data_map[line_id].beacon_power
 
             -- use amounts for 1 building as matrix entries
-            local line_aggregate = factory_data.line_data[line_id]
+            local line_aggregate = factory_data.line_data_map[line_id]
 
             -- Beacons draw the same power however many machines the line ends up needing, so that
             -- part of it can't be expressed per building. It only depends on how the line is

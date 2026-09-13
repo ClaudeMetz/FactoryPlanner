@@ -353,7 +353,7 @@ end
 ---@class FactoryData
 ---@field player_index uint32
 ---@field factory_id ObjectID
----@field line_data AggregateMap
+---@field line_data_map AggregateMap
 ---@field top_floor FloorData
 ---@field matrix_free_items FPItemPrototype[]
 ---@field simplex_basis table<ConstraintKey, VariableKey>
@@ -365,12 +365,12 @@ end
 function solver.generate_factory_data(player, factory)
     local calculate_emissions = lib.globals.preferences(player).calculate_emissions
     local free_items = factory.matrix_free_items  ---@as FPItemPrototype[]
-    local top_floor_data, line_data = generate_floor_data(player, factory, factory.top_floor, calculate_emissions)
+    local top_floor_data, line_data_map = generate_floor_data(player, factory, factory.top_floor, calculate_emissions)
 
     local factory_data = {
         player_index = player.index,
         factory_id = factory.id,
-        line_data = line_data,
+        line_data_map = line_data_map,
         top_floor = top_floor_data,
         matrix_free_items = free_items,
         simplex_basis = factory.simplex_basis or {}
