@@ -54,7 +54,7 @@ end
 
 
 ---@class MatrixMetadata
----@field aggregate_map table<ObjectID, MatrixAggregate>
+---@field aggregate_map table<ObjectID, SolverAggregate>
 ---@field byproducts SolverSet
 ---@field unproduced_outputs SolverSet
 ---@field all_items SolverSet
@@ -85,7 +85,7 @@ function matrix_engine.get_matrix_solver_metadata(factory_data)
             if line.subfloor ~= nil then
                 get_lines_metadata(line.subfloor.lines, line.subfloor.id)
             else  ---@cast line LineData
-                local line_aggregate = matrix_engine.get_line_aggregate(line, floor_id, 1)
+                local line_aggregate = solver.get_line_aggregate(line, floor_id, 1)
                 matrix_engine.consolidate(line_aggregate)
                 for item_key, _ in pairs(line_aggregate.ingredients) do line_inputs[item_key] = true end
                 for item_key, _ in  pairs(line_aggregate.products) do line_outputs[item_key] = true end
@@ -345,7 +345,7 @@ function matrix_engine.run_matrix_solver(factory_data, matrix_metadata)
 
     ---@param floor FloorData
     local function set_line_results(floor)
-        local floor_aggregate = structures.aggregate.init(floor.id)
+        local floor_aggregate = structures.aggregate.init(floor.id, floor.id)
         for i, line in ipairs(floor.lines) do
             local line_key = "line"..SEPARATOR..line.id
             local line_aggregate = nil
@@ -416,7 +416,7 @@ function matrix_engine.run_matrix_solver(factory_data, matrix_metadata)
         required_amount[key] = product.amount
     end
 
-    local main_aggregate = structures.aggregate.init(1)
+    local main_aggregate = structures.aggregate.init(factory_data.top_floor.id, factory_data.top_floor.id)
     for _, item in ipairs(structures.map.list(total)) do
         local key = structures.pack_item(item)
         local req = required_amount[key] or 0
@@ -452,7 +452,7 @@ end
 -- If an aggregate has items that are both inputs and outputs, deletes whichever is smaller and saves the net amount.
 -- If the input and output are identical to within rounding error, delete from both.
 -- This is mainly for calculating line aggregates with subfloors for the matrix solver.
----@param aggregate MatrixAggregate
+---@param aggregate SolverAggregate
 function matrix_engine.consolidate(aggregate)
     -- Items cannot be both products or byproducts, but they can be both ingredients and fuels.
     -- In the case that an item appears as an output, an ingredient, and a fuel, delete from fuel first.
@@ -532,7 +532,7 @@ function matrix_engine.get_matrix(matrix_metadata, floor_data, rows, columns)
             -- Beacons draw the same power however many machines the line ends up needing, so that
             -- part of it can't be expressed per building. It only depends on how the line is
             -- configured though, so it's known upfront and can be demanded of the factory directly.
-            if beacon_power > 0 then
+            if beacon_power and beacon_power > 0 then
                 constant_demand = constant_demand + beacon_power
             end
 
@@ -613,125 +613,12 @@ function matrix_engine.get_matrix(matrix_metadata, floor_data, rows, columns)
     return matrix, free_variable_scale_factors
 end
 
----@class MatrixAggregate : SolverAggregate
----@field recipe_name string
----@field beacon_power double
----@field fuel SolverItem?
-
----@param line_data LineData
----@param floor_id ObjectID
----@param machine_amount number
----@return MatrixAggregate
-function matrix_engine.get_line_aggregate(line_data, floor_id, machine_amount)
-    local line_aggregate = structures.aggregate.init(floor_id)  ---@type MatrixAggregate
-    line_aggregate.machine_amount = machine_amount
-    local total_effects = line_data.total_effects
-    local machine_proto = line_data.machine_proto
-    local speed_multiplier = 1 + (total_effects.speed / MAGIC_NUMBERS.effect_precision)
-    local energy = line_data.recipe_energy
-    -- hacky workaround for recipes with zero energy - this really messes up the matrix
-    energy = math.max(energy, MAGIC_NUMBERS.minimum_energy)
-    local time_per_craft = energy / (line_data.machine_speed * speed_multiplier)
-    local total_crafts = machine_amount * (1 / time_per_craft)
-    line_aggregate.production_ratio = total_crafts
-
-    for _, product in pairs(line_data.products) do
-        local prodded_amount = solver.util.determine_prodded_amount(product, total_effects)
-        structures.map.add(line_aggregate.products, product, prodded_amount * total_crafts)
-    end
-
-    for _, ingredient in pairs(line_data.ingredients) do
-        local ingredient_amount = (ingredient.amount * total_crafts)
-        if ingredient.type ~= "fluid" then  -- doesn't apply to mining fluids
-            ingredient_amount = ingredient_amount * line_data.resource_drain_rate
-        end
-        structures.map.add(line_aggregate.ingredients, ingredient, ingredient_amount)
-    end
-
-    -- Determine power (including potential fuel needs) and emissions
-    local fuel_proto = line_data.fuel_proto
-    local power, emissions = 0.0, 0.0
-    local fuel, fuel_amount = nil, nil
-    if energy > MAGIC_NUMBERS.minimum_energy then
-        power, emissions = solver.util.determine_power_and_emissions(line_data, machine_amount, total_crafts)
-
-        if machine_proto.energy_type == "burner" then  ---@cast fuel_proto -nil
-            local burner = machine_proto.burner  ---@as MachineBurner
-            fuel_amount = solver.util.determine_fuel_amount(line_data, power, machine_amount)
-
-            fuel = {type=fuel_proto.type, name=line_data.fuel_name, amount=fuel_amount}  ---@type SolverItem
-            structures.map.add(line_aggregate.ingredients, fuel)
-
-            if fuel_proto.burnt_result then
-                structures.map.add(line_aggregate.products, {
-                    type = "item",
-                    name = fuel_proto.burnt_result,
-                    amount = fuel_amount
-                }--[[@as SolverItem]])
-            end
-
-            if burner.produces_spent_fluid then
-                local spent_fluid = burner.spent_fluid or fuel_proto.spent_fluid
-                if spent_fluid then
-                    structures.map.add(line_aggregate.products, {
-                        type="fluid",
-                        name=lib.temperature.name_with(spent_fluid.name, spent_fluid.temperature),
-                        amount=fuel_amount * spent_fluid.amount
-                    })
-                end
-            end
-
-            power = 0  -- set power to 0 when fuel is used
-
-        elseif machine_proto.energy_type == "heat" then
-            local heat_item = {type="entity", name="custom-heat-power", amount=power}
-            structures.map.add(line_aggregate.ingredients, heat_item)
-
-            power = 0  -- set power to 0 when heat is used
-
-        elseif machine_proto.energy_type == "void" then
-            power = 0  -- set power to 0 while still polluting
-        end
-    end
-
-    -- Beacon power is non-linear, so it's calculated separately
-    line_aggregate.beacon_power = line_data.beacon_power or 0
-
-    if power > 0 then
-        local electric_item = {type="entity", name="custom-electric-power", amount=power}
-        structures.map.add(line_aggregate.ingredients, electric_item)
-    end
-
-    if line_data.entities_require_heating and machine_proto.heating_energy > 0 then
-        local heating_energy = machine_proto.heating_energy * machine_amount
-        local heating_item = {type="entity", name="custom-heating-power", amount=heating_energy}
-        structures.map.add(line_aggregate.ingredients, heating_item)
-    end
-
-    if emissions ~= 0 then  -- emissions are either produced or consumed
-        local emission_name = "custom-" .. line_data.pollutant_type
-        local emission_item = {type="entity", name=emission_name, amount=math.abs(emissions)}
-
-        if emissions > 0 then
-            structures.map.add(line_aggregate.products, emission_item)
-        elseif emissions < 0 then
-            structures.map.add(line_aggregate.ingredients, emission_item)
-        end
-    end
-
-    -- needed for interface.set_line_result
-    line_aggregate.recipe_name = line_data.recipe_proto.name
-    line_aggregate.fuel = fuel
-
-    return line_aggregate
-end
-
----@param line_aggregate MatrixAggregate
+---@param line_aggregate SolverAggregate
 ---@param line_id ObjectID
 ---@param machine_amount number
 ---@param matrix_metadata MatrixMetadata
 ---@param free_variables table<string, true>
----@return MatrixAggregate
+---@return SolverAggregate
 function matrix_engine.get_line_result_aggregate(line_aggregate, line_id, machine_amount, matrix_metadata, free_variables)
     local aggregate = lib.flib.deep_copy(line_aggregate)
 
@@ -753,7 +640,7 @@ function matrix_engine.get_line_result_aggregate(line_aggregate, line_id, machin
     end
 
     if aggregate.fuel then aggregate.fuel.amount = aggregate.fuel.amount * machine_amount end
-    if aggregate.beacon_power > 0 then
+    if aggregate.beacon_power and aggregate.beacon_power > 0 then
         local power_item = {type="entity", name="custom-electric-power", amount=aggregate.beacon_power}
         structures.map.add(aggregate.ingredients, power_item)
     end

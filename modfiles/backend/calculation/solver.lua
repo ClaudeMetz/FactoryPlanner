@@ -129,6 +129,7 @@ end
 ---@param floor Floor
 ---@param calculate_emissions boolean
 ---@return FloorData
+---@return AggregateMap
 local function generate_floor_data(player, factory, floor, calculate_emissions)
     local floor_data = {
         id = floor.id,
@@ -137,16 +138,19 @@ local function generate_floor_data(player, factory, floor, calculate_emissions)
         lines = {}
     }  ---@type FloorData
 
+    local aggregate_map = {}  ---@type AggregateMap
     local relevant_line_active = true
 
     for line in floor:iterator() do
         local line_data = { id = line.id }
 
         if line.class == "Floor" then  ---@cast line Floor
+            local subfloor_aggregate_map
             line_data.recipe_proto = line.first--[[@as Line]].recipe.proto
             line_data.products = line.first--[[@as Line]].recipe.products
-            line_data.subfloor = generate_floor_data(player, factory, line, calculate_emissions)
+            line_data.subfloor, subfloor_aggregate_map = generate_floor_data(player, factory, line, calculate_emissions)
             table.insert(floor_data.lines, line_data)
+            for k, v in pairs (subfloor_aggregate_map) do aggregate_map[k] = v end
         else  ---@cast line Line
             if line:get_blocker() ~= nil then
                 -- Useless lines don't need to run through the solver
@@ -162,14 +166,14 @@ local function generate_floor_data(player, factory, floor, calculate_emissions)
                 line_data.products = line.recipe.products
                 line_data.percentage = line.percentage  -- non-zero
                 line_data.production_type = line.recipe.production_type
-                line_data.priority_item_proto = line.recipe.priority_item
-                line_data.machine_proto = machine.proto
+                line_data.priority_item_proto = line.recipe.priority_item  ---@as FPItemPrototype
+                line_data.machine_proto = machine.proto  ---@as FPMachinePrototype
                 line_data.machine_limit = {limit=machine.limit, force_limit=machine.force_limit}
                 line_data.energy_usage = machine:get_energy_usage()
                 line_data.fluid_usage_per_tick = machine:get_fluid_usage_per_tick()
                 line_data.resource_drain_rate = machine:get_resource_drain_rate()
                 line_data.pollutant_type = (calculate_emissions) and factory.parent.location_proto.pollutant_type or nil
-                line_data.entities_require_heating = factory.parent.location_proto.entities_require_heating
+                line_data.entities_require_heating = factory.parent.location_proto.entities_require_heating or false
 
                 local force = player.force  ---@as LuaForce
                 local mod_changed = machine:update_mod_effects(force)
@@ -178,7 +182,7 @@ local function generate_floor_data(player, factory, floor, calculate_emissions)
                 line_data.total_effects = line.total_effects
 
                 if machine.fuel ~= nil then
-                    line_data.fuel_proto = machine.fuel.proto
+                    line_data.fuel_proto = machine.fuel.proto  ---@as AnyFPFuelPrototype
                     line_data.fuel_name = machine.fuel:get_name_with_temperature()
                     line_data.fuel_value = machine.fuel:get_fuel_value()
                 end
@@ -207,13 +211,14 @@ local function generate_floor_data(player, factory, floor, calculate_emissions)
                 end
 
                 table.insert(floor_data.lines, line_data)
+                aggregate_map[line.id] = solver.get_line_aggregate(line_data  --[[@as LineData]], floor.id, 1)
             else
                 solver.set_blank_line(floor, line)
             end
         end
     end
 
-    return floor_data
+    return floor_data, aggregate_map
 end
 
 
@@ -348,6 +353,7 @@ end
 ---@class FactoryData
 ---@field player_index uint32
 ---@field factory_id ObjectID
+---@field aggregate_map AggregateMap
 ---@field top_floor FloorData
 ---@field matrix_free_items FPItemPrototype[]
 ---@field simplex_basis table<ConstraintKey, VariableKey>
@@ -359,16 +365,153 @@ end
 function solver.generate_factory_data(player, factory)
     local calculate_emissions = lib.globals.preferences(player).calculate_emissions
     local free_items = factory.matrix_free_items  ---@as FPItemPrototype[]
+    local top_floor_data, aggregate_map = generate_floor_data(player, factory, factory.top_floor, calculate_emissions)
 
     local factory_data = {
         player_index = player.index,
         factory_id = factory.id,
-        top_floor = generate_floor_data(player, factory, factory.top_floor, calculate_emissions),
+        aggregate_map = aggregate_map,
+        top_floor = top_floor_data,
         matrix_free_items = free_items,
         simplex_basis = factory.simplex_basis or {}
     }
 
     return factory_data
+end
+
+
+--- Applies all effects on the machine of the line and returns how many
+--- products/ingredients are produced/consumed per second by the nuber of given machines.
+--- Emmisions, fuel, power and heat are also included.
+---@param line_data LineData
+---@param floor_id ObjectID
+---@param machine_amount number
+---@return SolverAggregate
+function solver.get_line_aggregate(line_data, floor_id, machine_amount)
+    local products = {}  ---@type SolverMap
+    local ingredients = {}  ---@type SolverMap
+
+    -- Get amount of crafts in 1 second
+    local speed_multiplier = line_data.machine_speed * (1 + (line_data.total_effects.speed / MAGIC_NUMBERS.effect_precision))
+    local energy = math.max(line_data.recipe_energy, MAGIC_NUMBERS.minimum_energy)
+    local total_crafts = machine_amount * speed_multiplier / energy
+
+    -- Get simple products
+    for _, item in pairs(line_data.products) do
+        local amount = total_crafts * solver.util.determine_prodded_amount(item, line_data.total_effects)
+        structures.map.add(products, item, amount)
+    end
+
+    -- Get simple ingredients
+    for _, item in pairs(line_data.ingredients) do
+        local amount = item.amount * total_crafts * (item.type ~= "fluid" and line_data.resource_drain_rate or 1)
+        structures.map.add(ingredients, item, amount)
+    end
+
+    local power = 0.0
+    local emissions = 0.0
+
+    local fuel_amount = 0.0
+    local power_amount = 0.0
+    local heat_amount = 0.0
+    local heating_amount = 0.0
+
+    if energy > MAGIC_NUMBERS.minimum_energy then
+        -- Get power and emissions
+        power, emissions = solver.util.determine_power_and_emissions(line_data, machine_amount, total_crafts)
+
+        -- Get fuel/power/heat energy requirements
+        if line_data.machine_proto.energy_type == "burner" and line_data.fuel_proto then
+            ---@cast line_data.machine_proto.burner -nil
+            fuel_amount = fuel_amount + solver.util.determine_fuel_amount(line_data, power, machine_amount)
+        elseif line_data.machine_proto.energy_type == "electric" then
+            power_amount = power_amount + power
+        elseif line_data.machine_proto.energy_type == "heat" then
+            heat_amount = heat_amount + power
+        end
+    end
+
+    -- Get beacon power
+    local beacon_power = line_data.beacon_power or 0
+
+    -- Get heat requirements (frozen surfaces e.g. Aquillo)
+    if line_data.entities_require_heating then
+        heating_amount = line_data.machine_proto.heating_energy
+    end
+
+    -- Add fuel to the ingredients
+    local fuel = nil  ---@type SolverItem?
+    local burner = line_data.machine_proto.burner
+    if burner then
+        ---@cast line_data.fuel_proto -nil
+        ---@cast line_data.fuel_name -nil
+        fuel = {
+            name = line_data.fuel_name,
+            type = line_data.fuel_proto.type,
+            amount = fuel_amount
+        }  ---@type SolverItem
+        structures.map.add(ingredients, fuel)
+
+        -- Add burnt result
+        if line_data.fuel_proto.burnt_result then
+            local burnt_result = {
+                name = line_data.fuel_proto.burnt_result,
+                type = "item",
+                amount = fuel_amount
+            }  ---@type SolverItem
+            structures.map.add(products, burnt_result)
+        end
+
+        -- Add spent fluid
+        local spent_fluid = burner.produces_spent_fluid and (burner.spent_fluid or line_data.fuel_proto.spent_fluid)
+        if spent_fluid then
+            local spent_fluid_item = {
+                name = lib.temperature.name_with(spent_fluid.name, spent_fluid.temperature),
+                type = "fluid",
+                amount = fuel_amount * spent_fluid.amount
+            }  ---@type SolverItem
+            structures.map.add(products, spent_fluid_item)
+        end
+    end
+
+    -- Add other special categories
+    if power_amount > 0 then
+        local item = {name="custom-electric-power", type="entity", amount=0}
+        structures.map.add(ingredients, item, power_amount)
+    end
+    if heat_amount > 0 then
+        local item = {name="custom-heat-power", type="entity", amount=0}
+        structures.map.add(ingredients, item, heat_amount)
+    end
+    if heating_amount > 0 then
+        local item = {name="custom-heating-power", type="entity", amount=0}
+        local item_key = structures.pack_item(item)
+        structures.map.add(ingredients, item, heating_amount)
+    end
+    if line_data.pollutant_type and emissions ~= 0 then
+        local item = {name="custom-"..line_data.pollutant_type, type="entity", amount=math.abs(emissions)}
+        if emissions > 0 then
+            structures.map.add(products, item)
+        else
+            structures.map.add(ingredients, item)
+        end
+    end
+
+    return {
+        line_id = line_data.id,
+        floor_id = floor_id,
+        machine_amount = machine_amount,
+        production_ratio = total_crafts,
+        products = products,
+        byproducts = {},
+        ingredients = ingredients,
+        known_byproducts = {},
+        recipe_name = line_data.recipe_proto.name,
+        beacon_power = beacon_power,
+        fuel = fuel,
+        machine_limit = line_data.machine_limit.limit,
+        machine_force_limit = line_data.machine_limit.force_limit,
+    }
 end
 
 ---@class FactoryResult

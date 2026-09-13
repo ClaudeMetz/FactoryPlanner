@@ -5,18 +5,6 @@ local util = require("__core__.lualib.util")
 --- Matrix solver based on the simplex method
 local simplex_engine = {}
 
----@alias LineMetadataTable table<ObjectID, LineMetadata>
-
----@class LineMetadata
----@field line_id ObjectID
----@field floor_id ObjectID
----@field products SolverMap
----@field ingredients SolverMap
----@field total_crafts number?
----@field machine_limit number?
----@field machine_force_limit boolean?
----@field fuel_ratio number?  how much of an ingredient is for fuel (treat as 1 if nil)
-
 
 -- @TODO: Move this to a better place. Maybe let the user configure it
 -- The objective function is maximized, so positive values indicate a score,
@@ -68,13 +56,13 @@ function simplex_engine.solve(factory_data)
 end
 
 ---@param floor_data FloorData
----@param line_metadata_table LineMetadataTable
+---@param line_metadata_table AggregateMap
 ---@param level integer
 ---@param previous_basis table<ConstraintKey, VariableKey>
 ---@param cache_invalid_map table<ObjectID, true>
 ---@return SimplexResult?
 function simplex_engine.solve_floor(floor_data, line_metadata_table, level, previous_basis, cache_invalid_map)
-    local relevant_line_metadata = {}  ---@type LineMetadata[]
+    local relevant_line_metadata = {}  ---@type SolverAggregate[]
     local products = {}  ---@type SolverSet
     local ingredients = {}  ---@type SolverSet
     local cycled_intermediates = {}  ---@type SolverSet
@@ -94,8 +82,12 @@ function simplex_engine.solve_floor(floor_data, line_metadata_table, level, prev
                 line_metadata_table[line_object_data.id] = {
                     floor_id = floor_data.id,
                     line_id = line_object_data.id,
+                    machine_amount = 1,
                     products = floor_result.products,
-                    ingredients = floor_result.ingredients
+                    ingredients = floor_result.ingredients,
+                    byproducts = {},
+                    known_byproducts = {},
+                    recipe_name = "",
                 }
             end
         end
@@ -204,16 +196,16 @@ end
 
 -- Iterate through lines and subfloors collecting line data
 ---@param floor_data FloorData
----@return LineMetadataTable
+---@return AggregateMap
 function simplex_engine.get_floor_metadata(floor_data)
-    local line_metadata_table = {}  ---@type LineMetadataTable
+    local line_metadata_table = {}  ---@type AggregateMap
 
     for _, line_object_data in pairs(floor_data.lines) do
         if line_object_data.subfloor then
             local subfloor_data = simplex_engine.get_floor_metadata(line_object_data.subfloor)
             if subfloor_data then line_metadata_table = util.merge({line_metadata_table, subfloor_data}) end
         else
-            local line_metadata = simplex_engine.get_line_metadata(line_object_data, floor_data.id)
+            local line_metadata = solver.get_line_aggregate(line_object_data, floor_data.id, 1)
             if line_metadata then line_metadata_table[line_metadata.line_id] = line_metadata end
         end
     end
@@ -221,144 +213,8 @@ function simplex_engine.get_floor_metadata(floor_data)
     return line_metadata_table
 end
 
---- Applies all effects on the machine of the line and returns how many
---- products/ingredients are produced/consumed per second by one machine.
---- Positive values represent products, while negative values represent ingredients.
---- Emmisions, fuel, power and heat are also included.
----@param line_data LineData
----@param floor_id ObjectID
----@return LineMetadata?
-function simplex_engine.get_line_metadata(line_data, floor_id)
-    local products = {}  ---@type SolverMap
-    local ingredients = {}  ---@type SolverMap
-
-    -- Get amount of crafts in 1 second
-    local speed_multiplier = line_data.machine_speed * (1 + (line_data.total_effects.speed / MAGIC_NUMBERS.effect_precision))
-    local energy = math.max(line_data.recipe_energy, MAGIC_NUMBERS.minimum_energy)
-    local total_crafts = speed_multiplier / energy
-
-    -- Get simple products
-    for _, item in pairs(line_data.products) do
-        local amount = total_crafts * solver.util.determine_prodded_amount(item, line_data.total_effects)
-        structures.map.add(products, item, amount)
-    end
-
-    -- Get simple ingredients
-    for _, item in pairs(line_data.ingredients) do
-        local amount = item.amount * total_crafts * (item.type ~= "fluid" and line_data.resource_drain_rate or 1)
-        structures.map.add(ingredients, item, amount)
-    end
-
-    local power = 0.0
-    local emissions = 0.0
-
-    local fuel_amount = 0.0
-    local power_amount = 0.0
-    local heat_amount = 0.0
-    local heating_amount = 0.0
-
-    if energy > MAGIC_NUMBERS.minimum_energy then
-        -- Get power and emissions
-        power, emissions = solver.util.determine_power_and_emissions(line_data, 1, total_crafts)
-
-        -- Get fuel/power/heat energy requirements
-        if line_data.machine_proto.energy_type == "burner" and line_data.fuel_proto then
-            ---@cast line_data.machine_proto.burner -nil
-            fuel_amount = fuel_amount + solver.util.determine_fuel_amount(line_data, power, 1)
-        elseif line_data.machine_proto.energy_type == "electric" then
-            power_amount = power_amount + power
-        elseif line_data.machine_proto.energy_type == "heat" then
-            heat_amount = heat_amount + power
-        end
-    end
-
-    -- Get beacon power
-    power_amount = power_amount + (line_data.beacon_power or 0)
-
-    -- Get heat requirements (frozen surfaces e.g. Aquillo)
-    if line_data.entities_require_heating then
-        heating_amount = line_data.machine_proto.heating_energy
-    end
-
-    -- Add fuel to the ingredients
-    local fuel_ratio = nil
-    local burner = line_data.machine_proto.burner
-    if burner then
-        ---@cast line_data.fuel_proto -nil
-        ---@cast line_data.fuel_name -nil
-        local fuel = {
-            name = line_data.fuel_name,
-            type = line_data.fuel_proto.type,
-            amount = 0
-        }  ---@type SolverItem
-        local fuel_key = structures.pack_item(fuel)
-        local fuel_as_ingredient = ingredients[fuel_key] or 0
-        structures.map.add(ingredients, fuel, fuel_amount)
-
-        -- Add burnt result
-        if line_data.fuel_proto.burnt_result then
-            local burnt_result = {
-                name = line_data.fuel_proto.burnt_result,
-                type = "item",
-                amount = 0
-            }  ---@type SolverItem
-            structures.map.add(products, burnt_result, fuel_amount)
-        end
-
-        -- Add spent fluid
-        local spent_fluid = burner.produces_spent_fluid and (burner.spent_fluid or line_data.fuel_proto.spent_fluid)
-        if spent_fluid then
-            local spent_fluid_item = {
-                name = lib.temperature.name_with(spent_fluid.name, spent_fluid.temperature),
-                type = "fluid",
-                amount = fuel_amount * spent_fluid.amount
-            }  ---@type SolverItem
-            structures.map.add(products, spent_fluid_item)
-        end
-
-        -- Handle special case where fuel is also an ingredient
-        if fuel_as_ingredient > 0 then
-            fuel_ratio = fuel_amount / (fuel_amount + fuel_as_ingredient)
-        end
-    end
-
-    -- Add other special categories
-    if power_amount > 0 then
-        local item = {name="custom-electric-power", type="entity", amount=0}  ---@as SolverItem
-        structures.map.add(ingredients, item, power_amount)
-    end
-    if heat_amount > 0 then
-        local item = {name="custom-heat-power", type="entity", amount=0}  ---@as SolverItem
-        structures.map.add(ingredients, item, heat_amount)
-    end
-    if heating_amount > 0 then
-        local item = {name="custom-heating-power", type="entity", amount=0}  ---@as SolverItem
-        local item_key = structures.pack_item(item)
-        structures.map.add(ingredients, item, heating_amount)
-    end
-    if line_data.pollutant_type and emissions ~= 0 then
-        local item = {name="custom-"..line_data.pollutant_type, type = "entity", amount = 0 }  ---@as SolverItem
-        if emissions > 0 then
-            structures.map.add(products, item, emissions)
-        else
-            structures.map.add(ingredients, item, -emissions)
-        end
-    end
-
-    return {
-        line_id = line_data.id,
-        floor_id = floor_id,
-        products = products,
-        ingredients = ingredients,
-        total_crafts = total_crafts,
-        machine_limit = line_data.machine_limit.limit,
-        machine_force_limit = line_data.machine_limit.force_limit,
-        fuel_ratio = fuel_ratio
-    }  ---@type LineMetadata
-end
-
 ---@param factory_data FactoryData
----@param line_metadata_table LineMetadataTable
+---@param line_metadata_table AggregateMap
 ---@param result SimplexResult?
 function simplex_engine.update_factory(factory_data, line_metadata_table, result)
     local top_products = {}  ---@type SolverSet
@@ -406,7 +262,7 @@ end
 ---@param floor_data FloorData
 ---@param scale_factor number
 ---@param byproducts SolverMap
----@param line_metadata_table LineMetadataTable
+---@param line_metadata_table AggregateMap
 ---@param result SimplexResult?
 ---@return integer machine_amount
 function simplex_engine.update_floor(floor_data, scale_factor, byproducts, line_metadata_table, result)
@@ -451,7 +307,7 @@ end
 ---@param line_data LineData
 ---@param scale_factor number
 ---@param byproducts SolverMap
----@param line_metadata_table LineMetadataTable
+---@param line_metadata_table AggregateMap
 ---@param result SimplexLineResult?
 ---@return number machine_amount
 function simplex_engine.update_line(floor_id, line_data, scale_factor, byproducts, line_metadata_table, result)
@@ -462,27 +318,20 @@ function simplex_engine.update_line(floor_id, line_data, scale_factor, byproduct
 
     -- Update the machine
     local machine_amount = result and scale_factor * result.machine_amount or 0
-    local production_ratio = machine_amount * (data.total_crafts or 0)
+    local production_ratio = machine_amount * (data.production_ratio or 0)
     local fuel_amount = 0.0
 
     -- Update the fuel
-    if line_data.fuel_proto then  ---@cast line_data.fuel_name -nil
-        local fuel = {
-            name = line_data.fuel_name,
-            type = line_data.fuel_proto.type,
-            amount = 0
-        }  ---@type SolverItem
-        local fuel_key = structures.pack_item(fuel)
-        local amount = ingredients[fuel_key]
+    if data.fuel then
+        local fuel_key = structures.pack_item(data.fuel)
+        ingredients[fuel_key] = ingredients[fuel_key] * machine_amount
 
-        if amount then
-            if data.fuel_ratio then
-                fuel_amount = machine_amount * amount * data.fuel_ratio
-                ingredients[fuel_key] = amount * (1 - data.fuel_ratio)
-            else
-                fuel_amount = machine_amount * amount
-                ingredients[fuel_key] = nil
-            end
+        fuel_amount = data.fuel.amount * machine_amount
+        structures.map.subtract(ingredients, data.fuel, fuel_amount)
+
+        -- Account for floating point errors
+        if ingredients[fuel_key] and ingredients[fuel_key] < data.fuel.amount * MAGIC_NUMBERS.margin_of_error then
+            ingredients[fuel_key] = nil
         end
     end
 
