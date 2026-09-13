@@ -145,6 +145,80 @@ function _lib.is_machine_available(force, machine)
 end
 
 
+---@param recipe FPRecipePrototype
+---@param machine FPMachinePrototype
+---@return boolean
+function _lib.is_recipe_machine_compatible(recipe, machine)
+    local counts = recipe.type_counts
+    return machine.ingredient_limit >= counts.ingredients.items
+        and machine.product_limit >= counts.products.items
+        and machine.fluid_channels.input >= counts.ingredients.fluids
+        and machine.fluid_channels.output >= counts.products.fluids
+end
+
+
+---@alias PrototypeUnlockCache table<string, table<string, boolean>>
+
+---@param force LuaForce
+---@param id UnlockableID
+---@param cache PrototypeUnlockCache
+---@return boolean
+local function is_prototype_unlocked(force, id, cache)
+    local type_cache = cache[id.type]
+    if type_cache == nil then
+        type_cache = {}
+        cache[id.type] = type_cache
+    end
+    local name = id.name or ""  -- special unlocks, such as fluid mining, have no prototype name
+    if type_cache[name] == nil then type_cache[name] = force.is_visible(id) end
+    return type_cache[name]
+end
+
+-- Custom recipes require an unlocked compatible machine and any explicit source requirements
+---@param force LuaForce
+---@param recipe FPRecipePrototype
+---@param cache PrototypeUnlockCache?
+---@return boolean
+function _lib.is_recipe_unlocked(force, recipe, cache)
+    if not recipe.custom then
+        local force_recipe = force.recipes[recipe.name]
+        return force_recipe ~= nil and force_recipe.enabled
+    end
+
+    cache = cache or {}
+    for _, requirement in pairs(recipe.additional_unlock_requirements or {}) do
+        if not is_prototype_unlocked(force, requirement, cache) then return false end
+    end
+
+    if recipe.unlock_without_machine then return true end
+
+    local machines = prototyper.util.find("machines", nil, recipe.combined_category)  ---@as NamedCategory<FPMachinePrototype>
+    for _, machine in pairs(machines.members) do
+        if _lib.is_recipe_machine_compatible(recipe, machine) and _lib.is_machine_available(force, machine)
+            and is_prototype_unlocked(force, {type="entity", name=machine.name}, cache) then return true end
+    end
+    return false
+end
+
+---@param force LuaForce
+---@param item FPItemPrototype
+---@param cache PrototypeUnlockCache?
+---@return boolean
+function _lib.is_item_unlocked(force, item, cache)
+    cache = cache or {}
+    if item.type ~= "entity" then
+        return is_prototype_unlocked(force, {type=item.type, name=item.base_name or item.name}, cache)
+    end
+
+    local producers = RECIPE_MAPS.produce[item.category_id][item.id]
+    for recipe_id, _ in pairs(producers or {}) do
+        local recipe = prototyper.util.find("recipes", recipe_id, nil)  ---@as FPRecipePrototype
+        if _lib.is_recipe_unlocked(force, recipe, cache) then return true end
+    end
+    return false
+end
+
+
 ---@alias FactoriopediaIDType "item" | "fluid" | "recipe" | "entity" | "tile" | "space-location" | "ammo-category" | "space-connection" | "asteroid-chunk" | "virtual-signal" | "surface"
 ---@alias FPFactoriopediaID {type: FactoriopediaIDType, name: string}
 

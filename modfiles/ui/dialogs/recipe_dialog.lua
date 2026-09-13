@@ -81,6 +81,7 @@ local function match_recipes(player, modal_data, proto)
     local relevant_recipes = {}
     local user_disabled_recipe = false
     local counts = {disabled = 0, hidden = 0, disabled_hidden = 0}
+    local unlock_cache = {}  ---@type PrototypeUnlockCache
 
     local map = RECIPE_MAPS[modal_data.production_type][proto.category_id][proto.id]
 
@@ -96,11 +97,12 @@ local function match_recipes(player, modal_data, proto)
             end
 
             if recipe.custom then
-                -- These are always enabled and non-hidden, so no need to tally them
-                table.insert(relevant_recipes, {proto=recipe, enabled=true})
+                local recipe_enabled = lib.is_recipe_unlocked(force, recipe, unlock_cache)
+                table.insert(relevant_recipes, {proto=recipe, enabled=recipe_enabled})
+                if not recipe_enabled then counts.disabled = counts.disabled + 1 end
 
             elseif force_recipe ~= nil then  -- only add recipes that exist on the current force
-                local recipe_enabled, recipe_hidden = force_recipe.enabled, recipe.hidden
+                local recipe_enabled, recipe_hidden = lib.is_recipe_unlocked(force, recipe), recipe.hidden
                 local recipe_should_show, overwrite = lib.is_recipe_available(force, recipe)
 
                 if overwrite == nil then  -- user preferences don't apply to overwritten recipes
@@ -206,7 +208,7 @@ local function attempt_adding_line(player, recipe_id, modal_data)
             lib.messages.raise(player, "warning", {"fp.warning_temperature_not_configured", recipe_name}, 1)
         end
 
-        if not (recipe_proto.custom or player.force--[[@as LuaForce]].recipes[recipe_proto.name].enabled) then
+        if not lib.is_recipe_unlocked(player.force--[[@as LuaForce]], recipe_proto) then
             lib.messages.raise(player, "warning", {"fp.warning_recipe_disabled", recipe_name}, 1)
         end
 

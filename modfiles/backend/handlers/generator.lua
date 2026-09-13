@@ -102,6 +102,8 @@ end
 ---@field enabling_technologies string[]?
 ---@field heat_capacity double?
 ---@field custom boolean
+---@field additional_unlock_requirements UnlockableID[]?
+---@field unlock_without_machine boolean?
 ---@field location_restricted boolean?
 ---@field enabled_from_the_start boolean
 ---@field hidden boolean
@@ -237,6 +239,7 @@ function generator.recipes.generate(context)
             local recipe = custom_recipe()
             recipe.name = "impostor-" .. proto.name
             recipe.factoriopedia_id = {type="entity", name=proto.name}
+            recipe.additional_unlock_requirements = {{type="entity", name=proto.name}}
             recipe.localised_name = {"", proto.localised_name, " ", {"fp.mining_recipe"}}
             recipe.sprite = main_product.type .. "/" .. main_product.name
             recipe.order = proto.order
@@ -247,6 +250,11 @@ function generator.recipes.generate(context)
             recipe.location_restricted = true
 
             local ingredients = {{type="entity", name="custom-" .. proto.name, amount=1}--[[@as Ingredient]]}
+
+            if proto.mineable_properties.required_fluid then
+                table.insert(recipe.additional_unlock_requirements, {type="mining-with-fluid"})
+                table.insert(recipe.additional_unlock_requirements, {type="fluid", name=proto.mineable_properties.required_fluid})
+            end
 
             if not proto.infinite_resource and proto.mineable_properties.required_fluid then
                 table.insert(ingredients, {
@@ -300,6 +308,7 @@ function generator.recipes.generate(context)
             recipe.name = "impostor-" .. proto.name
             recipe.factoriopedia_id = {type="entity", name=proto.name}
             recipe.localised_name = {"", proto.localised_name, " ", {"fp.planting_recipe"}}
+            recipe.additional_unlock_requirements = {{type="item", name=seed_name}}
             recipe.sprite = main_product.type .. "/" .. main_product.name
             recipe.order = proto.order
             recipe.categories = {["agricultural-tower"] = true}
@@ -361,6 +370,8 @@ function generator.recipes.generate(context)
                             launch_recipe = custom_recipe()
                             launch_recipe.name = name
                             launch_recipe.factoriopedia_id = {type="item", name=item_name}
+                            launch_recipe.additional_unlock_requirements = {
+                                {type="item", name=item_name}, {type="item", name=parts_product.name}}
                             launch_recipe.localised_name = {"", main_product.localised_name, " ", {"fp.launch_recipe"}}
                             launch_recipe.sprite = "item/" .. main_product.name
                             launch_recipe.order = main_product.order
@@ -391,6 +402,7 @@ function generator.recipes.generate(context)
                         rocket_recipe = custom_recipe()
                         rocket_recipe.name = name
                         rocket_recipe.factoriopedia_id = {type="item", name=parts_product.name}
+                        rocket_recipe.additional_unlock_requirements = {{type="item", name=parts_product.name}}
                         rocket_recipe.localised_name = {"", {"entity-name.rocket"}, " ", {"fp.launch_recipe"}}
                         rocket_recipe.sprite = "fp_silo_rocket"
                         rocket_recipe.order = recipe.order .. "-" .. proto.order
@@ -425,6 +437,7 @@ function generator.recipes.generate(context)
                     boiler_recipe = custom_recipe()
                     boiler_recipe.name = name
                     boiler_recipe.factoriopedia_id = {type="fluid", name=output_proto.name}
+                    boiler_recipe.additional_unlock_requirements = {{type="fluid", name=input_proto.name}}
                     boiler_recipe.localised_name = {"", input_proto.localised_name, " ", {"fp.boiling_recipe"}}
                     boiler_recipe.sprite = "fluid/" .. output_proto.name
                     boiler_recipe.order = input_proto.order .. "-" .. output_proto.order
@@ -469,6 +482,7 @@ function generator.recipes.generate(context)
             local recipe = custom_recipe()
             recipe.name = "impostor-" .. fluid.name .. "-tile"
             recipe.factoriopedia_id = {type="tile", name=proto.name}
+            recipe.additional_unlock_requirements = {{type="tile", name=proto.name}}
             recipe.localised_name = {"", fluid.localised_name, " ", {"fp.pumping_recipe"}}
             recipe.sprite = "fluid/" .. fluid.name
             recipe.order = proto.order
@@ -490,6 +504,8 @@ function generator.recipes.generate(context)
         if proto.get_spoil_ticks() > 0 and proto.spoil_result then
             local recipe = custom_recipe()
             recipe.name = "impostor-spoiling-" .. proto.name
+            recipe.unlock_without_machine = true
+            recipe.additional_unlock_requirements = {{type="item", name=proto.name}}
             recipe.factoriopedia_id = {type="item", name=proto.name}
             recipe.localised_name = {"", proto.spoil_result.localised_name, " ", {"fp.spoiling_recipe"}}
             recipe.sprite = "item/" .. proto.spoil_result.name
@@ -565,14 +581,17 @@ function generator.recipes.generate(context)
     for _, set in pairs(context.research_sets) do
         for _, cost in pairs(set.costs) do
             local ingredients = {}  ---@type Ingredient[]
+            local unlock_requirements = {}  ---@type UnlockableID[]
             for pack_name, amount in pairs(cost.amounts) do
                 table.insert(ingredients, {type="item", name=pack_name, amount=amount})
+                table.insert(unlock_requirements, {type="item", name=pack_name})
             end
             generator.util.sort_by_item_order(ingredients)
 
             local value, unit = generator.util.research_time(cost.ticks)
             local recipe = custom_recipe()
             recipe.name = "impostor-" .. set.category .. "-" .. cost.ticks .. cost.suffix
+            recipe.additional_unlock_requirements = unlock_requirements
             recipe.localised_name = {"fp.research_recipe", #ingredients, value, unit}
             recipe.sprite = "entity/" .. set.lab_name  ---@type SpritePath
             if not helpers.is_valid_sprite_path(recipe.sprite) then recipe.sprite = "fp_research" end

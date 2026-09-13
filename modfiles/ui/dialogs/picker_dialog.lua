@@ -75,8 +75,8 @@ local function add_item_picker(parent_flow, player)
     local modal_data = player_table.ui_state.modal_data  ---@as PickerDialogModalData
     local modal_elements = modal_data.modal_elements
     local translations = player_table.translation_tables
-    -- Fluid variants share a query; each button retains its result for this dialog.
-    local item_visibility = {item={}, fluid={}}  ---@type table<string, table<string, boolean>>
+    -- Share prototype queries across items and custom recipes; buttons retain the results for this dialog
+    local unlock_cache = {}  ---@type PrototypeUnlockCache
     local force = player.force  ---@as LuaForce
 
     local label_warning = parent_flow.add{type="label", caption={"fp.error_message", {"fp.no_item_found"}}}
@@ -192,14 +192,7 @@ local function add_item_picker(parent_flow, player)
             local existing_product = existing_products[item_name]
             local name = (item_proto.temperature) and item_proto.base_name or item_name
             local elem_tooltip = (item_proto.type ~= "entity") and {type=item_proto.type, name=name} or nil
-            local unlocked = true
-            if elem_tooltip then
-                local cache = item_visibility[item_proto.type]
-                if cache[name] == nil then
-                    cache[name] = force.is_visible(elem_tooltip)
-                end
-                unlocked = cache[name]
-            end
+            local unlocked = lib.is_item_unlocked(force, item_proto, unlock_cache)
             local button_style = (existing_product or not unlocked)
                 and "fflib_slot_button_red" or "fflib_slot_button_default"
 
@@ -220,7 +213,6 @@ local function add_item_picker(parent_flow, player)
             ---@field name string
             ---@field translated_name string
             ---@field unlocked boolean
-            -- Custom products have no game visibility state; fluid variants share their base fluid's state
             local subgroup_key = {name=item_name, translated_name=translated_name, unlocked=unlocked}
             subgroup_table[subgroup_key] = button_item
         end

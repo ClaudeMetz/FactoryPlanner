@@ -70,15 +70,7 @@ end
 ---@param machine_proto FPMachinePrototype
 ---@return boolean applicable
 function Line:is_machine_compatible(machine_proto)
-    ---@cast self.recipe.proto FPRecipePrototype
-    local type_counts = self.recipe.proto.type_counts
-
-    local valid_ingredient_count = (machine_proto.ingredient_limit >= type_counts.ingredients.items)
-    local valid_product_count = (machine_proto.product_limit >= type_counts.products.items)
-    local valid_input_channels = (machine_proto.fluid_channels.input >= type_counts.ingredients.fluids)
-    local valid_output_channels = (machine_proto.fluid_channels.output >= type_counts.products.fluids)
-
-    return (valid_ingredient_count and valid_product_count and valid_input_channels and valid_output_channels)
+    return lib.is_recipe_machine_compatible(self.recipe.proto--[[@as FPRecipePrototype]], machine_proto)
 end
 
 -- Sets this line's machine to be the given prototype
