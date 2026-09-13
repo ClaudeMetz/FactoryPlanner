@@ -54,7 +54,6 @@ end
 
 
 ---@class MatrixMetadata
----@field aggregate_map table<ObjectID, SolverAggregate>
 ---@field byproducts SolverSet
 ---@field unproduced_outputs SolverSet
 ---@field all_items SolverSet
@@ -75,27 +74,13 @@ function matrix_engine.get_matrix_solver_metadata(factory_data)
 
     local line_inputs = {}
     local line_outputs = {}
-    local aggregate_map = {}
     local line_count = 0
 
-    ---@param lines (LineData | SubfloorLineData)[]
-    local function get_lines_metadata(lines, floor_id)
-
-        for _, line in pairs(lines) do
-            if line.subfloor ~= nil then
-                get_lines_metadata(line.subfloor.lines, line.subfloor.id)
-            else  ---@cast line LineData
-                local line_aggregate = solver.get_line_aggregate(line, floor_id, 1)
-                matrix_engine.consolidate(line_aggregate)
-                for item_key, _ in pairs(line_aggregate.ingredients) do line_inputs[item_key] = true end
-                for item_key, _ in  pairs(line_aggregate.products) do line_outputs[item_key] = true end
-                aggregate_map[line.id] = line_aggregate
-                line_count = line_count + 1
-            end
-        end
+    for _, line_aggregate in pairs(factory_data.line_data) do
+        for item_key, _ in pairs(line_aggregate.ingredients) do line_inputs[item_key] = true end
+        for item_key, _ in  pairs(line_aggregate.products) do line_outputs[item_key] = true end
+        line_count = line_count + 1
     end
-
-    get_lines_metadata(factory_data.top_floor.lines, factory_data.top_floor.id)
 
     local all_items = solver.util.set.union(line_inputs, line_outputs)
     local raw_inputs = solver.util.set.difference(line_inputs, line_outputs)
@@ -117,7 +102,6 @@ function matrix_engine.get_matrix_solver_metadata(factory_data)
     local num_rows = solver.util.set.count(raw_inputs, byproducts, eliminated_items, free_items)
     local num_cols = line_count + solver.util.set.count(raw_inputs, byproducts, free_items)
     local result = {
-        aggregate_map = aggregate_map,
         byproducts = byproducts,
         unproduced_outputs = unproduced_outputs,
         all_items = all_items,
@@ -157,7 +141,7 @@ function matrix_engine.solve(factory_data)
     local matrix_metadata = matrix_engine.get_matrix_solver_metadata(factory_data)
 
     if matrix_metadata.num_rows ~= 0 then  -- don't run calculations if the factory has no lines
-        local linear_dependence_data = matrix_engine.get_linear_dependence_data(matrix_metadata, factory_data.top_floor)
+        local linear_dependence_data = matrix_engine.get_linear_dependence_data(factory_data, matrix_metadata)
 
         -- In the case of linearly dependent free items, we remove it automatically if there's only one option.
         -- Otherwise we present the user with a choice to remove problematic free items in the production box.
@@ -176,7 +160,7 @@ function matrix_engine.solve(factory_data)
             -- Redo all these since we've changed the factory
             factory_data = solver.generate_factory_data(player, factory)
             matrix_metadata = matrix_engine.get_matrix_solver_metadata(factory_data)
-            linear_dependence_data = matrix_engine.get_linear_dependence_data(matrix_metadata, factory_data.top_floor)
+            linear_dependence_data = matrix_engine.get_linear_dependence_data(factory_data, matrix_metadata)
         end
 
         if matrix_metadata.num_rows == matrix_metadata.num_cols
@@ -198,10 +182,10 @@ end
 ---@field allowed_free_items FPItemPrototype[]
 ---@field num_needed_free_items integer
 
----@param floor_data FloorData
+---@param factory_data FactoryData
 ---@param matrix_metadata MatrixMetadata
 ---@return LinearDependanceData
-function matrix_engine.get_linear_dependence_data(matrix_metadata, floor_data)
+function matrix_engine.get_linear_dependence_data(factory_data, matrix_metadata)
     local num_rows = matrix_metadata.num_rows
     local num_cols = matrix_metadata.num_cols
 
@@ -209,7 +193,7 @@ function matrix_engine.get_linear_dependence_data(matrix_metadata, floor_data)
     local linearly_dependent_free_items = {}  ---@type SolverSet
     local allowed_free_items = {}  ---@type SolverSet
 
-    local matrix_data = matrix_engine.get_matrix_data(matrix_metadata, floor_data)
+    local matrix_data = matrix_engine.get_matrix_data(factory_data, matrix_metadata)
     local matrix = matrix_data.matrix
     local columns = matrix_data.columns
     matrix_engine.to_reduced_row_echelon_form(matrix)
@@ -222,7 +206,7 @@ function matrix_engine.get_linear_dependence_data(matrix_metadata, floor_data)
         local col_split_str = lib.split_string(col_name, SEPARATOR)
         if col_split_str[1] == "line" then
             local line_id = col_split_str[2]  ---@as integer
-            local recipe_name = matrix_metadata.aggregate_map[line_id].recipe_name
+            local recipe_name = factory_data.line_data[line_id].recipe_name
             linearly_dependent_variables["recipe"..SEPARATOR..recipe_name] = true
         else -- item
             linearly_dependent_variables[col_name] = true
@@ -245,7 +229,7 @@ function matrix_engine.get_linear_dependence_data(matrix_metadata, floor_data)
     end
     -- check which eliminated items could be made free while still retaining linear independence
     if next(linearly_dependent_variables) == nil and num_cols < num_rows then
-        local ld_matrix_data = matrix_engine.get_matrix_data(matrix_metadata, floor_data)
+        local ld_matrix_data = matrix_engine.get_matrix_data(factory_data, matrix_metadata)
         local items = ld_matrix_data.rows  -- when transposed becomes columns
 
         local t_matrix = matrix_engine.transpose(ld_matrix_data.matrix)
@@ -280,13 +264,14 @@ end
 ---@field matrix_free_items SolverSet
 ---@field free_variable_scale_factors number[]
 
+---@param factory_data FactoryData
 ---@param matrix_metadata MatrixMetadata
----@param floor_data FloorData
 ---@return MatrixData
-function matrix_engine.get_matrix_data(matrix_metadata, floor_data)
+function matrix_engine.get_matrix_data(factory_data, matrix_metadata)
     local matrix_free_items = matrix_metadata.free_items
     local all_items = matrix_metadata.all_items
     local rows = matrix_engine.get_mapping_struct(all_items)
+    local floor_data = factory_data.top_floor
 
     -- Storing the line keys as "line;(lines id)"
     ---@return table<string, true>
@@ -312,7 +297,7 @@ function matrix_engine.get_matrix_data(matrix_metadata, floor_data)
     for key, _ in pairs(matrix_free_items) do free_variables["item"..SEPARATOR..key] = true end
     local col_set = solver.util.set.union(line_names, free_variables)
     local columns = matrix_engine.get_mapping_struct(col_set)
-    local matrix, free_variable_scale_factors = matrix_engine.get_matrix(matrix_metadata, floor_data, rows, columns)
+    local matrix, free_variable_scale_factors = matrix_engine.get_matrix(factory_data, rows, columns)
 
     return {
         matrix = matrix,
@@ -328,7 +313,7 @@ end
 ---@param matrix_metadata MatrixMetadata
 ---@return table<string, true>?
 function matrix_engine.run_matrix_solver(factory_data, matrix_metadata)
-    local matrix_data = matrix_engine.get_matrix_data(matrix_metadata, factory_data.top_floor)
+    local matrix_data = matrix_engine.get_matrix_data(factory_data, matrix_metadata)
     local matrix = matrix_data.matrix
     local columns = matrix_data.columns
     local free_variables = matrix_data.free_variables
@@ -354,7 +339,7 @@ function matrix_engine.run_matrix_solver(factory_data, matrix_metadata)
                  -- want the j-th entry in the last column (output of row-reduction)
                 local machine_amount = matrix[col_num]--[[@cast -nil]][#columns.values+1]  ---@as number
                 if machine_amount < 0 then machine_amount = 0 end
-                line_aggregate = matrix_metadata.aggregate_map[line.id]
+                line_aggregate = factory_data.line_data[line.id]
                 line_aggregate = matrix_engine.get_line_result_aggregate(line_aggregate, line.id, machine_amount, matrix_metadata, free_variables)
             else
                 line_aggregate = set_line_results(line.subfloor)
@@ -486,13 +471,12 @@ function matrix_engine.consolidate(aggregate)
     compare_maps("ingredients", "byproducts")
 end
 
----@param matrix_metadata MatrixMetadata
----@param floor_data FloorData
+---@param factory_data FactoryData
 ---@param rows MappingStruct
 ---@param columns MappingStruct
 ---@return number[][]
 ---@return number[]
-function matrix_engine.get_matrix(matrix_metadata, floor_data, rows, columns)
+function matrix_engine.get_matrix(factory_data, rows, columns)
     -- Returns the matrix to be solved.
     -- Format is a list of lists, where outer lists are rows and inner lists are columns.
     -- Rows are items and columns are recipes (or pseudo-recipes in the case of free items).
@@ -524,10 +508,10 @@ function matrix_engine.get_matrix(matrix_metadata, floor_data, rows, columns)
             matrix[row_num]--[[@cast -nil]][col_num] = 1
         else -- "line"
             local line_id = col_split_str[2]  ---@as integer
-            local beacon_power = matrix_metadata.aggregate_map[line_id].beacon_power
+            local beacon_power = factory_data.line_data[line_id].beacon_power
 
             -- use amounts for 1 building as matrix entries
-            local line_aggregate = matrix_metadata.aggregate_map[line_id]
+            local line_aggregate = factory_data.line_data[line_id]
 
             -- Beacons draw the same power however many machines the line ends up needing, so that
             -- part of it can't be expressed per building. It only depends on how the line is
@@ -552,7 +536,7 @@ function matrix_engine.get_matrix(matrix_metadata, floor_data, rows, columns)
 
     -- final column for desired output. Don't have to explicitly set constrained vars to zero
     -- since matrix is initialized with zeros.
-    for _, product in ipairs(floor_data.products) do
+    for _, product in ipairs(factory_data.top_floor.products) do
         local item_key = structures.pack_item(product)
         local row_num = rows.map[item_key]  -- will be nil for unproduced outputs
         if row_num ~= nil then
