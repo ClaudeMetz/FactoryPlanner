@@ -29,9 +29,9 @@ end
 --- Determines the amount of energy needed for a machine and the emissions that produces
 ---@param line_data LineData
 ---@param machine_amount number
----@param production_ratio number
+---@param crafts_per_second number
 ---@return number, number
-function _util.determine_power_and_emissions(line_data, machine_amount, production_ratio)
+function _util.determine_power_and_emissions(line_data, machine_amount, crafts_per_second)
     local machine_proto = line_data.machine_proto
     local recipe_proto = line_data.recipe_proto
     local total_effects = line_data.total_effects
@@ -65,7 +65,7 @@ function _util.determine_power_and_emissions(line_data, machine_amount, producti
     local emissions_per_joule = burned_energy * (machine_proto.emissions_per_joule[pollutant_type] or 0)
     local emissions_per_second = machine_amount * (machine_proto.emissions_per_second[pollutant_type] or 0)
     local emissions_per_craft = (recipe_proto.emissions_per_craft) and
-        production_ratio * (recipe_proto.emissions_per_craft[pollutant_type] or 0) or 0
+        crafts_per_second * (recipe_proto.emissions_per_craft[pollutant_type] or 0) or 0
     local total_emissions = (emissions_per_joule + emissions_per_second + emissions_per_craft) * total_multiplier * 60
 
     return total_power, total_emissions

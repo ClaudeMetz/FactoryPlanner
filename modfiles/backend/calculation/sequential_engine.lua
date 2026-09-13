@@ -300,7 +300,7 @@ local function update_line(line_data, aggregate, looped_fuel)
         floor_id = aggregate.floor_id,
         line_id = line_data.id,
         machine_amount = machine_amount,
-        production_ratio = production_ratio,
+        crafts_per_second = production_ratio,
         products = line_products,
         byproducts = line_byproducts,
         ingredients = line_ingredients,
@@ -349,7 +349,7 @@ local function update_floor(floor_data, aggregate)
                 floor_id = aggregate.floor_id,
                 line_id = line_data.id,
                 machine_amount = subfloor_aggregate.machine_amount,
-                production_ratio = nil,
+                crafts_per_second = nil,
                 products = subfloor_aggregate.products,
                 byproducts = subfloor_aggregate.byproducts,
                 ingredients = subfloor_aggregate.ingredients,
@@ -374,7 +374,7 @@ end
 ---@param factory_data FactoryData
 function sequential_engine.update_factory(factory_data)
     -- Initialize aggregate with the top level items
-    local aggregate = structures.aggregate.init(1)
+    local aggregate = structures.aggregate.init(factory_data.top_floor.id)
     for _, product in pairs(factory_data.top_floor.products) do
         structures.map.add(aggregate.ingredients, product)
     end

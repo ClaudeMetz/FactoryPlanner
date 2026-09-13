@@ -318,7 +318,7 @@ function simplex_engine.update_line(floor_id, line_data, scale_factor, byproduct
 
     -- Update the machine
     local machine_amount = result and scale_factor * result.machine_amount or 0
-    local production_ratio = machine_amount * (data.production_ratio or 0)
+    local production_ratio = machine_amount * (data.crafts_per_second or 0)
     local fuel_amount = 0.0
 
     -- Update the fuel
@@ -342,7 +342,7 @@ function simplex_engine.update_line(floor_id, line_data, scale_factor, byproduct
         line_id = line_data.id,
         floor_id = floor_id,
         machine_amount = machine_amount,
-        production_ratio = production_ratio,
+        crafts_per_second = production_ratio,
         products = product_result,
         byproducts = byproduct_result,
         ingredients = ingredient_result,

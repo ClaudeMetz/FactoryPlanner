@@ -19,7 +19,7 @@ function solver.set_blank_line(floor, line)
         floor_id = floor.id,
         line_id = line.id,
         machine_amount = 0,
-        production_ratio = (line.class == "Line") and 0 or nil,
+        crafts_per_second = (line.class == "Line") and 0 or nil,
         products = {},
         byproducts = {},
         ingredients = {},
@@ -353,7 +353,7 @@ end
 ---@class FactoryData
 ---@field player_index uint32
 ---@field factory_id ObjectID
----@field aggregate_map AggregateMap
+---@field line_data AggregateMap
 ---@field top_floor FloorData
 ---@field matrix_free_items FPItemPrototype[]
 ---@field simplex_basis table<ConstraintKey, VariableKey>
@@ -365,12 +365,12 @@ end
 function solver.generate_factory_data(player, factory)
     local calculate_emissions = lib.globals.preferences(player).calculate_emissions
     local free_items = factory.matrix_free_items  ---@as FPItemPrototype[]
-    local top_floor_data, aggregate_map = generate_floor_data(player, factory, factory.top_floor, calculate_emissions)
+    local top_floor_data, line_data = generate_floor_data(player, factory, factory.top_floor, calculate_emissions)
 
     local factory_data = {
         player_index = player.index,
         factory_id = factory.id,
-        aggregate_map = aggregate_map,
+        line_data = line_data,
         top_floor = top_floor_data,
         matrix_free_items = free_items,
         simplex_basis = factory.simplex_basis or {}
@@ -394,17 +394,17 @@ function solver.get_line_aggregate(line_data, floor_id, machine_amount)
     -- Get amount of crafts in 1 second
     local speed_multiplier = line_data.machine_speed * (1 + (line_data.total_effects.speed / MAGIC_NUMBERS.effect_precision))
     local energy = math.max(line_data.recipe_energy, MAGIC_NUMBERS.minimum_energy)
-    local total_crafts = machine_amount * speed_multiplier / energy
+    local crafts_per_second = machine_amount * speed_multiplier / energy
 
     -- Get simple products
     for _, item in pairs(line_data.products) do
-        local amount = total_crafts * solver.util.determine_prodded_amount(item, line_data.total_effects)
+        local amount = crafts_per_second * solver.util.determine_prodded_amount(item, line_data.total_effects)
         structures.map.add(products, item, amount)
     end
 
     -- Get simple ingredients
     for _, item in pairs(line_data.ingredients) do
-        local amount = item.amount * total_crafts * (item.type ~= "fluid" and line_data.resource_drain_rate or 1)
+        local amount = item.amount * crafts_per_second * (item.type ~= "fluid" and line_data.resource_drain_rate or 1)
         structures.map.add(ingredients, item, amount)
     end
 
@@ -418,7 +418,7 @@ function solver.get_line_aggregate(line_data, floor_id, machine_amount)
 
     if energy > MAGIC_NUMBERS.minimum_energy then
         -- Get power and emissions
-        power, emissions = solver.util.determine_power_and_emissions(line_data, machine_amount, total_crafts)
+        power, emissions = solver.util.determine_power_and_emissions(line_data, machine_amount, crafts_per_second)
 
         -- Get fuel/power/heat energy requirements
         if line_data.machine_proto.energy_type == "burner" and line_data.fuel_proto then
@@ -501,7 +501,7 @@ function solver.get_line_aggregate(line_data, floor_id, machine_amount)
         line_id = line_data.id,
         floor_id = floor_id,
         machine_amount = machine_amount,
-        production_ratio = total_crafts,
+        crafts_per_second = crafts_per_second,
         products = products,
         byproducts = {},
         ingredients = ingredients,
@@ -552,7 +552,7 @@ end
 ---@field floor_id ObjectID
 ---@field line_id ObjectID
 ---@field machine_amount number
----@field production_ratio number?
+---@field crafts_per_second number?
 ---@field products SolverMap
 ---@field byproducts SolverMap
 ---@field ingredients SolverMap
@@ -569,7 +569,7 @@ function solver.set_line_result(result)
         line.machine.amount = result.machine_amount
         if line.machine.fuel ~= nil then line.machine.fuel.amount = result.fuel_amount end
 
-        line.production_ratio = result.production_ratio
+        line.production_ratio = result.crafts_per_second
 
         -- Workaround for recipes with 0 energy
         if line.recipe.proto.energy <= MAGIC_NUMBERS.minimum_energy then line.machine.amount = 0 end

@@ -47,7 +47,7 @@ end
 ---@field line_id ObjectID
 ---@field floor_id ObjectID
 ---@field machine_amount number
----@field production_ratio number?
+---@field crafts_per_second number?
 ---@field products SolverMap
 ---@field byproducts SolverMap
 ---@field ingredients SolverMap
@@ -58,15 +58,14 @@ end
 ---@field machine_limit number?
 ---@field machine_force_limit boolean?
 
----@param line_id ObjectID
 ---@param floor_id ObjectID
 ---@return SolverAggregate
-function _structures.aggregate.init(line_id, floor_id)
+function _structures.aggregate.init(floor_id)
     return {
-        line_id = line_id,
+        line_id = 0,
         floor_id = floor_id,
         machine_amount = 0,
-        production_ratio = nil,
+        crafts_per_second = nil,
         products = {},
         byproducts = {},
         ingredients = {},

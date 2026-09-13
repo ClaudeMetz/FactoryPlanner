@@ -345,7 +345,7 @@ function matrix_engine.run_matrix_solver(factory_data, matrix_metadata)
 
     ---@param floor FloorData
     local function set_line_results(floor)
-        local floor_aggregate = structures.aggregate.init(floor.id, floor.id)
+        local floor_aggregate = structures.aggregate.init(floor.id)
         for i, line in ipairs(floor.lines) do
             local line_key = "line"..SEPARATOR..line.id
             local line_aggregate = nil
@@ -383,7 +383,7 @@ function matrix_engine.run_matrix_solver(factory_data, matrix_metadata)
                 floor_id = floor.id,
                 line_id = line.id,
                 machine_amount = line_aggregate.machine_amount,
-                production_ratio = line_aggregate.production_ratio,
+                crafts_per_second = line_aggregate.crafts_per_second,
                 products = line_aggregate.products,
                 byproducts = line_aggregate.byproducts,
                 ingredients = line_aggregate.ingredients,
@@ -416,7 +416,7 @@ function matrix_engine.run_matrix_solver(factory_data, matrix_metadata)
         required_amount[key] = product.amount
     end
 
-    local main_aggregate = structures.aggregate.init(factory_data.top_floor.id, factory_data.top_floor.id)
+    local main_aggregate = structures.aggregate.init(factory_data.top_floor.id)
     for _, item in ipairs(structures.map.list(total)) do
         local key = structures.pack_item(item)
         local req = required_amount[key] or 0
@@ -624,7 +624,7 @@ function matrix_engine.get_line_result_aggregate(line_aggregate, line_id, machin
 
     -- Metadata aggregates assumed a machine amount of 1, so we just need to multiply by the solved machine amount to get the result
     aggregate.machine_amount = machine_amount
-    aggregate.production_ratio = aggregate.production_ratio and aggregate.production_ratio * machine_amount
+    aggregate.crafts_per_second = aggregate.crafts_per_second and aggregate.crafts_per_second * machine_amount
 
     for item_key, item_amount in pairs(aggregate.products) do
         if matrix_metadata.byproducts[item_key] or free_variables["item"..SEPARATOR..item_key] then
