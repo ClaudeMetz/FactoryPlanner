@@ -21,12 +21,8 @@ local function refresh_solver_frame(player)
     local solver_flow = main_elements.solver_flow  ---@as LuaGuiElement
     solver_flow.clear()
 
-    local factory_data = solver.generate_factory_data(player, factory)
-    local matrix_metadata = matrix_engine.get_matrix_solver_metadata(factory_data)
-    if matrix_metadata.num_rows == 0 then return end  -- skip if there are no active lines
-    local linear_dependence_data = matrix_engine.get_linear_dependence_data(factory_data, matrix_metadata)
-    local free_items = matrix_engine.get_item_protos(matrix_metadata.free_items)
-    local num_needed_free_items = matrix_metadata.num_rows - matrix_metadata.num_cols + #free_items
+    local free_items = factory.matrix_free_items  ---@as FPItemPrototype[]
+    local num_needed_free_items = factory.linear_dependence_data and factory.linear_dependence_data.num_needed_free_items or 0
 
     ---@param flow LuaGuiElement
     ---@param status "unrestricted" | "constrained"
@@ -53,10 +49,10 @@ local function refresh_solver_frame(player)
         solver_flow.style.bottom_padding = (total_width > box_width) and 16 or 4
     end
 
-    if next(linear_dependence_data.linearly_dependent_free_items) then
+    if factory.linear_dependence_data and next(factory.linear_dependence_data.linearly_dependent_free_items) then
         main_elements.solver_frame.visible = true
 
-        local num_needed_restricted_items = #linear_dependence_data.linearly_dependent_free_items
+        local num_needed_restricted_items = #factory.linear_dependence_data.linearly_dependent_free_items
         local num_items_to_remove = num_needed_restricted_items - num_needed_free_items
 
         local caption = {"fp.error_message", {"fp.info_label", {"fp.remove_unrestricted_items"}}}
@@ -65,18 +61,18 @@ local function refresh_solver_frame(player)
         solver_flow.add{type="label", caption=caption, tooltip=tooltip, style="bold_label"}
 
         local flow_unrestricted = solver_flow.add{type="flow", direction="horizontal"}
-        build_unrestricted_item_button_flow(flow_unrestricted, "unrestricted", "default", linear_dependence_data.linearly_dependent_free_items)
+        build_unrestricted_item_button_flow(flow_unrestricted, "unrestricted", "default", factory.linear_dependence_data.linearly_dependent_free_items)
 
         fix_bottom_padding_for_buttons(#free_items)
 
-    elseif next(linear_dependence_data.linearly_dependent_recipes) then
+    elseif factory.linear_dependence_data and next(factory.linear_dependence_data.linearly_dependent_recipes) then
         main_elements.solver_frame.visible = true
 
         local caption = {"fp.error_message", {"fp.info_label", {"fp.linearly_dependent_recipes"}}}
         solver_flow.add{type="label", caption=caption, tooltip={"fp.linearly_dependent_recipes_tt"}, style="bold_label"}
         local flow_recipes = solver_flow.add{type="flow", direction="horizontal"}
 
-        for _, recipe_proto in pairs(linear_dependence_data.linearly_dependent_recipes) do
+        for _, recipe_proto in pairs(factory.linear_dependence_data.linearly_dependent_recipes) do
             local sprite = flow_recipes.add{type="sprite", sprite=recipe_proto.sprite,
                 tooltip=recipe_proto.localised_name, resize_to_sprite=true}
             sprite.style.size = 36
@@ -86,7 +82,7 @@ local function refresh_solver_frame(player)
     elseif num_needed_free_items ~= 0 then
         main_elements.solver_frame.visible = true
 
-        local needs_choice = (#linear_dependence_data.allowed_free_items > 0)
+        local needs_choice = factory.linear_dependence_data and #factory.linear_dependence_data.allowed_free_items > 0 or false
         local item_count = 0
 
         if needs_choice then
@@ -101,12 +97,12 @@ local function refresh_solver_frame(player)
 
         local flow_unrestricted = solver_flow.add{type="flow", direction="horizontal"}
         build_unrestricted_item_button_flow(flow_unrestricted, "unrestricted", "green", free_items)
-        item_count = item_count + #matrix_metadata.free_items
+        item_count = item_count + #free_items
 
-        if needs_choice then
+        if needs_choice then  ---@cast factory.linear_dependence_data -nil
             local flow_constrained = solver_flow.add{type="flow", direction="horizontal"}
-            build_unrestricted_item_button_flow(flow_constrained, "constrained", "default", linear_dependence_data.allowed_free_items)
-            item_count = item_count + #linear_dependence_data.allowed_free_items
+            build_unrestricted_item_button_flow(flow_constrained, "constrained", "default", factory.linear_dependence_data.allowed_free_items)
+            item_count = item_count + #factory.linear_dependence_data.allowed_free_items
         end
 
         fix_bottom_padding_for_buttons(item_count)
@@ -162,7 +158,7 @@ local function handle_solver_change(player, tags, _)
 
     factory.solver = tags.solver
     factory.matrix_free_items = {}  -- reset could be avoided
-    factory.linearly_dependant = false
+    factory.linear_dependence_data = nil
     factory.simplex_basis = nil
 
     main_dialog.toggle_districts_view(player, true)
