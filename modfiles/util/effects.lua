@@ -144,4 +144,20 @@ function _effects.format(module_effects, options)
     else return {"fp.none"} end
 end
 
+---@param force LuaForce
+---@param recipe_name string
+---@return IntegerEffectValue productivity_bonus
+function _effects.get_recipe_productivity(force, recipe_name)
+    local bonus = nil
+    if recipe_name == "custom-mining" then
+        bonus = force.mining_drill_productivity_bonus
+    elseif recipe_name == "custom-research" then
+        bonus = force.laboratory_productivity_bonus
+    else
+        bonus = force.recipes[recipe_name].productivity_bonus
+    end
+    return math.floor(bonus * MAGIC_NUMBERS.effect_precision + 1e-4)
+end
+
+
 return _effects

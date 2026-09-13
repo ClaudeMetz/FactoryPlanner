@@ -170,7 +170,7 @@ function _preferences.export(player)
         belt_stack = prefs.belt_stack
     }
 
-    return lib.pack_export_string(export_table)
+    return lib.porter.pack_export_string(export_table)
 end
 
 ---@param value any
@@ -198,7 +198,7 @@ function _preferences.import(player, export_string)
     local export_table = nil
 
     if not pcall(function()
-        export_table = lib.unpack_export_string(export_string)
+        export_table = lib.porter.unpack_export_string(export_string)
         assert(type(export_table) == "table")
     end) then return "decoding_failure" end
     ---@cast export_table PreferencesExportTable

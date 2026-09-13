@@ -173,7 +173,7 @@ end
 function Factory:get_productivity_bonus(force, recipe_name)
     local custom_bonus = self.productivity_boni[recipe_name]
     if custom_bonus then return custom_bonus
-    else return lib.get_recipe_productivity(force, recipe_name) end
+    else return lib.effects.get_recipe_productivity(force, recipe_name) end
 end
 
 

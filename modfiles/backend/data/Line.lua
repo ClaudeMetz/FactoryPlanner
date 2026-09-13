@@ -70,7 +70,7 @@ end
 ---@param machine_proto FPMachinePrototype
 ---@return boolean applicable
 function Line:is_machine_compatible(machine_proto)
-    return lib.is_recipe_machine_compatible(self.recipe.proto--[[@as FPRecipePrototype]], machine_proto)
+    return lib.availability.is_recipe_machine_compatible(self.recipe.proto--[[@as FPRecipePrototype]], machine_proto)
 end
 
 -- Sets this line's machine to be the given prototype
@@ -110,7 +110,7 @@ function Line:change_machine_by_action(player, action, current_proto)
         current_machine_proto = prototyper.util.find("machines", new_machine_id, category_id) ---@as FPMachinePrototype
 
         if self:is_machine_compatible(current_machine_proto)
-                and lib.is_machine_available(force, current_machine_proto) then
+                and lib.availability.is_machine_available(force, current_machine_proto) then
             self:change_machine_to_proto(player, current_machine_proto)
             return true
         end
@@ -143,7 +143,7 @@ function Line:change_machine_to_default(player)
     local success = false
     -- If the default is applicable, just set it straight away
     if self:is_machine_compatible(default_proto)
-            and lib.is_machine_available(player.force--[[@as LuaForce]], default_proto) then
+            and lib.availability.is_machine_available(player.force--[[@as LuaForce]], default_proto) then
         self:change_machine_to_proto(player, default_proto)
         success = true
     -- Otherwise, go up, then down the category to find an alternative
@@ -245,7 +245,7 @@ function Line:compile_machine_filter(force)
     local machine_category = prototyper.util.find("machines", nil, self.machine.proto.combined_category)  ---@as NamedCategory<FPMachinePrototype>
 
     for _, machine_proto in pairs(machine_category.members) do
-        if self:is_machine_compatible(machine_proto) and lib.is_machine_available(force, machine_proto) then
+        if self:is_machine_compatible(machine_proto) and lib.availability.is_machine_available(force, machine_proto) then
             table.insert(compatible_machines, machine_proto.name)
         end
     end

@@ -297,7 +297,7 @@ end
 function Recipe:refresh_availability(force)
     local recipe_proto = self.proto  --[[@as FPRecipePrototype]]
     local previous = self.available
-    self.available = lib.is_recipe_available(force, recipe_proto)
+    self.available = lib.availability.is_recipe_available(force, recipe_proto)
     return self.available ~= previous
 end
 

@@ -97,13 +97,13 @@ local function match_recipes(player, modal_data, proto)
             end
 
             if recipe.custom then
-                local recipe_enabled = lib.is_recipe_unlocked(force, recipe, unlock_cache)
+                local recipe_enabled = lib.availability.is_recipe_unlocked(force, recipe, unlock_cache)
                 table.insert(relevant_recipes, {proto=recipe, enabled=recipe_enabled})
                 if not recipe_enabled then counts.disabled = counts.disabled + 1 end
 
             elseif force_recipe ~= nil then  -- only add recipes that exist on the current force
-                local recipe_enabled, recipe_hidden = lib.is_recipe_unlocked(force, recipe), recipe.hidden
-                local recipe_should_show, overwrite = lib.is_recipe_available(force, recipe)
+                local recipe_enabled, recipe_hidden = lib.availability.is_recipe_unlocked(force, recipe), recipe.hidden
+                local recipe_should_show, overwrite = lib.availability.is_recipe_available(force, recipe)
 
                 if overwrite == nil then  -- user preferences don't apply to overwritten recipes
                     local user_disabled = (preferences.ignore_barreling_recipes and recipe.barreling)
@@ -208,7 +208,7 @@ local function attempt_adding_line(player, recipe_id, modal_data)
             lib.messages.raise(player, "warning", {"fp.warning_temperature_not_configured", recipe_name}, 1)
         end
 
-        if not lib.is_recipe_unlocked(player.force--[[@as LuaForce]], recipe_proto) then
+        if not lib.availability.is_recipe_unlocked(player.force--[[@as LuaForce]], recipe_proto) then
             lib.messages.raise(player, "warning", {"fp.warning_recipe_disabled", recipe_name}, 1)
         end
 

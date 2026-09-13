@@ -297,7 +297,7 @@ function utility_structures.productivity_boni(player, modal_data)
             end
             table.add{type="label", caption=caption}.style.width = 250
 
-            local recipe_productivity = lib.get_recipe_productivity(player.force, recipe_name)
+            local recipe_productivity = lib.effects.get_recipe_productivity(player.force, recipe_name)
             local percentage = recipe_productivity * 100 / MAGIC_NUMBERS.effect_precision
             table.add{type="label", caption=(("%+d"):format(percentage) .. "%")}
 

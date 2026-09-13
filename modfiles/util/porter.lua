@@ -13,6 +13,19 @@ local _porter = {}
 ---@field export_modset ModToVersion
 ---@field factories Factory[]
 
+---@param export_table table
+---@return ExportString export_string
+function _porter.pack_export_string(export_table)
+    return helpers.encode_string(helpers.table_to_json(export_table)) ---@as ExportString
+end
+
+---@param export_string ExportString
+---@return table export_table
+function _porter.unpack_export_string(export_string)
+    return helpers.json_to_table(helpers.decode_string(export_string)--[[@as string]]) ---@as table
+end
+
+
 -- Converts the given factories into a factory exchange string
 ---@param factories Factory[]
 ---@return ExportString
@@ -26,7 +39,7 @@ function _porter.generate_export_string(factories)
         table.insert(export_table.factories, factory:pack(false))
     end
 
-    return lib.pack_export_string(export_table)  ---@as ExportString
+    return _porter.pack_export_string(export_table)  ---@as ExportString
 end
 
 -- Converts the given factory exchange string into a temporary Factory
@@ -38,7 +51,7 @@ function _porter.process_export_string(player, export_string)
     local export_table = nil  ---@type AnyBasic?
 
     if not pcall(function()
-        export_table = lib.unpack_export_string(export_string)
+        export_table = _porter.unpack_export_string(export_string)
         assert(type(export_table) == "table")
     end) then return nil, "decoding_failure" end
     ---@cast export_table ExportTable
@@ -100,28 +113,28 @@ function _porter.format_modset_diff(old_modset)
     local current_table, next_index = tooltip, 3
 
     if next(changes.added) then
-        current_table, next_index = lib.build_localised_string(
+        current_table, next_index = lib.format.build_localised_string(
             {"fp.factory_mod_added"}, current_table, next_index)
         for name, version in pairs(changes.added) do
-            current_table, next_index = lib.build_localised_string(
+            current_table, next_index = lib.format.build_localised_string(
                 {"fp.factory_mod_and_version", name, version}, current_table, next_index)
         end
     end
 
     if next(changes.removed) then
-        current_table, next_index = lib.build_localised_string(
+        current_table, next_index = lib.format.build_localised_string(
             {"fp.factory_mod_removed"}, current_table, next_index)
         for name, version in pairs(changes.removed) do
-            current_table, next_index = lib.build_localised_string(
+            current_table, next_index = lib.format.build_localised_string(
                 {"fp.factory_mod_and_version", name, version}, current_table, next_index)
         end
     end
 
     if next(changes.updated) then
-        current_table, next_index = lib.build_localised_string(
+        current_table, next_index = lib.format.build_localised_string(
             {"fp.factory_mod_updated"}, current_table, next_index)
         for name, versions in pairs(changes.updated) do
-            current_table, next_index = lib.build_localised_string(
+            current_table, next_index = lib.format.build_localised_string(
                 {"fp.factory_mod_and_versions", name, versions.old, versions.current}, current_table, next_index)
         end
     end

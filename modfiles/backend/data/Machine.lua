@@ -322,7 +322,7 @@ function Machine:paste(object, player)
         local corresponding_proto = prototyper.util.find("machines", object.proto.name, self.proto.combined_category)  ---@as FPMachinePrototype?
 
         if corresponding_proto == nil or not self.parent:is_machine_compatible(corresponding_proto)
-                or not lib.is_machine_available(player.force--[[@as LuaForce]], corresponding_proto) then
+                or not lib.availability.is_machine_available(player.force--[[@as LuaForce]], corresponding_proto) then
             return false, "incompatible"
         end
 

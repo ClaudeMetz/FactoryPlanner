@@ -1862,7 +1862,7 @@ function generator.locations.generate(context)
             local value_and_unit = {property_proto.localised_unit_key, value}  ---@type LocalisedString
             if property_proto.is_time then value_and_unit = lib.format.time(value) end
 
-            current_table, next_index = lib.build_localised_string(
+            current_table, next_index = lib.format.build_localised_string(
                 {"fp.surface_property", property_proto.localised_name, value_and_unit}, current_table, next_index)
         end
 
