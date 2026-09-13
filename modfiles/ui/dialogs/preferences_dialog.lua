@@ -336,11 +336,11 @@ end
 ---@param tags TogglePreferencesViewTags
 local function handle_view_toggle(player, tags, _)
     local view_preferences = lib.globals.preferences(player).item_views
-    for index, view_preference in ipairs(view_preferences.views) do
+    for _, view_preference in ipairs(view_preferences.views) do
         if view_preference.name == tags.name then
             view_preference.enabled = not view_preference.enabled
             -- Select a valid view if the current one is disabled
-            if not view_preference.enabled and view_preferences.selected_index == index then
+            if not view_preference.enabled and view_preferences.selected.primary == tags.name then
                 item_views.cycle_views(player, "standard")
             end
             break
@@ -358,16 +358,6 @@ local function handle_view_move(player, tags, _)
     local view_preference = table.remove(view_preferences.views, tags.index)
     local new_index = (tags.direction == "up") and (tags.index-1) or (tags.index+1)
     table.insert(view_preferences.views, new_index, view_preference)
-
-    -- Make sure the selected view stays selected
-    local selected = view_preferences.selected_index
-    if tags.index == selected then
-        view_preferences.selected_index = new_index
-    elseif tags.index < selected and new_index >= selected then
-        view_preferences.selected_index = selected - 1
-    elseif tags.index > selected and new_index <= selected then
-        view_preferences.selected_index = selected + 1
-    end
 
     lib.preferences.refresh_after_change(player, "edit_views")
     refresh_views_table(player)

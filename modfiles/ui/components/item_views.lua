@@ -146,7 +146,7 @@ function item_views.process_item(player, proto, item_amount, machine_amount)
         return button_number, {"", tooltip_number, " ", unit}
     else
         local view_preferences = lib.globals.preferences(player).item_views
-        local selected_view = view_preferences.views[view_preferences.selected_index]--[[@cast -nil]].name
+        local selected_view = view_preferences.selected.primary
         local processor = processors[selected_view]  ---@cast processor -nil
         local number, tooltip = processor(views_data, item_amount, proto, machine_amount)
         return number, tooltip
@@ -262,7 +262,10 @@ end
 
 ---@class ItemViewPreferences
 ---@field views ItemViewPreference[]
----@field selected_index integer
+---@field selected ItemViewSelection
+
+---@class ItemViewSelection
+---@field primary string
 
 ---@class ItemViewPreference
 ---@field name string
@@ -279,10 +282,21 @@ function item_views.default_preferences()
             {name="wagons_per_timescale", enabled=false},
             {name="rockets_per_timescale", enabled=false}
         },
-        selected_index = 1
+        selected = {primary="items_per_timescale"}
     }
 end
 
+
+---@param preferences ItemViewPreferences
+---@param name string
+---@return ItemViewPreference? preference
+---@return integer? index
+local function find_preference(preferences, name)
+    for index, preference in ipairs(preferences.views) do
+        if preference.name == name then return preference, index end
+    end
+    return nil, nil
+end
 
 ---@param player LuaPlayer
 ---@param func function
@@ -310,12 +324,12 @@ function item_views.rebuild_interface(player)
         table.style.horizontal_spacing = 0
 
         -- Iterate preferences for proper ordering
-        for index, view_preference in pairs(view_preferences.views) do
+        for _, view_preference in ipairs(view_preferences.views) do
             local view = views[view_preference.name]
 
             ---@class ChangeViewTags
-            ---@field view_index integer
-            local tags = {mod="fp", on_gui_click="change_view", view_index=index}
+            ---@field view_name string
+            local tags = {mod="fp", on_gui_click="change_view", view_name=view_preference.name}
             table.add{type="button", tags=tags, caption=view.caption, tooltip=view.tooltip,
                 style="fp_button_push", mouse_button_filter={"left"}}
         end
@@ -332,9 +346,9 @@ function item_views.refresh_interface(player)
     ---@param flow LuaGuiElement
     local function refresh(flow)
         for _, view_button in pairs(flow["table_views"].children) do
-            local index = view_button.tags--[[@as ChangeViewTags]].view_index
-            local preference = view_preferences.views[index]
-            view_button.toggled = (view_preferences.selected_index == index)
+            local name = view_button.tags--[[@as ChangeViewTags]].view_name
+            local preference = find_preference(view_preferences, name)
+            view_button.toggled = (view_preferences.selected.primary == name)
             view_button.visible = preference--[[@cast -nil]].enabled
         end
     end
@@ -344,10 +358,10 @@ end
 
 
 ---@param player LuaPlayer
----@param new_index integer
-local function select_view(player, new_index)
+---@param name string
+local function select_view(player, name)
     local view_preferences = lib.globals.preferences(player).item_views
-    view_preferences.selected_index = new_index
+    view_preferences.selected.primary = name
 
     item_views.refresh_interface(player)
     local compact_view = lib.globals.ui_state(player).compact_view
@@ -360,18 +374,19 @@ end
 function item_views.cycle_views(player, direction)
     local view_preferences = lib.globals.preferences(player).item_views
 
-    local next_option = view_preferences.selected_index
+    local _, next_option = find_preference(view_preferences, view_preferences.selected.primary)
+    ---@cast next_option -nil
     local total_options = #view_preferences.views
     local mover = (direction == "standard") and 1 or -1
 
-    while true do
+    for _ = 1, total_options do
         next_option = next_option + mover
         if next_option > total_options then next_option = 1
         elseif next_option < 1 then next_option = total_options end
 
-        local preference = view_preferences.views[next_option]
-        if preference--[[@cast -nil]].enabled then
-            select_view(player, next_option)
+        local preference = view_preferences.views[next_option]  ---@cast preference -nil
+        if preference.enabled then
+            select_view(player, preference.name)
             break
         end
     end
@@ -387,7 +402,7 @@ listeners.gui = {
             name = "change_view",
             handler = function(player, tags, _)
                 ---@cast tags ChangeViewTags
-                select_view(player, tags.view_index)
+                select_view(player, tags.view_name)
             end
         }
     }
