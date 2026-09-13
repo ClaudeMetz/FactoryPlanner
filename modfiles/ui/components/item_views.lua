@@ -62,7 +62,7 @@ function processors.items_per_second_per_machine(metadata, raw_amount, item_prot
     local type_string = (item_proto.type == "fluid") and {"fp.l_fluid"} or {"fp.pl_item", plural_parameter}
     -- If machine_amount is nil, this shouldn't show /machine
     local per_machine = (machine_amount ~= nil) and {"", "/", {"fp.pl_machine", 1}} or ""
-    local tooltip = {"", tooltip_number, " ", type_string, "/", {"fp.second"}, per_machine}
+    local tooltip = {"", tooltip_number, " ", type_string, "/", {"fp.unit_second"}, per_machine}
 
     return button_number, tooltip
 end
