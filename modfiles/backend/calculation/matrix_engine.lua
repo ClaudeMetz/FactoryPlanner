@@ -75,8 +75,8 @@ function matrix_engine.get_matrix_solver_metadata(factory_data)
 
     local line_inputs = {}
     local line_outputs = {}
-    local recipe_map = {}
     local aggregate_map = {}
+    local line_count = 0
 
     ---@param lines (LineData | SubfloorLineData)[]
     local function get_lines_metadata(lines, floor_id)
@@ -89,8 +89,8 @@ function matrix_engine.get_matrix_solver_metadata(factory_data)
                 matrix_engine.consolidate(line_aggregate)
                 for item_key, _ in pairs(line_aggregate.ingredients) do line_inputs[item_key] = true end
                 for item_key, _ in  pairs(line_aggregate.products) do line_outputs[item_key] = true end
-                recipe_map[line.id] = line_aggregate.recipe_name
                 aggregate_map[line.id] = line_aggregate
+                line_count = line_count + 1
             end
         end
     end
@@ -115,7 +115,7 @@ function matrix_engine.get_matrix_solver_metadata(factory_data)
 
     local eliminated_items = solver.util.set.difference(intermediate_items, free_items)
     local num_rows = solver.util.set.count(raw_inputs, byproducts, eliminated_items, free_items)
-    local num_cols = solver.util.set.count(recipe_map, raw_inputs, byproducts, free_items)
+    local num_cols = line_count + solver.util.set.count(raw_inputs, byproducts, free_items)
     local result = {
         aggregate_map = aggregate_map,
         byproducts = byproducts,
