@@ -2,6 +2,7 @@
 Version: 0.00.00
 Date: 00. 00. 0000
   Features:
+    - The item picker can now hide unresearched items (#875)
   Changes:
   Bugfixes:
     - Fixed catalyst buttons in the compact dialogs not offering actions (#874)

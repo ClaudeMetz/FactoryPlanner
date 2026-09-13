@@ -19,6 +19,7 @@ end
 ---@field pause_on_interface boolean
 ---@field utility_scopes { components: "Factory" | "Floor" }
 ---@field recipe_filters { disabled: boolean, hidden: boolean }
+---@field show_unresearched_items boolean
 ---@field compact_ingredients boolean
 ---@field fold_out_subfloors boolean
 ---@field products_per_row integer
@@ -72,6 +73,7 @@ function _preferences.reload(player_table)
     reload("pause_on_interface", false)
     reload("utility_scopes", {components = "Factory"})
     reload("recipe_filters", {disabled = false, hidden = false})
+    reload("show_unresearched_items", true)
     reload("compact_ingredients", false)
     reload("fold_out_subfloors", false)
 

@@ -31,9 +31,10 @@ end
 
 ---@param player LuaPlayer
 ---@param search_term string
-local function search_picker_items(player, search_term)
+local function apply_item_filter(player, search_term)
     local modal_data = lib.globals.modal_data(player)  ---@as PickerDialogModalData
     local modal_elements = modal_data.modal_elements
+    local show_unresearched = lib.globals.preferences(player).show_unresearched_items
 
     -- Groups are indexed continuously, so using ipairs here is fine
     local first_visible_group_id = nil
@@ -42,9 +43,10 @@ local function search_picker_items(player, search_term)
 
         for _, subgroup_table in pairs(group.subgroup_tables) do
             for item_data, element in pairs(subgroup_table) do
-                -- Can only get to this if translations are complete, as the textfield is disabled otherwise
-                local visible = (search_term == item_data.name)
+                local matches_search = (search_term == item_data.name)
                     or (string.find(item_data.translated_name, search_term, 1, true) ~= nil)
+                local visible = matches_search and (show_unresearched or item_data.unlocked)
+
                 element.visible = visible
                 any_item_visible = any_item_visible or visible
             end
@@ -73,6 +75,9 @@ local function add_item_picker(parent_flow, player)
     local modal_data = player_table.ui_state.modal_data  ---@as PickerDialogModalData
     local modal_elements = modal_data.modal_elements
     local translations = player_table.translation_tables
+    -- Fluid variants share a query; each button retains its result for this dialog.
+    local item_visibility = {item={}, fluid={}}  ---@type table<string, table<string, boolean>>
+    local force = player.force  ---@as LuaForce
 
     local label_warning = parent_flow.add{type="label", caption={"fp.error_message", {"fp.no_item_found"}}}
     label_warning.style.font = "heading-2"
@@ -185,10 +190,18 @@ local function add_item_picker(parent_flow, player)
 
             local item_name = item_proto.name
             local existing_product = existing_products[item_name]
-            local button_style = (existing_product) and "fflib_slot_button_red" or "fflib_slot_button_default"
-
             local name = (item_proto.temperature) and item_proto.base_name or item_name
             local elem_tooltip = (item_proto.type ~= "entity") and {type=item_proto.type, name=name} or nil
+            local unlocked = true
+            if elem_tooltip then
+                local cache = item_visibility[item_proto.type]
+                if cache[name] == nil then
+                    cache[name] = force.is_visible(elem_tooltip)
+                end
+                unlocked = cache[name]
+            end
+            local button_style = (existing_product or not unlocked)
+                and "fflib_slot_button_red" or "fflib_slot_button_default"
 
             ---@class SelectPickerItemTags
             ---@field item_id integer
@@ -204,7 +217,11 @@ local function add_item_picker(parent_flow, player)
             translated_name = (translated_name) and helpers.multilingual_to_lower(translated_name) or item_name
 
             ---@class SubgroupKey
-            local subgroup_key = {name=item_name, translated_name=translated_name}
+            ---@field name string
+            ---@field translated_name string
+            ---@field unlocked boolean
+            -- Custom products have no game visibility state; fluid variants share their base fluid's state
+            local subgroup_key = {name=item_name, translated_name=translated_name, unlocked=unlocked}
             subgroup_table[subgroup_key] = button_item
         end
     end
@@ -478,10 +495,17 @@ local function open_picker_dialog(player, modal_data)
 
     -- The item picker only needs to show when adding a new item
     if modal_data.item_id == nil then
+        local titlebar_flow = modal_data.modal_elements.titlebar_flow
+        titlebar_flow.visible = true
+        titlebar_flow.add{type="sprite-button", sprite="utility/tip_icon", style="fp_button_frame",
+            tooltip={"factoriopedia.show-unresearched"}, auto_toggle=true, toggled=preferences.show_unresearched_items,
+            tags={mod="fp", on_gui_click="toggle_picker_unresearched"}, mouse_button_filter={"left"}}
+
         local auxiliary_flow = modal_data.modal_elements.auxiliary_flow
         local picker_content_frame = auxiliary_flow.add{type="frame", direction="vertical", style="inside_deep_frame"}
         picker_content_frame.style.top_margin = 8
         add_item_picker(picker_content_frame, player)
+        apply_item_filter(player, "")
     end
 end
 
@@ -550,6 +574,15 @@ local listeners = {}  ---@type ListenerDefinitions
 
 listeners.gui = {
     on_gui_click = {
+        {
+            name = "toggle_picker_unresearched",
+            handler = function(player, _, event)
+                ---@cast event EventData.on_gui_click
+                local preferences = lib.globals.preferences(player)
+                preferences.show_unresearched_items = event.element.toggled
+                modal_dialog.run_search(player)
+            end
+        },
         {
             name = "picker_item_choice",
             handler = function(player, _, _)
@@ -640,7 +673,7 @@ listeners.dialog = {
         local action = (modal_data.item_id) and {"fp.edit"} or {"fp.add"}
         return {
             caption = {"", action, " ", {"fp.pl_" .. modal_data.item_category, 1}},
-            search_handler_name = (not modal_data.item_id) and "search_picker_items" or nil,
+            search_handler_name = (not modal_data.item_id) and "apply_item_filter" or nil,
             disable_scroll_pane = true,
             show_submit_button = true,
             show_delete_button = (modal_data.item_id ~= nil)
@@ -651,7 +684,7 @@ listeners.dialog = {
 }
 
 listeners.global = {
-    search_picker_items = search_picker_items
+    apply_item_filter = apply_item_filter
 }
 
 return { listeners }
