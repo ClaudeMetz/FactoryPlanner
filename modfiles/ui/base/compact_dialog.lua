@@ -298,7 +298,7 @@ local function add_item_flow(line, relevant_line, item_category, button_color, m
             if amount == -1 then goto skip_item end  -- an amount of -1 means it was below the margin of error
 
             if flags.entity then
-                button_color = (relevant_line.done) and "disabled_grayscale" or "disabled"
+                button_color = (relevant_line.done) and "default_grayscale" or "default"
             else
                 if type == "fluid" and item_category == "ingredients" and line.class ~= "Floor" then  ---@cast line Line
                     local temperature_data = line.recipe.temperature_data[proto.name]
