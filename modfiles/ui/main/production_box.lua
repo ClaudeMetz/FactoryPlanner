@@ -209,6 +209,12 @@ local function build_production_box(player)
     button_convert_subfloor.style.top_margin = 2
     main_elements.production_box["convert_subfloor_button"] = button_convert_subfloor
 
+    local button_paste = flow_production.add{type="sprite-button", sprite="utility/import_slot",
+        tooltip={"fp.paste_line_tt"}, tags={mod="fp", on_gui_click="paste_line"},
+        style="fp_sprite-button_rounded_icon", mouse_button_filter={"left"}}
+    button_paste.style.top_margin = 2
+    main_elements.production_box["paste_button"] = button_paste
+
     flow_production.add{type="empty-widget", style="fflib_horizontal_pusher"}
 
     local flow_solver = flow_production.add{type="flow", direction="horizontal"}
@@ -264,13 +270,6 @@ local function build_production_box(player)
     button_repair.style.right_margin = 16
     button_repair.style.height = 22
     button_repair.style.padding = {0, 4}
-
-    -- Paste button
-    local button_paste = frame_vertical.add{type="button", caption={"fp.paste_line"}, tooltip={"fp.paste_line_tt"},
-        style="rounded_button", tags={mod="fp", on_gui_click="paste_line"}, mouse_button_filter={"left"}}
-    button_paste.style.margin = 12
-    button_paste.style.minimal_width = 0
-    main_elements.production_box["paste_button"] = button_paste
 
     frame_vertical.add{type="empty-widget", style="fflib_vertical_pusher"}
     frame_vertical.add{type="empty-widget", style="fflib_horizontal_pusher"}
