@@ -347,9 +347,9 @@ function matrix_engine.run_matrix_solver(factory_data, matrix_metadata)
 
             -- remove fuel from Ingredient for display only
             local fuel_amount = nil
-            if line_data and line_data.fuel then
-                fuel_amount = line_data.fuel.amount * line_aggregate.machine_amount
-                structures.map.subtract(line_aggregate.ingredients, line_data.fuel, fuel_amount, true)
+            if line_data and line_data.fuel_item then
+                fuel_amount = line_data.fuel_item.amount * line_aggregate.machine_amount
+                structures.map.subtract(line_aggregate.ingredients, line_data.fuel_item, fuel_amount, true)
             end
 
             -- need to call consolidate before set_line_result to net any non-fuel catalysts for display
@@ -431,7 +431,7 @@ end
 ---@param aggregate SolverLineData | SolverAggregate
 function matrix_engine.consolidate(aggregate)
     structures.map.reduce_items(aggregate.products, aggregate.ingredients, true)
-    structures.map.reduce_items(aggregate.byproducts, aggregate.ingredients, true)
+    if aggregate.byproducts then structures.map.reduce_items(aggregate.byproducts, aggregate.ingredients, true) end
 end
 
 ---@param factory_data FactoryData

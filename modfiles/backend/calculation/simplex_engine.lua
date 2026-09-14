@@ -76,17 +76,17 @@ function simplex_engine.solve_floor(floor_data, line_data_map, level, previous_b
             -- Add line data for this floor based on the results
             local floor_result = partial_result and partial_result.floor_results[line_object_data.id]
             if floor_result then
-                local subfloor_line = floor_data.lines[1]  ---@as OldLineData
-                local subfloor_machine_limit = subfloor_line.machine_limit
+                local subfloor_line = line_data_map[floor_data.lines[1]--[[@cast-nil]].id]
                 line_data_map[line_object_data.id] = {
                     floor_id = floor_data.id,
                     line_id = line_object_data.id,
                     products = floor_result.products,
-                    byproducts = {},
                     ingredients = floor_result.ingredients,
-                    recipe_name = subfloor_line.recipe_proto.name,
-                    machine_limit = subfloor_machine_limit and subfloor_machine_limit.limit,
-                    machine_force_limit = subfloor_machine_limit and subfloor_machine_limit.force_limit
+                    recipe_name = subfloor_line.recipe_name,
+                    machine_limit = subfloor_line.machine_limit,
+                    machine_force_limit = subfloor_line.machine_force_limit,
+                    percentage = subfloor_line.percentage,
+                    production_type = "produce"
                 }
             end
         end
@@ -301,12 +301,12 @@ function simplex_engine.update_line(floor_id, line_data, scale_factor, byproduct
     local fuel_amount = 0.0
 
     -- Update the fuel
-    if data.fuel then
-        local fuel_key = structures.pack_item(data.fuel)
+    if data.fuel_item then
+        local fuel_key = structures.pack_item(data.fuel_item)
         ingredients[fuel_key] = ingredients[fuel_key] * machine_amount
 
-        fuel_amount = data.fuel.amount * machine_amount
-        structures.map.subtract(ingredients, data.fuel, fuel_amount, true)
+        fuel_amount = data.fuel_item.amount * machine_amount
+        structures.map.subtract(ingredients, data.fuel_item, fuel_amount, true)
     end
 
     local product_result, byproduct_result, ingredient_result =

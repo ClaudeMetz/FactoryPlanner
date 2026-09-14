@@ -129,13 +129,15 @@ end
 ---@field floor_id ObjectID
 ---@field crafts_per_second number?
 ---@field products SolverMap
----@field byproducts SolverMap
 ---@field ingredients SolverMap
----@field fuel SolverItem?
+---@field fuel_item SolverItem?
+---@field priority_item SolverItem?
 ---@field beacon_power double?
 ---@field recipe_name string
 ---@field machine_limit number?
 ---@field machine_force_limit boolean?
+---@field percentage number
+---@field production_type RecipeProductionType
 
 --- Applies all effects on the machine of the line and returns how many
 --- products/ingredients are produced/consumed per second by one machine.
@@ -328,18 +330,30 @@ local function get_line_data(player, factory, line)
         end
     end
 
+    -- Get the priority product
+    local priority_item = nil
+    if line.recipe.priority_item then
+        priority_item = {
+            name = line.recipe.priority_item.name,
+            type = line.recipe.priority_item.type--[[@cast -nil]],
+            amount = 0
+        }  ---@type SolverItem
+    end
+
     return {
         line_id = line.id,
         floor_id = line.parent.id,
         crafts_per_second = crafts_per_second,
         products = products,
-        byproducts = {},
         ingredients = ingredients,
-        fuel = fuel_item,
+        fuel_item = fuel_item,
+        priority_item = priority_item,
         beacon_power = beacon_power,
         recipe_name = recipe_proto.name,
         machine_limit = line.machine.limit,
         machine_force_limit = line.machine.force_limit,
+        percentage = line.percentage,
+        production_type = line.recipe.production_type,
     }
 end
 
