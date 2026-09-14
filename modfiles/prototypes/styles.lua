@@ -9,6 +9,21 @@ styles["fp_naked_frame"] = {
     graphical_set = {}
 }
 
+-- Use the standard footer graphics without its fixed 36px height
+styles["fp_frame_subfooter"] = {
+    type = "frame_style",
+    parent = "frame",
+    graphical_set = styles["subfooter_frame"].graphical_set
+}
+
+styles["fp_label_solver"] = {
+    type = "label_style",
+    parent = "bold_label",
+    height = 36,
+    vertical_align = "center",
+    bottom_padding = 4
+}
+
 local function light_slots(size)
     return {
         position = {256, 136},
