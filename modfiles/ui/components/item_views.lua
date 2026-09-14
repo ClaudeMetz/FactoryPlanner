@@ -110,10 +110,11 @@ end
 ---@return LocalisedString tooltip
 function processors.rockets_per_timescale(metadata, raw_amount, item_proto, _)
     if item_proto.type == "fluid" then return nil, {"fp.fluid_item"} end
-    if item_proto.weight > metadata.lift_capacity then return nil, {"fp.item_too_heavy"} end
+    local lift_capacity = metadata.lift_capacity--[[@as number]]
+    if item_proto.weight > lift_capacity then return nil, {"fp.item_too_heavy"} end
 
     local total_weight = raw_amount * metadata.timescale * item_proto.weight--[[@as Weight]]
-    local raw_number = total_weight / metadata.lift_capacity
+    local raw_number = total_weight / lift_capacity
     local button_number = lib.format.button_number(raw_number)
 
     local tooltip_number = lib.format.number(raw_number, metadata.formatting_precision)
@@ -164,7 +165,7 @@ end
 ---@field throughput_multiplier number
 ---@field formatting_precision integer
 ---@field pumping_speed number
----@field lift_capacity number
+---@field lift_capacity number?
 ---@field cargo_wagon_capacity number?
 ---@field fluid_wagon_capacity number?
 
@@ -255,6 +256,26 @@ local function prepare_wagon_view(player, timescale_string)
 end
 
 ---@param player LuaPlayer
+---@param timescale_string string
+---@return ItemViewData view
+---@return number? lift_capacity
+local function prepare_rocket_view(player, timescale_string)
+    local silo = defaults.get_optional(player, "silos")
+    local view = {index=6, caption={"", "[img=fp_silo_rocket]", "/", {"fp.unit_" .. timescale_string}},
+        unavailable=not silo}  ---@type ItemViewData
+    if not silo then
+        view.tooltip = {"fp.preference_no_default_prototype", {"fp.pl_silo", 2}}
+        return view
+    end
+
+    ---@cast silo.proto FPSiloPrototype
+    local _, quality = proto_and_quality_string(silo)
+    view.tooltip = {"fp.view_tt", {"fp.rockets_per_timescale", {"fp." .. timescale_string},
+        silo.proto.rich_text, silo.proto.localised_name, quality}}
+    return view, silo.proto.rocket_lift_weight
+end
+
+---@param player LuaPlayer
 function item_views.rebuild_data(player)
     local preferences = lib.globals.preferences(player)
     local timescale_string = lib.gui.timescale_as_string(preferences.timescale)
@@ -267,10 +288,8 @@ function item_views.rebuild_data(player)
     local default_pump = defaults.get(player, "pumps")  ---@cast default_pump.proto FPPumpPrototype
     local pump_proto, pump_quality = proto_and_quality_string(default_pump)
 
-    local default_silo = defaults.get(player, "silos")  ---@cast default_silo.proto FPSiloPrototype
-    local _, silo_quality = proto_and_quality_string(default_silo)
-
     local wagon_view, cargo_capacity, fluid_capacity = prepare_wagon_view(player, timescale_string)
+    local rocket_view, lift_capacity = prepare_rocket_view(player, timescale_string)
 
     lib.globals.ui_state(player).views_data = {
         views = {
@@ -297,12 +316,7 @@ function item_views.rebuild_data(player)
                 tooltip = {"fp.view_tt", {"fp.stacks_per_timescale", {"fp." .. timescale_string}}}
             },
             wagons_per_timescale = wagon_view,
-            rockets_per_timescale = {
-                index = 6,
-                caption = {"", "[img=fp_silo_rocket]", "/", {"fp.unit_" .. timescale_string}},
-                tooltip = {"fp.view_tt", {"fp.rockets_per_timescale", {"fp." .. timescale_string},
-                    default_silo.proto.rich_text, default_silo.proto.localised_name, silo_quality}}
-            }
+            rockets_per_timescale = rocket_view
         },
         timescale = preferences.timescale,
         timescale_string = {"fp.unit_" .. timescale_string}--[[@as LocalisedString]],
@@ -311,7 +325,7 @@ function item_views.rebuild_data(player)
         throughput_multiplier = (1 / throughput_divisor) / belt_stack,
         formatting_precision = MAGIC_NUMBERS.formatting_precision,
         pumping_speed = pump_proto.get_pumping_speed(default_pump.quality--[[@cast -nil]].name) * 60,
-        lift_capacity = default_silo.proto--[[@as FPSiloPrototype]].rocket_lift_weight,
+        lift_capacity = lift_capacity,
         cargo_wagon_capacity = cargo_capacity,
         fluid_wagon_capacity = fluid_capacity
     }  ---@as ItemViewsData

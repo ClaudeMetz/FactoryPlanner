@@ -246,7 +246,8 @@ local function add_default_proto_box(player, content_frame, data_type, category_
     ---@field category_id string?
     local tags = {mod="fp", on_gui_elem_changed="select_preference_box_default", data_type=data_type,
         category_id=category_id}
-    local filter = {{filter="type", type=filter_type}, {filter="hidden", invert=true, mode="and"}}
+    local filter = (data_type == "silos") and lib.gui.compile_elem_filter("silos")
+        or {{filter="type", type=filter_type}, {filter="hidden", invert=true, mode="and"}}
     local button_module = flow.add{type="choose-elem-button", tags=tags--[[@as Tags]], elem_type="entity-with-quality",
         elem_filters=filter, style="fp_sprite-button_inset", mouse_button_filter={"left"}, enabled=(default ~= nil)}
 

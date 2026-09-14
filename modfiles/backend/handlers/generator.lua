@@ -1595,7 +1595,7 @@ function generator.silos.generate()
         {filter="hidden", invert=true, mode="and"}}
     for _, proto in pairs(prototypes.get_entity_filtered(silo_filter)) do
         local sprite = generator.util.determine_entity_sprite(proto)
-        if sprite ~= nil then
+        if sprite ~= nil and proto.launch_to_space_platforms then
             ---@diagnostic disable-next-line: missing-fields
             local silo = {
                 name = proto.name,
