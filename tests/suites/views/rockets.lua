@@ -1,6 +1,6 @@
 ---@diagnostic disable
 
-local with_player = require("cases.item-views").with_player
+local with_player = require("suite.items").with_player
 
 local function find_silo_picker(parent)
     for _, child in pairs(parent.children) do

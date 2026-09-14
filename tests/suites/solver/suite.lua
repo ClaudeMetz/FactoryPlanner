@@ -2,8 +2,9 @@
 
 -- Runs hand-computable setups through the full solver stack.
 
-return {
+return {{
+    name = "normal",
     cases = {
-        testSequentialChain = require("cases.solver-sequential-chain")
+        testSequentialChain = require("suite.sequential-chain")
     }
-}
+}}

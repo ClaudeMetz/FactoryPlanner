@@ -1,6 +1,6 @@
 ---@diagnostic disable
 
-local with_player = require("cases.item-views").with_player
+local with_player = require("suite.items").with_player
 
 local function find_control(parent, category)
     for _, child in pairs(parent.children) do

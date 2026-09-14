@@ -7,12 +7,13 @@
 -- "chemical") contain members from more than one of them: they assert membership and
 -- targeted absences, never exclusive category contents.
 
-return {
+return {{
+    name = "normal",
     cases = {
-        testGeneratorPrototypes = require("cases.generator-prototypes"),
-        testBoilerPrototypes = require("cases.boiler-prototypes"),
-        testFluidEnergyPrototypes = require("cases.fluid-energy-prototypes"),
-        testResearchPrototypes = require("cases.research-prototypes"),
-        testQualityBaselines = require("cases.quality-baselines")
+        testGeneratorPrototypes = require("suite.generators"),
+        testBoilerPrototypes = require("suite.boilers"),
+        testFluidEnergyPrototypes = require("suite.fluid-energy"),
+        testResearchPrototypes = require("suite.research"),
+        testQualityBaselines = require("suite.quality")
     }
-}
+}}

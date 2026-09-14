@@ -2,7 +2,7 @@
 
 -- Unit tests for the lib formatters, one case per function, none of which need
 -- prototypes of their own. Small related cases like these share a file, with the
--- world file naming each of them.
+-- suite manifest naming each of them
 
 local helpers = require("helpers")
 
