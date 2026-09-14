@@ -154,10 +154,11 @@ local function match_recipes(player, modal_data, proto)
     end
 end
 
--- Tries to add the given recipe to the current floor, then exiting the modal dialog
+-- Tries to add the given recipe to the current floor
 ---@param player LuaPlayer
 ---@param recipe_id integer
 ---@param modal_data RecipeDialogModalData
+---@return boolean success
 local function attempt_adding_line(player, recipe_id, modal_data)
     local recipe_proto = prototyper.util.find("recipes", recipe_id, nil)  ---@as FPRecipePrototype
     local line = Line.init(recipe_proto, modal_data.production_type)
@@ -165,7 +166,8 @@ local function attempt_adding_line(player, recipe_id, modal_data)
 
     -- If finding a machine fails, this line is invalid
     if line:change_machine_to_default(player) == false then
-        lib.messages.raise(player, "error", {"fp.error_no_compatible_machine", recipe_name}, 1)
+        lib.cursor.create_flying_text(player, {"fp.error_no_compatible_machine", recipe_name})
+        return false
     else
         local floor = lib.context.get(player, "Floor")  ---@as Floor
         local relative_object = OBJECT_INDEX[modal_data.add_after_line_id--[[@cast -nil]]]  ---@as LineObject?
@@ -218,6 +220,7 @@ local function attempt_adding_line(player, recipe_id, modal_data)
 
         solver.update(player)
         lib.gui.run_refresh(player, "production")
+        return true
     end
 end
 
@@ -231,8 +234,9 @@ local function handle_recipe_click(player, tags, event)
         player.open_technology_gui(recipe_proto.enabling_technologies[1])
     else
         local modal_data = lib.globals.modal_data(player)  ---@as RecipeDialogModalData
-        attempt_adding_line(player, tags.recipe_proto_id, modal_data)
-        lib.gui.close_dialog(player, "cancel")
+        if attempt_adding_line(player, tags.recipe_proto_id, modal_data) then
+            lib.gui.close_dialog(player, "cancel")
+        end
     end
 end
 
@@ -457,7 +461,7 @@ local function recipe_early_abort_check(player, modal_data)
     local relevant_recipes, error, filters = match_recipes(player, modal_data, proto)
 
     if error ~= nil then
-        lib.messages.raise(player, "error", error, 1)
+        lib.cursor.create_flying_text(player, error)
         return true  -- signal that the dialog does not need to actually be opened
 
     else  ---@cast relevant_recipes -nil
