@@ -349,7 +349,7 @@ function matrix_engine.run_matrix_solver(factory_data, matrix_metadata)
             local fuel_amount = nil
             if line_data and line_data.fuel then
                 fuel_amount = line_data.fuel.amount * line_aggregate.machine_amount
-                structures.map.subtract(line_aggregate.ingredients, line_data.fuel, fuel_amount)
+                structures.map.subtract(line_aggregate.ingredients, line_data.fuel, fuel_amount, true)
             end
 
             -- need to call consolidate before set_line_result to net any non-fuel catalysts for display
@@ -430,36 +430,8 @@ end
 -- This is mainly for calculating line aggregates with subfloors for the matrix solver.
 ---@param aggregate SolverLineData | SolverAggregate
 function matrix_engine.consolidate(aggregate)
-    -- Items cannot be both products or byproducts, but they can be both ingredients and fuels.
-    -- In the case that an item appears as an output, an ingredient, and a fuel, delete from fuel first.
-    ---@param input_map "products" | "byproducts" | "ingredients"
-    ---@param output_map "products" | "byproducts" | "ingredients"
-    local function compare_maps(input_map, output_map)
-        for item_key, output_amount in pairs(aggregate[output_map]) do
-            local output_item = structures.unpack_item(item_key, output_amount)
-            local input_amount = aggregate[input_map][item_key] or 0
-            local net_amount = output_amount - input_amount
-
-            -- Solving leaves a relative error behind, so the leftover of an item that actually
-            -- cancels out is proportional to how much of it flows. A fixed margin can't catch
-            -- that across amounts as far apart as items and power, so this scales with the flow.
-            local scale = math.max(math.abs(output_amount), math.abs(input_amount))
-            local cancels_out = math.abs(net_amount) < scale * MAGIC_NUMBERS.margin_of_error
-
-            if cancels_out then  -- take both sides down to nothing, rather than leaving the rest
-                structures.map.subtract(aggregate[input_map], output_item, input_amount)
-                structures.map.subtract(aggregate[output_map], output_item)
-            elseif net_amount > 0 then
-                structures.map.subtract(aggregate[input_map], output_item, input_amount)
-                structures.map.subtract(aggregate[output_map], output_item, input_amount)
-            else
-                structures.map.subtract(aggregate[input_map], output_item)
-                structures.map.subtract(aggregate[output_map], output_item)
-            end
-        end
-    end
-    compare_maps("ingredients", "products")
-    compare_maps("ingredients", "byproducts")
+    structures.map.reduce_items(aggregate.products, aggregate.ingredients, true)
+    structures.map.reduce_items(aggregate.byproducts, aggregate.ingredients, true)
 end
 
 ---@param factory_data FactoryData

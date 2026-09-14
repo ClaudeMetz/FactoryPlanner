@@ -66,19 +66,50 @@ end
 ---@param map SolverMap
 ---@param item SolverInputItem
 ---@param amount number?
-function _structures.map.add(map, item, amount)
+---@param round_errors boolean?
+function _structures.map.add(map, item, amount, round_errors)
     local key = _structures.pack_item(item)
     local amount_to_add = amount or item.amount or 0
 
     map[key] = (map[key] or 0) + amount_to_add
-    if map[key] == 0 then map[key] = nil end
+    if round_errors then
+        local threshold = math.abs(amount_to_add * MAGIC_NUMBERS.margin_of_error)
+        if map[key] < threshold and map[key] > -threshold then map[key] = nil end
+    else
+        if map[key] == 0 then map[key] = nil end
+    end
 end
 
 ---@param map SolverMap
 ---@param item SolverInputItem
 ---@param amount number?
-function _structures.map.subtract(map, item, amount)
-    _structures.map.add(map, item, -(amount or item.amount))
+---@param round_errors boolean?
+function _structures.map.subtract(map, item, amount, round_errors)
+    _structures.map.add(map, item, -(amount or item.amount), round_errors)
+end
+
+--- If the 2 maps contain the same item, it cancels out the lowest portion of the item from both maps.
+---@param map1 SolverMap
+---@param map2 SolverMap
+---@param round_errors boolean?
+function _structures.map.reduce_items(map1, map2, round_errors)
+    for item_key, value1 in pairs(map1) do
+        local item = _structures.unpack_item(item_key)
+        local value2 = map2[item_key]
+
+        if value2 then
+            if value1 == value2 then
+                map1[item_key] = nil
+                map2[item_key] = nil
+            elseif value1 < value2 then
+                _structures.map.subtract(map2, item, value1, round_errors)
+                map1[item_key] = nil
+            else
+                _structures.map.subtract(map1, item, value2, round_errors)
+                map2[item_key] = nil
+            end
+        end
+    end
 end
 
 --- Puts the items into their destination class in the given aggregate,
@@ -86,21 +117,12 @@ end
 ---@param map SolverMap
 ---@param depot SolverMap
 ---@param destination SolverMap
-function _structures.map.balance_items(map, depot, destination)
-    for _, item in pairs(_structures.map.list(map)) do
-        local depot_amount = depot[_structures.pack_item(item)]  ---@type number
-
-        if depot_amount ~= nil then  -- Use up depot items, if available
-            if depot_amount >= item.amount then
-                _structures.map.subtract(depot, item)
-            else
-                _structures.map.subtract(depot, item, depot_amount)
-                _structures.map.add(destination, item, (item.amount - depot_amount))
-            end
-
-        else  -- add to destination if this item is not present in the depot
-            _structures.map.add(destination, item)
-        end
+---@param round_errors boolean?
+function _structures.map.balance_items(map, depot, destination, round_errors)
+    local map_copy = lib.flib.shallow_copy(map)
+    _structures.map.reduce_items(map_copy, depot, round_errors)
+    for _, item in pairs(_structures.map.list(map_copy)) do
+        _structures.map.add(destination, item)
     end
 end
 

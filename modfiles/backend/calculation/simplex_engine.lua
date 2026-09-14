@@ -306,12 +306,7 @@ function simplex_engine.update_line(floor_id, line_data, scale_factor, byproduct
         ingredients[fuel_key] = ingredients[fuel_key] * machine_amount
 
         fuel_amount = data.fuel.amount * machine_amount
-        structures.map.subtract(ingredients, data.fuel, fuel_amount)
-
-        -- Account for floating point errors
-        if ingredients[fuel_key] and ingredients[fuel_key] < data.fuel.amount * MAGIC_NUMBERS.margin_of_error then
-            ingredients[fuel_key] = nil
-        end
+        structures.map.subtract(ingredients, data.fuel, fuel_amount, true)
     end
 
     local product_result, byproduct_result, ingredient_result =

@@ -140,32 +140,71 @@ end
 --- Applies all effects on the machine of the line and returns how many
 --- products/ingredients are produced/consumed per second by one machine.
 --- Emmisions, fuel, power and heat are also included.
----@param line_data OldLineData
----@param floor_id ObjectID
+---@param player LuaPlayer
+---@param factory Factory
+---@param line Line
 ---@return SolverLineData
-local function generate_line_data(line_data, floor_id)
+local function get_line_data(player, factory, line)
     local products = {}  ---@type SolverMap
     local ingredients = {}  ---@type SolverMap
+    local machine_amount = 1
+
+    local machine_proto = line.machine.proto  ---@as FPMachinePrototype
+    local recipe_proto = line.recipe.proto  ---@as FPRecipePrototype
+    local machine_speed = line.machine:get_speed()
+    local recipe_energy = recipe_proto.energy  ---@as number
+
+    -- Update line effects
+    local force = player.force  ---@as LuaForce
+    local mod_changed = line.machine:update_mod_effects(force)
+    local recipe_changed = line.recipe:update_effects(force, factory)
+    if mod_changed or recipe_changed then line.machine:summarize_effects() end
+
+    -- Lab speed bonus is multiplicative, not additive to effects
+    if machine_proto.prototype_category == "lab" then
+        machine_speed = machine_speed * (1 + force.laboratory_speed_modifier)
+    end
+
+    -- Get boiler energy
+    if machine_proto.prototype_category == "boiler" then
+        local goal_temperature = recipe_proto.products[1]--[[@cast -nil]].temperature  ---@as float
+        local input_temperature = line.recipe:get_temperature( recipe_proto.ingredients[1]--[[@cast -nil]])  ---@as float
+        recipe_energy = (goal_temperature - input_temperature) * recipe_proto.heat_capacity  ---@as number
+    end
 
     -- Get amount of crafts in 1 second
-    local speed_multiplier = line_data.machine_speed * (1 + (line_data.total_effects.speed / MAGIC_NUMBERS.effect_precision))
-    local energy = math.max(line_data.recipe_energy, MAGIC_NUMBERS.minimum_energy)
-    local crafts_per_second = speed_multiplier / energy
+    local fuel_performance, wasted_share = line.machine:get_fuel_performance()
+    local speed_multiplier = machine_speed * fuel_performance * (1 + (line.total_effects.speed / MAGIC_NUMBERS.effect_precision))
+    local energy = math.max(recipe_energy, MAGIC_NUMBERS.minimum_energy)
+    local crafts_per_second = machine_amount * speed_multiplier / energy
 
     -- Get simple products
-    for _, item in pairs(line_data.products) do
-        local amount = crafts_per_second * solver.util.determine_prodded_amount(item, line_data.total_effects)
+    for _, item in pairs(line.recipe.products) do
+        local amount = crafts_per_second * solver.util.determine_prodded_amount(item, line.total_effects)
         structures.map.add(products, item, amount)
     end
 
     -- Get simple ingredients
-    for _, item in pairs(line_data.ingredients) do
-        local amount = item.amount * crafts_per_second * (item.type ~= "fluid" and line_data.resource_drain_rate or 1)
+    for _, item in pairs(line_ingredients(line.recipe)) do
+        local amount = item.amount * crafts_per_second * (item.type ~= "fluid" and line.machine:get_resource_drain_rate() or 1)
         structures.map.add(ingredients, item, amount)
+    end
+
+    -- Get fuel
+    local fuel_proto = nil
+    local fuel_name = nil
+    local fuel_value = nil
+    if machine_proto.burner then
+        ---@cast line.machine.fuel -nil
+        fuel_proto = line.machine.fuel.proto  ---@as AnyFPFuelPrototype
+        fuel_name = line.machine.fuel:get_name_with_temperature()
+        fuel_value = line.machine.fuel:get_fuel_value()
     end
 
     local power = 0.0
     local emissions = 0.0
+    local calculate_emissions = lib.globals.preferences(player).calculate_emissions
+    local pollutant_type = (calculate_emissions) and factory.parent.location_proto.pollutant_type
 
     local fuel_amount = 0.0
     local power_amount = 0.0
@@ -173,53 +212,90 @@ local function generate_line_data(line_data, floor_id)
     local heating_amount = 0.0
 
     if energy > MAGIC_NUMBERS.minimum_energy then
-        -- Get power and emissions
-        power, emissions = solver.util.determine_power_and_emissions(line_data, 1, crafts_per_second)
+        -- Get power
+        local consumption_multiplier = 1 + (line.total_effects.consumption / MAGIC_NUMBERS.effect_precision)
+        -- A fuel-starved machine only draws what it can get, and pollutes proportionally less
+        local machine_power = machine_amount * (line.machine:get_energy_usage() * 60) * consumption_multiplier * fuel_performance
+        -- Drain follows the exact machine count rather than the whole machines that'd actually be
+        -- built, so that power stays proportional to it. The matrix solver relies on that to balance
+        -- power against the machines producing it, since it works in amounts for a single machine.
+        local machine_drain = machine_amount * (machine_proto.energy_drain * 60)
+        power = machine_power + machine_drain
+
+        -- Get emissions
+        if pollutant_type then
+
+            local fuel_multiplier = fuel_proto and fuel_proto.emissions_multiplier or 1
+            local pollution_multiplier = 1 + (line.total_effects.pollution / MAGIC_NUMBERS.effect_precision)
+            local total_multiplier = fuel_multiplier * pollution_multiplier * recipe_proto.emissions_multiplier
+
+            -- Pollution comes from the fuel that's burned, not the energy the machine puts to use: an
+            -- effectivity below 1 burns extra, and a source that doesn't scale its usage burns its full
+            -- amount even when the machine can't use all of it
+            local burned_energy = machine_power
+            if machine_proto.burner then
+                burned_energy = burned_energy / machine_proto.burner.effectivity
+                if wasted_share > 0 and wasted_share < 1 then burned_energy = burned_energy / (1 - wasted_share) end
+            end
+
+            local emissions_per_joule = burned_energy * (machine_proto.emissions_per_joule[pollutant_type] or 0)
+            local emissions_per_second = machine_amount * (machine_proto.emissions_per_second[pollutant_type] or 0)
+            local emissions_per_craft = (recipe_proto.emissions_per_craft) and
+                crafts_per_second * (recipe_proto.emissions_per_craft[pollutant_type] or 0) or 0
+            emissions = (emissions_per_joule + emissions_per_second + emissions_per_craft) * total_multiplier * 60
+        end
 
         -- Get fuel/power/heat energy requirements
-        if line_data.machine_proto.energy_type == "burner" and line_data.fuel_proto then
-            ---@cast line_data.machine_proto.burner -nil
-            fuel_amount = fuel_amount + solver.util.determine_fuel_amount(line_data, power, 1)
-        elseif line_data.machine_proto.energy_type == "electric" then
-            power_amount = power_amount + power
-        elseif line_data.machine_proto.energy_type == "heat" then
-            heat_amount = heat_amount + power
-        end
+        if machine_proto.burner then
+            local fluid_usage_per_tick = line.machine:get_fluid_usage_per_tick()
+
+            if fluid_usage_per_tick and not machine_proto.burner.scale_fluid_usage then
+                -- Without scaling, the source always moves its full usage, wasting any energy beyond demand
+                fuel_amount = machine_amount * fluid_usage_per_tick * 60
+            else
+                -- Power is already reduced by the fuel performance, so this collapses to the usage per tick
+                -- when the source can't keep up, and to the demanded amount when it can
+                fuel_amount = (power / machine_proto.burner.effectivity) / fuel_value  ---@as number
+            end
+        elseif machine_proto.energy_type == "electric" then
+            power_amount = power
+        elseif machine_proto.energy_type == "heat" then
+            heat_amount = power
+        end  -- else "void", but we don't care
     end
 
     -- Get beacon power
-    local beacon_power = line_data.beacon_power or 0
+    local beacon_power = line.beacon and line.beacon:get_total_power()
 
     -- Get heat requirements (frozen surfaces e.g. Aquillo)
-    if line_data.entities_require_heating then
-        heating_amount = line_data.machine_proto.heating_energy
+    if factory.parent.location_proto.entities_require_heating then
+        heating_amount = machine_proto.heating_energy
     end
 
     -- Add fuel to the ingredients
-    local fuel = nil  ---@type SolverItem?
-    local burner = line_data.machine_proto.burner
-    if burner then
-        ---@cast line_data.fuel_proto -nil
-        ---@cast line_data.fuel_name -nil
-        fuel = {
-            name = line_data.fuel_name,
-            type = line_data.fuel_proto.type,
+    local fuel_item = nil  ---@type SolverItem?
+    if machine_proto.burner then
+        ---@cast fuel_name -nil
+        ---@cast fuel_proto -nil
+        fuel_item = {
+            name = fuel_name,
+            type = fuel_proto.type,
             amount = fuel_amount
         }  ---@type SolverItem
-        structures.map.add(ingredients, fuel)
+        structures.map.add(ingredients, fuel_item)
 
         -- Add burnt result
-        if line_data.fuel_proto.burnt_result then
-            local burnt_result = {
-                name = line_data.fuel_proto.burnt_result,
+        if fuel_proto.burnt_result then
+            local burnt_item = {
+                name = fuel_proto.burnt_result,
                 type = "item",
                 amount = fuel_amount
             }  ---@type SolverItem
-            structures.map.add(products, burnt_result)
+            structures.map.add(products, burnt_item)
         end
 
         -- Add spent fluid
-        local spent_fluid = burner.produces_spent_fluid and (burner.spent_fluid or line_data.fuel_proto.spent_fluid)
+        local spent_fluid = machine_proto.burner.produces_spent_fluid and (machine_proto.burner.spent_fluid or fuel_proto.spent_fluid)
         if spent_fluid then
             local spent_fluid_item = {
                 name = lib.temperature.name_with(spent_fluid.name, spent_fluid.temperature),
@@ -232,20 +308,19 @@ local function generate_line_data(line_data, floor_id)
 
     -- Add other special categories
     if power_amount > 0 then
-        local item = {name="custom-electric-power", type="entity", amount=0}
-        structures.map.add(ingredients, item, power_amount)
+        local item = {name="custom-electric-power", type="entity", amount=power_amount}
+        structures.map.add(ingredients, item)
     end
     if heat_amount > 0 then
-        local item = {name="custom-heat-power", type="entity", amount=0}
-        structures.map.add(ingredients, item, heat_amount)
+        local item = {name="custom-heat-power", type="entity", amount=heat_amount}
+        structures.map.add(ingredients, item)
     end
     if heating_amount > 0 then
-        local item = {name="custom-heating-power", type="entity", amount=0}
-        local item_key = structures.pack_item(item)
-        structures.map.add(ingredients, item, heating_amount)
+        local item = {name="custom-heating-power", type="entity", amount=heating_amount}
+        structures.map.add(ingredients, item)
     end
-    if line_data.pollutant_type and emissions ~= 0 then
-        local item = {name="custom-"..line_data.pollutant_type, type="entity", amount=math.abs(emissions)}
+    if pollutant_type and emissions ~= 0 then
+        local item = {name="custom-"..pollutant_type, type="entity", amount=math.abs(emissions)}
         if emissions > 0 then
             structures.map.add(products, item)
         else
@@ -254,17 +329,17 @@ local function generate_line_data(line_data, floor_id)
     end
 
     return {
-        line_id = line_data.id,
-        floor_id = floor_id,
+        line_id = line.id,
+        floor_id = line.parent.id,
         crafts_per_second = crafts_per_second,
         products = products,
         byproducts = {},
         ingredients = ingredients,
-        fuel = fuel,
+        fuel = fuel_item,
         beacon_power = beacon_power,
-        recipe_name = line_data.recipe_proto.name,
-        machine_limit = line_data.machine_limit.limit,
-        machine_force_limit = line_data.machine_limit.force_limit,
+        recipe_name = recipe_proto.name,
+        machine_limit = line.machine.limit,
+        machine_force_limit = line.machine.force_limit,
     }
 end
 
@@ -356,7 +431,7 @@ local function generate_floor_data(player, factory, floor, calculate_emissions)
                 end
 
                 table.insert(floor_data.lines, line_data)
-                line_data_map[line.id] = generate_line_data(line_data  --[[@as OldLineData]], floor.id)
+                line_data_map[line.id] = get_line_data(player, factory, line)
             else
                 solver.set_blank_line(floor, line)
             end
