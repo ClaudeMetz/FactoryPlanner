@@ -284,25 +284,27 @@ end
 function simplex_engine.update_line(floor_id, line_data, scale_factor, byproducts, line_data_map, result)
     local data = line_data_map[line_data.id]
     if not data then return 0 end
-    local products = lib.flib.shallow_copy(data.products)
-    local ingredients = lib.flib.shallow_copy(data.ingredients)
 
     -- Update the machine
     local machine_amount = result and scale_factor * result.machine_amount or 0
     local production_ratio = machine_amount * data.crafts_per_second
-    local fuel_amount = 0.0
-
-    -- Update the fuel
-    if data.fuel_item then
-        local fuel_key = structures.pack_item(data.fuel_item)
-        ingredients[fuel_key] = ingredients[fuel_key] * machine_amount
-
-        fuel_amount = data.fuel_item.amount * machine_amount
-        structures.map.subtract(ingredients, data.fuel_item, fuel_amount, true)
-    end
 
     local product_result, byproduct_result, ingredient_result =
-            simplex_engine.update_line_object_common(machine_amount, products, byproducts, ingredients)
+            simplex_engine.update_line_object_common(machine_amount, data.products, byproducts, data.ingredients)
+
+    -- Update the fuel
+    local fuel_amount
+    if data.fuel_item then
+        local fuel_key = structures.pack_item(data.fuel_item)
+        fuel_amount = data.fuel_item.amount * machine_amount
+        local ingredient_amount = ingredient_result[fuel_key] or 0
+        if fuel_amount <= ingredient_amount then
+            structures.map.subtract(ingredient_result, data.fuel_item, fuel_amount)
+        else
+            structures.map.add(product_result, data.fuel_item, fuel_amount - ingredient_amount)
+            ingredient_result[fuel_key] = nil
+        end
+    end
 
     solver.set_line_result{
         line_id = line_data.id,

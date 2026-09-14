@@ -365,6 +365,9 @@ local function generate_line_data(player, factory, line)
         }  ---@type SolverItem
     end
 
+    -- Needed to reduce looped fuel + safeguard
+    structures.map.reduce_items(products, ingredients)
+
     return {
         line_id = line.id,
         floor_id = line.parent.id,
