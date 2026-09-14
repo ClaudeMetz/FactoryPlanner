@@ -80,8 +80,9 @@ local function refresh_views_table(player)
         ---@field name string
         local tags = {mod="fp", on_gui_checked_state_changed="toggle_preference_view", name=view_preference.name}
         local enabled = (active_view_count < 4 or view_preference.enabled) and
-            (active_view_count > 1 or not view_preference.enabled)
-        views_table.add{type="checkbox", tags=tags, state=view_preference.enabled, enabled=enabled}
+            (active_view_count > 1 or not view_preference.enabled) and not item_view_data.unavailable
+        views_table.add{type="checkbox", tags=tags, state=view_preference.enabled, enabled=enabled,
+            tooltip=item_view_data.unavailable and item_view_data.tooltip or nil}
 
         local flow_name = views_table.add{type="flow", direction="horizontal"}
         flow_name.add{type="label", caption=item_view_data.caption, tooltip=item_view_data.tooltip}
@@ -229,23 +230,33 @@ end
 ---@param player LuaPlayer
 ---@param content_frame LuaGuiElement
 ---@param data_type ProtoPreferenceDataType
----@param category_id integer?
+---@param category_id string?
 ---@param filter_type "pump" | "rocket-silo" | "cargo-wagon" | "fluid-wagon"
 local function add_default_proto_box(player, content_frame, data_type, category_id, filter_type)
+    local default = defaults.get_optional(player, data_type, category_id)
+    local type_name = (category_id or data_type:sub(1, -2)):gsub("-", "_")
+
     local flow = content_frame.add{type="flow", direction="horizontal"}
     flow.style.vertical_align = "center"
-    flow.add{type="label", caption={"fp.pu_" .. data_type:sub(1, -2), 1}}
-    flow.add{type="empty-widget", style="fflib_horizontal_pusher"}
+    flow.style.minimal_width = 140
+    flow.style.horizontal_spacing = 8
 
     ---@class SelectPreferenceBoxDefaultTags
     ---@field data_type ProtoPreferenceDataType
-    ---@field category_id integer?
+    ---@field category_id string?
     local tags = {mod="fp", on_gui_elem_changed="select_preference_box_default", data_type=data_type,
         category_id=category_id}
     local filter = {{filter="type", type=filter_type}, {filter="hidden", invert=true, mode="and"}}
     local button_module = flow.add{type="choose-elem-button", tags=tags--[[@as Tags]], elem_type="entity-with-quality",
-        elem_filters=filter, style="fp_sprite-button_inset", mouse_button_filter={"left"}}
-    button_module.elem_value = defaults.get_as_elem_value(player, data_type, category_id)
+        elem_filters=filter, style="fp_sprite-button_inset", mouse_button_filter={"left"}, enabled=(default ~= nil)}
+
+    if default then
+        button_module.elem_value = defaults.get_as_elem_value(player, data_type, category_id)
+    else
+        button_module.tooltip = {"fp.preference_no_default_prototype", {"fp.pl_" .. type_name, 2}}
+    end
+    flow.add{type="label", caption={"fp.pu_" .. type_name, 1}, enabled=(default ~= nil),
+        tooltip=button_module.tooltip}
 end
 
 ---@param modal_elements table
@@ -453,13 +464,13 @@ local function open_preferences_dialog(player, modal_data)
 
     local preference_box = add_preference_box(right_content_frame, "box_defaults")
     local default_boxes_table = preference_box.add{type="table", column_count=2}
-    default_boxes_table.style.horizontal_spacing = 60
+    default_boxes_table.style.horizontal_spacing = 16
     default_boxes_table.style.vertical_spacing = 8
-    default_boxes_table.style.right_margin = 50
+    default_boxes_table.style.top_margin = -2
     add_default_proto_box(player, default_boxes_table, "pumps", nil, "pump")
+    add_default_proto_box(player, default_boxes_table, "wagons", "cargo-wagon", "cargo-wagon")
     add_default_proto_box(player, default_boxes_table, "silos", nil, "rocket-silo")
-    add_default_proto_box(player, default_boxes_table, "wagons", 1, "cargo-wagon")
-    add_default_proto_box(player, default_boxes_table, "wagons", 2, "fluid-wagon")
+    add_default_proto_box(player, default_boxes_table, "wagons", "fluid-wagon", "fluid-wagon")
 
     local pusher = right_content_frame.add{type="empty-widget", style="fflib_vertical_pusher"}
     pusher.style.top_margin = -4  -- counteract vertical spacing

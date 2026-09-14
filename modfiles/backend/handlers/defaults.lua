@@ -40,6 +40,18 @@ function defaults.get(player, data_type, category)
     end
 end
 
+-- Unlike get(), this only returns entries with a usable prototype, never an empty
+-- default or the category collection returned when a category is missing.
+---@param player LuaPlayer
+---@param data_type DataType
+---@param category (integer | string)?
+---@return DefaultPrototype?
+function defaults.get_optional(player, data_type, category)
+    local default = defaults.get(player, data_type, category)
+    if not default or not default.proto then return nil end
+    return default
+end
+
 -- Sets the default for the given type, incorporating the category if given
 ---@param player LuaPlayer
 ---@param data_type DataType
@@ -152,7 +164,7 @@ end
 ---@param category string?
 ---@return DefaultPrototype migrated_default
 local function migrate_prototype_default(data_type, fallback, default, category)
-    if fallback.proto == nil then return fallback end
+    if fallback.proto == nil or default.proto == nil then return fallback end
 
     local equivalent_proto = prototyper.util.find(data_type, default.proto.name, category)
     if not equivalent_proto then return fallback end  -- full reset if prototype went missing
@@ -211,8 +223,10 @@ function defaults.migrate(player_table)
         else
             local default_map = {}  ---@type table<string, DefaultPrototype>
             for _, default_data in pairs(default) do
-                local category_name = default_data.proto[category_designations[data_type]]  ---@type string
-                default_map[category_name] = default_data
+                if default_data.proto then
+                    local category_name = default_data.proto[category_designations[data_type]]  ---@type string
+                    default_map[category_name] = default_data
+                end
             end
 
             local new_defaults = {}

@@ -23,6 +23,7 @@ local function with_player(check)
 end
 
 return {
+    with_player = with_player,
     migration = {check=function()
         local previous = {
             views = {

@@ -92,7 +92,7 @@ end
 ---@return LocalisedString tooltip
 function processors.wagons_per_timescale(metadata, raw_amount, item_proto, _)
     local wagon_capacity = (item_proto.type == "fluid") and metadata.fluid_wagon_capacity
-        or metadata.cargo_wagon_capactiy * item_proto.stack_size--[[@as uint]]
+        or metadata.cargo_wagon_capacity--[[@as number]] * item_proto.stack_size--[[@as uint]]
     local raw_number = (raw_amount * metadata.timescale) / wagon_capacity
     local button_number = lib.format.button_number(raw_number)
 
@@ -145,8 +145,9 @@ function item_views.process_item(player, proto, item_amount, machine_amount)
             {"fp." .. lib.gui.timescale_as_string(views_data.timescale)}}
         return button_number, {"", tooltip_number, " ", unit}
     else
-        local view_preferences = lib.globals.preferences(player).item_views
-        local selected_view = view_preferences.selected.primary
+        local selected_view = lib.globals.preferences(player).item_views.selected.primary
+        local view = views_data.views[selected_view]
+        if view.unavailable_for and view.unavailable_for[proto.type] then return nil, nil end
         local processor = processors[selected_view]  ---@cast processor -nil
         local number, tooltip = processor(views_data, item_amount, proto, machine_amount)
         return number, tooltip
@@ -164,13 +165,15 @@ end
 ---@field formatting_precision integer
 ---@field pumping_speed number
 ---@field lift_capacity number
----@field cargo_wagon_capactiy number
----@field fluid_wagon_capacity number
+---@field cargo_wagon_capacity number?
+---@field fluid_wagon_capacity number?
 
 ---@class ItemViewData
 ---@field index integer
 ---@field caption LocalisedString
----@field tooltip LocalisedString
+---@field tooltip LocalisedString?
+---@field unavailable boolean?
+---@field unavailable_for table<string, boolean>?
 
 ---@param default DefaultPrototype
 ---@return LuaEntityPrototype prototype
@@ -180,6 +183,75 @@ local function proto_and_quality_string(default)
     local quality = (default.quality and default.quality.always_show)
         and {"", " (", default.quality.rich_text, ")"} or ""
     return proto, quality
+end
+
+-- Disable unavailable views and keep an enabled view selected
+---@param player LuaPlayer
+local function disable_unavailable_views(player)
+    local preferences = lib.globals.preferences(player).item_views
+    local data = lib.globals.ui_state(player).views_data  ---@cast data -nil
+    local first_enabled, items_view = nil, nil  ---@type string?, ItemViewPreference?
+    local selection_enabled = false
+
+    for _, preference in ipairs(preferences.views) do
+        if preference.name == "items_per_timescale" then items_view = preference end
+        if data.views[preference.name].unavailable then preference.enabled = false end
+        if preference.enabled then
+            first_enabled = first_enabled or preference.name
+            if preference.name == preferences.selected.primary then selection_enabled = true end
+        end
+    end
+
+    if not first_enabled then
+        items_view--[[@cast -nil]].enabled = true
+        first_enabled = "items_per_timescale"
+    end
+    if not selection_enabled then preferences.selected.primary = first_enabled end
+end
+
+---@param player LuaPlayer
+---@param timescale_string string
+---@return ItemViewData view
+---@return number? cargo_capacity
+---@return number? fluid_capacity
+local function prepare_wagon_view(player, timescale_string)
+    local cargo = defaults.get_optional(player, "wagons", "cargo-wagon")
+    local fluid = defaults.get_optional(player, "wagons", "fluid-wagon")
+    local view = {index=5, caption={"", {"fp.pu_wagon", 2}, "/", {"fp.unit_" .. timescale_string}},
+        unavailable=not cargo and not fluid, unavailable_for={item=not cargo, fluid=not fluid}}  ---@type ItemViewData
+    if view.unavailable then
+        view.tooltip = {"fp.preference_no_default_prototype", {"fp.pl_wagon", 2}}
+        return view
+    end
+
+    local cargo_capacity, fluid_capacity  ---@type number?, number?
+    local cargo_quality, fluid_quality = "", ""  ---@type LocalisedString, LocalisedString
+    if cargo then
+        ---@cast cargo.proto FPWagonPrototype
+        local proto
+        proto, cargo_quality = proto_and_quality_string(cargo)
+        cargo_capacity = proto.get_inventory_size(defines.inventory.cargo_wagon, cargo.quality--[[@cast -nil]].name)
+    end
+    if fluid then
+        ---@cast fluid.proto FPWagonPrototype
+        local proto
+        proto, fluid_quality = proto_and_quality_string(fluid)
+        fluid_capacity = proto.get_fluid_capacity(fluid.quality--[[@cast -nil]].name)
+    end
+
+    view.caption = {"", cargo and cargo.proto.rich_text or "", fluid and fluid.proto.rich_text or "",
+        "/", {"fp.unit_" .. timescale_string}}
+    if cargo and fluid then
+        view.tooltip = {"fp.view_tt", {"fp.wagons_per_timescale", {"fp." .. timescale_string},
+            cargo.proto.rich_text, cargo.proto.localised_name, cargo_quality,
+            fluid.proto.rich_text, fluid.proto.localised_name, fluid_quality}}  ---@as LocalisedString
+    else
+        local wagon = cargo or fluid  ---@cast wagon -nil
+        ---@cast wagon.proto FPWagonPrototype
+        view.tooltip = {"fp.view_tt", {"fp.wagons_per_timescale_single", {"fp." .. timescale_string},
+            wagon.proto.rich_text, wagon.proto.localised_name, cargo and cargo_quality or fluid_quality}}
+    end
+    return view, cargo_capacity, fluid_capacity
 end
 
 ---@param player LuaPlayer
@@ -198,13 +270,7 @@ function item_views.rebuild_data(player)
     local default_silo = defaults.get(player, "silos")  ---@cast default_silo.proto FPSiloPrototype
     local _, silo_quality = proto_and_quality_string(default_silo)
 
-    local default_cargo_wagon = defaults.get(player, "wagons", "cargo-wagon")
-    ---@cast default_cargo_wagon.proto FPWagonPrototype
-    local cargo_wagon_proto, cargo_wagon_quality = proto_and_quality_string(default_cargo_wagon)
-
-    local default_fluid_wagon = defaults.get(player, "wagons", "fluid-wagon")
-    ---@cast default_fluid_wagon.proto FPWagonPrototype
-    local fluid_wagon_proto, fluid_wagon_quality = proto_and_quality_string(default_fluid_wagon)
+    local wagon_view, cargo_capacity, fluid_capacity = prepare_wagon_view(player, timescale_string)
 
     lib.globals.ui_state(player).views_data = {
         views = {
@@ -230,15 +296,7 @@ function item_views.rebuild_data(player)
                 caption = {"", "[img=fp_stack]", "/", {"fp.unit_" .. timescale_string}},
                 tooltip = {"fp.view_tt", {"fp.stacks_per_timescale", {"fp." .. timescale_string}}}
             },
-            wagons_per_timescale = {
-                index = 5,
-                caption = {"", default_cargo_wagon.proto.rich_text, default_fluid_wagon.proto.rich_text,
-                    "/", {"fp.unit_" .. timescale_string}},
-                tooltip = {"fp.view_tt", {"fp.wagons_per_timescale", {"fp." .. timescale_string},
-                    default_cargo_wagon.proto.rich_text, default_cargo_wagon.proto.localised_name,
-                    cargo_wagon_quality, default_fluid_wagon.proto.rich_text,
-                    default_fluid_wagon.proto.localised_name, fluid_wagon_quality}}
-            },
+            wagons_per_timescale = wagon_view,
             rockets_per_timescale = {
                 index = 6,
                 caption = {"", "[img=fp_silo_rocket]", "/", {"fp.unit_" .. timescale_string}},
@@ -254,10 +312,10 @@ function item_views.rebuild_data(player)
         formatting_precision = MAGIC_NUMBERS.formatting_precision,
         pumping_speed = pump_proto.get_pumping_speed(default_pump.quality--[[@cast -nil]].name) * 60,
         lift_capacity = default_silo.proto--[[@as FPSiloPrototype]].rocket_lift_weight,
-        cargo_wagon_capactiy = cargo_wagon_proto.get_inventory_size(defines.inventory.cargo_wagon,
-            default_cargo_wagon.quality--[[@cast -nil]].name),
-        fluid_wagon_capacity = fluid_wagon_proto.get_fluid_capacity(default_fluid_wagon.quality--[[@cast -nil]].name)
+        cargo_wagon_capacity = cargo_capacity,
+        fluid_wagon_capacity = fluid_capacity
     }  ---@as ItemViewsData
+    disable_unavailable_views(player)
 end
 
 ---@class ItemViewPreferences
@@ -361,6 +419,8 @@ end
 ---@param name string
 local function select_view(player, name)
     local view_preferences = lib.globals.preferences(player).item_views
+    local preference = find_preference(view_preferences, name)
+    if not preference or not preference.enabled then return end
     view_preferences.selected.primary = name
 
     item_views.refresh_interface(player)
@@ -373,6 +433,9 @@ end
 ---@param direction "standard" | "reverse"
 function item_views.cycle_views(player, direction)
     local view_preferences = lib.globals.preferences(player).item_views
+
+    -- The shortcuts can also be used before either interface has been opened.
+    if not lib.globals.ui_state(player).views_data then item_views.rebuild_data(player) end
 
     local _, next_option = find_preference(view_preferences, view_preferences.selected.primary)
     ---@cast next_option -nil
