@@ -5,7 +5,6 @@ local _lib = {
     globals = require("util.globals"),
     context = require("util.context"),
     clipboard = require("util.clipboard"),
-    messages = require("util.messages"),
     cursor = require("util.cursor"),
     gui = require("util.gui"),
     format = require("util.format"),

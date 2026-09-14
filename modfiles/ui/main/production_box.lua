@@ -399,18 +399,7 @@ local function build_production_box(player)
     frame_vertical.add{type="empty-widget", style="fflib_vertical_pusher"}
     frame_vertical.add{type="empty-widget", style="fflib_horizontal_pusher"}
 
-    -- Bottom UI for messages & solver
-    local scroll_pane_messages = frame_vertical.add{type="scroll-pane", vertical_scroll_policy="never",
-        visible=false, style="fflib_naked_scroll_pane_no_padding"}
-    main_elements["messages_frame"] = scroll_pane_messages
-
-    local line_messages = scroll_pane_messages.add{type="line", direction="horizontal"}
-    line_messages.style.margin = -1  -- hack around some scrollpane styling issues
-
-    local flow_messages = scroll_pane_messages.add{type="flow", direction="vertical"}
-    flow_messages.style.padding = {0, 12, 6, 12}
-    main_elements["messages_flow"] = flow_messages
-
+    -- Bottom UI for solver
     local scroll_pane_solver = frame_vertical.add{type="scroll-pane", vertical_scroll_policy="never",
         visible=false, style="fflib_naked_scroll_pane_no_padding"}
     main_elements["solver_frame"] = scroll_pane_solver

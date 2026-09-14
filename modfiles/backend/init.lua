@@ -13,7 +13,6 @@ local dev_export_string = "eNrtWUtv2zAM/i8+R0WdrTvk2MNOGzBsuw2BIct0KlQPV5KzBln++
 ---@field main_dialog_dimensions DisplayResolution?
 ---@field last_action LastAction?
 ---@field views_data ItemViewsData?
----@field messages PlayerMessage[]
 ---@field main_elements table
 ---@field compact_elements table
 ---@field calculator_elements table<string, LuaGuiElement>
@@ -38,7 +37,6 @@ local function reset_ui_state(player_table)
         main_dialog_dimensions = nil,
         last_action = nil,
         views_data = nil,
-        messages = {},
         main_elements = {},
         compact_elements = {},
         calculator_elements = {},

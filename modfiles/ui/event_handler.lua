@@ -252,7 +252,6 @@ local function handle_gui_event(event)
     end
 
     if not hover_event then
-        lib.messages.refresh(player)
         -- Any action drops the object it started out with, unless it picked it up itself
         drop_held_object(player, previous_held_id)
         if lib.context.record(player) then lib.gui.run_refresh(player, "title_bar") end
@@ -373,7 +372,6 @@ local function handle_player_event(event)
     end
 
     if event.input_name then  -- only for keyboard shortcut events
-        lib.messages.refresh(player)
         drop_held_object(player, lib.globals.ui_state(player).held_object_id)
         if lib.context.record(player) then lib.gui.run_refresh(player, "title_bar") end
     end
