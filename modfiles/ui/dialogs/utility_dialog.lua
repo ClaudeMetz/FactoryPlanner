@@ -131,7 +131,7 @@ function utility_structures.components(player, modal_data)
         local main_inventory = player.get_main_inventory()
         local queued_amounts = queued_craft_amounts(player)
         local frame_components = component_row.add{type="frame", direction="horizontal", style="fp_frame_light_slots"}
-        local table_components = frame_components.add{type="table", column_count=10, style="filter_slot_table"}
+        local table_components = frame_components.add{type="table", column_count=8, style="filter_slot_table"}
 
         for _, component in pairs(component_data[type .. "s"]) do  ---@cast component ComponentDataSet
             if component.amount > 0 then
@@ -210,14 +210,20 @@ function utility_structures.blueprints(player, modal_data)
     local modal_elements = modal_data.modal_elements
     local blueprints_box = add_utility_box(player, modal_elements, "content_frame", "blueprints", true, false)
     blueprints_box.style.margin = {4, 0}
+    local flow_blueprints = blueprints_box.add{type="flow", direction="horizontal"}
 
     -- Disable all actions besides transfer (trash is disabled by default)
-    local inventory_blueprints = blueprints_box.add{type="inventory", slots_per_row=MAGIC_NUMBERS.blueprint_limit,
+    local inventory_blueprints = flow_blueprints.add{type="inventory", slots_per_row=MAGIC_NUMBERS.blueprint_limit,
         tags={mod="fp", on_gui_inventory_action="utility_blueprints"}, handle_cursor_split=false,
         handle_open_item=false, handle_open_mod_item=false}
 
     local factory = lib.context.get(player, "Factory")  ---@as Factory
     inventory_blueprints.inventory = factory.blueprints_inventory
+
+    local button_blueprints = flow_blueprints.add{type="sprite-button", sprite="item/blueprint",
+        style="slot_button", tags={mod="fp", on_gui_click="utility_item_combinator", blueprint=true},
+        tooltip={"fp.utility_create_blueprint"}, enabled=factory.valid, mouse_button_filter={"left"}}
+    button_blueprints.style.padding = 3
 end
 
 ---@param player LuaPlayer
@@ -230,7 +236,7 @@ function utility_structures.notes(player, modal_data)
         tags={mod="fp", on_gui_text_changed="factory_notes"}}
     text_box.style.vertically_stretchable = true
     text_box.style.minimal_height = 320
-    text_box.style.width = 480
+    text_box.style.width = 400
     text_box.word_wrap = true
 end
 
@@ -328,9 +334,13 @@ local function handle_scope_change(player, tags, event)
 end
 
 
+---@class UtilityItemCombinatorTags
+---@field blueprint boolean?
+
 ---@param player LuaPlayer
+---@param tags UtilityItemCombinatorTags
 ---@param event EventData.on_gui_click
-local function handle_item_combinator(player, _, event)
+local function handle_item_combinator(player, tags, event)
     local modal_data = lib.globals.modal_data(player)  ---@as UtilityDialogModalData
     local item_filters = {}
 
@@ -343,7 +353,51 @@ local function handle_item_combinator(player, _, event)
             count = (event.shift) and item.missing_amount or item.required_amount
         })
     end
-    lib.cursor.set_item_combinator(player, item_filters)
+
+    local metadata
+    if tags.blueprint then
+        local factory = lib.context.get(player, "Factory")  ---@as Factory
+        local timescale = lib.globals.preferences(player).timescale
+        local description = {}
+
+        ---@param direction string
+        ---@param proto FPItemPrototype
+        ---@param amount number
+        local function describe_item(direction, proto, amount)
+            local unit = (timescale == 1) and "/s" or "/m"
+            if proto.special then
+                unit = lib.is_special_power_item(proto.name) and " W" or "/m"
+            elseif proto.fixed_unit then
+                unit = ""
+            else
+                amount = amount * timescale
+            end
+            local icon = (proto.type == "entity") and "[img=" .. proto.sprite .. "]"
+                or "[" .. proto.type .. "=" .. (proto.base_name or proto.name) .. "]"
+            local temperature = proto.temperature and " (" .. proto.temperature .. "°C)" or ""
+            table.insert(description, direction .. " " .. icon .. temperature .. " "
+                .. lib.format.number(amount, MAGIC_NUMBERS.formatting_precision) .. unit)
+        end
+
+        local icons = {}  ---@type BlueprintSignalIcon[]
+        for product in factory:iterator() do
+            local proto = product.proto  ---@as FPItemPrototype
+            describe_item("→", proto, product.amount)
+            if #icons < 4 and proto.type ~= "entity" then
+                table.insert(icons, {index=#icons + 1, signal={type=proto.type, name=proto.base_name or proto.name}})
+            end
+        end
+        if factory.first and next(factory.top_floor.ingredients) then table.insert(description, "") end
+        for _, ingredient in ipairs(factory.top_floor.ingredients) do
+            describe_item("←", ingredient.proto--[[@as FPItemPrototype]], ingredient.amount)
+        end
+        if factory.notes ~= "" then
+            if next(description) then table.insert(description, "") end
+            table.insert(description, factory.notes)
+        end
+        metadata = {label=factory.name, icons=icons, description=table.concat(description, "\n")}
+    end
+    lib.cursor.set_item_combinator(player, item_filters, metadata)
 
     lib.gui.close_dialog(player, "cancel")
     main_dialog.toggle(player)

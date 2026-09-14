@@ -4,6 +4,7 @@ Date: 00. 00. 0000
   Features:
     - The item picker can now hide unresearched items (#875)
     - Special recipes like mining now show whether they are actually usable (#870)
+    - The utility dialog now offers a blueprint with basic factory metadata pre-filled (#808)
   Changes:
     - Disabled the rocket item rate view when no launch-capable rocket silo is available (#510)
     - Made disabled recipes more obvious by giving them a red background (#883)
