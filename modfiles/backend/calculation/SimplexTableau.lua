@@ -308,7 +308,10 @@ function SimplexTableau:solve(previous_basis)
         end
     end
 
-    local lu = LUDecomposition:init(#self.matrix[1])
+    -- Re-scale the tableau only after the basis has been chosen
+    local basis_scalars = self:_normalize()
+
+    local lu = LUDecomposition:init(basis_scalars)
     local x_vector = lib.flib.shallow_copy(self.solution)
     local iterations = 0
     local last_factorization = iterations
@@ -320,7 +323,7 @@ function SimplexTableau:solve(previous_basis)
 
     local function refactorize()
         local b_matrix = {}  ---@type number[][]
-        for j = 1, #self.matrix do
+        for j = 1, #self.matrix[1] do
             b_matrix[j] = self.matrix[self.cols[basic[j]--[[@cast -nil]]]]
         end
 
@@ -494,6 +497,29 @@ function SimplexTableau:solve(previous_basis)
     end
 
     return result
+end
+
+--- Re-scales the conditions based on the highest coefficient in the row.
+--- Returns the scalars by which each row was scaled by
+---@return number[]
+function SimplexTableau:_normalize()
+    local scalars = {}  ---@type number[]
+    for i = 1, #self.matrix[1] do
+        -- Find the maximum coefficient in the row
+        local max = 0.0
+        for j = 1, #self.matrix do
+            max = math.max(max, math.abs(self.matrix[j][i]--[[@cast -nil]]))
+        end
+
+        -- Re-scale the row
+        scalars[i] = 1 / max
+        for j = 1, #self.matrix do
+            self.matrix[j][i] = self.matrix[j][i]--[[@cast -nil]] / max
+        end
+        self.solution[i] = self.solution[i]--[[@cast -nil]] / max
+    end
+
+    return scalars
 end
 
 ---@param key ConstraintKey
