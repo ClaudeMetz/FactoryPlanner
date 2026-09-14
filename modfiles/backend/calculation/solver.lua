@@ -418,14 +418,15 @@ local function generate_floor_data(player, factory, floor, calculate_emissions)
             line_data.products = line.first--[[@as Line]].recipe.products
             line_data.subfloor, subfloor_floor_map, subfloor_line_map = generate_floor_data(player, factory, line, calculate_emissions)
             table.insert(old_floor_data.lines, line_data)
+            table.insert(floor_data.lines, line.id)
             for k, v in pairs (subfloor_floor_map) do floor_data_map[k] = v end
             for k, v in pairs (subfloor_line_map) do line_data_map[k] = v end
         else  ---@cast line Line
-            if line:get_blocker() ~= nil then
+            if line:get_blocker() or not relevant_line_active then
                 -- Useless lines don't need to run through the solver
                 solver.set_blank_line(floor, line)
                 if line == floor.first and floor.level > 1 then relevant_line_active = false end
-            elseif relevant_line_active then
+            else
                 local machine = line.machine
                 local recipe_proto = line.recipe.proto  ---@as FPRecipePrototype
 
@@ -480,12 +481,10 @@ local function generate_floor_data(player, factory, floor, calculate_emissions)
                 end
 
                 table.insert(old_floor_data.lines, line_data)
+                table.insert(floor_data.lines, line.id)
                 line_data_map[line.id] = generate_line_data(player, factory, line)
-            else
-                solver.set_blank_line(floor, line)
             end
         end
-        table.insert(floor_data.lines, line.id)
     end
 
     floor_data_map[floor.id] = floor_data

@@ -336,9 +336,6 @@ function matrix_engine.run_matrix_solver(factory_data, matrix_metadata)
                 matrix_engine.consolidate(line_aggregate)
             end
 
-            -- Line/floor disabled
-            if not line_aggregate then goto continue end
-
             -- Lines with subfloors show actual number of machines to build, so each counts are rounded up when summed
             floor_aggregate.machine_amount = floor_aggregate.machine_amount +
                 math.ceil(line_aggregate.machine_amount - MAGIC_NUMBERS.margin_of_error)
