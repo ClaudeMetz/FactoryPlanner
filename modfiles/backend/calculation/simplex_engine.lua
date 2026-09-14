@@ -66,7 +66,7 @@ function simplex_engine.solve_floor(factory_data, floor_id, cache_invalid_map)
     local result  ---@type SimplexResult?
 
     -- Recursively solve subfloors and add their results to the line data
-    for _, line_object_id in pairs(floor_data.lines) do
+    for _, line_object_id in pairs(floor_data.line_ids) do
         if factory_data.floor_data_map[line_object_id] then
             local partial_result = simplex_engine.solve_floor(factory_data, line_object_id, cache_invalid_map)
             result = util.merge({result or {}, partial_result})  ---@as SimplexResult?
@@ -76,7 +76,7 @@ function simplex_engine.solve_floor(factory_data, floor_id, cache_invalid_map)
             local floor_result = partial_result and partial_result.floor_results[line_object_id]
             if floor_result then
                 local subfloor_data = factory_data.floor_data_map[line_object_id]
-                local subfloor_line = factory_data.line_data_map[subfloor_data.lines[1]--[[@cast -nil]]]
+                local subfloor_line = factory_data.line_data_map[subfloor_data.line_ids[1]--[[@cast -nil]]]
                 factory_data.line_data_map[line_object_id] = {
                     floor_id = floor_id,
                     line_id = line_object_id,

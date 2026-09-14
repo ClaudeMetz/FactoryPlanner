@@ -320,7 +320,7 @@ function matrix_engine.run_matrix_solver(factory_data, matrix_metadata)
     local function set_line_results(floor_id)
         local floor_data = factory_data.floor_data_map[floor_id]
         local floor_aggregate = structures.aggregate.init(floor_id)
-        for _, line_object_id in ipairs(floor_data.lines) do
+        for _, line_object_id in ipairs(floor_data.line_ids) do
             local line_key = "line"..SEPARATOR..line_object_id
             local line_data = nil
             local line_aggregate = nil
@@ -331,7 +331,7 @@ function matrix_engine.run_matrix_solver(factory_data, matrix_metadata)
                 if machine_amount < 0 then machine_amount = 0 end
                 line_data = factory_data.line_data_map[line_object_id]
                 line_aggregate = matrix_engine.get_line_result_aggregate(line_data, machine_amount, matrix_metadata, free_variables)
-            elseif factory_data.floor_data_map[line_object_id] then   -- Floor
+            else  -- Floor
                 line_aggregate = set_line_results(line_object_id)
                 matrix_engine.consolidate(line_aggregate)
             end

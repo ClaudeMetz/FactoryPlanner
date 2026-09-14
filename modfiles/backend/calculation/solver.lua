@@ -108,7 +108,7 @@ end
 ---@field floor_id ObjectID
 ---@field level integer
 ---@field products SolverItem[]
----@field lines ObjectID[]
+---@field line_ids ObjectID[]
 
 ---@class OldFloorData  -- deprecated
 ---@field id ObjectID
@@ -402,7 +402,7 @@ local function generate_floor_data(player, factory, floor, calculate_emissions)
         floor_id = floor.id,
         level = floor.level,
         products = floor.level == 1 and factory_products(factory) or floor_products(floor),
-        lines = {}
+        line_ids = {}
     }  ---@type FloorData
 
     local floor_data_map = {}  ---@type FloorDataMap
@@ -418,7 +418,7 @@ local function generate_floor_data(player, factory, floor, calculate_emissions)
             line_data.products = line.first--[[@as Line]].recipe.products
             line_data.subfloor, subfloor_floor_map, subfloor_line_map = generate_floor_data(player, factory, line, calculate_emissions)
             table.insert(old_floor_data.lines, line_data)
-            table.insert(floor_data.lines, line.id)
+            table.insert(floor_data.line_ids, line.id)
             for k, v in pairs (subfloor_floor_map) do floor_data_map[k] = v end
             for k, v in pairs (subfloor_line_map) do line_data_map[k] = v end
         else  ---@cast line Line
@@ -481,7 +481,7 @@ local function generate_floor_data(player, factory, floor, calculate_emissions)
                 end
 
                 table.insert(old_floor_data.lines, line_data)
-                table.insert(floor_data.lines, line.id)
+                table.insert(floor_data.line_ids, line.id)
                 line_data_map[line.id] = generate_line_data(player, factory, line)
             end
         end
