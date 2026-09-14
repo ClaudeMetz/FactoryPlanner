@@ -86,7 +86,6 @@ function simplex_engine.solve_floor(factory_data, floor_id, cache_invalid_map)
                     recipe_name = subfloor_line.recipe_name,
                     machine_limit = subfloor_line.machine_limit,
                     machine_force_limit = subfloor_line.machine_force_limit,
-                    percentage = subfloor_line.percentage,
                     production_type = "produce"
                 }
             end
