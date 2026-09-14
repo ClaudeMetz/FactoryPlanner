@@ -637,7 +637,7 @@ end
 ---@return FactoryData
 function solver.generate_factory_data(player, factory)
     local calculate_emissions = lib.globals.preferences(player).calculate_emissions
-    local free_items = factory.matrix_free_items  ---@as FPItemPrototype[]
+    local free_items = factory.matrix_free_items  ---@as FPItemPrototype[]  -- intentional pass-by-reference
     local top_floor_data, floor_data_map, line_data_map =
             generate_floor_data(player, factory, factory.top_floor, calculate_emissions)
 
