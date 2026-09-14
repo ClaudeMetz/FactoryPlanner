@@ -40,11 +40,7 @@ function _structures.unpack_item(item_key, amount)
     }  ---@type SolverItem
 end
 
-
----@alias AggregateMap table<ObjectID, SolverAggregate>
-
 ---@class SolverAggregate
----@field line_id ObjectID
 ---@field floor_id ObjectID
 ---@field machine_amount number
 ---@field crafts_per_second number?
@@ -52,27 +48,18 @@ end
 ---@field byproducts SolverMap
 ---@field ingredients SolverMap
 ---@field known_byproducts SolverSet
----@field recipe_name string
----@field beacon_power double?
----@field fuel SolverItem?
----@field machine_limit number?
----@field machine_force_limit boolean?
 
 ---@param floor_id ObjectID
 ---@return SolverAggregate
 function _structures.aggregate.init(floor_id)
     return {
-        line_id = 0,
         floor_id = floor_id,
         machine_amount = 0,
         crafts_per_second = nil,
         products = {},
         byproducts = {},
         ingredients = {},
-        known_byproducts = {},
-        recipe_name = "",
-        beacon_power = nil,
-        fuel = nil
+        known_byproducts = {}
     }  ---@type SolverAggregate
 end
 

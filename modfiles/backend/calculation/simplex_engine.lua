@@ -53,13 +53,13 @@ function simplex_engine.solve(factory_data)
 end
 
 ---@param floor_data FloorData
----@param line_data_map AggregateMap
+---@param line_data_map LineDataMap
 ---@param level integer
 ---@param previous_basis table<ConstraintKey, VariableKey>
 ---@param cache_invalid_map table<ObjectID, true>
 ---@return SimplexResult?
 function simplex_engine.solve_floor(floor_data, line_data_map, level, previous_basis, cache_invalid_map)
-    local relevant_line_metadata = {}  ---@type SolverAggregate[]
+    local relevant_line_data = {}  ---@type SolverLineData[]
     local products = {}  ---@type SolverSet
     local ingredients = {}  ---@type SolverSet
     local cycled_intermediates = {}  ---@type SolverSet
@@ -73,30 +73,32 @@ function simplex_engine.solve_floor(floor_data, line_data_map, level, previous_b
             result = util.merge({result or {}, partial_result})  ---@as SimplexResult?
             cache_invalid = cache_invalid or (result and result.cache_invalid)
 
-            -- Add line metadata for this floor based on the results
+            -- Add line data for this floor based on the results
             local floor_result = partial_result and partial_result.floor_results[line_object_data.id]
             if floor_result then
+                local subfloor_line = floor_data.lines[1]  ---@as LineData
+                local subfloor_machine_limit = subfloor_line.machine_limit
                 line_data_map[line_object_data.id] = {
                     floor_id = floor_data.id,
                     line_id = line_object_data.id,
-                    machine_amount = 1,
                     products = floor_result.products,
-                    ingredients = floor_result.ingredients,
                     byproducts = {},
-                    known_byproducts = {},
-                    recipe_name = "",
+                    ingredients = floor_result.ingredients,
+                    recipe_name = subfloor_line.recipe_proto.name,
+                    machine_limit = subfloor_machine_limit and subfloor_machine_limit.limit,
+                    machine_force_limit = subfloor_machine_limit and subfloor_machine_limit.force_limit
                 }
             end
         end
 
-        table.insert(relevant_line_metadata, line_data_map[line_object_data.id])
+        table.insert(relevant_line_data, line_data_map[line_object_data.id])
     end
 
     -- Do not continue if the floor is empty (sanity check)
-    if not next(relevant_line_metadata) then return end
+    if not next(relevant_line_data) then return end
 
     -- Populate the item sets based on the line data
-    for _, line_data in pairs(relevant_line_metadata) do
+    for _, line_data in pairs(relevant_line_data) do
         for item_key, _ in pairs(line_data.products) do
             products[item_key] = true
         end
@@ -115,8 +117,8 @@ function simplex_engine.solve_floor(floor_data, line_data_map, level, previous_b
     local tableau = SimplexTableau:init()
 
     -- Add line variables to the tableau
-    for _, line_metadata in pairs(relevant_line_metadata) do
-        tableau:add_line_variable(line_metadata)
+    for _, line_data in pairs(relevant_line_data) do
+        tableau:add_line_variable(line_data)
     end
 
     -- Add slack variables for products
@@ -164,10 +166,10 @@ function simplex_engine.solve_floor(floor_data, line_data_map, level, previous_b
         end
 
         -- Add aditional constraint for machine limits
-        for _, line_metadata in pairs(relevant_line_metadata) do
-            if line_metadata.machine_limit then
-                local type = line_metadata.machine_force_limit and "==" or "<="
-                tableau:add_line_constraint(line_metadata.line_id, type, line_metadata.machine_limit, objective_vector.machine_limit)
+        for _, line_data in pairs(relevant_line_data) do
+            if line_data.machine_limit then
+                local type = line_data.machine_force_limit and "==" or "<="
+                tableau:add_line_constraint(line_data.line_id, type, line_data.machine_limit, objective_vector.machine_limit)
             end
         end
         for _, line_object_data in pairs(floor_data.lines) do
@@ -181,33 +183,14 @@ function simplex_engine.solve_floor(floor_data, line_data_map, level, previous_b
         end
     else
         -- Artificially limit the top line to one machine so we get a solution for this subfloor
-        local _, line_metadata = next(relevant_line_metadata)  ---@cast line_metadata -nil
-        tableau:add_line_constraint(line_metadata.line_id, "==", 1, objective_vector.target_machine)
+        local _, line_data = next(relevant_line_data)  ---@cast line_data -nil
+        tableau:add_line_constraint(line_data.line_id, "==", 1, objective_vector.target_machine)
     end
 
     -- Solve the tableau
     local tableau_result = tableau:solve(not cache_invalid and previous_basis or {})
 
     return util.merge({result or {}, tableau_result})  ---@as SimplexResult?
-end
-
--- Iterate through lines and subfloors collecting line data
----@param floor_data FloorData
----@return AggregateMap
-function simplex_engine.get_floor_metadata(floor_data)
-    local line_metadata_table = {}  ---@type AggregateMap
-
-    for _, line_object_data in pairs(floor_data.lines) do
-        if line_object_data.subfloor then
-            local subfloor_data = simplex_engine.get_floor_metadata(line_object_data.subfloor)
-            if subfloor_data then line_metadata_table = util.merge({line_metadata_table, subfloor_data}) end
-        else
-            local line_metadata = solver.get_line_aggregate(line_object_data, floor_data.id, 1)
-            if line_metadata then line_metadata_table[line_metadata.line_id] = line_metadata end
-        end
-    end
-
-    return line_metadata_table
 end
 
 ---@param factory_data FactoryData
@@ -258,7 +241,7 @@ end
 ---@param floor_data FloorData
 ---@param scale_factor number
 ---@param byproducts SolverMap
----@param line_data_map AggregateMap
+---@param line_data_map LineDataMap
 ---@param result SimplexResult?
 ---@return integer machine_amount
 function simplex_engine.update_floor(floor_data, scale_factor, byproducts, line_data_map, result)
@@ -303,7 +286,7 @@ end
 ---@param line_data LineData
 ---@param scale_factor number
 ---@param byproducts SolverMap
----@param line_data_map AggregateMap
+---@param line_data_map LineDataMap
 ---@param result SimplexLineResult?
 ---@return number machine_amount
 function simplex_engine.update_line(floor_id, line_data, scale_factor, byproducts, line_data_map, result)

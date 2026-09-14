@@ -77,6 +77,7 @@ function matrix_engine.get_matrix_solver_metadata(factory_data)
     local line_count = 0
 
     for _, line_data in pairs(factory_data.line_data_map) do
+        matrix_engine.consolidate(line_data)
         for item_key, _ in pairs(line_data.ingredients) do line_inputs[item_key] = true end
         for item_key, _ in  pairs(line_data.products) do line_outputs[item_key] = true end
         line_count = line_count + 1
@@ -271,25 +272,12 @@ function matrix_engine.get_matrix_data(factory_data, matrix_metadata)
     local matrix_free_items = matrix_metadata.free_items
     local all_items = matrix_metadata.all_items
     local rows = matrix_engine.get_mapping_struct(all_items)
-    local floor_data = factory_data.top_floor
 
     -- Storing the line keys as "line;(lines id)"
-    ---@return table<string, true>
-    local function get_line_names(lines)
-        local line_names = {}
-        for _, line in ipairs(lines) do
-            local line_key = "line"..SEPARATOR..line.id
-            -- these are exclusive because only actual recipes are allowed to be inputs to the matrix solver
-            if line.subfloor == nil then  -- line
-                line_names[line_key] = true
-            else  -- floor
-                local subfloor_line_names = get_line_names(line.subfloor.lines)
-                line_names = solver.util.set.union(line_names, subfloor_line_names)
-            end
-        end
-        return line_names
+    local line_names = {}  ---@type table<string, true>
+    for line_id, _ in pairs(factory_data.line_data_map) do
+        line_names["line"..SEPARATOR..line_id] = true
     end
-    local line_names = get_line_names(floor_data.lines)
 
     local raw_free_variables = solver.util.set.union(matrix_metadata.raw_inputs, matrix_metadata.byproducts)  ---@as SolverSet
     local free_variables = {}  ---@type table<string, true>
@@ -331,16 +319,17 @@ function matrix_engine.run_matrix_solver(factory_data, matrix_metadata)
     ---@param floor FloorData
     local function set_line_results(floor)
         local floor_aggregate = structures.aggregate.init(floor.id)
-        for i, line in ipairs(floor.lines) do
+        for _, line in ipairs(floor.lines) do
             local line_key = "line"..SEPARATOR..line.id
+            local line_data = nil
             local line_aggregate = nil
             if line.subfloor == nil then  ---@cast line LineData
                 local col_num = columns.map[line_key]
                  -- want the j-th entry in the last column (output of row-reduction)
                 local machine_amount = matrix[col_num]--[[@cast -nil]][#columns.values+1]  ---@as number
                 if machine_amount < 0 then machine_amount = 0 end
-                line_aggregate = factory_data.line_data_map[line.id]
-                line_aggregate = matrix_engine.get_line_result_aggregate(line_aggregate, line.id, machine_amount, matrix_metadata, free_variables)
+                line_data = factory_data.line_data_map[line.id]
+                line_aggregate = matrix_engine.get_line_result_aggregate(line_data, machine_amount, matrix_metadata, free_variables)
             else
                 line_aggregate = set_line_results(line.subfloor)
                 matrix_engine.consolidate(line_aggregate)
@@ -357,8 +346,10 @@ function matrix_engine.run_matrix_solver(factory_data, matrix_metadata)
             end
 
             -- remove fuel from Ingredient for display only
-            if line_aggregate.fuel then
-                structures.map.subtract(line_aggregate.ingredients, line_aggregate.fuel)
+            local fuel_amount = nil
+            if line_data and line_data.fuel then
+                fuel_amount = line_data.fuel.amount * line_aggregate.machine_amount
+                structures.map.subtract(line_aggregate.ingredients, line_data.fuel, fuel_amount)
             end
 
             -- need to call consolidate before set_line_result to net any non-fuel catalysts for display
@@ -372,7 +363,7 @@ function matrix_engine.run_matrix_solver(factory_data, matrix_metadata)
                 products = line_aggregate.products,
                 byproducts = line_aggregate.byproducts,
                 ingredients = line_aggregate.ingredients,
-                fuel_amount = line_aggregate.fuel and line_aggregate.fuel.amount
+                fuel_amount = fuel_amount
             }
         end
         return floor_aggregate
@@ -437,7 +428,7 @@ end
 -- If an aggregate has items that are both inputs and outputs, deletes whichever is smaller and saves the net amount.
 -- If the input and output are identical to within rounding error, delete from both.
 -- This is mainly for calculating line aggregates with subfloors for the matrix solver.
----@param aggregate SolverAggregate
+---@param aggregate SolverLineData | SolverAggregate
 function matrix_engine.consolidate(aggregate)
     -- Items cannot be both products or byproducts, but they can be both ingredients and fuels.
     -- In the case that an item appears as an output, an ingredient, and a fuel, delete from fuel first.
@@ -597,20 +588,19 @@ function matrix_engine.get_matrix(factory_data, rows, columns)
     return matrix, free_variable_scale_factors
 end
 
----@param line_aggregate SolverAggregate
----@param line_id ObjectID
+---@param line_data SolverLineData
 ---@param machine_amount number
 ---@param matrix_metadata MatrixMetadata
 ---@param free_variables table<string, true>
 ---@return SolverAggregate
-function matrix_engine.get_line_result_aggregate(line_aggregate, line_id, machine_amount, matrix_metadata, free_variables)
-    local aggregate = lib.flib.deep_copy(line_aggregate)
+function matrix_engine.get_line_result_aggregate(line_data, machine_amount, matrix_metadata, free_variables)
+    local aggregate = structures.aggregate.init(line_data.floor_id)
 
     -- Metadata aggregates assumed a machine amount of 1, so we just need to multiply by the solved machine amount to get the result
     aggregate.machine_amount = machine_amount
-    aggregate.crafts_per_second = aggregate.crafts_per_second and aggregate.crafts_per_second * machine_amount
+    aggregate.crafts_per_second = line_data.crafts_per_second and line_data.crafts_per_second * machine_amount
 
-    for item_key, item_amount in pairs(aggregate.products) do
+    for item_key, item_amount in pairs(line_data.products) do
         if matrix_metadata.byproducts[item_key] or free_variables["item"..SEPARATOR..item_key] then
            aggregate.byproducts[item_key] = item_amount * machine_amount
            aggregate.products[item_key] = nil
@@ -619,13 +609,12 @@ function matrix_engine.get_line_result_aggregate(line_aggregate, line_id, machin
         end
     end
 
-    for item_key, item_amount in pairs(aggregate.ingredients) do
+    for item_key, item_amount in pairs(line_data.ingredients) do
         aggregate.ingredients[item_key] = item_amount * machine_amount
     end
 
-    if aggregate.fuel then aggregate.fuel.amount = aggregate.fuel.amount * machine_amount end
-    if aggregate.beacon_power and aggregate.beacon_power > 0 then
-        local power_item = {type="entity", name="custom-electric-power", amount=aggregate.beacon_power}
+    if line_data.beacon_power and line_data.beacon_power > 0 then
+        local power_item = {type="entity", name="custom-electric-power", amount=line_data.beacon_power}
         structures.map.add(aggregate.ingredients, power_item)
     end
 

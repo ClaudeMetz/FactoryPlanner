@@ -101,7 +101,7 @@ end
 
 --- Adds a column representing the line recipe.
 --- Missing items are automatically added.
----@param line_data SolverAggregate
+---@param line_data SolverLineData
 function SimplexTableau:add_line_variable(line_data)
     local line_key = pack_line_variable(line_data.line_id)
 
