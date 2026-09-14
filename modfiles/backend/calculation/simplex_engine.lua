@@ -46,40 +46,40 @@ function simplex_engine.solve(factory_data)
     if context_floor then cache_invalid_map[context_floor.id] = true end
 
     -- Solve each floor recursively
-    local result = simplex_engine.solve_floor( factory_data.top_floor, factory_data.line_data_map, 1, factory_data.simplex_basis, cache_invalid_map)
+    local result = simplex_engine.solve_floor(factory_data, factory_data.top_floor_id, cache_invalid_map)
 
     -- Update GUI
     simplex_engine.update_factory(factory_data, result)
 end
 
----@param floor_data OldFloorData
----@param line_data_map LineDataMap
----@param level integer
----@param previous_basis table<ConstraintKey, VariableKey>
+---@param factory_data FactoryData
+---@param floor_id ObjectID
 ---@param cache_invalid_map table<ObjectID, true>
 ---@return SimplexResult?
-function simplex_engine.solve_floor(floor_data, line_data_map, level, previous_basis, cache_invalid_map)
+function simplex_engine.solve_floor(factory_data, floor_id, cache_invalid_map)
     local relevant_line_data = {}  ---@type SolverLineData[]
     local products = {}  ---@type SolverSet
     local ingredients = {}  ---@type SolverSet
     local cycled_intermediates = {}  ---@type SolverSet
-    local cache_invalid = cache_invalid_map[floor_data.id]
+    local floor_data = factory_data.floor_data_map[floor_id]
+    local cache_invalid = cache_invalid_map[floor_id]
     local result  ---@type SimplexResult?
 
     -- Recursively solve subfloors and add their results to the line data
-    for _, line_object_data in pairs(floor_data.lines) do
-        if line_object_data.subfloor then
-            local partial_result = simplex_engine.solve_floor(line_object_data.subfloor, line_data_map, level + 1, previous_basis, cache_invalid_map)
+    for _, line_object_id in pairs(floor_data.lines) do
+        if factory_data.floor_data_map[line_object_id] then
+            local partial_result = simplex_engine.solve_floor(factory_data, line_object_id, cache_invalid_map)
             result = util.merge({result or {}, partial_result})  ---@as SimplexResult?
             cache_invalid = cache_invalid or (result and result.cache_invalid)
 
             -- Add line data for this floor based on the results
-            local floor_result = partial_result and partial_result.floor_results[line_object_data.id]
+            local floor_result = partial_result and partial_result.floor_results[line_object_id]
             if floor_result then
-                local subfloor_line = line_data_map[floor_data.lines[1]--[[@cast-nil]].id]
-                line_data_map[line_object_data.id] = {
-                    floor_id = floor_data.id,
-                    line_id = line_object_data.id,
+                local subfloor_data = factory_data.floor_data_map[line_object_id]
+                local subfloor_line = factory_data.line_data_map[subfloor_data.lines[1]--[[@cast -nil]]]
+                factory_data.line_data_map[line_object_id] = {
+                    floor_id = floor_id,
+                    line_id = line_object_id,
                     products = floor_result.products,
                     ingredients = floor_result.ingredients,
                     recipe_name = subfloor_line.recipe_name,
@@ -91,7 +91,7 @@ function simplex_engine.solve_floor(floor_data, line_data_map, level, previous_b
             end
         end
 
-        table.insert(relevant_line_data, line_data_map[line_object_data.id])
+        table.insert(relevant_line_data, factory_data.line_data_map[line_object_id])
     end
 
     -- Do not continue if the floor is empty (sanity check)
@@ -125,36 +125,36 @@ function simplex_engine.solve_floor(floor_data, line_data_map, level, previous_b
     for item_key, _ in pairs(products) do
         if not intermediates[item_key] then
             local objective = item_cost(item_key) * objective_vector.product
-            tableau:add_item_variable(item_key, floor_data.id, "out", objective)
+            tableau:add_item_variable(item_key, floor_id, "out", objective)
         end
     end
 
     -- Add exporty slack variables for intermediates
     for item_key, _ in pairs(intermediates) do
         local c = item_cost(item_key)
-        tableau:add_item_variable(item_key, floor_data.id, "out", c * objective_vector.intermediate_out)
+        tableau:add_item_variable(item_key, floor_id, "out", c * objective_vector.intermediate_out)
     end
 
     -- Add import slack variables for cycled intermediates
     for item_key, _ in pairs(cycled_intermediates) do
         local c = item_cost(item_key)
-        tableau:add_item_variable(item_key, floor_data.id, "in", c * objective_vector.intermediate_in)
+        tableau:add_item_variable(item_key, floor_id, "in", c * objective_vector.intermediate_in)
     end
 
     -- Add slack variables for ingredients
     for item_key, _ in pairs(ingredients) do
         if not intermediates[item_key] then
             local objective = item_cost(item_key) * objective_vector.ingredient
-            tableau:add_item_variable(item_key, floor_data.id, "in", objective)
+            tableau:add_item_variable(item_key, floor_id, "in", objective)
         end
     end
 
-    if level == 1 then
+    if floor_data.level == 1 then
         -- Add additional constraint to target products, so we get a bounded solution
         for _, item in pairs(floor_data.products) do  ---@cast item SolverItem
             local item_key = structures.pack_item(item)
             local objective = item_cost(item_key) * objective_vector.target_product
-            tableau:add_item_constraint(item_key, floor_data.id, "out", "<=", item.amount, objective)
+            tableau:add_item_constraint(item_key, floor_id, "out", "<=", item.amount, objective)
         end
 
         -- Add additional constraint for limited ingredients
@@ -162,7 +162,7 @@ function simplex_engine.solve_floor(floor_data, line_data_map, level, previous_b
         for _, item in pairs({}) do  ---@cast item SolverItem
             local item_key = structures.pack_item(item)
             local objective = item_cost(item_key) * objective_vector.limited_ingredient
-            tableau:add_item_constraint(item_key, floor_data.id, "in", "<=", item.amount, objective)
+            tableau:add_item_constraint(item_key, floor_id, "in", "<=", item.amount, objective)
         end
 
         -- Add aditional constraint for machine limits
@@ -172,15 +172,6 @@ function simplex_engine.solve_floor(floor_data, line_data_map, level, previous_b
                 tableau:add_line_constraint(line_data.line_id, type, line_data.machine_limit, objective_vector.machine_limit)
             end
         end
-        for _, line_object_data in pairs(floor_data.lines) do
-            if line_object_data.subfloor then
-                local top_line_data = line_object_data.subfloor.lines[1]
-                if top_line_data and top_line_data.machine_limit and top_line_data.machine_limit.limit then
-                    local type = top_line_data.machine_limit.force_limit and "==" or "<="
-                    tableau:add_line_constraint(line_object_data.id, type, top_line_data.machine_limit.limit, objective_vector.machine_limit)
-                end
-            end
-        end
     else
         -- Artificially limit the top line to one machine so we get a solution for this subfloor
         local _, line_data = next(relevant_line_data)  ---@cast line_data -nil
@@ -188,7 +179,7 @@ function simplex_engine.solve_floor(floor_data, line_data_map, level, previous_b
     end
 
     -- Solve the tableau
-    local tableau_result = tableau:solve(not cache_invalid and previous_basis or {})
+    local tableau_result = tableau:solve(not cache_invalid and factory_data.simplex_basis or {})
 
     return util.merge({result or {}, tableau_result})  ---@as SimplexResult?
 end
