@@ -155,24 +155,6 @@ function builders.recipe(line, parent_flow, metadata, indent)
     metadata.tooltips[button.index] = tooltip
 end
 
----@param line LineObject
----@param parent_flow LuaGuiElement
----@param metadata ProductionTableMetadata
-function builders.percentage(line, parent_flow, metadata)
-    local relevant_line = (line.class == "Floor") and line.first or line
-
-    ---@class ChangeLinePercentageTags
-    ---@field line_id ObjectID
-    local tags = {mod="fp", on_gui_text_changed="change_line_percentage",
-       on_gui_confirmed="set_line_percentage", line_id=line.id}
-    local textfield_percentage = parent_flow.add{type="textfield", tags=tags, text=tostring(relevant_line.percentage),
-        enabled=(not metadata.archive_open and metadata.solver == "sequential")}
-    lib.gui.setup_numeric_textfield(textfield_percentage, true, false)
-    textfield_percentage.style.horizontal_align = "center"
-    textfield_percentage.style.width = 55
-end
-
-
 ---@param parent_flow LuaGuiElement
 ---@param module_set ModuleSet
 ---@param metadata ProductionTableMetadata
@@ -689,7 +671,6 @@ local all_production_columns = {
     {name="move", caption="", alignment="center"},
     {name="done", caption="", tooltip={"fp.column_done_tt"}, alignment="center"},
     {name="recipe", caption={"fp.pu_recipe", 1}, alignment="left"},
-    {name="percentage", caption="% ", tooltip={"fp.column_percentage_tt"}, alignment="center"},
     {name="machine", caption={"fp.pu_machine", 1}, alignment="left"},
     {name="beacon", caption={"fp.pu_beacon", 1}, alignment="left"},
     {name="products", caption={"fp.pu_product", 2}, alignment="left"},

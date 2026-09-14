@@ -102,7 +102,6 @@ end
 ---@field recipe_energy double
 ---@field ingredients SolverItem[]
 ---@field products FormattedProduct[]
----@field percentage number
 ---@field production_type RecipeProductionType
 ---@field priority_item_proto FPItemPrototype
 ---@field machine_proto FPMachinePrototype
@@ -160,7 +159,6 @@ local function generate_floor_data(player, factory, floor, calculate_emissions)
                 line_data.recipe_energy = recipe_proto.energy
                 line_data.ingredients = line_ingredients(line.recipe)  -- bakes in temperatures
                 line_data.products = line.recipe.products
-                line_data.percentage = line.percentage  -- non-zero
                 line_data.production_type = line.recipe.production_type
                 line_data.priority_item_proto = line.recipe.priority_item
                 line_data.machine_proto = machine.proto

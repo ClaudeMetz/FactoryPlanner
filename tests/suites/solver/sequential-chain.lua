@@ -20,7 +20,7 @@ local helpers = require("helpers")
 -- Builds a factory in a fresh district with one line per recipe name, in order
 local function build_factory(classes, player, recipe_names)
     local district = classes.District.init()
-    local factory = classes.Factory.init("test-factory", false)
+    local factory = classes.Factory.init("test-factory", "sequential")
     district:insert(factory)
 
     for _, recipe_name in ipairs(recipe_names) do
@@ -141,6 +141,22 @@ return {
         c.check(helpers.approx(item_amount(top.ingredients, "custom-electric-power") or 0, 1e6),
             "top floor: expected 1MW total power draw")
         c.check(#top.byproducts == 0, "top floor: expected no byproducts")
+
+        -- Force 20 plates/s so a consuming gear line can use the 10 plates/s surplus
+        plate_line.machine.limit = 10
+        plate_line.machine.force_limit = true
+        local consumer = context.classes.Line.init(
+            prototyper.util.find("recipes", "test-solver-gear"), "consume")
+        top:insert(consumer)
+        consumer:change_machine_to_proto(player,
+            prototyper.util.find("machines", "test-solver-machine", "test-solver"))
+        solver.update(player, factory)
+        c.check(helpers.approx(consumer.production_ratio, 5),
+            "consuming line: expected all 10 surplus plates/s to make 5 gears/s")
+        c.check(helpers.approx(item_amount(top.byproducts, "test-solver-gear") or 0, 5),
+            "top floor: expected 5 surplus gears/s")
+        c.check(item_amount(top.byproducts, "test-solver-plate") == nil,
+            "top floor: consuming line must leave no surplus plates")
 
         c.done()
     end

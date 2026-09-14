@@ -18,7 +18,7 @@ local function determine_producing_ratio(line_data, aggregate, demanded_products
     local function demanded_ratio(product)
         local demand = aggregate.ingredients[structures.pack_item(product)]
         local prodded_amount = solver.util.determine_prodded_amount(product, line_data.total_effects)
-        return (demand * (line_data.percentage / 100)) / prodded_amount
+        return demand / prodded_amount
     end
 
     if #demanded_products == 1 then return demanded_ratio(demanded_products[1]) end
@@ -50,7 +50,7 @@ local function determine_consuming_ratio(line_data, aggregate, ingredients)
     local function available_ratio(ingredient, available)
         local amount = ingredient.amount
         if ingredient.type ~= "fluid" then amount = amount * line_data.resource_drain_rate end
-        return (available * (line_data.percentage / 100)) / amount
+        return available / amount
     end
 
     local priority_proto = line_data.priority_item_proto

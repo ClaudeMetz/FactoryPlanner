@@ -526,20 +526,6 @@ listeners.gui = {
     },
     on_gui_text_changed = {
         {
-            name = "change_line_percentage",
-            handler = function(player, tags, event)
-                ---@cast tags ChangeLinePercentageTags
-                ---@cast event EventData.on_gui_text_changed
-                local line = OBJECT_INDEX[tags.line_id]  ---@as Line
-                local relevant_line = (line.class == "Floor") and line.first or line
-                relevant_line.percentage = tonumber(event.element.text) or 100
-
-                -- Re-run solve only after a delay so it doesn't become out of sync
-                local factory = lib.context.get(player, "Factory")  ---@as Factory
-                factory:schedule_solver_update(game.tick + 300, player)
-            end
-        },
-        {
             name = "line_comment",
             handler = function(_, tags, event)
                 ---@cast tags LineCommentTags
@@ -547,15 +533,6 @@ listeners.gui = {
                 local line = OBJECT_INDEX[tags.line_id]  ---@as Line
                 local relevant_line = (line.class == "Floor") and line.first or line
                 relevant_line.comment = event.element.text
-            end
-        }
-    },
-    on_gui_confirmed = {
-        {
-            name = "set_line_percentage",
-            handler = function(player, _, _)
-                solver.update(player)
-                lib.gui.run_refresh(player, "production")
             end
         }
     }

@@ -66,7 +66,6 @@ return {
             local line = add_line(classes, player, source or factory.top_floor)
             source = source or line
             line.comment = "Copied configuration"
-            line.percentage = 75
             local beacon = add_beacon(classes, line)
             solver.update(player, factory)
             click(player, "act_on_line_recipe", {line_id=source.id}, nil, "copy")
@@ -82,7 +81,7 @@ return {
                 local pasted = factory.top_floor:find_last()
                 local pasted_line = subfloor and pasted.first or pasted
                 assert(pasted ~= source and pasted_line ~= line)
-                assert(pasted_line.comment == "Copied configuration" and pasted_line.percentage == 75)
+                assert(pasted_line.comment == "Copied configuration")
                 assert(pasted_line.beacon.amount == 3 and pasted_line.beacon.module_set.first.amount == 2,
                     "Paste must restore the snapshot, independent of source and earlier pastes")
                 pasted_line.comment = "Changed after paste"
@@ -204,14 +203,13 @@ return {
         local defining = add_line(classes, player, floor)
         local source = add_line(classes, player, floor)
         source.comment = "Keep this line"
-        source.percentage = 75
         solver.update(player, factory)
         click(player, "act_on_line_recipe", {line_id=source.id})
         assert(source.parent == nil and factory.top_floor.first == defining,
             "cut must remove the line and collapse its old subfloor")
         assert(lib.clipboard.paste(player, factory.top_floor))
         local pasted = factory.top_floor:find_last()
-        assert(pasted ~= source and pasted.comment == "Keep this line" and pasted.percentage == 75)
+        assert(pasted ~= source and pasted.comment == "Keep this line")
     end},
 
     cut_subfloor = {check=function(context)
