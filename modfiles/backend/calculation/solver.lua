@@ -1,5 +1,5 @@
 local sequential_engine = require("backend.calculation.sequential_engine")
-local matrix_engine = require("backend.calculation.matrix_engine")
+local gaussian_engine = require("backend.calculation.gaussian_engine")
 local simplex_engine = require("backend.calculation.simplex_engine")
 local structures = require("backend.calculation.structures")
 local SimpleItem = require("backend.data.SimpleItem")
@@ -610,7 +610,7 @@ function solver.update(player, factory)
             simplex_engine.solve(factory_data)
 
         else  -- "gaussian"
-            matrix_engine.solve(factory_data)
+            gaussian_engine.solve(factory_data)
         end
     end
 end
