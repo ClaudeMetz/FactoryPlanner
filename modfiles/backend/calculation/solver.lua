@@ -58,14 +58,30 @@ end
 ---@param factory Factory
 ---@return SolverItem[]
 local function factory_products(factory)
-    local products = {}
+    local products = {}  ---@type SolverItem[]
     for product in factory:iterator() do
-        local product_data = {
+        ---@cast product.proto.type -nil
+        local item = {
             name = product.proto.name,
             type = product.proto.type,
             amount = product:get_required_amount()
-        }
-        table.insert(products, product_data)
+        }  ---@type SolverItem
+        table.insert(products, item)
+    end
+    return products
+end
+
+---@param floor Floor
+---@return SolverItem[]
+local function floor_products(floor)
+    local products = {}  ---@type SolverItem[]
+    for _, product in pairs(floor.first--[[@as Line]].recipe.products) do
+        local item = {
+            name = product.name,
+            type = product.type,
+            amount = 0
+        }  ---@type SolverItem
+        table.insert(products, item)
     end
     return products
 end
@@ -73,17 +89,26 @@ end
 ---@param recipe Recipe
 ---@return SolverItem[]
 local function line_ingredients(recipe)
-    local ingredients = {}
+    local ingredients = {}  ---@type SolverItem[]
     for _, ingredient in pairs(recipe.ingredients) do
-        table.insert(ingredients, {
+        local item = {
             name = recipe:get_name_with_temperature(ingredient),
             type = ingredient.type,
             amount = ingredient.amount,
-            temperature = recipe:get_temperature(ingredient)
-        })  -- don't need min/max temperatures here
+            temperature = recipe:get_temperature(ingredient)  -- don't need min/max temperatures here
+        }  ---@as SolverItem
+        table.insert(ingredients, item)
     end
     return ingredients
 end
+
+---@alias FloorDataMap table<ObjectID, FloorData>
+
+---@class FloorData
+---@field floor_id ObjectID
+---@field level integer
+---@field products SolverItem[]
+---@field lines ObjectID[]
 
 ---@class OldFloorData  -- deprecated
 ---@field id ObjectID
@@ -146,7 +171,7 @@ end
 ---@param factory Factory
 ---@param line Line
 ---@return SolverLineData
-local function get_line_data(player, factory, line)
+local function generate_line_data(player, factory, line)
     local products = {}  ---@type SolverMap
     local ingredients = {}  ---@type SolverMap
     local machine_amount = 1
@@ -363,15 +388,24 @@ end
 ---@param floor Floor
 ---@param calculate_emissions boolean
 ---@return OldFloorData
+---@return FloorDataMap
 ---@return LineDataMap
 local function generate_floor_data(player, factory, floor, calculate_emissions)
-    local floor_data = {
+    local old_floor_data = {
         id = floor.id,
         products = (floor.level == 1) and factory_products(factory)
             or floor.first--[[@as Line]].recipe.products,
         lines = {}
     }  ---@type OldFloorData
 
+    local floor_data = {
+        floor_id = floor.id,
+        level = floor.level,
+        products = floor.level == 1 and factory_products(factory) or floor_products(floor),
+        lines = {}
+    }  ---@type FloorData
+
+    local floor_data_map = {}  ---@type FloorDataMap
     local line_data_map = {}  ---@type LineDataMap
     local relevant_line_active = true
 
@@ -379,12 +413,13 @@ local function generate_floor_data(player, factory, floor, calculate_emissions)
         local line_data = { id = line.id }
 
         if line.class == "Floor" then  ---@cast line Floor
-            local subfloor_aggregate_map
+            local subfloor_floor_map, subfloor_line_map
             line_data.recipe_proto = line.first--[[@as Line]].recipe.proto
             line_data.products = line.first--[[@as Line]].recipe.products
-            line_data.subfloor, subfloor_aggregate_map = generate_floor_data(player, factory, line, calculate_emissions)
-            table.insert(floor_data.lines, line_data)
-            for k, v in pairs (subfloor_aggregate_map) do line_data_map[k] = v end
+            line_data.subfloor, subfloor_floor_map, subfloor_line_map = generate_floor_data(player, factory, line, calculate_emissions)
+            table.insert(old_floor_data.lines, line_data)
+            for k, v in pairs (subfloor_floor_map) do floor_data_map[k] = v end
+            for k, v in pairs (subfloor_line_map) do line_data_map[k] = v end
         else  ---@cast line Line
             if line:get_blocker() ~= nil then
                 -- Useless lines don't need to run through the solver
@@ -444,15 +479,17 @@ local function generate_floor_data(player, factory, floor, calculate_emissions)
                     line_data.beacon_power = line.beacon:get_total_power()
                 end
 
-                table.insert(floor_data.lines, line_data)
-                line_data_map[line.id] = get_line_data(player, factory, line)
+                table.insert(old_floor_data.lines, line_data)
+                line_data_map[line.id] = generate_line_data(player, factory, line)
             else
                 solver.set_blank_line(floor, line)
             end
         end
+        table.insert(floor_data.lines, line.id)
     end
 
-    return floor_data, line_data_map
+    floor_data_map[floor.id] = floor_data
+    return old_floor_data, floor_data_map, line_data_map
 end
 
 
@@ -587,6 +624,8 @@ end
 ---@class FactoryData
 ---@field player_index uint32
 ---@field factory_id ObjectID
+---@field top_floor_id ObjectID
+---@field floor_data_map FloorDataMap
 ---@field line_data_map LineDataMap
 ---@field top_floor OldFloorData
 ---@field matrix_free_items FPItemPrototype[]
@@ -599,11 +638,14 @@ end
 function solver.generate_factory_data(player, factory)
     local calculate_emissions = lib.globals.preferences(player).calculate_emissions
     local free_items = factory.matrix_free_items  ---@as FPItemPrototype[]
-    local top_floor_data, line_data_map = generate_floor_data(player, factory, factory.top_floor, calculate_emissions)
+    local top_floor_data, floor_data_map, line_data_map =
+            generate_floor_data(player, factory, factory.top_floor, calculate_emissions)
 
     local factory_data = {
         player_index = player.index,
         factory_id = factory.id,
+        top_floor_id = factory.top_floor.id,
+        floor_data_map = floor_data_map,
         line_data_map = line_data_map,
         top_floor = top_floor_data,
         matrix_free_items = free_items,
