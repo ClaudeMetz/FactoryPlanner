@@ -24,6 +24,52 @@ end
 
 return {
     with_player = with_player,
+    formatting = {check=function()
+        with_player(function(player, player_table)
+            local prefs = player_table.preferences
+            prefs.timescale = 1
+            item_views.rebuild_data(player)
+            local data = player_table.ui_state.views_data
+            -- Supply a prepared capacity to exercise formatting even in the base-only test world.
+            data.views.rockets_per_timescale.lift_capacity = 1000
+            local item = {type="item", stack_size=50, weight=10}
+            local cases = {
+                {"items_per_timescale", 1, "item"},
+                {"throughput", 1 / data.views.throughput.multiplier, prefs.belts_or_lanes:sub(1, -2)},
+                {"items_per_second_per_machine", 2, "item", 2},
+                {"stacks_per_timescale", 50, "stack"},
+                {"wagons_per_timescale", data.views.wagons_per_timescale.cargo_capacity * 50, "wagon"},
+                {"rockets_per_timescale", 100, "rocket"}
+            }
+            for _, case in ipairs(cases) do
+                prefs.item_views.selected.primary = case[1]
+                for _, value in ipairs{0, 1, 1.000000001, 2} do
+                    local amount, tooltip = item_views.process_item(player, item, case[2] * value, case[4])
+                    local rounded = value == 1.000000001 and 1 or value
+                    assert(amount ~= nil and tooltip[2] == tostring(rounded), "Keep tooltip precision across all views")
+                    assert(tooltip[4][1] == "fp.pl_" .. case[3])
+                    assert(tooltip[4][2] == (rounded == 1 and 1 or 2), "Pluralize the displayed value")
+                end
+            end
+
+            prefs.item_views.selected.primary = "items_per_second_per_machine"
+            local _, without_machine = item_views.process_item(player, item, 1)
+            local _, with_machine = item_views.process_item(player, item, 1, 1)
+            assert(not serpent.line(without_machine):find("fp.pl_machine", 1, true))
+            assert(serpent.line(with_machine):find("fp.pl_machine", 1, true))
+            local amount, tooltip = item_views.process_item(player, item, 1, 0)
+            assert(amount == 0 and tooltip == nil)
+            _, tooltip = item_views.process_item(player, {type="fluid"}, 1)
+            assert(tooltip[4][1] == "fp.l_fluid")
+
+            prefs.item_views.selected.primary = "stacks_per_timescale"
+            amount, tooltip = item_views.process_item(player, {type="fluid"}, 1)
+            assert(amount == nil and tooltip[1] == "fp.fluid_item")
+            prefs.item_views.selected.primary = "rockets_per_timescale"
+            amount, tooltip = item_views.process_item(player, {type="item", weight=1001}, 1)
+            assert(amount == nil and tooltip[1] == "fp.item_too_heavy")
+        end)
+    end},
     migration = {check=function()
         local previous = {
             views = {

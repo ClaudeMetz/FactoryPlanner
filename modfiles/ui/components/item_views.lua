@@ -3,20 +3,28 @@ item_views = {}
 local processors = {}  -- individual functions for each kind of view state
 
 ---@param metadata ItemViewsData
+---@param amount number
+---@param unit_name string
+---@param suffix LocalisedString?
+---@return number? button_number
+---@return LocalisedString tooltip
+local function format_amount(metadata, amount, unit_name, suffix)
+    local button_number = lib.format.button_number(amount)
+    local tooltip_number = lib.format.number(amount, metadata.formatting_precision)
+    local plural_parameter = (tooltip_number == "1") and 1 or 2
+    local unit = (unit_name == "fluid") and {"fp.l_fluid"} or {"fp.pl_" .. unit_name, plural_parameter}
+    return button_number, {"", tooltip_number, " ", unit, suffix or ""}
+end
+
+---@param metadata ItemViewsData
 ---@param raw_amount number
 ---@param item_proto FPItemPrototype | FPFuelPrototype
 ---@return number? button_number
 ---@return LocalisedString tooltip
 function processors.items_per_timescale(metadata, raw_amount, item_proto, _)
     local raw_number = raw_amount * metadata.timescale
-    local button_number = lib.format.button_number(raw_number)
-
-    local tooltip_number = lib.format.number(raw_number, metadata.formatting_precision)
-    local plural_parameter = (tooltip_number == "1") and 1 or 2
-    local type_string = (item_proto.type == "fluid") and {"fp.l_fluid"} or {"fp.pl_item", plural_parameter}
-    local tooltip = {"", tooltip_number, " ", type_string, "/", metadata.timescale_string}
-
-    return button_number, tooltip
+    local unit_name = (item_proto.type == "fluid") and "fluid" or "item"
+    return format_amount(metadata, raw_number, unit_name, {"", "/", metadata.timescale_string})
 end
 
 ---@param metadata ItemViewsData
@@ -36,13 +44,7 @@ function processors.throughput(metadata, raw_amount, item_proto, _)
         unit_name = view.belts_or_lanes:sub(1, -2)
     end
 
-    local button_number = lib.format.button_number(raw_number)
-
-    local tooltip_number = lib.format.number(raw_number, metadata.formatting_precision)
-    local plural_parameter = (tooltip_number == "1") and 1 or 2
-    local tooltip = {"", tooltip_number, " ", {"fp.pl_" .. unit_name, plural_parameter}}
-
-    return button_number, tooltip
+    return format_amount(metadata, raw_number, unit_name)
 end
 
 ---@param metadata ItemViewsData
@@ -56,16 +58,10 @@ function processors.items_per_second_per_machine(metadata, raw_amount, item_prot
     if adjusted_count == 0 then return 0, nil end  -- avoid division by zero
 
     local raw_number = raw_amount / adjusted_count
-    local button_number = lib.format.button_number(raw_number)
-
-    local tooltip_number = lib.format.number(raw_number, metadata.formatting_precision)
-    local plural_parameter = (tooltip_number == "1") and 1 or 2
-    local type_string = (item_proto.type == "fluid") and {"fp.l_fluid"} or {"fp.pl_item", plural_parameter}
+    local unit_name = (item_proto.type == "fluid") and "fluid" or "item"
     -- If machine_amount is nil, this shouldn't show /machine
     local per_machine = (machine_amount ~= nil) and {"", "/", {"fp.pl_machine", 1}} or ""
-    local tooltip = {"", tooltip_number, " ", type_string, "/", {"fp.unit_second"}, per_machine}
-
-    return button_number, tooltip
+    return format_amount(metadata, raw_number, unit_name, {"", "/", {"fp.unit_second"}, per_machine})
 end
 
 ---@param metadata ItemViewsData
@@ -77,13 +73,7 @@ function processors.stacks_per_timescale(metadata, raw_amount, item_proto, _)
     if item_proto.type == "fluid" then return nil, {"fp.fluid_item"} end
 
     local raw_number = (raw_amount * metadata.timescale) / item_proto.stack_size--[[@as uint]]
-    local button_number = lib.format.button_number(raw_number)
-
-    local tooltip_number = lib.format.number(raw_number, metadata.formatting_precision)
-    local plural_parameter = (tooltip_number == "1") and 1 or 2
-    local tooltip = {"", tooltip_number, " ", {"fp.pl_stack", plural_parameter}, "/", metadata.timescale_string}
-
-    return button_number, tooltip
+    return format_amount(metadata, raw_number, "stack", {"", "/", metadata.timescale_string})
 end
 
 ---@param metadata ItemViewsData
@@ -96,13 +86,7 @@ function processors.wagons_per_timescale(metadata, raw_amount, item_proto, _)
     local wagon_capacity = (item_proto.type == "fluid") and view.fluid_capacity
         or view.cargo_capacity--[[@as number]] * item_proto.stack_size--[[@as uint]]
     local raw_number = (raw_amount * metadata.timescale) / wagon_capacity
-    local button_number = lib.format.button_number(raw_number)
-
-    local tooltip_number = lib.format.number(raw_number, metadata.formatting_precision)
-    local plural_parameter = (tooltip_number == "1") and 1 or 2
-    local tooltip = {"", tooltip_number, " ", {"fp.pl_wagon", plural_parameter}, "/", metadata.timescale_string}
-
-    return button_number, tooltip
+    return format_amount(metadata, raw_number, "wagon", {"", "/", metadata.timescale_string})
 end
 
 ---@param metadata ItemViewsData
@@ -118,13 +102,7 @@ function processors.rockets_per_timescale(metadata, raw_amount, item_proto, _)
 
     local total_weight = raw_amount * metadata.timescale * item_proto.weight--[[@as Weight]]
     local raw_number = total_weight / lift_capacity
-    local button_number = lib.format.button_number(raw_number)
-
-    local tooltip_number = lib.format.number(raw_number, metadata.formatting_precision)
-    local plural_parameter = (tooltip_number == "1") and 1 or 2
-    local tooltip = {"", tooltip_number, " ", {"fp.pl_rocket", plural_parameter}, "/", metadata.timescale_string}
-
-    return button_number, tooltip
+    return format_amount(metadata, raw_number, "rocket", {"", "/", metadata.timescale_string})
 end
 
 
@@ -167,7 +145,6 @@ end
 ---@field formatting_precision integer
 
 ---@class ItemViewData
----@field index integer
 ---@field caption LocalisedString
 ---@field tooltip LocalisedString?
 ---@field unavailable boolean?
@@ -197,7 +174,7 @@ end
 
 -- Disable unavailable views and keep an enabled view selected
 ---@param player LuaPlayer
-local function disable_unavailable_views(player)
+local function reconcile_preferences(player)
     local preferences = lib.globals.preferences(player).item_views
     local data = lib.globals.ui_state(player).views_data  ---@cast data -nil
     local first_enabled, items_view = nil, nil  ---@type string?, ItemViewPreference?
@@ -230,7 +207,7 @@ local function prepare_throughput_view(player)
     local stack_insert = (belt_stack > 1) and {"", {"fp.throughput_insert", belt_stack}, " "} or ""
 
     local pump = defaults.get_optional(player, "pumps")
-    local view = {index=2, caption=belt.rich_text, unavailable_for={fluid=not pump},
+    local view = {caption=belt.rich_text, unavailable_for={fluid=not pump},
         belts_or_lanes=belts_or_lanes, multiplier=(1 / divisor) / belt_stack}  ---@type ThroughputViewData
     if not pump then
         view.tooltip = {"fp.view_tt", {"fp.throughput_belts_only", unit, stack_insert, belt.rich_text, belt.localised_name}}
@@ -252,7 +229,7 @@ end
 local function prepare_wagon_view(player, timescale_string)
     local cargo = defaults.get_optional(player, "wagons", "cargo-wagon")
     local fluid = defaults.get_optional(player, "wagons", "fluid-wagon")
-    local view = {index=5, caption={"", {"fp.pu_wagon", 2}, "/", {"fp.unit_" .. timescale_string}},
+    local view = {caption={"", {"fp.pu_wagon", 2}, "/", {"fp.unit_" .. timescale_string}},
         unavailable=not cargo and not fluid, unavailable_for={item=not cargo, fluid=not fluid}}  ---@type WagonViewData
     if view.unavailable then
         view.tooltip = {"fp.preference_no_default_prototype", {"fp.pl_wagon", 2}}
@@ -293,7 +270,7 @@ end
 ---@return RocketViewData view
 local function prepare_rocket_view(player, timescale_string)
     local silo = defaults.get_optional(player, "silos")
-    local view = {index=6, caption={"", "[img=fp_silo_rocket]", "/", {"fp.unit_" .. timescale_string}},
+    local view = {caption={"", "[img=fp_silo_rocket]", "/", {"fp.unit_" .. timescale_string}},
         unavailable=not silo}  ---@type RocketViewData
     if not silo then
         view.tooltip = {"fp.preference_no_default_prototype", {"fp.pl_silo", 2}}
@@ -316,18 +293,15 @@ function item_views.rebuild_data(player)
     lib.globals.ui_state(player).views_data = {
         views = {
             items_per_timescale = {
-                index = 1,
                 caption = {"", {"fp.pu_item", 2}, "/", {"fp.unit_" .. timescale_string}},
                 tooltip = {"fp.view_tt", {"fp.items_per_timescale", {"fp." .. timescale_string}}}
             },
             throughput = prepare_throughput_view(player),
             items_per_second_per_machine = {
-                index = 3,
                 caption = {"", {"fp.pu_item", 2}, "/", {"fp.unit_second"}, "/[img=fp_generic_assembler]"},
                 tooltip = {"fp.view_tt", {"fp.items_per_second_per_machine"}}
             },
             stacks_per_timescale = {
-                index = 4,
                 caption = {"", "[img=fp_stack]", "/", {"fp.unit_" .. timescale_string}},
                 tooltip = {"fp.view_tt", {"fp.stacks_per_timescale", {"fp." .. timescale_string}}}
             },
@@ -339,7 +313,7 @@ function item_views.rebuild_data(player)
         adjusted_margin_of_error = MAGIC_NUMBERS.margin_of_error / preferences.timescale,
         formatting_precision = MAGIC_NUMBERS.formatting_precision
     }  ---@as ItemViewsData
-    disable_unavailable_views(player)
+    reconcile_preferences(player)
 end
 
 ---@class ItemViewPreferences

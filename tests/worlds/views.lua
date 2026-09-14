@@ -7,6 +7,7 @@ local throughput = require("cases.throughput-views")
 
 return {
     cases = {
+        testItemViewsFormatting = views.formatting,
         testThroughputViews = throughput.case(true),
         testDefaultsLookup = defaults_cases.lookup,
         testDefaultsMigration = defaults_cases.migration,
