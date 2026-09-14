@@ -147,12 +147,12 @@ end
 ---@field fluid_usage_per_tick number?
 
 ---@alias MachineLimit {limit: number?, force_limit: boolean}
----@alias LineDataMap table<ObjectID, SolverLineData>
+---@alias LineDataMap table<ObjectID, LineData>
 
----@class SolverLineData
+---@class LineData
 ---@field line_id ObjectID
 ---@field floor_id ObjectID
----@field crafts_per_second number?
+---@field crafts_per_second number
 ---@field products SolverMap
 ---@field ingredients SolverMap
 ---@field fuel_item SolverItem?
@@ -170,7 +170,7 @@ end
 ---@param player LuaPlayer
 ---@param factory Factory
 ---@param line Line
----@return SolverLineData
+---@return LineData
 local function generate_line_data(player, factory, line)
     local products = {}  ---@type SolverMap
     local ingredients = {}  ---@type SolverMap
@@ -375,8 +375,8 @@ local function generate_line_data(player, factory, line)
         priority_item = priority_item,
         beacon_power = beacon_power,
         recipe_name = recipe_proto.name,
-        machine_limit = line.machine.limit,
-        machine_force_limit = line.machine.force_limit,
+        machine_limit = energy > MAGIC_NUMBERS.minimum_energy and line.machine.limit or nil,
+        machine_force_limit = energy > MAGIC_NUMBERS.minimum_energy and line.machine.force_limit or nil,
         percentage = line.percentage,
         production_type = line.recipe.production_type,
     }

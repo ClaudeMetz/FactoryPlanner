@@ -57,7 +57,7 @@ end
 ---@param cache_invalid_map table<ObjectID, true>
 ---@return SimplexResult?
 function simplex_engine.solve_floor(factory_data, floor_id, cache_invalid_map)
-    local relevant_line_data = {}  ---@type SolverLineData[]
+    local relevant_line_data = {}  ---@type LineData[]
     local products = {}  ---@type SolverSet
     local ingredients = {}  ---@type SolverSet
     local cycled_intermediates = {}  ---@type SolverSet
@@ -80,6 +80,7 @@ function simplex_engine.solve_floor(factory_data, floor_id, cache_invalid_map)
                 factory_data.line_data_map[line_object_id] = {
                     floor_id = floor_id,
                     line_id = line_object_id,
+                    crafts_per_second = 1,
                     products = floor_result.products,
                     ingredients = floor_result.ingredients,
                     recipe_name = subfloor_line.recipe_name,
@@ -288,7 +289,7 @@ function simplex_engine.update_line(floor_id, line_data, scale_factor, byproduct
 
     -- Update the machine
     local machine_amount = result and scale_factor * result.machine_amount or 0
-    local production_ratio = machine_amount * (data.crafts_per_second or 0)
+    local production_ratio = machine_amount * data.crafts_per_second
     local fuel_amount = 0.0
 
     -- Update the fuel

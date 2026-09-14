@@ -561,7 +561,7 @@ function matrix_engine.get_matrix(factory_data, rows, columns)
     return matrix, free_variable_scale_factors
 end
 
----@param line_data SolverLineData
+---@param line_data LineData
 ---@param machine_amount number
 ---@param matrix_metadata MatrixMetadata
 ---@param free_variables table<string, true>
@@ -571,7 +571,7 @@ function matrix_engine.get_line_result_aggregate(line_data, machine_amount, matr
 
     -- Metadata aggregates assumed a machine amount of 1, so we just need to multiply by the solved machine amount to get the result
     aggregate.machine_amount = machine_amount
-    aggregate.crafts_per_second = line_data.crafts_per_second and line_data.crafts_per_second * machine_amount
+    aggregate.crafts_per_second = machine_amount * line_data.crafts_per_second
 
     for item_key, item_amount in pairs(line_data.products) do
         if matrix_metadata.byproducts[item_key] or free_variables["item"..SEPARATOR..item_key] then
