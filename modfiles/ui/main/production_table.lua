@@ -125,9 +125,9 @@ function builders.recipe(line, parent_flow, metadata, indent)
     elseif relevant_line.recipe.production_type == "consume" then
         color, note = "yellow", {"fp.recipe_consumes_byproduct"}
     end
+    if relevant_line:get_blocker() ~= nil then color = "red" end
 
     local status = relevant_line:get_status()
-    local variant = (status ~= nil) and "_grayscale_small" or "_small"
     local status_line = (status ~= nil) and {"fp.line_status", {"fp.line_status_" .. status}} or ""
 
     local recipe_proto = relevant_line.recipe.proto
@@ -135,7 +135,7 @@ function builders.recipe(line, parent_flow, metadata, indent)
         or {"fp.tt_title_with_note", recipe_proto.localised_name, note}
     local effects_section = (line.class == "Line") and format_effects_tooltip(relevant_line.effects_tooltip) or ""
     local tooltip = {"", first_line, status_line, effects_section}
-    local style = "fflib_slot_button_" .. color .. variant
+    local style = "fflib_slot_button_" .. color .. "_small"
 
     local flags = {
         defining_recipe = first_subfloor_line,

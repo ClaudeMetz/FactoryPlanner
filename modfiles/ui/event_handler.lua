@@ -9,7 +9,7 @@ local event_listener_names = {
     "ui.dialogs.factory_dialog", "ui.dialogs.utility_dialog", "ui.dialogs.item_dialog",
     "ui.main.title_bar", "ui.main.district_info", "ui.main.factory_list", "ui.main.production_bar",
     "ui.main.districts_box", "ui.main.item_boxes", "ui.main.production_box", "ui.main.production_table",
-    "ui.main.production_handler"
+    "ui.main.production_handler", "ui.main.solver_bar"
 }
 
 ---@class ListenerDefinitions
@@ -252,7 +252,6 @@ local function handle_gui_event(event)
     end
 
     if not hover_event then
-        lib.messages.refresh(player)
         -- Any action drops the object it started out with, unless it picked it up itself
         drop_held_object(player, previous_held_id)
         if lib.context.record(player) then lib.gui.run_refresh(player, "title_bar") end
@@ -373,7 +372,6 @@ local function handle_player_event(event)
     end
 
     if event.input_name then  -- only for keyboard shortcut events
-        lib.messages.refresh(player)
         drop_held_object(player, lib.globals.ui_state(player).held_object_id)
         if lib.context.record(player) then lib.gui.run_refresh(player, "title_bar") end
     end

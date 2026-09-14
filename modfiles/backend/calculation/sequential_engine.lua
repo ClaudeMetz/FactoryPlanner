@@ -344,6 +344,12 @@ local function update_floor(floor_data, aggregate)
 
             aggregate.machine_amount = aggregate.machine_amount + subfloor_aggregate.machine_amount
 
+            -- Unproduced requests remain on the parent, but aren't ingredients of this subfloor
+            for _, desired_product in pairs(floor_products) do
+                local ingredient_amount = subfloor_aggregate.ingredients[structures.pack_item(desired_product)] or 0
+                structures.map.subtract(subfloor_aggregate.ingredients, desired_product, ingredient_amount)
+            end
+
             -- Update the parent line of the subfloor with the results from the subfloor aggregate
             solver.set_line_result {
                 floor_id = aggregate.floor_id,

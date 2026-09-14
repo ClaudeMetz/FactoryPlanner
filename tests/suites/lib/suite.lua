@@ -2,10 +2,11 @@
 
 -- Tests for lib utilities: formatters and clipboard operations.
 
-local formatters = require("cases.lib-formatters")
-local clipboard = require("cases.lib-clipboard")
+local formatters = require("suite.formatters")
+local clipboard = require("suite.clipboard")
 
-return {
+return {{
+    name = "normal",
     cases = {
         testLibFormatNumber = formatters.number,
         testLibFormatSIValue = formatters.SI_value,
@@ -22,4 +23,4 @@ return {
         testLibClipboardCutProduct = clipboard.cut_product,
         testLibClipboardCutRestrictions = clipboard.cut_restrictions
     }
-}
+}}
