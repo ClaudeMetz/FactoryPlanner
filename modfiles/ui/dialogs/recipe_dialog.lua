@@ -162,11 +162,10 @@ end
 local function attempt_adding_line(player, recipe_id, modal_data)
     local recipe_proto = prototyper.util.find("recipes", recipe_id, nil)  ---@as FPRecipePrototype
     local line = Line.init(recipe_proto, modal_data.production_type)
-    local recipe_name = recipe_proto.localised_name
 
     -- If finding a machine fails, this line is invalid
     if line:change_machine_to_default(player) == false then
-        lib.cursor.create_flying_text(player, {"fp.error_no_compatible_machine", recipe_name})
+        lib.cursor.create_flying_text(player, {"fp.error_no_compatible_machine", recipe_proto.localised_name})
         return false
     else
         local floor = lib.context.get(player, "Floor")  ---@as Floor
@@ -204,18 +203,6 @@ local function attempt_adding_line(player, recipe_id, modal_data)
         -- Set ingredient temperature to match byproduct recipe
         if modal_data.production_type == "consume" and requested_proto.temperature then
             line.recipe:set_temperature(requested_proto.base_name--[[@as string]], requested_proto.temperature)
-        end
-
-        if not line:is_temperature_fully_configured() then
-            lib.messages.raise(player, "warning", {"fp.warning_temperature_not_configured", recipe_name}, 1)
-        end
-
-        if not lib.availability.is_recipe_unlocked(player.force--[[@as LuaForce]], recipe_proto) then
-            lib.messages.raise(player, "warning", {"fp.warning_recipe_disabled", recipe_name}, 1)
-        end
-
-        if not line:get_surface_compatibility().overall then
-            lib.messages.raise(player, "warning", {"fp.warning_surface_not_compatible", recipe_name}, 1)
         end
 
         solver.update(player)

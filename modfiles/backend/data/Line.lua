@@ -4,6 +4,10 @@ local Machine = require("backend.data.Machine")
 local Beacon = require("backend.data.Beacon")
 local SimpleItem = require("backend.data.SimpleItem")
 
+---@class SurfaceCompatibility
+---@field recipe boolean
+---@field machine boolean
+
 ---@class Line: Object, ObjectMethods
 ---@field class "Line"
 ---@field parent Floor
@@ -301,7 +305,7 @@ function Line:get_surface_compatibility()
             recipe = false
         end ]]
 
-        self.surface_compatibility = {recipe=recipe, machine=machine, overall=(recipe and machine)}
+        self.surface_compatibility = {recipe=recipe, machine=machine}
     end
     return self.surface_compatibility
 end

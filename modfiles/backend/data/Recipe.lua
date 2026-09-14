@@ -4,11 +4,6 @@ local SimpleItem = require("backend.data.SimpleItem")
 ---@alias RecipeProductionType "produce" | "consume"
 ---@alias RecipeCatalysts { products: SimpleItem[], ingredients: SimpleItem[] }
 
----@class SurfaceCompatibility
----@field recipe boolean
----@field machine boolean
----@field overall boolean
-
 ---@class Recipe: Object, ObjectMethods
 ---@field class "Recipe"
 ---@field parent Line
