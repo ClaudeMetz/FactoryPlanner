@@ -12,9 +12,9 @@ LUDecomposition.__index = LUDecomposition
 ---@field index integer
 
 
----@param size integer
+---@param diagonal number[]
 ---@return LUDecomposition
-function LUDecomposition:init(size)
+function LUDecomposition:init(diagonal)
     ---@diagnostic disable-next-line: missing-fields
     local o = {
         u_matrix = {},
@@ -26,14 +26,14 @@ function LUDecomposition:init(size)
     setmetatable(o, self)
 
     -- Initialize the matrices and the permutation vectors
-    for k = 1, size do
+    for k = 1, #diagonal do
         o.p_vector[k] = k
         o.q_vector[k] = k
         o.u_matrix[k] = {}
         o.l_matrix[k] = {}
-        for j = 1, size do o.u_matrix[k][j] = 0 end
+        for j = 1, #diagonal do o.u_matrix[k][j] = 0 end
         for j = 1, k - 1 do o.l_matrix[k][j] = 0 end
-        o.u_matrix[k][k] = 1
+        o.u_matrix[k][k] = diagonal[k]
         o.l_matrix[k][k] = 1
     end
 
