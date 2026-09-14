@@ -85,18 +85,18 @@ local function line_ingredients(recipe)
     return ingredients
 end
 
----@class FloorData
+---@class OldFloorData  -- deprecated
 ---@field id ObjectID
 ---@field products (FormattedProduct | SolverItem)[]
----@field lines (LineData | SubfloorLineData)[]
+---@field lines (OldLineData | OldSubfloorLineData)[]
 
----@class SubfloorLineData
+---@class OldSubfloorLineData  -- deprecated
 ---@field id ObjectID
 ---@field recipe_proto FPRecipePrototype
 ---@field products FormattedProduct[]
----@field subfloor FloorData?
+---@field subfloor OldFloorData?
 
----@class LineData
+---@class OldLineData  -- deprecated
 ---@field id ObjectID
 ---@field recipe_proto FPRecipePrototype
 ---@field recipe_energy double
@@ -140,7 +140,7 @@ end
 --- Applies all effects on the machine of the line and returns how many
 --- products/ingredients are produced/consumed per second by one machine.
 --- Emmisions, fuel, power and heat are also included.
----@param line_data LineData
+---@param line_data OldLineData
 ---@param floor_id ObjectID
 ---@return SolverLineData
 local function generate_line_data(line_data, floor_id)
@@ -273,7 +273,7 @@ end
 ---@param factory Factory
 ---@param floor Floor
 ---@param calculate_emissions boolean
----@return FloorData
+---@return OldFloorData
 ---@return LineDataMap
 local function generate_floor_data(player, factory, floor, calculate_emissions)
     local floor_data = {
@@ -281,7 +281,7 @@ local function generate_floor_data(player, factory, floor, calculate_emissions)
         products = (floor.level == 1) and factory_products(factory)
             or floor.first--[[@as Line]].recipe.products,
         lines = {}
-    }  ---@type FloorData
+    }  ---@type OldFloorData
 
     local line_data_map = {}  ---@type LineDataMap
     local relevant_line_active = true
@@ -356,7 +356,7 @@ local function generate_floor_data(player, factory, floor, calculate_emissions)
                 end
 
                 table.insert(floor_data.lines, line_data)
-                line_data_map[line.id] = generate_line_data(line_data  --[[@as LineData]], floor.id)
+                line_data_map[line.id] = generate_line_data(line_data  --[[@as OldLineData]], floor.id)
             else
                 solver.set_blank_line(floor, line)
             end
@@ -499,7 +499,7 @@ end
 ---@field player_index uint32
 ---@field factory_id ObjectID
 ---@field line_data_map LineDataMap
----@field top_floor FloorData
+---@field top_floor OldFloorData
 ---@field matrix_free_items FPItemPrototype[]
 ---@field simplex_basis table<ConstraintKey, VariableKey>
 

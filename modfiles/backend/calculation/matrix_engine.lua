@@ -316,14 +316,14 @@ function matrix_engine.run_matrix_solver(factory_data, matrix_metadata)
         matrix[idx][#columns.values+1] = matrix[idx][#columns.values+1] * scale_factor
     end
 
-    ---@param floor FloorData
+    ---@param floor OldFloorData
     local function set_line_results(floor)
         local floor_aggregate = structures.aggregate.init(floor.id)
         for _, line in ipairs(floor.lines) do
             local line_key = "line"..SEPARATOR..line.id
             local line_data = nil
             local line_aggregate = nil
-            if line.subfloor == nil then  ---@cast line LineData
+            if line.subfloor == nil then  ---@cast line OldLineData
                 local col_num = columns.map[line_key]
                  -- want the j-th entry in the last column (output of row-reduction)
                 local machine_amount = matrix[col_num]--[[@cast -nil]][#columns.values+1]  ---@as number

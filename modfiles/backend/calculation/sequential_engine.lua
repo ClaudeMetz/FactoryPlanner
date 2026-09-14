@@ -8,7 +8,7 @@ local sequential_engine = {}
 
 -- ** LOCAL UTIL **
 --- A producing line is paced by the outstanding demand for the products it makes
----@param line_data LineData
+---@param line_data OldLineData
 ---@param aggregate SolverAggregate
 ---@param demanded_products FormattedProduct[]
 ---@return number
@@ -39,7 +39,7 @@ local function determine_producing_ratio(line_data, aggregate, demanded_products
 end
 
 --- A consuming line is paced by the byproducts available to its ingredients
----@param line_data LineData
+---@param line_data OldLineData
 ---@param aggregate SolverAggregate
 ---@param ingredients SolverItemWithConstant[]
 ---@return number
@@ -80,7 +80,7 @@ local function determine_consuming_ratio(line_data, aggregate, ingredients)
 end
 
 
----@param line_data LineData
+---@param line_data OldLineData
 ---@param aggregate SolverAggregate
 ---@param looped_fuel number?
 local function update_line(line_data, aggregate, looped_fuel)
@@ -309,7 +309,7 @@ local function update_line(line_data, aggregate, looped_fuel)
 end
 
 
----@param floor_data FloorData
+---@param floor_data OldFloorData
 ---@param aggregate SolverAggregate
 local function update_floor(floor_data, aggregate)
     local desired_products = structures.map.list(aggregate.ingredients)
@@ -357,7 +357,7 @@ local function update_floor(floor_data, aggregate)
             }
         else
             -- Update aggregate according to the current line, which also adjusts the respective line object
-            update_line(line_data--[[@as LineData]], aggregate, nil)  -- updates aggregate
+            update_line(line_data--[[@as OldLineData]], aggregate, nil)  -- updates aggregate
         end
     end
 

@@ -52,7 +52,7 @@ function simplex_engine.solve(factory_data)
     simplex_engine.update_factory(factory_data, result)
 end
 
----@param floor_data FloorData
+---@param floor_data OldFloorData
 ---@param line_data_map LineDataMap
 ---@param level integer
 ---@param previous_basis table<ConstraintKey, VariableKey>
@@ -76,7 +76,7 @@ function simplex_engine.solve_floor(floor_data, line_data_map, level, previous_b
             -- Add line data for this floor based on the results
             local floor_result = partial_result and partial_result.floor_results[line_object_data.id]
             if floor_result then
-                local subfloor_line = floor_data.lines[1]  ---@as LineData
+                local subfloor_line = floor_data.lines[1]  ---@as OldLineData
                 local subfloor_machine_limit = subfloor_line.machine_limit
                 line_data_map[line_object_data.id] = {
                     floor_id = floor_data.id,
@@ -238,7 +238,7 @@ function simplex_engine.update_factory(factory_data, result)
     }
 end
 
----@param floor_data FloorData
+---@param floor_data OldFloorData
 ---@param scale_factor number
 ---@param byproducts SolverMap
 ---@param line_data_map LineDataMap
@@ -283,7 +283,7 @@ function simplex_engine.update_floor(floor_data, scale_factor, byproducts, line_
 end
 
 ---@param floor_id ObjectID
----@param line_data LineData
+---@param line_data OldLineData
 ---@param scale_factor number
 ---@param byproducts SolverMap
 ---@param line_data_map LineDataMap

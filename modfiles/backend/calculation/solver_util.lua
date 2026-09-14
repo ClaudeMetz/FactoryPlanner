@@ -27,7 +27,7 @@ function _util.determine_prodded_amount(item, total_effects)
 end
 
 --- Determines the amount of energy needed for a machine and the emissions that produces
----@param line_data LineData
+---@param line_data OldLineData
 ---@param machine_amount number
 ---@param crafts_per_second number
 ---@return number, number
@@ -72,7 +72,7 @@ function _util.determine_power_and_emissions(line_data, machine_amount, crafts_p
 end
 
 --- Determines the amount of fuel needed in the given context
----@param line_data LineData
+---@param line_data OldLineData
 ---@param power number
 ---@param machine_amount number
 ---@return number
