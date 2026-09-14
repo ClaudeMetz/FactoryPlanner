@@ -16,7 +16,6 @@ local SimpleItem = require("backend.data.SimpleItem")
 ---@field recipe Recipe
 ---@field done boolean
 ---@field active boolean
----@field percentage number
 ---@field machine Machine
 ---@field beacon Beacon?
 ---@field comment string
@@ -39,7 +38,6 @@ local function init(recipe_proto, production_type)
         recipe = nil,  -- initialized below
         done = false,
         active = true,
-        percentage = 100,
         machine = nil,
         beacon = nil,
         comment = "",
@@ -311,14 +309,13 @@ function Line:get_surface_compatibility()
 end
 
 
----@alias LineBlocker "disabled" | "unavailable_recipe" | "zero_percentage" | "incompatible_recipe" | "incompatible_machine" | "unconfigured_temperature"
+---@alias LineBlocker "disabled" | "unavailable_recipe" | "incompatible_recipe" | "incompatible_machine" | "unconfigured_temperature"
 
 --- Returns why this line can't take part in the calculation, or nil if it can
 ---@return LineBlocker?
 function Line:get_blocker()
     if not self.active then return "disabled" end
     if not self.recipe.available then return "unavailable_recipe" end
-    if self.percentage == 0 then return "zero_percentage" end
 
     local compatibility = self:get_surface_compatibility()
     if not compatibility.recipe then return "incompatible_recipe" end
@@ -365,7 +362,6 @@ end
 ---@field recipe PackedRecipe
 ---@field done boolean
 ---@field active boolean
----@field percentage number
 ---@field machine PackedMachine
 ---@field beacon PackedBeacon?
 ---@field comment string
@@ -378,7 +374,6 @@ function Line:pack(full)
         recipe = self.recipe:pack(full),
         done = self.done,
         active = self.active,
-        percentage = self.percentage,
         machine = self.machine:pack(full),
         beacon = self.beacon and self.beacon:pack(full),
         comment = self.comment,
@@ -396,7 +391,6 @@ local function unpack(packed_self)
     unpacked_self.recipe = Recipe.unpack(packed_self.recipe, unpacked_self)  ---@as Recipe
     unpacked_self.done = packed_self.done
     unpacked_self.active = packed_self.active
-    unpacked_self.percentage = packed_self.percentage
     unpacked_self.machine = Machine.unpack(packed_self.machine, unpacked_self)  ---@as Machine
     unpacked_self.beacon = packed_self.beacon and Beacon.unpack(packed_self.beacon, unpacked_self)  ---@as Beacon
     unpacked_self.comment = packed_self.comment

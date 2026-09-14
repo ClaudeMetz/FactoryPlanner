@@ -123,7 +123,6 @@ end
 ---@field recipe_name string
 ---@field machine_limit number?
 ---@field machine_force_limit boolean?
----@field percentage number
 ---@field production_type RecipeProductionType
 
 --- Applies all effects on the machine of the line and returns how many
@@ -342,7 +341,6 @@ local function generate_line_data(player, factory, line)
         recipe_name = recipe_proto.name,
         machine_limit = energy > MAGIC_NUMBERS.minimum_energy and line.machine.limit or nil,
         machine_force_limit = energy > MAGIC_NUMBERS.minimum_energy and line.machine.force_limit or nil,
-        percentage = line.percentage,
         production_type = line.recipe.production_type,
     }
 end

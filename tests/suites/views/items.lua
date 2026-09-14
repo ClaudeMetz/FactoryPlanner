@@ -82,7 +82,7 @@ return {
             },
             selected_index = 3
         }
-        local player_table = {preferences={item_views=previous}}
+        local player_table = {preferences={item_views=previous}, realm=lib.globals.player_table(game.players[1]).realm}
         migration.player_table(player_table)
         assert(previous.selected.primary == "items_per_timescale" and previous.selected_index == nil)
         migration.player_table(player_table) -- repeated configuration changes before the next release

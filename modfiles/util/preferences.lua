@@ -35,7 +35,6 @@ end
 ---@field ignore_recycling_recipes boolean
 ---@field default_solver SolverName
 ---@field done_column boolean
----@field percentage_column boolean
 ---@field line_comment_column boolean
 ---@field item_views ItemViewPreferences
 ---@field belts_or_lanes BeltsOrLanes
@@ -93,7 +92,6 @@ function _preferences.reload(player_table)
     reload("default_solver", "sequential")
 
     reload("done_column", true)
-    reload("percentage_column", false)
     reload("line_comment_column", false)
 
     reload("item_views", item_views.default_preferences())
@@ -113,7 +111,7 @@ end
 
 -- Version, incremented each time the format of exported preferences changes in any way
 -- The mod prevents importing non-matching preferences versions to avoid needing migrations
-_preferences.current_version = 3
+_preferences.current_version = 4
 
 ---@class PreferencesExportTable
 ---@field version integer
@@ -134,7 +132,6 @@ _preferences.current_version = 3
 ---@field ignore_recycling_recipes boolean
 ---@field default_solver SolverName
 ---@field done_column boolean
----@field percentage_column boolean
 ---@field line_comment_column boolean
 ---@field belts_or_lanes BeltsOrLanes
 ---@field belt_stack integer
@@ -164,7 +161,6 @@ function _preferences.export(player)
         ignore_recycling_recipes = prefs.ignore_recycling_recipes,
         default_solver = prefs.default_solver,
         done_column = prefs.done_column,
-        percentage_column = prefs.percentage_column,
         line_comment_column = prefs.line_comment_column,
         belts_or_lanes = prefs.belts_or_lanes,
         belt_stack = prefs.belt_stack
@@ -224,7 +220,6 @@ function _preferences.import(player, export_string)
         assert(type(et.ignore_barreling_recipes) == "boolean")
         assert(type(et.ignore_recycling_recipes) == "boolean")
         assert(type(et.done_column) == "boolean")
-        assert(type(et.percentage_column) == "boolean")
         assert(type(et.line_comment_column) == "boolean")
         assert(verify_option(et.belts_or_lanes, {"belts", "lanes"}))
         assert(verify_range(et.belt_stack, _preferences.belt_stack_options))

@@ -17,7 +17,7 @@ local function determine_producing_ratio(line_data, aggregate, demanded_products
     ---@return number
     local function demanded_ratio(product)
         local demand = aggregate.ingredients[structures.pack_item(product)]
-        return (demand * (line_data.percentage / 100)) / product.amount
+        return demand / product.amount
     end
 
     if #demanded_products == 1 then return demanded_ratio(demanded_products[1]) end
@@ -44,7 +44,7 @@ local function determine_consuming_ratio(line_data, aggregate, ingredients)
     ---@param available number
     ---@return number
     local function available_ratio(ingredient, available)
-        return (available * (line_data.percentage / 100)) / ingredient.amount
+        return available / ingredient.amount
     end
 
     local production_ratio = 0  ---@type number

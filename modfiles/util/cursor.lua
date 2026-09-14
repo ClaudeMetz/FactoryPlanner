@@ -1,5 +1,7 @@
 local _cursor = {}
 
+---@alias BlueprintMetadata {label: string, icons: BlueprintSignalIcon[], description: string}
+
 ---@param player LuaPlayer
 ---@param text LocalisedString
 function _cursor.create_flying_text(player, text)
@@ -9,12 +11,20 @@ end
 
 ---@param player LuaPlayer
 ---@param blueprint_entities BlueprintEntity[]
-local function set_cursor_blueprint(player, blueprint_entities)
+---@param metadata BlueprintMetadata?
+local function set_cursor_blueprint(player, blueprint_entities, metadata)
     local script_inventory = game.create_inventory(1)
     local blank_slot = script_inventory[1]
 
     blank_slot.set_stack{name="blueprint"}
     blank_slot.set_blueprint_entities(blueprint_entities)
+
+    if metadata then
+        blank_slot.label = metadata.label
+        if next(metadata.icons) then blank_slot.preview_icons = metadata.icons end
+        blank_slot.blueprint_description = metadata.description
+    end
+
     player.clear_cursor()
     player.add_to_clipboard(blank_slot)
     player.activate_paste()
@@ -89,7 +99,8 @@ end
 
 ---@param player LuaPlayer
 ---@param item_filters BlueprintLogisticFilter[]
-function _cursor.set_item_combinator(player, item_filters)
+---@param metadata BlueprintMetadata?
+function _cursor.set_item_combinator(player, item_filters, metadata)
     local slot_index = 1
     for _, filter in pairs(item_filters) do
         -- Make sure amounts < 1 are not excluded, and the int32 limit is not exceeded
@@ -114,7 +125,7 @@ function _cursor.set_item_combinator(player, item_filters)
         }
     }
 
-    set_cursor_blueprint(player, {blueprint_entity})
+    set_cursor_blueprint(player, {blueprint_entity}, metadata)
 end
 
 
