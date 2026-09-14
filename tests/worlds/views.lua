@@ -3,9 +3,11 @@
 local views = require("cases.item-views")
 local defaults_cases = require("cases.defaults")
 local wagons = require("cases.wagon-views")
+local throughput = require("cases.throughput-views")
 
 return {
     cases = {
+        testThroughputViews = throughput.case(true),
         testDefaultsLookup = defaults_cases.lookup,
         testDefaultsMigration = defaults_cases.migration,
         testWagonViews = wagons.case(true, true),

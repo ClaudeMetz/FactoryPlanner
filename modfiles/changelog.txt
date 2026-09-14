@@ -7,7 +7,7 @@ Date: 00. 00. 0000
   Changes:
     - Disabled the rocket item rate view when no launch-capable rocket silo is available (#510)
   Bugfixes:
-    - Fixed a crash when no cargo or fluid wagons are available (#475)
+    - Fixed a crash when no cargo, fluid wagons, or pumps are available (#475)
     - Fixed catalyst buttons in the compact dialogs not offering actions (#874)
 
 ---------------------------------------------------------------------------------------------------

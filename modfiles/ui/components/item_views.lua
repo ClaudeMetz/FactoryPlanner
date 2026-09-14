@@ -28,7 +28,7 @@ function processors.throughput(metadata, raw_amount, item_proto, _)
     local raw_number, unit_name = nil, nil
 
     if item_proto.type == "fluid" then
-        raw_number = raw_amount / metadata.pumping_speed
+        raw_number = raw_amount / metadata.pumping_speed--[[@as number]]
         unit_name = "pump"
     else
         raw_number = raw_amount * metadata.throughput_multiplier
@@ -164,7 +164,7 @@ end
 ---@field belts_or_lanes BeltsOrLanes
 ---@field throughput_multiplier number
 ---@field formatting_precision integer
----@field pumping_speed number
+---@field pumping_speed number?
 ---@field lift_capacity number?
 ---@field cargo_wagon_capacity number?
 ---@field fluid_wagon_capacity number?
@@ -208,6 +208,34 @@ local function disable_unavailable_views(player)
         first_enabled = "items_per_timescale"
     end
     if not selection_enabled then preferences.selected.primary = first_enabled end
+end
+
+---@param player LuaPlayer
+---@return ItemViewData view
+---@return number throughput_multiplier
+---@return number? pumping_speed
+local function prepare_throughput_view(player)
+    local preferences = lib.globals.preferences(player)
+    local belt = defaults.get(player, "belts").proto  ---@as FPBeltPrototype
+    local belts_or_lanes, belt_stack = preferences.belts_or_lanes, preferences.belt_stack
+    local divisor = (belts_or_lanes == "belts") and belt.throughput or (belt.throughput / 2)
+    local multiplier = (1 / divisor) / belt_stack
+    local unit = {"fp.pl_" .. belts_or_lanes:sub(1, -2), 2}
+    local stack_insert = (belt_stack > 1) and {"", {"fp.throughput_insert", belt_stack}, " "} or ""
+
+    local pump = defaults.get_optional(player, "pumps")
+    local view = {index=2, caption=belt.rich_text, unavailable_for={fluid=not pump}}  ---@type ItemViewData
+    if not pump then
+        view.tooltip = {"fp.view_tt", {"fp.throughput_belts_only", unit, stack_insert, belt.rich_text, belt.localised_name}}
+        return view, multiplier
+    end
+
+    ---@cast pump.proto FPPumpPrototype
+    local proto, quality = proto_and_quality_string(pump)
+    view.caption = {"", belt.rich_text, " ", pump.proto.rich_text}
+    view.tooltip = {"fp.view_tt", {"fp.throughput", unit, stack_insert, belt.rich_text, belt.localised_name,
+        pump.proto.rich_text, pump.proto.localised_name, quality}}
+    return view, multiplier, proto.get_pumping_speed(pump.quality--[[@cast -nil]].name) * 60
 end
 
 ---@param player LuaPlayer
@@ -280,14 +308,7 @@ function item_views.rebuild_data(player)
     local preferences = lib.globals.preferences(player)
     local timescale_string = lib.gui.timescale_as_string(preferences.timescale)
 
-    local belt_proto = defaults.get(player, "belts").proto  ---@as FPBeltPrototype
-    local belts_or_lanes, belt_stack = preferences.belts_or_lanes, preferences.belt_stack
-    local throughput_divisor = (belts_or_lanes == "belts") and belt_proto.throughput or (belt_proto.throughput / 2)
-    local throughput_insert = (belt_stack > 1) and {"", {"fp.throughput_insert", belt_stack}, " "} or ""
-
-    local default_pump = defaults.get(player, "pumps")  ---@cast default_pump.proto FPPumpPrototype
-    local pump_proto, pump_quality = proto_and_quality_string(default_pump)
-
+    local throughput_view, throughput_multiplier, pumping_speed = prepare_throughput_view(player)
     local wagon_view, cargo_capacity, fluid_capacity = prepare_wagon_view(player, timescale_string)
     local rocket_view, lift_capacity = prepare_rocket_view(player, timescale_string)
 
@@ -298,13 +319,7 @@ function item_views.rebuild_data(player)
                 caption = {"", {"fp.pu_item", 2}, "/", {"fp.unit_" .. timescale_string}},
                 tooltip = {"fp.view_tt", {"fp.items_per_timescale", {"fp." .. timescale_string}}}
             },
-            throughput = {
-                index = 2,
-                caption = {"", belt_proto.rich_text, " ", default_pump.proto.rich_text},
-                tooltip = {"fp.view_tt", {"fp.throughput", {"fp.pl_" .. belts_or_lanes:sub(1, -2), 2},
-                    throughput_insert, belt_proto.rich_text, belt_proto.localised_name,
-                    default_pump.proto.rich_text, default_pump.proto.localised_name, pump_quality}}
-            },
+            throughput = throughput_view,
             items_per_second_per_machine = {
                 index = 3,
                 caption = {"", {"fp.pu_item", 2}, "/", {"fp.unit_second"}, "/[img=fp_generic_assembler]"},
@@ -321,10 +336,10 @@ function item_views.rebuild_data(player)
         timescale = preferences.timescale,
         timescale_string = {"fp.unit_" .. timescale_string}--[[@as LocalisedString]],
         adjusted_margin_of_error = MAGIC_NUMBERS.margin_of_error / preferences.timescale,
-        belts_or_lanes = belts_or_lanes,
-        throughput_multiplier = (1 / throughput_divisor) / belt_stack,
+        belts_or_lanes = preferences.belts_or_lanes,
+        throughput_multiplier = throughput_multiplier,
         formatting_precision = MAGIC_NUMBERS.formatting_precision,
-        pumping_speed = pump_proto.get_pumping_speed(default_pump.quality--[[@cast -nil]].name) * 60,
+        pumping_speed = pumping_speed,
         lift_capacity = lift_capacity,
         cargo_wagon_capacity = cargo_capacity,
         fluid_wagon_capacity = fluid_capacity
