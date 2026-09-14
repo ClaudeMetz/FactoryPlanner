@@ -78,8 +78,8 @@ function simplex_engine.solve_floor(factory_data, floor_id, cache_invalid_map)
                 local subfloor_data = factory_data.floor_data_map[line_object_id]
                 local subfloor_line = factory_data.line_data_map[subfloor_data.line_ids[1]--[[@cast -nil]]]
                 factory_data.line_data_map[line_object_id] = {
+                    id = line_object_id,
                     floor_id = floor_id,
-                    line_id = line_object_id,
                     crafts_per_second = 1,
                     products = floor_result.products,
                     ingredients = floor_result.ingredients,
@@ -169,13 +169,13 @@ function simplex_engine.solve_floor(factory_data, floor_id, cache_invalid_map)
         for _, line_data in pairs(relevant_line_data) do
             if line_data.machine_limit then
                 local type = line_data.machine_force_limit and "==" or "<="
-                tableau:add_line_constraint(line_data.line_id, type, line_data.machine_limit, objective_vector.machine_limit)
+                tableau:add_line_constraint(line_data.id, type, line_data.machine_limit, objective_vector.machine_limit)
             end
         end
     else
         -- Artificially limit the top line to one machine so we get a solution for this subfloor
         local _, line_data = next(relevant_line_data)  ---@cast line_data -nil
-        tableau:add_line_constraint(line_data.line_id, "==", 1, objective_vector.target_machine)
+        tableau:add_line_constraint(line_data.id, "==", 1, objective_vector.target_machine)
     end
 
     -- Solve the tableau
@@ -304,7 +304,7 @@ function simplex_engine.update_line(floor_id, line_data, scale_factor, byproduct
     end
 
     solver.set_line_result{
-        line_id = line_data.line_id,
+        line_id = line_data.id,
         floor_id = floor_id,
         machine_amount = machine_amount,
         crafts_per_second = production_ratio,

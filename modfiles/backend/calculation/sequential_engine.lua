@@ -170,7 +170,7 @@ local function update_line(line_data, aggregate)
     -- Update the actual line with the calculated results
     solver.set_line_result {
         floor_id = aggregate.floor_id,
-        line_id = line_data.line_id,
+        line_id = line_data.id,
         machine_amount = machine_amount,
         crafts_per_second = crafts_per_second,
         products = line_products,

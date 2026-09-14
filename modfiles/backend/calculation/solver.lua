@@ -106,13 +106,13 @@ end
 ---@alias LineDataMap table<ObjectID, LineData>
 
 ---@class FloorData
----@field floor_id ObjectID
+---@field id ObjectID
 ---@field level integer
 ---@field products SolverItem[]
 ---@field line_ids ObjectID[]
 
 ---@class LineData
----@field line_id ObjectID
+---@field id ObjectID
 ---@field floor_id ObjectID
 ---@field crafts_per_second number
 ---@field products SolverMap
@@ -330,7 +330,7 @@ local function generate_line_data(player, factory, line)
     structures.map.reduce_items(products, ingredients)
 
     return {
-        line_id = line.id,
+        id = line.id,
         floor_id = line.parent.id,
         crafts_per_second = crafts_per_second,
         products = products,
@@ -342,7 +342,7 @@ local function generate_line_data(player, factory, line)
         machine_limit = energy > MAGIC_NUMBERS.minimum_energy and line.machine.limit or nil,
         machine_force_limit = energy > MAGIC_NUMBERS.minimum_energy and line.machine.force_limit or nil,
         production_type = line.recipe.production_type,
-    }
+    }  ---@type LineData
 end
 
 --- Generates structured data of the given floor for calculation
@@ -353,7 +353,7 @@ end
 ---@return LineDataMap
 local function generate_floor_data(player, factory, floor)
     local floor_data = {
-        floor_id = floor.id,
+        id = floor.id,
         level = floor.level,
         products = floor.level == 1 and factory_products(factory) or floor_products(floor),
         line_ids = {}

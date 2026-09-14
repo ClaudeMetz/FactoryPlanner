@@ -103,7 +103,7 @@ end
 --- Missing items are automatically added.
 ---@param line_data LineData
 function SimplexTableau:add_line_variable(line_data)
-    local line_key = pack_line_variable(line_data.line_id)
+    local line_key = pack_line_variable(line_data.id)
 
     -- Line is already present in the tableau
     if self.cols[line_key] then return end
