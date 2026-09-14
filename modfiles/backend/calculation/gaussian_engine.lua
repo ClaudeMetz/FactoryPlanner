@@ -500,7 +500,8 @@ function gaussian_engine.get_matrix(factory_data, rows, columns)
 
     -- final column for desired output. Don't have to explicitly set constrained vars to zero
     -- since matrix is initialized with zeros.
-    for _, product in ipairs(factory_data.top_floor.products) do
+    local top_floor_data = factory_data.floor_data_map[factory_data.top_floor_id]
+    for _, product in ipairs(top_floor_data.products) do
         local item_key = structures.pack_item(product)
         local row_num = rows.map[item_key]  -- will be nil for unproduced outputs
         if row_num ~= nil then

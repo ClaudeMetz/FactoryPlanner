@@ -195,13 +195,14 @@ function simplex_engine.update_factory(factory_data, result)
     local byproduct_result = {}  ---@type SolverMap
     local ingredient_result = {}  ---@type SolverMap
 
-    for _, product in pairs(factory_data.top_floor.products) do
+    local top_floor_data = factory_data.floor_data_map[factory_data.top_floor_id]
+    for _, product in pairs(top_floor_data.products) do
         top_products[structures.pack_item(product)] = true
     end
 
-    if result and result.floor_results[factory_data.top_floor.id] then
+    if result and result.floor_results[factory_data.top_floor_id] then
         -- Update the products
-        for item_key, amount in pairs(result.floor_results[factory_data.top_floor.id].products) do
+        for item_key, amount in pairs(result.floor_results[factory_data.top_floor_id].products) do
             if top_products[item_key] then
                 -- Update product amount
                 structures.map.add(product_result, structures.unpack_item(item_key, amount))
@@ -213,7 +214,7 @@ function simplex_engine.update_factory(factory_data, result)
         end
 
         -- Update the ingredients
-        for item_key, amount in pairs(result.floor_results[factory_data.top_floor.id].ingredients) do
+        for item_key, amount in pairs(result.floor_results[factory_data.top_floor_id].ingredients) do
             structures.map.add(ingredient_result, structures.unpack_item(item_key, amount))
         end
     end

@@ -255,7 +255,7 @@ end
 ---@param factory_data FactoryData
 function sequential_engine.update_factory(factory_data)
     -- Initialize aggregate with the top level items
-    local aggregate = structures.aggregate.init(factory_data.top_floor.id)
+    local aggregate = structures.aggregate.init(factory_data.top_floor_id)
     local top_floor_data = factory_data.floor_data_map[factory_data.top_floor_id]
     for _, product in pairs(top_floor_data.products) do
         structures.map.add(aggregate.ingredients, product)

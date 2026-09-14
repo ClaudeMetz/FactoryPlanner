@@ -103,51 +103,13 @@ local function line_ingredients(recipe)
 end
 
 ---@alias FloorDataMap table<ObjectID, FloorData>
+---@alias LineDataMap table<ObjectID, LineData>
 
 ---@class FloorData
 ---@field floor_id ObjectID
 ---@field level integer
 ---@field products SolverItem[]
 ---@field line_ids ObjectID[]
-
----@class OldFloorData  -- deprecated
----@field id ObjectID
----@field products (FormattedProduct | SolverItem)[]
----@field lines (OldLineData | OldSubfloorLineData)[]
-
----@class OldSubfloorLineData  -- deprecated
----@field id ObjectID
----@field recipe_proto FPRecipePrototype
----@field products FormattedProduct[]
----@field subfloor OldFloorData?
-
----@class OldLineData  -- deprecated
----@field id ObjectID
----@field recipe_proto FPRecipePrototype
----@field recipe_energy double
----@field ingredients SolverItem[]
----@field products FormattedProduct[]
----@field percentage number
----@field production_type RecipeProductionType
----@field priority_item_proto FPItemPrototype
----@field machine_proto FPMachinePrototype
----@field machine_limit MachineLimit
----@field machine_speed double
----@field energy_usage double
----@field resource_drain_rate double
----@field pollutant_type string?
----@field entities_require_heating boolean
----@field total_effects IntegerModuleEffects
----@field beacon_power double?
----@field fuel_proto AnyFPFuelPrototype?
----@field fuel_name string?
----@field fuel_value number?
----@field fuel_performance number
----@field wasted_share number
----@field fluid_usage_per_tick number?
-
----@alias MachineLimit {limit: number?, force_limit: boolean}
----@alias LineDataMap table<ObjectID, LineData>
 
 ---@class LineData
 ---@field line_id ObjectID
@@ -389,18 +351,9 @@ end
 ---@param player LuaPlayer
 ---@param factory Factory
 ---@param floor Floor
----@param calculate_emissions boolean
----@return OldFloorData
 ---@return FloorDataMap
 ---@return LineDataMap
-local function generate_floor_data(player, factory, floor, calculate_emissions)
-    local old_floor_data = {
-        id = floor.id,
-        products = (floor.level == 1) and factory_products(factory)
-            or floor.first--[[@as Line]].recipe.products,
-        lines = {}
-    }  ---@type OldFloorData
-
+local function generate_floor_data(player, factory, floor)
     local floor_data = {
         floor_id = floor.id,
         level = floor.level,
@@ -413,14 +366,9 @@ local function generate_floor_data(player, factory, floor, calculate_emissions)
     local relevant_line_active = true
 
     for line in floor:iterator() do
-        local line_data = { id = line.id }
-
         if line.class == "Floor" then  ---@cast line Floor
             local subfloor_floor_map, subfloor_line_map
-            line_data.recipe_proto = line.first--[[@as Line]].recipe.proto
-            line_data.products = line.first--[[@as Line]].recipe.products
-            line_data.subfloor, subfloor_floor_map, subfloor_line_map = generate_floor_data(player, factory, line, calculate_emissions)
-            table.insert(old_floor_data.lines, line_data)
+            subfloor_floor_map, subfloor_line_map = generate_floor_data(player, factory, line)
             table.insert(floor_data.line_ids, line.id)
             for k, v in pairs (subfloor_floor_map) do floor_data_map[k] = v end
             for k, v in pairs (subfloor_line_map) do line_data_map[k] = v end
@@ -430,60 +378,6 @@ local function generate_floor_data(player, factory, floor, calculate_emissions)
                 solver.set_blank_line(floor, line)
                 if line == floor.first and floor.level > 1 then relevant_line_active = false end
             else
-                local machine = line.machine
-                local recipe_proto = line.recipe.proto  ---@as FPRecipePrototype
-
-                line_data.recipe_proto = recipe_proto
-                line_data.recipe_energy = recipe_proto.energy
-                line_data.ingredients = line_ingredients(line.recipe)  -- bakes in temperatures
-                line_data.products = line.recipe.products
-                line_data.percentage = line.percentage  -- non-zero
-                line_data.production_type = line.recipe.production_type
-                line_data.priority_item_proto = line.recipe.priority_item  ---@as FPItemPrototype
-                line_data.machine_proto = machine.proto  ---@as FPMachinePrototype
-                line_data.machine_limit = {limit=machine.limit, force_limit=machine.force_limit}
-                line_data.energy_usage = machine:get_energy_usage()
-                line_data.fluid_usage_per_tick = machine:get_fluid_usage_per_tick()
-                line_data.resource_drain_rate = machine:get_resource_drain_rate()
-                line_data.pollutant_type = (calculate_emissions) and factory.parent.location_proto.pollutant_type or nil
-                line_data.entities_require_heating = factory.parent.location_proto.entities_require_heating or false
-
-                local force = player.force  ---@as LuaForce
-                local mod_changed = machine:update_mod_effects(force)
-                local recipe_changed = line.recipe:update_effects(force, factory)
-                if mod_changed or recipe_changed then machine:summarize_effects() end
-                line_data.total_effects = line.total_effects
-
-                if machine.fuel ~= nil then
-                    line_data.fuel_proto = machine.fuel.proto  ---@as AnyFPFuelPrototype
-                    line_data.fuel_name = machine.fuel:get_name_with_temperature()
-                    line_data.fuel_value = machine.fuel:get_fuel_value()
-                end
-
-                -- The machine needs to potentially run slower if fuel is insufficient
-                line_data.fuel_performance, line_data.wasted_share = machine:get_fuel_performance()
-                line_data.machine_speed = machine:get_speed() * line_data.fuel_performance
-
-                -- Lab speed bonus is multiplicative, not additive to effects
-                if machine.proto.prototype_category == "lab" then
-                    line_data.machine_speed = line_data.machine_speed
-                        * (1 + force.laboratory_speed_modifier)
-                end
-
-                if machine.proto.prototype_category == "boiler" then
-                    local goal_temperature = recipe_proto.products[1]--[[@cast -nil]].temperature  ---@as float
-                    local input_temperature = line.recipe:get_temperature(
-                        recipe_proto.ingredients[1]--[[@cast -nil]])  ---@as float
-                    line_data.recipe_energy = (goal_temperature - input_temperature)
-                        * recipe_proto.heat_capacity--[[@as double]]
-                end
-
-                -- Beacon total - can be calculated here, which is faster and simpler
-                if line.beacon ~= nil and line.beacon.total_amount ~= nil then
-                    line_data.beacon_power = line.beacon:get_total_power()
-                end
-
-                table.insert(old_floor_data.lines, line_data)
                 table.insert(floor_data.line_ids, line.id)
                 line_data_map[line.id] = generate_line_data(player, factory, line)
             end
@@ -491,7 +385,7 @@ local function generate_floor_data(player, factory, floor, calculate_emissions)
     end
 
     floor_data_map[floor.id] = floor_data
-    return old_floor_data, floor_data_map, line_data_map
+    return floor_data_map, line_data_map
 end
 
 
@@ -629,7 +523,6 @@ end
 ---@field top_floor_id ObjectID
 ---@field floor_data_map FloorDataMap
 ---@field line_data_map LineDataMap
----@field top_floor OldFloorData
 ---@field matrix_free_items FPItemPrototype[]
 ---@field simplex_basis table<ConstraintKey, VariableKey>
 
@@ -638,10 +531,9 @@ end
 ---@param factory Factory
 ---@return FactoryData
 function solver.generate_factory_data(player, factory)
-    local calculate_emissions = lib.globals.preferences(player).calculate_emissions
     local free_items = factory.matrix_free_items  ---@as FPItemPrototype[]  -- intentional pass-by-reference
-    local top_floor_data, floor_data_map, line_data_map =
-            generate_floor_data(player, factory, factory.top_floor, calculate_emissions)
+    local floor_data_map, line_data_map =
+        generate_floor_data(player, factory, factory.top_floor)
 
     local factory_data = {
         player_index = player.index,
@@ -649,7 +541,6 @@ function solver.generate_factory_data(player, factory)
         top_floor_id = factory.top_floor.id,
         floor_data_map = floor_data_map,
         line_data_map = line_data_map,
-        top_floor = top_floor_data,
         matrix_free_items = free_items,
         simplex_basis = factory.simplex_basis or {}
     }
