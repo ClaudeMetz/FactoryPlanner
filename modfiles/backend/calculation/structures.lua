@@ -88,7 +88,7 @@ function _structures.map.subtract(map, item, amount, round_errors)
     _structures.map.add(map, item, -(amount or item.amount), round_errors)
 end
 
---- If the 2 maps contain the same item, it cancels out the lowest portion of the item from both maps.
+--- If the 2 maps contain the same item, cancel out the lowest portion of the item from both maps.
 ---@param map1 SolverMap
 ---@param map2 SolverMap
 ---@param round_errors boolean?
@@ -122,7 +122,7 @@ function _structures.map.balance_items(map, depot, destination, round_errors)
     local map_copy = lib.flib.shallow_copy(map)
     _structures.map.reduce_items(map_copy, depot, round_errors)
     for _, item in pairs(_structures.map.list(map_copy)) do
-        _structures.map.add(destination, item)
+        _structures.map.add(destination, item, item.amount, round_errors)
     end
 end
 

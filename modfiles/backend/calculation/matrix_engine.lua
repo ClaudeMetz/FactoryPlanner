@@ -77,7 +77,6 @@ function matrix_engine.get_matrix_solver_metadata(factory_data)
     local line_count = 0
 
     for _, line_data in pairs(factory_data.line_data_map) do
-        matrix_engine.consolidate(line_data)
         for item_key, _ in pairs(line_data.ingredients) do line_inputs[item_key] = true end
         for item_key, _ in  pairs(line_data.products) do line_outputs[item_key] = true end
         line_count = line_count + 1
@@ -428,10 +427,10 @@ end
 -- If an aggregate has items that are both inputs and outputs, deletes whichever is smaller and saves the net amount.
 -- If the input and output are identical to within rounding error, delete from both.
 -- This is mainly for calculating line aggregates with subfloors for the matrix solver.
----@param aggregate SolverLineData | SolverAggregate
+---@param aggregate SolverAggregate
 function matrix_engine.consolidate(aggregate)
     structures.map.reduce_items(aggregate.products, aggregate.ingredients, true)
-    if aggregate.byproducts then structures.map.reduce_items(aggregate.byproducts, aggregate.ingredients, true) end
+    structures.map.reduce_items(aggregate.byproducts, aggregate.ingredients, true)
 end
 
 ---@param factory_data FactoryData
@@ -472,9 +471,7 @@ function matrix_engine.get_matrix(factory_data, rows, columns)
         else -- "line"
             local line_id = col_split_str[2]  ---@as integer
             local beacon_power = factory_data.line_data_map[line_id].beacon_power
-
-            -- use amounts for 1 building as matrix entries
-            local line_aggregate = factory_data.line_data_map[line_id]
+            local line_data = factory_data.line_data_map[line_id]
 
             -- Beacons draw the same power however many machines the line ends up needing, so that
             -- part of it can't be expressed per building. It only depends on how the line is
@@ -483,13 +480,13 @@ function matrix_engine.get_matrix(factory_data, rows, columns)
                 constant_demand = constant_demand + beacon_power
             end
 
-            for item_key, amount in pairs(line_aggregate.products) do
+            for item_key, amount in pairs(line_data.products) do
                 ---@diagnostic disable: need-check-nil
                 local row_num = rows.map[item_key]
                 matrix[row_num][col_num] = matrix[row_num][col_num] + amount
             end
 
-            for item_key, amount in pairs(line_aggregate.ingredients) do
+            for item_key, amount in pairs(line_data.ingredients) do
                 ---@diagnostic disable: need-check-nil
                 local row_num = rows.map[item_key]
                 matrix[row_num][col_num] = matrix[row_num][col_num] - amount
