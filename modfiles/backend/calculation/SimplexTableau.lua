@@ -29,6 +29,7 @@ SimplexTableau.__index = SimplexTableau
 ---@field floor_result SimplexFloorResult
 ---@field line_results LineResultTable
 ---@field cache_invalid boolean?
+---@field simplex_basis_cache SimplexBasisCache?  -- simplex
 
 ---@class SimplexLineResult
 ---@field id ObjectID
@@ -217,7 +218,6 @@ end
 ---@param floor_id ObjectID
 ---@param basis_cache SimplexBasisCache?
 ---@return SimplexResult result
----@return SimplexBasisCache? new_basis_cache
 function SimplexTableau:solve(floor_id, basis_cache)
     local result = {
         state = "in-progress",
@@ -226,8 +226,7 @@ function SimplexTableau:solve(floor_id, basis_cache)
             products = {},
             ingredients = {}
         },
-        line_results = {},
-        cache_invalid = false,
+        line_results = {}
     }  ---@type SimplexResult
 
     local variable_map = {}  ---@type VariableMap[]
@@ -463,9 +462,9 @@ function SimplexTableau:solve(floor_id, basis_cache)
     end
 
     -- Cache the solution basis for later
-    local new_basis_cache = {}
+    result.simplex_basis_cache = {}
     for key, i in pairs(self.rows) do
-        new_basis_cache[key] = basic[i]
+        result.simplex_basis_cache[key] = basic[i]
     end
 
     -- Interpret the result
@@ -491,7 +490,7 @@ function SimplexTableau:solve(floor_id, basis_cache)
         end
     end
 
-    return result, new_basis_cache
+    return result
 end
 
 --- Re-scales the conditions based on the highest coefficient in the row.

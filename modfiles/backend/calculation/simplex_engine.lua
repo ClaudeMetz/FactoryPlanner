@@ -136,10 +136,7 @@ function simplex_engine.solve_floor(factory_data, floor_id)
     end
 
     -- Solve the tableau
-    local result, new_simplex_basis = tableau:solve(floor_id, floor_data.simplex_basis)
-    floor_data.simplex_basis = new_simplex_basis
-
-    return result
+    return tableau:solve(floor_id, floor_data.simplex_basis)
 end
 
 return simplex_engine

@@ -378,7 +378,7 @@ local function generate_floor_data(player, factory, floor)
         level = floor.level,
         products = floor.level == 1 and factory_products(factory) or floor_products(floor),
         line_ids = {},
-        simplex_basis = floor.simplex_basis or {}
+        simplex_basis = floor.simplex_basis_cache or {}
     }  ---@type FloorData
 
     local floor_data_map = {}  ---@type FloorDataMap
@@ -551,7 +551,7 @@ function solver.update(player, factory)
             end
         end
 
-        solve_floor(factory_data.top_floor_id)
+        solve_floor(factory.top_floor.id)
         solver.update_factory(factory_data, result_map)
 
         if factory.solver == "sequential" then
@@ -604,6 +604,8 @@ end
 ---@param factory_data FactoryData
 ---@param result_map ResultMap
 function solver.update_factory(factory_data, result_map)
+    local factory = OBJECT_INDEX[factory_data.factory_id]  ---@as Factory
+
     local top_products = {}  ---@type SolverSet
     local top_byproducts = {}  ---@type SolverMap
 
@@ -611,12 +613,11 @@ function solver.update_factory(factory_data, result_map)
     local byproduct_result = {}  ---@type SolverMap
     local ingredient_result = {}  ---@type SolverMap
 
-    local top_floor_data = factory_data.floor_data_map[factory_data.top_floor_id]
-    for _, product in pairs(top_floor_data.products) do
+    for product in factory:iterator() do
         top_products[structures.pack_item(product)] = true
     end
 
-    local result = result_map[factory_data.top_floor_id]
+    local result = result_map[factory.top_floor.id]
     if result then
         -- Update the products
         for item_key, amount in pairs(result.floor_result.products) do
@@ -654,28 +655,28 @@ end
 ---@param byproducts SolverMap
 ---@return integer machine_amount
 function solver.update_floor(factory_data, result_map, floor_id, scale_factor, byproducts)
-    local floor_data = factory_data.floor_data_map[floor_id]
+    local floor = OBJECT_INDEX[floor_id]  ---@as Floor
     local result = result_map[floor_id]
     local machine_amount = 0
 
-    for _, line_object_id in pairs(floor_data.line_ids) do
-        local line_result = result and result.line_results[line_object_id]
-        if not factory_data.floor_data_map[line_object_id] then  -- Line
-            local line_data = factory_data.line_data_map[line_object_id]
-            local line_machines = solver.update_line(line_data, line_result, floor_id, scale_factor, byproducts)
+    for line_object in floor:iterator() do
+        local line_result = result and result.line_results[line_object.id]
+        if line_object.class == "Line" then
+            local line_data = factory_data.line_data_map[line_object.id]
+            local line_machines = solver.update_line(line_object.id, floor_id, line_data, line_result, scale_factor, byproducts)
             machine_amount = machine_amount + math.ceil(line_machines - MAGIC_NUMBERS.margin_of_error)
         else  -- Floor
-            local blank_result = {id=line_object_id, products={}, ingredients={}}  ---@type SimplexFloorResult
-            local subfloor_result = result_map[line_object_id] and result_map[line_object_id].floor_result or blank_result
+            local blank_result = {id=line_object.id, products={}, ingredients={}}  ---@type SimplexFloorResult
+            local subfloor_result = result_map[line_object.id] and result_map[line_object.id].floor_result or blank_result
             local subfloor_scale_factor = (line_result and line_result.machine_amount or 0) * scale_factor
 
             local product_result, byproduct_result, ingredient_result, floor_byproducts =
                     solver.update_line_object_common(subfloor_scale_factor, subfloor_result.products, byproducts, subfloor_result.ingredients)
-            local floor_machines = solver.update_floor(factory_data, result_map, line_object_id, subfloor_scale_factor, floor_byproducts)
+            local floor_machines = solver.update_floor(factory_data, result_map, line_object.id, subfloor_scale_factor, floor_byproducts)
 
             solver.set_line_result{
                 floor_id = floor_id,
-                line_id = line_object_id,
+                line_id = line_object.id,
                 machine_amount = floor_machines,
                 products = product_result,
                 byproducts = byproduct_result,
@@ -686,39 +687,55 @@ function solver.update_floor(factory_data, result_map, floor_id, scale_factor, b
         end
     end
 
+    floor.simplex_basis_cache = result and result.simplex_basis_cache
+
     return machine_amount
 end
 
----@param line_data LineData
----@param result SimplexLineResult?
+---@param line_id ObjectID
 ---@param floor_id ObjectID
+---@param line_data LineData?
+---@param result SimplexLineResult?
 ---@param scale_factor number
 ---@param byproducts SolverMap
 ---@return number machine_amount
-function solver.update_line(line_data, result, floor_id, scale_factor, byproducts)
-    -- Update the machine
-    local machine_amount = result and scale_factor * result.machine_amount or 0
-    local production_ratio = machine_amount * line_data.crafts_per_second
+function solver.update_line(line_id, floor_id, line_data, result, scale_factor, byproducts)
+    local machine_amount = 0.0
+    local production_ratio = 0.0
 
-    local product_result, byproduct_result, ingredient_result =
-            solver.update_line_object_common(machine_amount, line_data.products, byproducts, line_data.ingredients)
+    local product_result = {}  ---@type SolverMap
+    local byproduct_result = {}  ---@type SolverMap
+    local ingredient_result = {}  ---@type SolverMap
 
-    -- Update the fuel
-    local fuel_amount
-    if line_data.fuel_item then
-        local fuel_key = structures.pack_item(line_data.fuel_item)
-        fuel_amount = line_data.fuel_item.amount * machine_amount
-        local ingredient_amount = ingredient_result[fuel_key] or 0
-        if fuel_amount <= ingredient_amount then
-            structures.map.subtract(ingredient_result, line_data.fuel_item, fuel_amount)
-        else
-            structures.map.add(product_result, line_data.fuel_item, fuel_amount - ingredient_amount)
-            ingredient_result[fuel_key] = nil
+    local fuel_amount = 0.0
+
+    if line_data and result then
+        -- Update the machine
+        machine_amount = scale_factor * result.machine_amount
+        production_ratio = machine_amount * line_data.crafts_per_second
+
+        product_result, byproduct_result, ingredient_result =
+                solver.update_line_object_common(machine_amount, line_data.products, byproducts, line_data.ingredients)
+        ---@cast product_result SolverMap
+        ---@cast byproduct_result SolverMap
+        ---@cast ingredient_result SolverMap
+
+        -- Update the fuel
+        if line_data.fuel_item then
+            local fuel_key = structures.pack_item(line_data.fuel_item)
+            fuel_amount = line_data.fuel_item.amount * machine_amount
+            local ingredient_amount = ingredient_result[fuel_key] or 0
+            if fuel_amount <= ingredient_amount then
+                structures.map.subtract(ingredient_result, line_data.fuel_item, fuel_amount)
+            else
+                structures.map.add(product_result, line_data.fuel_item, fuel_amount - ingredient_amount)
+                ingredient_result[fuel_key] = nil
+            end
         end
     end
 
     solver.set_line_result{
-        line_id = line_data.id,
+        line_id = line_id,
         floor_id = floor_id,
         machine_amount = machine_amount,
         crafts_per_second = production_ratio,
