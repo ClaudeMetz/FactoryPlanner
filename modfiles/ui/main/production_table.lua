@@ -270,12 +270,17 @@ function builders.beacon(line, parent_flow, metadata)
         local quality_proto = beacon.quality_proto
         local title_line = (not quality_proto.always_show) and {"fp.tt_title", beacon.proto.localised_name}
             or {"fp.tt_title_with_note", beacon.proto.localised_name, quality_proto.rich_text}
-        local number_line = {"", "\n", beacon.amount, " ", {"fp.pl_beacon", beacon.amount}}
-        local total_amount = beacon:get_total_amount()
-        if total_amount then table.insert(number_line, {"", " - ", {"fp.in_total", total_amount}}) end
+        local coverage_line = {"", "\n", {"fp.beacon_coverage", beacon.amount, {"fp.pl_beacon", beacon.amount}}}
         local effectivity = ("%.2f"):format(beacon:overall_effectivity() * 100):gsub("%.?0+$", "")
         local effectivity_line = {"", "\n", {"fp.transmission_percentage", effectivity}}
-        local tooltip = {"", title_line, number_line, effectivity_line, format_effects_tooltip(beacon.effects_tooltip)}
+        local tooltip = {"", title_line, coverage_line, effectivity_line}
+        local style = "fflib_slot_button_default_small"
+        if beacon.amount_per_machine ~= nil then
+            style = "fflib_slot_button_blue_small"
+            table.insert(tooltip, {"", "\n", {"fp.beacon_build_ratio",
+                lib.format.number(beacon.amount_per_machine, 4)}})
+        end
+        table.insert(tooltip, format_effects_tooltip(beacon.effects_tooltip))
 
         local flags = {
             archived = metadata.archive_open,
@@ -288,14 +293,9 @@ function builders.beacon(line, parent_flow, metadata)
         local tags = {mod="fp", on_gui_click="act_on_line_beacon", beacon_id=beacon.id, on_gui_hover="set_tooltip",
             context="production_table", flags=flags}
         local button_beacon = parent_flow.add{type="sprite-button", tags=tags, sprite=beacon.proto.sprite,
-            number=beacon.amount, quality=quality_proto.name, style="fflib_slot_button_default_small",
+            number=beacon.amount, quality=quality_proto.name, style=style,
             mouse_button_filter={"left-and-right"}, raise_hover_events=true}
         metadata.tooltips[button_beacon.index] = tooltip
-
-        if beacon.amount_per_machine ~= nil then  -- add a graphical hint that a beacon ratio is set
-            local sprite_overlay = button_beacon.add{type="sprite", sprite="fp_white_square"}
-            sprite_overlay.ignored_by_interaction = true
-        end
 
         add_module_flow(parent_flow, beacon.module_set, metadata)
     end
