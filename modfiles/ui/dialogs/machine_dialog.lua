@@ -5,33 +5,31 @@
 ---@field beacon_backup Beacon
 
 -- ** LOCAL UTIL **
+---@param parent_flow LuaGuiElement
 ---@param modal_elements table
 ---@param identifier "machine" | "fuel"
----@param info_caption LocalisedString
-local function add_defaults_section(modal_elements, identifier, info_caption)
-    local label_info = modal_elements.defaults_flow.add{type="label", caption=info_caption, style="semibold_label"}
-    label_info.style.margin = {0, 8, 0, 24}
-    modal_elements[identifier .. "_title"] = label_info
+local function add_defaults_buttons(parent_flow, modal_elements, identifier)
+    parent_flow.add{type="empty-widget", style="fflib_horizontal_pusher"}
 
     ---@class SetMachineDefaultTags
     ---@field action "machine" | "fuel" | "machine_all" | "fuel_all"
 
     ---@type SetMachineDefaultTags
     local tags_machine = {mod="fp", on_gui_click="set_machine_default", action=identifier}
-    local button = modal_elements.defaults_flow.add{type="sprite-button", tags=tags_machine, sprite="fp_default",
+    local button = parent_flow.add{type="sprite-button", tags=tags_machine, sprite="fp_default",
         tooltip={"fp.save_as_default_" .. identifier}, style="tool_button"}
     modal_elements[identifier] = button
 
     local action = (identifier .. "_all")  ---@as "machine_all" | "fuel_all"
     ---@type SetMachineDefaultTags
     local tags_all = {mod="fp", on_gui_click="set_machine_default", action=action}
-    local button_all = modal_elements.defaults_flow.add{type="sprite-button", tags=tags_all, sprite="fp_default_all",
+    local button_all = parent_flow.add{type="sprite-button", tags=tags_all, sprite="fp_default_all",
         tooltip={"fp.save_for_all_" .. identifier}, style="tool_button"}
     modal_elements[action] = button_all
 end
 
 ---@param player LuaPlayer
-local function refresh_defaults_frame(player)
+local function refresh_defaults_buttons(player)
     local modal_data = lib.globals.modal_data(player)  ---@as MachineDialogModalData
     local modal_elements = modal_data.modal_elements
     local machine = modal_data.object  ---@as Machine
@@ -42,7 +40,7 @@ local function refresh_defaults_frame(player)
     local equals_machine = defaults.equals_default(player, "machines", machine, machine_category)
     local equals_all_machines = defaults.equals_all_defaults(player, "machines", machine)
 
-    modal_elements.machine_title.tooltip = machine_tooltip
+    modal_elements.machine.tooltip = {"", {"fp.save_as_default_machine"}, "\n\n", machine_tooltip}
     modal_elements.machine.enabled = not equals_machine
     modal_elements.machine_all.enabled = not equals_all_machines
 
@@ -57,31 +55,11 @@ local function refresh_defaults_frame(player)
         equals_all_fuels = defaults.equals_all_defaults(player, "fuels", machine.fuel)
     end
 
-    modal_elements.fuel_title.tooltip = fuel_tooltip
+    modal_elements.fuel.tooltip = {"", {"fp.save_as_default_fuel"}, "\n\n", fuel_tooltip}
+    modal_elements.fuel.visible = fuel_required
+    modal_elements.fuel_all.visible = fuel_required
     modal_elements.fuel.enabled = fuel_required and not equals_fuel
     modal_elements.fuel_all.enabled = fuel_required and not equals_all_fuels
-end
-
----@param parent_frame LuaGuiElement
----@param player LuaPlayer
-local function add_defaults_frame(parent_frame, player)
-    local modal_elements = lib.globals.modal_elements(player)
-
-    local frame_defaults = parent_frame.add{type="frame", direction="horizontal", style="fp_frame_bordered_stretch"}
-    frame_defaults.style.top_padding = 7
-    local flow_defaults = frame_defaults.add{type="flow", direction="horizontal"}
-    flow_defaults.style.vertical_align = "center"
-    modal_elements["defaults_flow"] = flow_defaults
-
-    flow_defaults.add{type="label", caption={"fp.defaults"}, style="semibold_label"}
-
-    local machine_info = {"fp.info_label", {"", {"fp.pu_machine", 1}, " & ", {"fp.pu_module", 2}}}
-    add_defaults_section(modal_elements, "machine", machine_info)
-
-    local fuel_info = {"fp.info_label", {"fp.pu_fuel", 1}}
-    add_defaults_section(modal_elements, "fuel", fuel_info)
-
-    refresh_defaults_frame(player)
 end
 
 ---@param player LuaPlayer
@@ -108,7 +86,7 @@ local function set_defaults(player, tags, _)
         defaults.set(player, "fuels", {prototype=machine.fuel--[[@cast -nil]].proto.name}, category)
     end
 
-    refresh_defaults_frame(player)
+    refresh_defaults_buttons(player)
 end
 
 
@@ -126,9 +104,10 @@ local function refresh_fuel_frame(player)
 
     local elem_type = machine.fuel.proto.elem_type
 
-    modal_elements.fuel_button_flow.add{type="choose-elem-button", elem_type=elem_type,
+    local button_fuel = modal_elements.fuel_button_flow.add{type="choose-elem-button", elem_type=elem_type,
         [elem_type]=machine.fuel.proto.name, elem_filters=machine:compile_fuel_filter(),
         tags={mod="fp", on_gui_elem_changed="choose_fuel"}, style="fp_sprite-button_inset"}
+    button_fuel.style.size = 40
 end
 
 
@@ -150,22 +129,20 @@ local function reset_machine(player)
 
     refresh_fuel_frame(player)
     module_configurator.refresh_modules_flow(player, false)
-    refresh_defaults_frame(player)
+    refresh_defaults_buttons(player)
 end
 
 
 ---@param parent_frame LuaGuiElement
----@param label_caption LocalisedString
 ---@return LuaGuiElement flow_choices
-local function create_choice_frame(parent_frame, label_caption)
-    local frame_choices = parent_frame.add{type="frame", direction="horizontal", style="fp_frame_bordered_stretch"}
+local function create_choice_frame(parent_frame)
+    local frame_choices = parent_frame.add{type="frame", direction="horizontal", style="fp_frame_module"}
     frame_choices.style.width = (MAGIC_NUMBERS.module_dialog_element_width / 2) - 2
-
     local flow_choices = frame_choices.add{type="flow", direction="horizontal"}
+    flow_choices.style.horizontally_stretchable = true
+    flow_choices.style.horizontal_spacing = 4
     flow_choices.style.vertical_align = "center"
-
-    flow_choices.add{type="label", caption=label_caption, style="semibold_label"}
-    flow_choices.add{type="empty-widget", style="fflib_horizontal_pusher"}
+    flow_choices.style.height = 40
 
     return flow_choices
 end
@@ -175,20 +152,22 @@ end
 ---@param line Line
 local function add_machine_frame(parent_frame, player, line)
     local modal_elements = lib.globals.modal_data(player)--[[@cast -nil]].modal_elements
-    local flow_choices = create_choice_frame(parent_frame, {"fp.pu_machine", 1})
+    local flow_choices = create_choice_frame(parent_frame)
 
     local button_machine = flow_choices.add{type="choose-elem-button", elem_type="entity-with-quality",
         tags={mod="fp", on_gui_elem_changed="choose_machine"}, style="fp_sprite-button_inset",
         elem_filters=line:compile_machine_filter(player.force--[[@as LuaForce]])}
     button_machine.elem_value = line.machine:elem_value()
+    button_machine.style.size = 40
     modal_elements["machine_button"] = button_machine
+    add_defaults_buttons(flow_choices, modal_elements, "machine")
 end
 
 ---@param parent_frame LuaGuiElement
 ---@param player LuaPlayer
 local function add_fuel_frame(parent_frame, player)
     local modal_elements = lib.globals.modal_data(player)--[[@cast -nil]].modal_elements
-    local flow_choices = create_choice_frame(parent_frame, {"fp.pu_fuel", 1})
+    local flow_choices = create_choice_frame(parent_frame)
 
     local label_fuel = flow_choices.add{type="label", caption={"fp.machine_no_fuel_required"}}
     label_fuel.style.padding = {6, 4}
@@ -197,6 +176,7 @@ local function add_fuel_frame(parent_frame, player)
     local flow_fuel_button = flow_choices.add{type="flow", direction="horizontal"}
     modal_elements["fuel_button_flow"] = flow_fuel_button
     -- Button recreated on refresh because its type can change
+    add_defaults_buttons(flow_choices, modal_elements, "fuel")
 
     refresh_fuel_frame(player)
 end
@@ -264,7 +244,7 @@ local function handle_machine_choice(player, _, event)
 
     refresh_fuel_frame(player)
     module_configurator.refresh_modules_flow(player, false)
-    refresh_defaults_frame(player)
+    refresh_defaults_buttons(player)
 end
 
 ---@param player LuaPlayer
@@ -284,7 +264,7 @@ local function handle_fuel_choice(player, _, event)
     local proto = prototyper.util.find("fuels", elem_value, combined_category)  ---@as FPFuelPrototype
     machine.fuel:set_proto(proto, player)
 
-    refresh_defaults_frame(player)
+    refresh_defaults_buttons(player)
 end
 
 
@@ -314,12 +294,9 @@ local function open_machine_dialog(player, modal_data)
     add_limit_frame(content_frame, player, limit_enabled)
 
     -- Modules
+    modal_data.defaults_refresher = "machine_defaults_refresher"
     module_configurator.add_modules_flow(content_frame, modal_data)
     module_configurator.refresh_modules_flow(player, false)
-
-    -- Defaults
-    modal_data.defaults_refresher = "machine_defaults_refresher"
-    add_defaults_frame(content_frame, player)
 end
 
 ---@param player LuaPlayer
@@ -392,7 +369,7 @@ listeners.gui = {
     on_gui_checked_state_changed = {
         {
             name = "machine_checkbox_all",
-            handler = refresh_defaults_frame
+            handler = refresh_defaults_buttons
         }
     }
 }  ---@as GUIListenerDefinition
@@ -415,7 +392,7 @@ listeners.dialog = {
 }
 
 listeners.global = {
-    machine_defaults_refresher = refresh_defaults_frame,
+    machine_defaults_refresher = refresh_defaults_buttons,
     reset_machine = reset_machine
 }
 
