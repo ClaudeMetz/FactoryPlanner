@@ -366,7 +366,6 @@ function gaussian_engine.run_solver(factory_data, metadata)
                 ingredients = line_aggregate.ingredients,
                 fuel_amount = fuel_amount
             }
-            ::continue::
         end
         return floor_aggregate
     end
