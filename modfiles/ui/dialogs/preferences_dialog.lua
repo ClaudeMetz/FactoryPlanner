@@ -453,11 +453,6 @@ local function open_preferences_dialog(player, modal_data)
     local production_preference_names = {"done_column", "line_comment_column"}
     add_checkboxes_box(preferences, left_content_frame, "production", production_preference_names)
 
-    left_content_frame.add{type="empty-widget", style="fflib_vertical_pusher"}
-    local support_frame = left_content_frame.add{type="frame", direction="vertical", style="fp_frame_bordered_stretch"}
-    support_frame.style.top_padding = 8
-    support_frame.add{type="label", caption={"fp.preferences_support"}}
-
     -- Right side
     local right_content_frame = modal_elements.secondary_frame
     add_views_box(player, right_content_frame, modal_elements)
