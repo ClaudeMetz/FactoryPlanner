@@ -271,6 +271,12 @@ function Floor:reset_surface_compatibility()
     end
 end
 
+function Floor:clear_solver_cache()
+    for line_object in self:iterator() do
+        if line_object.class == "Floor" then line_object:clear_solver_cache() end
+    end
+end
+
 ---@param object CopyableObject
 ---@return boolean success
 ---@return string? error
