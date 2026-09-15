@@ -113,14 +113,14 @@ local function add_beacon_frame(parent_flow, modal_data)
     label_profile.style.width = 64
     modal_elements["profile_label"] = label_profile
 
-    flow_beacon.add{type="label", caption={"fp.info_label", {"fp.beacon_total"}}, tooltip={"fp.beacon_total_tt"},
+    flow_beacon.add{type="label", caption={"fp.info_label", {"fp.beacon_per_machine"}}, tooltip={"fp.beacon_per_machine_tt"},
         style="semibold_label"}
-    local total_width = 40
-    local textfield_total = flow_beacon.add{type="textfield", text=tostring(beacon.total_amount or ""),
-        tags={mod="fp", on_gui_text_changed="beacon_total_amount", on_gui_confirmed="confirm_beacon",
-        width=total_width}, tooltip={"fp.expression_textfield"}}
-    textfield_total.style.width = total_width
-    modal_elements["beacon_total"] = textfield_total
+    local ratio_width = 40
+    local textfield_ratio = flow_beacon.add{type="textfield", text=tostring(beacon.amount_per_machine or ""),
+        tags={mod="fp", on_gui_text_changed="beacon_per_machine", on_gui_confirmed="confirm_beacon",
+        width=ratio_width}, tooltip={"fp.expression_textfield"}}
+    textfield_ratio.style.width = ratio_width
+    modal_elements["beacon_per_machine"] = textfield_ratio
 end
 
 
@@ -140,6 +140,9 @@ local function update_dialog_submit_button(modal_data)
         message = {"fp.beacon_issue_set_amount"}
     elseif modal_data.module_set.module_count == 0 then
         message = {"fp.beacon_issue_no_modules"}
+    elseif modal_data.modal_elements.beacon_per_machine.text ~= ""
+        and modal_data.object.amount_per_machine == nil then
+        message = {"fp.beacon_issue_per_machine"}
     end
     modal_dialog.set_submit_button_state(modal_data.modal_elements, (message == nil), message)
 end
@@ -245,9 +248,6 @@ local function close_beacon_dialog(player, action)
     local modal_data = lib.globals.modal_data(player)  ---@as BeaconDialogModalData
 
     if action == "submit" then
-        local beacon = modal_data.object
-        beacon.total_amount = lib.gui.parse_expression_field(modal_data.modal_elements.beacon_total, true)
-
         solver.update(player)
         lib.gui.run_refresh(player, "production")
 
@@ -280,11 +280,15 @@ listeners.gui = {
             handler = handle_amount_change
         },
         {
-            name = "beacon_total_amount",
-            handler = function(_, _, event)
+            name = "beacon_per_machine",
+            handler = function(player, _, event)
                 ---@cast event EventData.on_gui_text_changed
-                local total_amount = lib.gui.parse_expression_field(event.element, true)
-                lib.gui.update_expression_field(event.element, total_amount ~= nil)
+                local ratio = lib.gui.parse_expression_field(event.element, true)
+                lib.gui.update_expression_field(event.element, ratio ~= nil or event.element.text == "")
+
+                local modal_data = lib.globals.modal_data(player)  ---@as BeaconDialogModalData
+                modal_data.object.amount_per_machine = ratio
+                update_dialog_submit_button(modal_data)
             end
         }
     },
@@ -293,7 +297,10 @@ listeners.gui = {
             name = "confirm_beacon",
             handler = function(player, _, event)
                 ---@cast event EventData.on_gui_confirmed
-                local confirmed = lib.gui.confirm_expression_field(event.element, true)
+                local element = event.element  ---@as LuaGuiElement
+                local ratio_field = lib.globals.modal_elements(player).beacon_per_machine
+                local confirmed = (element == ratio_field and element.text == "")
+                    or lib.gui.confirm_expression_field(element, true)
                 if confirmed then lib.gui.close_dialog(player, "submit") end
             end
         }

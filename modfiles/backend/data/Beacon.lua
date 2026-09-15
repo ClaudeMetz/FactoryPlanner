@@ -7,7 +7,7 @@ local ModuleSet = require("backend.data.ModuleSet")
 ---@field proto FPBeaconPrototype | FPPackedPrototype
 ---@field quality_proto FPQualityPrototype | FPPackedPrototype
 ---@field amount integer
----@field total_amount number?
+---@field amount_per_machine number?
 ---@field module_set ModuleSet
 ---@field total_effects IntegerModuleEffects
 ---@field effects_tooltip LocalisedString
@@ -28,7 +28,7 @@ local function init(parent, proto)
         proto = this_proto,
         quality_proto = defaults.get_fallback("qualities").proto,
         amount = 0,
-        total_amount = nil,
+        amount_per_machine = nil,
         module_set = nil,
 
         total_effects = nil,
@@ -111,11 +111,16 @@ function Beacon:allows_module(proto)
 end
 
 
+---@return number?
+function Beacon:get_total_amount()
+    return self.amount_per_machine and self.amount_per_machine * self.parent.machine.amount
+end
+
 ---@return double
-function Beacon:get_total_power()
+function Beacon:get_power_per_machine()
     ---@cast self.proto FPBeaconPrototype
     ---@cast self.quality_proto FPQualityPrototype
-    return (self.total_amount or 0) * self.proto.energy_usage * 60
+    return (self.amount_per_machine or 0) * self.proto.energy_usage * 60
         * self.quality_proto.beacon_power_usage_multiplier
 end
 
@@ -174,7 +179,7 @@ end
 ---@field proto FPPackedPrototype
 ---@field quality_proto FPPackedPrototype
 ---@field amount integer
----@field total_amount number?
+---@field amount_per_machine number?
 ---@field module_set PackedModuleSet
 
 ---@param full boolean
@@ -185,7 +190,7 @@ function Beacon:pack(full)
         proto = prototyper.util.simplify_prototype(self.proto, nil),
         quality_proto = prototyper.util.simplify_prototype(self.quality_proto, nil),
         amount = self.amount,
-        total_amount = self.total_amount,
+        amount_per_machine = self.amount_per_machine,
         module_set = self.module_set:pack(full)
     }
 end
@@ -199,7 +204,7 @@ local function unpack(packed_self, parent)
     unpacked_self.quality_proto = packed_self.quality_proto
 
     unpacked_self.amount = packed_self.amount
-    unpacked_self.total_amount = packed_self.total_amount
+    unpacked_self.amount_per_machine = packed_self.amount_per_machine
     unpacked_self.module_set = ModuleSet.unpack(packed_self.module_set, unpacked_self)
 
     return unpacked_self

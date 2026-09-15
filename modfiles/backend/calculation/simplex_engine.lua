@@ -273,7 +273,7 @@ function simplex_engine.get_line_metadata(line_data, floor_id)
     end
 
     -- Get beacon power
-    power_amount = power_amount + (line_data.beacon_power or 0)
+    power_amount = power_amount + (line_data.beacon_power_per_machine or 0)
 
     -- Get heat requirements (frozen surfaces e.g. Aquillo)
     if line_data.entities_require_heating then

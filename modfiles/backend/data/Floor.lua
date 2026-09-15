@@ -156,10 +156,12 @@ function Floor:get_component_data(skip_done, component_table)
             local ceil_machine_amount = math.ceil(machine.amount - MAGIC_NUMBERS.margin_of_error)
             add_machine(machine, ceil_machine_amount)
 
-            local beacon = line.beacon
-            if beacon and beacon.total_amount then
-                local ceil_total_amount = math.ceil(beacon.total_amount - MAGIC_NUMBERS.margin_of_error)
-                add_machine(beacon, ceil_total_amount)
+            if line.beacon then
+                local total_amount = line.beacon:get_total_amount()
+                if total_amount then
+                    local ceil_total_amount = math.ceil(total_amount - MAGIC_NUMBERS.margin_of_error)
+                    add_machine(line.beacon, ceil_total_amount)
+                end
             end
         end
     end

@@ -8,6 +8,7 @@ Date: 00. 00. 0000
   Changes:
     - Disabled the rocket item rate view when no launch-capable rocket silo is available (#510)
     - Made disabled recipes more obvious by giving them a red background (#883)
+    - Replaced beacon total config with a ratio relative to the machine amount, to enable future solver improvements (#850)
     - Removed recipe percentage config, as it's incompatible with future solver improvements (#841)
   Bugfixes:
     - Fixed an issue where the simplex solver would not present a solution in some cases (#886) (Thanks vapopescu!)

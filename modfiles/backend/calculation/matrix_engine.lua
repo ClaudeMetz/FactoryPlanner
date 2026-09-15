@@ -508,10 +508,6 @@ function matrix_engine.get_matrix(matrix_metadata, floor_data, rows, columns)
         table.insert(matrix, row)
     end
 
-    -- Power that lines draw regardless of their machine count, collected to be demanded below
-    local electric_power = {type="entity", name="custom-electric-power", amount=0}  ---@type SolverItem
-    local constant_demand = 0.0
-
     -- loop over columns since it's easier to look up items for lines/free vars than vice-versa
     for col_num=1, #columns.values do
         local col_str = columns.values[col_num]
@@ -524,17 +520,8 @@ function matrix_engine.get_matrix(matrix_metadata, floor_data, rows, columns)
             matrix[row_num]--[[@cast -nil]][col_num] = 1
         else -- "line"
             local line_id = col_split_str[2]  ---@as integer
-            local beacon_power = matrix_metadata.aggregate_map[line_id].beacon_power
-
             -- use amounts for 1 building as matrix entries
             local line_aggregate = matrix_metadata.aggregate_map[line_id]
-
-            -- Beacons draw the same power however many machines the line ends up needing, so that
-            -- part of it can't be expressed per building. It only depends on how the line is
-            -- configured though, so it's known upfront and can be demanded of the factory directly.
-            if beacon_power > 0 then
-                constant_demand = constant_demand + beacon_power
-            end
 
             for item_key, amount in pairs(line_aggregate.products) do
                 ---@diagnostic disable: need-check-nil
@@ -558,16 +545,6 @@ function matrix_engine.get_matrix(matrix_metadata, floor_data, rows, columns)
         if row_num ~= nil then
             local amount = product.amount
             matrix[row_num]--[[@cast -nil]][#columns.values+1] = amount
-        end
-    end
-
-    -- The power taken out of the lines above still needs to come from somewhere, so ask the
-    -- factory to produce that much on top of whatever its machines use
-    if constant_demand > 0 then
-        local row_num = rows.map[structures.pack_item(electric_power)]
-        if row_num ~= nil then
-            ---@diagnostic disable: need-check-nil
-            matrix[row_num][#columns.values+1] = matrix[row_num][#columns.values+1] + constant_demand
         end
     end
 
@@ -615,7 +592,6 @@ end
 
 ---@class MatrixAggregate : SolverAggregate
 ---@field recipe_name string
----@field beacon_power double
 ---@field fuel SolverItem?
 
 ---@param line_data LineData
@@ -694,8 +670,7 @@ function matrix_engine.get_line_aggregate(line_data, floor_id, machine_amount)
         end
     end
 
-    -- Beacon power is non-linear, so it's calculated separately
-    line_aggregate.beacon_power = line_data.beacon_power or 0
+    power = power + (line_data.beacon_power_per_machine or 0) * machine_amount
 
     if power > 0 then
         local electric_item = {type="entity", name="custom-electric-power", amount=power}
@@ -753,10 +728,6 @@ function matrix_engine.get_line_result_aggregate(line_aggregate, line_id, machin
     end
 
     if aggregate.fuel then aggregate.fuel.amount = aggregate.fuel.amount * machine_amount end
-    if aggregate.beacon_power > 0 then
-        local power_item = {type="entity", name="custom-electric-power", amount=aggregate.beacon_power}
-        structures.map.add(aggregate.ingredients, power_item)
-    end
 
     return aggregate
 end

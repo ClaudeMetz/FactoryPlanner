@@ -271,7 +271,8 @@ function builders.beacon(line, parent_flow, metadata)
         local title_line = (not quality_proto.always_show) and {"fp.tt_title", beacon.proto.localised_name}
             or {"fp.tt_title_with_note", beacon.proto.localised_name, quality_proto.rich_text}
         local number_line = {"", "\n", beacon.amount, " ", {"fp.pl_beacon", beacon.amount}}
-        if beacon.total_amount then table.insert(number_line, {"", " - ", {"fp.in_total", beacon.total_amount}}) end
+        local total_amount = beacon:get_total_amount()
+        if total_amount then table.insert(number_line, {"", " - ", {"fp.in_total", total_amount}}) end
         local effectivity = ("%.2f"):format(beacon:overall_effectivity() * 100):gsub("%.?0+$", "")
         local effectivity_line = {"", "\n", {"fp.transmission_percentage", effectivity}}
         local tooltip = {"", title_line, number_line, effectivity_line, format_effects_tooltip(beacon.effects_tooltip)}
@@ -291,7 +292,7 @@ function builders.beacon(line, parent_flow, metadata)
             mouse_button_filter={"left-and-right"}, raise_hover_events=true}
         metadata.tooltips[button_beacon.index] = tooltip
 
-        if beacon.total_amount ~= nil then  -- add a graphical hint that a beacon total is set
+        if beacon.amount_per_machine ~= nil then  -- add a graphical hint that a beacon ratio is set
             local sprite_overlay = button_beacon.add{type="sprite", sprite="fp_white_square"}
             sprite_overlay.ignored_by_interaction = true
         end
