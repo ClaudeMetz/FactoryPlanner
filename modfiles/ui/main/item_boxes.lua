@@ -48,11 +48,10 @@ end
 
 ---@param player LuaPlayer
 ---@param factory Factory?
----@param show_floor_items boolean
 ---@param item_category ItemCategory
 ---@param tooltips table
 ---@return integer row_count
-local function refresh_item_box(player, factory, show_floor_items, item_category, tooltips)
+local function refresh_item_box(player, factory, item_category, tooltips)
     local item_boxes_elements = lib.globals.main_elements(player).item_boxes  ---@as table<string, LuaGuiElement>
 
     local table_items = item_boxes_elements[item_category .. "_item_table"]
@@ -63,11 +62,9 @@ local function refresh_item_box(player, factory, show_floor_items, item_category
     if not valid_factory then return 0 end  ---@cast factory -nil
 
     local table_item_count = 0
-    local current_floor = lib.context.get(player, "Floor")  ---@as Floor
-    local floor = (show_floor_items) and current_floor or factory.top_floor
-    local wrong_floor = (not show_floor_items and current_floor.level > 1)
+    local floor = lib.context.get(player, "Floor")  ---@as Floor
 
-    if item_category == "product" and (not show_floor_items or floor.level == 1) then
+    if item_category == "product" and floor.level == 1 then
         for product in factory:iterator() do  ---@cast product.proto FPItemPrototype
             local style = "fflib_slot_button_default"
 
@@ -81,7 +78,6 @@ local function refresh_item_box(player, factory, show_floor_items, item_category
                 special = special,
                 cursor = (product.proto.type ~= "entity"),
                 archived = factory.archived,
-                wrong_floor = wrong_floor,
                 ingredient_only = product.proto.ingredient_only,
                 move_left = (product.previous ~= nil),
                 move_right = (product.next ~= nil),
@@ -138,7 +134,6 @@ local function refresh_item_box(player, factory, show_floor_items, item_category
                 special = special,
                 cursor = (item.proto.type ~= "entity"),
                 archived = factory.archived,
-                wrong_floor = wrong_floor,
                 ingredient_only = item.proto.ingredient_only,
                 byproduct = (item_category == "byproduct"),
                 factoriopedia = (lib.get_factoriopedia_proto(item.proto) ~= nil)
@@ -209,16 +204,11 @@ end
 ---@param tags HandleItemBoxClickTags
 ---@param action string
 local function handle_item_button_click(player, tags, action)
-    local show_floor_items = lib.globals.preferences(player).show_floor_items
-
     local item
     if tags.item_id then
         item = OBJECT_INDEX[tags.item_id]  ---@as TLProduct
     else
-        local floor  ---@type Floor
-        if show_floor_items then floor = lib.context.get(player, "Floor")  ---@as Floor
-        else floor = lib.context.get(player, "Factory")--[[@as Factory]].top_floor end
-        -- Need to get items from the right floor depending on display settings
+        local floor = lib.context.get(player, "Floor")  ---@as Floor
         item = floor[tags.item_category .. "s"][tags.item_index]  ---@as TLProduct
     end
 
@@ -270,8 +260,7 @@ end
 ---@param player LuaPlayer
 local function put_ingredients_into_cursor(player, _, _)
     local preferences = lib.globals.preferences(player)
-    local relevant_floor = (preferences.show_floor_items) and lib.context.get(player, "Floor")--[[@as Floor]]
-        or lib.context.get(player, "Factory")--[[@as Factory]].top_floor
+    local relevant_floor = lib.context.get(player, "Floor")  ---@as Floor
 
     local ingredient_filters = {}
     for _, ingredient in pairs(relevant_floor.ingredients) do
@@ -304,14 +293,13 @@ local function refresh_item_boxes(player)
     if not visible then return end
 
     local factory = lib.context.get(player, "Factory")  ---@as Factory?
-    local show_floor_items = player_table.preferences.show_floor_items
 
     local tooltips = player_table.ui_state.tooltips
     tooltips.item_boxes = {}
 
-    local prow_count = refresh_item_box(player, factory, show_floor_items, "product", tooltips)
-    local brow_count = refresh_item_box(player, factory, show_floor_items, "byproduct", tooltips)
-    local irow_count = refresh_item_box(player, factory, show_floor_items, "ingredient", tooltips)
+    local prow_count = refresh_item_box(player, factory, "product", tooltips)
+    local brow_count = refresh_item_box(player, factory, "byproduct", tooltips)
+    local irow_count = refresh_item_box(player, factory, "ingredient", tooltips)
 
     local maxrow_count = math.max(prow_count, math.max(brow_count, irow_count))
     local actual_row_count = math.min(math.max(maxrow_count, 1), MAGIC_NUMBERS.item_box_max_rows)
