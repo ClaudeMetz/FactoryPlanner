@@ -26,17 +26,16 @@ SimplexTableau.__index = SimplexTableau
 
 ---@class SimplexResult
 ---@field state SolverState
----@field basis table<ConstraintKey, VariableKey>
+---@field floor_result SimplexFloorResult
 ---@field line_results LineResultTable
----@field floor_results FloorResultTable
----@field cache_invalid boolean
+---@field cache_invalid boolean?
 
 ---@class SimplexLineResult
----@field line_id ObjectID
+---@field id ObjectID
 ---@field machine_amount number
 
 ---@class SimplexFloorResult
----@field floor_id ObjectID
+---@field id ObjectID
 ---@field products SolverMap
 ---@field ingredients SolverMap
 
@@ -44,10 +43,9 @@ SimplexTableau.__index = SimplexTableau
 local SEPARATOR = ";"
 
 ---@param item_key SolverItemKey
----@param floor_id ObjectID
 ---@return ConstraintKey
-local function pack_item_constraint(item_key, floor_id)
-    return "item" .. SEPARATOR .. floor_id .. SEPARATOR .. item_key
+local function pack_item_constraint(item_key)
+    return "item" .. SEPARATOR .. item_key
 end
 
 ---@param key string | integer
@@ -57,11 +55,10 @@ local function pack_generic_constraint(key)
 end
 
 ---@param item_key SolverItemKey
----@param floor_id ObjectID
 ---@param direction ItemDirection
 ---@return VariableKey
-local function pack_item_variable(item_key, floor_id, direction)
-    return "item" .. SEPARATOR .. floor_id .. SEPARATOR .. direction .. SEPARATOR .. item_key
+local function pack_item_variable(item_key, direction)
+    return "item" .. SEPARATOR .. item_key .. SEPARATOR .. direction
 end
 
 ---@param line_id ObjectID
@@ -115,7 +112,7 @@ function SimplexTableau:add_line_variable(line_data)
     local function add_rows(items, sign)
         for item, value in pairs(items) do
             if value > 0 then
-                local item_row_key = pack_item_constraint(item, line_data.floor_id)
+                local item_row_key = pack_item_constraint(item)
                 local row_index = 0
 
                 -- Add the item to the tableau if not already present
@@ -139,12 +136,11 @@ end
 
 --- Adds a slack variable to the inequality constraint of the given item
 ---@param item SolverItemKey
----@param floor_id ObjectID
 ---@param direction ItemDirection
 ---@param objective number?
-function SimplexTableau:add_item_variable(item, floor_id, direction, objective)
-    local item_row_key = pack_item_constraint(item, floor_id)
-    local item_col_key = pack_item_variable(item, floor_id, direction)
+function SimplexTableau:add_item_variable(item, direction, objective)
+    local item_row_key = pack_item_constraint(item)
+    local item_col_key = pack_item_variable(item, direction)
 
     -- This is opposite to recipes where products > 0 and ingredients < 0
     local sign = (direction == "in" and 1) or (direction == "out" and -1) or 0
@@ -167,13 +163,12 @@ end
 
 --- Adds an additional constraint to a given item (at most one per item)
 ---@param item SolverItemKey
----@param floor_id ObjectID
 ---@param direction ItemDirection
 ---@param type InequalityType
 ---@param limit number must be non-negative (`>=0`)
 ---@param objective number?
-function SimplexTableau:add_item_constraint(item, floor_id, direction, type, limit, objective)
-    self:_add_constraint(pack_item_variable(item, floor_id, direction), type, limit, objective)
+function SimplexTableau:add_item_constraint(item, direction, type, limit, objective)
+    self:_add_constraint(pack_item_variable(item, direction), type, limit, objective)
 end
 
 --- Adds an additional constraint to a given line (machine limit)
@@ -217,14 +212,21 @@ function SimplexTableau:_add_constraint(key, type, limit, objective)
     self.matrix[slack_col_index][row_index] = sign
 end
 
----@param previous_basis table<ConstraintKey, VariableKey>
+---@alias SimplexBasisCache table<ConstraintKey, VariableKey>
+
+---@param floor_id ObjectID
+---@param basis_cache SimplexBasisCache?
 ---@return SimplexResult result
-function SimplexTableau:solve(previous_basis)
+---@return SimplexBasisCache? new_basis_cache
+function SimplexTableau:solve(floor_id, basis_cache)
     local result = {
         state = "in-progress",
-        basis = {},
+        floor_result = {
+            id = floor_id,
+            products = {},
+            ingredients = {}
+        },
         line_results = {},
-        floor_results = {},
         cache_invalid = false,
     }  ---@type SimplexResult
 
@@ -238,13 +240,15 @@ function SimplexTableau:solve(previous_basis)
     end
 
     -- Populate the basis vector based on the previous result
-    for row_key, col_key in pairs(previous_basis) do
-        local row_index = self.rows[row_key]
-        local col_index = self.cols[col_key]
+    if basis_cache then
+        for row_key, col_key in pairs(basis_cache) do
+            local row_index = self.rows[row_key]
+            local col_index = self.cols[col_key]
 
-        if row_index and col_index then
-            variable_map[col_index]--[[@cast -nil]].type = "basic"
-            basic[row_index] = col_key
+            if row_index and col_index then
+                variable_map[col_index]--[[@cast -nil]].type = "basic"
+                basic[row_index] = col_key
+            end
         end
     end
 
@@ -459,8 +463,9 @@ function SimplexTableau:solve(previous_basis)
     end
 
     -- Cache the solution basis for later
+    local new_basis_cache = {}
     for key, i in pairs(self.rows) do
-        result.basis[key] = basic[i]
+        new_basis_cache[key] = basic[i]
     end
 
     -- Interpret the result
@@ -471,32 +476,22 @@ function SimplexTableau:solve(previous_basis)
             if var_unpacked[1] == "line" then
                 local id = tonumber(var_unpacked[2])  ---@as ObjectID
                 result.line_results[id] = {
-                    line_id = id,
+                    id = id,
                     machine_amount = value
                 }
             elseif var_unpacked[1] == "item" then
-                local item_key = var_unpacked[4]  ---@as SolverItemKey
-                local floor_id = tonumber(var_unpacked[2])  ---@as ObjectID
-
-                -- Create a new floor result if necessary
-                if not result.floor_results[floor_id] then
-                    result.floor_results[floor_id] = {
-                        floor_id = floor_id,
-                        products = {},
-                        ingredients = {}
-                    }  ---@type SimplexFloorResult
-                end
+                local item_key = var_unpacked[2]  ---@as SolverItemKey
 
                 if var_unpacked[3] == "out" then
-                    result.floor_results[floor_id].products[item_key] = value
+                    result.floor_result.products[item_key] = value
                 elseif var_unpacked[3] == "in" then
-                    result.floor_results[floor_id].ingredients[item_key] = value
+                    result.floor_result.ingredients[item_key] = value
                 end
             end
         end
     end
 
-    return result
+    return result, new_basis_cache
 end
 
 --- Re-scales the conditions based on the highest coefficient in the row.

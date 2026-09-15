@@ -16,6 +16,7 @@ local SimpleItem = require("backend.data.SimpleItem")
 ---@field byproducts SimpleItem[]
 ---@field ingredients SimpleItem[]
 ---@field machine_amount integer
+---@field simplex_basis SimplexBasisCache?
 local Floor = Object.methods()
 Floor.__index = Floor
 script.register_metatable("Floor", Floor)
@@ -271,7 +272,10 @@ function Floor:reset_surface_compatibility()
     end
 end
 
-function Floor:clear_solver_cache()
+---@param self_only boolean?
+function Floor:clear_solver_cache(self_only)
+    self.simplex_basis = nil
+    if self_only then return end
     for line_object in self:iterator() do
         if line_object.class == "Floor" then line_object:clear_solver_cache() end
     end
