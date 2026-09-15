@@ -758,12 +758,11 @@ function solver.update_line(line_id, floor_id, line_data, result, scale_factor, 
     end
 
     line.machine.amount = machine_amount
-    if line.machine.fuel ~= nil then line.machine.fuel.amount = fuel_amount end
-
-    line.production_ratio = crafts_per_second
-
     -- Workaround for recipes with 0 energy
     if line.recipe.proto.energy <= MAGIC_NUMBERS.minimum_energy then line.machine.amount = 0 end
+
+    line.production_ratio = crafts_per_second
+    if line.machine.fuel ~= nil then line.machine.fuel.amount = fuel_amount end
 
     if line.production_ratio == 0 then
         set_zeroed_items(line, "products", line.recipe.products)
