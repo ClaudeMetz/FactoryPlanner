@@ -121,12 +121,6 @@ local function add_beacon_frame(parent_flow, modal_data)
         width=total_width}, tooltip={"fp.expression_textfield"}}
     textfield_total.style.width = total_width
     modal_elements["beacon_total"] = textfield_total
-
-    local button_total = flow_beacon.add{type="sprite-button", tags={mod="fp", on_gui_click="use_beacon_selector"},
-        tooltip={"fp.beacon_selector_tt"}, sprite="fp_zone_selection", style="button", mouse_button_filter={"left"}}
-    button_total.style.padding = 2
-    button_total.style.size = 26
-    button_total.style.top_margin = 1
 end
 
 
@@ -207,17 +201,6 @@ local function handle_amount_change(player, _, _)
     refresh_defaults_frame(player)
     update_dialog_submit_button(modal_data)
 end
-
----@param player LuaPlayer
----@param entities LuaEntity[]
-local function handle_beacon_selection(player, entities)
-    local modal_elements = lib.globals.modal_elements(player)
-    modal_elements.beacon_total.text = tostring(table_size(entities))
-    modal_elements.beacon_total.focus()
-
-    modal_dialog.leave_selection_mode(player)
-end
-
 
 ---@param player LuaPlayer
 ---@param modal_data BeaconDialogModalData
@@ -317,37 +300,11 @@ listeners.gui = {
     },
     on_gui_click = {
         {
-            name = "use_beacon_selector",
-            timeout = 20,
-            handler = function(player, _, _)
-                modal_dialog.enter_selection_mode(player, "fp_beacon_selector")
-            end
-        },
-        {
             name = "set_beacon_default",
             handler = set_defaults
         }
     }
 }  ---@as GUIListenerDefinition
-
-listeners.player = {
-    on_player_cursor_stack_changed = function(player, _)
-        if lib.globals.ui_state(player).active_selector == nil then return end
-
-        -- If the cursor stack is not valid_for_read, it's empty, thus the selector has been put away
-        if not player.cursor_stack.valid_for_read or player.cursor_stack.name ~= "fp_beacon_selector" then
-            modal_dialog.leave_selection_mode(player)
-        end
-    end,
-
-    on_player_selected_area = function(player, event)
-        ---@cast event EventData.on_player_selected_area
-        local active_selector = lib.globals.ui_state(player).active_selector
-        if event.item == "fp_beacon_selector" and active_selector ~= nil then
-            handle_beacon_selection(player, event.entities)
-        end
-    end
-}
 
 listeners.dialog = {
     dialog = "beacon",

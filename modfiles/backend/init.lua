@@ -22,7 +22,6 @@ local dev_export_string = "eNrtWUtv2zAM/i8+R0WdrTvk2MNOGzBsuw2BIct0KlQPV5KzBln++
 ---@field modal_dialog_type ModalDialogType?
 ---@field modal_data ModalData?
 ---@field context_menu LuaGuiElement?
----@field active_selector string?
 ---@field compact_view boolean
 ---@field districts_view boolean
 
@@ -47,7 +46,6 @@ local function reset_ui_state(player_table)
         modal_dialog_type = nil,
         modal_data = nil,
         context_menu = nil,
-        active_selector = nil,
 
         compact_view = false,
         districts_view = false
