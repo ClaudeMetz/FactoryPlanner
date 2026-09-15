@@ -216,7 +216,7 @@ local function update_line(line_data, aggregate, looped_fuel)
         power = 0  -- set power to 0 while still polluting
     end
 
-    power = power + (line_data.beacon_power or 0)
+    power = power + (line_data.beacon_power_per_machine or 0) * machine_amount
 
     if power > 0 then
         local electric_item = {type="entity", name="custom-electric-power", amount=power, constant=true}

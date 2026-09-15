@@ -2,6 +2,17 @@
 
 local migration = {}
 
+local function migrate_beacon(line)
+    local beacon = line.beacon
+    if not beacon or beacon.total_amount == nil then return end
+
+    local machine_amount = line.machine.amount
+    if machine_amount and machine_amount > 0 then
+        beacon.amount_per_machine = beacon.total_amount / machine_amount
+    end
+    beacon.total_amount = nil
+end
+
 function migration.player_table(player_table)
     local preferences = player_table.preferences.item_views
     if preferences and not preferences.selected then
@@ -17,6 +28,7 @@ function migration.player_table(player_table)
             else
                 if line.percentage == 0 then line.active = false end
                 line.percentage = nil
+                migrate_beacon(line)
             end
         end
     end
@@ -45,6 +57,7 @@ function migration.packed_factory(packed_factory)
             else
                 if line.percentage == 0 then line.active = false end
                 line.percentage = nil
+                migrate_beacon(line)
             end
         end
     end

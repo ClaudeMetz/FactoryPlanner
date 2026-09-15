@@ -112,7 +112,7 @@ end
 ---@field pollutant_type string?
 ---@field entities_require_heating boolean
 ---@field total_effects IntegerModuleEffects
----@field beacon_power double?
+---@field beacon_power_per_machine double?
 ---@field fuel_proto AnyFPFuelPrototype?
 ---@field fuel_name string?
 ---@field fuel_value number?
@@ -199,9 +199,8 @@ local function generate_floor_data(player, factory, floor, calculate_emissions)
                         * recipe_proto.heat_capacity--[[@as double]]
                 end
 
-                -- Beacon total - can be calculated here, which is faster and simpler
-                if line.beacon ~= nil and line.beacon.total_amount ~= nil then
-                    line_data.beacon_power = line.beacon:get_total_power()
+                if line.beacon ~= nil then
+                    line_data.beacon_power_per_machine = line.beacon:get_power_per_machine()
                 end
 
                 table.insert(floor_data.lines, line_data)
