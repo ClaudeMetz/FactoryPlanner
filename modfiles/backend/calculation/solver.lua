@@ -119,7 +119,6 @@ end
 ---@field ingredients SolverMap
 ---@field fuel_item SolverItem?
 ---@field priority_item SolverItem?
----@field beacon_power double?
 ---@field recipe_name string
 ---@field machine_limit number?
 ---@field machine_force_limit boolean?
@@ -253,7 +252,7 @@ local function generate_line_data(player, factory, line)
     end
 
     -- Get beacon power
-    local beacon_power = line.beacon and line.beacon:get_total_power()
+    power_amount = power_amount + (line.beacon and line.beacon:get_power_per_machine() or 0)
 
     -- Get heat requirements (frozen surfaces e.g. Aquillo)
     if factory.parent.location_proto.entities_require_heating then
@@ -337,7 +336,6 @@ local function generate_line_data(player, factory, line)
         ingredients = ingredients,
         fuel_item = fuel_item,
         priority_item = priority_item,
-        beacon_power = beacon_power,
         recipe_name = recipe_proto.name,
         machine_limit = energy > MAGIC_NUMBERS.minimum_energy and line.machine.limit or nil,
         machine_force_limit = energy > MAGIC_NUMBERS.minimum_energy and line.machine.force_limit or nil,
