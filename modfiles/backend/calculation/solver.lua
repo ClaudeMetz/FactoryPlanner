@@ -653,13 +653,20 @@ function solver.update_factory(factory_data, result_map)
 
     solver.update_floor(factory_data, result_map, factory_data.top_floor_id, 1, top_byproducts)
 
-    solver.set_factory_result{
-        player_index = factory_data.player_index,
-        factory_id = factory_data.factory_id,
-        products = product_result,
-        byproducts = byproduct_result,
-        ingredients = ingredient_result
-    }
+    if factory.parent then factory.parent.needs_refresh = true end
+
+    for product in factory:iterator() do
+        product.amount = product_result[structures.pack_item(product)] or 0
+    end
+
+    update_object_items(factory.top_floor, "byproducts", byproduct_result)
+    update_object_items(factory.top_floor, "ingredients", ingredient_result)
+
+    -- Determine satisfaction-amounts for all line ingredients
+    local player = game.players[factory_data.player_index]
+    if lib.globals.preferences(player).ingredient_satisfaction then
+        solver.determine_ingredient_satisfaction(factory)
+    end
 end
 
 ---@param factory_data FactoryData
@@ -694,14 +701,11 @@ function solver.update_floor(factory_data, result_map, floor_id, scale_factor, b
                     solver.update_line_object_common(subfloor_scale_factor, subfloor_result.products, byproducts, subfloor_result.ingredients)
             local floor_machines = solver.update_floor(factory_data, result_map, line_object.id, subfloor_scale_factor, floor_byproducts)
 
-            solver.set_line_result{
-                floor_id = floor_id,
-                line_id = line_object.id,
-                machine_amount = floor_machines,
-                products = product_result,
-                byproducts = byproduct_result,
-                ingredients = ingredient_result
-            }
+            line_object.machine_amount = floor_machines
+
+            update_object_items(line_object, "products", product_result)
+            update_object_items(line_object, "byproducts", byproduct_result)
+            update_object_items(line_object, "ingredients", ingredient_result)
 
             machine_amount = machine_amount + floor_machines
         end
@@ -720,8 +724,10 @@ end
 ---@param byproducts SolverMap
 ---@return number machine_amount
 function solver.update_line(line_id, floor_id, line_data, result, scale_factor, byproducts)
+    local line = OBJECT_INDEX[line_id]  ---@as Line
+
     local machine_amount = 0.0
-    local production_ratio = 0.0
+    local crafts_per_second = 0.0
 
     local product_result = {}  ---@type SolverMap
     local byproduct_result = {}  ---@type SolverMap
@@ -732,19 +738,16 @@ function solver.update_line(line_id, floor_id, line_data, result, scale_factor, 
     if line_data and result then
         -- Update the machine
         machine_amount = scale_factor * result.machine_amount
-        production_ratio = machine_amount * line_data.crafts_per_second
+        crafts_per_second = machine_amount * line_data.crafts_per_second
 
         product_result, byproduct_result, ingredient_result =
                 solver.update_line_object_common(machine_amount, line_data.products, byproducts, line_data.ingredients)
-        ---@cast product_result SolverMap
-        ---@cast byproduct_result SolverMap
-        ---@cast ingredient_result SolverMap
 
         -- Update the fuel
         if line_data.fuel_item then
             local fuel_key = structures.pack_item(line_data.fuel_item)
             fuel_amount = line_data.fuel_item.amount * machine_amount
-            local ingredient_amount = ingredient_result[fuel_key] or 0
+            local ingredient_amount = ingredient_result--[[@as SolverMap]][fuel_key] or 0
             if fuel_amount <= ingredient_amount then
                 structures.map.subtract(ingredient_result, line_data.fuel_item, fuel_amount)
             else
@@ -754,16 +757,23 @@ function solver.update_line(line_id, floor_id, line_data, result, scale_factor, 
         end
     end
 
-    solver.set_line_result{
-        line_id = line_id,
-        floor_id = floor_id,
-        machine_amount = machine_amount,
-        crafts_per_second = production_ratio,
-        products = product_result,
-        byproducts = byproduct_result,
-        ingredients = ingredient_result,
-        fuel_amount = fuel_amount,
-    }
+    line.machine.amount = machine_amount
+    if line.machine.fuel ~= nil then line.machine.fuel.amount = fuel_amount end
+
+    line.production_ratio = crafts_per_second
+
+    -- Workaround for recipes with 0 energy
+    if line.recipe.proto.energy <= MAGIC_NUMBERS.minimum_energy then line.machine.amount = 0 end
+
+    if line.production_ratio == 0 then
+        set_zeroed_items(line, "products", line.recipe.products)
+        line.byproducts = {}
+        set_zeroed_items(line, "ingredients", line.recipe.ingredients)
+    else
+        update_object_items(line, "products", product_result)
+        update_object_items(line, "byproducts", byproduct_result)
+        update_object_items(line, "ingredients", ingredient_result)
+    end
 
     return machine_amount
 end
