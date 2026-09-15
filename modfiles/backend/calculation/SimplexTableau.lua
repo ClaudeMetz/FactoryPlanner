@@ -8,8 +8,6 @@ local util = require("__core__.lualib.util")
 ---@alias VariableType "unassigned" | "basic" | "non-basic"
 ---@alias ConstraintKey string `"item;<floor_id>;<proto-key>"` | `"c;<var-key>"`
 ---@alias VariableKey string `"line;<line_id>"` | `"item;<floor_id>;<in|out>;<proto-key>"` | `"s;<n>"` | `"y;<n>"`
----@alias LineResultTable table<ObjectID, SimplexLineResult>
----@alias FloorResultTable table<ObjectID, SimplexFloorResult>
 
 ---@class SimplexTableau
 ---@field matrix number[][] column-major order
@@ -23,23 +21,6 @@ SimplexTableau.__index = SimplexTableau
 ---@class VariableMap
 ---@field key VariableKey
 ---@field type VariableType
-
----@class SimplexResult
----@field state SolverState
----@field floor_result SimplexFloorResult
----@field line_results LineResultTable
----@field cache_invalid boolean?
----@field simplex_basis_cache SimplexBasisCache?  -- simplex
-
----@class SimplexLineResult
----@field id ObjectID
----@field machine_amount number
-
----@class SimplexFloorResult
----@field id ObjectID
----@field products SolverMap
----@field ingredients SolverMap
-
 
 local SEPARATOR = ";"
 
@@ -217,17 +198,15 @@ end
 
 ---@param floor_id ObjectID
 ---@param basis_cache SimplexBasisCache?
----@return SimplexResult result
+---@return FloorResult result
 function SimplexTableau:solve(floor_id, basis_cache)
     local result = {
         state = "in-progress",
-        floor_result = {
-            id = floor_id,
-            products = {},
-            ingredients = {}
-        },
-        line_results = {}
-    }  ---@type SimplexResult
+        id = floor_id,
+        products = {},
+        ingredients = {},
+        line_result_map = {}
+    }  ---@type FloorResult
 
     local variable_map = {}  ---@type VariableMap[]
     local basic = {}  ---@type VariableKey[]
@@ -474,7 +453,7 @@ function SimplexTableau:solve(floor_id, basis_cache)
             local var_unpacked = unpack_key(key)
             if var_unpacked[1] == "line" then
                 local id = tonumber(var_unpacked[2])  ---@as ObjectID
-                result.line_results[id] = {
+                result.line_result_map[id] = {
                     id = id,
                     machine_amount = value
                 }
@@ -482,9 +461,9 @@ function SimplexTableau:solve(floor_id, basis_cache)
                 local item_key = var_unpacked[2]  ---@as SolverItemKey
 
                 if var_unpacked[3] == "out" then
-                    result.floor_result.products[item_key] = value
+                    result.products[item_key] = value
                 elseif var_unpacked[3] == "in" then
-                    result.floor_result.ingredients[item_key] = value
+                    result.ingredients[item_key] = value
                 end
             end
         end

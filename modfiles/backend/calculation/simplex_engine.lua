@@ -38,7 +38,7 @@ end
 
 ---@param factory_data FactoryData
 ---@param floor_id ObjectID
----@return SimplexResult?
+---@return FloorResult?
 function simplex_engine.solve_floor(factory_data, floor_id)
     local relevant_line_data = {}  ---@type LineData[]
     local products = {}  ---@type SolverSet

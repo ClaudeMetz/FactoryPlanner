@@ -346,18 +346,34 @@ local function generate_line_data(player, factory, line)
     }  ---@type LineData
 end
 
+---@alias FloorResultMap table<ObjectID, FloorResult>
+---@alias LineResultMap table<ObjectID, LineResult>
+
+---@class FloorResult
+---@field state SolverState
+---@field id ObjectID
+---@field products SolverMap
+---@field ingredients SolverMap
+---@field line_result_map LineResultMap
+---@field cache_invalid boolean?
+---@field simplex_basis_cache SimplexBasisCache?  -- simplex
+
+---@class LineResult
+---@field id ObjectID
+---@field machine_amount number
+
 ---@param factory_data FactoryData
 ---@param floor_id ObjectID
----@param result SimplexResult
-local function generate_line_data_from_result(factory_data, floor_id, result)
-    local subfloor_data = factory_data.floor_data_map[result.floor_result.id]
+---@param subfloor_result FloorResult
+local function generate_line_data_from_result(factory_data, floor_id, subfloor_result)
+    local subfloor_data = factory_data.floor_data_map[subfloor_result.id]
     local subfloor_line = factory_data.line_data_map[subfloor_data.line_ids[1]--[[@cast -nil]]]
-    factory_data.line_data_map[result.floor_result.id] = {
-        id = result.floor_result.id,
+    factory_data.line_data_map[subfloor_result.id] = {
+        id = subfloor_result.id,
         floor_id = floor_id,
         crafts_per_second = 1,
-        products = result.floor_result.products,
-        ingredients = result.floor_result.ingredients,
+        products = subfloor_result.products,
+        ingredients = subfloor_result.ingredients,
         priority_item = subfloor_line.priority_item,
         recipe_name = subfloor_line.recipe_name,
         machine_limit = subfloor_line.machine_limit,
@@ -523,7 +539,7 @@ function solver.update(player, factory)
         end
 
         local factory_data = solver.generate_factory_data(player, factory)
-        local result_map = {}  ---@type ResultMap
+        local result_map = {}  ---@type FloorResultMap
 
         ---@param floor_id ObjectID
         ---@return boolean? cache_invalid
@@ -599,10 +615,8 @@ function solver.generate_factory_data(player, factory)
     return factory_data
 end
 
----@alias ResultMap table<ObjectID, SimplexResult>
-
 ---@param factory_data FactoryData
----@param result_map ResultMap
+---@param result_map FloorResultMap
 function solver.update_factory(factory_data, result_map)
     local factory = OBJECT_INDEX[factory_data.factory_id]  ---@as Factory
 
@@ -617,10 +631,10 @@ function solver.update_factory(factory_data, result_map)
         top_products[structures.pack_item(product)] = true
     end
 
-    local result = result_map[factory.top_floor.id]
-    if result then
+    local top_floor_result = result_map[factory.top_floor.id]
+    if top_floor_result then
         -- Update the products
-        for item_key, amount in pairs(result.floor_result.products) do
+        for item_key, amount in pairs(top_floor_result.products) do
             if top_products[item_key] then
                 -- Update product amount
                 structures.map.add(product_result, structures.unpack_item(item_key, amount))
@@ -632,7 +646,7 @@ function solver.update_factory(factory_data, result_map)
         end
 
         -- Update the ingredients
-        for item_key, amount in pairs(result.floor_result.ingredients) do
+        for item_key, amount in pairs(top_floor_result.ingredients) do
             structures.map.add(ingredient_result, structures.unpack_item(item_key, amount))
         end
     end
@@ -649,7 +663,7 @@ function solver.update_factory(factory_data, result_map)
 end
 
 ---@param factory_data FactoryData
----@param result_map ResultMap
+---@param result_map FloorResultMap
 ---@param floor_id ObjectID
 ---@param scale_factor number
 ---@param byproducts SolverMap
@@ -660,14 +674,20 @@ function solver.update_floor(factory_data, result_map, floor_id, scale_factor, b
     local machine_amount = 0
 
     for line_object in floor:iterator() do
-        local line_result = result and result.line_results[line_object.id]
+        local line_result = result and result.line_result_map[line_object.id]
         if line_object.class == "Line" then
             local line_data = factory_data.line_data_map[line_object.id]
             local line_machines = solver.update_line(line_object.id, floor_id, line_data, line_result, scale_factor, byproducts)
             machine_amount = machine_amount + math.ceil(line_machines - MAGIC_NUMBERS.margin_of_error)
         else  -- Floor
-            local blank_result = {id=line_object.id, products={}, ingredients={}}  ---@type SimplexFloorResult
-            local subfloor_result = result_map[line_object.id] and result_map[line_object.id].floor_result or blank_result
+            local blank_result = {
+                state = "solved",
+                id = line_object.id,
+                products = {},
+                ingredients = {},
+                line_result_map = {}
+            }  ---@type FloorResult
+            local subfloor_result = result_map[line_object.id] or blank_result
             local subfloor_scale_factor = (line_result and line_result.machine_amount or 0) * scale_factor
 
             local product_result, byproduct_result, ingredient_result, floor_byproducts =
@@ -695,7 +715,7 @@ end
 ---@param line_id ObjectID
 ---@param floor_id ObjectID
 ---@param line_data LineData?
----@param result SimplexLineResult?
+---@param result LineResult?
 ---@param scale_factor number
 ---@param byproducts SolverMap
 ---@return number machine_amount
@@ -800,7 +820,7 @@ function solver.update_line_object_common(machine_amount, products, byproducts, 
     return product_result, byproduct_result, ingredient_result, floor_byproducts
 end
 
----@class FactoryResult
+---@class OldFactoryResult
 ---@field player_index uint32
 ---@field factory_id ObjectID
 ---@field matrix_free_items FPItemPrototype[]?
@@ -809,7 +829,7 @@ end
 ---@field ingredients SolverMap
 
 --- Updates the active factories top-level data with the given result
----@param result FactoryResult
+---@param result OldFactoryResult
 function solver.set_factory_result(result)
     local factory = OBJECT_INDEX[result.factory_id]  ---@as Factory
 
@@ -832,7 +852,7 @@ function solver.set_factory_result(result)
     end
 end
 
----@class LineResult
+---@class OldLineResult
 ---@field floor_id ObjectID
 ---@field line_id ObjectID
 ---@field machine_amount number
@@ -843,7 +863,7 @@ end
 ---@field fuel_amount number?
 
 --- Updates the given line of the given floor of the active factory
----@param result LineResult
+---@param result OldLineResult
 function solver.set_line_result(result)
     local line = OBJECT_INDEX[result.line_id]  ---@as LineObject
 
