@@ -834,7 +834,6 @@ end
 ---@class OldFactoryResult
 ---@field player_index uint32
 ---@field factory_id ObjectID
----@field matrix_free_items FPItemPrototype[]?
 ---@field products SolverMap
 ---@field byproducts SolverMap
 ---@field ingredients SolverMap

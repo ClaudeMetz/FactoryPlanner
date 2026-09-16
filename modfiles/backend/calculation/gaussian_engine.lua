@@ -263,7 +263,6 @@ end
 ---@field rows MappingStruct
 ---@field columns MappingStruct
 ---@field free_variables table<string, true>
----@field matrix_free_items SolverSet
 ---@field free_variable_scale_factors number[]
 
 ---@param factory_data FactoryData
@@ -271,30 +270,29 @@ end
 ---@param floor_id ObjectID
 ---@return MatrixData
 function gaussian_engine.get_matrix_data(factory_data, metadata, floor_id)
-    local matrix_free_items = metadata.free_items
-    local all_items = metadata.all_items
-    local rows = gaussian_engine.get_mapping_struct(all_items)
-
     -- Storing the line keys as "line;(lines id)"
     local line_names = {}  ---@type table<string, true>
     for line_id, _ in pairs(factory_data.line_data_map) do
         line_names["line"..SEPARATOR..line_id] = true
     end
 
-    local raw_free_variables = solver.util.set.union(metadata.raw_inputs, metadata.byproducts)  ---@as SolverSet
-    local free_variables = {}  ---@type table<string, true>
-    for key, _ in pairs(raw_free_variables) do free_variables["item"..SEPARATOR..key] = true end
-    for key, _ in pairs(matrix_free_items) do free_variables["item"..SEPARATOR..key] = true end
-    local col_set = solver.util.set.union(line_names, free_variables)
-    local columns = gaussian_engine.get_mapping_struct(col_set)
+    -- Generate row (constraint) data
+    local rows = gaussian_engine.get_mapping_struct(metadata.all_items)
+
+    -- Generate column (variable) data
+    local variable_set = solver.util.set.union(metadata.free_items, metadata.raw_inputs, metadata.byproducts)  ---@as SolverSet
+    local item_variables = {}  ---@type table<string, true>
+    for key, _ in pairs(variable_set) do item_variables["item"..SEPARATOR..key] = true end
+    local column_set = solver.util.set.union(line_names, item_variables)
+    local columns = gaussian_engine.get_mapping_struct(column_set)
+
     local matrix, free_variable_scale_factors = gaussian_engine.get_matrix(factory_data, floor_id, rows, columns)
 
     return {
         matrix = matrix,
         rows = rows,
         columns = columns,
-        free_variables = free_variables,
-        matrix_free_items = matrix_free_items,
+        free_variables = item_variables,
         free_variable_scale_factors = free_variable_scale_factors
     }  ---@type MatrixData
 end
@@ -308,7 +306,6 @@ function gaussian_engine.run_solver(factory_data, metadata, floor_id)
     local matrix = matrix_data.matrix
     local columns = matrix_data.columns
     local free_variables = matrix_data.free_variables
-    local matrix_free_items = matrix_data.matrix_free_items
     local free_variable_scale_factors = matrix_data.free_variable_scale_factors
 
     gaussian_engine.to_reduced_row_echelon_form(matrix)
@@ -425,8 +422,7 @@ function gaussian_engine.run_solver(factory_data, metadata, floor_id)
         factory_id = factory_data.factory_id,
         products = main_aggregate.products,
         byproducts = main_aggregate.byproducts,
-        ingredients = main_aggregate.ingredients,
-        matrix_free_items = gaussian_engine.get_item_protos(matrix_free_items)
+        ingredients = main_aggregate.ingredients
     }
 end
 
