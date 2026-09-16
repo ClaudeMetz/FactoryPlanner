@@ -585,7 +585,7 @@ function generator.recipes.generate(context)
             for pack_name, amount in pairs(cost.amounts) do
                 local pack_proto = prototypes.item[pack_name]
                 local capacity = pack_proto.get_durability("normal")
-                    or prototypes.quality.normal.tool_durability_multiplier
+                    or (pack_proto.science_capacity * prototypes.quality.normal.science_capacity_multiplier)
                 table.insert(ingredients, {type="item", name=pack_name, amount=amount / capacity})
                 table.insert(unlock_requirements, {type="item", name=pack_name})
             end
