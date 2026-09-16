@@ -65,11 +65,12 @@ end
 
 ---@param factory_data FactoryData
 ---@param floor_id ObjectID
+---@param free_items SolverSet?
 ---@return GaussianMetadata
-function gaussian_engine.get_metadata(factory_data, floor_id)
+function gaussian_engine.get_metadata(factory_data, floor_id, free_items)
     local desired_outputs = {}
-    local top_floor = factory_data.floor_data_map[floor_id]
-    for _, product in pairs(top_floor.products) do
+    local floor_data = factory_data.floor_data_map[floor_id]
+    for _, product in pairs(floor_data.products) do
         local item_key = structures.pack_item(product)
         desired_outputs[item_key] = true
     end
@@ -93,8 +94,8 @@ function gaussian_engine.get_metadata(factory_data, floor_id)
     local intermediate_items = solver.util.set.difference(all_items, free_variables)
 
     -- When a factory is updated, add any new variables to eliminated and let the user select free.
-    local free_items = {}  ---@type SolverSet
-    for _, free_item in ipairs(top_floor.gaussian_free_items) do
+    free_items = free_items or {}
+    for _, free_item in ipairs(floor_data.gaussian_free_items) do
         local item_key = structures.pack_item(free_item)
         -- Make sure that the picked free items are intermediates
         if intermediate_items[item_key] then free_items[item_key] = true end
@@ -158,7 +159,7 @@ function gaussian_engine.solve_floor(factory_data, floor_id)
             metadata.free_items[structures.pack_item(last_ld_free_item)] = nil
 
             -- Redo all these since we've changed the factory
-            metadata = gaussian_engine.get_metadata(factory_data, floor_id)
+            metadata = gaussian_engine.get_metadata(factory_data, floor_id, metadata.free_items)
             linear_dependence_data = gaussian_engine.get_linear_dependence_data(factory_data, metadata, floor_id)
         end
 
