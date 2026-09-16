@@ -11,49 +11,8 @@ solver = {
     choices = {"sequential", "simplex", "gaussian"}  ---@type SolverName[]
 }
 
+
 -- ** LOCAL UTIL **
----@param floor Floor
----@param line LineObject
-function solver.set_blank_line(floor, line)
-    solver.set_line_result {
-        floor_id = floor.id,
-        line_id = line.id,
-        machine_amount = 0,
-        crafts_per_second = (line.class == "Line") and 0 or nil,
-        products = {},
-        byproducts = {},
-        ingredients = {},
-        fuel_amount = 0
-    }
-end
-
----@param floor Floor
-function solver.set_blank_floor(floor)
-    for line in floor:iterator() do
-        if line.class == "Floor" then
-            solver.set_blank_line(floor, line)
-            solver.set_blank_floor(line)
-        else
-            solver.set_blank_line(floor, line)
-        end
-    end
-end
-
----@param player LuaPlayer
----@param factory Factory
-function solver.set_blank_factory(player, factory)
-    solver.set_factory_result {
-        player_index = player.index,
-        factory_id = factory.id,
-        products = {},
-        byproducts = {},
-        ingredients = {},
-    }
-
-    solver.set_blank_floor(factory.top_floor)
-end
-
-
 ---@param factory Factory
 ---@return SolverItem[]
 local function factory_products(factory)
@@ -399,7 +358,6 @@ local function generate_floor_data(player, factory, floor)
         else  ---@cast line Line
             if line:get_blocker() or not relevant_line_active then
                 -- Useless lines don't need to run through the solver
-                solver.set_blank_line(floor, line)
                 if line == floor.first and floor.level > 1 then relevant_line_active = false end
             else
                 table.insert(floor_data.line_ids, line.id)
@@ -816,73 +774,6 @@ function solver.update_line_object_common(machine_amount, products, byproducts, 
     end
 
     return product_result, byproduct_result, ingredient_result, floor_byproducts
-end
-
----@class OldFactoryResult
----@field player_index uint32
----@field factory_id ObjectID
----@field products SolverMap
----@field byproducts SolverMap
----@field ingredients SolverMap
-
---- Updates the active factories top-level data with the given result
----@param result OldFactoryResult
-function solver.set_factory_result(result)
-    local factory = OBJECT_INDEX[result.factory_id]  ---@as Factory
-
-    if factory.parent then factory.parent.needs_refresh = true end
-
-    for product in factory:iterator() do
-        local product_result_amount = result.products[structures.pack_item(product)]
-        product.amount = product_result_amount or 0
-    end
-
-    update_object_items(factory.top_floor, "byproducts", result.byproducts)
-    update_object_items(factory.top_floor, "ingredients", result.ingredients)
-
-    -- Determine satisfaction-amounts for all line ingredients
-    local player = game.players[result.player_index]
-    if lib.globals.preferences(player).ingredient_satisfaction then
-        solver.determine_ingredient_satisfaction(factory)
-    end
-end
-
----@class OldLineResult
----@field floor_id ObjectID
----@field line_id ObjectID
----@field machine_amount number
----@field crafts_per_second number?
----@field products SolverMap
----@field byproducts SolverMap
----@field ingredients SolverMap
----@field fuel_amount number?
-
---- Updates the given line of the given floor of the active factory
----@param result OldLineResult
-function solver.set_line_result(result)
-    local line = OBJECT_INDEX[result.line_id]  ---@as LineObject
-
-    if line.class == "Floor" then  ---@cast line Floor
-        line.machine_amount = result.machine_amount  ---@as integer
-    else  ---@cast line Line
-        line.machine.amount = result.machine_amount
-        if line.machine.fuel ~= nil then line.machine.fuel.amount = result.fuel_amount end
-
-        line.production_ratio = result.crafts_per_second
-
-        -- Workaround for recipes with 0 energy
-        if line.recipe.proto.energy <= MAGIC_NUMBERS.minimum_energy then line.machine.amount = 0 end
-    end
-
-    if line.production_ratio == 0 then  ---@cast line Line
-        set_zeroed_items(line, "products", line.recipe.products)
-        line.byproducts = {}
-        set_zeroed_items(line, "ingredients", line.recipe.ingredients)
-    else
-        update_object_items(line, "products", result.products)
-        update_object_items(line, "byproducts", result.byproducts)
-        update_object_items(line, "ingredients", result.ingredients)
-    end
 end
 
 
