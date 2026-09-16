@@ -125,44 +125,46 @@ function simplex_engine.solve_floor(factory_data, floor_id, cache_invalid_map)
     for item_key, _ in pairs(products) do
         if not intermediates[item_key] then
             local objective = item_cost(item_key) * objective_vector.product
-            tableau:add_item_variable(item_key, floor_id, "out", objective)
+            tableau:add_item_variable(item_key, floor_id, "export", objective)
         end
     end
 
     -- Add exporty slack variables for intermediates
     for item_key, _ in pairs(intermediates) do
-        local c = item_cost(item_key)
-        tableau:add_item_variable(item_key, floor_id, "out", c * objective_vector.intermediate_out)
+        local objective = item_cost(item_key) * objective_vector.intermediate_out
+        tableau:add_item_variable(item_key, floor_id, "export", objective)
     end
 
     -- Add import slack variables for cycled intermediates
     for item_key, _ in pairs(cycled_intermediates) do
-        local c = item_cost(item_key)
-        tableau:add_item_variable(item_key, floor_id, "in", c * objective_vector.intermediate_in)
+        local objective = item_cost(item_key) * objective_vector.intermediate_in
+        tableau:add_item_variable(item_key, floor_id, "import", objective)
     end
 
     -- Add slack variables for ingredients
     for item_key, _ in pairs(ingredients) do
         if not intermediates[item_key] then
             local objective = item_cost(item_key) * objective_vector.ingredient
-            tableau:add_item_variable(item_key, floor_id, "in", objective)
+            tableau:add_item_variable(item_key, floor_data.id, "import", objective)
         end
     end
 
     if floor_data.level == 1 then
-        -- Add additional constraint to target products, so we get a bounded solution
+        -- Add additional variable and constraint to target products, so we get a bounded solution
         for _, item in pairs(floor_data.products) do  ---@cast item SolverItem
             local item_key = structures.pack_item(item)
             local objective = item_cost(item_key) * objective_vector.target_product
-            tableau:add_item_constraint(item_key, floor_id, "out", "<=", item.amount, objective)
+            tableau:add_item_variable(item_key, floor_id, "desired_export", objective)
+            tableau:add_item_constraint(item_key, floor_id, "desired_export", "<=", item.amount, objective)
         end
 
-        -- Add additional constraint for limited ingredients
+        -- Add additional variable and constraint for limited ingredients
         -- TODO: implement limited ingredients
         for _, item in pairs({}) do  ---@cast item SolverItem
             local item_key = structures.pack_item(item)
             local objective = item_cost(item_key) * objective_vector.limited_ingredient
-            tableau:add_item_constraint(item_key, floor_id, "in", "<=", item.amount, objective)
+            tableau:add_item_variable(item_key, floor_id, "desired_import", objective)
+            tableau:add_item_constraint(item_key, floor_id, "desired_import", "<=", item.amount, objective)
         end
 
         -- Add aditional constraint for machine limits
