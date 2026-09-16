@@ -583,7 +583,10 @@ function generator.recipes.generate(context)
             local ingredients = {}  ---@type Ingredient[]
             local unlock_requirements = {}  ---@type UnlockableID[]
             for pack_name, amount in pairs(cost.amounts) do
-                table.insert(ingredients, {type="item", name=pack_name, amount=amount})
+                local pack_proto = prototypes.item[pack_name]
+                local capacity = pack_proto.get_durability("normal")
+                    or prototypes.quality.normal.tool_durability_multiplier
+                table.insert(ingredients, {type="item", name=pack_name, amount=amount / capacity})
                 table.insert(unlock_requirements, {type="item", name=pack_name})
             end
             generator.util.sort_by_item_order(ingredients)

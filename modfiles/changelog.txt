@@ -4,6 +4,7 @@ Date: 00. 00. 0000
   Features:
   Changes:
   Bugfixes:
+    - Fixed research planning ignoring science ingredient durability
 
 ---------------------------------------------------------------------------------------------------
 Version: 2.1.15
