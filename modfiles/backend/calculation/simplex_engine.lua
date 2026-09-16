@@ -145,7 +145,7 @@ function simplex_engine.solve_floor(factory_data, floor_id, cache_invalid_map)
     for item_key, _ in pairs(ingredients) do
         if not intermediates[item_key] then
             local objective = item_cost(item_key) * objective_vector.ingredient
-            tableau:add_item_variable(item_key, floor_data.id, "import", objective)
+            tableau:add_item_variable(item_key, floor_id, "import", objective)
         end
     end
 
