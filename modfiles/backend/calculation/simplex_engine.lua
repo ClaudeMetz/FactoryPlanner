@@ -5,7 +5,6 @@ local structures = require("backend.calculation.structures")
 local simplex_engine = {}
 
 
--- @TODO: Move this to a better place. Maybe let the user configure it
 -- The objective function is maximized, so positive values indicate a score,
 -- and negative values indicate a cost
 local objective_vector = {

@@ -154,6 +154,8 @@ end
 
 
 -- ** TOP LEVEL **
+---@alias SequentialSolverState "solved"
+
 ---@param factory_data FactoryData
 ---@param floor_id ObjectID
 ---@return FloorResult

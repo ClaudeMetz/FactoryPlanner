@@ -336,6 +336,7 @@ end
 
 ---@alias FloorResultMap table<ObjectID, FloorResult>
 ---@alias LineResultMap table<ObjectID, LineResult>
+---@alias SolverState SequentialSolverState|SimplexSolverState
 
 ---@class FloorResult
 ---@field state SolverState
@@ -711,9 +712,13 @@ function solver.update_floor(factory_data, result_map, floor_id, scale_factor, b
         end
     end
 
-    floor.gaussian_free_items = result and result.gaussian_free_items or floor.gaussian_free_items
-    floor.linear_dependence_data = result and result.linear_dependence_data
-    floor.simplex_basis_cache = result and result.simplex_basis_cache
+    if result then
+        floor.gaussian_free_items = result.gaussian_free_items or floor.gaussian_free_items
+        floor.linear_dependence_data = result.linear_dependence_data
+        floor.simplex_basis_cache = result.simplex_basis_cache
+
+        -- TODO: handle solver error states (`result.state`)
+    end
 
     return machine_amount
 end

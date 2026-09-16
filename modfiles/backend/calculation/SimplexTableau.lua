@@ -5,7 +5,7 @@ local util = require("__core__.lualib.util")
 
 ---@alias InequalityType "==" | "<=" | ">="
 ---@alias ItemFlow "import" | "export" | "desired_import" | "desired_export"
----@alias SolverState "in-progress" | "solved" | "unbounded" | "no-solution"
+---@alias SimplexSolverState "solved" | "in-progress" | "unbounded" | "no-solution"
 ---@alias VariableType "unassigned" | "basic" | "non-basic"
 ---@alias ConstraintKey string `"item;<floor_id>;<proto-key>"` | `"c;<var-key>"`
 ---@alias VariableKey string `"line;<line_id>"` | `"item;<floor_id>;<in|out>;<proto-key>"` | `"s;<n>"` | `"y;<n>"`
