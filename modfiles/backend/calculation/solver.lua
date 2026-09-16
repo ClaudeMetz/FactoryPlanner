@@ -102,17 +102,6 @@ local function line_ingredients(recipe)
     return ingredients
 end
 
----@alias FloorDataMap table<ObjectID, FloorData>
----@alias LineDataMap table<ObjectID, LineData>
-
----@class FloorData
----@field id ObjectID
----@field level integer
----@field products SolverItem[]
----@field line_ids ObjectID[]
----@field gaussian_free_items FPItemPrototype[]
----@field simplex_basis SimplexBasisCache?
-
 ---@class LineData
 ---@field id ObjectID
 ---@field floor_id ObjectID
@@ -383,6 +372,17 @@ local function generate_line_data_from_result(factory_data, floor_id, subfloor_r
     }
 end
 
+---@class FloorData
+---@field id ObjectID
+---@field level integer
+---@field products SolverItem[]
+---@field line_ids ObjectID[]
+---@field gaussian_free_items FPItemPrototype[]
+---@field simplex_basis SimplexBasisCache?
+
+---@alias FloorDataMap table<ObjectID, FloorData>
+---@alias LineDataMap table<ObjectID, LineData>
+
 --- Generates structured data of the given floor for calculation
 ---@param player LuaPlayer
 ---@param factory Factory
@@ -425,6 +425,32 @@ local function generate_floor_data(player, factory, floor)
 
     floor_data_map[floor.id] = floor_data
     return floor_data_map, line_data_map
+end
+
+---@class FactoryData
+---@field player_index uint32
+---@field factory_id ObjectID
+---@field floor_data_map FloorDataMap
+---@field line_data_map LineDataMap
+
+--- Returns a table containing all the data needed to run the calculations for the given factory
+---@param player LuaPlayer
+---@param factory Factory
+---@return FactoryData
+local function generate_factory_data(player, factory)
+    -- Intentional pass-by-reference
+    local floor_data_map, line_data_map =
+        generate_floor_data(player, factory, factory.top_floor)
+
+    local factory_data = {
+        player_index = player.index,
+        factory_id = factory.id,
+        top_floor_id = factory.top_floor.id,
+        floor_data_map = floor_data_map,
+        line_data_map = line_data_map,
+    }
+
+    return factory_data
 end
 
 
@@ -541,7 +567,7 @@ function solver.update(player, factory)
             floor = floor.parent
         end
 
-        local factory_data = solver.generate_factory_data(player, factory)
+        local factory_data = generate_factory_data(player, factory)
         local result_map = {}  ---@type FloorResultMap
 
         ---@param floor_id ObjectID
@@ -589,33 +615,6 @@ end
 
 
 -- ** INTERFACE **
----@class FactoryData
----@field player_index uint32
----@field factory_id ObjectID
----@field top_floor_id ObjectID
----@field floor_data_map FloorDataMap
----@field line_data_map LineDataMap
-
---- Returns a table containing all the data needed to run the calculations for the given factory
----@param player LuaPlayer
----@param factory Factory
----@return FactoryData
-function solver.generate_factory_data(player, factory)
-    -- Intentional pass-by-reference
-    local floor_data_map, line_data_map =
-        generate_floor_data(player, factory, factory.top_floor)
-
-    local factory_data = {
-        player_index = player.index,
-        factory_id = factory.id,
-        top_floor_id = factory.top_floor.id,
-        floor_data_map = floor_data_map,
-        line_data_map = line_data_map,
-    }
-
-    return factory_data
-end
-
 ---@param factory_data FactoryData
 ---@param result_map FloorResultMap
 function solver.update_factory(factory_data, result_map)
@@ -652,7 +651,7 @@ function solver.update_factory(factory_data, result_map)
         end
     end
 
-    solver.update_floor(factory_data, result_map, factory_data.top_floor_id, 1, top_byproducts)
+    solver.update_floor(factory_data, result_map, factory.top_floor.id, 1, top_byproducts)
 
     if factory.parent then factory.parent.needs_refresh = true end
 

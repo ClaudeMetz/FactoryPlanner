@@ -64,10 +64,11 @@ end
 ---@field num_cols integer
 
 ---@param factory_data FactoryData
+---@param floor_id ObjectID
 ---@return GaussianMetadata
-function gaussian_engine.get_metadata(factory_data)
+function gaussian_engine.get_metadata(factory_data, floor_id)
     local desired_outputs = {}
-    local top_floor = factory_data.floor_data_map[factory_data.top_floor_id]
+    local top_floor = factory_data.floor_data_map[floor_id]
     for _, product in pairs(top_floor.products) do
         local item_key = structures.pack_item(product)
         desired_outputs[item_key] = true
@@ -141,7 +142,7 @@ function gaussian_engine.solve_floor(factory_data, floor_id)
     local player = game.players[factory_data.player_index]
     local floor = OBJECT_INDEX[floor_id]  ---@as Floor
 
-    local metadata = gaussian_engine.get_metadata(factory_data)
+    local metadata = gaussian_engine.get_metadata(factory_data, floor_id)
 
     if metadata.num_rows ~= 0 then  -- don't run calculations if the factory has no lines
         local linear_dependence_data = gaussian_engine.get_linear_dependence_data(factory_data, metadata, floor_id)
@@ -157,7 +158,7 @@ function gaussian_engine.solve_floor(factory_data, floor_id)
             metadata.free_items[structures.pack_item(last_ld_free_item)] = nil
 
             -- Redo all these since we've changed the factory
-            metadata = gaussian_engine.get_metadata(factory_data)
+            metadata = gaussian_engine.get_metadata(factory_data, floor_id)
             linear_dependence_data = gaussian_engine.get_linear_dependence_data(factory_data, metadata, floor_id)
         end
 
@@ -372,31 +373,31 @@ function gaussian_engine.run_solver(factory_data, metadata, floor_id)
         return floor_aggregate
     end
 
-    local top_floor_aggregate = set_line_results(factory_data.top_floor_id)
+    local floor_aggregate = set_line_results(floor_id)
 
     -- Nets out items that are produced and consumed in equal amounts across the whole factory,
     -- while the amounts on both sides are still around to tell solver noise from a real leftover
-    gaussian_engine.consolidate(top_floor_aggregate)
+    gaussian_engine.consolidate(floor_aggregate)
 
     local total = {}
-    for _, item in ipairs(structures.map.list(top_floor_aggregate.products)) do
+    for _, item in ipairs(structures.map.list(floor_aggregate.products)) do
         structures.map.add(total, item)
     end
-    for _, item in ipairs(structures.map.list(top_floor_aggregate.byproducts)) do
+    for _, item in ipairs(structures.map.list(floor_aggregate.byproducts)) do
         structures.map.add(total, item)
     end
-    for _, item in ipairs(structures.map.list(top_floor_aggregate.ingredients)) do
+    for _, item in ipairs(structures.map.list(floor_aggregate.ingredients)) do
         structures.map.subtract(total, item)
     end
 
-    local top_floor_data = factory_data.floor_data_map[factory_data.top_floor_id]
+    local floor_data = factory_data.floor_data_map[floor_id]
     local required_amount = {}
-    for _, product in pairs(top_floor_data.products) do
+    for _, product in pairs(floor_data.products) do
         local key = structures.pack_item(product)
         required_amount[key] = product.amount
     end
 
-    local main_aggregate = structures.aggregate.init(factory_data.top_floor_id)
+    local main_aggregate = structures.aggregate.init(floor_id)
     for _, item in ipairs(structures.map.list(total)) do
         local key = structures.pack_item(item)
         local req = required_amount[key] or 0
@@ -412,7 +413,7 @@ function gaussian_engine.run_solver(factory_data, metadata, floor_id)
     end
 
     -- set products for unproduced items
-    for _, product in pairs(top_floor_data.products) do
+    for _, product in pairs(floor_data.products) do
         local item_key = structures.pack_item(product)
         if not metadata.unproduced_outputs[item_key] then
             structures.map.add(main_aggregate.products, product)
