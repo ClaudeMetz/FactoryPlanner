@@ -304,7 +304,7 @@ local function handle_checkbox_preference_change(player, tags, event)
     local preference_name = tags.name
     lib.globals.preferences(player)[preference_name] = event.element.state
 
-    if tags.data_type == "production" or preference_name == "show_floor_items" then
+    if tags.data_type == "production" then
         lib.gui.run_refresh(player, "production")
 
     elseif preference_name == "ingredient_satisfaction" then
@@ -444,7 +444,7 @@ local function open_preferences_dialog(player, modal_data)
     local left_content_frame = modal_elements.content_frame
 
     local general_preference_names = {"show_gui_button", "skip_factory_naming", "attach_factory_products",
-        "show_floor_items", "ingredient_satisfaction", "calculate_emissions",
+        "ingredient_satisfaction", "calculate_emissions",
         "ignore_barreling_recipes", "ignore_recycling_recipes"}
     local general_box = add_checkboxes_box(preferences, left_content_frame, "general", general_preference_names)
 
@@ -452,11 +452,6 @@ local function open_preferences_dialog(player, modal_data)
 
     local production_preference_names = {"done_column", "line_comment_column"}
     add_checkboxes_box(preferences, left_content_frame, "production", production_preference_names)
-
-    left_content_frame.add{type="empty-widget", style="fflib_vertical_pusher"}
-    local support_frame = left_content_frame.add{type="frame", direction="vertical", style="fp_frame_bordered_stretch"}
-    support_frame.style.top_padding = 8
-    support_frame.add{type="label", caption={"fp.preferences_support"}}
 
     -- Right side
     local right_content_frame = modal_elements.secondary_frame

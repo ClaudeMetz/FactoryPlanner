@@ -52,6 +52,7 @@ local function determine_consuming_ratio(line_data, aggregate, ingredients)
     for _, ingredient in pairs(ingredients) do
         local ingredient_key = structures.pack_item(ingredient)
         local available = aggregate.byproducts[ingredient_key]  ---@type number?
+        local fuel_key = line_data.fuel_item and structures.pack_item(line_data.fuel_item)
 
         if line_data.priority_item then
             -- The priority ingredient paces the line by itself, importing the others as needed
@@ -64,7 +65,8 @@ local function determine_consuming_ratio(line_data, aggregate, ingredients)
             -- Avoid importing additional ingredients if they are a consumed byproduct further up
             if aggregate.known_byproducts[structures.pack_item(ingredient)] then return 0 end
 
-        else  -- stay within every byproduct's availability, so take the lowest ratio
+        elseif ingredient_key ~= fuel_key then
+            -- stay within every byproduct's availability, so take the lowest ratio
             local ratio = available_ratio(ingredient, available)
             production_ratio = (production_ratio == 0) and ratio or math.min(production_ratio, ratio)
         end

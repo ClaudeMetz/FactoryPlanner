@@ -1,9 +1,10 @@
 local LUDecomposition = require("backend.calculation.LUDecomposition")
+local structures = require("backend.calculation.structures")
 local util = require("__core__.lualib.util")
 
 
 ---@alias InequalityType "==" | "<=" | ">="
----@alias ItemDirection "in" | "out"
+---@alias ItemFlow "import" | "export" | "desired_import" | "desired_export"
 ---@alias SolverState "in-progress" | "solved" | "unbounded" | "no-solution"
 ---@alias VariableType "unassigned" | "basic" | "non-basic"
 ---@alias ConstraintKey string `"item;<floor_id>;<proto-key>"` | `"c;<var-key>"`
@@ -37,10 +38,10 @@ local function pack_generic_constraint(key)
 end
 
 ---@param item_key SolverItemKey
----@param direction ItemDirection
+---@param flow ItemFlow
 ---@return VariableKey
-local function pack_item_variable(item_key, direction)
-    return "item" .. SEPARATOR .. item_key .. SEPARATOR .. direction
+local function pack_item_variable(item_key, flow)
+    return "item" .. SEPARATOR .. item_key .. SEPARATOR .. flow
 end
 
 ---@param line_id ObjectID
@@ -118,14 +119,15 @@ end
 
 --- Adds a slack variable to the inequality constraint of the given item
 ---@param item SolverItemKey
----@param direction ItemDirection
+---@param flow ItemFlow
 ---@param objective number?
-function SimplexTableau:add_item_variable(item, direction, objective)
+function SimplexTableau:add_item_variable(item, flow, objective)
     local item_row_key = pack_item_constraint(item)
-    local item_col_key = pack_item_variable(item, direction)
+    local item_col_key = pack_item_variable(item, flow)
 
     -- This is opposite to recipes where products > 0 and ingredients < 0
-    local sign = (direction == "in" and 1) or (direction == "out" and -1) or 0
+    local sign = ((flow == "import" or flow == "desired_import") and 1) or
+            ((flow == "export" or flow == "desired_export") and -1) or 0
     if sign == 0 then return end
 
     -- Item variable is already present in the tableau
@@ -145,12 +147,12 @@ end
 
 --- Adds an additional constraint to a given item (at most one per item)
 ---@param item SolverItemKey
----@param direction ItemDirection
+---@param flow ItemFlow
 ---@param type InequalityType
 ---@param limit number must be non-negative (`>=0`)
 ---@param objective number?
-function SimplexTableau:add_item_constraint(item, direction, type, limit, objective)
-    self:_add_constraint(pack_item_variable(item, direction), type, limit, objective)
+function SimplexTableau:add_item_constraint(item, flow, type, limit, objective)
+    self:_add_constraint(pack_item_variable(item, flow), type, limit, objective)
 end
 
 --- Adds an additional constraint to a given line (machine limit)
@@ -448,22 +450,22 @@ function SimplexTableau:solve(floor_id, basis_cache)
 
     -- Interpret the result
     for row, key in pairs(basic) do
-        local value = x_vector[row] or 0
-        if value > MAGIC_NUMBERS.margin_of_error then
+        local amount = x_vector[row] or 0
+        if amount > MAGIC_NUMBERS.margin_of_error then
             local var_unpacked = unpack_key(key)
             if var_unpacked[1] == "line" then
                 local id = tonumber(var_unpacked[2])  ---@as ObjectID
                 result.line_result_map[id] = {
                     id = id,
-                    machine_amount = value
+                    machine_amount = amount
                 }
             elseif var_unpacked[1] == "item" then
                 local item_key = var_unpacked[2]  ---@as SolverItemKey
 
-                if var_unpacked[3] == "out" then
-                    result.products[item_key] = value
-                elseif var_unpacked[3] == "in" then
-                    result.ingredients[item_key] = value
+                if var_unpacked[3] == "export" or var_unpacked[3] == "desired_export" then
+                    structures.map.add(result.products, structures.unpack_item(item_key, amount))
+                elseif var_unpacked[3] == "import" or var_unpacked[3] == "desired_import" then
+                    structures.map.add(result.ingredients, structures.unpack_item(item_key, amount))
                 end
             end
         end

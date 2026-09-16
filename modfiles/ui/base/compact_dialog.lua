@@ -459,10 +459,8 @@ local function refresh_compact_header(player, factory)
     local table_items = item_frame.add{type="table", column_count=column_count, style="filter_slot_table"}
 
     local item_buttons = compact_elements.item_buttons
-    local show_floor_items = player_table.preferences.show_floor_items
-    local relevant_floor = (show_floor_items) and current_floor or factory.top_floor
 
-    for index, ingredient in pairs(relevant_floor.ingredients) do
+    for index, ingredient in pairs(current_floor.ingredients) do
         local amount, number_tooltip = nil, nil
         local proto = ingredient.proto
         local special = (proto.type == "entity" and proto.special)
@@ -477,7 +475,7 @@ local function refresh_compact_header(player, factory)
         ---@field item_index integer
         ---@field context "compact_dialog"
         ---@field flags GUIActionFlags
-        local tags = {mod="fp", on_gui_click="act_on_compact_ingredient", floor_id=relevant_floor.id, item_index=index,
+        local tags = {mod="fp", on_gui_click="act_on_compact_ingredient", floor_id=current_floor.id, item_index=index,
             on_gui_hover="hover_compact_item", on_gui_leave="leave_compact_item", context="compact_dialog", flags=flags}
 
         if flags.special then

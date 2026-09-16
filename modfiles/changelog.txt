@@ -2,14 +2,25 @@
 Version: 0.00.00
 Date: 00. 00. 0000
   Features:
+  Changes:
+  Bugfixes:
+
+---------------------------------------------------------------------------------------------------
+Version: 2.1.15
+Date: 16. 09. 2026
+  Features:
     - The item picker can now hide unresearched items (#875)
     - Special recipes like mining now show whether they are actually usable (#870)
     - The utility dialog now offers a blueprint with basic factory metadata pre-filled (#808)
   Changes:
     - Disabled the rocket item rate view when no launch-capable rocket silo is available (#510)
     - Made disabled recipes more obvious by giving them a red background (#883)
+    - Replaced beacon total config with a ratio relative to the machine amount, to enable future solver improvements (#850)
     - Removed recipe percentage config, as it's incompatible with future solver improvements (#841)
+    - Removed the show floor items preference, making it always show items for the current floor
+    - Rejiggered the machine and beacon dialogs to position the 'Set default' buttons more intuitively
   Bugfixes:
+    - Fixed a crash when trying to load an older save Pyanodon's save file after updating
     - Fixed an issue where the simplex solver would not present a solution in some cases (#886) (Thanks vapopescu!)
     - Fixed a crash when no cargo, fluid wagons, or pumps are available (#475)
     - Fixed catalyst buttons in the compact dialogs not offering actions (#874)

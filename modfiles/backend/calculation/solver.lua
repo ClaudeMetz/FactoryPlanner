@@ -75,7 +75,8 @@ end
 ---@return SolverItem[]
 local function floor_products(floor)
     local products = {}  ---@type SolverItem[]
-    for _, product in pairs(floor.first--[[@as Line]].recipe.products) do
+    local recipe = floor.first--[[@as Line]].recipe
+    for _, product in pairs(recipe.products) do
         local item = {
             name = product.name,
             type = product.type,
@@ -120,15 +121,14 @@ end
 ---@field ingredients SolverMap
 ---@field fuel_item SolverItem?
 ---@field priority_item SolverItem?
----@field beacon_power double?
 ---@field recipe_name string
 ---@field machine_limit number?
 ---@field machine_force_limit boolean?
 ---@field production_type RecipeProductionType
 
 --- Applies all effects on the machine of the line and returns how many
---- products/ingredients are produced/consumed per second by one machine.
---- Emmisions, fuel, power and heat are also included.
+--- products/ingredients are produced/consumed per second by one machine
+--- Emmisions, fuel, power and heat are also included
 ---@param player LuaPlayer
 ---@param factory Factory
 ---@param line Line
@@ -157,7 +157,7 @@ local function generate_line_data(player, factory, line)
     -- Get boiler energy
     if machine_proto.prototype_category == "boiler" then
         local goal_temperature = recipe_proto.products[1]--[[@cast -nil]].temperature  ---@as float
-        local input_temperature = line.recipe:get_temperature( recipe_proto.ingredients[1]--[[@cast -nil]])  ---@as float
+        local input_temperature = line.recipe:get_temperature(recipe_proto.ingredients[1]--[[@cast -nil]])  ---@as float
         recipe_energy = (goal_temperature - input_temperature) * recipe_proto.heat_capacity  ---@as number
     end
 
@@ -254,7 +254,7 @@ local function generate_line_data(player, factory, line)
     end
 
     -- Get beacon power
-    local beacon_power = line.beacon and line.beacon:get_total_power()
+    power_amount = power_amount + (line.beacon and line.beacon:get_power_per_machine() or 0)
 
     -- Get heat requirements (frozen surfaces e.g. Aquillo)
     if factory.parent.location_proto.entities_require_heating then
@@ -338,7 +338,6 @@ local function generate_line_data(player, factory, line)
         ingredients = ingredients,
         fuel_item = fuel_item,
         priority_item = priority_item,
-        beacon_power = beacon_power,
         recipe_name = recipe_proto.name,
         machine_limit = energy > MAGIC_NUMBERS.minimum_energy and line.machine.limit or nil,
         machine_force_limit = energy > MAGIC_NUMBERS.minimum_energy and line.machine.force_limit or nil,
@@ -599,7 +598,8 @@ end
 ---@param factory Factory
 ---@return FactoryData
 function solver.generate_factory_data(player, factory)
-    local free_items = factory.matrix_free_items  ---@as FPItemPrototype[]  -- intentional pass-by-reference
+    -- Intentional pass-by-reference
+    local free_items = factory.matrix_free_items  ---@as FPItemPrototype[]
     local floor_data_map, line_data_map =
         generate_floor_data(player, factory, factory.top_floor)
 
