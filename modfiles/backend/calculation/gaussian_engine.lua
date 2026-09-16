@@ -30,6 +30,18 @@ local structures = require("backend.calculation.structures")
 local gaussian_engine = {}
 local SEPARATOR = ";"
 
+---@param item_key SolverItemKey
+---@return string
+local function pack_item_key(item_key)
+    return "item"..SEPARATOR..item_key
+end
+
+---@param line_id ObjectID
+---@return string
+local function pack_line_key(line_id)
+    return "line"..SEPARATOR..line_id
+end
+
 ---@param recipe_set table<integer, true>
 local function get_recipe_protos(recipe_set)
     local recipe_protos = {}
@@ -191,20 +203,20 @@ local function get_matrix(factory_data, floor_id, rows, columns)
         -- note this string "item" is an internal matrix-solver convention and is unrelated to item types
         if col_type == "item" then
             local item_key = col_split_str[2]  ---@as SolverItemKey
-            local row_num = rows.map["item"..SEPARATOR..item_key]
+            local row_num = rows.map[pack_item_key(item_key)]
             matrix[row_num]--[[@cast -nil]][col_num] = 1
         else -- "line"
             local line_id = col_split_str[2]  ---@as integer
             local line_data = factory_data.line_data_map[line_id]
             for item_key, amount in pairs(line_data.products) do
                 ---@diagnostic disable: need-check-nil
-                local row_num = rows.map["item"..SEPARATOR..item_key]
+                local row_num = rows.map[pack_item_key(item_key)]
                 matrix[row_num][col_num] = matrix[row_num][col_num] + amount
             end
 
             for item_key, amount in pairs(line_data.ingredients) do
                 ---@diagnostic disable: need-check-nil
-                local row_num = rows.map["item"..SEPARATOR..item_key]
+                local row_num = rows.map[pack_item_key(item_key)]
                 matrix[row_num][col_num] = matrix[row_num][col_num] - amount
             end
         end
@@ -216,7 +228,7 @@ local function get_matrix(factory_data, floor_id, rows, columns)
     for _, product in ipairs(floor_data.products) do
         if floor_data.level == 1 then
             local item_key = structures.pack_item(product)
-            local row_num = rows.map["item"..SEPARATOR..item_key]  -- will be nil for unproduced outputs
+            local row_num = rows.map[pack_item_key(item_key)]  -- will be nil for unproduced outputs
             if row_num ~= nil then
                 local amount = product.amount
                 matrix[row_num]--[[@cast -nil]][#columns.values+1] = amount
@@ -281,19 +293,19 @@ local function get_matrix_data(factory_data, metadata, floor_id)
     -- Storing the line keys as "line;(lines id)"
     local line_names = {}  ---@type table<string, true>
     for line_id, _ in pairs(factory_data.line_data_map) do
-        line_names["line"..SEPARATOR..line_id] = true
+        line_names[pack_line_key(line_id)] = true
     end
 
     -- Generate row (constraint) data
     local item_constraints = {}
-    for key, _ in pairs(metadata.all_items) do item_constraints["item"..SEPARATOR..key] = true end
+    for key, _ in pairs(metadata.all_items) do item_constraints[pack_item_key(key)] = true end
     local row_set = solver.util.set.union(item_constraints)
     local rows = get_mapping_struct(row_set)
 
     -- Generate column (variable) data
     local variable_set = solver.util.set.union(metadata.free_items, metadata.raw_inputs, metadata.byproducts)  ---@as SolverSet
     local item_variables = {}  ---@type table<string, true>
-    for key, _ in pairs(variable_set) do item_variables["item"..SEPARATOR..key] = true end
+    for key, _ in pairs(variable_set) do item_variables[pack_item_key(key)] = true end
     local column_set = solver.util.set.union(line_names, item_variables)
     local columns = get_mapping_struct(column_set)
 
@@ -523,7 +535,7 @@ local function get_line_result_aggregate(line_data, machine_amount, metadata, fr
     aggregate.crafts_per_second = machine_amount * line_data.crafts_per_second
 
     for item_key, item_amount in pairs(line_data.products) do
-        if metadata.byproducts[item_key] or free_variables["item"..SEPARATOR..item_key] then
+        if metadata.byproducts[item_key] or free_variables[pack_item_key(item_key)] then
            aggregate.byproducts[item_key] = item_amount * machine_amount
            aggregate.products[item_key] = nil
         else
@@ -571,7 +583,7 @@ local function run_solver(factory_data, metadata, floor_id)
         local floor_data = factory_data.floor_data_map[floor_id]
         local floor_aggregate = structures.aggregate.init(floor_id)
         for _, line_object_id in ipairs(floor_data.line_ids) do
-            local line_key = "line"..SEPARATOR..line_object_id
+            local line_key = pack_line_key(line_object_id)
             local line_data = nil
             local line_aggregate = nil
             if factory_data.line_data_map[line_object_id] then  -- Line
