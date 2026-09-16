@@ -680,7 +680,7 @@ function solver.update_floor(factory_data, result_map, floor_id, scale_factor, b
     local result = result_map[floor_id]
     local machine_amount = 0
 
-    for line_object in floor:iterator() do
+    for line_object in floor:iterator(nil, floor:find_last(), "previous") do
         local line_result = result and result.line_result_map[line_object.id]
         if line_object.class == "Line" then
             local line_data = factory_data.line_data_map[line_object.id]
