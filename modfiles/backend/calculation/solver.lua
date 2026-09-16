@@ -543,7 +543,7 @@ function solver.update(player, factory)
         ---@param floor_id ObjectID
         ---@return boolean? cache_invalid
         local function solve_floor(floor_id)
-            -- Recurse bottom-up
+            -- Recurse the floor tree from the leaves to the top floor (root)
             local floor_data = factory_data.floor_data_map[floor_id]
             for _, line_object_id in pairs(floor_data.line_ids) do
                 if factory_data.floor_data_map[line_object_id] then
@@ -555,7 +555,9 @@ function solver.update(player, factory)
             end
 
             local result = nil
-            if factory.solver == "simplex" then
+            if factory.solver == "sequential" then
+                result = sequential_engine.solve_floor(factory_data, floor_id)
+            elseif factory.solver == "simplex" then
                 result = simplex_engine.solve_floor(factory_data, floor_id)
             end
 
@@ -569,9 +571,7 @@ function solver.update(player, factory)
         solve_floor(factory.top_floor.id)
         solver.update_factory(factory_data, result_map)
 
-        if factory.solver == "sequential" then
-            sequential_engine.update_factory(factory_data)
-        elseif factory.solver == "gaussian" then
+        if factory.solver == "gaussian" then
             gaussian_engine.solve(factory_data)
         end
     end
