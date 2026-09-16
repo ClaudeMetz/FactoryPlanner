@@ -48,7 +48,6 @@ function solver.set_blank_factory(player, factory)
         products = {},
         byproducts = {},
         ingredients = {},
-        matrix_free_items = factory.matrix_free_items  ---@as FPItemPrototype[]
     }
 
     solver.set_blank_floor(factory.top_floor)
@@ -111,6 +110,7 @@ end
 ---@field level integer
 ---@field products SolverItem[]
 ---@field line_ids ObjectID[]
+---@field gaussian_free_items FPItemPrototype[]
 ---@field simplex_basis SimplexBasisCache?
 
 ---@class LineData
@@ -355,6 +355,8 @@ end
 ---@field ingredients SolverMap
 ---@field line_result_map LineResultMap
 ---@field cache_invalid boolean?
+---@field gaussian_free_items FPItemPrototype[]?  -- gaussian
+---@field linear_dependence_data LinearDependanceData?
 ---@field simplex_basis_cache SimplexBasisCache?  -- simplex
 
 ---@class LineResult
@@ -388,12 +390,14 @@ end
 ---@return FloorDataMap
 ---@return LineDataMap
 local function generate_floor_data(player, factory, floor)
+    local free_items = floor.gaussian_free_items  ---@as FPItemPrototype[]
     local floor_data = {
         id = floor.id,
         level = floor.level,
         products = floor.level == 1 and factory_products(factory) or floor_products(floor),
         line_ids = {},
-        simplex_basis = floor.simplex_basis_cache or {}
+        gaussian_free_items = free_items,
+        simplex_basis = floor.simplex_basis_cache
     }  ---@type FloorData
 
     local floor_data_map = {}  ---@type FloorDataMap
@@ -572,7 +576,7 @@ function solver.update(player, factory)
         solver.update_factory(factory_data, result_map)
 
         if factory.solver == "gaussian" then
-            gaussian_engine.solve(factory_data)
+            gaussian_engine.solve_floor(factory_data, factory.top_floor.id)
         end
     end
 end
@@ -591,7 +595,6 @@ end
 ---@field top_floor_id ObjectID
 ---@field floor_data_map FloorDataMap
 ---@field line_data_map LineDataMap
----@field matrix_free_items FPItemPrototype[]
 
 --- Returns a table containing all the data needed to run the calculations for the given factory
 ---@param player LuaPlayer
@@ -599,7 +602,6 @@ end
 ---@return FactoryData
 function solver.generate_factory_data(player, factory)
     -- Intentional pass-by-reference
-    local free_items = factory.matrix_free_items  ---@as FPItemPrototype[]
     local floor_data_map, line_data_map =
         generate_floor_data(player, factory, factory.top_floor)
 
@@ -609,7 +611,6 @@ function solver.generate_factory_data(player, factory)
         top_floor_id = factory.top_floor.id,
         floor_data_map = floor_data_map,
         line_data_map = line_data_map,
-        matrix_free_items = free_items,
     }
 
     return factory_data
@@ -711,6 +712,8 @@ function solver.update_floor(factory_data, result_map, floor_id, scale_factor, b
         end
     end
 
+    floor.gaussian_free_items = result and result.gaussian_free_items or floor.gaussian_free_items
+    floor.linear_dependence_data = result and result.linear_dependence_data
     floor.simplex_basis_cache = result and result.simplex_basis_cache
 
     return machine_amount
@@ -843,8 +846,6 @@ function solver.set_factory_result(result)
     local factory = OBJECT_INDEX[result.factory_id]  ---@as Factory
 
     if factory.parent then factory.parent.needs_refresh = true end
-
-    factory.matrix_free_items = result.matrix_free_items or factory.matrix_free_items
 
     for product in factory:iterator() do
         local product_result_amount = result.products[structures.pack_item(product)]

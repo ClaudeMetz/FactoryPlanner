@@ -16,6 +16,8 @@ local SimpleItem = require("backend.data.SimpleItem")
 ---@field byproducts SimpleItem[]
 ---@field ingredients SimpleItem[]
 ---@field machine_amount integer
+---@field gaussian_free_items (FPItemPrototype | FPPackedPrototype)[]
+---@field linear_dependence_data LinearDependanceData?
 ---@field simplex_basis_cache SimplexBasisCache?
 local Floor = Object.methods()
 Floor.__index = Floor
@@ -31,7 +33,11 @@ local function init(level)
         products = {},
         byproducts = {},
         ingredients = {},
-        machine_amount = 0
+        machine_amount = 0,
+
+        linear_dependence_data = nil,
+        gaussian_free_items = {},
+        simplex_basis_cache = nil,
     }, "Floor", Floor)  ---@as Floor
     return object
 end
@@ -276,7 +282,9 @@ end
 
 ---@param self_only boolean?
 function Floor:clear_solver_cache(self_only)
+    self.linear_dependence_data = nil
     self.simplex_basis_cache = nil
+
     if self_only then return end
     for line_object in self:iterator() do
         if line_object.class == "Floor" then line_object:clear_solver_cache() end
@@ -306,6 +314,10 @@ end
 ---@field class "Floor"
 ---@field level integer
 ---@field lines PackedLineObject[]
+---@field products PackedSimpleItem[]?
+---@field byproducts PackedSimpleItem[]?
+---@field ingredients PackedSimpleItem[]?
+---@field gaussian_free_items FPPackedPrototype[]
 
 ---@param full boolean
 ---@return PackedFloor packed_self
@@ -318,6 +330,8 @@ function Floor:pack(full)
         products = (full) and SimpleItem.pack_items(self.products) or nil,
         byproducts = (full) and SimpleItem.pack_items(self.byproducts) or nil,
         ingredients = (full) and SimpleItem.pack_items(self.ingredients) or nil,
+
+        gaussian_free_items = prototyper.util.simplify_prototypes(self.gaussian_free_items, "type") or nil,
     }
 end
 
@@ -333,6 +347,9 @@ local function unpack(packed_self)
     end
     unpacked_self.first = Object.unpack(packed_self.lines, unpacker, unpacked_self)  ---@as LineObject
 
+    -- Matrix free items will be automatically unpacked by the validation process
+    unpacked_self.gaussian_free_items = packed_self.gaussian_free_items
+
     return unpacked_self
 end
 
@@ -341,6 +358,11 @@ end
 ---@return boolean valid
 function Floor:validate(player)
     self.valid = self:_validate(player)
+
+    local free_items, valid = prototyper.util.validate_prototype_objects(self.gaussian_free_items, "type")
+    self.gaussian_free_items = free_items
+    self.valid = valid and self.valid
+
     return self.valid
 end
 
@@ -353,6 +375,14 @@ function Floor:repair(player)
         -- If the defining line can't be repaired, the floor is dead
         if not line_valid then return false end
         pivot = self.first.next
+    end
+
+    -- Remove any unrepairable free items so the factory remains valid
+    local free_items = self.gaussian_free_items
+    for index = #free_items, 1, -1 do
+        if free_items[index].simplified then
+            table.remove(free_items, index)
+        end
     end
 
     if pivot then self:_repair(player, pivot) end
