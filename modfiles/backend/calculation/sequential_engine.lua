@@ -76,9 +76,10 @@ end
 
 ---@param line_data LineData
 ---@param aggregate SolverAggregate
----@param first_line boolean
+---@param is_top_floor boolean
+---@param is_relevant_line boolean
 ---@return LineResult
-local function solve_line(line_data, aggregate, first_line)
+local function solve_line(line_data, aggregate, is_top_floor, is_relevant_line)
     local products = structures.map.list(line_data.products)
     local ingredients = structures.map.list(line_data.ingredients)
     local consuming = (line_data.production_type == "consume")
@@ -93,15 +94,15 @@ local function solve_line(line_data, aggregate, first_line)
     -- Determine machine count
     -- Line data assumes a machine amount of 1, so production_ratio == machine_amount
     local machine_amount = 0.0
-    if first_line then
-        machine_amount = 1
+    if is_relevant_line then
+        machine_amount = 1  -- calculate subfloors based on the demand of the relevant line
     else
         machine_amount = (consuming) and determine_consuming_ratio(line_data, aggregate, ingredients)
             or determine_producing_ratio(line_data, aggregate, demanded_products)
     end
 
     -- Limit the machine amount
-    if line_data.machine_limit then
+    if is_top_floor and line_data.machine_limit then
         machine_amount = line_data.machine_force_limit and line_data.machine_limit
             or math.min(machine_amount, line_data.machine_limit)
     end
@@ -173,8 +174,9 @@ function sequential_engine.solve_floor(factory_data, floor_id)
     for i, line_object_id in ipairs(floor_data.line_ids) do
         -- Update aggregate according to the current line, which also adjusts the respective line object
         local line_data = factory_data.line_data_map[line_object_id]
-        local first_line = (floor_data.level > 1 and i == 1)
-        line_results[line_object_id] = solve_line(line_data, aggregate, first_line)  -- updates aggregate
+        local is_top_floor = (floor_data.level == 1)
+        local is_relevant_line = (floor_data.level > 1 and i == 1)
+        line_results[line_object_id] = solve_line(line_data, aggregate, is_top_floor, is_relevant_line)  -- updates aggregate
     end
 
     -- Remove simulated product demand
