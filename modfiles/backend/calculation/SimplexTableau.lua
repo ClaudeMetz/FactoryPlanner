@@ -1,9 +1,10 @@
 local LUDecomposition = require("backend.calculation.LUDecomposition")
+local structures = require("backend.calculation.structures")
 local util = require("__core__.lualib.util")
 
 
 ---@alias InequalityType "==" | "<=" | ">="
----@alias ItemDirection "in" | "out"
+---@alias ItemFlow "import" | "export" | "desired_import" | "desired_export"
 ---@alias SolverState "in-progress" | "solved" | "unbounded" | "no-solution"
 ---@alias VariableType "unassigned" | "basic" | "non-basic"
 ---@alias ConstraintKey string `"item;<floor_id>;<proto-key>"` | `"c;<var-key>"`
@@ -58,10 +59,10 @@ end
 
 ---@param item_key SolverItemKey
 ---@param floor_id ObjectID
----@param direction ItemDirection
+---@param flow ItemFlow
 ---@return VariableKey
-local function pack_item_variable(item_key, floor_id, direction)
-    return "item" .. SEPARATOR .. floor_id .. SEPARATOR .. direction .. SEPARATOR .. item_key
+local function pack_item_variable(item_key, floor_id, flow)
+    return "item" .. SEPARATOR .. floor_id .. SEPARATOR .. flow .. SEPARATOR .. item_key
 end
 
 ---@param line_id ObjectID
@@ -140,14 +141,15 @@ end
 --- Adds a slack variable to the inequality constraint of the given item
 ---@param item SolverItemKey
 ---@param floor_id ObjectID
----@param direction ItemDirection
+---@param flow ItemFlow
 ---@param objective number?
-function SimplexTableau:add_item_variable(item, floor_id, direction, objective)
+function SimplexTableau:add_item_variable(item, floor_id, flow, objective)
     local item_row_key = pack_item_constraint(item, floor_id)
-    local item_col_key = pack_item_variable(item, floor_id, direction)
+    local item_col_key = pack_item_variable(item, floor_id, flow)
 
     -- This is opposite to recipes where products > 0 and ingredients < 0
-    local sign = (direction == "in" and 1) or (direction == "out" and -1) or 0
+    local sign = ((flow == "import" or flow == "desired_import") and 1) or
+            ((flow == "export" or flow == "desired_export") and -1) or 0
     if sign == 0 then return end
 
     -- Item variable is already present in the tableau
@@ -168,12 +170,12 @@ end
 --- Adds an additional constraint to a given item (at most one per item)
 ---@param item SolverItemKey
 ---@param floor_id ObjectID
----@param direction ItemDirection
+---@param flow ItemFlow
 ---@param type InequalityType
 ---@param limit number must be non-negative (`>=0`)
 ---@param objective number?
-function SimplexTableau:add_item_constraint(item, floor_id, direction, type, limit, objective)
-    self:_add_constraint(pack_item_variable(item, floor_id, direction), type, limit, objective)
+function SimplexTableau:add_item_constraint(item, floor_id, flow, type, limit, objective)
+    self:_add_constraint(pack_item_variable(item, floor_id, flow), type, limit, objective)
 end
 
 --- Adds an additional constraint to a given line (machine limit)
@@ -465,14 +467,14 @@ function SimplexTableau:solve(previous_basis)
 
     -- Interpret the result
     for row, key in pairs(basic) do
-        local value = x_vector[row] or 0
-        if value > MAGIC_NUMBERS.margin_of_error then
+        local amount = x_vector[row] or 0
+        if amount > MAGIC_NUMBERS.margin_of_error then
             local var_unpacked = unpack_key(key)
             if var_unpacked[1] == "line" then
                 local id = tonumber(var_unpacked[2])  ---@as ObjectID
                 result.line_results[id] = {
                     line_id = id,
-                    machine_amount = value
+                    machine_amount = amount
                 }
             elseif var_unpacked[1] == "item" then
                 local item_key = var_unpacked[4]  ---@as SolverItemKey
@@ -487,10 +489,10 @@ function SimplexTableau:solve(previous_basis)
                     }  ---@type SimplexFloorResult
                 end
 
-                if var_unpacked[3] == "out" then
-                    result.floor_results[floor_id].products[item_key] = value
-                elseif var_unpacked[3] == "in" then
-                    result.floor_results[floor_id].ingredients[item_key] = value
+                if var_unpacked[3] == "export" or var_unpacked[3] == "desired_export" then
+                    structures.map.add(result.floor_results[floor_id].products, structures.unpack_item(item_key, amount))
+                elseif var_unpacked[3] == "import" or var_unpacked[3] == "desired_import" then
+                    structures.map.add(result.floor_results[floor_id].ingredients, structures.unpack_item(item_key, amount))
                 end
             end
         end
