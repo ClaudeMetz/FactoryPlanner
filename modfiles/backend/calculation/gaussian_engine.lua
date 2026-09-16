@@ -242,8 +242,11 @@ function gaussian_engine.get_linear_dependence_data(factory_data, metadata, floo
         local eliminated_items = metadata.eliminated_items
 
         for col, _ in pairs(t_linearly_dependent) do  ---@cast col integer
-            local item = items.values[col]  ---@as SolverItemKey
-            if eliminated_items[item] then allowed_free_items[item] = true end
+            local row_split_str = lib.split_string(items.values[col]--[[@cast -nil]], SEPARATOR)
+            if row_split_str[1] == "item" then
+                local item_key = row_split_str[2]  ---@as SolverItemKey
+                if eliminated_items[item_key] then allowed_free_items[item_key] = true end
+            end
         end
     end
 
@@ -278,7 +281,10 @@ function gaussian_engine.get_matrix_data(factory_data, metadata, floor_id)
     end
 
     -- Generate row (constraint) data
-    local rows = gaussian_engine.get_mapping_struct(metadata.all_items)
+    local item_constraints = {}
+    for key, _ in pairs(metadata.all_items) do item_constraints["item"..SEPARATOR..key] = true end
+    local row_set = solver.util.set.union(item_constraints)
+    local rows = gaussian_engine.get_mapping_struct(row_set)
 
     -- Generate column (variable) data
     local variable_set = solver.util.set.union(metadata.free_items, metadata.raw_inputs, metadata.byproducts)  ---@as SolverSet
@@ -466,20 +472,20 @@ function gaussian_engine.get_matrix(factory_data, floor_id, rows, columns)
         -- note this string "item" is an internal matrix-solver convention and is unrelated to item types
         if col_type == "item" then
             local item_key = col_split_str[2]  ---@as SolverItemKey
-            local row_num = rows.map[item_key]
+            local row_num = rows.map["item"..SEPARATOR..item_key]
             matrix[row_num]--[[@cast -nil]][col_num] = 1
         else -- "line"
             local line_id = col_split_str[2]  ---@as integer
             local line_data = factory_data.line_data_map[line_id]
             for item_key, amount in pairs(line_data.products) do
                 ---@diagnostic disable: need-check-nil
-                local row_num = rows.map[item_key]
+                local row_num = rows.map["item"..SEPARATOR..item_key]
                 matrix[row_num][col_num] = matrix[row_num][col_num] + amount
             end
 
             for item_key, amount in pairs(line_data.ingredients) do
                 ---@diagnostic disable: need-check-nil
-                local row_num = rows.map[item_key]
+                local row_num = rows.map["item"..SEPARATOR..item_key]
                 matrix[row_num][col_num] = matrix[row_num][col_num] - amount
             end
         end
@@ -491,7 +497,7 @@ function gaussian_engine.get_matrix(factory_data, floor_id, rows, columns)
     for _, product in ipairs(floor_data.products) do
         if floor_data.level == 1 then
             local item_key = structures.pack_item(product)
-            local row_num = rows.map[item_key]  -- will be nil for unproduced outputs
+            local row_num = rows.map["item"..SEPARATOR..item_key]  -- will be nil for unproduced outputs
             if row_num ~= nil then
                 local amount = product.amount
                 matrix[row_num]--[[@cast -nil]][#columns.values+1] = amount
