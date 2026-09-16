@@ -536,27 +536,6 @@ local function get_linear_dependence_data(factory_data, metadata, floor_id)
     return result, is_viable
 end
 
----@param line_data LineData
----@param machine_amount number
----@return SolverAggregate
-local function get_line_result_aggregate(line_data, machine_amount)
-    local aggregate = structures.aggregate.init(line_data.floor_id)
-
-    -- Metadata aggregates assumed a machine amount of 1, so we just need to multiply by the solved machine amount to get the result
-    aggregate.machine_amount = machine_amount
-    aggregate.crafts_per_second = machine_amount * line_data.crafts_per_second
-
-    for item_key, item_amount in pairs(line_data.products) do
-        aggregate.products[item_key] = item_amount * machine_amount
-    end
-
-    for item_key, item_amount in pairs(line_data.ingredients) do
-        aggregate.ingredients[item_key] = item_amount * machine_amount
-    end
-
-    return aggregate
-end
-
 ---@param factory_data FactoryData
 ---@param metadata GaussianMetadata
 ---@param floor_id ObjectID
@@ -574,7 +553,8 @@ local function run_solver(factory_data, metadata, floor_id)
     end
 
     local floor_data = factory_data.floor_data_map[floor_id]
-    local floor_aggregate = structures.aggregate.init(floor_id)
+    local floor_products = {}  ---@type SolverMap
+    local floor_ingredients = {}  ---@type SolverMap
     local line_results = {}  ---@type LineResultMap
     for _, line_object_id in ipairs(floor_data.line_ids) do
         local line_key = pack_line_key(line_object_id)
@@ -584,32 +564,29 @@ local function run_solver(factory_data, metadata, floor_id)
         -- want the j-th entry in the last column (output of row-reduction is identity matrix + last column)
         local machine_amount = matrix_data.matrix[col_num]--[[@cast -nil]][#matrix_data.columns.values+1]  ---@as number
         if machine_amount < 0 then machine_amount = 0 end
-        local line_aggregate = get_line_result_aggregate(line_data, machine_amount)
 
-        -- Lines with subfloors show actual number of machines to build, so each counts are rounded up when summed
-        floor_aggregate.machine_amount = floor_aggregate.machine_amount +
-            math.ceil(line_aggregate.machine_amount - MAGIC_NUMBERS.margin_of_error)
-
-        for _, item in pairs(structures.map.list(line_aggregate.products)) do
-            structures.map.add(floor_aggregate.products, item)
+        for key, amount in pairs(line_data.products) do
+            local item = structures.unpack_item(key, amount * machine_amount)
+            structures.map.add(floor_products, item)
         end
-        for _, item in pairs(structures.map.list(line_aggregate.ingredients)) do
-            structures.map.add(floor_aggregate.ingredients, item)
+        for key, amount in pairs(line_data.ingredients) do
+            local item = structures.unpack_item(key, amount * machine_amount)
+            structures.map.add(floor_ingredients, item)
         end
 
         line_results[line_object_id] = {
             id = line_object_id,
-            machine_amount = line_aggregate.machine_amount
+            machine_amount = machine_amount
         }
     end
 
-    structures.map.reduce_items(floor_aggregate.products, floor_aggregate.ingredients, true)
+    structures.map.reduce_items(floor_products, floor_ingredients, true)
 
     return {
         state = "solved",
         id = floor_id,
-        products = floor_aggregate.products,
-        ingredients = floor_aggregate.ingredients,
+        products = floor_products,
+        ingredients = floor_ingredients,
         line_result_map = line_results
     }
 end
