@@ -70,22 +70,6 @@ local function factory_products(factory)
     return products
 end
 
----@param floor Floor
----@return SolverItem[]
-local function floor_products(floor)
-    local products = {}  ---@type SolverItem[]
-    local recipe = floor.first--[[@as Line]].recipe
-    for _, product in pairs(recipe.products) do
-        local item = {
-            name = product.name,
-            type = product.type,
-            amount = 0
-        }  ---@type SolverItem
-        table.insert(products, item)
-    end
-    return products
-end
-
 ---@param recipe Recipe
 ---@return SolverItem[]
 local function line_ingredients(recipe)
@@ -336,7 +320,7 @@ end
 
 ---@alias FloorResultMap table<ObjectID, FloorResult>
 ---@alias LineResultMap table<ObjectID, LineResult>
----@alias SolverState SequentialSolverState|SimplexSolverState
+---@alias SolverState SequentialSolverState|SimplexSolverState|GaussianSolverState
 
 ---@class FloorResult
 ---@field state SolverState
@@ -395,7 +379,7 @@ local function generate_floor_data(player, factory, floor)
     local floor_data = {
         id = floor.id,
         level = floor.level,
-        products = floor.level == 1 and factory_products(factory) or floor_products(floor),
+        products = floor.level == 1 and factory_products(factory) or {},
         line_ids = {},
         gaussian_free_items = free_items,
         simplex_basis = floor.simplex_basis_cache
@@ -590,6 +574,8 @@ function solver.update(player, factory)
                 result = sequential_engine.solve_floor(factory_data, floor_id)
             elseif factory.solver == "simplex" then
                 result = simplex_engine.solve_floor(factory_data, floor_id)
+            elseif factory.solver == "gaussian" then
+                result = gaussian_engine.solve_floor(factory_data, floor_id)
             end
 
             if result then
@@ -601,10 +587,6 @@ function solver.update(player, factory)
 
         solve_floor(factory.top_floor.id)
         solver.update_factory(factory_data, result_map)
-
-        if factory.solver == "gaussian" then
-            gaussian_engine.solve_floor(factory_data, factory.top_floor.id)
-        end
     end
 end
 

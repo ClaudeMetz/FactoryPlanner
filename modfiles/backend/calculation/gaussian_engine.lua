@@ -87,12 +87,10 @@ local function get_metadata(factory_data, floor_id, free_items)
 
     local line_inputs = {}
     local line_outputs = {}
-    local line_count = 0
-
-    for _, line_data in pairs(factory_data.line_data_map) do
+    for _, line_object_id in pairs(floor_data.line_ids) do
+        local line_data = factory_data.line_data_map[line_object_id]
         for item_key, _ in pairs(line_data.ingredients) do line_inputs[item_key] = true end
         for item_key, _ in  pairs(line_data.products) do line_outputs[item_key] = true end
-        line_count = line_count + 1
     end
 
     local all_items = solver.util.set.union(line_inputs, line_outputs)
@@ -302,8 +300,7 @@ local function get_matrix_data(factory_data, metadata, floor_id)
     if floor_data.level == 1 then
         for _, line_id in ipairs(floor_data.line_ids) do
             local line_data = factory_data.line_data_map[line_id]
-            --- TODO: remove line_data check
-            if line_data and line_data.machine_limit then
+            if line_data.machine_limit then
                 machine_limits[line_id] = line_data.machine_limit
             end
         end
@@ -323,7 +320,7 @@ local function get_matrix_data(factory_data, metadata, floor_id)
     local variables = {}  ---@type table<string, true>
     local item_variable_set = solver.util.set.union(metadata.free_items, metadata.raw_inputs, metadata.byproducts)
     for item_key, _ in pairs(item_variable_set) do variables[pack_item_key(item_key)] = true end
-    for line_id, _ in pairs(factory_data.line_data_map) do variables[pack_line_key(line_id)] = true end
+    for _, line_id in ipairs(floor_data.line_ids) do variables[pack_line_key(line_id)] = true end
     local columns = get_mapping_struct(variables)
 
     local matrix, free_variable_scale_factors = get_matrix(factory_data, floor_id, rows, columns, machine_limits)
@@ -535,16 +532,14 @@ local function get_linear_dependence_data(factory_data, metadata, floor_id)
         allowed_free_items = get_item_protos(allowed_free_items),
         num_needed_free_items = num_rows - num_cols + num_chosen_free_items
     }  ---@type LinearDependanceData
-    local is_viable = num_rows == num_cols and #linearly_dependent_recipes == 0
+    local is_viable = num_rows == num_cols and #linearly_dependent_recipes == 0 and #linearly_dependent_free_items == 0
     return result, is_viable
 end
 
 ---@param line_data LineData
 ---@param machine_amount number
----@param metadata GaussianMetadata
----@param free_variables table<string, true>
 ---@return SolverAggregate
-local function get_line_result_aggregate(line_data, machine_amount, metadata, free_variables)
+local function get_line_result_aggregate(line_data, machine_amount)
     local aggregate = structures.aggregate.init(line_data.floor_id)
 
     -- Metadata aggregates assumed a machine amount of 1, so we just need to multiply by the solved machine amount to get the result
@@ -552,12 +547,7 @@ local function get_line_result_aggregate(line_data, machine_amount, metadata, fr
     aggregate.crafts_per_second = machine_amount * line_data.crafts_per_second
 
     for item_key, item_amount in pairs(line_data.products) do
-        if metadata.byproducts[item_key] or free_variables[pack_item_key(item_key)] then
-           aggregate.byproducts[item_key] = item_amount * machine_amount
-           aggregate.products[item_key] = nil
-        else
-           aggregate.products[item_key] = item_amount * machine_amount
-        end
+        aggregate.products[item_key] = item_amount * machine_amount
     end
 
     for item_key, item_amount in pairs(line_data.ingredients) do
@@ -570,148 +560,66 @@ end
 ---@param factory_data FactoryData
 ---@param metadata GaussianMetadata
 ---@param floor_id ObjectID
----@return table<string, true>?
+---@return FloorResult
 local function run_solver(factory_data, metadata, floor_id)
+    -- Solve the matrix
     local matrix_data = get_matrix_data(factory_data, metadata, floor_id)
-    local matrix = matrix_data.matrix
-    local columns = matrix_data.columns
-    local free_variables = matrix_data.free_variables
-    local free_variable_scale_factors = matrix_data.free_variable_scale_factors
-
-    to_reduced_row_echelon_form(matrix)
+    to_reduced_row_echelon_form(matrix_data.matrix)
 
     -- rescale ouput column based on free variable scale factors
-    for idx, scale_factor in pairs(free_variable_scale_factors) do
+    for idx, scale_factor in pairs(matrix_data.free_variable_scale_factors) do
         ---@diagnostic disable: need-check-nil
-        matrix[idx][#columns.values+1] = matrix[idx][#columns.values+1] * scale_factor
-    end
-
-    -- If an aggregate has items that are both inputs and outputs, deletes whichever is smaller and saves the net amount.
-    -- If the input and output are identical to within rounding error, delete from both.
-    -- This is mainly for calculating line aggregates with subfloors for the matrix solver.
-    ---@param aggregate SolverAggregate
-    local function consolidate(aggregate)
-        structures.map.reduce_items(aggregate.products, aggregate.ingredients, true)
-        structures.map.reduce_items(aggregate.byproducts, aggregate.ingredients, true)
-    end
-
-    ---@param floor_id ObjectID
-    local function set_line_results(floor_id)
-        local floor_data = factory_data.floor_data_map[floor_id]
-        local floor_aggregate = structures.aggregate.init(floor_id)
-        for _, line_object_id in ipairs(floor_data.line_ids) do
-            local line_key = pack_line_key(line_object_id)
-            local line_data = nil
-            local line_aggregate = nil
-            if factory_data.line_data_map[line_object_id] then  -- Line
-                local col_num = columns.map[line_key]
-                 -- want the j-th entry in the last column (output of row-reduction)
-                local machine_amount = matrix[col_num]--[[@cast -nil]][#columns.values+1]  ---@as number
-                if machine_amount < 0 then machine_amount = 0 end
-                line_data = factory_data.line_data_map[line_object_id]
-                line_aggregate = get_line_result_aggregate(line_data, machine_amount, metadata, free_variables)
-            else  -- Floor
-                line_aggregate = set_line_results(line_object_id)
-                consolidate(line_aggregate)
-            end
-
-            -- Lines with subfloors show actual number of machines to build, so each counts are rounded up when summed
-            floor_aggregate.machine_amount = floor_aggregate.machine_amount +
-                math.ceil(line_aggregate.machine_amount - MAGIC_NUMBERS.margin_of_error)
-
-            for _, map in pairs{"products", "byproducts", "ingredients"} do
-                for _, item in pairs(structures.map.list(line_aggregate[map])) do
-                    structures.map.add(floor_aggregate[map], item)
-                end
-            end
-
-            -- remove fuel from Ingredient for display only
-            local fuel_amount = nil
-            if line_data and line_data.fuel_item then
-                fuel_amount = line_data.fuel_item.amount * line_aggregate.machine_amount
-                structures.map.subtract(line_aggregate.ingredients, line_data.fuel_item, fuel_amount, true)
-            end
-
-            -- need to call consolidate before set_line_result to net any non-fuel catalysts for display
-            consolidate(line_aggregate)
-
-            solver.set_line_result {
-                floor_id = floor_id,
-                line_id = line_object_id,
-                machine_amount = line_aggregate.machine_amount,
-                crafts_per_second = line_aggregate.crafts_per_second,
-                products = line_aggregate.products,
-                byproducts = line_aggregate.byproducts,
-                ingredients = line_aggregate.ingredients,
-                fuel_amount = fuel_amount
-            }
-        end
-        return floor_aggregate
-    end
-
-    local floor_aggregate = set_line_results(floor_id)
-
-    -- Nets out items that are produced and consumed in equal amounts across the whole factory,
-    -- while the amounts on both sides are still around to tell solver noise from a real leftover
-    consolidate(floor_aggregate)
-
-    local total = {}
-    for _, item in ipairs(structures.map.list(floor_aggregate.products)) do
-        structures.map.add(total, item)
-    end
-    for _, item in ipairs(structures.map.list(floor_aggregate.byproducts)) do
-        structures.map.add(total, item)
-    end
-    for _, item in ipairs(structures.map.list(floor_aggregate.ingredients)) do
-        structures.map.subtract(total, item)
+        local col_num = #matrix_data.columns.values+1
+        matrix_data.matrix[idx][col_num] = matrix_data.matrix[idx][col_num] * scale_factor
     end
 
     local floor_data = factory_data.floor_data_map[floor_id]
-    local required_amount = {}
-    for _, product in pairs(floor_data.products) do
-        local key = structures.pack_item(product)
-        required_amount[key] = product.amount
-    end
+    local floor_aggregate = structures.aggregate.init(floor_id)
+    local line_results = {}  ---@type LineResultMap
+    for _, line_object_id in ipairs(floor_data.line_ids) do
+        local line_key = pack_line_key(line_object_id)
+        local line_data = factory_data.line_data_map[line_object_id]
+        local col_num = matrix_data.columns.map[line_key]
 
-    local main_aggregate = structures.aggregate.init(floor_id)
-    for _, item in ipairs(structures.map.list(total)) do
-        local key = structures.pack_item(item)
-        local req = required_amount[key] or 0
-        local amount = item.amount - req
-        -- A product that comes out to its required amount shouldn't leave a leftover either
-        if math.abs(amount) < math.abs(req) * MAGIC_NUMBERS.margin_of_error then amount = 0 end
+        -- want the j-th entry in the last column (output of row-reduction is identity matrix + last column)
+        local machine_amount = matrix_data.matrix[col_num]--[[@cast -nil]][#matrix_data.columns.values+1]  ---@as number
+        if machine_amount < 0 then machine_amount = 0 end
+        local line_aggregate = get_line_result_aggregate(line_data, machine_amount)
 
-        if amount > 0 then
-            structures.map.add(main_aggregate.byproducts, item, amount)
-        else
-            structures.map.add(main_aggregate.ingredients, item, -amount)
+        -- Lines with subfloors show actual number of machines to build, so each counts are rounded up when summed
+        floor_aggregate.machine_amount = floor_aggregate.machine_amount +
+            math.ceil(line_aggregate.machine_amount - MAGIC_NUMBERS.margin_of_error)
+
+        for _, item in pairs(structures.map.list(line_aggregate.products)) do
+            structures.map.add(floor_aggregate.products, item)
         end
-    end
-
-    -- set products for unproduced items
-    for _, product in pairs(floor_data.products) do
-        local item_key = structures.pack_item(product)
-        if not metadata.unproduced_outputs[item_key] then
-            structures.map.add(main_aggregate.products, product)
+        for _, item in pairs(structures.map.list(line_aggregate.ingredients)) do
+            structures.map.add(floor_aggregate.ingredients, item)
         end
+
+        line_results[line_object_id] = {
+            id = line_object_id,
+            machine_amount = line_aggregate.machine_amount
+        }
     end
 
-    solver.set_factory_result {
-        player_index = factory_data.player_index,
-        factory_id = factory_data.factory_id,
-        products = main_aggregate.products,
-        byproducts = main_aggregate.byproducts,
-        ingredients = main_aggregate.ingredients
+    structures.map.reduce_items(floor_aggregate.products, floor_aggregate.ingredients, true)
+
+    return {
+        state = "solved",
+        id = floor_id,
+        products = floor_aggregate.products,
+        ingredients = floor_aggregate.ingredients,
+        line_result_map = line_results
     }
 end
 
+---@alias GaussianSolverState "solved" | "linearly-dependent"
+
 ---@param factory_data FactoryData
 ---@param floor_id ObjectID
+---@return FloorResult
 function gaussian_engine.solve_floor(factory_data, floor_id)
-    local factory = OBJECT_INDEX[factory_data.factory_id]  ---@as Factory
-    local player = game.players[factory_data.player_index]
-    local floor = OBJECT_INDEX[floor_id]  ---@as Floor
-
     local metadata = get_metadata(factory_data, floor_id)
     local linear_dependence_data, is_viable = get_linear_dependence_data(factory_data, metadata, floor_id)
 
@@ -730,14 +638,23 @@ function gaussian_engine.solve_floor(factory_data, floor_id)
         linear_dependence_data, is_viable = get_linear_dependence_data(factory_data, metadata, floor_id)
     end
 
+    local result ---@type FloorResult
     if is_viable then
-        run_solver(factory_data, metadata, floor_id)
+        result = run_solver(factory_data, metadata, floor_id)
     else
-        solver.set_blank_factory(player, factory)  -- reset factory by blanking everything
+        result = {
+            state = "linearly-dependent",
+            id = floor_id,
+            products = {},
+            ingredients = {},
+            line_result_map = {}
+        }
     end
 
-    floor.linear_dependence_data = linear_dependence_data
-    floor.gaussian_free_items = get_item_protos(metadata.free_items)
+    result.linear_dependence_data = linear_dependence_data
+    result.gaussian_free_items = get_item_protos(metadata.free_items)
+
+    return result
 end
 
 return gaussian_engine
