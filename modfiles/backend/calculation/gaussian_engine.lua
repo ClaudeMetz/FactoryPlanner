@@ -31,7 +31,7 @@ local gaussian_engine = {}
 local SEPARATOR = ";"
 
 ---@param recipe_set table<integer, true>
-function gaussian_engine.get_recipe_protos(recipe_set)
+local function get_recipe_protos(recipe_set)
     local recipe_protos = {}
     for recipe_id, _ in pairs(recipe_set) do
         local recipe_proto = prototyper.util.find("recipes", recipe_id, nil)
@@ -42,7 +42,7 @@ end
 
 ---@param item_set SolverSet
 ---@return FPItemPrototype[]
-function gaussian_engine.get_item_protos(item_set)
+local function get_item_protos(item_set)
     local item_protos = {}  ---@type FPItemPrototype[]
     for item_key, _ in pairs(item_set) do
         local item = structures.unpack_item(item_key)
@@ -67,7 +67,7 @@ end
 ---@param floor_id ObjectID
 ---@param free_items SolverSet?
 ---@return GaussianMetadata
-function gaussian_engine.get_metadata(factory_data, floor_id, free_items)
+local function get_metadata(factory_data, floor_id, free_items)
     local desired_outputs = {}
     local floor_data = factory_data.floor_data_map[floor_id]
     for _, product in pairs(floor_data.products) do
@@ -119,7 +119,7 @@ end
 
 ---@param m number[][]
 ---@return number[][]
-function gaussian_engine.transpose(m)
+local function transpose(m)
     local transposed = {}
 
     if #m == 0 then
@@ -136,310 +136,29 @@ function gaussian_engine.transpose(m)
     return transposed
 end
 
----@param factory_data FactoryData
----@param floor_id ObjectID
-function gaussian_engine.solve_floor(factory_data, floor_id)
-    local factory = OBJECT_INDEX[factory_data.factory_id]  ---@as Factory
-    local player = game.players[factory_data.player_index]
-    local floor = OBJECT_INDEX[floor_id]  ---@as Floor
+---@class MappingStruct
+---@field values string[]
+---@field map table<string, integer>
 
-    local metadata = gaussian_engine.get_metadata(factory_data, floor_id)
-
-    if metadata.num_rows ~= 0 then  -- don't run calculations if the factory has no lines
-        local linear_dependence_data = gaussian_engine.get_linear_dependence_data(factory_data, metadata, floor_id)
-
-        -- In the case of linearly dependent free items, we remove it automatically if there's only one option.
-        -- Otherwise we present the user with a choice to remove problematic free items in the production box.
-        local num_ld_free_items, last_ld_free_item = 0, nil  ---@type integer, FPItemPrototype?
-        for _, ld_free_item in pairs(linear_dependence_data.linearly_dependent_free_items) do
-            num_ld_free_items = num_ld_free_items + 1
-            last_ld_free_item = ld_free_item
-        end
-        if num_ld_free_items == 1 then  ---@cast last_ld_free_item -nil
-            metadata.free_items[structures.pack_item(last_ld_free_item)] = nil
-
-            -- Redo all these since we've changed the factory
-            metadata = gaussian_engine.get_metadata(factory_data, floor_id, metadata.free_items)
-            linear_dependence_data = gaussian_engine.get_linear_dependence_data(factory_data, metadata, floor_id)
-        end
-
-        if metadata.num_rows == metadata.num_cols
-                and #linear_dependence_data.linearly_dependent_recipes == 0 then
-            gaussian_engine.run_solver(factory_data, metadata, floor_id)
-        else
-            solver.set_blank_factory(player, factory)  -- reset factory by blanking everything
-        end
-        floor.linear_dependence_data = linear_dependence_data
-        floor.gaussian_free_items = gaussian_engine.get_item_protos(metadata.free_items)
-    else  -- reset top level items
-        solver.set_blank_factory(player, factory)
-        floor.linear_dependence_data = nil
-        floor.gaussian_free_items = {}
+---@param input_set table<string, true>
+---@return MappingStruct
+local function get_mapping_struct(input_set)
+    -- turns a set into a mapping struct (eg matrix rows or columns)
+    -- a "mapping struct" consists of a table with:
+        -- key "values" - array of set values in sort order
+        -- key "map" - map from input_set values to integers, where the integer is the position in "values"
+    local values = {}
+    for k, _ in pairs(input_set) do table.insert(values, k) end
+    table.sort(values)
+    local map = {}
+    for i,k in ipairs(values) do
+        map[k] = i
     end
-end
-
----@class LinearDependanceData
----@field linearly_dependent_recipes FPRecipePrototype[]
----@field linearly_dependent_free_items FPItemPrototype[]
----@field allowed_free_items FPItemPrototype[]
----@field num_needed_free_items integer
-
----@param factory_data FactoryData
----@param metadata GaussianMetadata
----@param floor_id ObjectID
----@return LinearDependanceData
-function gaussian_engine.get_linear_dependence_data(factory_data, metadata, floor_id)
-    local num_rows = metadata.num_rows
-    local num_cols = metadata.num_cols
-
-    local linearly_dependent_recipes = {}  ---@type table<integer, true>
-    local linearly_dependent_free_items = {}  ---@type SolverSet
-    local allowed_free_items = {}  ---@type SolverSet
-
-    local matrix_data = gaussian_engine.get_matrix_data(factory_data, metadata, floor_id)
-    local matrix = matrix_data.matrix
-    local columns = matrix_data.columns
-    gaussian_engine.to_reduced_row_echelon_form(matrix)
-
-    local linearly_dependent_cols = gaussian_engine.find_linearly_dependent_cols(matrix, true)
-    local linearly_dependent_variables = {}  ---@type table<string, true>
-
-    for col, _ in pairs(linearly_dependent_cols) do  ---@cast col integer
-        local col_name = columns.values[col]  ---@as string
-        local col_split_str = lib.split_string(col_name, SEPARATOR)
-        if col_split_str[1] == "line" then
-            local line_id = col_split_str[2]  ---@as integer
-            local recipe_name = factory_data.line_data_map[line_id].recipe_name
-            linearly_dependent_variables["recipe"..SEPARATOR..recipe_name] = true
-        else -- item
-            linearly_dependent_variables[col_name] = true
-        end
-    end
-
-    if next(linearly_dependent_variables) ~= nil then
-        local free_items = metadata.free_items
-
-        for col_name, _ in pairs(linearly_dependent_variables) do
-            local col_split_str = lib.split_string(col_name, SEPARATOR)
-            if col_split_str[1] == "recipe" then
-                local recipe_key = col_split_str[2]  ---@as integer
-                linearly_dependent_recipes[recipe_key] = true
-            else -- "item"
-                local item_key = col_split_str[2]  ---@as SolverItemKey
-                if free_items[item_key] then linearly_dependent_free_items[item_key] = true end
-            end
-        end
-    end
-    -- check which eliminated items could be made free while still retaining linear independence
-    if next(linearly_dependent_variables) == nil and num_cols < num_rows then
-        local ld_matrix_data = gaussian_engine.get_matrix_data(factory_data, metadata, floor_id)
-        local items = ld_matrix_data.rows  -- when transposed becomes columns
-
-        local t_matrix = gaussian_engine.transpose(ld_matrix_data.matrix)
-        table.remove(t_matrix)
-        gaussian_engine.to_reduced_row_echelon_form(t_matrix)
-        local t_linearly_dependent = gaussian_engine.find_linearly_dependent_cols(t_matrix, false)
-        local eliminated_items = metadata.eliminated_items
-
-        for col, _ in pairs(t_linearly_dependent) do  ---@cast col integer
-            local row_split_str = lib.split_string(items.values[col]--[[@cast -nil]], SEPARATOR)
-            if row_split_str[1] == "item" then
-                local item_key = row_split_str[2]  ---@as SolverItemKey
-                if eliminated_items[item_key] then allowed_free_items[item_key] = true end
-            end
-        end
-    end
-
-    local num_chosen_free_items = 0
-    for _, _ in pairs(metadata.free_items) do num_chosen_free_items = num_chosen_free_items + 1 end
-
     local result = {
-        linearly_dependent_recipes = gaussian_engine.get_recipe_protos(linearly_dependent_recipes),
-        linearly_dependent_free_items = gaussian_engine.get_item_protos(linearly_dependent_free_items),
-        allowed_free_items = gaussian_engine.get_item_protos(allowed_free_items),
-        num_needed_free_items = num_rows - num_cols + num_chosen_free_items
-    }  ---@type LinearDependanceData
+        values = values,
+        map = map
+    }  ---@type MappingStruct
     return result
-end
-
----@class MatrixData
----@field matrix number[][]
----@field rows MappingStruct
----@field columns MappingStruct
----@field free_variables table<string, true>
----@field free_variable_scale_factors number[]
-
----@param factory_data FactoryData
----@param metadata GaussianMetadata
----@param floor_id ObjectID
----@return MatrixData
-function gaussian_engine.get_matrix_data(factory_data, metadata, floor_id)
-    -- Storing the line keys as "line;(lines id)"
-    local line_names = {}  ---@type table<string, true>
-    for line_id, _ in pairs(factory_data.line_data_map) do
-        line_names["line"..SEPARATOR..line_id] = true
-    end
-
-    -- Generate row (constraint) data
-    local item_constraints = {}
-    for key, _ in pairs(metadata.all_items) do item_constraints["item"..SEPARATOR..key] = true end
-    local row_set = solver.util.set.union(item_constraints)
-    local rows = gaussian_engine.get_mapping_struct(row_set)
-
-    -- Generate column (variable) data
-    local variable_set = solver.util.set.union(metadata.free_items, metadata.raw_inputs, metadata.byproducts)  ---@as SolverSet
-    local item_variables = {}  ---@type table<string, true>
-    for key, _ in pairs(variable_set) do item_variables["item"..SEPARATOR..key] = true end
-    local column_set = solver.util.set.union(line_names, item_variables)
-    local columns = gaussian_engine.get_mapping_struct(column_set)
-
-    local matrix, free_variable_scale_factors = gaussian_engine.get_matrix(factory_data, floor_id, rows, columns)
-
-    return {
-        matrix = matrix,
-        rows = rows,
-        columns = columns,
-        free_variables = item_variables,
-        free_variable_scale_factors = free_variable_scale_factors
-    }  ---@type MatrixData
-end
-
----@param factory_data FactoryData
----@param metadata GaussianMetadata
----@param floor_id ObjectID
----@return table<string, true>?
-function gaussian_engine.run_solver(factory_data, metadata, floor_id)
-    local matrix_data = gaussian_engine.get_matrix_data(factory_data, metadata, floor_id)
-    local matrix = matrix_data.matrix
-    local columns = matrix_data.columns
-    local free_variables = matrix_data.free_variables
-    local free_variable_scale_factors = matrix_data.free_variable_scale_factors
-
-    gaussian_engine.to_reduced_row_echelon_form(matrix)
-
-    -- rescale ouput column based on free variable scale factors
-    for idx, scale_factor in pairs(free_variable_scale_factors) do
-        ---@diagnostic disable: need-check-nil
-        matrix[idx][#columns.values+1] = matrix[idx][#columns.values+1] * scale_factor
-    end
-
-    ---@param floor_id ObjectID
-    local function set_line_results(floor_id)
-        local floor_data = factory_data.floor_data_map[floor_id]
-        local floor_aggregate = structures.aggregate.init(floor_id)
-        for _, line_object_id in ipairs(floor_data.line_ids) do
-            local line_key = "line"..SEPARATOR..line_object_id
-            local line_data = nil
-            local line_aggregate = nil
-            if factory_data.line_data_map[line_object_id] then  -- Line
-                local col_num = columns.map[line_key]
-                 -- want the j-th entry in the last column (output of row-reduction)
-                local machine_amount = matrix[col_num]--[[@cast -nil]][#columns.values+1]  ---@as number
-                if machine_amount < 0 then machine_amount = 0 end
-                line_data = factory_data.line_data_map[line_object_id]
-                line_aggregate = gaussian_engine.get_line_result_aggregate(line_data, machine_amount, metadata, free_variables)
-            else  -- Floor
-                line_aggregate = set_line_results(line_object_id)
-                gaussian_engine.consolidate(line_aggregate)
-            end
-
-            -- Lines with subfloors show actual number of machines to build, so each counts are rounded up when summed
-            floor_aggregate.machine_amount = floor_aggregate.machine_amount +
-                math.ceil(line_aggregate.machine_amount - MAGIC_NUMBERS.margin_of_error)
-
-            for _, map in pairs{"products", "byproducts", "ingredients"} do
-                for _, item in pairs(structures.map.list(line_aggregate[map])) do
-                    structures.map.add(floor_aggregate[map], item)
-                end
-            end
-
-            -- remove fuel from Ingredient for display only
-            local fuel_amount = nil
-            if line_data and line_data.fuel_item then
-                fuel_amount = line_data.fuel_item.amount * line_aggregate.machine_amount
-                structures.map.subtract(line_aggregate.ingredients, line_data.fuel_item, fuel_amount, true)
-            end
-
-            -- need to call consolidate before set_line_result to net any non-fuel catalysts for display
-            gaussian_engine.consolidate(line_aggregate)
-
-            solver.set_line_result {
-                floor_id = floor_id,
-                line_id = line_object_id,
-                machine_amount = line_aggregate.machine_amount,
-                crafts_per_second = line_aggregate.crafts_per_second,
-                products = line_aggregate.products,
-                byproducts = line_aggregate.byproducts,
-                ingredients = line_aggregate.ingredients,
-                fuel_amount = fuel_amount
-            }
-        end
-        return floor_aggregate
-    end
-
-    local floor_aggregate = set_line_results(floor_id)
-
-    -- Nets out items that are produced and consumed in equal amounts across the whole factory,
-    -- while the amounts on both sides are still around to tell solver noise from a real leftover
-    gaussian_engine.consolidate(floor_aggregate)
-
-    local total = {}
-    for _, item in ipairs(structures.map.list(floor_aggregate.products)) do
-        structures.map.add(total, item)
-    end
-    for _, item in ipairs(structures.map.list(floor_aggregate.byproducts)) do
-        structures.map.add(total, item)
-    end
-    for _, item in ipairs(structures.map.list(floor_aggregate.ingredients)) do
-        structures.map.subtract(total, item)
-    end
-
-    local floor_data = factory_data.floor_data_map[floor_id]
-    local required_amount = {}
-    for _, product in pairs(floor_data.products) do
-        local key = structures.pack_item(product)
-        required_amount[key] = product.amount
-    end
-
-    local main_aggregate = structures.aggregate.init(floor_id)
-    for _, item in ipairs(structures.map.list(total)) do
-        local key = structures.pack_item(item)
-        local req = required_amount[key] or 0
-        local amount = item.amount - req
-        -- A product that comes out to its required amount shouldn't leave a leftover either
-        if math.abs(amount) < math.abs(req) * MAGIC_NUMBERS.margin_of_error then amount = 0 end
-
-        if amount > 0 then
-            structures.map.add(main_aggregate.byproducts, item, amount)
-        else
-            structures.map.add(main_aggregate.ingredients, item, -amount)
-        end
-    end
-
-    -- set products for unproduced items
-    for _, product in pairs(floor_data.products) do
-        local item_key = structures.pack_item(product)
-        if not metadata.unproduced_outputs[item_key] then
-            structures.map.add(main_aggregate.products, product)
-        end
-    end
-
-    solver.set_factory_result {
-        player_index = factory_data.player_index,
-        factory_id = factory_data.factory_id,
-        products = main_aggregate.products,
-        byproducts = main_aggregate.byproducts,
-        ingredients = main_aggregate.ingredients
-    }
-end
-
--- If an aggregate has items that are both inputs and outputs, deletes whichever is smaller and saves the net amount.
--- If the input and output are identical to within rounding error, delete from both.
--- This is mainly for calculating line aggregates with subfloors for the matrix solver.
----@param aggregate SolverAggregate
-function gaussian_engine.consolidate(aggregate)
-    structures.map.reduce_items(aggregate.products, aggregate.ingredients, true)
-    structures.map.reduce_items(aggregate.byproducts, aggregate.ingredients, true)
 end
 
 ---@param factory_data FactoryData
@@ -448,7 +167,7 @@ end
 ---@param floor_id ObjectID
 ---@return number[][]
 ---@return number[]
-function gaussian_engine.get_matrix(factory_data, floor_id, rows, columns)
+local function get_matrix(factory_data, floor_id, rows, columns)
     -- Returns the matrix to be solved.
     -- Format is a list of lists, where outer lists are rows and inner lists are columns.
     -- Rows are items and columns are recipes (or pseudo-recipes in the case of free items).
@@ -547,71 +266,52 @@ function gaussian_engine.get_matrix(factory_data, floor_id, rows, columns)
     return matrix, free_variable_scale_factors
 end
 
----@param line_data LineData
----@param machine_amount number
+---@class MatrixData
+---@field matrix number[][]
+---@field rows MappingStruct
+---@field columns MappingStruct
+---@field free_variables table<string, true>
+---@field free_variable_scale_factors number[]
+
+---@param factory_data FactoryData
 ---@param metadata GaussianMetadata
----@param free_variables table<string, true>
----@return SolverAggregate
-function gaussian_engine.get_line_result_aggregate(line_data, machine_amount, metadata, free_variables)
-    local aggregate = structures.aggregate.init(line_data.floor_id)
-
-    -- Metadata aggregates assumed a machine amount of 1, so we just need to multiply by the solved machine amount to get the result
-    aggregate.machine_amount = machine_amount
-    aggregate.crafts_per_second = machine_amount * line_data.crafts_per_second
-
-    for item_key, item_amount in pairs(line_data.products) do
-        if metadata.byproducts[item_key] or free_variables["item"..SEPARATOR..item_key] then
-           aggregate.byproducts[item_key] = item_amount * machine_amount
-           aggregate.products[item_key] = nil
-        else
-           aggregate.products[item_key] = item_amount * machine_amount
-        end
+---@param floor_id ObjectID
+---@return MatrixData
+local function get_matrix_data(factory_data, metadata, floor_id)
+    -- Storing the line keys as "line;(lines id)"
+    local line_names = {}  ---@type table<string, true>
+    for line_id, _ in pairs(factory_data.line_data_map) do
+        line_names["line"..SEPARATOR..line_id] = true
     end
 
-    for item_key, item_amount in pairs(line_data.ingredients) do
-        aggregate.ingredients[item_key] = item_amount * machine_amount
-    end
+    -- Generate row (constraint) data
+    local item_constraints = {}
+    for key, _ in pairs(metadata.all_items) do item_constraints["item"..SEPARATOR..key] = true end
+    local row_set = solver.util.set.union(item_constraints)
+    local rows = get_mapping_struct(row_set)
 
-    return aggregate
-end
+    -- Generate column (variable) data
+    local variable_set = solver.util.set.union(metadata.free_items, metadata.raw_inputs, metadata.byproducts)  ---@as SolverSet
+    local item_variables = {}  ---@type table<string, true>
+    for key, _ in pairs(variable_set) do item_variables["item"..SEPARATOR..key] = true end
+    local column_set = solver.util.set.union(line_names, item_variables)
+    local columns = get_mapping_struct(column_set)
 
----@class MappingStruct
----@field values string[]
----@field map table<string, integer>
+    local matrix, free_variable_scale_factors = get_matrix(factory_data, floor_id, rows, columns)
 
----@param input_set table<string, true>
----@return MappingStruct
-function gaussian_engine.get_mapping_struct(input_set)
-    -- turns a set into a mapping struct (eg matrix rows or columns)
-    -- a "mapping struct" consists of a table with:
-        -- key "values" - array of set values in sort order
-        -- key "map" - map from input_set values to integers, where the integer is the position in "values"
-    local values = gaussian_engine.set_to_ordered_list(input_set)
-    local map = {}
-    for i,k in ipairs(values) do
-        map[k] = i
-    end
-    local result = {
-        values = values,
-        map = map
-    }  ---@type MappingStruct
-    return result
-end
-
----@generic T
----@param s table<T, true>
----@return T[]
-function gaussian_engine.set_to_ordered_list(s)
-    local result = {}
-    for k, _ in pairs(s) do table.insert(result, k) end
-    table.sort(result)
-    return result
+    return {
+        matrix = matrix,
+        rows = rows,
+        columns = columns,
+        free_variables = item_variables,
+        free_variable_scale_factors = free_variable_scale_factors
+    }  ---@type MatrixData
 end
 
 -- Contains the raw matrix solver. Converts an NxN+1 matrix to reduced row-echelon form.
 -- Based on the algorithm from octave: https://fossies.org/dox/FreeMat-4.2-Source/rref_8m_source.html
 ---@param m number[][]
-function gaussian_engine.to_reduced_row_echelon_form(m)
+local function to_reduced_row_echelon_form(m)
     ---@diagnostic disable: need-check-nil
     local num_rows = #m
     if #m==0 then return m end
@@ -687,7 +387,7 @@ end
 ---@param matrix number[][]
 ---@param ignore_last boolean
 ---@return table<integer, true>
-function gaussian_engine.find_linearly_dependent_cols(matrix, ignore_last)
+local function find_linearly_dependent_cols(matrix, ignore_last)
     -- Returns linearly dependent columns from a row-reduced matrix
     -- Algorithm works as follows:
     -- For each column:
@@ -726,44 +426,295 @@ function gaussian_engine.find_linearly_dependent_cols(matrix, ignore_last)
     return col_set
 end
 
--- utility function that removes from a sorted array in place
----@generic T
----@param orig_table T[]
----@param value T
-function gaussian_engine.remove(orig_table, value)
-    local i = 1
-    local found = false
-    while i<=#orig_table and (not found) do
-        local curr = orig_table[i]
-        if curr >= value then
-            found = true
+---@class LinearDependanceData
+---@field linearly_dependent_recipes FPRecipePrototype[]
+---@field linearly_dependent_free_items FPItemPrototype[]
+---@field allowed_free_items FPItemPrototype[]
+---@field num_needed_free_items integer
+
+---@param factory_data FactoryData
+---@param metadata GaussianMetadata
+---@param floor_id ObjectID
+---@return LinearDependanceData
+local function get_linear_dependence_data(factory_data, metadata, floor_id)
+    local num_rows = metadata.num_rows
+    local num_cols = metadata.num_cols
+
+    local linearly_dependent_recipes = {}  ---@type table<integer, true>
+    local linearly_dependent_free_items = {}  ---@type SolverSet
+    local allowed_free_items = {}  ---@type SolverSet
+
+    local matrix_data = get_matrix_data(factory_data, metadata, floor_id)
+    local matrix = matrix_data.matrix
+    local columns = matrix_data.columns
+    to_reduced_row_echelon_form(matrix)
+
+    local linearly_dependent_cols = find_linearly_dependent_cols(matrix, true)
+    local linearly_dependent_variables = {}  ---@type table<string, true>
+
+    for col, _ in pairs(linearly_dependent_cols) do  ---@cast col integer
+        local col_name = columns.values[col]  ---@as string
+        local col_split_str = lib.split_string(col_name, SEPARATOR)
+        if col_split_str[1] == "line" then
+            local line_id = col_split_str[2]  ---@as integer
+            local recipe_name = factory_data.line_data_map[line_id].recipe_name
+            linearly_dependent_variables["recipe"..SEPARATOR..recipe_name] = true
+        else -- item
+            linearly_dependent_variables[col_name] = true
         end
-        if curr == value then
-            table.remove(orig_table, i)
-        end
-        i = i+1
     end
+
+    if next(linearly_dependent_variables) ~= nil then
+        local free_items = metadata.free_items
+
+        for col_name, _ in pairs(linearly_dependent_variables) do
+            local col_split_str = lib.split_string(col_name, SEPARATOR)
+            if col_split_str[1] == "recipe" then
+                local recipe_key = col_split_str[2]  ---@as integer
+                linearly_dependent_recipes[recipe_key] = true
+            else -- "item"
+                local item_key = col_split_str[2]  ---@as SolverItemKey
+                if free_items[item_key] then linearly_dependent_free_items[item_key] = true end
+            end
+        end
+    end
+    -- check which eliminated items could be made free while still retaining linear independence
+    if next(linearly_dependent_variables) == nil and num_cols < num_rows then
+        local ld_matrix_data = get_matrix_data(factory_data, metadata, floor_id)
+        local items = ld_matrix_data.rows  -- when transposed becomes columns
+
+        local t_matrix = transpose(ld_matrix_data.matrix)
+        table.remove(t_matrix)
+        to_reduced_row_echelon_form(t_matrix)
+        local t_linearly_dependent = find_linearly_dependent_cols(t_matrix, false)
+        local eliminated_items = metadata.eliminated_items
+
+        for col, _ in pairs(t_linearly_dependent) do  ---@cast col integer
+            local row_split_str = lib.split_string(items.values[col]--[[@cast -nil]], SEPARATOR)
+            if row_split_str[1] == "item" then
+                local item_key = row_split_str[2]  ---@as SolverItemKey
+                if eliminated_items[item_key] then allowed_free_items[item_key] = true end
+            end
+        end
+    end
+
+    local num_chosen_free_items = 0
+    for _, _ in pairs(metadata.free_items) do num_chosen_free_items = num_chosen_free_items + 1 end
+
+    local result = {
+        linearly_dependent_recipes = get_recipe_protos(linearly_dependent_recipes),
+        linearly_dependent_free_items = get_item_protos(linearly_dependent_free_items),
+        allowed_free_items = get_item_protos(allowed_free_items),
+        num_needed_free_items = num_rows - num_cols + num_chosen_free_items
+    }  ---@type LinearDependanceData
+    return result
 end
 
--- utility function that inserts into a sorted array in place
----@generic T
----@param orig_table T[]
----@param value T
-function gaussian_engine.insert(orig_table, value)
-    local i = 1
-    local found = false
-    while i<=#orig_table and (not found) do
-        local curr = orig_table[i]
-        if curr >= value then
-            found=true
+---@param line_data LineData
+---@param machine_amount number
+---@param metadata GaussianMetadata
+---@param free_variables table<string, true>
+---@return SolverAggregate
+local function get_line_result_aggregate(line_data, machine_amount, metadata, free_variables)
+    local aggregate = structures.aggregate.init(line_data.floor_id)
+
+    -- Metadata aggregates assumed a machine amount of 1, so we just need to multiply by the solved machine amount to get the result
+    aggregate.machine_amount = machine_amount
+    aggregate.crafts_per_second = machine_amount * line_data.crafts_per_second
+
+    for item_key, item_amount in pairs(line_data.products) do
+        if metadata.byproducts[item_key] or free_variables["item"..SEPARATOR..item_key] then
+           aggregate.byproducts[item_key] = item_amount * machine_amount
+           aggregate.products[item_key] = nil
+        else
+           aggregate.products[item_key] = item_amount * machine_amount
         end
-        if curr > value then
-            table.insert(orig_table, i, value)
-        end
-        i = i+1
     end
-    if not found then
-        table.insert(orig_table, value)
+
+    for item_key, item_amount in pairs(line_data.ingredients) do
+        aggregate.ingredients[item_key] = item_amount * machine_amount
+    end
+
+    return aggregate
+end
+
+---@param factory_data FactoryData
+---@param metadata GaussianMetadata
+---@param floor_id ObjectID
+---@return table<string, true>?
+local function run_solver(factory_data, metadata, floor_id)
+    local matrix_data = get_matrix_data(factory_data, metadata, floor_id)
+    local matrix = matrix_data.matrix
+    local columns = matrix_data.columns
+    local free_variables = matrix_data.free_variables
+    local free_variable_scale_factors = matrix_data.free_variable_scale_factors
+
+    to_reduced_row_echelon_form(matrix)
+
+    -- rescale ouput column based on free variable scale factors
+    for idx, scale_factor in pairs(free_variable_scale_factors) do
+        ---@diagnostic disable: need-check-nil
+        matrix[idx][#columns.values+1] = matrix[idx][#columns.values+1] * scale_factor
+    end
+
+    -- If an aggregate has items that are both inputs and outputs, deletes whichever is smaller and saves the net amount.
+    -- If the input and output are identical to within rounding error, delete from both.
+    -- This is mainly for calculating line aggregates with subfloors for the matrix solver.
+    ---@param aggregate SolverAggregate
+    local function consolidate(aggregate)
+        structures.map.reduce_items(aggregate.products, aggregate.ingredients, true)
+        structures.map.reduce_items(aggregate.byproducts, aggregate.ingredients, true)
+    end
+
+    ---@param floor_id ObjectID
+    local function set_line_results(floor_id)
+        local floor_data = factory_data.floor_data_map[floor_id]
+        local floor_aggregate = structures.aggregate.init(floor_id)
+        for _, line_object_id in ipairs(floor_data.line_ids) do
+            local line_key = "line"..SEPARATOR..line_object_id
+            local line_data = nil
+            local line_aggregate = nil
+            if factory_data.line_data_map[line_object_id] then  -- Line
+                local col_num = columns.map[line_key]
+                 -- want the j-th entry in the last column (output of row-reduction)
+                local machine_amount = matrix[col_num]--[[@cast -nil]][#columns.values+1]  ---@as number
+                if machine_amount < 0 then machine_amount = 0 end
+                line_data = factory_data.line_data_map[line_object_id]
+                line_aggregate = get_line_result_aggregate(line_data, machine_amount, metadata, free_variables)
+            else  -- Floor
+                line_aggregate = set_line_results(line_object_id)
+                consolidate(line_aggregate)
+            end
+
+            -- Lines with subfloors show actual number of machines to build, so each counts are rounded up when summed
+            floor_aggregate.machine_amount = floor_aggregate.machine_amount +
+                math.ceil(line_aggregate.machine_amount - MAGIC_NUMBERS.margin_of_error)
+
+            for _, map in pairs{"products", "byproducts", "ingredients"} do
+                for _, item in pairs(structures.map.list(line_aggregate[map])) do
+                    structures.map.add(floor_aggregate[map], item)
+                end
+            end
+
+            -- remove fuel from Ingredient for display only
+            local fuel_amount = nil
+            if line_data and line_data.fuel_item then
+                fuel_amount = line_data.fuel_item.amount * line_aggregate.machine_amount
+                structures.map.subtract(line_aggregate.ingredients, line_data.fuel_item, fuel_amount, true)
+            end
+
+            -- need to call consolidate before set_line_result to net any non-fuel catalysts for display
+            consolidate(line_aggregate)
+
+            solver.set_line_result {
+                floor_id = floor_id,
+                line_id = line_object_id,
+                machine_amount = line_aggregate.machine_amount,
+                crafts_per_second = line_aggregate.crafts_per_second,
+                products = line_aggregate.products,
+                byproducts = line_aggregate.byproducts,
+                ingredients = line_aggregate.ingredients,
+                fuel_amount = fuel_amount
+            }
+        end
+        return floor_aggregate
+    end
+
+    local floor_aggregate = set_line_results(floor_id)
+
+    -- Nets out items that are produced and consumed in equal amounts across the whole factory,
+    -- while the amounts on both sides are still around to tell solver noise from a real leftover
+    consolidate(floor_aggregate)
+
+    local total = {}
+    for _, item in ipairs(structures.map.list(floor_aggregate.products)) do
+        structures.map.add(total, item)
+    end
+    for _, item in ipairs(structures.map.list(floor_aggregate.byproducts)) do
+        structures.map.add(total, item)
+    end
+    for _, item in ipairs(structures.map.list(floor_aggregate.ingredients)) do
+        structures.map.subtract(total, item)
+    end
+
+    local floor_data = factory_data.floor_data_map[floor_id]
+    local required_amount = {}
+    for _, product in pairs(floor_data.products) do
+        local key = structures.pack_item(product)
+        required_amount[key] = product.amount
+    end
+
+    local main_aggregate = structures.aggregate.init(floor_id)
+    for _, item in ipairs(structures.map.list(total)) do
+        local key = structures.pack_item(item)
+        local req = required_amount[key] or 0
+        local amount = item.amount - req
+        -- A product that comes out to its required amount shouldn't leave a leftover either
+        if math.abs(amount) < math.abs(req) * MAGIC_NUMBERS.margin_of_error then amount = 0 end
+
+        if amount > 0 then
+            structures.map.add(main_aggregate.byproducts, item, amount)
+        else
+            structures.map.add(main_aggregate.ingredients, item, -amount)
+        end
+    end
+
+    -- set products for unproduced items
+    for _, product in pairs(floor_data.products) do
+        local item_key = structures.pack_item(product)
+        if not metadata.unproduced_outputs[item_key] then
+            structures.map.add(main_aggregate.products, product)
+        end
+    end
+
+    solver.set_factory_result {
+        player_index = factory_data.player_index,
+        factory_id = factory_data.factory_id,
+        products = main_aggregate.products,
+        byproducts = main_aggregate.byproducts,
+        ingredients = main_aggregate.ingredients
+    }
+end
+
+---@param factory_data FactoryData
+---@param floor_id ObjectID
+function gaussian_engine.solve_floor(factory_data, floor_id)
+    local factory = OBJECT_INDEX[factory_data.factory_id]  ---@as Factory
+    local player = game.players[factory_data.player_index]
+    local floor = OBJECT_INDEX[floor_id]  ---@as Floor
+
+    local metadata = get_metadata(factory_data, floor_id)
+
+    if metadata.num_rows ~= 0 then  -- don't run calculations if the factory has no lines
+        local linear_dependence_data = get_linear_dependence_data(factory_data, metadata, floor_id)
+
+        -- In the case of linearly dependent free items, we remove it automatically if there's only one option.
+        -- Otherwise we present the user with a choice to remove problematic free items in the production box.
+        local num_ld_free_items, last_ld_free_item = 0, nil  ---@type integer, FPItemPrototype?
+        for _, ld_free_item in pairs(linear_dependence_data.linearly_dependent_free_items) do
+            num_ld_free_items = num_ld_free_items + 1
+            last_ld_free_item = ld_free_item
+        end
+        if num_ld_free_items == 1 then  ---@cast last_ld_free_item -nil
+            metadata.free_items[structures.pack_item(last_ld_free_item)] = nil
+
+            -- Redo all these since we've changed the factory
+            metadata = get_metadata(factory_data, floor_id, metadata.free_items)
+            linear_dependence_data = get_linear_dependence_data(factory_data, metadata, floor_id)
+        end
+
+        if metadata.num_rows == metadata.num_cols
+                and #linear_dependence_data.linearly_dependent_recipes == 0 then
+            run_solver(factory_data, metadata, floor_id)
+        else
+            solver.set_blank_factory(player, factory)  -- reset factory by blanking everything
+        end
+        floor.linear_dependence_data = linear_dependence_data
+        floor.gaussian_free_items = get_item_protos(metadata.free_items)
+    else  -- reset top level items
+        solver.set_blank_factory(player, factory)
+        floor.linear_dependence_data = nil
+        floor.gaussian_free_items = {}
     end
 end
 
