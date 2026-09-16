@@ -214,7 +214,7 @@ function builders.machine(line, parent_flow, metadata)
 
         local machine_limit = machine.limit
         local style, note = "fflib_slot_button_default_small", nil
-        if metadata.solver ~= "gaussian" and machine_limit ~= nil then
+        if machine_limit ~= nil then
             if machine.force_limit then
                 style = "fflib_slot_button_pink_small"
                 note = {"fp.machine_limit_force", machine_limit}
