@@ -381,7 +381,6 @@ end
 ---@param factory Factory
 ---@return FactoryData
 local function generate_factory_data(player, factory)
-    -- Intentional pass-by-reference
     local floor_data_map, line_data_map =
         generate_floor_data(player, factory, factory.top_floor)
 
