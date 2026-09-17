@@ -491,15 +491,12 @@ end
 
 ---@param machine_amount number
 ---@param products SolverMap
----@param byproducts SolverMap
 ---@param ingredients SolverMap
+---@param floor_byproducts SolverMap
 ---@return SolverMap products
 ---@return SolverMap byproducts
 ---@return SolverMap ingredients
----@return SolverMap floor_byproducts
-local function update_line_object_common(machine_amount, products, byproducts, ingredients)
-    local floor_byproducts = {}  ---@type SolverMap
-
+local function update_line_object_common(machine_amount, products, ingredients, floor_byproducts)
     local product_result = {}  ---@type SolverMap
     local byproduct_result = {}  ---@type SolverMap
     local ingredient_result = {}  ---@type SolverMap
@@ -508,25 +505,20 @@ local function update_line_object_common(machine_amount, products, byproducts, i
     for item_key, v in pairs(products) do
         local amount = v * machine_amount
         local item = structures.unpack_item(item_key, amount)
-        if not byproducts[item_key] then
+        if not floor_byproducts[item_key] then
+            -- Add as product
             structures.map.add(product_result, item)
         else
             -- Add as byproduct
-            local min_amount = math.min(byproducts[item_key], amount)
-            item.amount = min_amount
-            structures.map.add(byproduct_result, item)
-            structures.map.add(floor_byproducts, item)
+            local byproduct_amount = math.min(floor_byproducts[item_key], amount)
+            structures.map.add(byproduct_result, item, byproduct_amount)
+            structures.map.subtract(floor_byproducts, item, byproduct_amount, true)
 
-            -- Calculate item remainder
-            local product_amount = solver.util.safe_sub(amount, min_amount)
+            -- Add the remainder as product
+            local product_amount = amount - byproduct_amount
             if product_amount > 0 then
-                item.amount = product_amount
-                structures.map.add(product_result, item)
+                structures.map.add(product_result, item, product_amount, true)
             end
-
-            -- Calculate byproduct remainder
-            byproducts[item_key] = solver.util.safe_sub(byproducts[item_key], min_amount)
-            if byproducts[item_key] == 0 then byproducts[item_key] = nil end
         end
     end
 
@@ -538,17 +530,16 @@ local function update_line_object_common(machine_amount, products, byproducts, i
         structures.map.add(ingredient_result, item)
     end
 
-    return product_result, byproduct_result, ingredient_result, floor_byproducts
+    return product_result, byproduct_result, ingredient_result
 end
 
 ---@param line_id ObjectID
----@param floor_id ObjectID
 ---@param line_data LineData?
 ---@param result LineResult?
 ---@param scale_factor number
----@param byproducts SolverMap
+---@param floor_byproducts SolverMap
 ---@return number machine_amount
-local function update_line(line_id, floor_id, line_data, result, scale_factor, byproducts)
+local function update_line(line_id, line_data, result, scale_factor, floor_byproducts)
     local line = OBJECT_INDEX[line_id]  ---@as Line
 
     local machine_amount = 0.0
@@ -566,20 +557,15 @@ local function update_line(line_id, floor_id, line_data, result, scale_factor, b
         crafts_per_second = machine_amount * line_data.crafts_per_second
 
         product_result, byproduct_result, ingredient_result =
-                update_line_object_common(machine_amount, line_data.products, byproducts, line_data.ingredients)
+                update_line_object_common(machine_amount, line_data.products, line_data.ingredients, floor_byproducts)
 
         -- Update the fuel
         if line_data.fuel_item then
-            local fuel_key = structures.pack_item(line_data.fuel_item)
             fuel_amount = line_data.fuel_item.amount * machine_amount
-            local ingredient_amount = ingredient_result--[[@as SolverMap]][fuel_key] or 0
-            if fuel_amount <= ingredient_amount then
-                structures.map.subtract(ingredient_result, line_data.fuel_item, fuel_amount)
-            else
-                structures.map.add(product_result, line_data.fuel_item, fuel_amount - ingredient_amount)
-                ingredient_result[fuel_key] = nil
-            end
+            structures.map.subtract(ingredient_result, line_data.fuel_item, fuel_amount)
         end
+
+        structures.map.reduce_items(product_result, ingredient_result, true)
     end
 
     line.machine.amount = machine_amount
@@ -606,19 +592,19 @@ end
 ---@param result_map FloorResultMap
 ---@param floor_id ObjectID
 ---@param scale_factor number
----@param byproducts SolverMap
+---@param floor_byproducts SolverMap
 ---@return integer machine_amount
-local function update_floor(factory_data, result_map, floor_id, scale_factor, byproducts)
+local function update_floor(factory_data, result_map, floor_id, scale_factor, floor_byproducts)
     local floor = OBJECT_INDEX[floor_id]  ---@as Floor
     local result = result_map[floor_id]
-    local machine_amount = 0
+    local floor_machines = 0
 
     for line_object in floor:iterator(nil, floor:find_last(), "previous") do
         local line_result = result and result.line_result_map[line_object.id]
         if line_object.class == "Line" then
             local line_data = factory_data.line_data_map[line_object.id]
-            local line_machines = update_line(line_object.id, floor_id, line_data, line_result, scale_factor, byproducts)
-            machine_amount = machine_amount + math.ceil(line_machines - MAGIC_NUMBERS.margin_of_error)
+            local line_machines = update_line(line_object.id, line_data, line_result, scale_factor, floor_byproducts)
+            floor_machines = floor_machines + math.ceil(line_machines - MAGIC_NUMBERS.margin_of_error)
         else  -- Floor
             local blank_result = {
                 state = "solved",
@@ -630,17 +616,16 @@ local function update_floor(factory_data, result_map, floor_id, scale_factor, by
             local subfloor_result = result_map[line_object.id] or blank_result
             local subfloor_scale_factor = (line_result and line_result.machine_amount or 0) * scale_factor
 
-            local product_result, byproduct_result, ingredient_result, floor_byproducts =
-                    update_line_object_common(subfloor_scale_factor, subfloor_result.products, byproducts, subfloor_result.ingredients)
-            local floor_machines = update_floor(factory_data, result_map, line_object.id, subfloor_scale_factor, floor_byproducts)
-
-            line_object.machine_amount = floor_machines
+            local product_result, byproduct_result, ingredient_result =
+                    update_line_object_common(subfloor_scale_factor, subfloor_result.products, subfloor_result.ingredients, floor_byproducts)
 
             update_object_items(line_object, "products", product_result)
             update_object_items(line_object, "byproducts", byproduct_result)
             update_object_items(line_object, "ingredients", ingredient_result)
 
-            machine_amount = machine_amount + floor_machines
+            local subfloor_machines = update_floor(factory_data, result_map, line_object.id, subfloor_scale_factor, byproduct_result)
+            line_object.machine_amount = subfloor_machines
+            floor_machines = floor_machines + subfloor_machines
         end
     end
 
@@ -652,7 +637,7 @@ local function update_floor(factory_data, result_map, floor_id, scale_factor, by
         -- TODO: handle solver error states (`result.state`)
     end
 
-    return machine_amount
+    return floor_machines
 end
 
 ---@param factory_data FactoryData
@@ -661,7 +646,7 @@ local function update_factory(factory_data, result_map)
     local factory = OBJECT_INDEX[factory_data.factory_id]  ---@as Factory
 
     local top_products = {}  ---@type SolverSet
-    local top_byproducts = {}  ---@type SolverMap
+    local floor_byproducts = {}  ---@type SolverMap
 
     local product_result = {}  ---@type SolverMap
     local byproduct_result = {}  ---@type SolverMap
@@ -680,7 +665,7 @@ local function update_factory(factory_data, result_map)
                 structures.map.add(product_result, structures.unpack_item(item_key, amount))
             else
                 -- Add to byproducts
-                structures.map.add(top_byproducts, structures.unpack_item(item_key, amount))
+                structures.map.add(floor_byproducts, structures.unpack_item(item_key, amount))
                 structures.map.add(byproduct_result, structures.unpack_item(item_key, amount))
             end
         end
@@ -691,7 +676,7 @@ local function update_factory(factory_data, result_map)
         end
     end
 
-    update_floor(factory_data, result_map, factory.top_floor.id, 1, top_byproducts)
+    update_floor(factory_data, result_map, factory.top_floor.id, 1, floor_byproducts)
 
     if factory.parent then factory.parent.needs_refresh = true end
 
