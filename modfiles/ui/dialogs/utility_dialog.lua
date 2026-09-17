@@ -175,7 +175,8 @@ function utility_structures.components(player, modal_data)
                 local tags = {mod="fp", on_gui_click="utility_craft_items", item_name=proto.name,
                     quality=quality_proto.name, required_amount=required_amount}
                 table_components.add{type="sprite-button", tags=tags, sprite=("item/" .. proto.name),
-                    number=required_amount, tooltip=tooltip, quality=quality_proto.name, style=button_style,
+                    number=required_amount, secondary_number=amount_in_inventory,
+                    tooltip=tooltip, quality=quality_proto.name, style=button_style,
                     mouse_button_filter={"left-and-right"}}
             end
         end
