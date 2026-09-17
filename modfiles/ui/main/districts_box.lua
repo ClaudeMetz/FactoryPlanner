@@ -27,7 +27,7 @@ local function change_district_location(player, tags, event)
     district.location_proto = prototyper.util.find("locations", location_proto_id, nil)  ---@as FPLocationPrototype
 
     for factory in district:iterator() do
-        factory.top_floor:reset_surface_compatibility()
+        factory.top_floor:reset_location()
         solver.update(player, factory)
     end
     lib.gui.run_refresh(player, "all")

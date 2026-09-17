@@ -263,12 +263,12 @@ function Floor:check_product_compatibility(object)
     return false
 end
 
-function Floor:reset_surface_compatibility()
+function Floor:reset_location()
     for line in self:iterator() do
         if line.class == "Floor" then  ---@cast line Floor
-            line:reset_surface_compatibility()
+            line:reset_location()
         else
-            line.surface_compatibility = nil
+            line.location_name = nil
         end
     end
 end

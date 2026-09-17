@@ -4,10 +4,6 @@ local Machine = require("backend.data.Machine")
 local Beacon = require("backend.data.Beacon")
 local SimpleItem = require("backend.data.SimpleItem")
 
----@class SurfaceCompatibility
----@field recipe boolean
----@field machine boolean
-
 ---@class Line: Object, ObjectMethods
 ---@field class "Line"
 ---@field parent Floor
@@ -21,7 +17,7 @@ local SimpleItem = require("backend.data.SimpleItem")
 ---@field comment string
 ---@field total_effects IntegerModuleEffects
 ---@field effects_tooltip LocalisedString
----@field surface_compatibility SurfaceCompatibility?
+---@field location_name string?
 ---@field products SimpleItem[]
 ---@field byproducts SimpleItem[]
 ---@field ingredients SimpleItem[]
@@ -44,7 +40,7 @@ local function init(recipe_proto, production_type)
 
         total_effects = nil,
         effects_tooltip = "",
-        surface_compatibility = nil,  -- determined on demand
+        location_name = nil,  -- determined on demand
 
         products = {},
         byproducts = {},
@@ -87,7 +83,6 @@ function Line:change_machine_to_proto(player, proto)
 
         self.machine.module_set:normalize({compatibility=true, trim=true, effects=true})
         if not self:uses_beacon_effects() then self:set_beacon(nil) end
-        self.surface_compatibility = nil  -- reset it since the machine changed
     end
 
     -- Make sure the machine's fuel still applies
@@ -270,29 +265,16 @@ function Line:is_temperature_fully_configured()
     return true
 end
 
----@return SurfaceCompatibility compatibility
-function Line:get_surface_compatibility()
-    -- Determine and save compatibility on the fly when requested
-    if self.surface_compatibility == nil then
+---@return string
+function Line:get_current_location_name()
+    if not self.location_name then
         local object = self.parent  ---@as Object  -- find the District this is in
         while object.class ~= "District" do object = object.parent--[[@as District]] end
         ---@cast object District
-        ---@cast self.recipe.proto FPRecipePrototype
-        ---@cast self.machine.proto FPMachinePrototype
-
-        local location_name = object.location_proto.name
-        local recipe = self.recipe.proto.compatible_locations[location_name]
-        local machine =self.machine.proto.compatible_locations[location_name]
-
-        --[[ -- Only allow resources found on this location
-        if object.location_proto.resource_recipes and self.recipe.proto.location_restricted
-                and not object.location_proto.resource_recipes[self.recipe.proto.name] then
-            recipe = false
-        end ]]
-
-        self.surface_compatibility = {recipe=recipe, machine=machine}
+        self.location_name = object.location_proto.name
     end
-    return self.surface_compatibility
+    ---@cast self.location_name -nil
+    return self.location_name
 end
 
 
@@ -303,10 +285,12 @@ end
 function Line:get_blocker()
     if not self.active then return "disabled" end
     if not self.recipe.available then return "unavailable_recipe" end
+    ---@cast self.recipe.proto FPRecipePrototype
+    ---@cast self.machine.proto FPMachinePrototype
 
-    local compatibility = self:get_surface_compatibility()
-    if not compatibility.recipe then return "incompatible_recipe" end
-    if not compatibility.machine then return "incompatible_machine" end
+    local location = self:get_current_location_name()
+    if not self.recipe.proto.compatible_locations[location] then return "incompatible_recipe" end
+    if not self.machine.proto.compatible_locations[location] then return "incompatible_machine" end
 
     if not self:is_temperature_fully_configured() then return "unconfigured_temperature" end
 
@@ -394,8 +378,6 @@ function Line:validate(player)
     if self.recipe.valid then self.valid = self.machine:validate(player) and self.valid end
 
     if self.recipe.valid and self.beacon then self.valid = self.beacon:validate(player) and self.valid end
-
-    self.surface_compatibility = nil  -- reset cached value
 
     return self.valid
 end
