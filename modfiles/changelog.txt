@@ -6,6 +6,7 @@ Date: 00. 00. 0000
   Changes:
     - Bumped the required Factorio version to 2.1.18
   Bugfixes:
+    - Fixed crash when exporting disabled subfloor (#894) (Thanks vapopescu!)
     - Fixed research planning ignoring science ingredient durability
 
 ---------------------------------------------------------------------------------------------------
