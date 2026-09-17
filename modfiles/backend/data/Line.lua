@@ -270,21 +270,6 @@ function Line:is_temperature_fully_configured()
     return true
 end
 
-
----@param properties SurfaceProperties?
----@param conditions SurfaceCondition[]?
----@return boolean compatible
-local function check_compatibility(properties, conditions)
-    if not properties or not conditions then return true end
-    for _, condition in pairs(conditions) do
-        local property = properties[condition.property]
-        if property and (property < condition.min or property > condition.max) then
-            return false
-        end
-    end
-    return true
-end
-
 ---@return SurfaceCompatibility compatibility
 function Line:get_surface_compatibility()
     -- Determine and save compatibility on the fly when requested
@@ -292,10 +277,12 @@ function Line:get_surface_compatibility()
         local object = self.parent  ---@as Object  -- find the District this is in
         while object.class ~= "District" do object = object.parent--[[@as District]] end
         ---@cast object District
+        ---@cast self.recipe.proto FPRecipePrototype
+        ---@cast self.machine.proto FPMachinePrototype
 
-        local properties = object.location_proto.surface_properties
-        local recipe = check_compatibility(properties, self.recipe.proto.surface_conditions)
-        local machine = check_compatibility(properties, self.machine.proto.surface_conditions)
+        local location_name = object.location_proto.name
+        local recipe = self.recipe.proto.compatible_locations[location_name]
+        local machine =self.machine.proto.compatible_locations[location_name]
 
         --[[ -- Only allow resources found on this location
         if object.location_proto.resource_recipes and self.recipe.proto.location_restricted
