@@ -350,10 +350,6 @@ local function handle_view_toggle(player, tags, _)
     for _, view_preference in ipairs(view_preferences.views) do
         if view_preference.name == tags.name then
             view_preference.enabled = not view_preference.enabled
-            -- Select a valid view if the current one is disabled
-            if not view_preference.enabled and view_preferences.selected.primary == tags.name then
-                item_views.cycle_views(player, "standard")
-            end
             break
         end
     end

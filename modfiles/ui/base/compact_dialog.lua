@@ -272,7 +272,7 @@ local function add_item_flow(line, relevant_line, item_category, button_color, m
             factoriopedia = (lib.get_factoriopedia_proto(proto) ~= nil)
         }
 
-        local amount, number_tooltip = nil, nil
+        local amount, number_tooltip, secondary_amount
         button_color = (relevant_line.done) and "default_grayscale" or button_color
         local name_line = {"", {"fp.tt_title", {"", proto.localised_name}}}
         local temperature_line = ""  ---@type LocalisedString
@@ -294,7 +294,8 @@ local function add_item_flow(line, relevant_line, item_category, button_color, m
         else
             -- items/s/machine does not make sense for lines with subfloors, show items/s instead
             local machine_amount = (line.class == "Line") and line--[[@as Line]].machine.amount or nil
-            amount, number_tooltip = item_views.process_item(metadata.player, proto, item.amount, machine_amount)
+            amount, number_tooltip, secondary_amount = item_views.process_item(metadata.player, proto,
+                item.amount, machine_amount)
             if amount == -1 then goto skip_item end  -- an amount of -1 means it was below the margin of error
 
             if flags.entity then
@@ -320,7 +321,8 @@ local function add_item_flow(line, relevant_line, item_category, button_color, m
         local style = "fflib_slot_button_" .. button_color
 
         local button = item_table.add{type="sprite-button", tags=tags, sprite=proto.sprite, number=amount,
-            style=style, mouse_button_filter={"left-and-right"}, raise_hover_events=true}
+            secondary_number=secondary_amount, style=style, mouse_button_filter={"left-and-right"},
+            raise_hover_events=true}
         metadata.tooltips[button.index] = tooltip
 
         local name = (line.class == "Line") and line.recipe:get_name_with_temperature(proto) or proto.name
@@ -347,7 +349,7 @@ local function add_item_flow(line, relevant_line, item_category, button_color, m
                 item_category=item_category, item_index=index, on_gui_hover="hover_compact_item",
                 on_gui_leave="leave_compact_item", context="compact_dialog", flags=flags}
 
-            local amount, number_tooltip = item_views.process_item(metadata.player, proto,
+            local amount, number_tooltip, secondary_amount = item_views.process_item(metadata.player, proto,
                 (item.amount * line.production_ratio), line.machine.amount)
 
             ---@type LocalisedString, LocalisedString
@@ -365,8 +367,9 @@ local function add_item_flow(line, relevant_line, item_category, button_color, m
             local style = "fflib_slot_button_blue"
 
             -- Slots in ahead of the special items, which stay at the end alongside the fuel
-            local button = item_table.add{type="sprite-button", sprite=proto.sprite, number=amount, tags=tags,
-                style=style, index=first_special_index, mouse_button_filter={"left-and-right"}, raise_hover_events=true}
+            local button = item_table.add{type="sprite-button", sprite=proto.sprite, number=amount,
+                secondary_number=secondary_amount, tags=tags, style=style, index=first_special_index,
+                mouse_button_filter={"left-and-right"}, raise_hover_events=true}
             metadata.tooltips[button.index] = {"", name_line, temperature_line, number_line}
             if first_special_index then first_special_index = first_special_index + 1 end
 
@@ -379,8 +382,8 @@ local function add_item_flow(line, relevant_line, item_category, button_color, m
 
     if item_category == "ingredients" and line.machine.fuel then
         local fuel = line.machine.fuel
-        local amount, number_tooltip = item_views.process_item(metadata.player, fuel.proto--[[@as FPFuelPrototype]],
-            fuel.amount, line.machine.amount)
+        local amount, number_tooltip, secondary_amount = item_views.process_item(metadata.player,
+            fuel.proto--[[@as FPFuelPrototype]], fuel.amount, line.machine.amount)
         if amount == -1 then goto skip_fuel end  -- an amount of -1 means it was below the margin of error
 
         local style = "fflib_slot_button_cyan"
@@ -412,7 +415,8 @@ local function add_item_flow(line, relevant_line, item_category, button_color, m
             on_gui_leave="leave_compact_item", context="compact_dialog", flags=flags}
 
         local button = item_table.add{type="sprite-button", tags=tags, sprite=fuel.proto.sprite, style=style,
-            number=amount, mouse_button_filter={"left-and-right"}, raise_hover_events=true, index=first_special_index}
+            number=amount, secondary_number=secondary_amount, mouse_button_filter={"left-and-right"},
+            raise_hover_events=true, index=first_special_index}
         metadata.tooltips[button.index] = tooltip
 
         local type, name = fuel.proto.type, fuel:get_name_with_temperature()
@@ -461,7 +465,7 @@ local function refresh_compact_header(player, factory)
     local item_buttons = compact_elements.item_buttons
 
     for index, ingredient in pairs(current_floor.ingredients) do
-        local amount, number_tooltip = nil, nil
+        local amount, number_tooltip, secondary_amount
         local proto = ingredient.proto
         local special = (proto.type == "entity" and proto.special)
         local flags = {
@@ -482,7 +486,7 @@ local function refresh_compact_header(player, factory)
             amount = lib.format.button_number(ingredient.amount)
             number_tooltip = lib.format.special_tooltip(proto.name, ingredient.amount)
         else
-            amount, number_tooltip = item_views.process_item(player, proto, ingredient.amount, nil)
+            amount, number_tooltip, secondary_amount = item_views.process_item(player, proto, ingredient.amount, nil)
             if amount == -1 then goto skip_ingredient end  -- an amount of -1 means it was below the margin of error
         end
 
@@ -490,8 +494,8 @@ local function refresh_compact_header(player, factory)
         local number_line = (number_tooltip) and {"", "\n", number_tooltip} or ""  ---@type LocalisedString
         local tooltip = {"", {"fp.tt_title", proto.localised_name}, number_line}
 
-        local button = table_items.add{type="sprite-button", tags=tags, number=amount,
-            sprite=proto.sprite, style=style, mouse_button_filter={"left-and-right"},
+        local button = table_items.add{type="sprite-button", tags=tags, sprite=proto.sprite, number=amount,
+            secondary_number=secondary_amount, style=style, mouse_button_filter={"left-and-right"},
             raise_hover_events=true}
         tooltips[button.index] = tooltip
 

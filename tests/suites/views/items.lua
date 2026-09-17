@@ -68,6 +68,20 @@ return {
             prefs.item_views.selected.primary = "rockets_per_timescale"
             amount, tooltip = item_views.process_item(player, {type="item", weight=1001}, 1)
             assert(amount == nil and tooltip[1] == "fp.item_too_heavy")
+
+            prefs.item_views.selected = {primary="items_per_timescale", secondary="stacks_per_timescale"}
+            local secondary
+            amount, tooltip, secondary = item_views.process_item(player, item, 100)
+            assert(amount == 2 and secondary == 100)
+            assert(tooltip[2][2] == "100" and tooltip[4][2] == "2", "Tooltips follow upper/main number order")
+            amount, tooltip, secondary = item_views.process_item(player, {type="fluid"}, 100)
+            assert(amount == nil and secondary == 100 and tooltip[4][1] == "fp.fluid_item")
+            amount, tooltip, secondary = item_views.process_item(player, {type="entity", fixed_unit="units"}, 100)
+            assert(amount == 100 and secondary == nil, "Entity amounts must not be duplicated")
+            amount, tooltip, secondary = item_views.process_item(player, item, 1e-12)
+            assert(amount == -1 and tooltip == nil and secondary == nil)
+            amount, tooltip, secondary = item_views.process_item(player, item, 0)
+            assert(amount == 0 and secondary == 0)
         end)
     end},
     migration = {check=function()
@@ -113,17 +127,18 @@ return {
                 }
             end
 
-            local function assert_selection(name)
+            local function assert_selection(name, second)
                 assert(prefs.selected.primary == name)
+                assert(prefs.selected.secondary == second)
                 for _, elements in ipairs{ui.main_elements, ui.compact_elements} do
                     local selected = 0
                     for _, button in pairs(elements.views_flow.table_views.children) do
                         if button.toggled then
-                            assert(button.tags.view_name == name and button.visible)
+                            assert((button.tags.view_name == name or button.tags.view_name == second) and button.visible)
                             selected = selected + 1
                         end
                     end
-                    assert(selected == 1, "Both selectors must keep exactly the named selection")
+                    assert(selected == (second and 2 or 1), "Both selectors must keep the named selections")
                 end
             end
 
@@ -139,6 +154,13 @@ return {
                 end
             end
 
+            dispatch(ui.main_elements.views_flow.table_views.children[2], defines.events.on_gui_click)
+            assert_selection("items_per_timescale", "throughput")
+            assert(not ui.main_elements.views_flow.table_views.children[3].enabled)
+            dispatch(ui.main_elements.views_flow.table_views.children[3], defines.events.on_gui_click)
+            assert_selection("items_per_timescale", "throughput")
+            dispatch(ui.main_elements.views_flow.table_views.children[1], defines.events.on_gui_click)
+            assert_selection("throughput")
             dispatch(ui.main_elements.views_flow.table_views.children[2], defines.events.on_gui_click)
             assert_selection("throughput")
             local amount = item_views.process_item(player, {type="item"}, defaults.get(player, "belts").proto.throughput)
@@ -162,7 +184,7 @@ return {
             assert(checkbox and checkbox.enabled)
             checkbox.state = false
             dispatch(checkbox, defines.events.on_gui_checked_state_changed)
-            assert_selection("items_per_second_per_machine")
+            assert_selection("items_per_timescale")
             lib.gui.close_dialog(player, "cancel")
 
             for _, compact in ipairs{false, true} do
@@ -170,12 +192,14 @@ return {
                 local elements = compact and ui.compact_elements or ui.main_elements
                 dispatch(elements.views_flow.table_views.children[1], defines.events.on_gui_click)
                 assert_selection("items_per_timescale")
-                item_views.cycle_views(player, "reverse")
+                dispatch(elements.views_flow.table_views.children[3], defines.events.on_gui_click)
+                assert_selection("items_per_timescale", "items_per_second_per_machine")
+                dispatch(elements.views_flow.table_views.children[1], defines.events.on_gui_click)
                 assert_selection("items_per_second_per_machine")
-                item_views.cycle_views(player, "standard")
+                dispatch(elements.views_flow.table_views.children[1], defines.events.on_gui_click)
+                assert_selection("items_per_timescale", "items_per_second_per_machine")
+                dispatch(elements.views_flow.table_views.children[3], defines.events.on_gui_click)
                 assert_selection("items_per_timescale")
-                item_views.cycle_views(player, "standard")
-                assert_selection("items_per_second_per_machine")
             end
             player_table.realm:remove(district)
         end)
