@@ -51,7 +51,7 @@ view_definitions.items_per_timescale = {
     prepare = function(_, timescale_string)
         return {
             caption = {"", {"fp.pu_item", 2}, "/", {"fp.unit_" .. timescale_string}},
-            tooltip = {"fp.view_tt", {"fp.items_per_timescale", {"fp." .. timescale_string}}}
+            tooltip = {"fp.items_per_timescale", {"fp." .. timescale_string}}
         }
     end,
 
@@ -87,15 +87,15 @@ view_definitions.throughput = {
         local view = {caption=belt.rich_text, unavailable_for={fluid=not pump},
             belts_or_lanes=belts_or_lanes, multiplier=(1 / divisor) / belt_stack}  ---@type ThroughputViewData
         if not pump then
-            view.tooltip = {"fp.view_tt", {"fp.throughput_belts_only", unit, stack_insert, belt.rich_text, belt.localised_name}}
+            view.tooltip = {"fp.throughput_belts_only", unit, stack_insert, belt.rich_text, belt.localised_name}
             return view
         end
 
         ---@cast pump.proto FPPumpPrototype
         local proto, quality = proto_and_quality_string(pump)
         view.caption = {"", belt.rich_text, " ", pump.proto.rich_text}
-        view.tooltip = {"fp.view_tt", {"fp.throughput", unit, stack_insert, belt.rich_text, belt.localised_name,
-            pump.proto.rich_text, pump.proto.localised_name, quality}}
+        view.tooltip = {"fp.throughput", unit, stack_insert, belt.rich_text, belt.localised_name,
+            pump.proto.rich_text, pump.proto.localised_name, quality}
         view.pumping_speed = proto.get_pumping_speed(pump.quality--[[@cast -nil]].name) * 60
         return view
     end,
@@ -126,7 +126,7 @@ view_definitions.items_per_second_per_machine = {
     prepare = function()
         return {
             caption = {"", {"fp.pu_item", 2}, "/", {"fp.unit_second"}, "/[img=fp_generic_assembler]"},
-            tooltip = {"fp.view_tt", {"fp.items_per_second_per_machine"}}
+            tooltip = {"fp.items_per_second_per_machine"}
         }
     end,
 
@@ -155,7 +155,7 @@ view_definitions.stacks_per_timescale = {
     prepare = function(_, timescale_string)
         return {
             caption = {"", "[img=fp_stack]", "/", {"fp.unit_" .. timescale_string}},
-            tooltip = {"fp.view_tt", {"fp.stacks_per_timescale", {"fp." .. timescale_string}}}
+            tooltip = {"fp.stacks_per_timescale", {"fp." .. timescale_string}}
         }
     end,
 
@@ -207,14 +207,14 @@ view_definitions.wagons_per_timescale = {
         view.caption = {"", cargo and cargo.proto.rich_text or "", fluid and fluid.proto.rich_text or "",
             "/", {"fp.unit_" .. timescale_string}}
         if cargo and fluid then
-            view.tooltip = {"fp.view_tt", {"fp.wagons_per_timescale", {"fp." .. timescale_string},
+            view.tooltip = {"fp.wagons_per_timescale", {"fp." .. timescale_string},
                 cargo.proto.rich_text, cargo.proto.localised_name, cargo_quality,
-                fluid.proto.rich_text, fluid.proto.localised_name, fluid_quality}}  ---@as LocalisedString
+                fluid.proto.rich_text, fluid.proto.localised_name, fluid_quality}  ---@as LocalisedString
         else
             local wagon = cargo or fluid  ---@cast wagon -nil
             ---@cast wagon.proto FPWagonPrototype
-            view.tooltip = {"fp.view_tt", {"fp.wagons_per_timescale_single", {"fp." .. timescale_string},
-                wagon.proto.rich_text, wagon.proto.localised_name, cargo and cargo_quality or fluid_quality}}
+            view.tooltip = {"fp.wagons_per_timescale_single", {"fp." .. timescale_string},
+                wagon.proto.rich_text, wagon.proto.localised_name, cargo and cargo_quality or fluid_quality}
         end
         return view
     end,
@@ -251,8 +251,8 @@ view_definitions.rockets_per_timescale = {
 
         ---@cast silo.proto FPSiloPrototype
         local _, quality = proto_and_quality_string(silo)
-        view.tooltip = {"fp.view_tt", {"fp.rockets_per_timescale", {"fp." .. timescale_string},
-            silo.proto.rich_text, silo.proto.localised_name, quality}}
+        view.tooltip = {"fp.rockets_per_timescale", {"fp." .. timescale_string},
+            silo.proto.rich_text, silo.proto.localised_name, quality}
         view.lift_capacity = silo.proto.rocket_lift_weight
         return view
     end,
@@ -274,13 +274,28 @@ view_definitions.rockets_per_timescale = {
     end
 }
 
+---@param views_data ItemViewsData
+---@param name string
+---@param proto FPItemPrototype | FPFuelPrototype
+---@param item_amount number
+---@param machine_amount number?
+---@return number? button_number
+---@return LocalisedString? tooltip
+local function process_view(views_data, name, proto, item_amount, machine_amount)
+    local view = views_data.views[name]
+    if view.unavailable_for and view.unavailable_for[proto.type] then return nil, nil end
+    return view_definitions[name].process(views_data, item_amount, proto, machine_amount)
+end
+
 ---@param player LuaPlayer
 ---@param proto FPItemPrototype | FPFuelPrototype
 ---@param item_amount number
 ---@param machine_amount number?
+---@param tooltip_separator string?
 ---@return (number | -1 | nil) button_number
 ---@return LocalisedString? tooltip_line
-function item_views.process_item(player, proto, item_amount, machine_amount)
+---@return number? secondary_number
+function item_views.process_item(player, proto, item_amount, machine_amount, tooltip_separator)
     local views_data = lib.globals.ui_state(player).views_data  ---@cast views_data -nil
 
     if item_amount == nil or (item_amount ~= 0 and item_amount < views_data.adjusted_margin_of_error) then
@@ -295,12 +310,18 @@ function item_views.process_item(player, proto, item_amount, machine_amount)
             {"fp." .. lib.gui.timescale_as_string(views_data.timescale)}}
         return button_number, {"", tooltip_number, " ", unit}
     else
-        local selected_view = lib.globals.preferences(player).item_views.selected.primary
-        local view = views_data.views[selected_view]
-        if view.unavailable_for and view.unavailable_for[proto.type] then return nil, nil end
-        local processor = view_definitions[selected_view].process
-        local number, tooltip = processor(views_data, item_amount, proto, machine_amount)
-        return number, tooltip
+        local selected = lib.globals.preferences(player).item_views.selected
+        local first_number, first_tooltip = process_view(views_data, selected.primary,
+            proto, item_amount, machine_amount)
+        if not selected.secondary then return first_number, first_tooltip end
+
+        local second_number, second_tooltip = process_view(views_data, selected.secondary,
+            proto, item_amount, machine_amount)
+        local tooltip = first_tooltip or second_tooltip  ---@type LocalisedString?
+        if first_tooltip and second_tooltip then
+            tooltip = {"", first_tooltip, tooltip_separator or "\n", second_tooltip}  ---@as LocalisedString
+        end
+        return second_number, tooltip, first_number
     end
 end
 
@@ -310,14 +331,16 @@ local function reconcile_preferences(player)
     local preferences = lib.globals.preferences(player).item_views
     local data = lib.globals.ui_state(player).views_data  ---@cast data -nil
     local first_enabled, items_view = nil, nil  ---@type string?, ItemViewPreference?
-    local selection_enabled = false
+    local selected = {}
 
     for _, preference in ipairs(preferences.views) do
         if preference.name == "items_per_timescale" then items_view = preference end
         if data.views[preference.name].unavailable then preference.enabled = false end
         if preference.enabled then
             first_enabled = first_enabled or preference.name
-            if preference.name == preferences.selected.primary then selection_enabled = true end
+            if preference.name == preferences.selected.primary or preference.name == preferences.selected.secondary then
+                selected[#selected+1] = preference.name
+            end
         end
     end
 
@@ -325,7 +348,8 @@ local function reconcile_preferences(player)
         items_view--[[@cast -nil]].enabled = true
         first_enabled = "items_per_timescale"
     end
-    if not selection_enabled then preferences.selected.primary = first_enabled end
+    preferences.selected.primary = selected[1] or first_enabled
+    preferences.selected.secondary = selected[2]
 end
 
 ---@param player LuaPlayer
@@ -353,7 +377,8 @@ end
 ---@field selected ItemViewSelection
 
 ---@class ItemViewSelection
----@field primary string
+---@field primary string First selected view in button order
+---@field secondary string? Second selected view in button order
 
 ---@class ItemViewPreference
 ---@field name string
@@ -378,12 +403,11 @@ end
 ---@param preferences ItemViewPreferences
 ---@param name string
 ---@return ItemViewPreference? preference
----@return integer? index
 local function find_preference(preferences, name)
-    for index, preference in ipairs(preferences.views) do
-        if preference.name == name then return preference, index end
+    for _, preference in ipairs(preferences.views) do
+        if preference.name == name then return preference end
     end
-    return nil, nil
+    return nil
 end
 
 ---@param player LuaPlayer
@@ -401,6 +425,7 @@ end
 
 ---@param player LuaPlayer
 function item_views.rebuild_interface(player)
+    reconcile_preferences(player)
     local view_preferences = lib.globals.preferences(player).item_views
     local views_data = lib.globals.ui_state(player).views_data
     local views = views_data--[[@cast -nil]].views
@@ -436,7 +461,9 @@ function item_views.refresh_interface(player)
         for _, view_button in pairs(flow["table_views"].children) do
             local name = view_button.tags--[[@as ChangeViewTags]].view_name
             local preference = find_preference(view_preferences, name)
-            view_button.toggled = (view_preferences.selected.primary == name)
+            view_button.toggled = (view_preferences.selected.primary == name
+                or view_preferences.selected.secondary == name)
+            view_button.enabled = view_button.toggled or view_preferences.selected.secondary == nil
             view_button.visible = preference--[[@cast -nil]].enabled
         end
     end
@@ -447,44 +474,27 @@ end
 
 ---@param player LuaPlayer
 ---@param name string
-local function select_view(player, name)
+local function toggle_view(player, name)
     local view_preferences = lib.globals.preferences(player).item_views
     local preference = find_preference(view_preferences, name)
     if not preference or not preference.enabled then return end
-    view_preferences.selected.primary = name
-
+    local selected = view_preferences.selected
+    if selected.primary == name then
+        if not selected.secondary then return end
+        selected.primary, selected.secondary = selected.secondary, nil
+    elseif selected.secondary == name then
+        selected.secondary = nil
+    elseif not selected.secondary then
+        selected.secondary = name
+    else
+        return
+    end
+    reconcile_preferences(player)
     item_views.refresh_interface(player)
     local compact_view = lib.globals.ui_state(player).compact_view
     local refresh = (compact_view) and "compact_factory" or "factory"
     lib.gui.run_refresh(player, refresh)
 end
-
----@param player LuaPlayer
----@param direction "standard" | "reverse"
-function item_views.cycle_views(player, direction)
-    local view_preferences = lib.globals.preferences(player).item_views
-
-    -- The shortcuts can also be used before either interface has been opened.
-    if not lib.globals.ui_state(player).views_data then item_views.rebuild_data(player) end
-
-    local _, next_option = find_preference(view_preferences, view_preferences.selected.primary)
-    ---@cast next_option -nil
-    local total_options = #view_preferences.views
-    local mover = (direction == "standard") and 1 or -1
-
-    for _ = 1, total_options do
-        next_option = next_option + mover
-        if next_option > total_options then next_option = 1
-        elseif next_option < 1 then next_option = total_options end
-
-        local preference = view_preferences.views[next_option]  ---@cast preference -nil
-        if preference.enabled then
-            select_view(player, preference.name)
-            break
-        end
-    end
-end
-
 
 -- ** EVENTS **
 local listeners = {}  ---@type ListenerDefinitions
@@ -495,19 +505,10 @@ listeners.gui = {
             name = "change_view",
             handler = function(player, tags, _)
                 ---@cast tags ChangeViewTags
-                select_view(player, tags.view_name)
+                toggle_view(player, tags.view_name)
             end
         }
     }
 }  ---@as GUIListenerDefinition
-
-listeners.player = {
-    fp_cycle_production_views = function(player, _)
-        item_views.cycle_views(player, "standard")
-    end,
-    fp_reverse_cycle_production_views = function(player, _)
-        item_views.cycle_views(player, "reverse")
-    end
-}
 
 return { listeners }

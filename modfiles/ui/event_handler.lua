@@ -290,8 +290,6 @@ local player_events = {
     "fp_navigate_back",
     "fp_navigate_forward",
     "fp_toggle_fold_out_subfloors",
-    "fp_cycle_production_views",
-    "fp_reverse_cycle_production_views",
     "fp_confirm_dialog",
     "fp_confirm_gui",
     "fp_focus_searchfield",

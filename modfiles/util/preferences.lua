@@ -89,7 +89,7 @@ function _preferences.reload(player_table)
     reload("ignore_recycling_recipes", false)
     reload("default_solver", "sequential")
 
-    reload("done_column", true)
+    reload("done_column", false)
     reload("line_comment_column", false)
 
     reload("item_views", item_views.default_preferences())

@@ -68,7 +68,7 @@ local function refresh_item_box(player, factory, item_category, tooltips)
         for product in factory:iterator() do  ---@cast product.proto FPItemPrototype
             local style = "fflib_slot_button_default"
 
-            local amount, number_tooltip = nil, nil
+            local amount, number_tooltip, secondary_amount
             local required_amount = product:get_required_amount()
 
             local special = (product.proto.type == "entity" and product.proto.special)
@@ -88,7 +88,8 @@ local function refresh_item_box(player, factory, item_category, tooltips)
                 amount = lib.format.button_number(required_amount)
                 number_tooltip = lib.format.special_tooltip(product.proto.name, required_amount)
             else
-                amount, number_tooltip = item_views.process_item(player, product.proto, required_amount, nil)
+                amount, number_tooltip, secondary_amount = item_views.process_item(player, product.proto,
+                    required_amount, nil)
                 if amount == -1 then goto skip_product end  -- an amount of -1 means it was below the margin of error
             end
 
@@ -105,8 +106,9 @@ local function refresh_item_box(player, factory, item_category, tooltips)
             ---@type HandleItemBoxClickTags
             local tags = {mod="fp", on_gui_click="act_on_item_box", item_category=item_category, item_id=product.id,
                 on_gui_hover="set_tooltip", context="item_boxes", flags=flags}
-            local button = table_items.add{type="sprite-button", tags=tags--[[@as Tags]], number=amount, style=style,
-                sprite=product.proto.sprite, mouse_button_filter={"left-and-right"}, raise_hover_events=true}
+            local button = table_items.add{type="sprite-button", tags=tags--[[@as Tags]], number=amount,
+                secondary_number=secondary_amount, style=style, sprite=product.proto.sprite,
+                mouse_button_filter={"left-and-right"}, raise_hover_events=true}
             tooltips.item_boxes[button.index] = tooltip
             table_item_count = table_item_count + 1
 
@@ -125,7 +127,7 @@ local function refresh_item_box(player, factory, item_category, tooltips)
         table_item_count = table_item_count + 1
     else
         for index, item in pairs(floor[item_category .. "s"]) do
-            local amount, number_tooltip = nil, nil
+            local amount, number_tooltip, secondary_amount
 
             local special = (item.proto.type == "entity" and item.proto.special)
             local flags = {
@@ -143,7 +145,7 @@ local function refresh_item_box(player, factory, item_category, tooltips)
                 amount = lib.format.button_number(item.amount)
                 number_tooltip = lib.format.special_tooltip(item.proto.name, item.amount)
             else
-                amount, number_tooltip = item_views.process_item(player, item.proto, item.amount, nil)
+                amount, number_tooltip, secondary_amount = item_views.process_item(player, item.proto, item.amount, nil)
                 if amount == -1 then goto skip_item end  -- an amount of -1 means it was below the margin of error
             end
 
@@ -153,8 +155,9 @@ local function refresh_item_box(player, factory, item_category, tooltips)
             ---@type HandleItemBoxClickTags
             local tags = {mod="fp", on_gui_click="act_on_item_box", item_category=item_category, item_id=item.id,
                 item_index=index, on_gui_hover="set_tooltip", context="item_boxes", flags=flags}
-            local button = table_items.add{type="sprite-button", tags=tags--[[@as Tags]], number=amount, style=style,
-                sprite=item.proto.sprite, mouse_button_filter={"left-and-right"}, raise_hover_events=true}
+            local button = table_items.add{type="sprite-button", tags=tags--[[@as Tags]], number=amount,
+                secondary_number=secondary_amount, style=style, sprite=item.proto.sprite,
+                mouse_button_filter={"left-and-right"}, raise_hover_events=true}
             tooltips.item_boxes[button.index] = tooltip
             table_item_count = table_item_count + 1
 

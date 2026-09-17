@@ -16,4 +16,7 @@ return {{
         testResearchPrototypes = require("suite.research"),
         testQualityBaselines = require("suite.quality")
     }
+}, {
+    name = "research-durability",
+    cases = {testResearchDurability = require("suite.research-durability")}
 }}

@@ -71,9 +71,8 @@ local function fixture(player, player_table, context)
     local prefs = player_table.preferences.item_views
     prefs.selected.primary = "wagons_per_timescale"
     for _, view in ipairs(prefs.views) do view.enabled = view.name == "wagons_per_timescale" end
-    -- Exercise cycling before either interface has been opened.
     player_table.ui_state.views_data = nil
-    item_views.cycle_views(player, "standard")
+    item_views.rebuild_data(player)
     local district = context.classes.District.init()
     player_table.realm:insert(district)
     local factory = context.classes.Factory.init("wagon-views", "sequential")
@@ -102,8 +101,7 @@ function wagon_views.case(cargo_available, fluid_available)
                 check_selection(player, cargo_available, fluid_available)
                 for _, compact in ipairs{false, true} do
                     player_table.ui_state.compact_view = compact
-                    item_views.cycle_views(player, "standard")
-                    item_views.cycle_views(player, "reverse")
+                    item_views.rebuild_data(player)
                     local expected = (cargo_available or fluid_available) and "wagons_per_timescale" or "items_per_timescale"
                     assert(player_table.preferences.item_views.selected.primary == expected)
                 end
