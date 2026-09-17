@@ -121,7 +121,7 @@ local function build_items_flow(player, parent, district)
         local tags = {mod="fp", item_id=item.id, on_gui_click="act_on_district_item",
             on_gui_hover="set_tooltip", context="districts_box", flags=flags}
 
-        local diff_number, amount_tooltip = nil, nil
+        local diff_number, amount_tooltip, secondary_number
         local total_tooltip = nil
 
         if flags.special then
@@ -129,8 +129,9 @@ local function build_items_flow(player, parent, district)
             amount_tooltip = lib.format.special_tooltip(item.proto.name, item.abs_diff)
             total_tooltip = lib.format.special_tooltip(item.proto.name, total_amount)
         else
-            diff_number, amount_tooltip = item_views.process_item(player, item.proto, item.abs_diff, nil)
-            _, total_tooltip = item_views.process_item(player, item.proto, total_amount, nil)
+            diff_number, amount_tooltip, secondary_number = item_views.process_item(player, item.proto,
+                item.abs_diff, nil, ", ")
+            _, total_tooltip = item_views.process_item(player, item.proto, total_amount, nil, ", ")
         end
 
         local colors = color_map[item.overall]
@@ -141,8 +142,9 @@ local function build_items_flow(player, parent, district)
         local total_line = {"fp.item_amount_total", total_tooltip}
         local tooltip = {"", title_line, diff_line, total_line}
 
-        local button = relevant_table.add{type="sprite-button", number=diff_number, style=style,
-            sprite=item.proto.sprite, tags=tags, raise_hover_events=true, mouse_button_filter={"left-and-right"}}
+        local button = relevant_table.add{type="sprite-button", number=diff_number, secondary_number=secondary_number,
+            style=style, sprite=item.proto.sprite, tags=tags, raise_hover_events=true,
+            mouse_button_filter={"left-and-right"}}
         tooltips.districts_box[button.index] = tooltip
     end
 

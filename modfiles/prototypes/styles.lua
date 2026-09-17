@@ -43,23 +43,6 @@ styles["fp_frame_light_slots"] = {
     background_graphical_set = light_slots(40)
 }
 
--- normal slots table is called filter_slot_table
-
-styles["fp_frame_light_slots_small"] = {
-    type = "frame_style",
-    parent = "fp_naked_frame",
-    background_graphical_set = light_slots(36)
-}
-
-styles["fp_table_slots_small"] = {
-    type = "table_style",
-    parent = "slot_table",
-    wide_as_column_count = true,
-    column_widths = {
-        width = 36
-    }
-}
-
 styles["fp_frame_bordered_stretch"] = {
     type = "frame_style",
     parent = "bordered_frame",
@@ -231,17 +214,11 @@ styles["fp_button_green"] = {
     left_click_sound = "__core__/sound/gui-green-confirm.ogg"
 }
 
--- Generate smaller versions of flib's slot buttons (size 36), plus a grayscale variant
+-- Generate grayscale versions of flib's slot buttons
 for _, color in pairs{"default", "grey", "red", "orange", "yellow", "green", "cyan", "blue", "purple", "pink"} do
-    styles["fflib_slot_button_" .. color .. "_small"] = {
+    styles["fflib_slot_button_" .. color .. "_grayscale"] = {
         type = "button_style",
         parent = "fflib_slot_button_" .. color,
-        size = 36
-    }
-
-    styles["fflib_slot_button_" .. color .. "_grayscale_small"] = {
-        type = "button_style",
-        parent = "fflib_slot_button_" .. color .. "_small",
         draw_grayscale_picture = true
     }
 end
@@ -254,18 +231,6 @@ styles["fflib_slot_button_disabled"] = {
     clicked_graphical_set = {},
     disabled_graphical_set = {},
     padding = 4
-}
-
-styles["fflib_slot_button_disabled_small"] = {
-    type = "button_style",
-    parent = "fflib_slot_button_disabled",
-    size = 36
-}
-
-styles["fflib_slot_button_disabled_grayscale_small"] = {
-    type = "button_style",
-    parent = "fflib_slot_button_disabled_small",
-    draw_grayscale_picture = true
 }
 
 

@@ -55,8 +55,6 @@ function throughput_views.case(pump_available)
                 end
 
                 item_views.rebuild_interface(player)
-                item_views.cycle_views(player, "standard")
-                item_views.cycle_views(player, "reverse")
                 assert(prefs.item_views.selected.primary == "throughput", "Missing pumps must not drop the throughput selection")
                 for _, elements in ipairs{player_table.ui_state.main_elements, player_table.ui_state.compact_elements} do
                     for _, button in pairs(elements.views_flow.table_views.children) do

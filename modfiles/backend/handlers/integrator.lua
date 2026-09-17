@@ -208,6 +208,14 @@ end
 -- Collects the named integration again, and runs appropriate updates if necessary
 ---@param integration string
 function integrator.invalidate(integration)
+    -- Initialization will collect integrations once our storage is ready
+    if not storage.installed_mods then return end
+
+    -- An upgrade will collect integrations once our configuration change is handled
+    if storage.installed_mods["factoryplanner"] ~= script.active_mods["factoryplanner"] then
+        return
+    end
+
     integrator.collect(integration)
 
     if integration == "machine_effects" then

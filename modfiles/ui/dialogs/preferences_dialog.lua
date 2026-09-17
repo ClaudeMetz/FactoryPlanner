@@ -30,7 +30,7 @@ local function refresh_defaults_table(player, modal_elements, data_type, categor
 
     for prototype_id, prototype in ipairs(prototypes) do
         local selected = (default.proto.id == prototype_id)
-        local style = (selected) and "fflib_slot_button_green_small" or "fflib_slot_button_default_small"
+        local style = (selected) and "fflib_slot_button_green" or "fflib_slot_button_default"
         local elem_type = (default.quality) and prototype.elem_type .. "-with-quality" or prototype.elem_type
         local quality = (default.quality) and default.quality.name or nil
         local tooltip = {type=elem_type, name=prototype.name, quality=quality}
@@ -199,14 +199,14 @@ local function add_belts_proto_box(player, content_frame)
     local modal_elements = lib.globals.modal_elements(player)
     local preference_box = add_preference_box(content_frame, "default_belts")
 
-    local frame = preference_box.add{type="frame", direction="horizontal", style="fp_frame_light_slots_small"}
-    modal_elements["belts"] = frame.add{type="table", column_count=8, style="fp_table_slots_small"}
+    local frame = preference_box.add{type="frame", direction="horizontal", style="fp_frame_light_slots"}
+    modal_elements["belts"] = frame.add{type="table", column_count=6, style="filter_slot_table"}
     refresh_defaults_table(player, modal_elements, "belts", nil)
 
     local line = preference_box.add{type="line", direction="horizontal"}
     line.style.margin = {4, 0}
     local flow_additional = preference_box.add{type="flow", direction="horizontal"}
-    flow_additional.style.margin = {0, 20}
+    flow_additional.style.margin = {0, 8}
     flow_additional.style.vertical_align = "center"
 
     local switch_state = (preferences.belts_or_lanes == "belts") and "left" or "right"
@@ -238,7 +238,6 @@ local function add_default_proto_box(player, content_frame, data_type, category_
 
     local flow = content_frame.add{type="flow", direction="horizontal"}
     flow.style.vertical_align = "center"
-    flow.style.minimal_width = 140
     flow.style.horizontal_spacing = 8
 
     ---@class SelectPreferenceBoxDefaultTags
@@ -351,10 +350,6 @@ local function handle_view_toggle(player, tags, _)
     for _, view_preference in ipairs(view_preferences.views) do
         if view_preference.name == tags.name then
             view_preference.enabled = not view_preference.enabled
-            -- Select a valid view if the current one is disabled
-            if not view_preference.enabled and view_preferences.selected.primary == tags.name then
-                item_views.cycle_views(player, "standard")
-            end
             break
         end
     end
@@ -459,13 +454,13 @@ local function open_preferences_dialog(player, modal_data)
     add_belts_proto_box(player, right_content_frame)
 
     local preference_box = add_preference_box(right_content_frame, "box_defaults")
-    local default_boxes_table = preference_box.add{type="table", column_count=2}
-    default_boxes_table.style.horizontal_spacing = 16
+    local default_boxes_table = preference_box.add{type="table", column_count=3}
     default_boxes_table.style.vertical_spacing = 8
-    default_boxes_table.style.top_margin = -2
     add_default_proto_box(player, default_boxes_table, "pumps", nil, "pump")
+    default_boxes_table.add{type="empty-widget", style="fflib_horizontal_pusher"}
     add_default_proto_box(player, default_boxes_table, "wagons", "cargo-wagon", "cargo-wagon")
     add_default_proto_box(player, default_boxes_table, "silos", nil, "rocket-silo")
+    default_boxes_table.add{type="empty-widget", style="fflib_horizontal_pusher"}
     add_default_proto_box(player, default_boxes_table, "wagons", "fluid-wagon", "fluid-wagon")
 
     local pusher = right_content_frame.add{type="empty-widget", style="fflib_vertical_pusher"}
