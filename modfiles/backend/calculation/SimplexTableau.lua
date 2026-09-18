@@ -4,7 +4,8 @@ local util = require("__core__.lualib.util")
 
 
 ---@alias InequalityType "==" | "<=" | ">="
----@alias ItemFlow "import" | "export" | "desired_import" | "desired_export"
+---@alias ItemFlow "import" | "export" | "input" | "output"
+---@alias FlowDirection "in" | "out"
 ---@alias SimplexSolverState "solved" | "in-progress" | "unbounded" | "no-solution"
 ---@alias VariableType "unassigned" | "basic" | "non-basic"
 ---@alias ConstraintKey string `"item;<floor_id>;<proto-key>"` | `"c;<var-key>"`
@@ -61,6 +62,12 @@ end
 ---@return string[]
 local function unpack_key(key)
     return util.split(key--[[@as string]], SEPARATOR)
+end
+
+---@param flow ItemFlow
+---@return FlowDirection
+local function flow_direction(flow)
+    return (flow == "export" or flow == "output") and "out" or "in"
 end
 
 
@@ -126,8 +133,8 @@ function SimplexTableau:add_item_variable(item, flow, objective)
     local item_col_key = pack_item_variable(item, flow)
 
     -- This is opposite to recipes where products > 0 and ingredients < 0
-    local sign = ((flow == "import" or flow == "desired_import") and 1) or
-            ((flow == "export" or flow == "desired_export") and -1) or 0
+    local direction = flow_direction(flow)
+    local sign = (direction == "in" and 1) or (direction == "out" and -1) or 0
     if sign == 0 then return end
 
     -- Item variable is already present in the tableau
@@ -175,7 +182,7 @@ function SimplexTableau:_add_constraint(key, type, limit, objective)
     if limit < 0 then return end
 
     -- Add a new row for the constaint
-    local row_index = self:_add_row(pack_slack_variable(#self.matrix[1] + 1))
+    local row_index = self:_add_row(pack_generic_constraint(key))
 
     -- Fill the row values
     ---@diagnostic disable: need-check-nil
@@ -189,7 +196,7 @@ function SimplexTableau:_add_constraint(key, type, limit, objective)
     if type == "==" then return end
 
     -- Add a new slack variable for the inequality
-    local slack_col_index = self:_add_column(pack_generic_constraint(key))
+    local slack_col_index = self:_add_column(pack_slack_variable(#self.matrix[1] + 1))
 
     -- Fill the inequality between the given variable and the slack variable
     local sign = (type == "<=" and 1) or (type == ">=" and -1) or 0
@@ -462,9 +469,10 @@ function SimplexTableau:solve(floor_id, basis_cache)
             elseif var_unpacked[1] == "item" then
                 local item_key = var_unpacked[2]  ---@as SolverItemKey
 
-                if var_unpacked[3] == "export" or var_unpacked[3] == "desired_export" then
+                local direction = flow_direction(var_unpacked[3]--[[@as ItemFlow]])
+                if direction == "out" then
                     structures.map.add(result.products, structures.unpack_item(item_key, amount))
-                elseif var_unpacked[3] == "import" or var_unpacked[3] == "desired_import" then
+                elseif direction == "in" then
                     structures.map.add(result.ingredients, structures.unpack_item(item_key, amount))
                 end
             end
