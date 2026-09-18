@@ -185,9 +185,13 @@ function sequential_engine.solve_floor(factory_data, floor_id)
     if floor_data.level == 1 then
         for _, product in pairs(floor_data.products) do
             local ingredient_amount = aggregate.ingredients[structures.pack_item(product)] or 0  ---@type number
-            local produced_amount = product.amount - ingredient_amount
-            structures.map.subtract(aggregate.ingredients, product, ingredient_amount)
-            structures.map.add(aggregate.products, product, produced_amount)
+            if ingredient_amount < product.amount then
+                local produced_amount = product.amount - ingredient_amount
+                structures.map.subtract(aggregate.ingredients, product, ingredient_amount)
+                structures.map.add(aggregate.products, product, produced_amount)
+            else
+                structures.map.subtract(aggregate.ingredients, product)
+            end
         end
     end
 
