@@ -153,18 +153,22 @@ function simplex_engine.solve_floor(factory_data, floor_id, cache_invalid_map)
         -- Add additional variable and constraint to target products, so we get a bounded solution
         for _, item in pairs(floor_data.products) do  ---@cast item SolverItem
             local item_key = structures.pack_item(item)
-            local objective = item_cost(item_key) * objective_vector.target_product
-            tableau:add_item_variable(item_key, floor_id, "desired_export", objective)
-            tableau:add_item_constraint(item_key, floor_id, "desired_export", "<=", item.amount, objective)
+            if products[item_key] then
+                local objective = item_cost(item_key) * objective_vector.target_product
+                tableau:add_item_variable(item_key, floor_id, "output", objective)
+                tableau:add_item_constraint(item_key, floor_id, "output", "<=", item.amount, objective)
+            end
         end
 
         -- Add additional variable and constraint for limited ingredients
         -- TODO: implement limited ingredients
         for _, item in pairs({}) do  ---@cast item SolverItem
             local item_key = structures.pack_item(item)
-            local objective = item_cost(item_key) * objective_vector.limited_ingredient
-            tableau:add_item_variable(item_key, floor_id, "desired_import", objective)
-            tableau:add_item_constraint(item_key, floor_id, "desired_import", "<=", item.amount, objective)
+            if ingredients[item_key] then
+                local objective = item_cost(item_key) * objective_vector.limited_ingredient
+                tableau:add_item_variable(item_key, floor_id, "input", objective)
+                tableau:add_item_constraint(item_key, floor_id, "input", "<=", item.amount, objective)
+            end
         end
 
         -- Add aditional constraint for machine limits
