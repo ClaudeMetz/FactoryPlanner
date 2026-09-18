@@ -666,6 +666,24 @@ function generator.recipes.second_pass(recipes, context)
             local conditions = context.recipe_surface_conditions[recipe.name]
             recipe.compatible_locations[location.name] = generator.util.are_surface_conditions_met(properties, conditions)
         end
+
+        if recipe.location_restricted then
+            local locations_with_resource = {}  ---@type table<string, true>
+            local count = 0
+            for _, location in pairs(storage.prototypes.locations) do
+                if not location.resource_recipes or location.resource_recipes[recipe.name] then
+                    locations_with_resource[location.name] = true
+                    count = count + 1
+                end
+            end
+
+            -- Only apply resource restricitions if it can be found on at least a surface other than "Universal"
+            if count > 1 then
+                for location_name, is_compatible in pairs(recipe.compatible_locations) do
+                    recipe.compatible_locations[location_name] = (is_compatible and locations_with_resource[location_name])
+                end
+            end
+        end
     end
 end
 
