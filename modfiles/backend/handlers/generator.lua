@@ -27,6 +27,9 @@ local generator = {
 ---@field suffix string
 ---@field amounts table<string, uint>
 
+---@alias SurfaceConditionsMap table<string, SurfaceCondition[]>
+---@alias CompatibleLocationSet table<string, boolean>
+
 -- Data collected during recipe generation, reused by later stages of the same build
 ---@class GeneratorContext
 ---@field resource_deposits LuaEntityPrototype[]
@@ -36,6 +39,8 @@ local generator = {
 ---@field tile_can_have_plant table<string, string[]>
 ---@field research_sets table<string, ResearchSet>
 ---@field research_groups {group: ItemGroup, subgroup: ItemGroup}?
+---@field recipe_surface_conditions SurfaceConditionsMap
+---@field machine_surface_conditions SurfaceConditionsMap
 
 
 ---@class FPPrototype
@@ -96,7 +101,7 @@ end
 ---@field maximum_productivity IntegerEffectValue
 ---@field productivity_recipe string?
 ---@field type_counts { products: ItemTypeCounts, ingredients: ItemTypeCounts }
----@field surface_conditions SurfaceCondition[]?
+---@field compatible_locations CompatibleLocationSet
 ---@field recycling boolean
 ---@field barreling boolean
 ---@field enabling_technologies string[]?
@@ -126,7 +131,8 @@ function generator.recipes.generate(context)
             enabled_from_the_start = true,
             hidden = false,
             maximum_productivity = 2^53,
-            emissions_multiplier = 1
+            emissions_multiplier = 1,
+            compatible_locations = {}
         }  ---@type FPRecipePrototype
         generator.util.add_default_groups(recipe)
         return recipe
@@ -190,7 +196,7 @@ function generator.recipes.generate(context)
                 maximum_productivity = math.floor(proto.maximum_productivity
                     * MAGIC_NUMBERS.effect_precision + 1e-4),
                 productivity_recipe = (productivity_recipes[proto.name]) and proto.name or nil,
-                surface_conditions = proto.surface_conditions,
+                compatible_locations = {},
                 recycling = recycling_recipes[proto.name],
                 barreling = compacting_recipes[proto.name],
                 enabling_technologies = researchable_recipes[recipe_name],  -- can be nil
@@ -201,6 +207,8 @@ function generator.recipes.generate(context)
                 group = generator.util.generate_group_table(proto.group),
                 subgroup = generator.util.generate_group_table(proto.subgroup)
             }  ---@type FPRecipePrototype
+
+            context.recipe_surface_conditions[proto.name] = proto.surface_conditions
 
             generator.util.format_recipe(recipe, proto.products, proto.main_product, proto.ingredients)
             insert_prototype(recipes, recipe, nil)
@@ -638,7 +646,8 @@ function generator.recipes.generate(context)
 end
 
 ---@param recipes NamedPrototypes<FPRecipePrototype>
-function generator.recipes.second_pass(recipes)
+---@param context GeneratorContext
+function generator.recipes.second_pass(recipes, context)
     local machines = storage.prototypes.machines
     for _, recipe in pairs(recipes) do
         -- Check if recipes have a machine to produce them
@@ -647,6 +656,33 @@ function generator.recipes.second_pass(recipes)
         -- Give custom recipes a tooltip after items have been generated
         elseif recipe.custom then
             recipe.tooltip = generator.util.recipe_tooltip(recipe)
+        end
+    end
+
+    -- Build location compatibility data
+    for _, recipe in pairs(recipes) do
+        for _, location in pairs(storage.prototypes.locations) do
+            local properties = location.surface_properties
+            local conditions = context.recipe_surface_conditions[recipe.name]
+            recipe.compatible_locations[location.name] = generator.util.are_surface_conditions_met(properties, conditions)
+        end
+
+        if recipe.location_restricted then
+            local locations_with_resource = {}  ---@type table<string, true>
+            local count = 0
+            for _, location in pairs(storage.prototypes.locations) do
+                if not location.resource_recipes or location.resource_recipes[recipe.name] then
+                    locations_with_resource[location.name] = true
+                    count = count + 1
+                end
+            end
+
+            -- Only apply resource restricitions if it can be found on at least a surface other than "Universal"
+            if count > 1 then
+                for location_name, is_compatible in pairs(recipe.compatible_locations) do
+                    recipe.compatible_locations[location_name] = (is_compatible and locations_with_resource[location_name])
+                end
+            end
         end
     end
 end
@@ -960,7 +996,7 @@ end
 ---@field module_limit uint16
 ---@field quality_affects_module_slots boolean?
 ---@field module_slots_quality_bonus table<QualityID, uint16>
----@field surface_conditions SurfaceCondition[]
+---@field compatible_locations CompatibleLocationSet
 ---@field resource_drain_rate number?
 ---@field uses_quality_drain_modifier boolean?
 ---@field uses_force_mining_productivity_bonus boolean?
@@ -1153,6 +1189,8 @@ function generator.machines.generate(context)
             if fluid_burner_prototype.output_fluid_box then output_channels = output_channels - 1 end
         end
 
+        context.machine_surface_conditions[proto.name] = proto.surface_conditions
+
         return {
             name = proto.name,
             localised_name = proto.localised_name,
@@ -1181,7 +1219,7 @@ function generator.machines.generate(context)
             module_limit = generator.util.get_base_module_limit(proto),
             quality_affects_module_slots = proto.quality_affects_module_slots,  -- can be nil
             module_slots_quality_bonus = proto.module_slots_quality_bonus,
-            surface_conditions = proto.surface_conditions,
+            compatible_locations = {},
             uses_force_mining_productivity_bonus = proto.uses_force_mining_productivity_bonus,
             heating_energy = proto.heating_energy * 60
         }  ---@as FPMachinePrototype
@@ -1332,6 +1370,24 @@ function generator.machines.generate(context)
     generator.util.fill_categories(combined_list, machine_categories, machines, insert_prototype)
 
     return machines
+end
+
+---@param machine_categories IndexedPrototypesWithCategory<FPMachinePrototype>
+---@param context GeneratorContext
+function generator.machines.second_pass(machine_categories, context)
+    -- Build location compatibility data
+    for _, category in pairs(machine_categories) do
+        for _, machine in pairs(category.members) do
+            for _, location in pairs(storage.prototypes.locations) do
+                local compatible_locations = machine.compatible_locations
+                if #compatible_locations == 0 then
+                    local properties = location.surface_properties
+                    local conditions = context.machine_surface_conditions[machine.name]
+                    compatible_locations[location.name] = generator.util.are_surface_conditions_met(properties, conditions)
+                end
+            end
+        end
+    end
 end
 
 ---@param a FPMachinePrototype

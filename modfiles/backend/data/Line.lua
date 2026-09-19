@@ -4,10 +4,6 @@ local Machine = require("backend.data.Machine")
 local Beacon = require("backend.data.Beacon")
 local SimpleItem = require("backend.data.SimpleItem")
 
----@class SurfaceCompatibility
----@field recipe boolean
----@field machine boolean
-
 ---@class Line: Object, ObjectMethods
 ---@field class "Line"
 ---@field parent Floor
@@ -21,7 +17,6 @@ local SimpleItem = require("backend.data.SimpleItem")
 ---@field comment string
 ---@field total_effects IntegerModuleEffects
 ---@field effects_tooltip LocalisedString
----@field surface_compatibility SurfaceCompatibility?
 ---@field products SimpleItem[]
 ---@field byproducts SimpleItem[]
 ---@field ingredients SimpleItem[]
@@ -44,7 +39,6 @@ local function init(recipe_proto, production_type)
 
         total_effects = nil,
         effects_tooltip = "",
-        surface_compatibility = nil,  -- determined on demand
 
         products = {},
         byproducts = {},
@@ -87,7 +81,6 @@ function Line:change_machine_to_proto(player, proto)
 
         self.machine.module_set:normalize({compatibility=true, trim=true, effects=true})
         if not self:uses_beacon_effects() then self:set_beacon(nil) end
-        self.surface_compatibility = nil  -- reset it since the machine changed
     end
 
     -- Make sure the machine's fuel still applies
@@ -270,45 +263,6 @@ function Line:is_temperature_fully_configured()
     return true
 end
 
-
----@param properties SurfaceProperties?
----@param conditions SurfaceCondition[]?
----@return boolean compatible
-local function check_compatibility(properties, conditions)
-    if not properties or not conditions then return true end
-    for _, condition in pairs(conditions) do
-        local property = properties[condition.property]
-        if property and (property < condition.min or property > condition.max) then
-            return false
-        end
-    end
-    return true
-end
-
----@return SurfaceCompatibility compatibility
-function Line:get_surface_compatibility()
-    -- Determine and save compatibility on the fly when requested
-    if self.surface_compatibility == nil then
-        local object = self.parent  ---@as Object  -- find the District this is in
-        while object.class ~= "District" do object = object.parent--[[@as District]] end
-        ---@cast object District
-
-        local properties = object.location_proto.surface_properties
-        local recipe = check_compatibility(properties, self.recipe.proto.surface_conditions)
-        local machine = check_compatibility(properties, self.machine.proto.surface_conditions)
-
-        --[[ -- Only allow resources found on this location
-        if object.location_proto.resource_recipes and self.recipe.proto.location_restricted
-                and not object.location_proto.resource_recipes[self.recipe.proto.name] then
-            recipe = false
-        end ]]
-
-        self.surface_compatibility = {recipe=recipe, machine=machine}
-    end
-    return self.surface_compatibility
-end
-
-
 ---@alias LineBlocker "disabled" | "unavailable_recipe" | "incompatible_recipe" | "incompatible_machine" | "unconfigured_temperature"
 
 --- Returns why this line can't take part in the calculation, or nil if it can
@@ -316,10 +270,12 @@ end
 function Line:get_blocker()
     if not self.active then return "disabled" end
     if not self.recipe.available then return "unavailable_recipe" end
+    ---@cast self.recipe.proto FPRecipePrototype
+    ---@cast self.machine.proto FPMachinePrototype
 
-    local compatibility = self:get_surface_compatibility()
-    if not compatibility.recipe then return "incompatible_recipe" end
-    if not compatibility.machine then return "incompatible_machine" end
+    local location = self.parent:get_current_location().name
+    if not self.recipe.proto.compatible_locations[location] then return "incompatible_recipe" end
+    if not self.machine.proto.compatible_locations[location] then return "incompatible_machine" end
 
     if not self:is_temperature_fully_configured() then return "unconfigured_temperature" end
 
@@ -407,8 +363,6 @@ function Line:validate(player)
     if self.recipe.valid then self.valid = self.machine:validate(player) and self.valid end
 
     if self.recipe.valid and self.beacon then self.valid = self.beacon:validate(player) and self.valid end
-
-    self.surface_compatibility = nil  -- reset cached value
 
     return self.valid
 end
