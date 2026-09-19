@@ -104,6 +104,7 @@ end
 ---@field custom boolean
 ---@field additional_unlock_requirements UnlockableID[]?
 ---@field unlock_without_machine boolean?
+---@field agricultural_seed string?
 ---@field location_restricted boolean?
 ---@field enabled_from_the_start boolean
 ---@field hidden boolean
@@ -212,7 +213,8 @@ function generator.recipes.generate(context)
     local silo_recipes = {}  ---@type table<string, FPRecipePrototype>
     local lab_sets = {}  ---@type {inputs: table<string, boolean>, name: string, order: string}[]
 
-    local entity_filter = {{filter="hidden", invert=true}}
+    -- Hidden plants can still be cultivated through a seed (for example fishing towers).
+    local entity_filter = {{filter="hidden", invert=true}, {filter="type", type="plant"}}
     for _, proto in pairs(prototypes.get_entity_filtered(entity_filter)) do
         -- Note the alphabetically first power generating machine for the electricity recipe below
         if proto.type == "generator" or proto.type == "burner-generator" then
@@ -311,9 +313,11 @@ function generator.recipes.generate(context)
             recipe.additional_unlock_requirements = {{type="item", name=seed_name}}
             recipe.sprite = main_product.type .. "/" .. main_product.name
             recipe.order = proto.order
-            recipe.categories = {["agricultural-tower"] = true}
+            recipe.agricultural_seed = seed_name
+            recipe.categories = {["agricultural-tower-" .. seed_name] = true}
             recipe.energy = proto.growth_ticks--[[@cast -nil]] / 60
-            recipe.location_restricted = true
+            -- Cultivated-only plants need not have any natural spawning rules.
+            recipe.location_restricted = proto.autoplace_specification ~= nil
 
             -- Add the plant prototype name to the list of tiles it can be planted on
             if proto.autoplace_specification then
@@ -1279,17 +1283,26 @@ function generator.machines.generate(context)
             end
 
         elseif proto.type == "agricultural-tower" then
-            local machine = generate_category_entry(proto.type, proto, nil)
-            if machine then
-                local radius = proto.agricultural_tower_radius  ---@cast radius -nil
-                local crane_energy_usage = proto.crane_energy_usage  ---@cast crane_energy_usage -nil
-                -- One plant per grid square, with the tower occupying the center square
-                machine.speed = ((2 * radius + 1) ^ 2) - 1
-                -- The crane of a fully utilized tower is moving near-constantly, so include its usage
-                machine.energy_usage = machine.energy_usage + crane_energy_usage
-                -- Agri tower silently drops any fluid ingredients/products, so just allow them
-                machine.fluid_channels = {input = 255, output = 255}
-                insert_machine(machine)
+            local accepted_seeds = nil
+            if proto.accepted_seeds then
+                accepted_seeds = {}
+                for _, seed_name in pairs(proto.accepted_seeds) do accepted_seeds[seed_name] = true end
+            end
+            for _, recipe in pairs(recipe_prototypes) do
+                local seed_name = recipe.agricultural_seed
+                if seed_name and (accepted_seeds == nil or accepted_seeds[seed_name]) then
+                    local machine = generate_category_entry("agricultural-tower-" .. seed_name, proto, nil)
+                    if machine then
+                        local radius = proto.agricultural_tower_radius  ---@cast radius -nil
+                        local crane_energy_usage = proto.crane_energy_usage  ---@cast crane_energy_usage -nil
+                        -- One plant per grid square, with the tower occupying the center square
+                        machine.speed = ((2 * radius + 1) ^ 2) - 1
+                        -- Include the crane usage of a fully utilized tower
+                        machine.energy_usage = machine.energy_usage + crane_energy_usage
+                        machine.fluid_channels = {input = 255, output = 255}
+                        insert_machine(machine)
+                    end
+                end
             end
 
         elseif proto.type == "container" then
