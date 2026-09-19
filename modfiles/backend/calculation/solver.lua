@@ -53,7 +53,6 @@ end
 ---@field ingredients SolverMap
 ---@field fuel_item SolverItem?
 ---@field priority_item SolverItem?
----@field recipe_name string
 ---@field machine_limit number?
 ---@field machine_force_limit boolean?
 ---@field production_type RecipeProductionType
@@ -270,7 +269,6 @@ local function generate_line_data(player, factory, line)
         ingredients = ingredients,
         fuel_item = fuel_item,
         priority_item = priority_item,
-        recipe_name = recipe_proto.name,
         machine_limit = energy > MAGIC_NUMBERS.minimum_energy and line.machine.limit or nil,
         machine_force_limit = energy > MAGIC_NUMBERS.minimum_energy and line.machine.force_limit or nil,
         production_type = line.recipe.production_type,
@@ -309,7 +307,6 @@ local function generate_line_data_from_result(factory_data, floor_id, subfloor_r
         products = subfloor_result.products,
         ingredients = subfloor_result.ingredients,
         priority_item = subfloor_line.priority_item,
-        recipe_name = subfloor_line.recipe_name,
         machine_limit = subfloor_line.machine_limit,
         machine_force_limit = subfloor_line.machine_force_limit,
         production_type = "produce"

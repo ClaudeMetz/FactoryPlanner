@@ -67,14 +67,28 @@ local function refresh_solver_bar(player)
         local flow_unrestricted = solver_flow.add{type="flow", direction="horizontal"}
         build_unrestricted_item_buttons(flow_unrestricted, "unrestricted", "default", floor.linear_dependence_data.linearly_dependent_free_items)
 
-    elseif floor.linear_dependence_data and next(floor.linear_dependence_data.linearly_dependent_recipes) then
+    elseif floor.linear_dependence_data and next(floor.linear_dependence_data.linearly_dependent_lines) then
         local caption = {"fp.error_message", {"fp.info_label", {"fp.linearly_dependent_recipes"}}}
         solver_flow.add{type="label", caption=caption, tooltip={"fp.linearly_dependent_recipes_tt"}, style="fp_label_solver"}
         local flow_recipes = solver_flow.add{type="flow", direction="horizontal"}
         flow_recipes.style.minimal_height = 40
         flow_recipes.style.vertical_align = "center"
 
-        for _, recipe_proto in pairs(floor.linear_dependence_data.linearly_dependent_recipes) do
+        local ld_lines = {}  ---@type table<ObjectID, true>
+        for _, line_id in pairs(floor.linear_dependence_data.linearly_dependent_lines) do
+            ld_lines[line_id] = true
+        end
+
+        local ld_recipes = {}  ---@type table<integer, FPRecipePrototype>
+        for line_object in floor:iterator() do
+            if ld_lines[line_object.id] then
+                local recipe_proto = line_object.class == "Line" and line_object.recipe.proto
+                    or line_object.first--[[@cast -nil]].recipe--[[@cast -nil]].proto
+                ld_recipes[recipe_proto.id] = recipe_proto
+            end
+        end
+
+        for _, recipe_proto in pairs(ld_recipes) do
             local sprite = flow_recipes.add{type="sprite", sprite=recipe_proto.sprite,
                 tooltip=recipe_proto.localised_name, resize_to_sprite=true}
             sprite.style.size = 32

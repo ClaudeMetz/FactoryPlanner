@@ -42,16 +42,6 @@ local function pack_line_key(line_id)
     return "line"..SEPARATOR..line_id
 end
 
----@param recipe_set table<integer, true>
-local function get_recipe_protos(recipe_set)
-    local recipe_protos = {}
-    for recipe_id, _ in pairs(recipe_set) do
-        local recipe_proto = prototyper.util.find("recipes", recipe_id, nil)
-        table.insert(recipe_protos, recipe_proto)
-    end
-    return recipe_protos
-end
-
 ---@param item_set SolverSet
 ---@return FPItemPrototype[]
 local function get_item_protos(item_set)
@@ -454,7 +444,7 @@ local function find_linearly_dependent_cols(matrix, ignore_last)
 end
 
 ---@class LinearDependanceData
----@field linearly_dependent_recipes FPRecipePrototype[]
+---@field linearly_dependent_lines ObjectID[]
 ---@field linearly_dependent_free_items FPItemPrototype[]
 ---@field allowed_free_items FPItemPrototype[]
 ---@field num_needed_free_items integer
@@ -465,60 +455,42 @@ end
 ---@return LinearDependanceData
 ---@return boolean is_viable
 local function get_linear_dependence_data(factory_data, metadata, floor_id)
-    local linearly_dependent_recipes = {}  ---@type table<integer, true>
+    local linearly_dependent_lines = {}  ---@type ObjectID[]
     local linearly_dependent_free_items = {}  ---@type SolverSet
     local allowed_free_items = {}  ---@type SolverSet
 
     local matrix_data = get_matrix_data(factory_data, metadata, floor_id)
-    local num_rows = #matrix_data.rows.values
-    local num_cols = #matrix_data.columns.values
     to_reduced_row_echelon_form(matrix_data.matrix)
-
     local linearly_dependent_cols = find_linearly_dependent_cols(matrix_data.matrix, true)
-    local linearly_dependent_variables = {}  ---@type table<string, true>
 
     for col, _ in pairs(linearly_dependent_cols) do  ---@cast col integer
         local col_name = matrix_data.columns.values[col]  ---@as string
         local col_split_str = lib.split_string(col_name, SEPARATOR)
         if col_split_str[1] == "line" then
             local line_id = col_split_str[2]  ---@as integer
-            local recipe_name = factory_data.line_data_map[line_id].recipe_name
-            linearly_dependent_variables["recipe"..SEPARATOR..recipe_name] = true
+            table.insert(linearly_dependent_lines, line_id)
         else -- item
-            linearly_dependent_variables[col_name] = true
+            local item_key = col_split_str[2]  ---@as SolverItemKey
+            if metadata.free_items[item_key] then linearly_dependent_free_items[item_key] = true end
         end
     end
 
-    if next(linearly_dependent_variables) ~= nil then
-        local free_items = metadata.free_items
-
-        for col_name, _ in pairs(linearly_dependent_variables) do
-            local col_split_str = lib.split_string(col_name, SEPARATOR)
-            if col_split_str[1] == "recipe" then
-                local recipe_key = col_split_str[2]  ---@as integer
-                linearly_dependent_recipes[recipe_key] = true
-            else -- "item"
-                local item_key = col_split_str[2]  ---@as SolverItemKey
-                if free_items[item_key] then linearly_dependent_free_items[item_key] = true end
-            end
-        end
-    end
     -- check which eliminated items could be made free while still retaining linear independence
-    if next(linearly_dependent_variables) == nil and num_cols < num_rows then
-        local ld_matrix_data = get_matrix_data(factory_data, metadata, floor_id)
-        local items = ld_matrix_data.rows  -- when transposed becomes columns
-
-        local t_matrix = transpose(ld_matrix_data.matrix)
+    local num_rows = #matrix_data.rows.values
+    local num_cols = #matrix_data.columns.values
+    if not next(linearly_dependent_cols) and num_cols < num_rows then
+        local t_matrix_data = get_matrix_data(factory_data, metadata, floor_id)
+        local t_matrix = transpose(t_matrix_data.matrix)
         table.remove(t_matrix)
         to_reduced_row_echelon_form(t_matrix)
         local t_linearly_dependent = find_linearly_dependent_cols(t_matrix, false)
-        local eliminated_items = metadata.eliminated_items
 
+        local items = t_matrix_data.rows  -- when transposed becomes columns
         for col, _ in pairs(t_linearly_dependent) do  ---@cast col integer
             local row_split_str = lib.split_string(items.values[col]--[[@cast -nil]], SEPARATOR)
             if row_split_str[1] == "item" then
                 local item_key = row_split_str[2]  ---@as SolverItemKey
-                if eliminated_items[item_key] then allowed_free_items[item_key] = true end
+                if metadata.eliminated_items[item_key] then allowed_free_items[item_key] = true end
             end
         end
     end
@@ -527,12 +499,12 @@ local function get_linear_dependence_data(factory_data, metadata, floor_id)
     for _, _ in pairs(metadata.free_items) do num_chosen_free_items = num_chosen_free_items + 1 end
 
     local result = {
-        linearly_dependent_recipes = get_recipe_protos(linearly_dependent_recipes),
+        linearly_dependent_lines = linearly_dependent_lines,
         linearly_dependent_free_items = get_item_protos(linearly_dependent_free_items),
         allowed_free_items = get_item_protos(allowed_free_items),
         num_needed_free_items = num_rows - num_cols + num_chosen_free_items
     }  ---@type LinearDependanceData
-    local is_viable = num_rows == num_cols and #linearly_dependent_recipes == 0 and #linearly_dependent_free_items == 0
+    local is_viable = num_rows == num_cols and #linearly_dependent_lines == 0 and #linearly_dependent_free_items == 0
     return result, is_viable
 end
 
