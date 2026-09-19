@@ -2,18 +2,18 @@
 ---@param player LuaPlayer
 ---@param tags SwitchMatrixItemTags
 local function switch_matrix_item(player, tags, _)
-    local factory = lib.context.get(player, "Factory")  ---@as Factory
+    local floor = lib.context.get(player, "Floor")  ---@as Floor
 
     if tags.status == "unrestricted" then
-        for index, item in pairs(factory.matrix_free_items) do
+        for index, item in pairs(floor.gaussian_free_items) do
             if item.type == tags.type and item.name == tags.name then
-                table.remove(factory.matrix_free_items, index)
+                table.remove(floor.gaussian_free_items, index)
                 break
             end
         end
     else -- "constrained"
         local item_proto = prototyper.util.find("items", tags.name, tags.type)
-        table.insert(factory.matrix_free_items, item_proto)
+        table.insert(floor.gaussian_free_items, item_proto)
     end
 
     solver.update(player)
@@ -36,8 +36,8 @@ local function refresh_solver_bar(player)
     local floor = lib.context.get(player, "Floor")  ---@as Floor
     if floor:count() == 0 then return end
 
-    local free_items = factory.matrix_free_items  ---@as FPItemPrototype[]
-    local num_needed_free_items = factory.linear_dependence_data and factory.linear_dependence_data.num_needed_free_items or 0
+    local free_items = floor.gaussian_free_items  ---@as FPItemPrototype[]
+    local num_needed_free_items = floor.linear_dependence_data and floor.linear_dependence_data.num_needed_free_items or 0
 
     ---@param flow LuaGuiElement
     ---@param status "unrestricted" | "constrained"
@@ -55,8 +55,8 @@ local function refresh_solver_bar(player)
         end
     end
 
-    if factory.linear_dependence_data and next(factory.linear_dependence_data.linearly_dependent_free_items) then
-        local num_needed_restricted_items = #factory.linear_dependence_data.linearly_dependent_free_items
+    if floor.linear_dependence_data and next(floor.linear_dependence_data.linearly_dependent_free_items) then
+        local num_needed_restricted_items = #floor.linear_dependence_data.linearly_dependent_free_items
         local num_items_to_remove = num_needed_restricted_items - num_needed_free_items
 
         local caption = {"fp.error_message", {"fp.info_label", {"fp.remove_unrestricted_items"}}}
@@ -65,16 +65,30 @@ local function refresh_solver_bar(player)
         solver_flow.add{type="label", caption=caption, tooltip=tooltip, style="fp_label_solver"}
 
         local flow_unrestricted = solver_flow.add{type="flow", direction="horizontal"}
-        build_unrestricted_item_buttons(flow_unrestricted, "unrestricted", "default", factory.linear_dependence_data.linearly_dependent_free_items)
+        build_unrestricted_item_buttons(flow_unrestricted, "unrestricted", "default", floor.linear_dependence_data.linearly_dependent_free_items)
 
-    elseif factory.linear_dependence_data and next(factory.linear_dependence_data.linearly_dependent_recipes) then
+    elseif floor.linear_dependence_data and next(floor.linear_dependence_data.linearly_dependent_lines) then
         local caption = {"fp.error_message", {"fp.info_label", {"fp.linearly_dependent_recipes"}}}
         solver_flow.add{type="label", caption=caption, tooltip={"fp.linearly_dependent_recipes_tt"}, style="fp_label_solver"}
         local flow_recipes = solver_flow.add{type="flow", direction="horizontal"}
         flow_recipes.style.minimal_height = 40
         flow_recipes.style.vertical_align = "center"
 
-        for _, recipe_proto in pairs(factory.linear_dependence_data.linearly_dependent_recipes) do
+        local ld_lines = {}  ---@type table<ObjectID, true>
+        for _, line_id in pairs(floor.linear_dependence_data.linearly_dependent_lines) do
+            ld_lines[line_id] = true
+        end
+
+        local ld_recipes = {}  ---@type table<integer, FPRecipePrototype>
+        for line_object in floor:iterator() do
+            if ld_lines[line_object.id] then
+                local recipe_proto = line_object.class == "Line" and line_object.recipe.proto
+                    or line_object.first--[[@cast -nil]].recipe--[[@cast -nil]].proto
+                ld_recipes[recipe_proto.id] = recipe_proto
+            end
+        end
+
+        for _, recipe_proto in pairs(ld_recipes) do
             local sprite = flow_recipes.add{type="sprite", sprite=recipe_proto.sprite,
                 tooltip=recipe_proto.localised_name, resize_to_sprite=true}
             sprite.style.size = 32
@@ -82,7 +96,7 @@ local function refresh_solver_bar(player)
         end
 
     elseif num_needed_free_items ~= 0 then
-        local needs_choice = factory.linear_dependence_data and #factory.linear_dependence_data.allowed_free_items > 0 or false
+        local needs_choice = floor.linear_dependence_data and #floor.linear_dependence_data.allowed_free_items > 0 or false
 
         if needs_choice then
             local caption = {"fp.error_message", {"fp.info_label", {"fp.choose_unrestricted_items"}}}
@@ -97,9 +111,9 @@ local function refresh_solver_bar(player)
         local flow_unrestricted = solver_flow.add{type="flow", direction="horizontal"}
         build_unrestricted_item_buttons(flow_unrestricted, "unrestricted", "green", free_items)
 
-        if needs_choice then  ---@cast factory.linear_dependence_data -nil
+        if needs_choice then  ---@cast floor.linear_dependence_data -nil
             local flow_constrained = solver_flow.add{type="flow", direction="horizontal"}
-            build_unrestricted_item_buttons(flow_constrained, "constrained", "default", factory.linear_dependence_data.allowed_free_items)
+            build_unrestricted_item_buttons(flow_constrained, "constrained", "default", floor.linear_dependence_data.allowed_free_items)
         end
     end
 

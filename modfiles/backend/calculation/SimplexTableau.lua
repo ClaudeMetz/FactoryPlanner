@@ -4,13 +4,12 @@ local util = require("__core__.lualib.util")
 
 
 ---@alias InequalityType "==" | "<=" | ">="
----@alias ItemFlow "import" | "export" | "desired_import" | "desired_export"
----@alias SolverState "in-progress" | "solved" | "unbounded" | "no-solution"
+---@alias ItemFlow "import" | "export" | "input" | "output"
+---@alias FlowDirection "in" | "out"
+---@alias SimplexSolverState "solved" | "in-progress" | "unbounded" | "no-solution"
 ---@alias VariableType "unassigned" | "basic" | "non-basic"
 ---@alias ConstraintKey string `"item;<floor_id>;<proto-key>"` | `"c;<var-key>"`
 ---@alias VariableKey string `"line;<line_id>"` | `"item;<floor_id>;<in|out>;<proto-key>"` | `"s;<n>"` | `"y;<n>"`
----@alias LineResultTable table<ObjectID, SimplexLineResult>
----@alias FloorResultTable table<ObjectID, SimplexFloorResult>
 
 ---@class SimplexTableau
 ---@field matrix number[][] column-major order
@@ -25,30 +24,12 @@ SimplexTableau.__index = SimplexTableau
 ---@field key VariableKey
 ---@field type VariableType
 
----@class SimplexResult
----@field state SolverState
----@field basis table<ConstraintKey, VariableKey>
----@field line_results LineResultTable
----@field floor_results FloorResultTable
----@field cache_invalid boolean
-
----@class SimplexLineResult
----@field line_id ObjectID
----@field machine_amount number
-
----@class SimplexFloorResult
----@field floor_id ObjectID
----@field products SolverMap
----@field ingredients SolverMap
-
-
 local SEPARATOR = ";"
 
 ---@param item_key SolverItemKey
----@param floor_id ObjectID
 ---@return ConstraintKey
-local function pack_item_constraint(item_key, floor_id)
-    return "item" .. SEPARATOR .. floor_id .. SEPARATOR .. item_key
+local function pack_item_constraint(item_key)
+    return "item" .. SEPARATOR .. item_key
 end
 
 ---@param key string | integer
@@ -58,11 +39,10 @@ local function pack_generic_constraint(key)
 end
 
 ---@param item_key SolverItemKey
----@param floor_id ObjectID
 ---@param flow ItemFlow
 ---@return VariableKey
-local function pack_item_variable(item_key, floor_id, flow)
-    return "item" .. SEPARATOR .. floor_id .. SEPARATOR .. flow .. SEPARATOR .. item_key
+local function pack_item_variable(item_key, flow)
+    return "item" .. SEPARATOR .. item_key .. SEPARATOR .. flow
 end
 
 ---@param line_id ObjectID
@@ -82,6 +62,12 @@ end
 ---@return string[]
 local function unpack_key(key)
     return util.split(key--[[@as string]], SEPARATOR)
+end
+
+---@param flow ItemFlow
+---@return FlowDirection
+local function flow_direction(flow)
+    return (flow == "export" or flow == "output") and "out" or "in"
 end
 
 
@@ -116,7 +102,7 @@ function SimplexTableau:add_line_variable(line_data)
     local function add_rows(items, sign)
         for item, value in pairs(items) do
             if value > 0 then
-                local item_row_key = pack_item_constraint(item, line_data.floor_id)
+                local item_row_key = pack_item_constraint(item)
                 local row_index = 0
 
                 -- Add the item to the tableau if not already present
@@ -140,16 +126,15 @@ end
 
 --- Adds a slack variable to the inequality constraint of the given item
 ---@param item SolverItemKey
----@param floor_id ObjectID
 ---@param flow ItemFlow
 ---@param objective number?
-function SimplexTableau:add_item_variable(item, floor_id, flow, objective)
-    local item_row_key = pack_item_constraint(item, floor_id)
-    local item_col_key = pack_item_variable(item, floor_id, flow)
+function SimplexTableau:add_item_variable(item, flow, objective)
+    local item_row_key = pack_item_constraint(item)
+    local item_col_key = pack_item_variable(item, flow)
 
     -- This is opposite to recipes where products > 0 and ingredients < 0
-    local sign = ((flow == "import" or flow == "desired_import") and 1) or
-            ((flow == "export" or flow == "desired_export") and -1) or 0
+    local direction = flow_direction(flow)
+    local sign = (direction == "in" and 1) or (direction == "out" and -1) or 0
     if sign == 0 then return end
 
     -- Item variable is already present in the tableau
@@ -169,13 +154,12 @@ end
 
 --- Adds an additional constraint to a given item (at most one per item)
 ---@param item SolverItemKey
----@param floor_id ObjectID
 ---@param flow ItemFlow
 ---@param type InequalityType
 ---@param limit number must be non-negative (`>=0`)
 ---@param objective number?
-function SimplexTableau:add_item_constraint(item, floor_id, flow, type, limit, objective)
-    self:_add_constraint(pack_item_variable(item, floor_id, flow), type, limit, objective)
+function SimplexTableau:add_item_constraint(item, flow, type, limit, objective)
+    self:_add_constraint(pack_item_variable(item, flow), type, limit, objective)
 end
 
 --- Adds an additional constraint to a given line (machine limit)
@@ -198,7 +182,7 @@ function SimplexTableau:_add_constraint(key, type, limit, objective)
     if limit < 0 then return end
 
     -- Add a new row for the constaint
-    local row_index = self:_add_row(pack_slack_variable(#self.matrix[1] + 1))
+    local row_index = self:_add_row(pack_generic_constraint(key))
 
     -- Fill the row values
     ---@diagnostic disable: need-check-nil
@@ -212,23 +196,26 @@ function SimplexTableau:_add_constraint(key, type, limit, objective)
     if type == "==" then return end
 
     -- Add a new slack variable for the inequality
-    local slack_col_index = self:_add_column(pack_generic_constraint(key))
+    local slack_col_index = self:_add_column(pack_slack_variable(#self.matrix[1] + 1))
 
     -- Fill the inequality between the given variable and the slack variable
     local sign = (type == "<=" and 1) or (type == ">=" and -1) or 0
     self.matrix[slack_col_index][row_index] = sign
 end
 
----@param previous_basis table<ConstraintKey, VariableKey>
----@return SimplexResult result
-function SimplexTableau:solve(previous_basis)
+---@alias SimplexBasisCache table<ConstraintKey, VariableKey>
+
+---@param floor_id ObjectID
+---@param basis_cache SimplexBasisCache?
+---@return FloorResult result
+function SimplexTableau:solve(floor_id, basis_cache)
     local result = {
         state = "in-progress",
-        basis = {},
-        line_results = {},
-        floor_results = {},
-        cache_invalid = false,
-    }  ---@type SimplexResult
+        id = floor_id,
+        products = {},
+        ingredients = {},
+        line_result_map = {}
+    }  ---@type FloorResult
 
     local variable_map = {}  ---@type VariableMap[]
     local basic = {}  ---@type VariableKey[]
@@ -240,13 +227,15 @@ function SimplexTableau:solve(previous_basis)
     end
 
     -- Populate the basis vector based on the previous result
-    for row_key, col_key in pairs(previous_basis) do
-        local row_index = self.rows[row_key]
-        local col_index = self.cols[col_key]
+    if basis_cache then
+        for row_key, col_key in pairs(basis_cache) do
+            local row_index = self.rows[row_key]
+            local col_index = self.cols[col_key]
 
-        if row_index and col_index then
-            variable_map[col_index]--[[@cast -nil]].type = "basic"
-            basic[row_index] = col_key
+            if row_index and col_index then
+                variable_map[col_index]--[[@cast -nil]].type = "basic"
+                basic[row_index] = col_key
+            end
         end
     end
 
@@ -461,8 +450,9 @@ function SimplexTableau:solve(previous_basis)
     end
 
     -- Cache the solution basis for later
+    result.simplex_basis_cache = {}
     for key, i in pairs(self.rows) do
-        result.basis[key] = basic[i]
+        result.simplex_basis_cache[key] = basic[i]
     end
 
     -- Interpret the result
@@ -472,27 +462,18 @@ function SimplexTableau:solve(previous_basis)
             local var_unpacked = unpack_key(key)
             if var_unpacked[1] == "line" then
                 local id = tonumber(var_unpacked[2])  ---@as ObjectID
-                result.line_results[id] = {
-                    line_id = id,
+                result.line_result_map[id] = {
+                    id = id,
                     machine_amount = amount
                 }
             elseif var_unpacked[1] == "item" then
-                local item_key = var_unpacked[4]  ---@as SolverItemKey
-                local floor_id = tonumber(var_unpacked[2])  ---@as ObjectID
+                local item_key = var_unpacked[2]  ---@as SolverItemKey
 
-                -- Create a new floor result if necessary
-                if not result.floor_results[floor_id] then
-                    result.floor_results[floor_id] = {
-                        floor_id = floor_id,
-                        products = {},
-                        ingredients = {}
-                    }  ---@type SimplexFloorResult
-                end
-
-                if var_unpacked[3] == "export" or var_unpacked[3] == "desired_export" then
-                    structures.map.add(result.floor_results[floor_id].products, structures.unpack_item(item_key, amount))
-                elseif var_unpacked[3] == "import" or var_unpacked[3] == "desired_import" then
-                    structures.map.add(result.floor_results[floor_id].ingredients, structures.unpack_item(item_key, amount))
+                local direction = flow_direction(var_unpacked[3]--[[@as ItemFlow]])
+                if direction == "out" then
+                    structures.map.add(result.products, structures.unpack_item(item_key, amount))
+                elseif direction == "in" then
+                    structures.map.add(result.ingredients, structures.unpack_item(item_key, amount))
                 end
             end
         end

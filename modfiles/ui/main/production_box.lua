@@ -61,9 +61,7 @@ local function handle_solver_change(player, tags, _)
     if factory.solver == tags.solver then return end
 
     factory.solver = tags.solver
-    factory.matrix_free_items = {}  -- reset could be avoided
-    factory.linear_dependence_data = nil
-    factory.simplex_basis = nil
+    factory:clear_solver_cache()
 
     main_dialog.toggle_districts_view(player, true)
     solver.update(player)
