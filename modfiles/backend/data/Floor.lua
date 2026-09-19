@@ -346,7 +346,7 @@ end
 function Floor:validate(player)
     self.valid = self:_validate(player)
 
-    self.current_location = nil
+    self.current_location = nil  -- reset cached value
 
     return self.valid
 end
