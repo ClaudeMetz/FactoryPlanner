@@ -17,7 +17,6 @@ local SimpleItem = require("backend.data.SimpleItem")
 ---@field comment string
 ---@field total_effects IntegerModuleEffects
 ---@field effects_tooltip LocalisedString
----@field location_name string?
 ---@field products SimpleItem[]
 ---@field byproducts SimpleItem[]
 ---@field ingredients SimpleItem[]
@@ -40,7 +39,6 @@ local function init(recipe_proto, production_type)
 
         total_effects = nil,
         effects_tooltip = "",
-        location_name = nil,  -- determined on demand
 
         products = {},
         byproducts = {},
@@ -265,19 +263,6 @@ function Line:is_temperature_fully_configured()
     return true
 end
 
----@return string
-function Line:get_current_location_name()
-    if not self.location_name then
-        local object = self.parent  ---@as Object  -- find the District this is in
-        while object.class ~= "District" do object = object.parent--[[@as District]] end
-        ---@cast object District
-        self.location_name = object.location_proto.name
-    end
-    ---@cast self.location_name -nil
-    return self.location_name
-end
-
-
 ---@alias LineBlocker "disabled" | "unavailable_recipe" | "incompatible_recipe" | "incompatible_machine" | "unconfigured_temperature"
 
 --- Returns why this line can't take part in the calculation, or nil if it can
@@ -288,7 +273,7 @@ function Line:get_blocker()
     ---@cast self.recipe.proto FPRecipePrototype
     ---@cast self.machine.proto FPMachinePrototype
 
-    local location = self:get_current_location_name()
+    local location = self.parent:get_current_location().name
     if not self.recipe.proto.compatible_locations[location] then return "incompatible_recipe" end
     if not self.machine.proto.compatible_locations[location] then return "incompatible_machine" end
 
