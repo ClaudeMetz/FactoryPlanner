@@ -3,8 +3,8 @@ local Object = require("backend.data.Object")
 -- Belt-defined products are always stored in belts; lanes are only a display unit
 ---@alias ProductDefinedBy "amount" | "belts"
 
----@class TLProduct: Object, ObjectMethods
----@field class "TLProduct"
+---@class FactoryItem: Object, ObjectMethods
+---@field class "FactoryItem"
 ---@field parent Factory
 ---@field proto FPItemPrototype | FPPackedPrototype
 ---@field defined_by ProductDefinedBy
@@ -12,12 +12,12 @@ local Object = require("backend.data.Object")
 ---@field belt_proto (FPBeltPrototype | FPPackedPrototype)?
 ---@field belt_stack integer?
 ---@field amount number
-local TLProduct = Object.methods()
-TLProduct.__index = TLProduct
-script.register_metatable("TLProduct", TLProduct)
+local FactoryItem = Object.methods()
+FactoryItem.__index = FactoryItem
+script.register_metatable("FactoryItem", FactoryItem)
 
 ---@param proto (FPItemPrototype | FPPackedPrototype)?
----@return TLProduct
+---@return FactoryItem
 local function init(proto)
     local this_proto = proto or {
         name = "",
@@ -33,19 +33,19 @@ local function init(proto)
         belt_stack = nil,
 
         amount = 0  -- the amount satisfied by the solver
-    }, "TLProduct", TLProduct)  ---@as TLProduct
+    }, "FactoryItem", FactoryItem)  ---@as FactoryItem
     return object
 end
 
 
-function TLProduct:index()
+function FactoryItem:index()
     OBJECT_INDEX[self.id] = self
 end
 
 
 -- Returns the amount needed to satisfy this item
 ---@return number required_amount
-function TLProduct:get_required_amount()
+function FactoryItem:get_required_amount()
     if self.defined_by == "amount" then
         return self.required_amount
     else   -- defined_by == "belts"
@@ -57,7 +57,7 @@ end
 
 -- Adds to this item's requirement, converting the given amount into however it is defined
 ---@param added_amount number amount per second
-function TLProduct:add_required_amount(added_amount)
+function FactoryItem:add_required_amount(added_amount)
     if self.defined_by ~= "amount" then
         ---@cast self.belt_proto FPBeltPrototype
         ---@cast self.belt_stack -nil
@@ -70,8 +70,8 @@ end
 ---@param object CopyableObject
 ---@return boolean success
 ---@return string? error
-function TLProduct:paste(object)
-    if object.class == "TLProduct" or object.class == "SimpleItem" or object.class == "Fuel" then
+function FactoryItem:paste(object)
+    if object.class == "FactoryItem" or object.class == "SimpleItem" or object.class == "Fuel" then
         local proto
         if object.class == "Fuel" then  -- need an Item prototype here, not Fuel
             proto = prototyper.util.find("items", object:get_name_with_temperature(), object.proto.type)
@@ -97,7 +97,7 @@ function TLProduct:paste(object)
         end
 
         local product
-        if object.class == "TLProduct" then
+        if object.class == "FactoryItem" then
             product = object
         else
             product = init(proto)  -- defined_by = "amount"
@@ -112,8 +112,8 @@ function TLProduct:paste(object)
 end
 
 
----@class PackedProduct: PackedObject
----@field class "TLProduct"
+---@class PackedFactoryItem: PackedObject
+---@field class "FactoryItem"
 ---@field proto FPPackedPrototype
 ---@field defined_by ProductDefinedBy
 ---@field required_amount number
@@ -121,8 +121,8 @@ end
 ---@field belt_stack integer?
 
 ---@param full boolean
----@return PackedProduct packed_self
-function TLProduct:pack(full)
+---@return PackedFactoryItem packed_self
+function FactoryItem:pack(full)
     return {
         class = self.class,
         proto = prototyper.util.simplify_prototype(self.proto, "type"),
@@ -135,8 +135,8 @@ function TLProduct:pack(full)
     }
 end
 
----@param packed_self PackedProduct
----@return TLProduct product
+---@param packed_self PackedFactoryItem
+---@return FactoryItem product
 local function unpack(packed_self)
     -- Prototypes are unpacked at validate
     local unpacked_self = init(packed_self.proto)
@@ -152,7 +152,7 @@ end
 
 ---@param player LuaPlayer
 ---@return boolean valid
-function TLProduct:validate(player)
+function FactoryItem:validate(player)
     self.proto = prototyper.util.validate_prototype_object(self.proto, "type")  ---@as FPItemPrototype | FPPackedPrototype
     self.valid = (not self.proto.simplified)
 
@@ -173,7 +173,7 @@ end
 
 ---@param player LuaPlayer
 ---@return boolean success
-function TLProduct:repair(player)
+function FactoryItem:repair(player)
     -- If the item is invalid, either prototype is simplified, making this unrepairable
     return false
 end

@@ -31,7 +31,7 @@ end
 ---@return boolean success
 ---@return string? error
 function SimpleItem:paste(object)
-    if object.class == "TLProduct" or object.class == "SimpleItem" or object.class == "Fuel" then
+    if object.class == "FactoryItem" or object.class == "SimpleItem" or object.class == "Fuel" then
         ---@cast object.proto -nil
 
         -- Only pasting on a line item is allowed

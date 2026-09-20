@@ -1,4 +1,4 @@
-local TLProduct = require("backend.data.TLProduct")
+local FactoryItem = require("backend.data.FactoryItem")
 
 ---@alias ItemCategory "product" | "byproduct" | "ingredient"
 
@@ -6,7 +6,7 @@ local TLProduct = require("backend.data.TLProduct")
 ---@field item_id ObjectID?
 ---@field item_category ItemCategory
 ---@field create_factory boolean?
----@field item TLProduct?
+---@field item FactoryItem?
 ---@field timescale Timescale
 ---@field belts_or_lanes BeltsOrLanes
 ---@field amount_defined_by ProductDefinedBy
@@ -338,7 +338,7 @@ end
 ---@param parent_flow LuaGuiElement
 ---@param modal_data PickerDialogModalData
 ---@param item_category ItemCategory
----@param item TLProduct?
+---@param item FactoryItem?
 local function add_item_pane(parent_flow, modal_data, item_category, item)
     local function create_flow()
         local flow = parent_flow.add{type="flow", direction="horizontal"}
@@ -476,7 +476,7 @@ local function open_picker_dialog(player, modal_data)
     modal_data.belt_stack = preferences.belt_stack
 
     if modal_data.item_id then
-        modal_data.item = OBJECT_INDEX[modal_data.item_id]  ---@as TLProduct
+        modal_data.item = OBJECT_INDEX[modal_data.item_id]  ---@as FactoryItem
         modal_data.belt_stack = modal_data.item.belt_stack or modal_data.belt_stack
     end
 
@@ -531,7 +531,7 @@ local function close_picker_dialog(player, action)
             modal_data.item.belt_stack = (modal_data.belt_proto) and modal_data.belt_stack or nil
         else
             local item_proto = modal_data.item_proto
-            local top_level_item = TLProduct.init(item_proto)
+            local top_level_item = FactoryItem.init(item_proto)
             top_level_item.defined_by = defined_by
             top_level_item.required_amount = relevant_amount
             top_level_item.belt_proto = modal_data.belt_proto

@@ -9,7 +9,7 @@ local _structures = {
 ---@field amount number
 ---@field temperature float?
 
----@alias SolverInputItem SolverItem | FPItemPrototype | SimpleItem | Ingredient | FormattedProduct | TLProduct | Fuel
+---@alias SolverInputItem SolverItem | FPItemPrototype | SimpleItem | Ingredient | FormattedProduct | FactoryItem | Fuel
 ---@alias SolverItemKey string `<item.proto.type>/<item.proto.name>`
 ---@alias SolverMap table<SolverItemKey, number>
 ---@alias SolverSet table<SolverItemKey, true>

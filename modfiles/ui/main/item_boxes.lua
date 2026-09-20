@@ -1,4 +1,4 @@
-local TLProduct = require("backend.data.TLProduct")
+local FactoryItem = require("backend.data.FactoryItem")
 local SimpleItem = require("backend.data.SimpleItem")
 
 -- ** LOCAL UTIL **
@@ -176,7 +176,7 @@ local function handle_item_add(player, tags, event)
     local factory = lib.context.get(player, "Factory")  ---@as Factory
 
     if event.shift then  -- paste
-        local dummy_product = TLProduct.init()
+        local dummy_product = FactoryItem.init()
         lib.clipboard.dummy_paste(player, dummy_product, factory)
     elseif player.is_cursor_blueprint() then  -- import blueprint entities
         local blueprint = player.cursor_record or player.cursor_stack
@@ -190,7 +190,7 @@ local function handle_item_add(player, tags, event)
             if existing_item then
                 existing_item:add_required_amount(amount)
             else
-                local product = TLProduct.init(proto)  -- defined_by = "amount"
+                local product = FactoryItem.init(proto)  -- defined_by = "amount"
                 product.required_amount = amount
                 factory:insert(product)
             end
@@ -209,10 +209,10 @@ end
 local function handle_item_button_click(player, tags, action)
     local item
     if tags.item_id then
-        item = OBJECT_INDEX[tags.item_id]  ---@as TLProduct
+        item = OBJECT_INDEX[tags.item_id]  ---@as FactoryItem
     else
         local floor = lib.context.get(player, "Floor")  ---@as Floor
-        item = floor[tags.item_category .. "s"][tags.item_index]  ---@as TLProduct
+        item = floor[tags.item_category .. "s"][tags.item_index]  ---@as FactoryItem
     end
 
     if action == "add_recipe" then
@@ -230,7 +230,7 @@ local function handle_item_button_click(player, tags, action)
         lib.gui.run_refresh(player, "item_boxes")
 
     elseif action == "copy" then
-        local copyable_item = (item.class == "TLProduct") and item
+        local copyable_item = (item.class == "FactoryItem") and item
             or SimpleItem.init(nil, item.proto--[[@as FPItemPrototype]], item.amount)
         lib.clipboard.copy(player, copyable_item)
 
@@ -250,7 +250,7 @@ local function handle_item_button_click(player, tags, action)
         lib.cursor.pipette_item(player, item.proto--[[@as FPItemPrototype]])
 
     elseif action == "put_into_combinator" then
-        local amount = (item.class == "TLProduct") and item:get_required_amount() or item.amount
+        local amount = (item.class == "FactoryItem") and item:get_required_amount() or item.amount
         lib.cursor.put_into_combinator(player, item.proto--[[@as FPItemPrototype]], amount)
 
     elseif action == "factoriopedia" then

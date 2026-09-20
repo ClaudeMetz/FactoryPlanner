@@ -12,7 +12,7 @@ local function fixture(context)
     local factory = classes.Factory.init("clipboard-test", "sequential")
     district:insert(factory)
     lib.context.set(player, factory)
-    local product = classes.TLProduct.init(prototyper.util.find("items", "iron-gear-wheel", "item"))
+    local product = classes.FactoryItem.init(prototyper.util.find("items", "iron-gear-wheel", "item"))
     product.required_amount = 12
     factory:insert(product)
     return classes, player, factory, product
@@ -107,7 +107,7 @@ return {
             click(player, "act_on_item_box", {item_id=product.id, item_category="product"},
                 {top_level=true, product=true}, "copy")
             local clip = lib.globals.player_table(player).clipboard
-            assert(clip.class == "TLProduct" and product.parent == factory)
+            assert(clip.class == "FactoryItem" and product.parent == factory)
             product.defined_by = "amount"
             product.required_amount = 99
             product.belt_proto = nil
@@ -141,7 +141,7 @@ return {
         assert(factory.first.defined_by == "amount" and factory.first.required_amount == 23,
             "ordinary items must still paste as rate-defined products")
 
-        local coal = classes.TLProduct.init(prototyper.util.find("items", "coal", "item"))
+        local coal = classes.FactoryItem.init(prototyper.util.find("items", "coal", "item"))
         factory:insert(coal)
         lib.clipboard.copy(player, coal)
         local smelting = classes.Line.init(prototyper.util.find("recipes", "iron-plate"), "produce")
@@ -150,7 +150,7 @@ return {
         assert(lib.clipboard.paste(player, smelting.machine.fuel))
         assert(smelting.machine.fuel.proto.name == "coal", "products must still paste as fuels")
 
-        local steam = classes.TLProduct.init(prototyper.util.find("items",
+        local steam = classes.FactoryItem.init(prototyper.util.find("items",
             lib.temperature.name_with("steam", 165), "fluid"))
         assert(steam.proto.temperature == 165)
         factory:insert(steam)
@@ -191,7 +191,7 @@ return {
         local clip = player_table.clipboard
         assert(not lib.clipboard.paste(player, product), "a recipe cannot be pasted onto a product")
         assert(factory.first == product and product.required_amount == 12 and player_table.clipboard == clip)
-        lib.clipboard.dummy_paste(player, classes.TLProduct.init(), factory)
+        lib.clipboard.dummy_paste(player, classes.FactoryItem.init(), factory)
         assert(factory:count() == 1 and factory.first == product, "failed dummy paste must remove its placeholder")
         assert(player_table.clipboard == clip)
     end},
@@ -278,21 +278,21 @@ return {
                 {top_level=true, product=true})
             assert(factory:count() == 0 and product.parent == nil)
             local clip = lib.globals.player_table(player).clipboard
-            assert(clip.class == "TLProduct" and clip.class == copied.class)
+            assert(clip.class == "FactoryItem" and clip.class == copied.class)
             assert(clip.packed_object.proto.name == copied.packed_object.proto.name
                 and clip.packed_object.proto.type == copied.packed_object.proto.type
                 and clip.packed_object.required_amount == copied.packed_object.required_amount
                 and clip.packed_object.defined_by == copied.packed_object.defined_by
                 and clip.packed_object.belt_stack == copied.packed_object.belt_stack,
                 "Cut must store the same product configuration as Copy")
-            lib.clipboard.dummy_paste(player, classes.TLProduct.init(), factory)
+            lib.clipboard.dummy_paste(player, classes.FactoryItem.init(), factory)
             local pasted = factory.first
             assert(pasted and pasted ~= product and pasted.required_amount == expected_amount)
             assert(pasted.defined_by == (belts and "belts" or "amount"))
             if belts then
                 assert(pasted.belt_proto.name == "transport-belt" and pasted.belt_stack == 2)
             end
-            lib.clipboard.dummy_paste(player, classes.TLProduct.init(), factory)
+            lib.clipboard.dummy_paste(player, classes.FactoryItem.init(), factory)
             assert(factory:count() == 1, "repeated paste must not create a duplicate product")
             assert(lib.globals.player_table(player).clipboard == clip, "failed paste must retain clipboard")
 
