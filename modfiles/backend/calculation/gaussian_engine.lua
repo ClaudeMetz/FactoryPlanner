@@ -86,9 +86,9 @@ local function get_metadata(factory_data, floor_id, free_items)
     local all_items = solver.util.set.union(line_inputs, line_outputs)
     local raw_inputs = solver.util.set.difference(line_inputs, line_outputs)
     local raw_outputs = solver.util.set.difference(line_outputs, line_inputs)
-    local byproducts = solver.util.set.difference(raw_outputs, desired_outputs)
+    local products = solver.util.set.difference(raw_outputs, desired_outputs)
     local unproduced_outputs = solver.util.set.difference(desired_outputs, line_outputs)
-    local free_variables = solver.util.set.union(raw_inputs, byproducts, unproduced_outputs)
+    local free_variables = solver.util.set.union(raw_inputs, products, unproduced_outputs)
     local intermediate_items = solver.util.set.difference(all_items, free_variables)
 
     -- When a factory is updated, add any new variables to eliminated and let the user select free.
@@ -103,7 +103,7 @@ local function get_metadata(factory_data, floor_id, free_items)
 
     local eliminated_items = solver.util.set.difference(intermediate_items, free_items)
     local result = {
-        byproducts = byproducts,
+        byproducts = products,
         unproduced_outputs = unproduced_outputs,
         all_items = all_items,
         eliminated_items = eliminated_items,
@@ -290,8 +290,8 @@ local function get_matrix_data(factory_data, metadata, floor_id)
     if floor_data.level == 1 then
         for _, line_id in ipairs(floor_data.line_ids) do
             local line_data = factory_data.line_data_map[line_id]
-            if line_data.machine_limit then
-                machine_limits[line_id] = line_data.machine_limit
+            if line_data.machine_requirement then
+                machine_limits[line_id] = line_data.machine_requirement.count
             end
         end
     else
