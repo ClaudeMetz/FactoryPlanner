@@ -8,11 +8,6 @@ function migration.player_table(player_table)
         for line_object in floor:iterator() do
             if line_object.class == "Floor" then
                 migrate_floor(line_object)
-            else
-                if floor.level > 2 or floor.level == 2 and line_object ~= floor.first then
-                    line_object.machine.limit = nil
-                    line_object.machine.force_limit = nil
-                end
             end
         end
     end
@@ -30,11 +25,6 @@ function migration.packed_factory(packed_factory)
         for i, line_object in ipairs(floor.lines) do
             if line_object.class == "Floor" then
                 migrate_floor(line_object)
-            else
-                if floor.level > 2 or floor.level == 2 and i > 1 then
-                    line_object.machine.limit = nil
-                    line_object.machine.force_limit = nil
-                end
             end
         end
     end
