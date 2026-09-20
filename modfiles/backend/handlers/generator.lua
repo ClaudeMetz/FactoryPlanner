@@ -1865,16 +1865,15 @@ local function generate_surface_properties()
     end
 
     for _, proto in pairs(prototypes.surface_property) do
-        if not proto.hidden then
-            table.insert(properties, {
-                name = proto.name,
-                order = proto.order,
-                localised_name = proto.localised_name,
-                localised_unit_key = proto.localised_unit_key,
-                default_value = proto.default_value,
-                is_time = proto.is_time
-            })
-        end
+        table.insert(properties, {
+            name = proto.name,
+            order = proto.order,
+            localised_name = proto.localised_name,
+            localised_unit_key = proto.localised_unit_key,
+            default_value = proto.default_value,
+            is_time = proto.is_time,
+            hidden = proto.hidden
+        })
     end
 
     table.sort(properties, property_sorting_function)
@@ -1918,11 +1917,13 @@ function generator.locations.generate(context)
             local value = proto.surface_properties[property_proto.name] or property_proto.default_value
             surface_properties[property_proto.name] = value
 
-            local value_and_unit = {property_proto.localised_unit_key, value}  ---@type LocalisedString
-            if property_proto.is_time then value_and_unit = lib.format.time(value) end
+            if not property_proto.hidden then
+                local value_and_unit = {property_proto.localised_unit_key, value}  ---@type LocalisedString
+                if property_proto.is_time then value_and_unit = lib.format.time(value) end
 
-            current_table, next_index = lib.format.build_localised_string(
-                {"fp.surface_property", property_proto.localised_name, value_and_unit}, current_table, next_index)
+                current_table, next_index = lib.format.build_localised_string(
+                    {"fp.surface_property", property_proto.localised_name, value_and_unit}, current_table, next_index)
+            end
         end
 
         if category == "space-location" and proto.map_gen_settings and proto.map_gen_settings.autoplace_settings then
