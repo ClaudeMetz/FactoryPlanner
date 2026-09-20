@@ -66,10 +66,11 @@ local function refresh_item_box(player, factory, item_category, tooltips)
 
     if item_category == "product" and floor.level == 1 then
         for product in factory:iterator() do  ---@cast product.proto FPItemPrototype
-            local style = "fflib_slot_button_default"
+            local style = "fflib_slot_button_blue"
 
             local amount, number_tooltip, secondary_amount
             local required_amount = product:get_defined_amount()
+            local display_amount = required_amount or product.amount
 
             local special = (product.proto.type == "entity" and product.proto.special)
             local flags = {
@@ -85,23 +86,31 @@ local function refresh_item_box(player, factory, item_category, tooltips)
             }
 
             if flags.special then
-                amount = lib.format.button_number(required_amount)
-                number_tooltip = lib.format.special_tooltip(product.proto.name, required_amount)
+                amount = lib.format.button_number(display_amount)
+                number_tooltip = lib.format.special_tooltip(product.proto.name, display_amount)
             else
                 amount, number_tooltip, secondary_amount = item_views.process_item(player, product.proto,
-                    required_amount, nil)
+                    display_amount, nil)
                 if amount == -1 then goto skip_product end  -- an amount of -1 means it was below the margin of error
             end
 
-            local satisfaction_line, percentage_string = lib.gui.calculate_satisfaction(
-                product.amount, required_amount)
+            local satisfaction_line = ""  ---@type LocalisedString
+            if required_amount ~= nil then
+                local percentage_string
+                satisfaction_line, percentage_string = lib.gui.calculate_satisfaction(product.amount, required_amount)
 
-            if percentage_string == "0" then style = "fflib_slot_button_red"
-            elseif percentage_string == "100" then style = "fflib_slot_button_green"
-            else style = "fflib_slot_button_yellow" end
+                if percentage_string == "0" then style = "fflib_slot_button_red"
+                elseif percentage_string == "100" then style = "fflib_slot_button_green"
+                else style = "fflib_slot_button_yellow" end
+            end
 
             local tooltip = {"", {"fp.tt_title", product.proto.localised_name}, "\n", number_tooltip,
                 satisfaction_line}
+            if product.definition.type == "machines" then
+                local count = product.definition.machine_count
+                table.insert(tooltip, {"", "\n", {"fp.item_defined_by_machines",
+                    lib.format.number(count, 4), {"fp.pl_machine", count}}})
+            end
 
             ---@type HandleItemBoxClickTags
             local tags = {mod="fp", on_gui_click="act_on_item_box", item_category=item_category, item_id=product.id,
@@ -227,7 +236,9 @@ local function handle_item_button_click(player, tags, action)
     elseif action == "move_left" or action == "move_right" then
         local direction = (action == "move_left") and "previous" or "next"
         item.parent:shift(item, direction, 1)
-        lib.gui.run_refresh(player, "item_boxes")
+
+        solver.update(player)
+        lib.gui.run_refresh(player, "production")
 
     elseif action == "copy" then
         local copyable_item = (item.class == "FactoryItem") and item

@@ -246,14 +246,30 @@ end
 -- ** PICKER DIALOG **
 ---@param modal_data PickerDialogModalData
 local function set_appropriate_focus(modal_data)
-    if modal_data.amount_defined_by == "amount" then
+    if modal_data.amount_defined_by == "machines" then
+        lib.gui.select_all(modal_data.modal_elements["machine_count_textfield"])
+    elseif modal_data.amount_defined_by == "amount" then
         lib.gui.select_all(modal_data.modal_elements["item_amount_textfield"])
     else  -- "belts"
         lib.gui.select_all(modal_data.modal_elements["belt_amount_textfield"])
     end
 end
 
--- Is only called when defined_by ~= "amount"
+---@param modal_data PickerDialogModalData
+local function refresh_definition_controls(modal_data)
+    local modal_elements = modal_data.modal_elements
+    local machines = (modal_data.amount_defined_by == "machines")
+    local belts = (modal_data.belt_proto ~= nil)
+
+    modal_elements.item_amount_textfield.enabled = not machines and not belts
+    modal_elements.belt_choice_button.enabled = not machines
+        and modal_data.item_proto ~= nil and modal_data.item_proto.type == "item"
+    modal_elements.belt_amount_textfield.enabled = not machines and belts
+    modal_elements.belt_stack_dropdown.enabled = not machines and belts
+    modal_elements.machine_count_textfield.enabled = machines
+end
+
+-- Synchronizes the amount fields when a belt is selected
 ---@param modal_data PickerDialogModalData
 local function sync_amounts(modal_data)
     local modal_elements = modal_data.modal_elements
@@ -275,18 +291,16 @@ local function set_belt_proto(modal_data, belt_proto)
     modal_data.belt_proto = belt_proto
 
     local modal_elements = modal_data.modal_elements
-    modal_elements.item_amount_textfield.enabled = (belt_proto == nil)
-    modal_elements.belt_amount_textfield.enabled = (belt_proto ~= nil)
-    modal_elements.belt_stack_dropdown.enabled = (belt_proto ~= nil)
+    if modal_data.amount_defined_by ~= "machines" then
+        modal_data.amount_defined_by = (belt_proto ~= nil) and "belts" or "amount"
+    end
 
     if belt_proto == nil then
         modal_elements.belt_choice_button.elem_value = nil
         modal_elements.belt_amount_textfield.text = ""
-        modal_data.amount_defined_by = "amount"
     else
         -- Might double set the choice button, but it doesn't matter
         modal_elements.belt_choice_button.elem_value = belt_proto.name
-        modal_data.amount_defined_by = "belts"
 
         local item_amount = lib.gui.parse_expression_field(modal_elements.item_amount_textfield, true)
         if item_amount ~= nil then
@@ -314,7 +328,6 @@ local function set_item_proto(modal_data, item_proto)
 
     -- Disable definition by belt for non-items
     local is_item = (item_proto and item_proto.type == "item") or false
-    modal_elements.belt_choice_button.enabled = is_item
     if not is_item then set_belt_proto(modal_data, nil) end
 end
 
@@ -326,6 +339,9 @@ local function update_dialog_submit_button(modal_elements)
     local message  ---@type LocalisedString
     if item_choice_button.sprite == "" then
         message = {"fp.picker_issue_select_item"}
+    elseif modal_elements.machine_count_checkbox.state then
+        local machine_count = lib.gui.parse_expression_field(modal_elements.machine_count_textfield, true)
+        if machine_count == nil then message = {"fp.picker_issue_enter_machine_count"} end
     elseif item_amount == nil then
         -- The item amount will be filled even if the item is defined_by ~= "amount"
         message = {"fp.picker_issue_enter_amount"}
@@ -337,9 +353,8 @@ end
 
 ---@param parent_flow LuaGuiElement
 ---@param modal_data PickerDialogModalData
----@param item_category ItemCategory
 ---@param item FactoryItem?
-local function add_item_pane(parent_flow, modal_data, item_category, item)
+local function add_item_pane(parent_flow, modal_data, item)
     local function create_flow()
         local flow = parent_flow.add{type="flow", direction="horizontal"}
         flow.style.vertical_align = "center"
@@ -353,10 +368,9 @@ local function add_item_pane(parent_flow, modal_data, item_category, item)
     modal_data.amount_defined_by = defined_by
 
     local flow_amount = create_flow()
-    flow_amount.add{type="label", caption={"fp.pu_" .. item_category, 1}}
-
     local item_choice_button = flow_amount.add{type="sprite-button", style="fp_sprite-button_inset",
         tags={mod="fp", on_gui_click="picker_item_choice"}}
+    item_choice_button.style.size = 40
     item_choice_button.style.right_margin = 12
     modal_elements["item_choice_button"] = item_choice_button
 
@@ -378,9 +392,9 @@ local function add_item_pane(parent_flow, modal_data, item_category, item)
     end
 
     local textfield_amount = flow_amount.add{type="textfield", text=item_amount,
-        tags={mod="fp", on_gui_text_changed="picker_item_amount", on_gui_confirmed="picker_amount",
-        width=90}, tooltip={"fp.expression_textfield"}}
-    textfield_amount.style.width = 90
+        tags={mod="fp", on_gui_text_changed="picker_amount_changed", on_gui_confirmed="picker_amount",
+        width=80}, tooltip={"fp.expression_textfield"}}
+    textfield_amount.style.width = 80
     modal_elements["item_amount_textfield"] = textfield_amount
 
 
@@ -415,11 +429,29 @@ local function add_item_pane(parent_flow, modal_data, item_category, item)
     modal_elements["belt_stack_dropdown"] = belt_stack_dropdown
     flow_belts.add{type="label", caption={"fp.pl_stack", 2}}
 
+    parent_flow.add{type="line", direction="horizontal"}.style.bottom_margin = 6
+
+    local flow_machines = create_flow()
+    flow_machines.style.horizontal_spacing = 12
+    modal_elements["machine_count_checkbox"] = flow_machines.add{type="checkbox", state=(defined_by == "machines"),
+        tags={mod="fp", on_gui_checked_state_changed="picker_toggle_machines"},
+        caption={"fp.info_label", {"fp.picker_machine_count"}},
+        tooltip={"fp.picker_machine_count_tt"}}
+
+    local machine_width = 50
+    local machine_count = (item and item.definition.type == "machines") and tostring(item.definition.machine_count) or ""
+    local textfield_machines = flow_machines.add{type="textfield", text=machine_count,
+        tags={mod="fp", on_gui_text_changed="picker_amount_changed", on_gui_confirmed="picker_amount", width=machine_width},
+        tooltip={"fp.expression_textfield"}}
+    textfield_machines.style.width = machine_width
+    modal_elements["machine_count_textfield"] = textfield_machines
+
     local item_proto = (item) and item.proto or nil
     set_item_proto(modal_data, item_proto--[[@as FPItemPrototype?]])
 
     local belt_proto = (item and item.definition.type == "belts") and item.definition.belt_proto or nil
     set_belt_proto(modal_data, belt_proto--[[@as FPBeltPrototype?]])
+    refresh_definition_controls(modal_data)
 
     if (item) then set_appropriate_focus(modal_data)
     else modal_elements.search_textfield.focus() end
@@ -439,6 +471,7 @@ local function handle_item_pick(player, tags, _)
    end
 
     set_item_proto(modal_data, item_proto)  -- no need for sync in this case
+    refresh_definition_controls(modal_data)
 
     set_appropriate_focus(modal_data)
     update_dialog_submit_button(modal_data.modal_elements)
@@ -452,6 +485,7 @@ local function handle_belt_pick(player, _, event)
 
     local modal_data = lib.globals.modal_data(player)  ---@as PickerDialogModalData
     set_belt_proto(modal_data, belt_proto)  -- syncs amounts itself
+    refresh_definition_controls(modal_data)
 
     set_appropriate_focus(modal_data)
     update_dialog_submit_button(modal_data.modal_elements)
@@ -485,7 +519,7 @@ local function open_picker_dialog(player, modal_data)
     local content_frame = modal_data.modal_elements.content_frame
     content_frame.style.minimal_width = 325
     content_frame.style.bottom_padding = 6
-    add_item_pane(content_frame, modal_data, modal_data.item_category, modal_data.item)
+    add_item_pane(content_frame, modal_data, modal_data.item)
 
     -- The item picker only needs to show when adding a new item
     if modal_data.item_id == nil then
@@ -512,7 +546,8 @@ local function close_picker_dialog(player, action)
 
     if action == "submit" then
         local defined_by = modal_data.amount_defined_by
-        local relevant_textfield_name = ((defined_by == "amount") and "item" or "belt") .. "_amount_textfield"
+        local relevant_textfield_name = (defined_by == "machines") and "machine_count_textfield"
+            or (((defined_by == "amount") and "item" or "belt") .. "_amount_textfield")
         local amount_textfield = modal_data.modal_elements[relevant_textfield_name]
 
         local relevant_amount = lib.gui.parse_expression_field(amount_textfield, true) or 0
@@ -522,13 +557,15 @@ local function close_picker_dialog(player, action)
                 relevant_amount = relevant_amount / modal_data.timescale
             end
             relevant_amount = math.max(relevant_amount, MAGIC_NUMBERS.margin_of_error * 10)
-        elseif modal_data.belts_or_lanes == "lanes" then
+        elseif defined_by == "belts" and modal_data.belts_or_lanes == "lanes" then
             relevant_amount = relevant_amount * 0.5  -- lanes are stored as belts
         end
 
         local definition ---@type ItemDefinition
         if defined_by == "amount" then
             definition = {type="amount", amount=relevant_amount}
+        elseif defined_by == "machines" then
+            definition = {type="machines", machine_count=relevant_amount}
         else
             definition = {
                 type="belts",
@@ -573,6 +610,30 @@ end
 local listeners = {}  ---@type ListenerDefinitions
 
 listeners.gui = {
+    on_gui_checked_state_changed = {
+        {
+            name = "picker_toggle_machines",
+            handler = function(player, _, event)
+                ---@cast event EventData.on_gui_checked_state_changed
+                local modal_data = lib.globals.modal_data(player)  ---@as PickerDialogModalData
+                modal_data.amount_defined_by = event.element.state and "machines" or "amount"
+
+                if event.element.state then
+                    local modal_elements = modal_data.modal_elements
+                    modal_elements.item_amount_textfield.text = ""
+                    set_belt_proto(modal_data, nil)
+                    modal_data.belt_stack = lib.globals.preferences(player).belt_stack
+                    modal_elements.belt_stack_dropdown.selected_index = modal_data.belt_stack
+                    lib.gui.update_expression_field(modal_elements.item_amount_textfield, true)
+                    lib.gui.update_expression_field(modal_elements.belt_amount_textfield, true)
+                end
+
+                refresh_definition_controls(modal_data)
+                set_appropriate_focus(modal_data)
+                update_dialog_submit_button(modal_data.modal_elements)
+            end
+        }
+    },
     on_gui_click = {
         {
             name = "toggle_picker_unresearched",
@@ -628,11 +689,11 @@ listeners.gui = {
     },
     on_gui_text_changed = {
         {
-            name = "picker_item_amount",
+            name = "picker_amount_changed",
             handler = function(player, _, event)
                 ---@cast event EventData.on_gui_text_changed
-                local item_amount = lib.gui.parse_expression_field(event.element, true)
-                lib.gui.update_expression_field(event.element, item_amount ~= nil)
+                local amount = lib.gui.parse_expression_field(event.element, true)
+                lib.gui.update_expression_field(event.element, amount ~= nil)
 
                 update_dialog_submit_button(lib.globals.modal_elements(player))
             end

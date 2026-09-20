@@ -1,8 +1,8 @@
 local Object = require("backend.data.Object")
 
----@alias ItemDefinitionType "amount" | "belts"
+---@alias ItemDefinitionType "amount" | "belts" | "machines"
 
----@alias ItemDefinition AmountItemDefinition | BeltItemDefinition
+---@alias ItemDefinition AmountItemDefinition | BeltItemDefinition | MachineItemDefinition
 
 ---@class AmountItemDefinition
 ---@field type "amount"
@@ -13,6 +13,10 @@ local Object = require("backend.data.Object")
 ---@field belt_count number Full belts, regardless of the display preference
 ---@field belt_proto FPBeltPrototype | FPPackedPrototype
 ---@field belt_stack integer
+
+---@class MachineItemDefinition
+---@field type "machines"
+---@field machine_count number
 
 ---@class FactoryItem: Object, ObjectMethods
 ---@field class "FactoryItem"
@@ -48,28 +52,28 @@ function FactoryItem:index()
 end
 
 
--- Returns the configured quantity in the item's base unit
----@return number amount
+-- Machine definitions have no output amount target
+---@return number? amount
 function FactoryItem:get_defined_amount()
     local definition = self.definition
     if definition.type == "amount" then
         ---@cast definition AmountItemDefinition
         return definition.amount
-    else  -- "belts"
+    elseif definition.type == "belts" then
         ---@cast definition BeltItemDefinition
         local belt = definition.belt_proto  ---@as FPBeltPrototype
         return definition.belt_count * belt.throughput * definition.belt_stack
     end
 end
 
--- Adds an item amount, converting it to the definition's unit
+-- Adds an item amount, converting it to the definition's unit; machine counts stay unchanged
 ---@param added_amount number
 function FactoryItem:add_defined_amount(added_amount)
     local definition = self.definition
     if definition.type == "amount" then
         ---@cast definition AmountItemDefinition
         definition.amount = definition.amount + added_amount
-    else  -- "belts"
+    elseif definition.type == "belts" then
         ---@cast definition BeltItemDefinition
         local belt = definition.belt_proto  ---@as FPBeltPrototype
         definition.belt_count = definition.belt_count

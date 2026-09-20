@@ -61,12 +61,15 @@ local function factory_products(factory)
     local products = {}  ---@type SolverItem[]
     for product in factory:iterator() do
         ---@cast product.proto.type -nil
-        local item = {
-            name = product.proto.name,
-            type = product.proto.type,
-            amount = product:get_defined_amount()
-        }  ---@type SolverItem
-        table.insert(products, item)
+        local amount = product:get_defined_amount()
+        if amount ~= nil then  -- skip machine-defined products
+            local item = {
+                name = product.proto.name,
+                type = product.proto.type,
+                amount = amount
+            }  ---@type SolverItem
+            table.insert(products, item)
+        end
     end
     return products
 end
@@ -106,6 +109,41 @@ end
 ---@alias FloorDataMap table<ObjectID, FloorData>
 ---@alias LineDataMap table<ObjectID, LineData>
 
+---@class MachineRequirement
+---@field count number
+---@field product_proto FPItemPrototype
+
+-- Resolve the first usable match in displayed order, including subfloors' defining recipes
+---@param factory Factory
+---@return table<ObjectID, MachineRequirement>
+local function resolve_machine_requirements(factory)
+    local first_lines = {}  ---@type table<SolverItemKey, ObjectID>
+    for line_object in factory.top_floor:iterator() do
+        local line = (line_object.class == "Floor") and line_object.first or line_object  ---@cast line Line
+        -- Skip over lines that are blocked or don't calculate machine counts at all
+        if line.recipe.proto.energy > MAGIC_NUMBERS.minimum_energy and not line:get_blocker() then
+            for _, product in pairs(line.recipe.products) do
+                local key = structures.pack_item(product)
+                first_lines[key] = first_lines[key] or line.id
+            end
+        end
+    end
+
+    local requirements = {}  ---@type table<ObjectID, MachineRequirement>
+    for product in factory:iterator() do
+        local definition = product.definition
+        if definition.type == "machines" then
+            ---@cast definition MachineItemDefinition
+            local line_id = first_lines[structures.pack_item(product)]
+            if line_id and not requirements[line_id] then
+                requirements[line_id] = {count=definition.machine_count,
+                    product_proto=product.proto--[[@as FPItemPrototype]]}
+            end
+        end
+    end
+    return requirements
+end
+
 ---@class FloorData
 ---@field id ObjectID
 ---@field level integer
@@ -121,8 +159,7 @@ end
 ---@field fuel_item SolverItem?
 ---@field priority_item SolverItem?
 ---@field recipe_name string
----@field machine_limit number?
----@field machine_force_limit boolean?
+---@field machine_requirement MachineRequirement?
 ---@field production_type RecipeProductionType
 
 --- Applies all effects on the machine of the line and returns how many
@@ -338,8 +375,7 @@ local function generate_line_data(player, factory, line)
         fuel_item = fuel_item,
         priority_item = priority_item,
         recipe_name = recipe_proto.name,
-        machine_limit = energy > MAGIC_NUMBERS.minimum_energy and line.machine.limit or nil,
-        machine_force_limit = energy > MAGIC_NUMBERS.minimum_energy and line.machine.force_limit or nil,
+        machine_requirement = line.machine_requirement,
         production_type = line.recipe.production_type,
     }  ---@type LineData
 end
@@ -348,9 +384,10 @@ end
 ---@param player LuaPlayer
 ---@param factory Factory
 ---@param floor Floor
+---@param machine_requirements table<ObjectID, MachineRequirement>
 ---@return FloorDataMap
 ---@return LineDataMap
-local function generate_floor_data(player, factory, floor)
+local function generate_floor_data(player, factory, floor, machine_requirements)
     local floor_data = {
         id = floor.id,
         level = floor.level,
@@ -365,11 +402,15 @@ local function generate_floor_data(player, factory, floor)
     for line in floor:iterator() do
         if line.class == "Floor" then  ---@cast line Floor
             local subfloor_floor_map, subfloor_line_map
-            subfloor_floor_map, subfloor_line_map = generate_floor_data(player, factory, line)
+            subfloor_floor_map, subfloor_line_map = generate_floor_data(player, factory, line, machine_requirements)
             table.insert(floor_data.line_ids, line.id)
             for k, v in pairs (subfloor_floor_map) do floor_data_map[k] = v end
             for k, v in pairs (subfloor_line_map) do line_data_map[k] = v end
         else  ---@cast line Line
+            local requirement = machine_requirements[line.id]
+            -- Keep ignored requirements visible in the UI without passing them to the solver
+            line.machine_requirement_ignored = requirement ~= nil and factory.solver ~= "sequential"
+            line.machine_requirement = (not line.machine_requirement_ignored) and requirement or nil
             if line:get_blocker() or not relevant_line_active then
                 -- Useless lines don't need to run through the solver
                 solver.set_blank_line(floor, line)
@@ -531,7 +572,7 @@ function solver.generate_factory_data(player, factory)
     -- Intentional pass-by-reference
     local free_items = factory.matrix_free_items  ---@as FPItemPrototype[]
     local floor_data_map, line_data_map =
-        generate_floor_data(player, factory, factory.top_floor)
+        generate_floor_data(player, factory, factory.top_floor, resolve_machine_requirements(factory))
 
     local factory_data = {
         player_index = player.index,
@@ -566,7 +607,12 @@ function solver.set_factory_result(result)
     factory.simplex_basis = result.simplex_basis or {}
 
     for product in factory:iterator() do
-        local product_result_amount = result.products[structures.pack_item(product)]
+        local item_key = structures.pack_item(product)
+        local product_result_amount = result.products[item_key]
+        if product.definition.type == "machines" then
+            product_result_amount = (product_result_amount or 0) + (result.byproducts[item_key] or 0)
+            result.byproducts[item_key] = nil
+        end
         product.amount = product_result_amount or 0
     end
 
