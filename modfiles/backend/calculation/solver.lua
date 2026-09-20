@@ -48,9 +48,6 @@ local function line_ingredients(recipe)
     return ingredients
 end
 
----@alias FloorDataMap table<ObjectID, FloorData>
----@alias LineDataMap table<ObjectID, LineData>
-
 ---@class MachineRequirement
 ---@field count number
 ---@field product_proto FPItemPrototype
@@ -85,12 +82,6 @@ local function resolve_machine_requirements(factory)
     end
     return requirements
 end
-
----@class FloorData
----@field id ObjectID
----@field level integer
----@field products SolverItem[]
----@field line_ids ObjectID[]
 
 ---@class LineData
 ---@field id ObjectID
@@ -352,8 +343,7 @@ local function generate_line_data_from_result(factory_data, floor_id, subfloor_r
         products = subfloor_result.products,
         ingredients = subfloor_result.ingredients,
         priority_item = subfloor_line.priority_item,
-        machine_limit = subfloor_line.machine_limit,
-        machine_force_limit = subfloor_line.machine_force_limit,
+        machine_requirement = subfloor_line.machine_requirement,
         production_type = "produce"
     }
 end
@@ -428,8 +418,9 @@ end
 ---@param factory Factory
 ---@return FactoryData
 local function generate_factory_data(player, factory)
+    local machine_requirements = resolve_machine_requirements(factory)
     local floor_data_map, line_data_map =
-        generate_floor_data(player, factory, factory.top_floor)
+        generate_floor_data(player, factory, factory.top_floor, machine_requirements)
 
     local factory_data = {
         player_index = player.index,

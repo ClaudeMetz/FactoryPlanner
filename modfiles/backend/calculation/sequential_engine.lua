@@ -73,19 +73,6 @@ local function determine_consuming_ratio(line_data, aggregate, ingredients)
     return production_ratio
 end
 
-
----@param products SolverMap
----@param byproducts SolverMap
----@param requirement MachineRequirement?
-local function classify_machine_product(products, byproducts, requirement)
-    if not requirement then return end
-    local product = requirement.product_proto
-    local product_key = structures.pack_item(product)
-    structures.map.add(products, product, byproducts[product_key] or 0)
-    byproducts[product_key] = nil
-end
-
-
 ---@param line_data LineData
 ---@param aggregate SolverAggregate
 ---@param is_top_floor boolean
@@ -151,8 +138,6 @@ local function solve_line(line_data, aggregate, is_top_floor, is_relevant_line)
 
         structures.map.subtract(aggregate.products, ingredient, amount)
     end
-
-    classify_machine_product(line_products, line_byproducts, line_data.machine_requirement)
 
     -- Add the integer machine count to the aggregate so it can be displayed on the origin_line
     aggregate.machine_amount = aggregate.machine_amount + math.ceil(machine_amount - MAGIC_NUMBERS.margin_of_error)
