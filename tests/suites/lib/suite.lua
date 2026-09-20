@@ -4,10 +4,13 @@
 
 local formatters = require("suite.formatters")
 local clipboard = require("suite.clipboard")
+local factory_items = require("suite.factory-items")
 
 return {{
     name = "normal",
     cases = {
+        testFactoryItemDefinitions = factory_items.definitions,
+        testFactoryItemPicker = factory_items.picker,
         testLibFormatNumber = formatters.number,
         testLibFormatSIValue = formatters.SI_value,
         testLibFormatButtonNumber = formatters.button_number,

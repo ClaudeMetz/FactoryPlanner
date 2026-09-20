@@ -18,7 +18,6 @@ local objective_vector = {
     floor_transfer_out = 0,
     floor_transfer_in = 0,
 
-    machine_limit = 0,
     fluid_modifier = 0.01,
     energy_modifier = 1e-9,
 }
@@ -124,14 +123,6 @@ function simplex_engine.solve_floor(factory_data, floor_id)
                 local objective = item_cost(item_key) * objective_vector.limited_ingredient
                 tableau:add_item_variable(item_key, "input", objective)
                 tableau:add_item_constraint(item_key, "input", "<=", item.amount, objective)
-            end
-        end
-
-        -- Add aditional constraint for machine limits
-        for _, line_data in pairs(relevant_line_data) do
-            if line_data.machine_limit then
-                local type = line_data.machine_force_limit and "==" or "<="
-                tableau:add_line_constraint(line_data.id, type, line_data.machine_limit, objective_vector.machine_limit)
             end
         end
     else

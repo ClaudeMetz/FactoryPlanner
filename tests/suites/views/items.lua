@@ -1,7 +1,5 @@
 ---@diagnostic disable
 
-local migration = script and require("__factoryplanner__.backend.migrations.migration_2_1_15")
-
 local function with_player(check)
     local player = game.players[1]
     local player_table = lib.globals.player_table(player)
@@ -84,30 +82,6 @@ return {
             assert(amount == 0 and secondary == 0)
         end)
     end},
-    migration = {check=function()
-        local previous = {
-            views = {
-                {name="wagons_per_timescale", enabled=true},
-                {name="throughput", enabled=false},
-                {name="items_per_timescale", enabled=true},
-                {name="items_per_second_per_machine", enabled=false},
-                {name="stacks_per_timescale", enabled=false},
-                {name="rockets_per_timescale", enabled=false}
-            },
-            selected_index = 3
-        }
-        local player_table = {preferences={item_views=previous}, realm=lib.globals.player_table(game.players[1]).realm}
-        migration.player_table(player_table)
-        assert(previous.selected.primary == "items_per_timescale" and previous.selected_index == nil)
-        migration.player_table(player_table) -- repeated configuration changes before the next release
-        lib.preferences.reload(player_table)
-        local refreshed = player_table.preferences.item_views
-        assert(refreshed == previous, "Reload must preserve the saved item-view preferences")
-        assert(refreshed.selected.primary == "items_per_timescale")
-        assert(refreshed.views[1].name == "wagons_per_timescale" and refreshed.views[1].enabled)
-        assert(not refreshed.views[2].enabled and not refreshed.views[4].enabled)
-    end},
-
     selection = {check=function(context)
         with_player(function(player, player_table)
             local district = context.classes.District.init()

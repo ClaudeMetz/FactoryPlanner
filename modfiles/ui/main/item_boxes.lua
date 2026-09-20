@@ -1,4 +1,4 @@
-local TLProduct = require("backend.data.TLProduct")
+local FactoryItem = require("backend.data.FactoryItem")
 local SimpleItem = require("backend.data.SimpleItem")
 
 -- ** LOCAL UTIL **
@@ -66,10 +66,11 @@ local function refresh_item_box(player, factory, item_category, tooltips)
 
     if item_category == "product" and floor.level == 1 then
         for product in factory:iterator() do  ---@cast product.proto FPItemPrototype
-            local style = "fflib_slot_button_default"
+            local style = "fflib_slot_button_blue"
 
             local amount, number_tooltip, secondary_amount
-            local required_amount = product:get_required_amount()
+            local required_amount = product:get_defined_amount()
+            local display_amount = required_amount or product.amount
 
             local special = (product.proto.type == "entity" and product.proto.special)
             local flags = {
@@ -85,23 +86,31 @@ local function refresh_item_box(player, factory, item_category, tooltips)
             }
 
             if flags.special then
-                amount = lib.format.button_number(required_amount)
-                number_tooltip = lib.format.special_tooltip(product.proto.name, required_amount)
+                amount = lib.format.button_number(display_amount)
+                number_tooltip = lib.format.special_tooltip(product.proto.name, display_amount)
             else
                 amount, number_tooltip, secondary_amount = item_views.process_item(player, product.proto,
-                    required_amount, nil)
+                    display_amount, nil)
                 if amount == -1 then goto skip_product end  -- an amount of -1 means it was below the margin of error
             end
 
-            local satisfaction_line, percentage_string = lib.gui.calculate_satisfaction(
-                product.amount, required_amount)
+            local satisfaction_line = ""  ---@type LocalisedString
+            if required_amount ~= nil then
+                local percentage_string
+                satisfaction_line, percentage_string = lib.gui.calculate_satisfaction(product.amount, required_amount)
 
-            if percentage_string == "0" then style = "fflib_slot_button_red"
-            elseif percentage_string == "100" then style = "fflib_slot_button_green"
-            else style = "fflib_slot_button_yellow" end
+                if percentage_string == "0" then style = "fflib_slot_button_red"
+                elseif percentage_string == "100" then style = "fflib_slot_button_green"
+                else style = "fflib_slot_button_yellow" end
+            end
 
             local tooltip = {"", {"fp.tt_title", product.proto.localised_name}, "\n", number_tooltip,
                 satisfaction_line}
+            if product.definition.type == "machines" then
+                local count = product.definition.machine_count
+                table.insert(tooltip, {"", "\n", {"fp.item_defined_by_machines",
+                    lib.format.number(count, 4), {"fp.pl_machine", count}}})
+            end
 
             ---@type HandleItemBoxClickTags
             local tags = {mod="fp", on_gui_click="act_on_item_box", item_category=item_category, item_id=product.id,
@@ -176,7 +185,7 @@ local function handle_item_add(player, tags, event)
     local factory = lib.context.get(player, "Factory")  ---@as Factory
 
     if event.shift then  -- paste
-        local dummy_product = TLProduct.init()
+        local dummy_product = FactoryItem.init()
         lib.clipboard.dummy_paste(player, dummy_product, factory)
     elseif player.is_cursor_blueprint() then  -- import blueprint entities
         local blueprint = player.cursor_record or player.cursor_stack
@@ -188,10 +197,10 @@ local function handle_item_add(player, tags, event)
 
             local amount = entity.count / timescale
             if existing_item then
-                existing_item:add_required_amount(amount)
+                existing_item:add_defined_amount(amount)
             else
-                local product = TLProduct.init(proto)  -- defined_by = "amount"
-                product.required_amount = amount
+                local product = FactoryItem.init(proto)  -- definition.type = "amount"
+                product.definition = {type="amount", amount=amount}
                 factory:insert(product)
             end
         end
@@ -209,10 +218,10 @@ end
 local function handle_item_button_click(player, tags, action)
     local item
     if tags.item_id then
-        item = OBJECT_INDEX[tags.item_id]  ---@as TLProduct
+        item = OBJECT_INDEX[tags.item_id]  ---@as FactoryItem
     else
         local floor = lib.context.get(player, "Floor")  ---@as Floor
-        item = floor[tags.item_category .. "s"][tags.item_index]  ---@as TLProduct
+        item = floor[tags.item_category .. "s"][tags.item_index]  ---@as FactoryItem
     end
 
     if action == "add_recipe" then
@@ -227,10 +236,12 @@ local function handle_item_button_click(player, tags, action)
     elseif action == "move_left" or action == "move_right" then
         local direction = (action == "move_left") and "previous" or "next"
         item.parent:shift(item, direction, 1)
-        lib.gui.run_refresh(player, "item_boxes")
+
+        solver.update(player)
+        lib.gui.run_refresh(player, "production")
 
     elseif action == "copy" then
-        local copyable_item = (item.class == "TLProduct") and item
+        local copyable_item = (item.class == "FactoryItem") and item
             or SimpleItem.init(nil, item.proto--[[@as FPItemPrototype]], item.amount)
         lib.clipboard.copy(player, copyable_item)
 
@@ -250,7 +261,7 @@ local function handle_item_button_click(player, tags, action)
         lib.cursor.pipette_item(player, item.proto--[[@as FPItemPrototype]])
 
     elseif action == "put_into_combinator" then
-        local amount = (item.class == "TLProduct") and item:get_required_amount() or item.amount
+        local amount = (item.class == "FactoryItem") and item:get_defined_amount() or item.amount
         lib.cursor.put_into_combinator(player, item.proto--[[@as FPItemPrototype]], amount)
 
     elseif action == "factoriopedia" then

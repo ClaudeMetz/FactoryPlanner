@@ -140,7 +140,7 @@ function Fuel:paste(object, player)
         ---@cast object Fuel
         fuel_name = object.proto.name
         temperature = object.temperature
-    elseif object.class == "SimpleItem" or object.class == "TLProduct" then
+    elseif object.class == "SimpleItem" or object.class == "FactoryItem" then
         ---@cast object.proto FPItemPrototype
         fuel_name = object.proto.base_name or object.proto.name
         temperature = object.proto.temperature

@@ -121,12 +121,6 @@ local function reset_machine(player)
     local modal_elements = lib.globals.modal_elements(player)
     modal_elements["machine_button"].elem_value = machine:elem_value()
 
-    local limit_switch = modal_elements.force_limit_switch
-    if limit_switch.enabled then
-        modal_elements["limit_textfield"].text = machine.limit or ""
-        limit_switch.switch_state = lib.gui.switch.convert_to_state(machine.force_limit)
-    end
-
     refresh_fuel_frame(player)
     module_configurator.refresh_modules_flow(player, false)
     refresh_defaults_buttons(player)
@@ -179,40 +173,6 @@ local function add_fuel_frame(parent_frame, player)
     add_defaults_buttons(flow_choices, modal_elements, "fuel")
 
     refresh_fuel_frame(player)
-end
-
-
----@param parent_frame LuaGuiElement
----@param player LuaPlayer
----@param enabled boolean
-local function add_limit_frame(parent_frame, player, enabled)
-    local modal_data = lib.globals.modal_data(player)  ---@as MachineDialogModalData
-    local machine = modal_data.object
-
-    local frame_limit = parent_frame.add{type="frame", direction="horizontal", style="fp_frame_module"}
-    frame_limit.add{type="label", caption={"fp.info_label", {"fp.machine_limit"}},
-        tooltip={"fp.machine_limit_tt"}, style="semibold_label"}
-
-    local textfield_width = 45
-    local textfield_limit = frame_limit.add{type="textfield", tags={mod="fp", on_gui_text_changed="machine_limit",
-        on_gui_confirmed="confirm_machine", width=textfield_width}, tooltip={"fp.expression_textfield"},
-        text=machine.limit, enabled=enabled}
-    textfield_limit.style.width = textfield_width
-    modal_data.modal_elements["limit_textfield"] = textfield_limit
-
-    local label_force = frame_limit.add{type="label", caption={"fp.info_label", {"fp.machine_force_limit"}},
-        tooltip={"fp.machine_force_limit_tt"}, style="semibold_label"}
-    label_force.style.left_margin = 12
-
-    local state = lib.gui.switch.convert_to_state(machine.force_limit)
-    local switch_force_limit = lib.gui.switch.add_on_off(frame_limit, nil, {}, state)
-    switch_force_limit.enabled = enabled
-    modal_data.modal_elements["force_limit_switch"] = switch_force_limit
-
-    if not enabled then
-        frame_limit.add{type="label", caption={"fp.machine_limit_unavailable"},
-            tooltip={"fp.machine_limit_unavailable_tt"}}
-    end
 end
 
 
@@ -285,14 +245,6 @@ local function open_machine_dialog(player, modal_data)
     add_machine_frame(flow_machine, player, modal_data.line)
     add_fuel_frame(flow_machine, player)
 
-    -- Limit
-    local factory = lib.context.get(player, "Factory")  ---@as Factory
-    local floor = modal_data.line.parent
-    -- Unavailable with the gaussian solver or special recipes
-    local limit_enabled = modal_data.line.recipe.proto.energy > 0
-        and (floor.level == 1 or floor.level == 2 and floor.first == modal_data.line)
-    add_limit_frame(content_frame, player, limit_enabled)
-
     -- Modules
     modal_data.defaults_refresher = "machine_defaults_refresher"
     module_configurator.add_modules_flow(content_frame, modal_data)
@@ -307,12 +259,6 @@ local function close_machine_dialog(player, action)
 
     if action == "submit" then
         machine.module_set:normalize({sort=true})
-
-        local limit_switch = modal_data.modal_elements.force_limit_switch
-        if limit_switch.enabled then
-            machine.limit = lib.gui.parse_expression_field(modal_data.modal_elements.limit_textfield, true)
-            machine.force_limit = lib.gui.switch.convert_to_boolean(limit_switch.switch_state)
-        end
 
         solver.update(player)
         lib.gui.run_refresh(player, "production")
@@ -338,26 +284,6 @@ listeners.gui = {
         {
             name = "choose_fuel",
             handler = handle_fuel_choice
-        }
-    },
-    on_gui_text_changed = {
-        {
-            name = "machine_limit",
-            handler = function(_, _, event)
-                ---@cast event EventData.on_gui_text_changed
-                local limit = lib.gui.parse_expression_field(event.element, true)
-                lib.gui.update_expression_field(event.element, limit ~= nil)
-            end
-        }
-    },
-    on_gui_confirmed = {
-        {
-            name = "confirm_machine",
-            handler = function(player, _, event)
-                ---@cast event EventData.on_gui_confirmed
-                local confirmed = lib.gui.confirm_expression_field(event.element, true)
-                if confirmed then lib.gui.close_dialog(player, "submit") end
-            end
         }
     },
     on_gui_click = {

@@ -212,19 +212,13 @@ function builders.machine(line, parent_flow, metadata)
         local machine_proto, quality_proto = machine.proto, machine.quality_proto
         local amount, tooltip_line = lib.format.machine_amount(machine.amount, false)
 
-        local machine_limit = machine.limit
-        local style, note = "fflib_slot_button_default", nil
-        if machine_limit ~= nil then
-            if machine.force_limit then
-                style = "fflib_slot_button_pink"
-                note = {"fp.machine_limit_force", machine_limit}
-            else
-                style = "fflib_slot_button_purple"
-                note = {"fp.machine_limit_set", machine_limit}
-            end
+        local style = "fflib_slot_button_default"
+        if line.machine_requirement then
+            style = "fflib_slot_button_blue"
+            local count = line.machine_requirement.count
+            tooltip_line = {"", "\n", {"fp.machine_requirement", lib.format.number(count, 4), {"fp.pl_machine", count}}}
         end
 
-        if note ~= nil then table.insert(tooltip_line--[[@as table]], {"", " - ", note}) end
         local title_line = (not quality_proto.always_show) and {"fp.tt_title", machine_proto.localised_name}
             or {"fp.tt_title_with_note", machine_proto.localised_name, quality_proto.rich_text}
         local tooltip = {"", title_line, tooltip_line, format_effects_tooltip(machine.effects_tooltip)}

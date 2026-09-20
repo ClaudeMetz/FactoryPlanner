@@ -1,7 +1,7 @@
 if helpers.stage ~= "runtime" then return {} end
 
 local unpackers = {
-    TLProduct = require("backend.data.TLProduct").unpack,
+    FactoryItem = require("backend.data.FactoryItem").unpack,
     Floor = require("backend.data.Floor").unpack,
     Line = require("backend.data.Line").unpack,
     Machine = require("backend.data.Machine").unpack,
@@ -12,8 +12,8 @@ local unpackers = {
 
 local _clipboard = {}
 
----@alias CopyableObject TLProduct | Floor | Line | Machine | Beacon | Module | Fuel | SimpleItem
----@alias CopyableObjectClass "TLProduct" | "Floor" | "Line" | "Machine" | "Beacon" | "Module" | "Fuel" | "SimpleItem"
+---@alias CopyableObject FactoryItem | Floor | Line | Machine | Beacon | Module | Fuel | SimpleItem
+---@alias CopyableObjectClass "FactoryItem" | "Floor" | "Line" | "Machine" | "Beacon" | "Module" | "Fuel" | "SimpleItem"
 ---@alias CopyableObjectParent Factory | Floor | Line | ModuleSet | Machine
 
 ---@class ClipboardEntry
@@ -90,7 +90,7 @@ function _clipboard.paste(player, target)
 end
 
 ---@param player LuaPlayer
----@param dummy TLProduct | Line
+---@param dummy FactoryItem | Line
 ---@param parent Factory | Floor
 function _clipboard.dummy_paste(player, dummy, parent)
     ---@diagnostic disable-next-line: param-type-mismatch
