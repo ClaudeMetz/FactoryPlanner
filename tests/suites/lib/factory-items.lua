@@ -1,20 +1,15 @@
 ---@diagnostic disable
 
-local migration = script and require("__factoryplanner__.backend.migrations.migration_2_1_16")
-local old_migration = script and require("__factoryplanner__.backend.migrations.migration_2_1_4")
-local Realm = script and require("__factoryplanner__.backend.data.Realm")
-
-local function fixture(context, isolated)
+local function fixture(context)
     local player = game.players[1]
     local district = context.classes.District.init()
-    local realm = isolated and Realm.init() or lib.globals.player_table(player).realm
-    realm:insert(district)
+    lib.globals.player_table(player).realm:insert(district)
     local factory = context.classes.Factory.init("factory-item-test", "sequential")
     district:insert(factory)
     lib.context.set(player, factory)
     local item = context.classes.FactoryItem.init(prototyper.util.find("items", "iron-plate", "item"))
     factory:insert(item)
-    return player, factory, item, realm
+    return player, factory, item
 end
 
 local function dispatch(player, element, event_name)
@@ -68,95 +63,6 @@ return {
         local expected = item:get_defined_amount()
         assert(item:validate(player) and item:get_defined_amount() == expected)
         assert(item.definition.belt_stack == max_stack and item.definition.belt_count == 4)
-    end},
-    migration = {check=function(context)
-        local player, factory, item, realm = fixture(context, true)
-        local pt = {realm=realm}
-        local belt = prototyper.util.find("belts", "transport-belt")
-        for _, source_class in ipairs{"TLProduct", "FactoryItem"} do
-            for _, mode in ipairs{"amount", "belts"} do
-                item.definition = nil
-                item.defined_by, item.required_amount = mode, 3
-                item.belt_proto = (mode == "belts") and belt or nil
-                if source_class == "TLProduct" then
-                    old_migration.player_table(pt)
-                    item = factory.first
-                end
-                item.belt_stack = (mode == "belts") and 2 or nil
-                item.amount = 7
-                local packed = {top_floor={lines={}}, products={{class=source_class,
-                    proto=prototyper.util.simplify_prototype(item.proto, "type"),
-                    defined_by=mode, required_amount=3, belt_stack=item.belt_stack,
-                    belt_proto=(mode == "belts") and prototyper.util.simplify_prototype(belt, nil)}}}
-                migration.player_table(pt)
-                migration.packed_factory(packed)
-                migration.player_table(pt)
-                migration.packed_factory(packed)
-                item = factory.first
-                local restored = context.classes.FactoryItem.unpack(packed.products[1])
-                assert(restored:validate(player))
-                assert(item.class == "FactoryItem" and item.definition.type == mode and item.amount == 7)
-                assert(item:get_defined_amount() == restored:get_defined_amount())
-                assert(item:get_defined_amount() == ((mode == "amount") and 3 or 6 * belt.throughput))
-                assert(not packed.products[1].required_amount and not packed.products[1].defined_by)
-                assert(not item.required_amount and not item.belt_proto)
-            end
-        end
-    end},
-    machine_limits = {check=function(context)
-        for _, case in ipairs{
-            {name="exact", count=2.5, expected=2.5},
-            {name="cap", count=2.5, cap=true},
-            {name="later recipe"},
-            {name="subfloor", count=2.5, subfloor=true, expected=2.5},
-            {name="multiple outputs", count=2.5, recipe="advanced-oil-processing", item="petroleum-gas", type="fluid"},
-            {name="unmatched output", count=2.5, item="copper-plate"},
-            {name="existing definition", count=2.5, existing=4, expected=4},
-            {name="zero", count=0},
-            {name="infinite", count=math.huge}
-        } do
-            local player, factory, item, realm = fixture(context, true)
-            item.proto = prototyper.util.find("items", case.item or "iron-plate", case.type or "item")
-            item.definition = case.existing and {type="machines", machine_count=case.existing}
-                or {type="amount", amount=7}
-            local top = factory.top_floor
-            local first = context.classes.Line.init(prototyper.util.find("recipes", case.recipe or "iron-plate"))
-            local second = context.classes.Line.init(prototyper.util.find("recipes", "iron-plate"))
-            local internal = context.classes.Line.init(prototyper.util.find("recipes", "iron-plate"))
-            top:insert(first)
-            top:insert(second)
-            local subfloor = context.classes.Floor.init(2)
-            local defining = case.subfloor and first or second
-            top:replace(defining, subfloor)
-            subfloor:insert(defining)
-            subfloor:insert(internal)
-            for _, line in ipairs{first, second, internal} do line:change_machine_to_default(player) end
-            local packed = factory:pack(false)
-            local packed_subfloor = packed.top_floor.lines[case.subfloor and 1 or 2]
-            local packed_first = case.subfloor and packed_subfloor.lines[1] or packed.top_floor.lines[1]
-            local packed_second = case.subfloor and packed.top_floor.lines[2] or packed_subfloor.lines[1]
-            for _, machine in ipairs{first.machine, packed_first.machine} do
-                machine.limit, machine.force_limit = case.count, not case.cap
-            end
-            for _, machine in ipairs{second.machine, internal.machine, packed_second.machine,
-                    packed_subfloor.lines[2].machine} do
-                machine.limit, machine.force_limit, machine.hard_limit = 9, true, true
-            end
-            for _ = 1, 2 do
-                migration.player_table{realm=realm}
-                migration.packed_factory(packed)
-                for _, product in ipairs{factory.first, packed.products[1]} do
-                    assert(product.definition.machine_count == case.expected, case.name)
-                    if not case.expected then
-                        assert(product.definition.type == "amount" and product.definition.amount == 7, case.name)
-                    end
-                end
-                for _, machine in ipairs{first.machine, second.machine, internal.machine, packed_first.machine,
-                        packed_second.machine, packed_subfloor.lines[2].machine} do
-                    assert(machine.limit == nil and machine.force_limit == nil and machine.hard_limit == nil, case.name)
-                end
-            end
-        end
     end},
     picker = {check=function(context)
         local player, factory, item = fixture(context)

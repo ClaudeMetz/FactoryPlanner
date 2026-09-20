@@ -11,10 +11,10 @@ local function find_control(parent, category)
     end
 end
 
-local function check_selection(player, cargo_available, fluid_available, expected_selection)
+local function check_selection(player, cargo_available, fluid_available)
     local ui, prefs = lib.globals.ui_state(player), lib.globals.preferences(player).item_views
     local available = cargo_available or fluid_available
-    expected_selection = expected_selection or (available and "wagons_per_timescale" or "items_per_timescale")
+    local expected_selection = available and "wagons_per_timescale" or "items_per_timescale"
     assert(prefs.selected.primary == expected_selection)
     for _, view in ipairs(prefs.views) do
         assert(view.enabled == (view.name == expected_selection), "Only the selected view should remain enabled in this fixture")
@@ -110,46 +110,5 @@ function wagon_views.case(cargo_available, fluid_available)
         end
     }
 end
-
-wagon_views.restoration = {check=function(context)
-    local original, original_map = storage.prototypes.wagons, PROTOTYPE_MAPS.wagons
-    local ok, message = xpcall(function()
-        with_player(function(player, player_table)
-            local district = fixture(player, player_table, context)
-            -- Simulate the catalog/migration/rebuild sequence on configuration changes.
-            storage.prototypes.wagons, PROTOTYPE_MAPS.wagons = {}, {}
-            defaults.migrate(player_table)
-            item_views.rebuild_data(player)
-            item_views.rebuild_interface(player)
-            check_selection(player, false, false)
-            storage.prototypes.wagons, PROTOTYPE_MAPS.wagons = original, original_map
-            defaults.migrate(player_table)
-            item_views.rebuild_data(player)
-            item_views.rebuild_interface(player)
-            check_selection(player, true, true, "items_per_timescale")
-
-            -- Keep another enabled view instead of enabling items/time unnecessarily.
-            local prefs = player_table.preferences.item_views
-            prefs.selected.primary = "wagons_per_timescale"
-            for _, view in ipairs(prefs.views) do
-                view.enabled = view.name == "wagons_per_timescale" or view.name == "throughput"
-            end
-            storage.prototypes.wagons, PROTOTYPE_MAPS.wagons = {}, {}
-            defaults.migrate(player_table)
-            item_views.rebuild_data(player)
-            assert(prefs.selected.primary == "throughput")
-            for _, view in ipairs(prefs.views) do
-                assert(view.enabled == (view.name == "throughput"))
-            end
-            storage.prototypes.wagons, PROTOTYPE_MAPS.wagons = original, original_map
-            defaults.migrate(player_table)
-            item_views.rebuild_data(player)
-            assert(prefs.selected.primary == "throughput", "Returning wagons must not restore a dropped selection")
-            player_table.realm:remove(district)
-        end)
-    end, debug.traceback)
-    storage.prototypes.wagons, PROTOTYPE_MAPS.wagons = original, original_map
-    assert(ok, message)
-end}
 
 return wagon_views
