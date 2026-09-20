@@ -9,7 +9,7 @@ local FactoryItem = require("backend.data.FactoryItem")
 ---@field item FactoryItem?
 ---@field timescale Timescale
 ---@field belts_or_lanes BeltsOrLanes
----@field amount_defined_by ProductDefinedBy
+---@field amount_defined_by ItemDefinitionType
 ---@field item_proto FPItemPrototype?
 ---@field belt_proto FPBeltPrototype?
 ---@field belt_stack integer
@@ -349,7 +349,7 @@ local function add_item_pane(parent_flow, modal_data, item_category, item)
     end
 
     local modal_elements = modal_data.modal_elements
-    local defined_by = (item) and item.defined_by or "amount"
+    local defined_by = (item) and item.definition.type or "amount"
     modal_data.amount_defined_by = defined_by
 
     local flow_amount = create_flow()
@@ -364,15 +364,16 @@ local function add_item_pane(parent_flow, modal_data, item_category, item)
     flow_amount.add{type="label", caption={"fp.amount_per", timescale_string}}
 
     local item_amount = ""
-    if item and defined_by == "amount" then
+    if item and item.definition.type == "amount" then
+        local definition = item.definition  ---@as AmountItemDefinition
         if item.proto.special then
             if lib.is_special_power_item(item.proto.name) then
-                item_amount = tostring(item.required_amount / 1e6) .. "M"
+                item_amount = tostring(definition.amount / 1e6) .. "M"
             else  -- any of the emission types
-                item_amount = tostring(item.required_amount)
+                item_amount = tostring(definition.amount)
             end
         else
-            item_amount = tostring(item.required_amount * modal_data.timescale)
+            item_amount = tostring(definition.amount * modal_data.timescale)
         end
     end
 
@@ -396,8 +397,8 @@ local function add_item_pane(parent_flow, modal_data, item_category, item)
 
     -- Products are stored in belts, so they need to be converted for display as lanes
     local lane_multiplier = (modal_data.belts_or_lanes == "lanes") and 2 or 1
-    local belt_amount = (item and defined_by ~= "amount")
-        and tostring(item.required_amount * lane_multiplier) or ""
+    local belt_amount = (item and item.definition.type == "belts")
+        and tostring(item.definition.belt_count * lane_multiplier) or ""
     local belt_width = 50
     local textfield_belts = flow_belts.add{type="textfield", text=belt_amount,
         tags={mod="fp", on_gui_text_changed="picker_belt_amount", on_gui_confirmed="picker_amount",
@@ -417,7 +418,7 @@ local function add_item_pane(parent_flow, modal_data, item_category, item)
     local item_proto = (item) and item.proto or nil
     set_item_proto(modal_data, item_proto--[[@as FPItemPrototype?]])
 
-    local belt_proto = (item and defined_by ~= "amount") and item.belt_proto or nil
+    local belt_proto = (item and item.definition.type == "belts") and item.definition.belt_proto or nil
     set_belt_proto(modal_data, belt_proto--[[@as FPBeltPrototype?]])
 
     if (item) then set_appropriate_focus(modal_data)
@@ -477,7 +478,8 @@ local function open_picker_dialog(player, modal_data)
 
     if modal_data.item_id then
         modal_data.item = OBJECT_INDEX[modal_data.item_id]  ---@as FactoryItem
-        modal_data.belt_stack = modal_data.item.belt_stack or modal_data.belt_stack
+        local definition = modal_data.item.definition
+        if definition.type == "belts" then modal_data.belt_stack = definition.belt_stack end
     end
 
     local content_frame = modal_data.modal_elements.content_frame
@@ -524,18 +526,24 @@ local function close_picker_dialog(player, action)
             relevant_amount = relevant_amount * 0.5  -- lanes are stored as belts
         end
 
+        local definition ---@type ItemDefinition
+        if defined_by == "amount" then
+            definition = {type="amount", amount=relevant_amount}
+        else
+            definition = {
+                type="belts",
+                belt_count=relevant_amount,
+                belt_proto=modal_data.belt_proto--[[@as FPBeltPrototype]],
+                belt_stack=modal_data.belt_stack
+            }
+        end
+
         if modal_data.item ~= nil then  -- ie. this is an edit
-            modal_data.item.defined_by = defined_by
-            modal_data.item.required_amount = relevant_amount
-            modal_data.item.belt_proto = modal_data.belt_proto
-            modal_data.item.belt_stack = (modal_data.belt_proto) and modal_data.belt_stack or nil
+            modal_data.item.definition = definition
         else
             local item_proto = modal_data.item_proto
             local top_level_item = FactoryItem.init(item_proto)
-            top_level_item.defined_by = defined_by
-            top_level_item.required_amount = relevant_amount
-            top_level_item.belt_proto = modal_data.belt_proto
-            top_level_item.belt_stack = (modal_data.belt_proto) and modal_data.belt_stack or nil
+            top_level_item.definition = definition
 
             if modal_data.create_factory then  -- if this flag is set, create a factory to put the item into
                 factory = factory_list.add_factory(player, nil, item_proto)

@@ -64,7 +64,7 @@ local function factory_products(factory)
         local item = {
             name = product.proto.name,
             type = product.proto.type,
-            amount = product:get_required_amount()
+            amount = product:get_defined_amount()
         }  ---@type SolverItem
         table.insert(products, item)
     end

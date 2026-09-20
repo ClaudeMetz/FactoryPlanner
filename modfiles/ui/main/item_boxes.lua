@@ -69,7 +69,7 @@ local function refresh_item_box(player, factory, item_category, tooltips)
             local style = "fflib_slot_button_default"
 
             local amount, number_tooltip, secondary_amount
-            local required_amount = product:get_required_amount()
+            local required_amount = product:get_defined_amount()
 
             local special = (product.proto.type == "entity" and product.proto.special)
             local flags = {
@@ -188,10 +188,10 @@ local function handle_item_add(player, tags, event)
 
             local amount = entity.count / timescale
             if existing_item then
-                existing_item:add_required_amount(amount)
+                existing_item:add_defined_amount(amount)
             else
-                local product = FactoryItem.init(proto)  -- defined_by = "amount"
-                product.required_amount = amount
+                local product = FactoryItem.init(proto)  -- definition.type = "amount"
+                product.definition = {type="amount", amount=amount}
                 factory:insert(product)
             end
         end
@@ -250,7 +250,7 @@ local function handle_item_button_click(player, tags, action)
         lib.cursor.pipette_item(player, item.proto--[[@as FPItemPrototype]])
 
     elseif action == "put_into_combinator" then
-        local amount = (item.class == "FactoryItem") and item:get_required_amount() or item.amount
+        local amount = (item.class == "FactoryItem") and item:get_defined_amount() or item.amount
         lib.cursor.put_into_combinator(player, item.proto--[[@as FPItemPrototype]], amount)
 
     elseif action == "factoriopedia" then

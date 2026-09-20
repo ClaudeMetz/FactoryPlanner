@@ -42,7 +42,7 @@ local function handle_item_button_click(player, tags, action)
     if action == "create_factory" then  -- only on net ingredients
         local factory = factory_list.add_factory(player, nil, item.proto)
         local top_level_item = FactoryItem.init(item.proto)
-        top_level_item.required_amount = item.abs_diff
+        top_level_item.definition = {type="amount", amount=item.abs_diff}
         factory:insert(top_level_item)
         solver.update(player, factory)
 

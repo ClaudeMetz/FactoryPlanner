@@ -1,16 +1,24 @@
 local Object = require("backend.data.Object")
 
--- Belt-defined products are always stored in belts; lanes are only a display unit
----@alias ProductDefinedBy "amount" | "belts"
+---@alias ItemDefinitionType "amount" | "belts"
+
+---@alias ItemDefinition AmountItemDefinition | BeltItemDefinition
+
+---@class AmountItemDefinition
+---@field type "amount"
+---@field amount number
+
+---@class BeltItemDefinition
+---@field type "belts"
+---@field belt_count number Full belts, regardless of the display preference
+---@field belt_proto FPBeltPrototype | FPPackedPrototype
+---@field belt_stack integer
 
 ---@class FactoryItem: Object, ObjectMethods
 ---@field class "FactoryItem"
 ---@field parent Factory
 ---@field proto FPItemPrototype | FPPackedPrototype
----@field defined_by ProductDefinedBy
----@field required_amount number
----@field belt_proto (FPBeltPrototype | FPPackedPrototype)?
----@field belt_stack integer?
+---@field definition ItemDefinition
 ---@field amount number
 local FactoryItem = Object.methods()
 FactoryItem.__index = FactoryItem
@@ -27,10 +35,7 @@ local function init(proto)
     }
     local object = Object.init({
         proto = this_proto,
-        defined_by = "amount",
-        required_amount = 0,  -- always per second
-        belt_proto = nil,
-        belt_stack = nil,
+        definition = {type="amount", amount=0},
 
         amount = 0  -- the amount satisfied by the solver
     }, "FactoryItem", FactoryItem)  ---@as FactoryItem
@@ -43,27 +48,33 @@ function FactoryItem:index()
 end
 
 
--- Returns the amount needed to satisfy this item
----@return number required_amount
-function FactoryItem:get_required_amount()
-    if self.defined_by == "amount" then
-        return self.required_amount
-    else   -- defined_by == "belts"
-        ---@cast self.belt_proto FPBeltPrototype
-        ---@cast self.belt_stack -nil
-        return self.required_amount * self.belt_proto.throughput * self.belt_stack
+-- Returns the configured quantity in the item's base unit
+---@return number amount
+function FactoryItem:get_defined_amount()
+    local definition = self.definition
+    if definition.type == "amount" then
+        ---@cast definition AmountItemDefinition
+        return definition.amount
+    else  -- "belts"
+        ---@cast definition BeltItemDefinition
+        local belt = definition.belt_proto  ---@as FPBeltPrototype
+        return definition.belt_count * belt.throughput * definition.belt_stack
     end
 end
 
--- Adds to this item's requirement, converting the given amount into however it is defined
----@param added_amount number amount per second
-function FactoryItem:add_required_amount(added_amount)
-    if self.defined_by ~= "amount" then
-        ---@cast self.belt_proto FPBeltPrototype
-        ---@cast self.belt_stack -nil
-        added_amount = added_amount / (self.belt_proto.throughput * self.belt_stack)
+-- Adds an item amount, converting it to the definition's unit
+---@param added_amount number
+function FactoryItem:add_defined_amount(added_amount)
+    local definition = self.definition
+    if definition.type == "amount" then
+        ---@cast definition AmountItemDefinition
+        definition.amount = definition.amount + added_amount
+    else  -- "belts"
+        ---@cast definition BeltItemDefinition
+        local belt = definition.belt_proto  ---@as FPBeltPrototype
+        definition.belt_count = definition.belt_count
+            + added_amount / (belt.throughput * definition.belt_stack)
     end
-    self.required_amount = self.required_amount + added_amount
 end
 
 
@@ -100,8 +111,9 @@ function FactoryItem:paste(object)
         if object.class == "FactoryItem" then
             product = object
         else
-            product = init(proto)  -- defined_by = "amount"
-            product.required_amount = object.amount
+            local source = object  ---@as SimpleItem | Fuel
+            product = init(proto)  -- definition.type = "amount"
+            product.definition = {type="amount", amount=source.amount}
         end
         self.parent:replace(self, product)
 
@@ -115,21 +127,20 @@ end
 ---@class PackedFactoryItem: PackedObject
 ---@field class "FactoryItem"
 ---@field proto FPPackedPrototype
----@field defined_by ProductDefinedBy
----@field required_amount number
----@field belt_proto FPPackedPrototype?
----@field belt_stack integer?
+---@field definition ItemDefinition
 
 ---@param full boolean
 ---@return PackedFactoryItem packed_self
 function FactoryItem:pack(full)
+    local definition = lib.flib.shallow_copy(self.definition)
+    if definition.type == "belts" then
+        ---@cast definition BeltItemDefinition
+        definition.belt_proto = prototyper.util.simplify_prototype(definition.belt_proto, nil)
+    end
     return {
         class = self.class,
         proto = prototyper.util.simplify_prototype(self.proto, "type"),
-        defined_by = self.defined_by,
-        required_amount = self.required_amount,
-        belt_proto = (self.belt_proto) and prototyper.util.simplify_prototype(self.belt_proto, nil) or nil,
-        belt_stack = self.belt_stack,
+        definition = definition,
 
         amount = (full) and self.amount or nil
     }
@@ -141,10 +152,7 @@ local function unpack(packed_self)
     -- Prototypes are unpacked at validate
     local unpacked_self = init(packed_self.proto)
 
-    unpacked_self.defined_by = packed_self.defined_by
-    unpacked_self.required_amount = packed_self.required_amount
-    unpacked_self.belt_proto = packed_self.belt_proto
-    unpacked_self.belt_stack = packed_self.belt_stack
+    unpacked_self.definition = lib.flib.deep_copy(packed_self.definition)
 
     return unpacked_self
 end
@@ -156,15 +164,19 @@ function FactoryItem:validate(player)
     self.proto = prototyper.util.validate_prototype_object(self.proto, "type")  ---@as FPItemPrototype | FPPackedPrototype
     self.valid = (not self.proto.simplified)
 
-    self.belt_proto = (self.belt_proto) and prototyper.util.validate_prototype_object(self.belt_proto, nil) or nil
-    if self.belt_proto then  ---@cast self.belt_stack -nil
-        self.valid = (not self.belt_proto.simplified) and self.valid
+    local definition = self.definition
+    if definition.type == "belts" then
+        ---@cast definition BeltItemDefinition
+        local belt = definition.belt_proto  ---@as FPBeltPrototype | FPPackedPrototype
+        definition.belt_proto = prototyper.util.validate_prototype_object(belt, nil)  ---@as FPBeltPrototype | FPPackedPrototype
+        self.valid = (not definition.belt_proto.simplified) and self.valid
 
         local max_stack = prototypes.utility_constants.max_belt_stack_size
-        if self.belt_stack > max_stack then
-            -- The max stack size can shrink between loads, so scale the amount to keep it equivalent
-            self.required_amount = self.required_amount * (self.belt_stack / max_stack)
-            self.belt_stack = max_stack
+        if definition.belt_stack > max_stack then
+            -- Preserve throughput when the maximum belt stack size shrinks
+            definition.belt_count = definition.belt_count
+                * (definition.belt_stack / max_stack)
+            definition.belt_stack = max_stack
         end
     end
 

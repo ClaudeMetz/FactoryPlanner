@@ -37,7 +37,7 @@ end
 
 local function add_product(classes, factory, item_name, amount)
     local product = classes.FactoryItem.init(prototyper.util.find("items", item_name, "item"))
-    product.required_amount = amount  -- per second
+    product.definition.amount = amount  -- per second
     factory:insert(product)
     return product
 end
