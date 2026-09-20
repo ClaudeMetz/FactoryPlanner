@@ -328,7 +328,6 @@ end
 ---@class LineResult
 ---@field id ObjectID
 ---@field machine_amount number
----@field machine_requirement MachineRequirement?
 
 ---@param factory_data FactoryData
 ---@param floor_id ObjectID
@@ -609,7 +608,7 @@ local function update_line(line_id, line_data, result, scale_factor, floor_bypro
     line.production_ratio = crafts_per_second
     if line.machine.fuel ~= nil then line.machine.fuel.amount = fuel_amount end
 
-    line.machine_requirement = result and result.machine_requirement
+    line.machine_requirement = line_data and line_data.machine_requirement
 
     if line.production_ratio == 0 then
         set_zeroed_items(line, "products", line.recipe.products)

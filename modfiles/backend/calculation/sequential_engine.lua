@@ -143,8 +143,7 @@ local function solve_line(line_data, aggregate, is_relevant_line)
 
     return {
         id = line_data.id,
-        machine_amount = machine_amount,
-        machine_requirement = line_data.machine_requirement
+        machine_amount = machine_amount
     }
 end
 
