@@ -407,7 +407,10 @@ local function generate_floor_data(player, factory, floor, machine_requirements)
             for k, v in pairs (subfloor_floor_map) do floor_data_map[k] = v end
             for k, v in pairs (subfloor_line_map) do line_data_map[k] = v end
         else  ---@cast line Line
-            line.machine_requirement = machine_requirements[line.id]
+            local requirement = machine_requirements[line.id]
+            -- Keep ignored requirements visible in the UI without passing them to the solver
+            line.machine_requirement_ignored = requirement ~= nil and factory.solver ~= "sequential"
+            line.machine_requirement = (not line.machine_requirement_ignored) and requirement or nil
             if line:get_blocker() or not relevant_line_active then
                 -- Useless lines don't need to run through the solver
                 solver.set_blank_line(floor, line)

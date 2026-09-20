@@ -27,6 +27,7 @@ local SimpleItem = require("backend.data.SimpleItem")
 ---@field ingredients SimpleItem[]
 ---@field production_ratio number
 ---@field machine_requirement MachineRequirement?
+---@field machine_requirement_ignored boolean?
 local Line = Object.methods()
 Line.__index = Line
 script.register_metatable("Line", Line)
@@ -327,7 +328,7 @@ function Line:get_blocker()
     return nil
 end
 
----@alias LineStatus LineBlocker | "no_byproducts" | "no_demand"
+---@alias LineStatus LineBlocker | "no_byproducts" | "no_demand" | "machine_requirement_ignored"
 
 --- Returns why this line doesn't produce anything, or nil if it does
 ---@return LineStatus?
@@ -335,6 +336,7 @@ function Line:get_status()
     local blocker = self:get_blocker()
     if blocker ~= nil then return blocker end
     if self.production_ratio > 0 then return nil end
+    if self.machine_requirement_ignored then return "machine_requirement_ignored" end
 
     -- The line is configured fine, so the calculation just had nothing for it to do
     return (self.recipe.production_type == "consume") and "no_byproducts" or "no_demand"
