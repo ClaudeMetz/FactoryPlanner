@@ -75,10 +75,9 @@ end
 
 ---@param line_data LineData
 ---@param aggregate SolverAggregate
----@param is_top_floor boolean
 ---@param is_relevant_line boolean
 ---@return LineResult
-local function solve_line(line_data, aggregate, is_top_floor, is_relevant_line)
+local function solve_line(line_data, aggregate, is_relevant_line)
     local products = structures.map.list(line_data.products)
     local ingredients = structures.map.list(line_data.ingredients)
     local consuming = (line_data.production_type == "consume")
@@ -144,7 +143,8 @@ local function solve_line(line_data, aggregate, is_top_floor, is_relevant_line)
 
     return {
         id = line_data.id,
-        machine_amount = machine_amount
+        machine_amount = machine_amount,
+        machine_requirement = line_data.machine_requirement
     }
 end
 
@@ -172,9 +172,8 @@ function sequential_engine.solve_floor(factory_data, floor_id)
     for i, line_object_id in ipairs(floor_data.line_ids) do
         -- Update aggregate according to the current line, which also adjusts the respective line object
         local line_data = factory_data.line_data_map[line_object_id]
-        local is_top_floor = (floor_data.level == 1)
         local is_relevant_line = (floor_data.level > 1 and i == 1)
-        line_results[line_object_id] = solve_line(line_data, aggregate, is_top_floor, is_relevant_line)  -- updates aggregate
+        line_results[line_object_id] = solve_line(line_data, aggregate, is_relevant_line)  -- updates aggregate
     end
 
     -- Remove simulated product demand

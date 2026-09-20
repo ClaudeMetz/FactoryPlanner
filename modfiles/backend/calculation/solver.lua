@@ -50,7 +50,6 @@ end
 
 ---@class MachineRequirement
 ---@field count number
----@field product_proto FPItemPrototype
 
 -- Resolve the first usable match in displayed order, including subfloors' defining recipes
 ---@param factory Factory
@@ -75,8 +74,7 @@ local function resolve_machine_requirements(factory)
             ---@cast definition MachineItemDefinition
             local line_id = first_lines[structures.pack_item(product)]
             if line_id and not requirements[line_id] then
-                requirements[line_id] = {count=definition.machine_count,
-                    product_proto=product.proto--[[@as FPItemPrototype]]}
+                requirements[line_id] = {count=definition.machine_count}  ---@type MachineRequirement
             end
         end
     end
@@ -100,8 +98,9 @@ end
 ---@param player LuaPlayer
 ---@param factory Factory
 ---@param line Line
+---@param requirement MachineRequirement
 ---@return LineData
-local function generate_line_data(player, factory, line)
+local function generate_line_data(player, factory, line, requirement)
     local products = {}  ---@type SolverMap
     local ingredients = {}  ---@type SolverMap
     local machine_amount = 1
@@ -306,7 +305,7 @@ local function generate_line_data(player, factory, line)
         ingredients = ingredients,
         fuel_item = fuel_item,
         priority_item = priority_item,
-        machine_requirement = line.machine_requirement,
+        machine_requirement = requirement,
         production_type = line.recipe.production_type,
     }  ---@type LineData
 end
@@ -329,6 +328,7 @@ end
 ---@class LineResult
 ---@field id ObjectID
 ---@field machine_amount number
+---@field machine_requirement MachineRequirement?
 
 ---@param factory_data FactoryData
 ---@param floor_id ObjectID
@@ -390,15 +390,12 @@ local function generate_floor_data(player, factory, floor, machine_requirements)
             for k, v in pairs (subfloor_line_map) do line_data_map[k] = v end
         else  ---@cast line Line
             local requirement = machine_requirements[line.id]
-            -- Keep ignored requirements visible in the UI without passing them to the solver
-            line.machine_requirement_ignored = requirement ~= nil and factory.solver ~= "sequential"
-            line.machine_requirement = (not line.machine_requirement_ignored) and requirement or nil
             if line:get_blocker() or not relevant_line_active then
                 -- Useless lines don't need to run through the solver
                 if line == floor.first and floor.level > 1 then relevant_line_active = false end
             else
                 table.insert(floor_data.line_ids, line.id)
-                line_data_map[line.id] = generate_line_data(player, factory, line)
+                line_data_map[line.id] = generate_line_data(player, factory, line, requirement)
             end
         end
     end
@@ -611,6 +608,8 @@ local function update_line(line_id, line_data, result, scale_factor, floor_bypro
 
     line.production_ratio = crafts_per_second
     if line.machine.fuel ~= nil then line.machine.fuel.amount = fuel_amount end
+
+    line.machine_requirement = result and result.machine_requirement
 
     if line.production_ratio == 0 then
         set_zeroed_items(line, "products", line.recipe.products)
