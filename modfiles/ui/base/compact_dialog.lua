@@ -202,8 +202,14 @@ local function add_machine_flow(parent_flow, line, metadata)
         local title_line = (not quality_proto.always_show) and {"fp.tt_title", machine_proto.localised_name}
             or {"fp.tt_title_with_note", machine_proto.localised_name, quality_proto.rich_text}
         local amount, tooltip_line = lib.format.machine_amount(machine.amount, true)
+        local color = "default"
+        if line.machine_requirement then
+            color = "blue"
+            local count = line.machine_requirement.count
+            tooltip_line = {"", "\n", {"fp.machine_requirement", lib.format.number(count, 4), {"fp.pl_machine", count}}}
+        end
         local tooltip = {"", title_line, tooltip_line}
-        local style = (line.done) and "fflib_slot_button_default_grayscale" or "fflib_slot_button_default"
+        local style = "fflib_slot_button_" .. color .. ((line.done) and "_grayscale" or "")
 
         local flags = {cursor=lib.cursor.can_set_entity(machine_proto--[[@as FPMachinePrototype]])}
         ---@class ActOnCompactMachineTags

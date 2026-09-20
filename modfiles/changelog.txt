@@ -3,6 +3,7 @@ Version: 0.00.00
 Date: 00. 00. 0000
   Features:
     - Implemented support for selecting two item rate views at once (#807)
+    - Implemented defining desired products by machine amount instead of item rate, replacing limits defined on machines themselves (#93)
   Changes:
     - Bumped the required Factorio version to 2.1.18
   Bugfixes:

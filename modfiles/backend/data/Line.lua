@@ -26,6 +26,7 @@ local SimpleItem = require("backend.data.SimpleItem")
 ---@field byproducts SimpleItem[]
 ---@field ingredients SimpleItem[]
 ---@field production_ratio number
+---@field machine_requirement MachineRequirement?
 local Line = Object.methods()
 Line.__index = Line
 script.register_metatable("Line", Line)

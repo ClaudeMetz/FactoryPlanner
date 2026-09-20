@@ -64,6 +64,7 @@ return {
             test_item("test-solver-ore", "iron-ore"),
             test_item("test-solver-plate", "iron-plate"),
             test_item("test-solver-gear", "iron-gear-wheel"),
+            test_item("test-solver-slag", "stone"),
             {
                 type = "recipe-category",
                 name = "test-solver"
@@ -87,6 +88,12 @@ return {
                 results = {{type = "item", name = "test-solver-gear", amount = 1}}
             }
         }
+
+        local coproduct_recipe = deepcopy(data.raw.recipe["test-solver-plate"])
+        coproduct_recipe.name = "test-solver-plate-with-slag"
+        coproduct_recipe.main_product = "test-solver-plate"
+        table.insert(coproduct_recipe.results, {type="item", name="test-solver-slag", amount=1})
+        data:extend{coproduct_recipe}
 
         local machine = deepcopy(data.raw["assembling-machine"]["assembling-machine-2"])
         machine.name = "test-solver-machine"
@@ -142,9 +149,13 @@ return {
             "top floor: expected 1MW total power draw")
         c.check(#top.byproducts == 0, "top floor: expected no byproducts")
 
-        -- Force 20 plates/s so a consuming gear line can use the 10 plates/s surplus
-        plate_line.machine.limit = 10
-        plate_line.machine.force_limit = true
+        -- Request a coproduct so a consuming gear line can use the 10 plates/s surplus
+        local coproduct_line = context.classes.Line.init(
+            prototyper.util.find("recipes", "test-solver-plate-with-slag"), "produce")
+        top:replace(plate_line, coproduct_line)
+        coproduct_line:change_machine_to_proto(player,
+            prototyper.util.find("machines", "test-solver-machine", "test-solver"))
+        add_product(context.classes, factory, "test-solver-slag", 20)
         local consumer = context.classes.Line.init(
             prototyper.util.find("recipes", "test-solver-gear"), "consume")
         top:insert(consumer)
@@ -157,6 +168,118 @@ return {
             "top floor: expected 5 surplus gears/s")
         c.check(item_amount(top.byproducts, "test-solver-plate") == nil,
             "top floor: consuming line must leave no surplus plates")
+
+        -- A machine definition drives production even without an output amount target
+        factory = build_factory(context.classes, player, {"test-solver-gear", "test-solver-plate"})
+        product = add_product(context.classes, factory, "test-solver-gear", 0)
+        product.definition = {type="machines", machine_count=3.5}
+        top = factory.top_floor
+        gear_line, plate_line = top.first, top.first.next
+        solver.update(player, factory)
+        c.check(helpers.approx(gear_line.machine.amount, 3.5), "machine product: expected exactly 3.5 gear machines")
+        c.check(helpers.approx(product.amount, 3.5), "machine product: expected 3.5 gears/s")
+        c.check(helpers.approx(item_amount(gear_line.products, "test-solver-gear") or 0, 3.5)
+            and item_amount(gear_line.byproducts, "test-solver-gear") == nil,
+            "machine product: the controlling line must show gears as a product")
+        c.check(helpers.approx(plate_line.machine.amount, 3.5), "machine product: expected 3.5 upstream plate machines")
+        c.check(helpers.approx(item_amount(top.ingredients, "test-solver-ore") or 0, 14),
+            "machine product: expected 14 ore/s")
+        c.check(helpers.approx(item_amount(top.ingredients, "custom-electric-power") or 0, 700000),
+            "machine product: expected 700kW total power draw")
+        c.check(item_amount(top.byproducts, "test-solver-gear") == nil,
+            "machine product: output must not also appear as a byproduct")
+
+        -- The fixed plate count overrides internal demand; only the surplus is factory output
+        product.definition = {type="amount", amount=5}
+        local plates = add_product(context.classes, factory, "test-solver-plate", 0)
+        plates.definition = {type="machines", machine_count=8}
+        solver.update(player, factory)
+        c.check(helpers.approx(gear_line.machine.amount, 5) and helpers.approx(product.amount, 5),
+            "mixed definitions: expected the amount target to remain 5 gears/s")
+        c.check(helpers.approx(plate_line.machine.amount, 8), "mixed definitions: expected exactly 8 plate machines")
+        c.check(helpers.approx(plates.amount, 6), "mixed definitions: expected 16 minus 10 = 6 plates/s net output")
+        c.check(helpers.approx(item_amount(plate_line.products, "test-solver-plate") or 0, 16)
+            and item_amount(plate_line.byproducts, "test-solver-plate") == nil,
+            "mixed definitions: the controlling line must show all 16 plates/s as a product")
+        c.check(item_amount(top.byproducts, "test-solver-plate") == nil,
+            "mixed definitions: net plate output must not also appear as a byproduct")
+
+        plates.definition.machine_count = 3
+        solver.update(player, factory)
+        c.check(helpers.approx(plate_line.machine.amount, 3), "shortage: expected exactly 3 plate machines")
+        c.check(plates.amount == 0, "shortage: zero net output must be valid")
+        c.check(helpers.approx(product.amount, 5), "shortage: the gear target must remain satisfied")
+        c.check(helpers.approx(item_amount(top.ingredients, "test-solver-plate") or 0, 4),
+            "shortage: expected 4 imported plates/s")
+
+        -- A consuming line also obeys its fixed count, even if it must import ingredients
+        top:move(plate_line, gear_line, "previous")
+        gear_line.recipe.production_type = "consume"
+        product.definition = {type="machines", machine_count=3.5}
+        plates.definition.machine_count = 2
+        solver.update(player, factory)
+        c.check(helpers.approx(gear_line.machine.amount, 3.5) and helpers.approx(product.amount, 3.5),
+            "fixed consumer: expected 3.5 gear machines producing 3.5 gears/s")
+        c.check(helpers.approx(plate_line.machine.amount, 2) and plates.amount == 0,
+            "fixed consumer: expected all output from 2 plate machines to be consumed")
+        c.check(helpers.approx(item_amount(top.ingredients, "test-solver-plate") or 0, 3),
+            "fixed consumer: expected 3 imported plates/s beyond the 4 available")
+
+        -- Attaching a subfloor preserves the defining recipe's count and includes its upstream demand
+        factory = build_factory(context.classes, player, {"test-solver-gear", "test-solver-plate"})
+        product = add_product(context.classes, factory, "test-solver-gear", 0)
+        product.definition = {type="machines", machine_count=3.5}
+        top = factory.top_floor
+        gear_line, plate_line = top.first, top.first.next
+        local subfloor = context.classes.Floor.init(2)
+        top:replace(gear_line, subfloor)
+        top:remove(plate_line)
+        subfloor:insert(gear_line)
+        subfloor:insert(plate_line)
+        solver.update(player, factory)
+        c.check(helpers.approx(gear_line.machine.amount, 3.5) and helpers.approx(product.amount, 3.5),
+            "subfloor: expected exactly 3.5 defining machines producing 3.5 gears/s")
+        c.check(plate_line.machine_requirement == nil and helpers.approx(plate_line.machine.amount, 3.5),
+            "subfloor: internal plate machines must follow demand")
+        c.check(helpers.approx(item_amount(top.ingredients, "test-solver-ore") or 0, 14)
+            and helpers.approx(item_amount(top.ingredients, "custom-electric-power") or 0, 700000),
+            "subfloor: expected 14 ore/s and 700kW at the factory level")
+        c.check(helpers.approx(item_amount(subfloor.products, "test-solver-gear") or 0, 3.5)
+            and item_amount(subfloor.byproducts, "test-solver-gear") == nil,
+            "subfloor: its summary must show the machine-defined output as a product")
+
+        -- A fixed subfloor can supply a parent recipe and export the remaining production
+        factory = build_factory(context.classes, player,
+            {"test-solver-gear", "test-solver-plate", "test-solver-gear"})
+        product = add_product(context.classes, factory, "test-solver-gear", 5)
+        plates = add_product(context.classes, factory, "test-solver-plate", 0)
+        plates.definition = {type="machines", machine_count=8}
+        top = factory.top_floor
+        gear_line, plate_line = top.first, top.first.next
+        local internal = plate_line.next
+        subfloor = context.classes.Floor.init(2)
+        top:replace(plate_line, subfloor)
+        top:remove(internal)
+        subfloor:insert(plate_line)
+        subfloor:insert(internal)
+        solver.update(player, factory)
+        c.check(helpers.approx(plate_line.machine.amount, 8) and helpers.approx(product.amount, 5)
+            and helpers.approx(plates.amount, 6), "mixed subfloor: expected 5 gears/s and 6 net plates/s")
+        c.check(helpers.approx(item_amount(subfloor.products, "test-solver-plate") or 0, 16)
+            and item_amount(subfloor.byproducts, "test-solver-plate") == nil,
+            "mixed subfloor: all 16 plates/s must appear as a product in its summary")
+        internal.recipe.production_type = "consume"
+        solver.update(player, factory)
+        c.check(helpers.approx(internal.machine.amount, 3) and plates.amount == 0
+            and helpers.approx(item_amount(top.byproducts, "test-solver-gear") or 0, 3),
+            "subfloor consumer: expected all 6 surplus plates/s to become 3 surplus gears/s")
+        c.check(helpers.approx(item_amount(subfloor.products, "test-solver-plate") or 0, 10),
+            "subfloor consumer: its summary must show only the 10 plates/s remaining after internal consumption")
+        plates.definition.machine_count = 3
+        solver.update(player, factory)
+        c.check(helpers.approx(plate_line.machine.amount, 3) and plates.amount == 0
+            and helpers.approx(item_amount(top.ingredients, "test-solver-plate") or 0, 4),
+            "short subfloor: expected 3 defining machines and 4 imported plates/s")
 
         c.done()
     end

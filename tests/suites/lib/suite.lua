@@ -11,6 +11,7 @@ return {{
     cases = {
         testFactoryItemDefinitions = factory_items.definitions,
         testFactoryItemMigration = factory_items.migration,
+        testMachineLimitMigration = factory_items.machine_limits,
         testFactoryItemPicker = factory_items.picker,
         testLibFormatNumber = formatters.number,
         testLibFormatSIValue = formatters.SI_value,
