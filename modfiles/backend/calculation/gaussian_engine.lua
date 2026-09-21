@@ -297,7 +297,7 @@ local function get_matrix_data(factory_data, metadata, floor_id)
     end
 
     if floor_data.level == 1 then
-        for line_id, line_data in ipairs(relevant_lines) do
+        for line_id, line_data in pairs(relevant_lines) do
             if line_data.machine_requirement then
                 machine_limits[line_id] = line_data.machine_requirement.count
             end
