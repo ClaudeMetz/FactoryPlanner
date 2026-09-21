@@ -334,6 +334,7 @@ end
 ---@param floor_id ObjectID
 ---@param subfloor_result FloorResult
 local function generate_line_data_from_result(factory_data, floor_id, subfloor_result)
+    if subfloor_result.status ~= "solved" then return end
     local subfloor_data = factory_data.floor_data_map[subfloor_result.id]
     local subfloor_line = factory_data.line_data_map[subfloor_data.line_ids[1]--[[@cast -nil]]]
     factory_data.line_data_map[subfloor_result.id] = {
