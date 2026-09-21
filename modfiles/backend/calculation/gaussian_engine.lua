@@ -79,8 +79,10 @@ local function get_metadata(factory_data, floor_id, free_items)
     local line_outputs = {}
     for _, line_object_id in pairs(floor_data.line_ids) do
         local line_data = factory_data.line_data_map[line_object_id]
-        for item_key, _ in pairs(line_data.ingredients) do line_inputs[item_key] = true end
-        for item_key, _ in  pairs(line_data.products) do line_outputs[item_key] = true end
+        if line_data then
+            for item_key, _ in pairs(line_data.ingredients) do line_inputs[item_key] = true end
+            for item_key, _ in  pairs(line_data.products) do line_outputs[item_key] = true end
+        end
     end
 
     local all_items = solver.util.set.union(line_inputs, line_outputs)
@@ -287,9 +289,15 @@ local function get_matrix_data(factory_data, metadata, floor_id)
     -- Get machine limits
     local floor_data = factory_data.floor_data_map[floor_id]
     local machine_limits = {}  ---@type table<ObjectID, number>
+    local relevant_lines = {}  ---@type LineDataMap
+
+    for _, line_id in ipairs(floor_data.line_ids) do
+        local line_data = factory_data.line_data_map[line_id]
+        relevant_lines[line_id] = line_data
+    end
+
     if floor_data.level == 1 then
-        for _, line_id in ipairs(floor_data.line_ids) do
-            local line_data = factory_data.line_data_map[line_id]
+        for line_id, line_data in ipairs(relevant_lines) do
             if line_data.machine_requirement then
                 machine_limits[line_id] = line_data.machine_requirement.count
             end
@@ -310,7 +318,7 @@ local function get_matrix_data(factory_data, metadata, floor_id)
     local variables = {}  ---@type table<string, true>
     local item_variable_set = solver.util.set.union(metadata.free_items, metadata.raw_inputs, metadata.byproducts)
     for item_key, _ in pairs(item_variable_set) do variables[pack_item_key(item_key)] = true end
-    for _, line_id in ipairs(floor_data.line_ids) do variables[pack_line_key(line_id)] = true end
+    for line_id, _ in pairs(relevant_lines) do variables[pack_line_key(line_id)] = true end
     local columns = get_mapping_struct(variables)
 
     local matrix, free_variable_scale_factors = get_matrix(factory_data, floor_id, rows, columns, machine_limits)
@@ -533,23 +541,25 @@ local function run_solver(factory_data, metadata, floor_id)
         local line_data = factory_data.line_data_map[line_object_id]
         local col_num = matrix_data.columns.map[line_key]
 
-        -- want the j-th entry in the last column (output of row-reduction is identity matrix + last column)
-        local machine_amount = matrix_data.matrix[col_num]--[[@cast -nil]][#matrix_data.columns.values+1]  ---@as number
-        if machine_amount < 0 then machine_amount = 0 end
+        if col_num then
+            -- want the j-th entry in the last column (output of row-reduction is identity matrix + last column)
+            local machine_amount = matrix_data.matrix[col_num]--[[@cast -nil]][#matrix_data.columns.values+1]  ---@as number
+            if machine_amount < 0 then machine_amount = 0 end
 
-        for key, amount in pairs(line_data.products) do
-            local item = structures.unpack_item(key, amount * machine_amount)
-            structures.map.add(floor_products, item)
-        end
-        for key, amount in pairs(line_data.ingredients) do
-            local item = structures.unpack_item(key, amount * machine_amount)
-            structures.map.add(floor_ingredients, item)
-        end
+            for key, amount in pairs(line_data.products) do
+                local item = structures.unpack_item(key, amount * machine_amount)
+                structures.map.add(floor_products, item)
+            end
+            for key, amount in pairs(line_data.ingredients) do
+                local item = structures.unpack_item(key, amount * machine_amount)
+                structures.map.add(floor_ingredients, item)
+            end
 
-        line_results[line_object_id] = {
-            id = line_object_id,
-            machine_amount = machine_amount
-        }
+            line_results[line_object_id] = {
+                id = line_object_id,
+                machine_amount = machine_amount
+            }
+        end
     end
 
     structures.map.reduce_items(floor_products, floor_ingredients, true)

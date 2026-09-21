@@ -400,7 +400,7 @@ local function generate_floor_data(player, factory, floor, machine_requirements)
         end
     end
 
-    floor_data_map[floor.id] = floor_data
+    if #floor_data.line_ids > 0 then floor_data_map[floor.id] = floor_data end
     return floor_data_map, line_data_map
 end
 

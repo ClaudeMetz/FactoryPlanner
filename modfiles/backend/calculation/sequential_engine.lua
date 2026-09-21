@@ -171,8 +171,10 @@ function sequential_engine.solve_floor(factory_data, floor_id)
     for i, line_object_id in ipairs(floor_data.line_ids) do
         -- Update aggregate according to the current line, which also adjusts the respective line object
         local line_data = factory_data.line_data_map[line_object_id]
-        local is_relevant_line = (floor_data.level > 1 and i == 1)
-        line_results[line_object_id] = solve_line(line_data, aggregate, is_relevant_line)  -- updates aggregate
+        if line_data then
+            local is_relevant_line = (floor_data.level > 1 and i == 1)
+            line_results[line_object_id] = solve_line(line_data, aggregate, is_relevant_line)  -- updates aggregate
+        end
     end
 
     -- Remove simulated product demand
