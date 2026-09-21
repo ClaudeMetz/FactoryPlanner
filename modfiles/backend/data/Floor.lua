@@ -284,12 +284,17 @@ end
 
 ---@alias FloorStatus "disabled" | "linearly_dependent" | "solver_error"
 
---- Returns why this line doesn't produce anything, or nil if it does
+--- Returns why this floor doesn't produce anything, or nil if it does
 ---@return FloorStatus?
 function Floor:get_status()
     if self.first--[[@cast -nil]]:get_status() == "disabled" then return "disabled" end
-    if self.is_linearly_dependent then return "linearly_dependent" end
+
+    for line_object in self:iterator() do
+        if line_object.class == "Floor" and line_object:get_status() == "solver_error" then return "solver_error" end
+    end
+
     if self.solver_error then return "solver_error" end
+    if self.is_linearly_dependent then return "linearly_dependent" end
 
     return nil
 end
