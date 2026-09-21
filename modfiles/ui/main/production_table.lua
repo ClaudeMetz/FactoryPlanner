@@ -125,10 +125,15 @@ function builders.recipe(line, parent_flow, metadata, indent)
     elseif relevant_line.recipe.production_type == "consume" then
         color, note = "yellow", {"fp.recipe_consumes_byproduct"}
     end
-    if relevant_line:get_blocker() ~= nil then color = "red" end
 
     local status = relevant_line:get_status()
     local status_line = (status ~= nil) and {"fp.line_status", {"fp.line_status_" .. status}} or ""
+    if status == "disabled" then
+        color = "red"
+    elseif status == "unavailable_recipe" or status == "incompatible_recipe" or status == "incompatible_machine"
+            or status == "unconfigured_temperature" or status == "linearly_dependent" then
+        color = "orange"
+    end
 
     local recipe_proto = relevant_line.recipe.proto
     local first_line = (note == nil) and {"fp.tt_title", recipe_proto.localised_name}

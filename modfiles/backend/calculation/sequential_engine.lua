@@ -149,7 +149,7 @@ end
 
 
 -- ** TOP LEVEL **
----@alias SequentialSolverState "solved"
+---@alias SequentialSolverStatus "solved"
 
 ---@param factory_data FactoryData
 ---@param floor_id ObjectID
@@ -190,7 +190,7 @@ function sequential_engine.solve_floor(factory_data, floor_id)
     end
 
     return {
-        state = "solved",
+        status = "solved",
         id = floor_id,
         products = aggregate.products,
         ingredients = aggregate.ingredients,

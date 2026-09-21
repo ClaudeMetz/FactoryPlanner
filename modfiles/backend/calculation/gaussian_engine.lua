@@ -444,7 +444,7 @@ local function find_linearly_dependent_cols(matrix, ignore_last)
 end
 
 ---@class LinearDependanceData
----@field linearly_dependent_lines ObjectID[]
+---@field linearly_dependent_lines table<ObjectID, true>
 ---@field linearly_dependent_free_items FPItemPrototype[]
 ---@field allowed_free_items FPItemPrototype[]
 ---@field num_needed_free_items integer
@@ -455,7 +455,7 @@ end
 ---@return LinearDependanceData
 ---@return boolean is_viable
 local function get_linear_dependence_data(factory_data, metadata, floor_id)
-    local linearly_dependent_lines = {}  ---@type ObjectID[]
+    local linearly_dependent_lines = {}  ---@type table<ObjectID, true>
     local linearly_dependent_free_items = {}  ---@type SolverSet
     local allowed_free_items = {}  ---@type SolverSet
 
@@ -468,7 +468,7 @@ local function get_linear_dependence_data(factory_data, metadata, floor_id)
         local col_split_str = lib.split_string(col_name, SEPARATOR)
         if col_split_str[1] == "line" then
             local line_id = col_split_str[2]  ---@as integer
-            table.insert(linearly_dependent_lines, line_id)
+            linearly_dependent_lines[line_id] = true
         else -- item
             local item_key = col_split_str[2]  ---@as SolverItemKey
             if metadata.free_items[item_key] then linearly_dependent_free_items[item_key] = true end
@@ -502,9 +502,9 @@ local function get_linear_dependence_data(factory_data, metadata, floor_id)
         linearly_dependent_lines = linearly_dependent_lines,
         linearly_dependent_free_items = get_item_protos(linearly_dependent_free_items),
         allowed_free_items = get_item_protos(allowed_free_items),
-        num_needed_free_items = num_rows - num_cols + num_chosen_free_items
+        num_needed_free_items = math.max(num_rows - num_cols, 0) + num_chosen_free_items
     }  ---@type LinearDependanceData
-    local is_viable = num_rows == num_cols and #linearly_dependent_lines == 0 and #linearly_dependent_free_items == 0
+    local is_viable = num_rows == num_cols and not next(linearly_dependent_lines) and #linearly_dependent_free_items == 0
     return result, is_viable
 end
 
@@ -555,7 +555,7 @@ local function run_solver(factory_data, metadata, floor_id)
     structures.map.reduce_items(floor_products, floor_ingredients, true)
 
     return {
-        state = "solved",
+        status = "solved",
         id = floor_id,
         products = floor_products,
         ingredients = floor_ingredients,
@@ -563,7 +563,7 @@ local function run_solver(factory_data, metadata, floor_id)
     }
 end
 
----@alias GaussianSolverState "solved" | "linearly-dependent"
+---@alias GaussianSolverStatus "solved" | "linearly-dependent"
 
 ---@param factory_data FactoryData
 ---@param floor_id ObjectID
@@ -592,7 +592,7 @@ function gaussian_engine.solve_floor(factory_data, floor_id)
         result = run_solver(factory_data, metadata, floor_id)
     else
         result = {
-            state = "linearly-dependent",
+            status = "linearly-dependent",
             id = floor_id,
             products = {},
             ingredients = {},

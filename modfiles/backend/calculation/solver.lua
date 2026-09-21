@@ -313,10 +313,10 @@ end
 
 ---@alias FloorResultMap table<ObjectID, FloorResult>
 ---@alias LineResultMap table<ObjectID, LineResult>
----@alias SolverState SequentialSolverState|SimplexSolverState|GaussianSolverState
+---@alias SolverStatus SequentialSolverStatus|SimplexSolverStatus|GaussianSolverStatus
 
 ---@class FloorResult
----@field state SolverState
+---@field status SolverStatus
 ---@field id ObjectID
 ---@field products SolverMap
 ---@field ingredients SolverMap
@@ -610,6 +610,7 @@ local function update_line(line_id, line_data, result, scale_factor, floor_bypro
     if line.machine.fuel ~= nil then line.machine.fuel.amount = fuel_amount end
 
     line.machine_requirement = line_data and line_data.machine_requirement
+    line.is_linearly_dependent = nil
 
     if line.production_ratio == 0 then
         set_zeroed_items(line, "products", line.recipe.products)
@@ -643,7 +644,7 @@ local function update_floor(factory_data, result_map, floor_id, scale_factor, fl
             floor_machines = floor_machines + math.ceil(line_machines - MAGIC_NUMBERS.margin_of_error)
         else  -- Floor
             local blank_result = {
-                state = "solved",
+                status = "solved",
                 id = line_object.id,
                 products = {},
                 ingredients = {},
@@ -669,6 +670,18 @@ local function update_floor(factory_data, result_map, floor_id, scale_factor, fl
         floor.gaussian_free_items = result.gaussian_free_items or floor.gaussian_free_items
         floor.linear_dependence_data = result.linear_dependence_data
         floor.simplex_basis_cache = result.simplex_basis_cache
+
+        if result.linear_dependence_data then
+            for line in floor:iterator() do
+                if result.linear_dependence_data.linearly_dependent_lines[line.id] then
+                    if line.class == "Line" then
+                        line.is_linearly_dependent = true
+                    else  -- Floor
+                        -- TODO
+                    end
+                end
+            end
+        end
 
         -- TODO: handle solver error states (`result.state`)
     end

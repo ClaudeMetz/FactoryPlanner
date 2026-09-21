@@ -6,7 +6,7 @@ local util = require("__core__.lualib.util")
 ---@alias InequalityType "==" | "<=" | ">="
 ---@alias ItemFlow "import" | "export" | "input" | "output"
 ---@alias FlowDirection "in" | "out"
----@alias SimplexSolverState "solved" | "in-progress" | "unbounded" | "no-solution"
+---@alias SimplexSolverStatus "solved" | "in-progress" | "unbounded" | "no-solution"
 ---@alias VariableType "unassigned" | "basic" | "non-basic"
 ---@alias ConstraintKey string `"item;<floor_id>;<proto-key>"` | `"c;<var-key>"`
 ---@alias VariableKey string `"line;<line_id>"` | `"item;<floor_id>;<in|out>;<proto-key>"` | `"s;<n>"` | `"y;<n>"`
@@ -210,7 +210,7 @@ end
 ---@return FloorResult result
 function SimplexTableau:solve(floor_id, basis_cache)
     local result = {
-        state = "in-progress",
+        status = "in-progress",
         id = floor_id,
         products = {},
         ingredients = {},
@@ -328,7 +328,7 @@ function SimplexTableau:solve(floor_id, basis_cache)
     end
 
     ---@return boolean
-    ---@return SolverState
+    ---@return SolverStatus
     local function solution_reached()
         for i = 1, #basic do
             local var_unpacked = basic[i] and unpack_key(basic[i]) or {}
@@ -338,7 +338,7 @@ function SimplexTableau:solve(floor_id, basis_cache)
     end
 
     ---@return boolean done
-    ---@return SolverState state
+    ---@return SolverStatus state
     local function iterate()
         -- Compute the objective vector for the current basis
         local c_basic = {}  ---@type number[]
@@ -434,19 +434,19 @@ function SimplexTableau:solve(floor_id, basis_cache)
             -- Re-factorize if needed
             if needs_factorization then refactorize() end
             if not lu then
-                result.state = "no-solution"
+                result.status = "no-solution"
                 break
             end
 
             -- Iterate through the solution
-            done, result.state = iterate()
+            done, result.status = iterate()
             iterations = iterations + 1
         until done or iterations == max_iterations
-        if result.state ~= "solved" then return result end
+        if result.status ~= "solved" then return result end
     else
         -- Re-use the cached solution
         refactorize()
-        result.state = "solved"
+        result.status = "solved"
     end
 
     -- Cache the solution basis for later
