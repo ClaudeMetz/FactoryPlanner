@@ -16,6 +16,8 @@ local SimpleItem = require("backend.data.SimpleItem")
 ---@field byproducts SimpleItem[]
 ---@field ingredients SimpleItem[]
 ---@field machine_amount integer
+---@field solver_error SolverStatus?
+---@field is_linearly_dependent boolean?
 ---@field gaussian_free_items (FPItemPrototype | FPPackedPrototype)[]
 ---@field linear_dependence_data LinearDependanceData?
 ---@field simplex_basis_cache SimplexBasisCache?
@@ -278,6 +280,18 @@ function Floor:reset_surface_compatibility()
             line.surface_compatibility = nil
         end
     end
+end
+
+---@alias FloorStatus "disabled" | "linearly_dependent" | "solver_error"
+
+--- Returns why this line doesn't produce anything, or nil if it does
+---@return FloorStatus?
+function Floor:get_status()
+    if self.first--[[@cast -nil]]:get_status() == "disabled" then return "disabled" end
+    if self.is_linearly_dependent then return "linearly_dependent" end
+    if self.solver_error then return "solver_error" end
+
+    return nil
 end
 
 ---@param self_only boolean?

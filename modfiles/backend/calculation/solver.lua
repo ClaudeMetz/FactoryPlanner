@@ -313,7 +313,7 @@ end
 
 ---@alias FloorResultMap table<ObjectID, FloorResult>
 ---@alias LineResultMap table<ObjectID, LineResult>
----@alias SolverStatus SequentialSolverStatus|SimplexSolverStatus|GaussianSolverStatus
+---@alias SolverStatus SequentialSolverStatus | SimplexSolverStatus | GaussianSolverStatus
 
 ---@class FloorResult
 ---@field status SolverStatus
@@ -666,24 +666,25 @@ local function update_floor(factory_data, result_map, floor_id, scale_factor, fl
         end
     end
 
+    floor.is_linearly_dependent = nil
     if result then
         floor.gaussian_free_items = result.gaussian_free_items or floor.gaussian_free_items
         floor.linear_dependence_data = result.linear_dependence_data
         floor.simplex_basis_cache = result.simplex_basis_cache
 
         if result.linear_dependence_data then
-            for line in floor:iterator() do
-                if result.linear_dependence_data.linearly_dependent_lines[line.id] then
-                    if line.class == "Line" then
-                        line.is_linearly_dependent = true
-                    else  -- Floor
-                        -- TODO
-                    end
+            for line_object in floor:iterator() do
+                if result.linear_dependence_data.linearly_dependent_lines[line_object.id] then
+                    line_object.is_linearly_dependent = true
                 end
             end
         end
 
-        -- TODO: handle solver error states (`result.state`)
+        floor.solver_error = result and result.status ~= "solved" and result.status or nil
+    else
+        floor.linear_dependence_data = nil
+        floor.simplex_basis_cache = nil
+        floor.solver_error = nil
     end
 
     return floor_machines

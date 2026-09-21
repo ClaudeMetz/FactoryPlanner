@@ -104,21 +104,21 @@ function builders.done(line, parent_flow, metadata)
     parent_flow.add{type="checkbox", tags=tags, state=relevant_line.done, mouse_button_filter={"left"}}
 end
 
----@param line LineObject
+---@param line_object LineObject
 ---@param parent_flow LuaGuiElement
 ---@param metadata ProductionTableMetadata
 ---@param indent integer
-function builders.recipe(line, parent_flow, metadata, indent)
-    local relevant_line = (line.class == "Floor") and line.first or line
+function builders.recipe(line_object, parent_flow, metadata, indent)
+    local relevant_line = (line_object.class == "Floor") and line_object.first or line_object
     ---@cast relevant_line Line
 
     parent_flow.style.vertical_align = "center"
     parent_flow.style.horizontal_spacing = 3
     parent_flow.style.left_margin = indent * 12
 
-    local first_subfloor_line = (line.parent.level > 1 and line.previous == nil)
+    local first_subfloor_line = (line_object.parent.level > 1 and line_object.previous == nil)
     local color, note = "default", nil  ---@type string, LocalisedString?
-    if line.class == "Floor" then
+    if line_object.class == "Floor" then
         color, note = "blue", {"fp.recipe_subfloor_attached"}
     elseif first_subfloor_line then
         note = {"fp.floor_recipe"}
@@ -126,26 +126,26 @@ function builders.recipe(line, parent_flow, metadata, indent)
         color, note = "yellow", {"fp.recipe_consumes_byproduct"}
     end
 
-    local status = relevant_line:get_status()
+    local status = line_object:get_status()
     local status_line = (status ~= nil) and {"fp.line_status", {"fp.line_status_" .. status}} or ""
     if status == "disabled" then
         color = "red"
     elseif status == "unavailable_recipe" or status == "incompatible_recipe" or status == "incompatible_machine"
-            or status == "unconfigured_temperature" or status == "linearly_dependent" then
+            or status == "unconfigured_temperature" or status == "linearly_dependent" or status == "solver_error" then
         color = "orange"
     end
 
     local recipe_proto = relevant_line.recipe.proto
     local first_line = (note == nil) and {"fp.tt_title", recipe_proto.localised_name}
         or {"fp.tt_title_with_note", recipe_proto.localised_name, note}
-    local effects_section = (line.class == "Line") and format_effects_tooltip(relevant_line.effects_tooltip) or ""
+    local effects_section = (line_object.class == "Line") and format_effects_tooltip(relevant_line.effects_tooltip) or ""
     local tooltip = {"", first_line, status_line, effects_section}
     local style = "fflib_slot_button_" .. color
 
     local flags = {
         defining_recipe = first_subfloor_line,
         archived = metadata.archive_open,
-        subfloor = (line.class == "Floor"),
+        subfloor = (line_object.class == "Floor"),
         consuming = (relevant_line.recipe.production_type == "consume"),
         factoriopedia = (lib.get_factoriopedia_proto(recipe_proto) ~= nil)
     }
@@ -153,7 +153,7 @@ function builders.recipe(line, parent_flow, metadata, indent)
     ---@field line_id ObjectID
     ---@field context "production_table"
     ---@field flags GUIActionFlags
-    local tags = {mod="fp", on_gui_click="act_on_line_recipe", line_id=line.id, on_gui_hover="set_tooltip",
+    local tags = {mod="fp", on_gui_click="act_on_line_recipe", line_id=line_object.id, on_gui_hover="set_tooltip",
         context="production_table", flags=flags}
     local button = parent_flow.add{type="sprite-button", tags = tags, sprite=recipe_proto.sprite, style=style,
         mouse_button_filter={"left-and-right"}, raise_hover_events=true}
