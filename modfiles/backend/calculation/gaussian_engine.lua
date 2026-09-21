@@ -456,12 +456,12 @@ end
 ---@field linearly_dependent_free_items FPItemPrototype[]
 ---@field allowed_free_items FPItemPrototype[]
 ---@field num_needed_free_items integer
+---@field matrix_balanced boolean
 
 ---@param factory_data FactoryData
 ---@param metadata GaussianMetadata
 ---@param floor_id ObjectID
 ---@return LinearDependanceData
----@return boolean is_viable
 local function get_linear_dependence_data(factory_data, metadata, floor_id)
     local linearly_dependent_lines = {}  ---@type table<ObjectID, true>
     local linearly_dependent_free_items = {}  ---@type SolverSet
@@ -506,14 +506,13 @@ local function get_linear_dependence_data(factory_data, metadata, floor_id)
     local num_chosen_free_items = 0
     for _, _ in pairs(metadata.free_items) do num_chosen_free_items = num_chosen_free_items + 1 end
 
-    local result = {
+    return {
         linearly_dependent_lines = linearly_dependent_lines,
         linearly_dependent_free_items = get_item_protos(linearly_dependent_free_items),
         allowed_free_items = get_item_protos(allowed_free_items),
-        num_needed_free_items = math.max(num_rows - num_cols, 0) + num_chosen_free_items
+        num_needed_free_items = math.max(num_rows - num_cols, 0) + num_chosen_free_items,
+        matrix_balanced = num_rows == num_cols and not next(linearly_dependent_lines) and #linearly_dependent_free_items == 0
     }  ---@type LinearDependanceData
-    local is_viable = num_rows == num_cols and not next(linearly_dependent_lines) and #linearly_dependent_free_items == 0
-    return result, is_viable
 end
 
 ---@param factory_data FactoryData
@@ -573,14 +572,14 @@ local function run_solver(factory_data, metadata, floor_id)
     }
 end
 
----@alias GaussianSolverStatus "solved" | "linearly-dependent"
+---@alias GaussianSolverStatus "solved" | "linearly_dependent" | "free_items_unbalanced"
 
 ---@param factory_data FactoryData
 ---@param floor_id ObjectID
 ---@return FloorResult
 function gaussian_engine.solve_floor(factory_data, floor_id)
     local metadata = get_metadata(factory_data, floor_id)
-    local linear_dependence_data, is_viable = get_linear_dependence_data(factory_data, metadata, floor_id)
+    local linear_dependence_data = get_linear_dependence_data(factory_data, metadata, floor_id)
 
     -- In the case of linearly dependent free items, we remove it automatically if there's only one option.
     -- Otherwise we present the user with a choice to remove problematic free items in the production box.
@@ -594,15 +593,15 @@ function gaussian_engine.solve_floor(factory_data, floor_id)
 
         -- Redo all these since we've changed the factory
         metadata = get_metadata(factory_data, floor_id, metadata.free_items)
-        linear_dependence_data, is_viable = get_linear_dependence_data(factory_data, metadata, floor_id)
+        linear_dependence_data = get_linear_dependence_data(factory_data, metadata, floor_id)
     end
 
     local result ---@type FloorResult
-    if is_viable then
+    if linear_dependence_data.matrix_balanced then
         result = run_solver(factory_data, metadata, floor_id)
     else
         result = {
-            status = "linearly-dependent",
+            status = next(linear_dependence_data.linearly_dependent_lines) and "linearly_dependent" or "free_items_unbalanced",
             id = floor_id,
             products = {},
             ingredients = {},

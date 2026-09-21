@@ -6,7 +6,7 @@ local util = require("__core__.lualib.util")
 ---@alias InequalityType "==" | "<=" | ">="
 ---@alias ItemFlow "import" | "export" | "input" | "output"
 ---@alias FlowDirection "in" | "out"
----@alias SimplexSolverStatus "solved" | "in-progress" | "unbounded" | "no-solution"
+---@alias SimplexSolverStatus "solved" | "in_progress" | "unbounded" | "no_solution"
 ---@alias VariableType "unassigned" | "basic" | "non-basic"
 ---@alias ConstraintKey string `"item;<floor_id>;<proto-key>"` | `"c;<var-key>"`
 ---@alias VariableKey string `"line;<line_id>"` | `"item;<floor_id>;<in|out>;<proto-key>"` | `"s;<n>"` | `"y;<n>"`
@@ -210,7 +210,7 @@ end
 ---@return FloorResult result
 function SimplexTableau:solve(floor_id, basis_cache)
     local result = {
-        status = "in-progress",
+        status = "in_progress",
         id = floor_id,
         products = {},
         ingredients = {},
@@ -332,7 +332,7 @@ function SimplexTableau:solve(floor_id, basis_cache)
     local function solution_reached()
         for i = 1, #basic do
             local var_unpacked = basic[i] and unpack_key(basic[i]) or {}
-            if var_unpacked[1] == "y" then return true, "no-solution" end
+            if var_unpacked[1] == "y" then return true, "no_solution" end
         end
         return true, "solved"
     end
@@ -416,7 +416,7 @@ function SimplexTableau:solve(floor_id, basis_cache)
         -- Update the decomposition
         if not lu:update(u_vector, leaving_index) then needs_factorization = true end
 
-        return false, "in-progress"
+        return false, "in_progress"
     end
 
     -- If a cached result was found, then we need to calculate the initial
@@ -434,7 +434,7 @@ function SimplexTableau:solve(floor_id, basis_cache)
             -- Re-factorize if needed
             if needs_factorization then refactorize() end
             if not lu then
-                result.status = "no-solution"
+                result.status = "no_solution"
                 break
             end
 
