@@ -323,7 +323,7 @@ end
 ---@field line_result_map LineResultMap
 ---@field cache_invalid boolean?
 ---@field gaussian_free_items FPItemPrototype[]?  -- gaussian
----@field linear_dependence_data LinearDependanceData?
+---@field linear_dependence_data LinearDependanceData?  -- gaussian
 ---@field simplex_basis_cache SimplexBasisCache?  -- simplex
 
 ---@class LineResult
