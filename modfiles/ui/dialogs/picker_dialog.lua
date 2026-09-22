@@ -193,8 +193,20 @@ local function add_item_picker(parent_flow, player)
             local name = (item_proto.temperature) and item_proto.base_name or item_name
             local elem_tooltip = (item_proto.type ~= "entity") and {type=item_proto.type, name=name} or nil
             local unlocked = lib.availability.is_item_unlocked(force, item_proto, unlock_cache)
-            local button_style = (existing_product or not unlocked)
-                and "fflib_slot_button_red" or "fflib_slot_button_default"
+            local button_style = "fflib_slot_button_default"
+            local status_tooltip = nil  ---@type LocalisedString?
+            if existing_product then
+                button_style = "fflib_slot_button_blue"
+                status_tooltip = {"fp.picker_already_selected_tt", {"fp.pu_" .. modal_data.item_category, 1}}
+            elseif not unlocked then
+                button_style = "fflib_slot_button_red"
+                status_tooltip = {"fp.picker_unresearched_tt"}
+            end
+
+            local tooltip = item_proto.tooltip  ---@type LocalisedString?
+            if status_tooltip then
+                tooltip = {"", item_proto.tooltip or "", (item_proto.tooltip) and "\n\n" or "", status_tooltip}
+            end
 
             ---@class SelectPickerItemTags
             ---@field item_id integer
@@ -203,7 +215,8 @@ local function add_item_picker(parent_flow, player)
             local tags = {mod="fp", on_gui_click="select_picker_item", item_id=item_proto.id,
                 category_id=item_proto.category_id, enabled=(existing_product == nil)}
             local button_item = table_subgroup.add{type="sprite-button", tags=tags, sprite=item_proto.sprite,
-                style=button_style, tooltip=item_proto.tooltip, elem_tooltip=elem_tooltip, mouse_button_filter={"left"}}
+                style=button_style, elem_tooltip=elem_tooltip, mouse_button_filter={"left"}}
+            button_item.tooltip = tooltip
 
             -- Figure out the translated name here so search doesn't have to repeat the work for every character
             local translated_name = (translations) and translations[item_proto.type][item_name] or nil
@@ -436,7 +449,8 @@ local function add_item_pane(parent_flow, modal_data, item)
     modal_elements["machine_count_checkbox"] = flow_machines.add{type="checkbox", state=(defined_by == "machines"),
         tags={mod="fp", on_gui_checked_state_changed="picker_toggle_machines"},
         caption={"fp.info_label", {"fp.picker_machine_count"}},
-        tooltip={"fp.picker_machine_count_tt"}}
+        tooltip={"fp.picker_machine_count_tt", {"fp.pl_" .. modal_data.item_category, 1},
+            {"fp.pl_" .. modal_data.item_category, 2}}}
 
     local machine_width = 50
     local machine_count = (item and item.definition.type == "machines") and tostring(item.definition.machine_count) or ""
@@ -653,7 +667,9 @@ listeners.gui = {
                 local item_proto = prototyper.util.find("items", cursor_item.name, "item")  ---@as FPItemPrototype?
                 if item_proto == nil or item_proto.hidden or item_proto.ingredient_only then
                     local name = (item_proto) and item_proto.localised_name or {"fp.this"}
-                    lib.cursor.create_flying_text(player, {"fp.picker_invalid_product", name})
+                    local modal_data = lib.globals.modal_data(player)  ---@as PickerDialogModalData
+                    lib.cursor.create_flying_text(player, {"fp.picker_invalid_product", name,
+                        {"fp.pl_" .. modal_data.item_category, 1}})
                 else
                     local factory = lib.context.get(player, "Factory")  ---@as Factory
                     local enabled = (factory:find({proto = item_proto}) == nil)

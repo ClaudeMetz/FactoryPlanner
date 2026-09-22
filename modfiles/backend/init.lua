@@ -84,9 +84,9 @@ local function player_init(player)
     if DEVELOPER_MODE then
         lib.porter.add_factories(player, dev_export_string)
 
-        player.force--[[@as LuaForce]].research_all_technologies()
+        --player.force--[[@as LuaForce]].research_all_technologies()
         player.clear_recipe_notifications()
-        player.cheat_mode = true
+        --player.cheat_mode = true
     end
 end
 
