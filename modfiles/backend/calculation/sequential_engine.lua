@@ -76,6 +76,18 @@ local function determine_consuming_ratio(line_data, aggregate, ingredients)
 end
 
 
+---@param products SolverMap
+---@param byproducts SolverMap
+---@param requirement MachineRequirement?
+local function classify_machine_product(products, byproducts, requirement)
+    if not requirement then return end
+    local product = requirement.product_proto
+    local product_key = structures.pack_item(product)
+    structures.map.add(products, product, byproducts[product_key] or 0)
+    byproducts[product_key] = nil
+end
+
+
 ---@param line_data LineData
 ---@param aggregate SolverAggregate
 local function update_line(line_data, aggregate)
@@ -92,13 +104,13 @@ local function update_line(line_data, aggregate)
 
     -- Determine machine count
     -- Line data assumes a machine amount of 1, so production_ratio == machine_amount
-    local machine_amount = (consuming) and determine_consuming_ratio(line_data, aggregate, ingredients)
-        or determine_producing_ratio(line_data, aggregate, demanded_products)
-
-    -- Limit the machine amount
-    if line_data.machine_limit then
-        machine_amount = line_data.machine_force_limit and line_data.machine_limit
-            or math.min(machine_amount, line_data.machine_limit)
+    local machine_amount
+    if line_data.machine_requirement then
+        machine_amount = line_data.machine_requirement.count
+    elseif consuming then
+        machine_amount = determine_consuming_ratio(line_data, aggregate, ingredients)
+    else
+        machine_amount = determine_producing_ratio(line_data, aggregate, demanded_products)
     end
 
     -- Determine crafts per second
@@ -166,6 +178,8 @@ local function update_line(line_data, aggregate)
         end
     end
 
+    classify_machine_product(line_products, line_byproducts, line_data.machine_requirement)
+
     -- Add the integer machine count to the aggregate so it can be displayed on the origin_line
     aggregate.machine_amount = aggregate.machine_amount + math.ceil(machine_amount - MAGIC_NUMBERS.margin_of_error)
 
@@ -225,6 +239,10 @@ local function update_floor(factory_data, floor_id, aggregate)
                 local ingredient_amount = subfloor_aggregate.ingredients[structures.pack_item(desired_product)] or 0
                 structures.map.subtract(subfloor_aggregate.ingredients, desired_product, ingredient_amount)
             end
+
+            local defining_line = factory_data.line_data_map[subfloor_data.line_ids[1]]
+            classify_machine_product(subfloor_aggregate.products, subfloor_aggregate.byproducts,
+                defining_line and defining_line.machine_requirement)
 
             -- Update the parent line of the subfloor with the results from the subfloor aggregate
             solver.set_line_result {

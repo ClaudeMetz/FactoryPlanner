@@ -305,7 +305,7 @@ local function create_recipe_group_box(modal_data, relevant_group)
         local recipe_name = recipe_proto.name
 
         local style = "fflib_slot_button_green"
-        if not recipe.enabled then style = "fflib_slot_button_yellow"
+        if not recipe.enabled then style = "fflib_slot_button_red"
         elseif recipe_proto.hidden then style = "fflib_slot_button_default" end
 
         ---@class PickRecipeTags

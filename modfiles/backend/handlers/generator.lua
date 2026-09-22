@@ -1347,7 +1347,6 @@ end
 ---@class FPFuelPrototype: FPPrototypeWithCategory
 ---@field data_type "fuels"
 ---@field type "item" | "fluid"
----@field category string
 ---@field combined_category string
 ---@field elem_type ElemType
 ---@field fuel_value float
@@ -1389,7 +1388,6 @@ function generator.fuels.generate()
                 sprite = "item/" .. proto.name,
                 type = "item",
                 elem_type = "item",
-                category = proto.fuel_category,
                 combined_category = nil,  -- set below
                 fuel_value = proto.fuel_value,
                 emissions_multiplier = proto.fuel_emissions_multiplier,
@@ -1398,8 +1396,10 @@ function generator.fuels.generate()
                 burnt_result = (proto.burnt_result) and proto.burnt_result.name or nil
                 -- burnt_result item not explicitly added as FPItemPrototype, relies on mod to use it elsewhere
             }
-            fuel_categories[fuel.category] = fuel_categories[fuel.category] or {}
-            table.insert(fuel_categories[fuel.category], fuel)
+            for _, category in pairs(proto.fuel_categories--[[@cast -nil]]) do
+                fuel_categories[category] = fuel_categories[category] or {}
+                table.insert(fuel_categories[category], fuel)
+            end
         end
     end
 
@@ -1451,7 +1451,6 @@ function generator.fuels.generate()
                     sprite = "fluid/" .. proto.name,
                     type = "fluid",
                     elem_type = "fluid",
-                    category = category,
                     combined_category = nil,  -- set below
                     fuel_value = (burns_fluid) and proto.fuel_value or 0,
                     emissions_multiplier = proto.emissions_multiplier,
