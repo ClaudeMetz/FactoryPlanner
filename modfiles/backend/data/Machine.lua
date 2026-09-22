@@ -65,8 +65,10 @@ function Machine:normalize_fuel(player)
     -- no need to continue if this machine doesn't have a burner
 
     local burner = self.proto.burner  ---@as MachineBurner
-    -- Check if fuel has a valid category for this machine, replace otherwise
-    if self.fuel and not burner.categories[self.fuel.proto.category] then self.fuel = nil end
+    -- Look up the fuel in this machine's category combination to check compatibility
+    local compatible_proto = self.fuel
+        and prototyper.util.find("fuels", self.fuel.proto.name, burner.combined_category)  ---@as FPFuelPrototype?
+    if not compatible_proto then self.fuel = nil end
 
     if self.fuel == nil then  -- add a fuel for this machine if it doesn't have one here
         local default_fuel_proto = defaults.get(player, "fuels", burner.combined_category).proto  ---@as FPFuelPrototype
@@ -74,8 +76,7 @@ function Machine:normalize_fuel(player)
         self.fuel:apply_temperature_default(player)
     else  -- make sure the fuel is of the right combined category
         if burner.combined_category ~= self.fuel.proto.combined_category then
-            local proto = prototyper.util.find("fuels", self.fuel.proto.name, burner.combined_category)  ---@as FPFuelPrototype
-            self.fuel:set_proto(proto, player)
+            self.fuel:set_proto(compatible_proto--[[@cast -nil]], player)
         else
             -- The category can stay the same while the machine's fluid box allows other temperatures
             self.fuel:rebuild_temperature_data()

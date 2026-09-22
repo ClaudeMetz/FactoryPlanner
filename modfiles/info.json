@@ -5,7 +5,7 @@
     "author": "Therenas",
     "factorio_version": "2.1",
     "dependencies": [
-        "base >= 2.1.18",
+        "base >= 2.1.20",
         "(?) pypostprocessing"
     ]
 }
