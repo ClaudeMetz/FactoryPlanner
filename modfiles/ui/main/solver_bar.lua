@@ -51,7 +51,7 @@ local function refresh_solver_bar(player)
             ---@field name string
             flow.add{type="sprite-button", sprite=proto.sprite, tooltip={"fp.turn_" .. status, proto.localised_name},
                 tags={mod="fp", on_gui_click="switch_matrix_item", status=status, type=proto.type, name=proto.name},
-                style="fflib_slot_button_" .. color .. "_small", mouse_button_filter={"left"}}
+                style="fflib_slot_button_" .. color, mouse_button_filter={"left"}}
         end
     end
 
@@ -71,11 +71,13 @@ local function refresh_solver_bar(player)
         local caption = {"fp.error_message", {"fp.info_label", {"fp.linearly_dependent_recipes"}}}
         solver_flow.add{type="label", caption=caption, tooltip={"fp.linearly_dependent_recipes_tt"}, style="fp_label_solver"}
         local flow_recipes = solver_flow.add{type="flow", direction="horizontal"}
+        flow_recipes.style.minimal_height = 40
+        flow_recipes.style.vertical_align = "center"
 
         for _, recipe_proto in pairs(factory.linear_dependence_data.linearly_dependent_recipes) do
             local sprite = flow_recipes.add{type="sprite", sprite=recipe_proto.sprite,
                 tooltip=recipe_proto.localised_name, resize_to_sprite=true}
-            sprite.style.size = 28
+            sprite.style.size = 32
             sprite.style.stretch_image_to_widget_size = true
         end
 

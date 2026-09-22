@@ -4,6 +4,20 @@ Date: 00. 00. 0000
   Features:
   Changes:
   Bugfixes:
+    - Fixed an issue with the Simplex solver when a product has no producing line (#898) (Thanks vapopescu!)
+
+---------------------------------------------------------------------------------------------------
+Version: 2.1.16
+Date: 22. 09. 2026
+  Features:
+    - Implemented support for selecting two item rate views at once (#807)
+    - Implemented defining desired products by machine amount instead of item rate, replacing limits defined on machines themselves (#93)
+  Changes:
+    - Added support for fuels being able to have multiple categories
+    - Bumped the required Factorio version to 2.1.20
+  Bugfixes:
+    - Fixed crash when exporting disabled subfloor (#894) (Thanks vapopescu!)
+    - Fixed research planning ignoring science ingredient durability
 
 ---------------------------------------------------------------------------------------------------
 Version: 2.1.15

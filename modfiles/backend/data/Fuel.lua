@@ -140,7 +140,7 @@ function Fuel:paste(object, player)
         ---@cast object Fuel
         fuel_name = object.proto.name
         temperature = object.temperature
-    elseif object.class == "SimpleItem" or object.class == "TLProduct" then
+    elseif object.class == "SimpleItem" or object.class == "FactoryItem" then
         ---@cast object.proto FPItemPrototype
         fuel_name = object.proto.base_name or object.proto.name
         temperature = object.proto.temperature
@@ -207,12 +207,10 @@ function Fuel:validate(player)
         if burner == nil or self.parent.proto.simplified then
             self.valid = false
         elseif burner.combined_category ~= self.proto.combined_category then
-            if burner.categories[self.proto.category] then
-                -- Fix the fuel if the combined category changed but it still has a compatible category
-                self.proto = prototyper.util.find("fuels", self.proto.name, burner.combined_category)
-            else
-                self.valid = false
-            end
+            local compatible_proto = prototyper.util.find("fuels", self.proto.name,
+                burner.combined_category)  ---@as FPFuelPrototype?
+            self.valid = (compatible_proto ~= nil)
+            if compatible_proto then self.proto = compatible_proto end
         end
     end
 

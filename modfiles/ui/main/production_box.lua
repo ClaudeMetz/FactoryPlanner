@@ -1,6 +1,6 @@
 local Floor = require("backend.data.Floor")
 local Line = require("backend.data.Line")
-local TLProduct = require("backend.data.TLProduct")
+local FactoryItem = require("backend.data.FactoryItem")
 
 -- ** LOCAL UTIL **
 ---@param player LuaPlayer
@@ -31,12 +31,13 @@ end
 ---@param player LuaPlayer
 local function handle_convert_subfloor(player)
     local floor = lib.context.get(player, "Floor")  ---@as Floor
-    local first_product = floor.products[1]  ---@as SimpleItem always one at least
+    local products = #floor.products > 0 and floor.products or floor.first--[[@cast -nil]].products
+    local first_product = products[1]  ---@as SimpleItem always one at least
     local factory = factory_list.add_factory(player, nil, first_product.proto)
 
-    for _, floor_product in pairs(floor.products) do
-        local product = TLProduct.init(floor_product.proto)
-        product.required_amount = floor_product.amount
+    for _, floor_product in pairs(products) do  ---@cast floor_product SimpleItem
+        local product = FactoryItem.init(floor_product.proto)
+        product.definition = {type="amount", amount=floor_product.amount}
         factory:insert(product)
     end
 
