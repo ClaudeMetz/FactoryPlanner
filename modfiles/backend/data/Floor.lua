@@ -16,6 +16,7 @@ local SimpleItem = require("backend.data.SimpleItem")
 ---@field byproducts SimpleItem[]
 ---@field ingredients SimpleItem[]
 ---@field machine_amount integer
+---@field current_location FPLocationPrototype?
 local Floor = Object.methods()
 Floor.__index = Floor
 script.register_metatable("Floor", Floor)
@@ -30,7 +31,9 @@ local function init(level)
         products = {},
         byproducts = {},
         ingredients = {},
-        machine_amount = 0
+        machine_amount = 0,
+
+        current_location = nil,  -- determined on demand
     }, "Floor", Floor)  ---@as Floor
     return object
 end
@@ -263,14 +266,25 @@ function Floor:check_product_compatibility(object)
     return false
 end
 
-function Floor:reset_surface_compatibility()
+function Floor:reset_location()
+    self.current_location = nil
     for line in self:iterator() do
         if line.class == "Floor" then  ---@cast line Floor
-            line:reset_surface_compatibility()
-        else
-            line.surface_compatibility = nil
+            line:reset_location()
         end
     end
+end
+
+---@return FPLocationPrototype
+function Floor:get_current_location()
+    if not self.current_location then
+        local object = self.parent  ---@as Object  -- find the District this is in
+        while object.class ~= "District" do object = object.parent--[[@as District]] end
+        ---@cast object District
+        self.current_location = object.location_proto  ---@as FPLocationPrototype
+    end
+    ---@cast self.current_location -nil
+    return self.current_location
 end
 
 ---@param object CopyableObject
@@ -331,6 +345,9 @@ end
 ---@return boolean valid
 function Floor:validate(player)
     self.valid = self:_validate(player)
+
+    self.current_location = nil  -- reset cached value
+
     return self.valid
 end
 
