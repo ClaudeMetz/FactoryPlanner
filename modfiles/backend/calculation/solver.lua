@@ -776,7 +776,7 @@ function solver.update(player, factory)
         local function solve_floor(floor_id)
             -- Recurse the floor tree from the leaves to the top floor (root)
             local floor_data = factory_data.floor_data_map[floor_id]
-            if not floor_data then return end  -- empty factory
+            if not floor_data then return end
             for _, line_object_id in pairs(floor_data.line_ids) do
                 if factory_data.floor_data_map[line_object_id] then
                     local cache_invalid = solve_floor(line_object_id)
