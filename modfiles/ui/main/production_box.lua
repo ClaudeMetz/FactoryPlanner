@@ -150,7 +150,7 @@ local function refresh_production_box(player)
         production_box_elements.diff_label.tooltip = last_modset
     end
 
-    if floor.solver_error then
+    if factory_valid and floor.solver_error then
         production_box_elements.error_label.caption = {"fp.solver_error_"..floor.solver_error}
         production_box_elements.error_label.visible = true
     else
