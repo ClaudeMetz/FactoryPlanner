@@ -9,7 +9,6 @@ local FactoryItem = require("backend.data.FactoryItem")
 ---@field previous Factory?
 ---@field archived boolean
 ---@field name string
----@field solver SolverName
 ---@field blueprints_inventory LuaInventory
 ---@field notes string
 ---@field productivity_boni table<string, IntegerEffectValue>
@@ -32,12 +31,11 @@ local function init(name, solver_name)
         --shared = false,
 
         name = name,
-        solver = solver_name,
         blueprints_inventory = game.create_inventory(MAGIC_NUMBERS.blueprint_limit),
         notes = "",
         productivity_boni = {},
         first = nil,
-        top_floor = Floor.init(1),
+        top_floor = Floor.init(1, solver_name),
 
         tick_of_deletion = nil,
         tick_of_solver_update = nil,
@@ -214,7 +212,6 @@ end
 ---@class PackedFactory: PackedObject
 ---@field class "Factory"
 ---@field name string
----@field solver SolverName
 ---@field blueprint_strings table<integer, string> sparse
 ---@field notes string
 ---@field productivity_boni table<string, IntegerEffectValue>
@@ -235,7 +232,6 @@ function Factory:pack(full)
     return {
         class = self.class,
         name = self.name,
-        solver = self.solver,
         blueprint_strings = blueprint_strings,
         notes = self.notes,
         productivity_boni = self.productivity_boni,
@@ -247,7 +243,7 @@ end
 ---@param packed_self PackedFactory
 ---@return Factory factory
 local function unpack(packed_self)
-    local unpacked_self = init(packed_self.name, packed_self.solver)
+    local unpacked_self = init(packed_self.name, packed_self.top_floor.solver)
 
     unpacked_self.blueprints_inventory = game.create_inventory(MAGIC_NUMBERS.blueprint_limit)
     for index, blueprint in pairs(packed_self.blueprint_strings) do

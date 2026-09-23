@@ -16,6 +16,7 @@ local SimpleItem = require("backend.data.SimpleItem")
 ---@field byproducts SimpleItem[]
 ---@field ingredients SimpleItem[]
 ---@field machine_amount integer
+---@field solver SolverName
 ---@field solver_error SolverStatus?
 ---@field is_linearly_dependent boolean?
 ---@field gaussian_free_items (FPItemPrototype | FPPackedPrototype)[]
@@ -26,10 +27,12 @@ Floor.__index = Floor
 script.register_metatable("Floor", Floor)
 
 ---@param level integer
+---@param solver_name SolverName
 ---@return Floor
-local function init(level)
+local function init(level, solver_name)
     local object = Object.init({
         level = level,
+        solver = solver_name,
         first = nil,
 
         products = {},
@@ -299,6 +302,23 @@ function Floor:get_status()
     return nil
 end
 
+---@param solver_name SolverName
+---@param recursive boolean?
+---@return boolean changed
+function Floor:set_solver(solver_name, recursive)
+    local changed = self.solver ~= solver_name
+    self.solver = solver_name
+    if not recursive then return changed end
+
+    for line in self:iterator() do
+        if line.class == "Floor" and line:set_solver(solver_name, true) then
+            changed = true
+        end
+    end
+
+    return changed
+end
+
 ---@param self_only boolean?
 function Floor:clear_solver_cache(self_only)
     self.linear_dependence_data = nil
@@ -333,6 +353,7 @@ end
 ---@field class "Floor"
 ---@field level integer
 ---@field lines PackedLineObject[]
+---@field solver SolverName
 ---@field products PackedSimpleItem[]?
 ---@field byproducts PackedSimpleItem[]?
 ---@field ingredients PackedSimpleItem[]?
@@ -344,6 +365,7 @@ function Floor:pack(full)
     return {
         class = self.class,
         level = self.level,
+        solver = self.solver,
         lines = self:_pack(full),
 
         products = (full) and SimpleItem.pack_items(self.products) or nil,
@@ -357,7 +379,7 @@ end
 ---@param packed_self PackedFloor
 ---@return Floor floor
 local function unpack(packed_self)
-    local unpacked_self = init(packed_self.level)
+    local unpacked_self = init(packed_self.level, packed_self.solver)
 
     ---@param line PackedLineObject
     ---@return LineObject line

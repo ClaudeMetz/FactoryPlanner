@@ -1,14 +1,16 @@
 -- ** LOCAL UTIL **
 ---@param content_frame LuaGuiElement
 ---@param box_type string
+---@param show_tooltip boolean?
 ---@return LuaGuiElement
-local function add_preference_box(content_frame, box_type)
+local function add_preference_box(content_frame, box_type, show_tooltip)
     local bordered_frame = content_frame.add{type="frame", direction="vertical", style="fp_frame_bordered_stretch"}
     local title_flow = bordered_frame.add{type="flow", direction="horizontal", name="title_flow"}
     title_flow.style.vertical_align = "center"
 
-    local caption = {"fp.info_label", {"fp.preference_".. box_type .. "_title"}}
-    local tooltip = {"fp.preference_".. box_type .. "_title_tt"}
+    local caption = {"fp.preference_" .. box_type .. "_title"}  ---@type LocalisedString
+    if show_tooltip then caption = {"fp.info_label", caption} end
+    local tooltip = show_tooltip and {"fp.preference_" .. box_type .. "_title_tt"} or nil
     title_flow.add{type="label", caption=caption, tooltip=tooltip, style="caption_label"}
 
     return bordered_frame
@@ -95,7 +97,7 @@ local function refresh_views_table(player)
     end
 end
 
----@alias CheckboxPreferenceDataType "general" | "production"
+---@alias CheckboxPreferenceDataType "general" | "solver" | "production"
 
 ---@param preferences PreferencesTable
 ---@param content_frame LuaGuiElement
@@ -122,55 +124,64 @@ local function add_checkboxes_box(preferences, content_frame, data_type, prefere
     return preference_box
 end
 
----@param preferences PreferencesTable
 ---@param parent_flow LuaGuiElement
-local function add_dropdowns(preferences, parent_flow)
-    ---@param name string
-    ---@param items LocalisedString[]
-    ---@param selected_index integer
-    local function add_dropdown(name, items, selected_index)
-        local flow = parent_flow.add{type="flow", direction="horizontal"}
-        flow.style.top_margin = 4
+---@param name string
+---@param items LocalisedString[]
+---@param selected_index integer
+local function add_dropdown(parent_flow, name, items, selected_index)
+    local flow = parent_flow.add{type="flow", direction="horizontal"}
+    flow.style.top_margin = 4
 
-        flow.add{type="label", caption={"fp.info_label", {"fp.preference_dropdown_" .. name}},
-            tooltip={"fp.preference_dropdown_" .. name .. "_tt"}}
-        flow.add{type="empty-widget", style="fflib_horizontal_pusher"}
+    flow.add{type="label", caption={"fp.info_label", {"fp.preference_dropdown_" .. name}},
+        tooltip={"fp.preference_dropdown_" .. name .. "_tt"}}
+    flow.add{type="empty-widget", style="fflib_horizontal_pusher"}
 
-        ---@class ChoosePreferenceTags
-        ---@field name string
-        local tags = {mod="fp", on_gui_selection_state_changed="choose_preference", name=name}
-        flow.add{type="drop-down", tags=tags, items=items, selected_index=selected_index,
-            style="fp_drop-down_slim"}
-    end
+    ---@class ChoosePreferenceTags
+    ---@field name string
+    local tags = {mod="fp", on_gui_selection_state_changed="choose_preference", name=name}
+    flow.add{type="drop-down", tags=tags, items=items, selected_index=selected_index,
+        style="fp_drop-down_slim"}
+end
+
+---@param preferences PreferencesTable
+---@param content_frame LuaGuiElement
+local function add_solver_box(preferences, content_frame)
+    local preference_names = {"per_floor_solver", "ingredient_satisfaction", "calculate_emissions"}
+    local solver_box = add_checkboxes_box(preferences, content_frame, "solver", preference_names)
 
     local solver_items, solver_index = {}, nil  ---@type LocalisedString[], integer?
     for index, name in pairs(solver.choices) do
         solver_items[index] = {"fp.solver_" .. name}
         if name == preferences.default_solver then solver_index = index end
     end
-    add_dropdown("default_solver", solver_items, solver_index--[[@cast -nil]])
-    parent_flow.add{type="line", direction="horizontal"}.style.margin = {4, 0, 2, 0}
+    add_dropdown(solver_box, "default_solver", solver_items, solver_index--[[@cast -nil]])
+end
+
+---@param preferences PreferencesTable
+---@param content_frame LuaGuiElement
+local function add_dimensions_box(preferences, content_frame)
+    local dimensions_box = add_preference_box(content_frame, "dimensions")
 
     local width_items, width_index = {}, nil  ---@type LocalisedString[], integer?
     for index, value in pairs(lib.preferences.products_per_row_options) do
         width_items[index] = {"", value .. " ", {"fp.pl_product", 2}}
         if value == preferences.products_per_row then width_index = index end
     end
-    add_dropdown("products_per_row", width_items, width_index--[[@cast -nil]])
+    add_dropdown(dimensions_box, "products_per_row", width_items, width_index--[[@cast -nil]])
 
     local height_items, height_index = {}, nil  ---@type LocalisedString[], integer?
     for index, value in pairs(lib.preferences.factory_list_rows_options) do
         height_items[index] = {"", value .. " ", {"fp.pl_factory", 2}}
         if value == preferences.factory_list_rows then height_index = index end
     end
-    add_dropdown("factory_list_rows", height_items, height_index--[[@cast -nil]])
+    add_dropdown(dimensions_box, "factory_list_rows", height_items, height_index--[[@cast -nil]])
 
     local compact_items, compact_index = {}, nil  ---@type LocalisedString[], integer?
     for index, value in pairs(lib.preferences.compact_width_percentages) do
         compact_items[index] = {"", value .. " %"}
         if value == preferences.compact_width_percentage then compact_index = index end
     end
-    add_dropdown("compact_width_percentage", compact_items, compact_index--[[@cast -nil]])
+    add_dropdown(dimensions_box, "compact_width_percentage", compact_items, compact_index--[[@cast -nil]])
 end
 
 
@@ -178,7 +189,7 @@ end
 ---@param content_frame LuaGuiElement
 ---@param modal_elements table
 local function add_views_box(player, content_frame, modal_elements)
-    local preference_box = add_preference_box(content_frame, "views")
+    local preference_box = add_preference_box(content_frame, "views", true)
 
     local label = preference_box.add{type="label", caption={"fp.preference_pick_views"}}
     label.style.bottom_margin = 4
@@ -197,7 +208,7 @@ local function add_belts_proto_box(player, content_frame)
     local preferences = lib.globals.preferences(player)
 
     local modal_elements = lib.globals.modal_elements(player)
-    local preference_box = add_preference_box(content_frame, "default_belts")
+    local preference_box = add_preference_box(content_frame, "default_belts", true)
 
     local frame = preference_box.add{type="frame", direction="horizontal", style="fp_frame_light_slots"}
     modal_elements["belts"] = frame.add{type="table", column_count=6, style="filter_slot_table"}
@@ -303,20 +314,20 @@ local function handle_checkbox_preference_change(player, tags, event)
     local preference_name = tags.name
     lib.globals.preferences(player)[preference_name] = event.element.state
 
-    if tags.data_type == "production" then
-        lib.gui.run_refresh(player, "production")
+    if preference_name == "show_gui_button" then
+        lib.preferences.refresh_after_change(player, "mod_gui")
 
-    elseif preference_name == "ingredient_satisfaction" then
-        lib.preferences.refresh_after_change(player, "solver_config")
-
-    elseif preference_name == "calculate_emissions" then
-        lib.preferences.refresh_after_change(player, "solver_config")
-
-    elseif preference_name == "attach_factory_products" or preference_name == "skip_factory_naming" then
+    elseif preference_name == "skip_factory_naming" or preference_name == "attach_factory_products" then
         lib.gui.run_refresh(player, "factory_list")
 
-    elseif preference_name == "show_gui_button" then
-        lib.preferences.refresh_after_change(player, "mod_gui")
+    elseif preference_name == "per_floor_solver" then
+        lib.gui.run_refresh(player, "production_box")
+
+    elseif preference_name == "ingredient_satisfaction" or preference_name == "calculate_emissions" then
+        lib.preferences.refresh_after_change(player, "solver_config")
+
+    elseif tags.data_type == "production" then
+        lib.gui.run_refresh(player, "production")
     end
 end
 
@@ -439,11 +450,11 @@ local function open_preferences_dialog(player, modal_data)
     local left_content_frame = modal_elements.content_frame
 
     local general_preference_names = {"show_gui_button", "skip_factory_naming", "attach_factory_products",
-        "ingredient_satisfaction", "calculate_emissions",
         "ignore_barreling_recipes", "ignore_recycling_recipes"}
-    local general_box = add_checkboxes_box(preferences, left_content_frame, "general", general_preference_names)
+    add_checkboxes_box(preferences, left_content_frame, "general", general_preference_names)
 
-    add_dropdowns(preferences, general_box)
+    add_solver_box(preferences, left_content_frame)
+    add_dimensions_box(preferences, left_content_frame)
 
     local production_preference_names = {"done_column", "line_comment_column"}
     add_checkboxes_box(preferences, left_content_frame, "production", production_preference_names)
@@ -453,7 +464,7 @@ local function open_preferences_dialog(player, modal_data)
     add_views_box(player, right_content_frame, modal_elements)
     add_belts_proto_box(player, right_content_frame)
 
-    local preference_box = add_preference_box(right_content_frame, "box_defaults")
+    local preference_box = add_preference_box(right_content_frame, "box_defaults", true)
     local default_boxes_table = preference_box.add{type="table", column_count=3}
     default_boxes_table.style.vertical_spacing = 8
     add_default_proto_box(player, default_boxes_table, "pumps", nil, "pump")

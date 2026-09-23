@@ -41,7 +41,7 @@ local function refresh_solver_bar(player)
         solver_frame.visible = true
     end
 
-    if factory.archived or factory.solver ~= "gaussian" or floor:count() == 0 then return end
+    if factory.archived or floor.solver ~= "gaussian" or floor:count() == 0 then return end
 
     local free_items = floor.gaussian_free_items  ---@as FPItemPrototype[]
     local num_needed_free_items = floor.linear_dependence_data and floor.linear_dependence_data.num_needed_free_items or 0

@@ -56,11 +56,14 @@ end
 
 ---@param player LuaPlayer
 ---@param tags ChangeSolverTags
-local function handle_solver_change(player, tags, _)
+---@param event EventData.on_gui_click
+local function handle_solver_change(player, tags, event)
     local factory = lib.context.get(player, "Factory")  ---@as Factory
-    if factory.solver == tags.solver then return end
+    local floor = lib.context.get(player, "Floor")  ---@as Floor
 
-    factory.solver = tags.solver
+    local recursive = event.shift or not lib.globals.preferences(player).per_floor_solver
+    local target_floor = recursive and factory.top_floor or floor
+    if not target_floor:set_solver(tags.solver, recursive) then return end
     factory:clear_solver_cache()
 
     main_dialog.toggle_districts_view(player, true)
@@ -120,8 +123,14 @@ local function refresh_production_box(player)
 
     production_box_elements.solver_flow.visible = factory_valid
     if factory_valid then  ---@cast factory -nil
+        production_box_elements.solver_label.tooltip = {"fp.solver_choice_tt",
+            {preferences.per_floor_solver and "fp.pl_floor" or "fp.pl_factory", 1}}
         for _, button in pairs(production_box_elements.solver_table.children) do
-            button.toggled = (button.tags--[[@as ChangeSolverTags]].solver == factory.solver)
+            local solver_name = button.tags--[[@as ChangeSolverTags]].solver
+            local tooltip = {"fp.solver_" .. solver_name .. "_tt"}
+            button.tooltip = preferences.per_floor_solver
+                and {"", tooltip, {"fp.solver_apply_factory"}} or tooltip
+            button.toggled = (solver_name == floor.solver)
             button.enabled = (not factory.archived)
         end
     end
@@ -221,8 +230,9 @@ local function build_production_box(player)
     flow_solver.style.top_margin = 2
     flow_solver.style.vertical_align = "center"
     main_elements.production_box["solver_flow"] = flow_solver
-    flow_solver.add{type="label", caption={"fp.info_label", {"fp.solver_choice"}}, style="bold_label",
-        tooltip={"fp.solver_choice_tt"}}
+    local label_solver = flow_solver.add{type="label", caption={"fp.info_label", {"fp.solver_choice"}},
+        style="bold_label"}
+    main_elements.production_box["solver_label"] = label_solver
 
     local table_solvers = flow_solver.add{type="table", column_count=#solver.choices}
     table_solvers.style.horizontal_spacing = 0
@@ -233,7 +243,7 @@ local function build_production_box(player)
         ---@field solver SolverName
         local tags = {mod="fp", on_gui_click="change_solver", solver=name}
         table_solvers.add{type="button", tags=tags, caption={"fp.solver_" .. name},
-            tooltip={"fp.solver_" .. name .. "_tt"}, style="fp_button_push", mouse_button_filter={"left"}}
+            style="fp_button_push", mouse_button_filter={"left"}}
     end
 
 

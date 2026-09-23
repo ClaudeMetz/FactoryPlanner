@@ -1,7 +1,6 @@
 -- ** LOCAL UTIL **
 ---@class ProductionTableMetadata
 ---@field archive_open boolean
----@field solver SolverName
 ---@field ingredient_satisfaction boolean
 ---@field fold_out_subfloors boolean
 ---@field player LuaPlayer
@@ -23,7 +22,6 @@ local function generate_metadata(player, factory)
 
     local metadata = {
         archive_open = factory.archived,
-        solver = factory.solver,
         ingredient_satisfaction = preferences.ingredient_satisfaction,
         fold_out_subfloors = preferences.fold_out_subfloors,
         player = player,
@@ -40,6 +38,17 @@ end
 local function format_effects_tooltip(tooltip)
     if #tooltip > 1 then return {"", "\n\n", tooltip}
     else return "" end
+end
+
+---@param line LineObject
+---@return SolverName
+local function get_priority_solver(line)
+    local floor = line.parent  ---@as Floor
+    -- A defining recipe's priority applies when its subfloor is scaled by the parent
+    if floor.level > 1 and floor.first == line then
+        floor = floor.parent  ---@as Floor
+    end
+    return floor.solver
 end
 
 -- ** BUILDERS **
@@ -341,7 +350,7 @@ local function item_action_tags(line, proto, category, index, metadata, catalyst
             consuming = (line.class == "Line" and line--[[@as Line]].recipe.production_type == "consume"),
             catalyst = catalyst,
             archived = metadata.archive_open,
-            sequential = (metadata.solver == "sequential"),
+            sequential = (get_priority_solver(line) == "sequential"),
             ingredient_only = (recipe_item_proto.ingredient_only
                 and not (recipe_item_proto.type == "fluid" and recipe_item_proto.temperature == nil)),
             byproduct = (category == "byproduct"),
@@ -414,7 +423,7 @@ function builders.products(line, parent_flow, metadata)
         else
             relevant_flow = items_flow
 
-            if line.class ~= "Floor" and metadata.solver == "sequential"
+            if line.class ~= "Floor" and get_priority_solver(line) == "sequential"
                     and line.recipe.priority_item == proto then
                 style = "fflib_slot_button_pink"
                 priority_line = {"fp.item_prioritized"}
@@ -615,7 +624,7 @@ function builders.ingredients(line, parent_flow, metadata)
 
         -- Only byproduct recipes can prioritize an ingredient, which paces the line by itself
         local priority_line = ""  ---@type LocalisedString
-        if line.class ~= "Floor" and metadata.solver == "sequential" and line.recipe.priority_item ~= nil
+        if line.class ~= "Floor" and get_priority_solver(line) == "sequential" and line.recipe.priority_item ~= nil
                 and line.recipe.priority_item.name == line.recipe:get_name_with_temperature(proto) then
             style = "fflib_slot_button_pink"
             priority_line = {"fp.item_prioritized"}

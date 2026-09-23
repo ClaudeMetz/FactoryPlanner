@@ -373,7 +373,7 @@ local function generate_floor_data(player, factory, floor, machine_requirements)
     local floor_data = {
         id = floor.id,
         level = floor.level,
-        solver_choice = factory.solver,
+        solver_choice = floor.solver,
         products = floor.level == 1 and factory_products(factory) or {},
         line_ids = {},
         gaussian_free_items = free_items,
