@@ -352,6 +352,7 @@ end
 ---@class FloorData
 ---@field id ObjectID
 ---@field level integer
+---@field solver_choice SolverName
 ---@field products SolverItem[]
 ---@field line_ids ObjectID[]
 ---@field gaussian_free_items FPItemPrototype[]
@@ -372,6 +373,7 @@ local function generate_floor_data(player, factory, floor, machine_requirements)
     local floor_data = {
         id = floor.id,
         level = floor.level,
+        solver_choice = factory.solver,
         products = floor.level == 1 and factory_products(factory) or {},
         line_ids = {},
         gaussian_free_items = free_items,
@@ -784,11 +786,11 @@ function solver.update(player, factory)
             end
 
             local result = nil
-            if factory.solver == "sequential" then
+            if floor_data.solver_choice == "sequential" then
                 result = sequential_engine.solve_floor(factory_data, floor_id)
-            elseif factory.solver == "simplex" then
+            elseif floor_data.solver_choice == "simplex" then
                 result = simplex_engine.solve_floor(factory_data, floor_id)
-            elseif factory.solver == "gaussian" then
+            elseif floor_data.solver_choice == "gaussian" then
                 result = gaussian_engine.solve_floor(factory_data, floor_id)
             end
 
