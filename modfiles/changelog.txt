@@ -5,6 +5,7 @@ Date: 00. 00. 0000
   Changes:
   Bugfixes:
     - Fixed an issue with the Simplex solver when a product has no producing line (#898) (Thanks vapopescu!)
+    - Fixed an issue with the Simplex solver scaling recipes wrong in certain situations (#901) (Thanks vapopescu!)
 
 ---------------------------------------------------------------------------------------------------
 Version: 2.1.16
