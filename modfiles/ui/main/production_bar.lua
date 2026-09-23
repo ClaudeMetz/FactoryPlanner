@@ -30,14 +30,14 @@ local function refresh_production_bar(player)
     local districts_view = ui_state.districts_view
     production_bar_elements.factory_flow.visible = (not districts_view)
     production_bar_elements.district_flow.visible = districts_view
-    local is_factory_invalid = factory and not factory.valid or false
+    local invalid_factory_selected = factory and not factory.valid or false
 
     if not districts_view then
-        production_bar_elements.validity_label.visible = is_factory_invalid
+        production_bar_elements.validity_label.visible = invalid_factory_selected
     end
 
-    production_bar_elements.timescale_switch.visible = not is_factory_invalid
-    ui_state.main_elements.views_flow.visible = not is_factory_invalid
+    production_bar_elements.timescale_switch.visible = not invalid_factory_selected
+    ui_state.main_elements.views_flow.visible = not invalid_factory_selected
 end
 
 
