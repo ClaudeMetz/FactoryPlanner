@@ -220,6 +220,7 @@ function SimplexTableau:solve(floor_id, basis_cache)
     local variable_map = {}  ---@type VariableMap[]
     local basic = {}  ---@type VariableKey[]
     local non_basic = {}  ---@type VariableKey[]
+    local basis_scalars = {}  ---@type number[]
 
     -- Populate the column index to variable key map
     for key, column in pairs(self.cols) do
@@ -271,6 +272,7 @@ function SimplexTableau:solve(floor_id, basis_cache)
                         if is_basic then
                             map.type = "basic"
                             basic[k] = map.key
+                            basis_scalars[k] = self.matrix[j][k]
                         else
                             map.type = "non-basic"
                             table.insert(non_basic, map.key)
@@ -287,6 +289,7 @@ function SimplexTableau:solve(floor_id, basis_cache)
                 local col_index = self:_add_column(virtual_key, -1e100)
                 self.matrix[col_index]--[[@cast -nil]][i] = 1
                 basic[i] = virtual_key
+                basis_scalars[i] = 1
             end
         end
     end
@@ -300,7 +303,7 @@ function SimplexTableau:solve(floor_id, basis_cache)
     end
 
     -- Re-scale the tableau only after the basis has been chosen
-    local basis_scalars = self:_normalize()
+    self:_normalize(basis_scalars)
 
     local lu = LUDecomposition:init(basis_scalars)
     local x_vector = lib.flib.shallow_copy(self.solution)
@@ -484,9 +487,9 @@ end
 
 --- Re-scales the conditions based on the highest coefficient in the row.
 --- Returns the scalars by which each row was scaled by
+---@param scalars number[] the coefficients of the basis before scaling
 ---@return number[]
-function SimplexTableau:_normalize()
-    local scalars = {}  ---@type number[]
+function SimplexTableau:_normalize(scalars)
     for i = 1, #self.matrix[1] do
         -- Find the maximum coefficient in the row
         local max = 0.0
@@ -495,7 +498,7 @@ function SimplexTableau:_normalize()
         end
 
         -- Re-scale the row
-        scalars[i] = 1 / max
+        scalars[i] = scalars[i]--[[@cast -nil]] / max
         for j = 1, #self.matrix do
             self.matrix[j][i] = self.matrix[j][i]--[[@cast -nil]] / max
         end
