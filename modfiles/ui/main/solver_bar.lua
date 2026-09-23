@@ -31,10 +31,17 @@ local function refresh_solver_bar(player)
     solver_frame.visible = false
 
     local factory = lib.context.get(player, "Factory")  ---@as Factory?
-    if ui_state.districts_view or factory == nil or not factory.valid or factory.archived
-        or factory.solver ~= "gaussian" then return end
+    if ui_state.districts_view or factory == nil or not factory.valid then return end
     local floor = lib.context.get(player, "Floor")  ---@as Floor
-    if floor:count() == 0 then return end
+
+    if floor.solver_error then
+        local label_error = solver_flow.add{type="label", caption={"fp.solver_error_" .. floor.solver_error},
+            style="bold_red_label"}
+        label_error.style.padding = {2, 0, 6, 0}
+        solver_frame.visible = true
+    end
+
+    if factory.archived or factory.solver ~= "gaussian" or floor:count() == 0 then return end
 
     local free_items = floor.gaussian_free_items  ---@as FPItemPrototype[]
     local num_needed_free_items = floor.linear_dependence_data and floor.linear_dependence_data.num_needed_free_items or 0

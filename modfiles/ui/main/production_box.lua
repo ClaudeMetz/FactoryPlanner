@@ -150,14 +150,6 @@ local function refresh_production_box(player)
         production_box_elements.diff_label.tooltip = last_modset
     end
 
-    if factory_valid and floor.solver_error then
-        production_box_elements.error_label.caption = {"fp.solver_error_"..floor.solver_error}
-        production_box_elements.error_label.visible = true
-    else
-        production_box_elements.error_label.caption = ""
-        production_box_elements.error_label.visible = false
-    end
-
     refresh_paste_button(player)
 end
 
@@ -221,10 +213,6 @@ local function build_production_box(player)
         style="fp_sprite-button_rounded_icon", mouse_button_filter={"left"}}
     button_paste.style.top_margin = 2
     main_elements.production_box["paste_button"] = button_paste
-
-    local label_error = flow_production.add{type="label", style="bold_red_label"}
-    label_error.style.margin = {2, 0, 0, 16}
-    main_elements.production_box["error_label"] = label_error
 
     flow_production.add{type="empty-widget", style="fflib_horizontal_pusher"}
 
