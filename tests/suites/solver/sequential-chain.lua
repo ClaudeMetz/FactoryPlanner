@@ -231,7 +231,7 @@ return {
         product.definition = {type="machines", machine_count=3.5}
         top = factory.top_floor
         gear_line, plate_line = top.first, top.first.next
-        local subfloor = context.classes.Floor.init(2)
+        local subfloor = context.classes.Floor.init(2, top.solver)
         top:replace(gear_line, subfloor)
         top:remove(plate_line)
         subfloor:insert(gear_line)
@@ -257,7 +257,7 @@ return {
         top = factory.top_floor
         gear_line, plate_line = top.first, top.first.next
         local internal = plate_line.next
-        subfloor = context.classes.Floor.init(2)
+        subfloor = context.classes.Floor.init(2, top.solver)
         top:replace(plate_line, subfloor)
         top:remove(internal)
         subfloor:insert(plate_line)

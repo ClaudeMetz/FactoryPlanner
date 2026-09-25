@@ -89,6 +89,7 @@ function _structures.map.subtract(map, item, amount, round_errors)
 end
 
 --- If the 2 maps contain the same item, cancel out the lowest portion of the item from both maps.
+--- If a map contains negative values, remove it and add it as positive to the other map
 ---@param map1 SolverMap
 ---@param map2 SolverMap
 ---@param round_errors boolean?
@@ -97,17 +98,23 @@ function _structures.map.reduce_items(map1, map2, round_errors)
         local item = _structures.unpack_item(item_key)
         local value2 = map2[item_key]
 
-        if value2 then
-            if value1 == value2 then
-                map1[item_key] = nil
-                map2[item_key] = nil
-            elseif value1 < value2 then
-                _structures.map.subtract(map2, item, value1, round_errors)
-                map1[item_key] = nil
-            else
-                _structures.map.subtract(map1, item, value2, round_errors)
-                map2[item_key] = nil
-            end
+        if value2 and value1 == value2 then
+            map1[item_key] = nil
+            map2[item_key] = nil
+        elseif value2 and value1 > value2 then
+            _structures.map.subtract(map1, item, value2, round_errors)
+            map2[item_key] = nil
+        elseif value2 and value1 < value2 or value1 < 0 then
+            _structures.map.subtract(map2, item, value1, round_errors)
+            map1[item_key] = nil
+        end
+    end
+
+    for item_key, value2 in pairs(map2) do
+        local item = _structures.unpack_item(item_key)
+        if value2 < 0 then
+            _structures.map.subtract(map1, item, value2, round_errors)
+            map2[item_key] = nil
         end
     end
 end

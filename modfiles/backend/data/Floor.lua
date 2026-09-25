@@ -16,21 +16,33 @@ local SimpleItem = require("backend.data.SimpleItem")
 ---@field byproducts SimpleItem[]
 ---@field ingredients SimpleItem[]
 ---@field machine_amount integer
+---@field solver SolverName
+---@field solver_error SolverStatus?
+---@field is_linearly_dependent boolean?
+---@field gaussian_free_items (FPItemPrototype | FPPackedPrototype)[]
+---@field linear_dependence_data LinearDependanceData?
+---@field simplex_basis_cache SimplexBasisCache?
 local Floor = Object.methods()
 Floor.__index = Floor
 script.register_metatable("Floor", Floor)
 
 ---@param level integer
+---@param solver_name SolverName
 ---@return Floor
-local function init(level)
+local function init(level, solver_name)
     local object = Object.init({
         level = level,
+        solver = solver_name,
         first = nil,
 
         products = {},
         byproducts = {},
         ingredients = {},
-        machine_amount = 0
+        machine_amount = 0,
+
+        linear_dependence_data = nil,
+        gaussian_free_items = {},
+        simplex_basis_cache = nil,
     }, "Floor", Floor)  ---@as Floor
     return object
 end
@@ -273,6 +285,51 @@ function Floor:reset_surface_compatibility()
     end
 end
 
+---@alias FloorStatus "disabled" | "linearly_dependent" | "solver_error"
+
+--- Returns why this floor doesn't produce anything, or nil if it does
+---@return FloorStatus?
+function Floor:get_status()
+    if self.first--[[@cast -nil]]:get_status() == "disabled" then return "disabled" end
+
+    for line_object in self:iterator() do
+        if line_object.class == "Floor" and line_object:get_status() == "solver_error" then return "solver_error" end
+    end
+
+    if self.solver_error then return "solver_error" end
+    if self.is_linearly_dependent then return "linearly_dependent" end
+
+    return nil
+end
+
+---@param solver_name SolverName
+---@param recursive boolean?
+---@return boolean changed
+function Floor:set_solver(solver_name, recursive)
+    local changed = self.solver ~= solver_name
+    self.solver = solver_name
+    if not recursive then return changed end
+
+    for line in self:iterator() do
+        if line.class == "Floor" and line:set_solver(solver_name, true) then
+            changed = true
+        end
+    end
+
+    return changed
+end
+
+---@param self_only boolean?
+function Floor:clear_solver_cache(self_only)
+    self.linear_dependence_data = nil
+    self.simplex_basis_cache = nil
+
+    if self_only then return end
+    for line_object in self:iterator() do
+        if line_object.class == "Floor" then line_object:clear_solver_cache() end
+    end
+end
+
 ---@param object CopyableObject
 ---@return boolean success
 ---@return string? error
@@ -296,6 +353,11 @@ end
 ---@field class "Floor"
 ---@field level integer
 ---@field lines PackedLineObject[]
+---@field solver SolverName
+---@field products PackedSimpleItem[]?
+---@field byproducts PackedSimpleItem[]?
+---@field ingredients PackedSimpleItem[]?
+---@field gaussian_free_items FPPackedPrototype[]
 
 ---@param full boolean
 ---@return PackedFloor packed_self
@@ -303,18 +365,21 @@ function Floor:pack(full)
     return {
         class = self.class,
         level = self.level,
+        solver = self.solver,
         lines = self:_pack(full),
 
         products = (full) and SimpleItem.pack_items(self.products) or nil,
         byproducts = (full) and SimpleItem.pack_items(self.byproducts) or nil,
         ingredients = (full) and SimpleItem.pack_items(self.ingredients) or nil,
+
+        gaussian_free_items = prototyper.util.simplify_prototypes(self.gaussian_free_items, "type") or nil,
     }
 end
 
 ---@param packed_self PackedFloor
 ---@return Floor floor
 local function unpack(packed_self)
-    local unpacked_self = init(packed_self.level)
+    local unpacked_self = init(packed_self.level, packed_self.solver)
 
     ---@param line PackedLineObject
     ---@return LineObject line
@@ -322,6 +387,9 @@ local function unpack(packed_self)
         return (line.class == "Floor") and unpack(line--[[@as PackedFloor]]) or Line.unpack(line--[[@as PackedLine]])
     end
     unpacked_self.first = Object.unpack(packed_self.lines, unpacker, unpacked_self)  ---@as LineObject
+
+    -- Matrix free items will be automatically unpacked by the validation process
+    unpacked_self.gaussian_free_items = packed_self.gaussian_free_items
 
     return unpacked_self
 end
@@ -331,6 +399,11 @@ end
 ---@return boolean valid
 function Floor:validate(player)
     self.valid = self:_validate(player)
+
+    local free_items, valid = prototyper.util.validate_prototype_objects(self.gaussian_free_items, "type")
+    self.gaussian_free_items = free_items
+    self.valid = valid and self.valid
+
     return self.valid
 end
 
@@ -343,6 +416,14 @@ function Floor:repair(player)
         -- If the defining line can't be repaired, the floor is dead
         if not line_valid then return false end
         pivot = self.first.next
+    end
+
+    -- Remove any unrepairable free items so the factory remains valid
+    local free_items = self.gaussian_free_items
+    for index = #free_items, 1, -1 do
+        if free_items[index].simplified then
+            table.remove(free_items, index)
+        end
     end
 
     if pivot then self:_repair(player, pivot) end

@@ -99,7 +99,7 @@ return {
             "Re-enabling an earlier match must move the requirement back")
         assert(second.production_ratio == 0, "A usable line must qualify even without existing production")
 
-        local subfloor = classes.Floor.init(2)
+        local subfloor = classes.Floor.init(2, top.solver)
         top:replace(second, subfloor)
         subfloor:insert(second)
         local internal = add_line(subfloor)

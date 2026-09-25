@@ -33,6 +33,7 @@ end
 ---@field ignore_barreling_recipes boolean
 ---@field ignore_recycling_recipes boolean
 ---@field default_solver SolverName
+---@field per_floor_solver boolean
 ---@field done_column boolean
 ---@field line_comment_column boolean
 ---@field item_views ItemViewPreferences
@@ -88,6 +89,7 @@ function _preferences.reload(player_table)
     reload("ignore_barreling_recipes", false)
     reload("ignore_recycling_recipes", false)
     reload("default_solver", "sequential")
+    reload("per_floor_solver", false)
 
     reload("done_column", false)
     reload("line_comment_column", false)
@@ -109,7 +111,7 @@ end
 
 -- Version, incremented each time the format of exported preferences changes in any way
 -- The mod prevents importing non-matching preferences versions to avoid needing migrations
-_preferences.current_version = 4
+_preferences.current_version = 5
 
 ---@class PreferencesExportTable
 ---@field version integer
@@ -128,6 +130,7 @@ _preferences.current_version = 4
 ---@field ignore_barreling_recipes boolean
 ---@field ignore_recycling_recipes boolean
 ---@field default_solver SolverName
+---@field per_floor_solver boolean
 ---@field done_column boolean
 ---@field line_comment_column boolean
 ---@field belts_or_lanes BeltsOrLanes
@@ -156,6 +159,7 @@ function _preferences.export(player)
         ignore_barreling_recipes = prefs.ignore_barreling_recipes,
         ignore_recycling_recipes = prefs.ignore_recycling_recipes,
         default_solver = prefs.default_solver,
+        per_floor_solver = prefs.per_floor_solver,
         done_column = prefs.done_column,
         line_comment_column = prefs.line_comment_column,
         belts_or_lanes = prefs.belts_or_lanes,
@@ -210,6 +214,7 @@ function _preferences.import(player, export_string)
         assert(type(et.attach_factory_products) == "boolean")
         assert(type(et.skip_factory_naming) == "boolean")
         assert(verify_option(et.default_solver, solver.choices))
+        assert(type(et.per_floor_solver) == "boolean")
         assert(type(et.ingredient_satisfaction) == "boolean")
         assert(type(et.calculate_emissions) == "boolean")
         assert(type(et.ignore_barreling_recipes) == "boolean")

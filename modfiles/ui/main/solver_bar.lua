@@ -2,18 +2,18 @@
 ---@param player LuaPlayer
 ---@param tags SwitchMatrixItemTags
 local function switch_matrix_item(player, tags, _)
-    local factory = lib.context.get(player, "Factory")  ---@as Factory
+    local floor = lib.context.get(player, "Floor")  ---@as Floor
 
     if tags.status == "unrestricted" then
-        for index, item in pairs(factory.matrix_free_items) do
+        for index, item in pairs(floor.gaussian_free_items) do
             if item.type == tags.type and item.name == tags.name then
-                table.remove(factory.matrix_free_items, index)
+                table.remove(floor.gaussian_free_items, index)
                 break
             end
         end
     else -- "constrained"
         local item_proto = prototyper.util.find("items", tags.name, tags.type)
-        table.insert(factory.matrix_free_items, item_proto)
+        table.insert(floor.gaussian_free_items, item_proto)
     end
 
     solver.update(player)
@@ -31,13 +31,20 @@ local function refresh_solver_bar(player)
     solver_frame.visible = false
 
     local factory = lib.context.get(player, "Factory")  ---@as Factory?
-    if ui_state.districts_view or factory == nil or not factory.valid or factory.archived
-        or factory.solver ~= "gaussian" then return end
+    if ui_state.districts_view or factory == nil or not factory.valid then return end
     local floor = lib.context.get(player, "Floor")  ---@as Floor
-    if floor:count() == 0 then return end
 
-    local free_items = factory.matrix_free_items  ---@as FPItemPrototype[]
-    local num_needed_free_items = factory.linear_dependence_data and factory.linear_dependence_data.num_needed_free_items or 0
+    local label_error = solver_flow.add{type="label", style="fp_label_solver"}  ---@type LuaGuiElement
+    if floor.solver_error and floor.solver_error ~= "free_items_unbalanced" then
+        label_error.caption = {"fp.error_message", {"fp.info_label", {"fp.solver_error_" .. floor.solver_error}}}
+        label_error.tooltip = {"fp.solver_error_" .. floor.solver_error .. "_tt"}
+        solver_frame.visible = true
+    end
+
+    if factory.archived or floor.solver ~= "gaussian" or floor:count() == 0 then return end
+
+    local free_items = floor.gaussian_free_items  ---@as FPItemPrototype[]
+    local num_needed_free_items = floor.linear_dependence_data and floor.linear_dependence_data.num_needed_free_items or 0
 
     ---@param flow LuaGuiElement
     ---@param status "unrestricted" | "constrained"
@@ -55,55 +62,37 @@ local function refresh_solver_bar(player)
         end
     end
 
-    if factory.linear_dependence_data and next(factory.linear_dependence_data.linearly_dependent_free_items) then
-        local num_needed_restricted_items = #factory.linear_dependence_data.linearly_dependent_free_items
+    if floor.linear_dependence_data and next(floor.linear_dependence_data.linearly_dependent_free_items) then
+        local num_needed_restricted_items = #floor.linear_dependence_data.linearly_dependent_free_items
         local num_items_to_remove = num_needed_restricted_items - num_needed_free_items
 
-        local caption = {"fp.error_message", {"fp.info_label", {"fp.remove_unrestricted_items"}}}
-        local tooltip = {"fp.remove_unrestricted_items_tt", num_items_to_remove,
-                {"fp.pl_item", num_items_to_remove}}
-        solver_flow.add{type="label", caption=caption, tooltip=tooltip, style="fp_label_solver"}
+        label_error.caption = {"fp.error_message", {"fp.info_label", {"fp.remove_unrestricted_items"}}}
+        label_error.tooltip = {"fp.remove_unrestricted_items_tt", num_items_to_remove, {"fp.pl_item", num_items_to_remove}}
+        solver_frame.visible = true
 
         local flow_unrestricted = solver_flow.add{type="flow", direction="horizontal"}
-        build_unrestricted_item_buttons(flow_unrestricted, "unrestricted", "default", factory.linear_dependence_data.linearly_dependent_free_items)
-
-    elseif factory.linear_dependence_data and next(factory.linear_dependence_data.linearly_dependent_recipes) then
-        local caption = {"fp.error_message", {"fp.info_label", {"fp.linearly_dependent_recipes"}}}
-        solver_flow.add{type="label", caption=caption, tooltip={"fp.linearly_dependent_recipes_tt"}, style="fp_label_solver"}
-        local flow_recipes = solver_flow.add{type="flow", direction="horizontal"}
-        flow_recipes.style.minimal_height = 40
-        flow_recipes.style.vertical_align = "center"
-
-        for _, recipe_proto in pairs(factory.linear_dependence_data.linearly_dependent_recipes) do
-            local sprite = flow_recipes.add{type="sprite", sprite=recipe_proto.sprite,
-                tooltip=recipe_proto.localised_name, resize_to_sprite=true}
-            sprite.style.size = 32
-            sprite.style.stretch_image_to_widget_size = true
-        end
-
+        build_unrestricted_item_buttons(flow_unrestricted, "unrestricted", "default", floor.linear_dependence_data.linearly_dependent_free_items)
     elseif num_needed_free_items ~= 0 then
-        local needs_choice = factory.linear_dependence_data and #factory.linear_dependence_data.allowed_free_items > 0 or false
+        local needs_choice = floor.linear_dependence_data and #floor.linear_dependence_data.allowed_free_items > 0 or false
 
         if needs_choice then
-            local caption = {"fp.error_message", {"fp.info_label", {"fp.choose_unrestricted_items"}}}
-            local tooltip = {"fp.choose_unrestricted_items_tt", num_needed_free_items,
+            label_error.caption = {"fp.error_message", {"fp.info_label", {"fp.choose_unrestricted_items"}}}
+            label_error.tooltip = {"fp.choose_unrestricted_items_tt", num_needed_free_items,
                 {"fp.pl_item", num_needed_free_items}}
-            solver_flow.add{type="label", caption=caption, tooltip=tooltip, style="fp_label_solver"}
-        else
-            solver_flow.add{type="label", caption={"fp.info_label", {"fp.unrestricted_items_balanced"}},
-                tooltip={"fp.unrestricted_items_balanced_tt"}, style="fp_label_solver"}
+        elseif not floor.solver_error then
+            label_error.caption = {"fp.info_label", {"fp.unrestricted_items_balanced"}}
+            label_error.tooltip = {"fp.unrestricted_items_balanced_tt"}
         end
+        solver_frame.visible = true
 
         local flow_unrestricted = solver_flow.add{type="flow", direction="horizontal"}
         build_unrestricted_item_buttons(flow_unrestricted, "unrestricted", "green", free_items)
 
-        if needs_choice then  ---@cast factory.linear_dependence_data -nil
+        if needs_choice then  ---@cast floor.linear_dependence_data -nil
             local flow_constrained = solver_flow.add{type="flow", direction="horizontal"}
-            build_unrestricted_item_buttons(flow_constrained, "constrained", "default", factory.linear_dependence_data.allowed_free_items)
+            build_unrestricted_item_buttons(flow_constrained, "constrained", "default", floor.linear_dependence_data.allowed_free_items)
         end
     end
-
-    solver_frame.visible = (#solver_flow.children > 0)
 end
 
 ---@param player LuaPlayer
