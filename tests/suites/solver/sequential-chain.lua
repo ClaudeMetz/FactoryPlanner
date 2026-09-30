@@ -268,18 +268,25 @@ return {
         c.check(helpers.approx(item_amount(subfloor.products, "test-solver-plate") or 0, 16)
             and item_amount(subfloor.byproducts, "test-solver-plate") == nil,
             "mixed subfloor: all 16 plates/s must appear as a product in its summary")
+
+        -- Subfloors solve independently: the consumer uses all locally available plates,
+        -- including those needed by the parent, which imports its 10 plates/s separately.
         internal.recipe.production_type = "consume"
         solver.update(player, factory)
-        c.check(helpers.approx(internal.machine.amount, 3) and plates.amount == 0
-            and helpers.approx(product.amount, 8),
-            "subfloor consumer: expected all 6 surplus plates/s to add 3 gears/s to the 5 gears/s target")
-        c.check(helpers.approx(item_amount(subfloor.products, "test-solver-plate") or 0, 10),
-            "subfloor consumer: its summary must show only the 10 plates/s remaining after internal consumption")
+        c.check(helpers.approx(internal.machine.amount, 8) and plates.amount == 0
+            and helpers.approx(product.amount, 13),
+            "subfloor consumer: expected all 16 plates/s to add 8 gears/s to the parent's 5 gears/s")
+        c.check(item_amount(subfloor.products, "test-solver-plate") == nil
+            and helpers.approx(item_amount(subfloor.products, "test-solver-gear") or 0, 8),
+            "subfloor consumer: its summary must show 8 gears/s and no remaining plates")
+        c.check(helpers.approx(item_amount(top.ingredients, "test-solver-plate") or 0, 10),
+            "subfloor consumer: the parent must import all 10 plates/s it needs")
         plates.definition.machine_count = 3
         solver.update(player, factory)
-        c.check(helpers.approx(plate_line.machine.amount, 3) and plates.amount == 0
-            and helpers.approx(item_amount(top.ingredients, "test-solver-plate") or 0, 4),
-            "short subfloor: expected 3 defining machines and 4 imported plates/s")
+        c.check(helpers.approx(plate_line.machine.amount, 3) and helpers.approx(internal.machine.amount, 3)
+            and plates.amount == 0 and helpers.approx(product.amount, 8)
+            and helpers.approx(item_amount(top.ingredients, "test-solver-plate") or 0, 10),
+            "scaled subfloor: expected 3 plate and gear machines, 8 total gears/s, and 10 imported plates/s")
 
         c.done()
     end
