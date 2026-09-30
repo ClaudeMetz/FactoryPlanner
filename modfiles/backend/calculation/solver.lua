@@ -388,7 +388,7 @@ local function generate_floor_data(player, factory, floor, machine_requirements)
         if line.class == "Floor" then  ---@cast line Floor
             local subfloor_floor_map, subfloor_line_map
             subfloor_floor_map, subfloor_line_map = generate_floor_data(player, factory, line, machine_requirements)
-            table.insert(floor_data.line_ids, line.id)
+            if subfloor_floor_map[line.id] then table.insert(floor_data.line_ids, line.id) end
             for k, v in pairs (subfloor_floor_map) do floor_data_map[k] = v end
             for k, v in pairs (subfloor_line_map) do line_data_map[k] = v end
         else  ---@cast line Line
