@@ -382,7 +382,6 @@ local function generate_floor_data(player, factory, floor, machine_requirements)
 
     local floor_data_map = {}  ---@type FloorDataMap
     local line_data_map = {}  ---@type LineDataMap
-    local relevant_line_active = true
 
     for line in floor:iterator() do
         if line.class == "Floor" then  ---@cast line Floor
@@ -393,9 +392,9 @@ local function generate_floor_data(player, factory, floor, machine_requirements)
             for k, v in pairs (subfloor_line_map) do line_data_map[k] = v end
         else  ---@cast line Line
             local requirement = machine_requirements[line.id]
-            if line:get_blocker() or not relevant_line_active then
-                -- Useless lines don't need to run through the solver
-                if line == floor.first and floor.level > 1 then relevant_line_active = false end
+            if line:get_blocker() then
+                -- A blocked defining recipe disables the entire subtree
+                if line == floor.first and floor.level > 1 then break end
             else
                 table.insert(floor_data.line_ids, line.id)
                 line_data_map[line.id] = generate_line_data(player, factory, line, requirement)
