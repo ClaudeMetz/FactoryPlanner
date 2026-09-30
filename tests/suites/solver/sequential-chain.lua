@@ -164,8 +164,8 @@ return {
         solver.update(player, factory)
         c.check(helpers.approx(consumer.production_ratio, 5),
             "consuming line: expected all 10 surplus plates/s to make 5 gears/s")
-        c.check(helpers.approx(item_amount(top.byproducts, "test-solver-gear") or 0, 5),
-            "top floor: expected 5 surplus gears/s")
+        c.check(helpers.approx(product.amount, 10) and item_amount(top.byproducts, "test-solver-gear") == nil,
+            "top floor: requested products include the 5 extra gears/s in their total output")
         c.check(item_amount(top.byproducts, "test-solver-plate") == nil,
             "top floor: consuming line must leave no surplus plates")
 
@@ -271,8 +271,8 @@ return {
         internal.recipe.production_type = "consume"
         solver.update(player, factory)
         c.check(helpers.approx(internal.machine.amount, 3) and plates.amount == 0
-            and helpers.approx(item_amount(top.byproducts, "test-solver-gear") or 0, 3),
-            "subfloor consumer: expected all 6 surplus plates/s to become 3 surplus gears/s")
+            and helpers.approx(product.amount, 8),
+            "subfloor consumer: expected all 6 surplus plates/s to add 3 gears/s to the 5 gears/s target")
         c.check(helpers.approx(item_amount(subfloor.products, "test-solver-plate") or 0, 10),
             "subfloor consumer: its summary must show only the 10 plates/s remaining after internal consumption")
         plates.definition.machine_count = 3

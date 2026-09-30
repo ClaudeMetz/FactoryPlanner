@@ -205,7 +205,7 @@ local function handle_configuration_change()
         lib.gui.toggle_mod_gui(player)  -- Recreates the mod-GUI if necessary
 
         -- Update calculations in case prototypes changed in a relevant way
-        for district in storage.players[index--[[@as PlayerIndex]]].realm:iterator() do
+        for district in storage.players[index].realm:iterator() do
             district.needs_refresh = true
             for factory in district:iterator() do
                 factory:clear_solver_cache()

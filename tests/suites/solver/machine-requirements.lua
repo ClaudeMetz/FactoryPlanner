@@ -51,15 +51,13 @@ return {
         local iron = add_product(prototyper.util.find("items", "iron-plate", "item"), 3.5)
         local copper = add_product(prototyper.util.find("items", "copper-plate", "item"), 8)
 
-        local data = solver.generate_factory_data(player, factory)
+        solver.update(player, factory)
         assert(first.machine_requirement.count == 3.5 and second.machine_requirement == nil)
-        assert(first.machine_requirement.product_proto == iron.proto, "First factory product must win")
-        assert(data.line_data_map[first.id].machine_requirement == first.machine_requirement)
-        assert(data.line_data_map[first.id].machine_limit == nil, "New requirements must not enable old solver limits")
+        assert(first.machine.amount == 3.5 and second.machine.amount == 0, "First factory product must win")
         assert(first:pack(false).machine_requirement == nil and first:pack(true).machine_requirement == nil)
         factory:shift(copper, "previous", 1)
-        solver.generate_factory_data(player, factory)
-        assert(first.machine_requirement.count == 8 and first.machine_requirement.product_proto == copper.proto)
+        solver.update(player, factory)
+        assert(first.machine_requirement.count == 8 and first.machine.amount == 8)
         factory:shift(iron, "previous", 1)
 
         -- Generated recipes can have zero duration, although native recipe prototypes cannot
@@ -67,12 +65,11 @@ return {
         instant.recipe.proto = lib.flib.shallow_copy(instant.recipe.proto)
         instant.recipe.proto.energy = 0
         top:move(instant, first, "previous")
-        data = solver.generate_factory_data(player, factory)
+        solver.update(player, factory)
         assert(instant.recipe.proto.energy <= MAGIC_NUMBERS.minimum_energy)
         assert(instant.machine_requirement == nil and first.machine_requirement.count == 3.5)
-        assert(data.line_data_map[instant.id] ~= nil, "Instant recipes must remain available for amount targets")
         first.active, second.active = false, false
-        solver.generate_factory_data(player, factory)
+        solver.update(player, factory)
         assert(instant.machine_requirement == nil and first.machine_requirement == nil
             and second.machine_requirement == nil, "Instant-only matches must leave machine definitions unassigned")
         iron.definition = {type="amount", amount=1}
@@ -83,35 +80,39 @@ return {
         top:remove(instant)
 
         top:move(second, first, "previous")
-        solver.generate_factory_data(player, factory)
+        solver.update(player, factory)
         assert(second.machine_requirement.count == 3.5 and first.machine_requirement == nil)
         second.active = false
-        data = solver.generate_factory_data(player, factory)
-        assert(second.machine_requirement == nil and first.machine_requirement.count == 3.5)
-        assert(data.line_data_map[second.id] == nil, "Blocked matches must be skipped")
+        solver.update(player, factory)
+        assert(second.machine_requirement == nil and first.machine_requirement == nil,
+            "Disabling the first match must not transfer its machine target")
+        assert(second.machine.amount == 0 and first.machine.amount == 0 and iron.amount == 0 and copper.amount == 0,
+            "A disabled machine target must leave both matching recipes idle")
         first.active = false
-        solver.generate_factory_data(player, factory)
+        solver.update(player, factory)
         assert(first.machine_requirement == nil and second.machine_requirement == nil)
         first.active = true
         second.active = true
-        solver.generate_factory_data(player, factory)
+        assert(second.production_ratio == 0, "Previously disabled line must start with no production")
+        solver.update(player, factory)
         assert(second.machine_requirement.count == 3.5 and first.machine_requirement == nil,
-            "Re-enabling an earlier match must move the requirement back")
-        assert(second.production_ratio == 0, "A usable line must qualify even without existing production")
+            "Re-enabling the first match must restore its machine target")
+        assert(second.machine.amount == 3.5, "A usable line must qualify even without existing production")
 
         local subfloor = classes.Floor.init(2, top.solver)
         top:replace(second, subfloor)
         subfloor:insert(second)
         local internal = add_line(subfloor)
-        solver.generate_factory_data(player, factory)
+        solver.update(player, factory)
         assert(second.machine_requirement.count == 3.5 and first.machine_requirement == nil,
             "A subfloor's defining recipe must retain its requirement")
         second.active = false
-        solver.generate_factory_data(player, factory)
+        solver.update(player, factory)
         assert(second.machine_requirement == nil and internal.machine_requirement == nil
-            and first.machine_requirement.count == 3.5, "A blocked defining recipe must allow the next top-floor match")
+            and first.machine_requirement == nil,
+            "Disabling a defining recipe must not transfer its machine target")
         top:remove(first)
-        solver.generate_factory_data(player, factory)
+        solver.update(player, factory)
         assert(second.machine_requirement == nil and internal.machine_requirement == nil,
             "Internal subfloor recipes must not be selected")
         second.active = true
@@ -121,10 +122,10 @@ return {
         local hot = add_line(top, "test-machine-steam-500")
         local hot_proto = prototyper.util.find("items", hot.recipe.products[1].name, "fluid")
         local steam = add_product(hot_proto, 2)
-        solver.generate_factory_data(player, factory)
+        solver.update(player, factory)
         assert(hot.machine_requirement.count == 2 and cold.machine_requirement == nil)
         factory:remove(steam)
-        solver.generate_factory_data(player, factory)
+        solver.update(player, factory)
         assert(hot.machine_requirement == nil, "Removing a product must clear its old assignment")
 
         solver.update(player, factory)
@@ -163,7 +164,7 @@ return {
 
         iron.definition = {type="amount", amount=1}
         factory:remove(copper)
-        solver.generate_factory_data(player, factory)
+        solver.update(player, factory)
         assert(first.machine_requirement == nil, "Changing definitions must clear old assignments")
         lib.gui.run_refresh(player, "production")
         button = find_button(ui.main_elements.main_frame, "act_on_line_machine", "machine_id", first.machine.id)
