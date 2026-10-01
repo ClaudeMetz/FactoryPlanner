@@ -418,8 +418,7 @@ function builders.products(line, parent_flow, metadata)
         if proto.type == "entity" and proto.special then
             relevant_flow = special_flow
 
-            amount = lib.format.button_number(product.amount)
-            number_tooltip = lib.format.special_tooltip(proto.name, product.amount)
+            amount, number_tooltip = lib.format.special_amount(proto.name, product.amount)
         else
             relevant_flow = items_flow
 
@@ -470,8 +469,7 @@ function builders.byproducts(line, parent_flow, metadata)
         if proto.type == "entity" and proto.special then
             relevant_flow = special_flow
 
-            amount = lib.format.button_number(byproduct.amount)
-            number_tooltip = lib.format.special_tooltip(proto.name, byproduct.amount)
+            amount, number_tooltip = lib.format.special_amount(proto.name, byproduct.amount)
         else
             relevant_flow = items_flow
 
@@ -574,10 +572,10 @@ local function add_special_ingredient(line, parent_flow, metadata, item, index)
         satisfaction_line, _ = lib.gui.calculate_satisfaction(item.satisfied_amount or 0, item.amount)
     end
 
-    local number_line = {"", "\n", lib.format.special_tooltip(item.proto.name, item.amount)}
+    local button_number, number_tooltip = lib.format.special_amount(item.proto.name, item.amount)
+    local number_line = {"", "\n", number_tooltip}
     local tooltip = {"", {"fp.tt_title", item.proto.localised_name}, number_line, satisfaction_line}
 
-    local button_number = lib.format.button_number(item.amount)
     local tags = item_action_tags(line, item.proto, "ingredient", index, metadata)
     local button = parent_flow.add{type="sprite-button", tags=tags, sprite=item.proto.sprite, number=button_number,
         style="fflib_slot_button_cyan", mouse_button_filter={"left-and-right"}, raise_hover_events=true}

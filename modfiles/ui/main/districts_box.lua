@@ -125,9 +125,8 @@ local function build_items_flow(player, parent, district)
         local total_tooltip = nil
 
         if flags.special then
-            diff_number = lib.format.button_number(item.abs_diff)
-            amount_tooltip = lib.format.special_tooltip(item.proto.name, item.abs_diff)
-            total_tooltip = lib.format.special_tooltip(item.proto.name, total_amount)
+            diff_number, amount_tooltip = lib.format.special_amount(item.proto.name, item.abs_diff)
+            _, total_tooltip = lib.format.special_amount(item.proto.name, total_amount)
         else
             diff_number, amount_tooltip, secondary_number = item_views.process_item(player, item.proto,
                 item.abs_diff, nil, ", ")

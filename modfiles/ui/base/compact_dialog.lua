@@ -293,8 +293,7 @@ local function add_item_flow(line, relevant_line, item_category, button_color, m
             on_gui_hover="hover_compact_item", on_gui_leave="leave_compact_item", context="compact_dialog", flags=flags}
 
         if flags.special then
-            amount = lib.format.button_number(item.amount)
-            number_tooltip = lib.format.special_tooltip(proto.name, item.amount)
+            amount, number_tooltip = lib.format.special_amount(proto.name, item.amount)
             if not relevant_line.done and item_category == "ingredients" then button_color = "cyan" end
             first_special_index = first_special_index or index
         else
@@ -489,8 +488,7 @@ local function refresh_compact_header(player, factory)
             on_gui_hover="hover_compact_item", on_gui_leave="leave_compact_item", context="compact_dialog", flags=flags}
 
         if flags.special then
-            amount = lib.format.button_number(ingredient.amount)
-            number_tooltip = lib.format.special_tooltip(proto.name, ingredient.amount)
+            amount, number_tooltip = lib.format.special_amount(proto.name, ingredient.amount)
         else
             amount, number_tooltip, secondary_amount = item_views.process_item(player, proto, ingredient.amount, nil)
             if amount == -1 then goto skip_ingredient end  -- an amount of -1 means it was below the margin of error

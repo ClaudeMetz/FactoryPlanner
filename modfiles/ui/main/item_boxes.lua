@@ -86,8 +86,7 @@ local function refresh_item_box(player, factory, item_category, tooltips)
             }
 
             if flags.special then
-                amount = lib.format.button_number(display_amount)
-                number_tooltip = lib.format.special_tooltip(product.proto.name, display_amount)
+                amount, number_tooltip = lib.format.special_amount(product.proto.name, display_amount)
             else
                 amount, number_tooltip, secondary_amount = item_views.process_item(player, product.proto,
                     display_amount, nil)
@@ -151,8 +150,7 @@ local function refresh_item_box(player, factory, item_category, tooltips)
             }
 
             if flags.special then
-                amount = lib.format.button_number(item.amount)
-                number_tooltip = lib.format.special_tooltip(item.proto.name, item.amount)
+                amount, number_tooltip = lib.format.special_amount(item.proto.name, item.amount)
             else
                 amount, number_tooltip, secondary_amount = item_views.process_item(player, item.proto, item.amount, nil)
                 if amount == -1 then goto skip_item end  -- an amount of -1 means it was below the margin of error

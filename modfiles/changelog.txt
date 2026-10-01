@@ -4,6 +4,7 @@ Date: 00. 00. 0000
   Features:
   Changes:
   Bugfixes:
+    - Fixed that amounts on buttons and their tooltips sometimes didn't agree (#908)
 
 ---------------------------------------------------------------------------------------------------
 Version: 2.1.17

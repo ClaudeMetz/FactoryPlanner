@@ -41,12 +41,16 @@ return {
             }
             for _, case in ipairs(cases) do
                 prefs.item_views.selected.primary = case[1]
-                for _, value in ipairs{0, 1, 1.000000001, 2} do
-                    local amount, tooltip = item_views.process_item(player, item, case[2] * value, case[4])
-                    local rounded = value == 1.000000001 and 1 or value
-                    assert(amount ~= nil and tooltip[2] == tostring(rounded), "Keep tooltip precision across all views")
+                for _, value in ipairs{
+                    {0, 0, "0"}, {1, 1, "1"}, {1.000000001, 1, "1"}, {2, 2, "2"},
+                    {32.00001, 32, "32"}, {32.004, 32, "32"}, {32.006, 32.1, "32.01"},
+                    {32.04, 32.1, "32.04"}, {0.00001, 0.1, "≤0.0001"}
+                } do
+                    local amount, tooltip = item_views.process_item(player, item, case[2] * value[1], case[4])
+                    assert(amount == value[2], "Match button to tooltip precision in " .. case[1])
+                    assert(tooltip[2] == value[3], "Keep tooltip precision across all views")
                     assert(tooltip[4][1] == "fp.pl_" .. case[3])
-                    assert(tooltip[4][2] == (rounded == 1 and 1 or 2), "Pluralize the displayed value")
+                    assert(tooltip[4][2] == (value[3] == "1" and 1 or 2), "Pluralize the displayed value")
                 end
             end
 
@@ -76,10 +80,21 @@ return {
             assert(amount == nil and secondary == 100 and tooltip[4][1] == "fp.fluid_item")
             amount, tooltip, secondary = item_views.process_item(player, {type="entity", fixed_unit="units"}, 100)
             assert(amount == 100 and secondary == nil, "Entity amounts must not be duplicated")
+            amount, tooltip, secondary = item_views.process_item(player, item, 100.00001)
+            assert(amount == 2 and secondary == 100, "Both selected views must use tooltip precision")
             amount, tooltip, secondary = item_views.process_item(player, item, 1e-12)
             assert(amount == -1 and tooltip == nil and secondary == nil)
             amount, tooltip, secondary = item_views.process_item(player, item, 0)
             assert(amount == 0 and secondary == 0)
+
+            prefs.timescale = 60
+            item_views.rebuild_data(player)
+            prefs.item_views.selected = {primary="items_per_timescale"}
+            for _, proto in ipairs{item, {type="fluid"}, {type="entity"}, {type="entity", fixed_unit="units"}} do
+                local rate = proto.fixed_unit and 32.00001 or 32.00001 / 60
+                amount, tooltip = item_views.process_item(player, proto, rate)
+                assert(amount == 32 and tooltip[2] == "32", "Round after applying the view's timescale")
+            end
         end)
     end},
     selection = {check=function(context)
