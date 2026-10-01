@@ -61,7 +61,7 @@ return {
     copy_snapshots = {check=function(context)
         for _, subfloor in ipairs{false, true} do
             local classes, player, factory = fixture(context)
-            local source = subfloor and classes.Floor.init(2) or nil
+            local source = subfloor and classes.Floor.init(2, factory.top_floor.solver) or nil
             if source then factory.top_floor:insert(source) end
             local line = add_line(classes, player, source or factory.top_floor)
             source = source or line
@@ -195,7 +195,7 @@ return {
 
     cut_line_collapses_subfloor = {check=function(context)
         local classes, player, factory = fixture(context)
-        local floor = classes.Floor.init(2)
+        local floor = classes.Floor.init(2, factory.top_floor.solver)
         factory.top_floor:insert(floor)
         local defining = add_line(classes, player, floor)
         local source = add_line(classes, player, floor)
@@ -211,10 +211,10 @@ return {
 
     cut_subfloor = {check=function(context)
         local classes, player, factory = fixture(context)
-        local floor = classes.Floor.init(2)
+        local floor = classes.Floor.init(2, factory.top_floor.solver)
         factory.top_floor:insert(floor)
         add_line(classes, player, floor)
-        local nested = classes.Floor.init(3)
+        local nested = classes.Floor.init(3, floor.solver)
         floor:insert(nested)
         add_line(classes, player, nested).comment = "Nested configuration"
         solver.update(player, factory)

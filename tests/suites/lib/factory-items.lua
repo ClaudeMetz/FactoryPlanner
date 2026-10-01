@@ -1,5 +1,7 @@
 ---@diagnostic disable
 
+local helpers = require("helpers")
+
 local function fixture(context)
     local player = game.players[1]
     local district = context.classes.District.init()
@@ -144,14 +146,19 @@ return {
         local output = context.classes.FactoryItem.init(prototyper.util.find("items", "copper-plate", "item"))
         output.definition = {type="amount", amount=10}
         factory:insert(output)
-        local factory_data = solver.generate_factory_data(player, factory)
-        local targets = factory_data.floor_data_map[factory.top_floor.id].products
-        assert(#targets == 1 and targets[1].name == "copper-plate" and targets[1].amount == 10)
-        solver.set_factory_result{
-            player_index=player.index, factory_id=factory.id,
-            products={["item/copper-plate"]=10}, byproducts={["item/iron-plate"]=12}, ingredients={}
-        }
-        assert(item.amount == 12 and output.amount == 10)
+        -- Exercise result calculation through the public solver entry point.
+        -- Five stone furnaces make 5 / 3.2 iron plates/s; copper has a separate amount target.
+        local function add_smelting_line(recipe_name)
+            local line = context.classes.Line.init(prototyper.util.find("recipes", recipe_name))
+            factory.top_floor:insert(line)
+            line:change_machine_to_proto(player, helpers.find_machine("stone-furnace"))
+            return line
+        end
+        local iron_line = add_smelting_line("iron-plate")
+        add_smelting_line("copper-plate")
+        solver.update(player, factory)
+        assert(helpers.approx(iron_line.machine.amount, 5))
+        assert(helpers.approx(item.amount, 5 / 3.2) and helpers.approx(output.amount, 10))
         assert(#factory.top_floor.byproducts == 0, "Machine-defined output must not also appear as a byproduct")
     end}
 }

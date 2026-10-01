@@ -84,9 +84,9 @@ local function player_init(player)
     if DEVELOPER_MODE then
         lib.porter.add_factories(player, dev_export_string)
 
-        --player.force--[[@as LuaForce]].research_all_technologies()
+        player.force--[[@as LuaForce]].research_all_technologies()
         player.clear_recipe_notifications()
-        --player.cheat_mode = true
+        player.cheat_mode = true
     end
 end
 
@@ -208,7 +208,7 @@ local function handle_configuration_change()
         for district in storage.players[index].realm:iterator() do
             district.needs_refresh = true
             for factory in district:iterator() do
-                factory.simplex_basis = nil
+                factory:clear_solver_cache()
                 solver.update(player, factory)
             end
         end

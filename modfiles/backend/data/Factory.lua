@@ -9,15 +9,11 @@ local FactoryItem = require("backend.data.FactoryItem")
 ---@field previous Factory?
 ---@field archived boolean
 ---@field name string
----@field solver SolverName
----@field matrix_free_items (FPItemPrototype | FPPackedPrototype)[]
----@field simplex_basis table<ConstraintKey, VariableKey>?
 ---@field blueprints_inventory LuaInventory
 ---@field notes string
 ---@field productivity_boni table<string, IntegerEffectValue>
 ---@field first FactoryItem?
 ---@field top_floor Floor
----@field linear_dependence_data LinearDependanceData?
 ---@field tick_of_deletion uint?
 ---@field tick_of_solver_update uint?
 ---@field last_valid_modset ModToVersion?
@@ -35,16 +31,12 @@ local function init(name, solver_name)
         --shared = false,
 
         name = name,
-        solver = solver_name,
-        matrix_free_items = {},
-        simplex_basis = nil,
         blueprints_inventory = game.create_inventory(MAGIC_NUMBERS.blueprint_limit),
         notes = "",
         productivity_boni = {},
         first = nil,
-        top_floor = Floor.init(1),
+        top_floor = Floor.init(1, solver_name),
 
-        linear_dependence_data = nil,
         tick_of_deletion = nil,
         tick_of_solver_update = nil,
         last_valid_modset = nil
@@ -212,12 +204,14 @@ function Factory:refresh_lines(player, starting_tick)
     return starting_tick + MAGIC_NUMBERS.factory_solver_update_delay
 end
 
+function Factory:clear_solver_cache()
+    self.top_floor:clear_solver_cache()
+end
+
 
 ---@class PackedFactory: PackedObject
 ---@field class "Factory"
 ---@field name string
----@field solver SolverName
----@field matrix_free_items FPPackedPrototype[]
 ---@field blueprint_strings table<integer, string> sparse
 ---@field notes string
 ---@field productivity_boni table<string, IntegerEffectValue>
@@ -238,9 +232,6 @@ function Factory:pack(full)
     return {
         class = self.class,
         name = self.name,
-        solver = self.solver,
-        matrix_free_items = (self.matrix_free_items) and
-            prototyper.util.simplify_prototypes(self.matrix_free_items, "type") or nil,
         blueprint_strings = blueprint_strings,
         notes = self.notes,
         productivity_boni = self.productivity_boni,
@@ -252,11 +243,7 @@ end
 ---@param packed_self PackedFactory
 ---@return Factory factory
 local function unpack(packed_self)
-    local unpacked_self = init(packed_self.name, packed_self.solver)
-
-    -- Matrix free items will be automatically unpacked by the validation process
-    ---@diagnostic disable-next-line: assign-type-mismatch
-    unpacked_self.matrix_free_items = packed_self.matrix_free_items
+    local unpacked_self = init(packed_self.name, packed_self.top_floor.solver)
 
     unpacked_self.blueprints_inventory = game.create_inventory(MAGIC_NUMBERS.blueprint_limit)
     for index, blueprint in pairs(packed_self.blueprint_strings) do
@@ -292,10 +279,6 @@ function Factory:validate(player)
     self.valid = self:_validate(player) and self.valid
     self.valid = self.top_floor:validate(player) and self.valid
 
-    local matrix_free_items, valid = prototyper.util.validate_prototype_objects(self.matrix_free_items, "type")
-    self.matrix_free_items = matrix_free_items
-    self.valid = valid and self.valid
-
     -- Remove any invalid boni, no need to mark the factory as invalid
     for recipe_name, _ in pairs(self.productivity_boni) do
         if not PRODUCTIVITY_RECIPES[recipe_name] then
@@ -316,14 +299,6 @@ end
 function Factory:repair(player)
     self:_repair(player)
     self.top_floor:repair(player)
-
-    -- Remove any unrepairable free items so the factory remains valid
-    local free_items = self.matrix_free_items
-    for index = #free_items, 1, -1 do
-        if free_items[index].simplified then
-            table.remove(free_items, index)
-        end
-    end
 
     self.last_valid_modset = nil
     self.valid = true

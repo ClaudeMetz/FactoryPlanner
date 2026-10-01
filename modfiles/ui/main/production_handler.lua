@@ -21,7 +21,7 @@ end
 ---@param line Line
 ---@return Floor
 local function convert_line_to_subfloor(line)
-    local subfloor = Floor.init(line.parent.level + 1)
+    local subfloor = Floor.init(line.parent.level + 1, line.parent.solver)
     line.parent:replace(line, subfloor)
     line.next, line.previous = nil, nil
     subfloor:insert(line)
