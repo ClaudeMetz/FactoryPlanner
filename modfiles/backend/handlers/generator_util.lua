@@ -558,6 +558,20 @@ function _util.add_entity_groups(proto, entity_name)
     end
 end
 
+---@param properties SurfaceProperties?
+---@param conditions SurfaceCondition[]?
+---@return boolean
+function _util.are_surface_conditions_met(properties, conditions)
+    -- No surface properties or conditions means that the location/recipe/machine prototype is universal
+    if not properties or not conditions then return true end
+    for _, condition in pairs(conditions) do
+        local property = properties[condition.property]
+        if property and (property < condition.min or property > condition.max) then
+            return false
+        end
+    end
+    return true
+end
 
 ---@param text LocalisedString
 ---@param color Color
