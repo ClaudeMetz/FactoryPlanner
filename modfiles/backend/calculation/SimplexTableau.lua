@@ -303,7 +303,7 @@ function SimplexTableau:solve(floor_id, basis_cache)
     end
 
     -- Re-scale the tableau only after the basis has been chosen
-    self:_normalize(basis_scalars)
+    if result.cache_invalid then self:_normalize(basis_scalars) end
 
     local lu = LUDecomposition:init(basis_scalars)
     local x_vector = lib.flib.shallow_copy(self.solution)
@@ -487,8 +487,7 @@ end
 
 --- Re-scales the conditions based on the highest coefficient in the row.
 --- Returns the scalars by which each row was scaled by
----@param scalars number[] the coefficients of the basis before scaling
----@return number[]
+---@param scalars number[] (in/out) - the coefficients of the basis variables
 function SimplexTableau:_normalize(scalars)
     for i = 1, #self.matrix[1] do
         -- Find the maximum coefficient in the row
@@ -498,14 +497,12 @@ function SimplexTableau:_normalize(scalars)
         end
 
         -- Re-scale the row
-        if scalars[i] then scalars[i] = scalars[i] / max end
+        scalars[i] = (scalars[i] or 1) / max
         for j = 1, #self.matrix do
             self.matrix[j][i] = self.matrix[j][i]--[[@cast -nil]] / max
         end
         self.solution[i] = self.solution[i]--[[@cast -nil]] / max
     end
-
-    return scalars
 end
 
 ---@param key ConstraintKey
