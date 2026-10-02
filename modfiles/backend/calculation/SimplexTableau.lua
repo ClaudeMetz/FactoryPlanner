@@ -236,6 +236,7 @@ function SimplexTableau:solve(floor_id, basis_cache)
             if row_index and col_index then
                 variable_map[col_index]--[[@cast -nil]].type = "basic"
                 basic[row_index] = col_key
+                basis_scalars[row_index] = 1
             end
         end
     end
@@ -303,7 +304,7 @@ function SimplexTableau:solve(floor_id, basis_cache)
     end
 
     -- Re-scale the tableau only after the basis has been chosen
-    if result.cache_invalid then self:_normalize(basis_scalars) end
+    self:_normalize(basis_scalars)
 
     local lu = LUDecomposition:init(basis_scalars)
     local x_vector = lib.flib.shallow_copy(self.solution)
