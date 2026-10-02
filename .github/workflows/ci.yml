@@ -18,7 +18,7 @@ jobs:
       fail-fast: false
       matrix:
         # Configurations are discovered within each suite
-        suite: [lib, generator, solver, views]
+        suite: [lib, generator, solver, views, agriculture]
     steps:
       - uses: actions/checkout@v5
       - name: Run ${{ matrix.suite }}
