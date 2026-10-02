@@ -91,7 +91,6 @@ end
 ---@field fuel_item SolverItem?
 ---@field priority_item SolverItem?
 ---@field machine_requirement MachineRequirement?
----@field production_type RecipeProductionType
 
 --- Applies all effects on the machine of the line and returns how many
 --- products/ingredients are produced/consumed per second by one machine
@@ -307,7 +306,6 @@ local function generate_line_data(player, factory, line, requirement)
         fuel_item = fuel_item,
         priority_item = priority_item,
         machine_requirement = requirement,
-        production_type = line.recipe.production_type,
     }  ---@type LineData
 end
 
@@ -345,7 +343,6 @@ local function generate_line_data_from_result(factory_data, floor_id, subfloor_r
         ingredients = subfloor_result.ingredients,
         priority_item = subfloor_line.priority_item,
         machine_requirement = subfloor_line.machine_requirement,
-        production_type = "produce"
     }
 end
 

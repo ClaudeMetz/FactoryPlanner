@@ -8,28 +8,24 @@ local sequential_engine = {}
 --- A producing line is paced by the outstanding demand for the products it makes
 ---@param line_data LineData
 ---@param aggregate SolverAggregate
----@param demanded_products SolverItem[]
+---@param products SolverItem[]
 ---@return number
-local function determine_producing_ratio(line_data, aggregate, demanded_products)
-    ---@param product SolverItem
-    ---@return number
-    local function demanded_ratio(product)
-        local demand = aggregate.ingredients[structures.pack_item(product)]
-        return demand / product.amount
-    end
+local function determine_producing_ratio(line_data, aggregate, products)
+    local producing_ratio = 0  ---@type number
+    local priority_key = line_data.priority_item and structures.pack_item(line_data.priority_item)
 
-    if #demanded_products == 1 then return demanded_ratio(demanded_products[1]) end
-    local production_ratio = 0  ---@type number
+    for _, product in ipairs(products) do
+        local demand = aggregate.ingredients[structures.pack_item(product)]  ---@type number?
+        local ratio = (demand or 0) / product.amount
 
-    for _, product in ipairs(demanded_products) do
-        if not line_data.priority_item then  -- satisfy every demand, so take the highest ratio
-            production_ratio = math.max(production_ratio, demanded_ratio(product))
-        elseif structures.pack_item(product) == structures.pack_item(line_data.priority_item) then
-            return demanded_ratio(product)  -- the priority product paces the line by itself
+        if structures.pack_item(product) == priority_key then
+            return ratio  -- the priority product paces the line by itself
+        else  -- satisfy every demand, so take the highest ratio
+            producing_ratio = math.max(producing_ratio, ratio)
         end
     end
 
-    return production_ratio
+    return producing_ratio
 end
 
 --- A consuming line is paced by the byproducts available to its ingredients
@@ -38,26 +34,18 @@ end
 ---@param ingredients SolverItem[]
 ---@return number
 local function determine_consuming_ratio(line_data, aggregate, ingredients)
-    ---@param ingredient SolverItem
-    ---@param available number
-    ---@return number
-    local function available_ratio(ingredient, available)
-        return available / ingredient.amount
-    end
-
-    local production_ratio = 0  ---@type number
+    local consuming_ratio = 0  ---@type number
+    local priority_key = line_data.priority_item and structures.pack_item(line_data.priority_item)
 
     for _, ingredient in pairs(ingredients) do
         local ingredient_key = structures.pack_item(ingredient)
         local available = aggregate.known_byproducts[ingredient_key] and aggregate.products[ingredient_key]  ---@type number?
         local fuel_key = line_data.fuel_item and structures.pack_item(line_data.fuel_item)
+        local ratio = (available or 0) / ingredient.amount
 
-        if line_data.priority_item then
+        if ingredient_key == priority_key then
             -- The priority ingredient paces the line by itself, importing the others as needed
-            if ingredient_key == structures.pack_item(line_data.priority_item) then
-                if available == nil then return 0 end  -- nothing of it left to consume
-                return available_ratio(ingredient, available)
-            end
+            return ratio
 
         elseif available == nil then
             -- Avoid importing additional ingredients if they are a consumed byproduct further up
@@ -65,12 +53,11 @@ local function determine_consuming_ratio(line_data, aggregate, ingredients)
 
         elseif ingredient_key ~= fuel_key then
             -- stay within every byproduct's availability, so take the lowest ratio
-            local ratio = available_ratio(ingredient, available)
-            production_ratio = (production_ratio == 0) and ratio or math.min(production_ratio, ratio)
+            consuming_ratio = (consuming_ratio == 0) and ratio or math.min(consuming_ratio, ratio)
         end
     end
 
-    return production_ratio
+    return consuming_ratio
 end
 
 ---@param line_data LineData
@@ -80,14 +67,6 @@ end
 local function solve_line(line_data, aggregate, is_relevant_line)
     local products = structures.map.list(line_data.products)
     local ingredients = structures.map.list(line_data.ingredients)
-    local consuming = (line_data.production_type == "consume")
-
-    -- Split the recipe's products by whether this floor has a demand for them
-    local demanded_products, byproducts = {}, {}  ---@type SolverItem[], SolverItem[]
-    for _, product in pairs(products) do
-        local demanded = (aggregate.ingredients[structures.pack_item(product)] ~= nil)
-        table.insert((demanded) and demanded_products or byproducts, product)
-    end
 
     -- Determine machine count
     -- Line data assumes a machine amount of 1, so production_ratio == machine_amount
@@ -96,21 +75,27 @@ local function solve_line(line_data, aggregate, is_relevant_line)
         machine_amount = 1  -- calculate subfloors based on the demand of the relevant line
     elseif line_data.machine_requirement then
         machine_amount = line_data.machine_requirement.count
-    elseif consuming then
-        machine_amount = determine_consuming_ratio(line_data, aggregate, ingredients)
     else
-        machine_amount = determine_producing_ratio(line_data, aggregate, demanded_products)
+        -- Determine the ratios for both production and consumption
+        local producing_ratio = determine_producing_ratio(line_data, aggregate, products)
+        local consuming_ratio = determine_consuming_ratio(line_data, aggregate, ingredients)
+
+        -- The production / consumption mode can be determined by the selected priority item
+        local pritority_key = line_data.priority_item and structures.pack_item(line_data.priority_item)
+        local produce_priority = (pritority_key and line_data.products[pritority_key] ~= nil)
+        local consume_priority = (pritority_key and line_data.ingredients[pritority_key] ~= nil)
+
+        if produce_priority then
+            machine_amount = producing_ratio
+        elseif consume_priority then
+            machine_amount = consuming_ratio
+        else
+            machine_amount = math.max(producing_ratio, consuming_ratio)
+        end
     end
 
-    -- Determine byproducts
-    for _, byproduct in pairs(byproducts) do
-        local amount = byproduct.amount * machine_amount
-        structures.map.add(aggregate.products, byproduct, amount)
-        aggregate.known_byproducts[structures.pack_item(byproduct)] = true
-    end
-
-    -- Determine products
-    for _, product in ipairs(demanded_products) do
+    -- Determine products/byproducts
+    for _, product in ipairs(products) do
         local amount = product.amount * machine_amount
         local demand = aggregate.ingredients[structures.pack_item(product)] or 0
 

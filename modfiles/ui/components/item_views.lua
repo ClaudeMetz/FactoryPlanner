@@ -93,7 +93,7 @@ view_definitions.throughput = {
         view.caption = {"", belt.rich_text, " ", pump.proto.rich_text}
         view.tooltip = {"fp.throughput", unit, stack_insert, belt.rich_text, belt.localised_name,
             pump.proto.rich_text, pump.proto.localised_name, quality}
-        view.pumping_speed = proto.get_pumping_speed(pump.quality--[[@cast -nil]].name) * 60
+        view.pumping_speed = proto.get_pumping_speed(pump.quality--[[@cast -nil]].name)--[[@cast -nil]] * 60
         return view
     end,
 
