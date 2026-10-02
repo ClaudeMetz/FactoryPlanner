@@ -286,6 +286,18 @@ function Floor:reset_location()
     end
 end
 
+---@return FPLocationPrototype
+function Floor:get_current_location()
+    if not self.current_location then
+        local object = self.parent  ---@as Object  -- find the District this is in
+        while object.class ~= "District" do object = object.parent--[[@as District]] end
+        ---@cast object District
+        self.current_location = object.location_proto  ---@as FPLocationPrototype
+    end
+    ---@cast self.current_location -nil
+    return self.current_location
+end
+
 ---@alias FloorStatus "disabled" | "linearly_dependent" | "solver_error"
 
 --- Returns why this floor doesn't produce anything, or nil if it does
@@ -329,18 +341,6 @@ function Floor:clear_solver_cache(self_only)
     for line_object in self:iterator() do
         if line_object.class == "Floor" then line_object:clear_solver_cache() end
     end
-end
-
----@return FPLocationPrototype
-function Floor:get_current_location()
-    if not self.current_location then
-        local object = self.parent  ---@as Object  -- find the District this is in
-        while object.class ~= "District" do object = object.parent--[[@as District]] end
-        ---@cast object District
-        self.current_location = object.location_proto  ---@as FPLocationPrototype
-    end
-    ---@cast self.current_location -nil
-    return self.current_location
 end
 
 ---@param object CopyableObject
