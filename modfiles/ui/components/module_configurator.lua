@@ -176,6 +176,9 @@ end
 function module_configurator.add_modules_flow(parent, modal_data)
     local flow_modules = parent.add{type="flow", direction="vertical"}
     modal_data.modal_elements["modules_flow"] = flow_modules
+
+    local flow_effects = parent.add{type="flow", direction="horizontal"}
+    modal_data.modal_elements["effects_flow"] = flow_effects
 end
 
 ---@param modal_data ModuleConfiguratorModalData
@@ -208,8 +211,6 @@ function module_configurator.refresh_modules_flow(player, update_only)
 
         -- Update the UI instead of rebuilding it so the slider can be dragged properly
         for _, frame in pairs(modules_flow.children) do
-            if frame.name == "flow_effects" then goto skip end
-
             local module_id = frame.tags.module_id
             if module_id == nil then
                 frame.destroy()  -- destroy empty frame as it'll be re-added below
@@ -234,13 +235,14 @@ function module_configurator.refresh_modules_flow(player, update_only)
                     slider.enabled = (maximum_value ~= 1)
                 end
             end
-            ::skip::
         end
     else
         modules_flow.clear()
 
-        if #modal_data.line.effects_tooltip > 1 then
-            local effects_flow = modules_flow.add{type="flow", direction="horizontal", name="flow_effects"}
+        local effects_flow = modal_data.modal_elements.effects_flow
+        effects_flow.clear()
+        effects_flow.visible = (#modal_data.line.effects_tooltip > 1)
+        if effects_flow.visible then
             add_effects_section(effects_flow, modal_data.object, modal_data.modal_elements)
             add_effects_section(effects_flow, modal_data.line, modal_data.modal_elements)
         end

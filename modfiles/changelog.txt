@@ -2,9 +2,38 @@
 Version: 0.00.00
 Date: 00. 00. 0000
   Features:
-    - Implemented support for selecting two item rate views at once (#807)
   Changes:
-    - Bumped the required Factorio version to 2.1.18
+  Bugfixes:
+
+---------------------------------------------------------------------------------------------------
+Version: 2.1.18
+Date: 02. 10. 2026
+  Bugfixes:
+    - Fixed that amounts on buttons and their tooltips sometimes didn't agree (#908)
+    - Fixed a crash when the Simplex solver runs in certain situations (#909)
+
+---------------------------------------------------------------------------------------------------
+Version: 2.1.17
+Date: 01. 10. 2026
+  Features:
+    - Added a setting to allow you to use distinct solvers for different floors when desired. As a consequence, solver configuration is now always done per floor, not globally per factory (#768) (Thanks vapopescu!)
+    - Added support for defining products by machine count to Simplex and Gaussian solvers (Thanks vapopescu!)
+  Changes:
+    - Rewrote the Gaussian solver to bring it in line with the other solvers. It now treats subfloors in isolation instead of internally combining everything onto a single one. This will break some setups and/or require reconfiguration. (#842) (Thanks vapopescu!)
+    - Added warnings to the Simplex solver, and improved warning presentation for the Gaussian solver (Thanks vapopescu!)
+  Bugfixes:
+    - Fixed an issue with the Simplex solver when a product has no producing line (#898) (Thanks vapopescu!)
+    - Fixed an issue with the Simplex solver scaling recipes wrong in certain situations (#901) (Thanks vapopescu!)
+
+---------------------------------------------------------------------------------------------------
+Version: 2.1.16
+Date: 22. 09. 2026
+  Features:
+    - Implemented support for selecting two item rate views at once (#807)
+    - Implemented defining desired products by machine amount instead of item rate, replacing limits defined on machines themselves (#93)
+  Changes:
+    - Added support for fuels being able to have multiple categories
+    - Bumped the required Factorio version to 2.1.20
   Bugfixes:
     - Fixed crash when exporting disabled subfloor (#894) (Thanks vapopescu!)
     - Fixed research planning ignoring science ingredient durability

@@ -5,7 +5,6 @@ item_views = {}
 ---@field timescale Timescale
 ---@field timescale_string LocalisedString
 ---@field adjusted_margin_of_error number
----@field formatting_precision integer
 
 ---@class ItemViewData
 ---@field caption LocalisedString
@@ -17,15 +16,13 @@ item_views = {}
 ---@field prepare fun(player: LuaPlayer, timescale_string: string): ItemViewData
 ---@field process fun(metadata: ItemViewsData, raw_amount: number, item_proto: FPItemPrototype | FPFuelPrototype, machine_amount: number?): number?, LocalisedString?
 
----@param metadata ItemViewsData
 ---@param amount number
 ---@param unit_name string
 ---@param suffix LocalisedString?
 ---@return number? button_number
 ---@return LocalisedString tooltip
-local function format_amount(metadata, amount, unit_name, suffix)
-    local button_number = lib.format.button_number(amount)
-    local tooltip_number = lib.format.number(amount, metadata.formatting_precision)
+local function format_amount(amount, unit_name, suffix)
+    local button_number, tooltip_number = lib.format.amount(amount)
     local plural_parameter = (tooltip_number == "1") and 1 or 2
     local unit = (unit_name == "fluid") and {"fp.l_fluid"} or {"fp.pl_" .. unit_name, plural_parameter}
     return button_number, {"", tooltip_number, " ", unit, suffix or ""}
@@ -63,7 +60,7 @@ view_definitions.items_per_timescale = {
     process = function(metadata, raw_amount, item_proto, _)
         local raw_number = raw_amount * metadata.timescale
         local unit_name = (item_proto.type == "fluid") and "fluid" or "item"
-        return format_amount(metadata, raw_number, unit_name, {"", "/", metadata.timescale_string})
+        return format_amount(raw_number, unit_name, {"", "/", metadata.timescale_string})
     end
 }
 
@@ -117,7 +114,7 @@ view_definitions.throughput = {
             unit_name = view.belts_or_lanes:sub(1, -2)
         end
 
-        return format_amount(metadata, raw_number, unit_name)
+        return format_amount(raw_number, unit_name)
     end
 }
 
@@ -144,7 +141,7 @@ view_definitions.items_per_second_per_machine = {
         local unit_name = (item_proto.type == "fluid") and "fluid" or "item"
         -- If machine_amount is nil, this shouldn't show /machine
         local per_machine = (machine_amount ~= nil) and {"", "/", {"fp.pl_machine", 1}} or ""
-        return format_amount(metadata, raw_number, unit_name, {"", "/", {"fp.unit_second"}, per_machine})
+        return format_amount(raw_number, unit_name, {"", "/", {"fp.unit_second"}, per_machine})
     end
 }
 
@@ -168,7 +165,7 @@ view_definitions.stacks_per_timescale = {
         if item_proto.type == "fluid" then return nil, {"fp.fluid_item"} end
 
         local raw_number = (raw_amount * metadata.timescale) / item_proto.stack_size--[[@as uint]]
-        return format_amount(metadata, raw_number, "stack", {"", "/", metadata.timescale_string})
+        return format_amount(raw_number, "stack", {"", "/", metadata.timescale_string})
     end
 }
 
@@ -229,7 +226,7 @@ view_definitions.wagons_per_timescale = {
         local wagon_capacity = (item_proto.type == "fluid") and view.fluid_capacity
             or view.cargo_capacity--[[@as number]] * item_proto.stack_size--[[@as uint]]
         local raw_number = (raw_amount * metadata.timescale) / wagon_capacity
-        return format_amount(metadata, raw_number, "wagon", {"", "/", metadata.timescale_string})
+        return format_amount(raw_number, "wagon", {"", "/", metadata.timescale_string})
     end
 }
 
@@ -270,7 +267,7 @@ view_definitions.rockets_per_timescale = {
 
         local total_weight = raw_amount * metadata.timescale * item_proto.weight--[[@as Weight]]
         local raw_number = total_weight / lift_capacity
-        return format_amount(metadata, raw_number, "rocket", {"", "/", metadata.timescale_string})
+        return format_amount(raw_number, "rocket", {"", "/", metadata.timescale_string})
     end
 }
 
@@ -304,8 +301,7 @@ function item_views.process_item(player, proto, item_amount, machine_amount, too
 
     if proto.type == "entity" then
         local amount = (proto.fixed_unit) and item_amount or item_amount * views_data.timescale
-        local button_number = lib.format.button_number(amount)
-        local tooltip_number = lib.format.number(amount, views_data.formatting_precision)
+        local button_number, tooltip_number = lib.format.amount(amount)
         local unit = proto.fixed_unit or {"fp.per_timescale",
             {"fp." .. lib.gui.timescale_as_string(views_data.timescale)}}
         return button_number, {"", tooltip_number, " ", unit}
@@ -366,8 +362,7 @@ function item_views.rebuild_data(player)
         views = prepared_views,
         timescale = preferences.timescale,
         timescale_string = {"fp.unit_" .. timescale_string}--[[@as LocalisedString]],
-        adjusted_margin_of_error = MAGIC_NUMBERS.margin_of_error / preferences.timescale,
-        formatting_precision = MAGIC_NUMBERS.formatting_precision
+        adjusted_margin_of_error = MAGIC_NUMBERS.margin_of_error / preferences.timescale
     }  ---@as ItemViewsData
     reconcile_preferences(player)
 end

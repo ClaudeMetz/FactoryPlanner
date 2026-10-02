@@ -14,10 +14,7 @@ return {
             testItemViewsFormatting = items.formatting,
             testThroughputViews = throughput.case(true),
             testDefaultsLookup = defaults_cases.lookup,
-            testDefaultsMigration = defaults_cases.migration,
             testWagonViews = wagons.case(true, true),
-            testWagonRestoration = wagons.restoration,
-            testItemViewsMigration = items.migration,
             testItemViewsSelection = items.selection
         }
     },

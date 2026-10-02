@@ -202,8 +202,14 @@ local function add_machine_flow(parent_flow, line, metadata)
         local title_line = (not quality_proto.always_show) and {"fp.tt_title", machine_proto.localised_name}
             or {"fp.tt_title_with_note", machine_proto.localised_name, quality_proto.rich_text}
         local amount, tooltip_line = lib.format.machine_amount(machine.amount, true)
+        local color = "default"
+        if line.machine_requirement then
+            color = "blue"
+            local count = line.machine_requirement.count
+            tooltip_line = {"", "\n", {"fp.machine_requirement", lib.format.number(count, 4), {"fp.pl_machine", count}}}
+        end
         local tooltip = {"", title_line, tooltip_line}
-        local style = (line.done) and "fflib_slot_button_default_grayscale" or "fflib_slot_button_default"
+        local style = "fflib_slot_button_" .. color .. ((line.done) and "_grayscale" or "")
 
         local flags = {cursor=lib.cursor.can_set_entity(machine_proto--[[@as FPMachinePrototype]])}
         ---@class ActOnCompactMachineTags
@@ -287,8 +293,7 @@ local function add_item_flow(line, relevant_line, item_category, button_color, m
             on_gui_hover="hover_compact_item", on_gui_leave="leave_compact_item", context="compact_dialog", flags=flags}
 
         if flags.special then
-            amount = lib.format.button_number(item.amount)
-            number_tooltip = lib.format.special_tooltip(proto.name, item.amount)
+            amount, number_tooltip = lib.format.special_amount(proto.name, item.amount)
             if not relevant_line.done and item_category == "ingredients" then button_color = "cyan" end
             first_special_index = first_special_index or index
         else
@@ -483,8 +488,7 @@ local function refresh_compact_header(player, factory)
             on_gui_hover="hover_compact_item", on_gui_leave="leave_compact_item", context="compact_dialog", flags=flags}
 
         if flags.special then
-            amount = lib.format.button_number(ingredient.amount)
-            number_tooltip = lib.format.special_tooltip(proto.name, ingredient.amount)
+            amount, number_tooltip = lib.format.special_amount(proto.name, ingredient.amount)
         else
             amount, number_tooltip, secondary_amount = item_views.process_item(player, proto, ingredient.amount, nil)
             if amount == -1 then goto skip_ingredient end  -- an amount of -1 means it was below the margin of error

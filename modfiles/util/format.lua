@@ -34,6 +34,7 @@ local units = {
 ---@param unit string
 ---@param precision integer
 ---@return LocalisedString formatted_number
+---@return number display_value
 function _format.SI_value(value, unit, precision)
     local sign = (value >= 0) and "" or "-"
     value = math.abs(value)
@@ -47,21 +48,13 @@ function _format.SI_value(value, unit, precision)
         if scale_counter > #prefixes - 1 then scale_counter = 0 end
     end
 
-    value = value / (1000 ^ scale_counter)
+    local scale = 1000 ^ scale_counter
+    value = value / scale
+    local formatted_number = lib.format.number(value, precision)
+    local display_value = (tonumber(formatted_number) or value) * scale
+    if sign == "-" then display_value = -display_value end
     local prefix = scale_counter == 0 and "" or {"fp.prefix_" .. prefixes[scale_counter + 1]}
-    return {"", sign .. lib.format.number(value, precision) .. " ", prefix, units[unit]}  ---@as LocalisedString
-end
-
-
----@param name string
----@param amount number
----@return LocalisedString tooltip_line
-function _format.special_tooltip(name, amount)
-    if lib.is_special_power_item(name) then
-        return lib.format.SI_value(amount, "W", MAGIC_NUMBERS.formatting_precision)
-    else  -- any of the emission types
-        return lib.format.SI_value(amount, "E/m", MAGIC_NUMBERS.formatting_precision)
-    end
+    return {"", sign .. formatted_number .. " ", prefix, units[unit]}, display_value
 end
 
 
@@ -92,6 +85,28 @@ function _format.button_number(value)
 end
 
 
+---@param value number
+---@return number button_number
+---@return string tooltip_number
+function _format.amount(value)
+    local tooltip_number = _format.number(value, MAGIC_NUMBERS.formatting_precision)
+    -- Tiny values formatted with ≤ fall back to the raw amount
+    local display_amount = tonumber(tooltip_number) or value
+    return _format.button_number(display_amount), tooltip_number
+end
+
+
+---@param name string
+---@param amount number
+---@return number button_number
+---@return LocalisedString tooltip_line
+function _format.special_amount(name, amount)
+    local unit = lib.is_special_power_item(name) and "W" or "E/m"
+    local tooltip, display_amount = _format.SI_value(amount, unit, MAGIC_NUMBERS.formatting_precision)
+    return _format.button_number(display_amount), tooltip
+end
+
+
 ---@param amount number
 ---@param ceil_number boolean
 ---@return number? button_number
@@ -99,11 +114,9 @@ end
 function _format.machine_amount(amount, ceil_number)
     if amount == 0 then return nil, {""} end
 
-    local button_number = _format.button_number(amount)
-    -- If the formatting returns 0, it is a very small number, so show it as 0.001
+    local button_number, tooltip_number = _format.amount(amount)
     if ceil_number then button_number = math.ceil(button_number) end
 
-    local tooltip_number = lib.format.number(amount, MAGIC_NUMBERS.formatting_precision)
     local plural_parameter = (tooltip_number == "1") and 1 or 2
     local tooltip_line = {"", "\n", tooltip_number, " ", {"fp.pl_machine", plural_parameter}}
 

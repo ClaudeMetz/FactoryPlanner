@@ -1,4 +1,4 @@
-local TLProduct = require("backend.data.TLProduct")
+local FactoryItem = require("backend.data.FactoryItem")
 local SimpleItem = require("backend.data.SimpleItem")
 
 -- ** LOCAL UTIL **
@@ -41,8 +41,8 @@ local function handle_item_button_click(player, tags, action)
 
     if action == "create_factory" then  -- only on net ingredients
         local factory = factory_list.add_factory(player, nil, item.proto)
-        local top_level_item = TLProduct.init(item.proto)
-        top_level_item.required_amount = item.abs_diff
+        local top_level_item = FactoryItem.init(item.proto)
+        top_level_item.definition = {type="amount", amount=item.abs_diff}
         factory:insert(top_level_item)
         solver.update(player, factory)
 
@@ -125,9 +125,8 @@ local function build_items_flow(player, parent, district)
         local total_tooltip = nil
 
         if flags.special then
-            diff_number = lib.format.button_number(item.abs_diff)
-            amount_tooltip = lib.format.special_tooltip(item.proto.name, item.abs_diff)
-            total_tooltip = lib.format.special_tooltip(item.proto.name, total_amount)
+            diff_number, amount_tooltip = lib.format.special_amount(item.proto.name, item.abs_diff)
+            _, total_tooltip = lib.format.special_amount(item.proto.name, total_amount)
         else
             diff_number, amount_tooltip, secondary_number = item_views.process_item(player, item.proto,
                 item.abs_diff, nil, ", ")

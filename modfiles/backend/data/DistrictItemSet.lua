@@ -25,7 +25,7 @@ function DistrictItemSet:index()
 end
 
 
----@param items SimpleItem[] | TLProduct[]
+---@param items SimpleItem[] | FactoryItem[]
 ---@param mode DistrictItemMode
 function DistrictItemSet:add_items(items, mode)
     for _, item in pairs(items) do
