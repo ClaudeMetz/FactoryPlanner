@@ -5,6 +5,7 @@ Date: 00. 00. 0000
   Changes:
   Bugfixes:
     - Fixed that amounts on buttons and their tooltips sometimes didn't agree (#908)
+    - Fixed a crash when the Simplex solver runs in certain situations (#909)
 
 ---------------------------------------------------------------------------------------------------
 Version: 2.1.17

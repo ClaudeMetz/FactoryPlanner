@@ -498,7 +498,7 @@ function SimplexTableau:_normalize(scalars)
         end
 
         -- Re-scale the row
-        scalars[i] = scalars[i]--[[@cast -nil]] / max
+        if scalars[i] then scalars[i] = scalars[i] / max end
         for j = 1, #self.matrix do
             self.matrix[j][i] = self.matrix[j][i]--[[@cast -nil]] / max
         end
