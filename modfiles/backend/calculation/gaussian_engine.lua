@@ -338,7 +338,7 @@ end
 local function to_reduced_row_echelon_form(m)
     ---@diagnostic disable: need-check-nil
     local num_rows = #m
-    if #m==0 then return m end
+    if num_rows == 0 then return end
     local num_cols = #m[1]
 
     local tolerance = MAGIC_NUMBERS.matrix_tolerance

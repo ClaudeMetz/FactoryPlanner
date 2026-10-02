@@ -460,9 +460,10 @@ function builders.byproducts(line, parent_flow, metadata)
         local proto = byproduct.proto
 
         local relevant_flow = nil
-        local style, priority_line = "fflib_slot_button_red", ""
+        local style = "fflib_slot_button_red"
+        local priority_line = ""  ---@type LocalisedString
         if line.class ~= "Floor" and get_priority_solver(line) == "sequential"
-                and line.recipe.priority_item == proto then
+                and line--[[@as Line]].recipe.priority_item == proto then
             style, priority_line = "fflib_slot_button_pink", {"fp.item_prioritized"}
         end
         local amount, number_tooltip, secondary_amount
