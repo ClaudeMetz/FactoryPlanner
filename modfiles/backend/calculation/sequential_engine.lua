@@ -68,13 +68,6 @@ local function solve_line(line_data, aggregate, is_relevant_line)
     local products = structures.map.list(line_data.products)
     local ingredients = structures.map.list(line_data.ingredients)
 
-    -- Split the recipe's products by whether this floor has a demand for them
-    local demanded_products, byproducts = {}, {}  ---@type SolverItem[], SolverItem[]
-    for _, product in pairs(products) do
-        local demanded = (aggregate.ingredients[structures.pack_item(product)] ~= nil)
-        table.insert((demanded) and demanded_products or byproducts, product)
-    end
-
     -- Determine machine count
     -- Line data assumes a machine amount of 1, so production_ratio == machine_amount
     local machine_amount = 0.0
