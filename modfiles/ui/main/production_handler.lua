@@ -225,11 +225,9 @@ local function handle_item_click(player, tags, action)
     local amount = item.amount * ((tags.flags.catalyst) and line--[[@as Line]].production_ratio or 1)
 
     if action == "prioritize" then  ---@cast line Line
-        local consuming = (line.recipe.production_type == "consume")
-
         local proto = item.proto
         -- Ingredients are kept under their base name, so the temperature needs adding back on
-        if consuming and proto.type == "fluid" then
+        if tags.flags.ingredient and proto.type == "fluid" then
             local item_name = line.recipe:get_name_with_temperature(proto)
             proto = prototyper.util.find("items", item_name, "fluid")  ---@as FPItemPrototype
         end
@@ -352,11 +350,9 @@ local function show_item_temperature(flags)
 end
 
 ---@param flags GUIActionFlags
----@return boolean?
+---@return boolean
 local function show_prioritize_item(flags)
-    if flags.entity or flags.catalyst or flags.subfloor then return false end
-    if flags.consuming then return flags.ingredient end
-    return flags.product
+    return not (flags.entity or flags.catalyst or flags.subfloor)
 end
 
 ---@param flags GUIActionFlags
@@ -393,7 +389,6 @@ end
 ---@return boolean
 ---@return LocalisedString? warning
 local function can_open_subfloor(flags)
-    if flags.consuming then return false, {"fp.subfloor_consuming_recipe"} end
     if flags.archived and not flags.subfloor then return false, {"fp.subfloor_archived_factory"} end
     return true
 end

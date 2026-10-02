@@ -211,70 +211,6 @@ function Floor:refresh_lines(player)
 end
 
 
----@param object LineObject
----@return boolean compatible
-function Floor:check_product_compatibility(object)
-    if self.level == 1 then return true end
-
-    local relevant_line = (object.class == "Floor") and object.first or object
-    local recipe = relevant_line.recipe  ---@cast recipe -nil
-    local producing = (recipe.production_type == "produce")
-
-    -- Use the recipe's net items, as the picker only offers recipes that actually net the
-    -- item in question, which the raw prototype items don't take into account
-    local relevant_items = producing and recipe.products or recipe.ingredients
-
-    ---@param type string
-    ---@param name string
-    ---@param base_name string?
-    ---@param temperature float?
-    ---@return boolean
-    local function relevant(type, name, base_name, temperature)
-        for _, item in pairs(relevant_items) do
-            local item_temperature = producing and item.temperature or recipe:get_temperature(item)
-            if item.type == type and (item.name == name or item.name == base_name or item.base_name == name)
-                    and item_temperature == temperature then
-                return true
-            end
-        end
-        return false
-    end
-
-    ---@param items SimpleItem[]
-    ---@return boolean
-    local function any_relevant(items)
-        for _, item in pairs(items) do
-            local proto = item.proto
-            if relevant(proto.type, proto.name, proto.base_name, proto.temperature) then
-                return true
-            end
-        end
-        return false
-    end
-
-    for line in self:iterator() do
-        if producing then
-            -- Check whether any line on this floor consumes something the pasted line produces
-            for _, ingredient in pairs(line.ingredients) do
-                local proto = ingredient.proto
-                -- Subfloors have no recipe to resolve a temperature with, so use the proto's directly
-                local temperature = proto.temperature
-                if line.recipe then temperature = line.recipe:get_temperature(proto) end
-                if relevant(proto.type, proto.name, nil, temperature) then return true end
-            end
-            local fuel = line.machine and line.machine.fuel
-            if fuel and relevant(fuel.proto.elem_type--[[@as string]], fuel.proto.name, nil, fuel.temperature) then
-                return true
-            end
-        else
-            -- Check whether any line on this floor produces something the pasted line consumes
-            if any_relevant(line.products) or any_relevant(line.byproducts) then return true end
-        end
-    end
-
-    return false
-end
-
 function Floor:reset_surface_compatibility()
     for line in self:iterator() do
         if line.class == "Floor" then  ---@cast line Floor
@@ -335,10 +271,6 @@ end
 ---@return string? error
 function Floor:paste(object)
     if object.class == "Line" or object.class == "Floor" then
-        if not self:check_product_compatibility(object--[[@as LineObject]]) then
-            return false, "recipe_irrelevant"  -- found no use for the recipe's products
-        end
-
         self:insert(object--[[@as LineObject]])
         return true, nil
     else
