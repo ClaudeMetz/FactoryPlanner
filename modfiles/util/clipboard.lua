@@ -79,8 +79,6 @@ function _clipboard.paste(player, target)
                 lib.cursor.create_flying_text(player, {"fp.clipboard_already_exists", target_lower})
             elseif error == "no_empty_slots" then
                 lib.cursor.create_flying_text(player, {"fp.clipboard_no_empty_slots"})
-            elseif error == "recipe_irrelevant" then
-                lib.cursor.create_flying_text(player, {"fp.clipboard_recipe_irrelevant"})
             elseif error == "temperature_not_set" then
                 lib.cursor.create_flying_text(player, {"fp.clipboard_temperature_not_set"})
             end

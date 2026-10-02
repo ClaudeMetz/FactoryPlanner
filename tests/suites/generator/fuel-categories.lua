@@ -63,7 +63,7 @@ return {
                     "Migration must preserve the independent default for " .. category)
             end
 
-            local line = context.classes.Line.init(find("recipes", "test-fuel-gear"), "produce")
+            local line = context.classes.Line.init(find("recipes", "test-fuel-gear"))
             local function change_machine(suffix)
                 line:change_machine_to_proto(player, helpers.find_machine("test-fuel-machine-" .. suffix))
                 return line.machine.fuel
