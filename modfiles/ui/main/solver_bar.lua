@@ -66,7 +66,7 @@ local function refresh_solver_bar(player)
         local num_needed_restricted_items = #floor.linear_dependence_data.linearly_dependent_free_items
         local num_items_to_remove = num_needed_restricted_items - num_needed_free_items
 
-        label_error.caption = {"fp.error_message", {"fp.info_label", {"fp.remove_unrestricted_items"}}}
+        label_error.caption = {"fp.error_message", {"fp.info_label", {"fp.remove_unrestricted_items", num_items_to_remove, {"fp.pl_item", num_items_to_remove}}}}
         label_error.tooltip = {"fp.remove_unrestricted_items_tt", num_items_to_remove, {"fp.pl_item", num_items_to_remove}}
         solver_frame.visible = true
 
@@ -76,7 +76,8 @@ local function refresh_solver_bar(player)
         local needs_choice = floor.linear_dependence_data and #floor.linear_dependence_data.allowed_free_items > 0 or false
 
         if needs_choice then
-            label_error.caption = {"fp.error_message", {"fp.info_label", {"fp.choose_unrestricted_items"}}}
+            label_error.caption = {"fp.error_message", {"fp.info_label", {"fp.choose_unrestricted_items",
+                num_needed_free_items, {"fp.pl_item", num_needed_free_items}}}}
             label_error.tooltip = {"fp.choose_unrestricted_items_tt", num_needed_free_items,
                 {"fp.pl_item", num_needed_free_items}}
         elseif not floor.solver_error then
