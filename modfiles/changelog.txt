@@ -4,6 +4,7 @@ Date: 00. 00. 0000
   Features:
   Changes:
   Bugfixes:
+    - Fixed a crash with a factory's first row being an unsolved subfloor (#913)
 
 ---------------------------------------------------------------------------------------------------
 Version: 2.1.18

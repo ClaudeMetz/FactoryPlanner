@@ -796,7 +796,9 @@ function solver.update(player, factory)
 
             if result then
                 result_map[floor_id] = result
-                generate_line_data_from_result(factory_data, floor_id, result)
+                if floor_data.level > 1 then  -- no need to do this for the top floor
+                    generate_line_data_from_result(factory_data, floor_id, result)
+                end
                 return result.cache_invalid
             end
         end
