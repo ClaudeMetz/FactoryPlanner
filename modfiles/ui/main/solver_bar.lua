@@ -1,4 +1,41 @@
+solver_bar = {}
+
+local ITEM_WEIGHT_LIMIT = 5
+
+---@param player LuaPlayer
+---@param proto FPItemPrototype
+function solver_bar.add_item_weight(player, proto)
+    local floor = lib.context.get(player, "Floor")  ---@as Floor
+    local weights = floor.simplex_item_weights
+
+    for _, entry in ipairs(weights) do
+        if entry.proto.type == proto.type and entry.proto.name == proto.name then return end
+    end
+    table.insert(weights, {proto=proto, weight=0})
+    lib.gui.run_refresh(player, "solver_bar")
+end
+
 -- ** LOCAL UTIL **
+---@param player LuaPlayer
+---@param tags Tags
+---@param action string
+local function change_item_weight(player, tags, action)
+    local floor = lib.context.get(player, "Floor")  ---@as Floor
+    local weights = floor.simplex_item_weights
+    local index = tags.item_index --[[@as integer]]
+    local entry = weights[index]
+    if not entry then return end
+
+    if action == "delete" then
+        table.remove(weights, index)
+    elseif action == "increase_weight" then
+        entry.weight = math.min(entry.weight + 1, ITEM_WEIGHT_LIMIT)
+    elseif action == "decrease_weight" then
+        entry.weight = math.max(entry.weight - 1, -ITEM_WEIGHT_LIMIT)
+    end
+    lib.gui.run_refresh(player, "solver_bar")
+end
+
 ---@param player LuaPlayer
 ---@param tags SwitchMatrixItemTags
 local function switch_matrix_item(player, tags, _)
@@ -27,6 +64,7 @@ local function refresh_solver_bar(player)
     if ui_state.main_elements.main_frame == nil then return end
     local solver_frame = ui_state.main_elements.solver_bar.frame
     local solver_flow = ui_state.main_elements.solver_bar.flow
+    ui_state.tooltips.solver_bar = {}
     solver_flow.clear()
     solver_frame.visible = false
 
@@ -34,14 +72,43 @@ local function refresh_solver_bar(player)
     if ui_state.districts_view or factory == nil or not factory.valid then return end
     local floor = lib.context.get(player, "Floor")  ---@as Floor
 
-    local label_error = solver_flow.add{type="label", style="fp_label_solver"}  ---@type LuaGuiElement
+    local label_error = solver_flow.add{type="label", style="fp_label_solver", visible=false}  ---@type LuaGuiElement
     if floor.solver_error and floor.solver_error ~= "free_items_unbalanced" then
         label_error.caption = {"fp.error_message", {"fp.info_label", {"fp.solver_error_" .. floor.solver_error}}}
         label_error.tooltip = {"fp.solver_error_" .. floor.solver_error .. "_tt"}
+        label_error.visible = true
         solver_frame.visible = true
     end
 
-    if factory.archived or floor.solver ~= "gaussian" or floor:count() == 0 then return end
+    if factory.archived then return end
+    if floor.solver == "simplex" then
+        local weights = floor.simplex_item_weights
+        if not next(weights) then return end
+
+        local label = solver_flow.add{type="label", caption={"fp.info_label", {"fp.modified_weights"}},
+            tooltip={"fp.modified_weights_tt"}, style="fp_label_solver"}
+        label.style.bottom_padding = 0
+        local flow = solver_flow.add{type="flow", direction="horizontal"}
+        for index, entry in ipairs(weights) do
+            local proto = entry.proto  ---@as FPItemPrototype
+            local caption = (entry.weight > 0 and "+" or "") .. entry.weight
+            local flags = {
+                increase_weight = (entry.weight < ITEM_WEIGHT_LIMIT),
+                decrease_weight = (entry.weight > -ITEM_WEIGHT_LIMIT)
+            }
+            local tags = {mod="fp", on_gui_click="change_item_weight", item_index=index,
+                on_gui_hover="set_tooltip", context="solver_bar", flags=flags}
+            local button = flow.add{type="sprite-button", sprite=proto.sprite, caption=caption,
+                style="fp_sprite-button_item_weight", mouse_button_filter={"left-and-right"},
+                raise_hover_events=true, tags=tags}
+            ui_state.tooltips.solver_bar[button.index] = {"fp.item_weight_tt", proto.localised_name, caption}
+        end
+        solver_frame.visible = true
+        return
+    end
+
+    if floor.solver ~= "gaussian" or floor:count() == 0 then return end
+    label_error.visible = true
 
     local free_items = floor.gaussian_free_items  ---@as FPItemPrototype[]
     local num_needed_free_items = floor.linear_dependence_data and floor.linear_dependence_data.num_needed_free_items or 0
@@ -124,8 +191,33 @@ end
 -- ** EVENTS **
 local listeners = {}  ---@type ListenerDefinitions
 
+---@param flags GUIActionFlags
+---@return boolean?
+---@return LocalisedString? warning
+local function can_increase_weight(flags)
+    if not flags.increase_weight then return false, {"fp.item_weight_limit", ITEM_WEIGHT_LIMIT} end
+    return true
+end
+
+---@param flags GUIActionFlags
+---@return boolean?
+---@return LocalisedString? warning
+local function can_decrease_weight(flags)
+    if not flags.decrease_weight then return false, {"fp.item_weight_limit", ITEM_WEIGHT_LIMIT} end
+    return true
+end
+
 listeners.gui = {
     on_gui_click = {
+        {
+            name = "change_item_weight",
+            actions_table = {
+                increase_weight = {shortcut="left", core=true, enable=can_increase_weight},
+                decrease_weight = {shortcut="shift-left", core=true, enable=can_decrease_weight},
+                delete = {input="delete", core=true}
+            },
+            handler = change_item_weight
+        },
         {
             name = "switch_matrix_item",
             handler = switch_matrix_item

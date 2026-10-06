@@ -254,6 +254,14 @@ local function handle_item_click(player, tags, action)
             add_after_line_id=add_after_line_id, production_type=production_type,
             category_id=proto.category_id, product_id=proto.id}})
 
+    elseif action == "adjust_weight" then
+        local proto = item.proto
+        if proto.type == "fluid" and tags.item_category == "ingredient" and line.class == "Line" then
+            local name = line--[[@as Line]].recipe:get_name_with_temperature(proto)
+            proto = prototyper.util.find("items", name, "fluid")
+        end
+        solver_bar.add_item_weight(player, proto)
+
     elseif action == "edit_temperature" then  ---@cast line Line
         lib.gui.open_dialog(player, {dialog="item", modal_data={recipe_id=line.recipe.id,
             category_id=item.proto.category_id, name=item.proto.name}})
@@ -301,6 +309,10 @@ local function handle_fuel_click(player, tags, action)
         lib.gui.open_dialog(player, {dialog="recipe", modal_data={fuel_id=fuel.id,
             add_after_line_id=add_after_line_id, production_type="produce",
             category_id=proto.category_id, product_id=proto.id}})
+
+    elseif action == "adjust_weight" then
+        local proto = prototyper.util.find("items", fuel:get_name_with_temperature(), fuel.proto.type)
+        solver_bar.add_item_weight(player, proto--[[@as FPItemPrototype]])
 
     elseif action == "edit_temperature" then
         lib.gui.open_dialog(player, {dialog="item", modal_data={fuel_id=fuel.id,
@@ -352,7 +364,7 @@ end
 ---@param flags GUIActionFlags
 ---@return boolean
 local function show_prioritize_item(flags)
-    return not (flags.entity or flags.catalyst or flags.subfloor)
+    return not (not flags.sequential or flags.entity or flags.catalyst or flags.subfloor)
 end
 
 ---@param flags GUIActionFlags
@@ -390,15 +402,6 @@ end
 ---@return LocalisedString? warning
 local function can_open_subfloor(flags)
     if flags.archived and not flags.subfloor then return false, {"fp.subfloor_archived_factory"} end
-    return true
-end
-
----@param flags GUIActionFlags
----@return boolean
----@return LocalisedString? warning
-local function can_prioritize(flags)
-    if flags.archived then return false, {"fp.factory_archived_edit"} end
-    if not flags.sequential then return false, {"fp.prioritize_requires_sequential"} end
     return true
 end
 
@@ -482,8 +485,9 @@ listeners.gui = {
             actions_table = {
                 add_recipe_to_end = {shortcut="left", core=true, show=show_add_item_recipe, enable=lib.actions.can_add_recipe},
                 add_recipe_below = {show=show_add_item_recipe, enable=lib.actions.can_add_recipe},
+                adjust_weight = {show=lib.actions.show_adjust_weight, enable=lib.actions.can_adjust_weight},
                 edit_temperature = {shortcut="control-left", core=true, show=show_item_temperature, enable=lib.actions.can_edit_temperature},
-                prioritize = {shortcut="control-right", show=show_prioritize_item, enable=can_prioritize},
+                prioritize = {show=show_prioritize_item, enable=lib.actions.can_edit_factory},
                 copy = {shortcut="shift-right"},
                 paste = {shortcut="shift-left", show=show_item_temperature, enable=lib.actions.can_edit_temperature},
                 pipette = {input="pipette", enable=lib.actions.can_pipette},
@@ -499,6 +503,7 @@ listeners.gui = {
                 add_recipe_below = {enable=lib.actions.can_add_recipe},
                 edit_temperature = {shortcut="control-left", core=true, show=is_fluid, enable=lib.actions.can_edit_temperature},
                 edit_fuel = {enable=lib.actions.can_edit_factory},
+                adjust_weight = {show=lib.actions.show_adjust_weight, enable=lib.actions.can_adjust_weight},
                 copy = {shortcut="shift-right"},
                 paste = {shortcut="shift-left", enable=lib.actions.can_edit_factory},
                 pipette = {input="pipette", enable=lib.actions.can_pipette},

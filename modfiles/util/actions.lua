@@ -25,6 +25,13 @@ function _actions.is_enabled(action, flags)
 end
 
 
+---@param flags GUIActionFlags
+---@return boolean?
+function _actions.show_adjust_weight(flags)
+    return flags.simplex
+end
+
+
 -- Shared availability checks; cursor and factoriopedia flags describe whether the action has a target.
 ---@param flags GUIActionFlags
 ---@return boolean
@@ -32,6 +39,14 @@ end
 function _actions.can_edit_factory(flags)
     if flags.archived then return false, {"fp.factory_archived_edit"} end
     return true
+end
+
+---@param flags GUIActionFlags
+---@return boolean
+---@return LocalisedString? warning
+function _actions.can_adjust_weight(flags)
+    if flags.folded_out_subfloor then return false, {"fp.item_weight_folded_out_subfloor"} end
+    return _actions.can_edit_factory(flags)
 end
 
 ---@param flags GUIActionFlags
