@@ -1564,7 +1564,8 @@ function generator.pumps.generate()
         {filter="hidden", invert=true, mode="and"}}
     for _, proto in pairs(prototypes.get_entity_filtered(pump_filter)) do
         local sprite = generator.util.determine_entity_sprite(proto)
-        if sprite ~= nil then
+        local pumping_speed = generator.util.get_base_value(proto.get_pumping_speed())--[[@cast -nil]] * 60
+        if sprite ~= nil and pumping_speed > 0 then
             ---@diagnostic disable-next-line: missing-fields
             local pump = {
                 name = proto.name,
@@ -1572,7 +1573,7 @@ function generator.pumps.generate()
                 sprite = sprite,
                 elem_type = "entity",
                 rich_text = "[entity=" .. proto.name .. "]",
-                pumping_speed = generator.util.get_base_value(proto.get_pumping_speed())--[[@cast -nil]] * 60
+                pumping_speed = pumping_speed
                 -- pumping_speed is unused as the mod uses get_pumping_speed(quality)
             }  ---@type FPPumpPrototype
             insert_prototype(pumps, pump, nil)
