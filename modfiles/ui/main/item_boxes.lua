@@ -79,6 +79,7 @@ local function refresh_item_box(player, factory, item_category, tooltips)
                 special = special,
                 cursor = (product.proto.type ~= "entity"),
                 archived = factory.archived,
+                simplex = (floor.solver == "simplex"),
                 ingredient_only = product.proto.ingredient_only,
                 move_left = (product.previous ~= nil),
                 move_right = (product.next ~= nil),
@@ -144,6 +145,7 @@ local function refresh_item_box(player, factory, item_category, tooltips)
                 special = special,
                 cursor = (item.proto.type ~= "entity"),
                 archived = factory.archived,
+                simplex = (floor.solver == "simplex"),
                 ingredient_only = item.proto.ingredient_only,
                 byproduct = (item_category == "byproduct"),
                 factoriopedia = (lib.get_factoriopedia_proto(item.proto) ~= nil)
@@ -226,6 +228,9 @@ local function handle_item_button_click(player, tags, action)
         local production_type = (tags.item_category == "byproduct") and "consume" or "produce"
         lib.gui.open_dialog(player, {dialog="recipe", modal_data={production_type=production_type,
             category_id=item.proto.category_id, product_id=item.proto.id}})
+
+    elseif action == "adjust_weight" then
+        solver_bar.add_item_weight(player, item.proto--[[@as FPItemPrototype]])
 
     elseif action == "edit" then
         lib.gui.open_dialog(player, {dialog="picker",
@@ -391,6 +396,7 @@ listeners.gui = {
                 add_recipe = {shortcut="left", core=true, show=show_add_recipe, enable=lib.actions.can_add_recipe},
                 edit = {shortcut="control-left", core=true, show=is_top_level_product, enable=lib.actions.can_edit_factory},
                 delete = {input="delete", show=is_top_level_product, enable=lib.actions.can_edit_factory},
+                adjust_weight = {show=lib.actions.show_adjust_weight, enable=lib.actions.can_adjust_weight},
                 move_left = {show=is_top_level_product, enable=can_move_left},
                 move_right = {show=is_top_level_product, enable=can_move_right},
                 copy = {shortcut="shift-right"},
