@@ -5,6 +5,9 @@ local _format = {}
 ---@param precision integer
 ---@return string formatted_number
 function _format.number(number, precision)
+    -- Guard against non-finite values, which would otherwise format to strings like "nan" or "inf".
+    -- Those are not accepted by Factorio when used as a number (eg. on item buttons), and crash the game.
+    if number ~= number or number == math.huge or number == -math.huge then return "0" end
     if number == 0 then return "0" end
     if number < 10 ^ -precision then
         return "≤" .. ("%." .. precision .. "g"):format(10 ^ -precision)
