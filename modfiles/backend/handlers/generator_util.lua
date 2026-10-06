@@ -420,7 +420,7 @@ function _util.get_boiler_conversions(proto)
 
         if separate_pipe then
             output_proto = (output ~= nil and output.filter) or fluid_proto
-            goal_temperature = proto.target_temperature--[[@as double]]
+            goal_temperature = math.min(proto.target_temperature--[[@as double]], output_proto.max_temperature)
         else
             goal_temperature = math.min(fluid_proto.max_temperature, input.maximum_temperature or math.huge)
         end
