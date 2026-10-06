@@ -3,6 +3,8 @@ Version: 0.00.00
 Date: 00. 00. 0000
   Features:
   Changes:
+    - Recipes are no longer categorized as producing or consuming, as the sequential solver now determines their role dynamically (#911) (Thanks vapopescu!)
+    - Pasting no longer guards against irrelevant recipes
   Bugfixes:
     - Fixed a crash with a factory's first row being an unsolved subfloor (#913)
 

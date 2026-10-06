@@ -223,7 +223,7 @@ function _util.get_base_module_limit(proto)
     elseif proto.type == "beacon" then
         return limit - normal_quality.beacon_module_slots_bonus
     else  -- crafting machines
-        return limit - proto.module_slots_quality_bonus.normal
+        return limit - proto.module_slots_quality_bonus--[[@cast -nil]].normal
     end
 end
 
