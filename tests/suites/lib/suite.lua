@@ -1,6 +1,6 @@
 ---@diagnostic disable
 
--- Tests for lib utilities: formatters and clipboard operations.
+-- Tests for lib utilities: expressions, formatters and clipboard operations.
 
 local formatters = require("suite.formatters")
 local clipboard = require("suite.clipboard")
@@ -9,6 +9,7 @@ local factory_items = require("suite.factory-items")
 return {{
     name = "normal",
     cases = {
+        testLibExpressions = require("suite.expressions"),
         testFactoryItemDefinitions = factory_items.definitions,
         testFactoryItemPicker = factory_items.picker,
         testLibFormatNumber = formatters.number,
