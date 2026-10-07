@@ -33,7 +33,9 @@ local function change_item_weight(player, tags, action)
     elseif action == "decrease_weight" then
         entry.weight = math.max(entry.weight - 1, -ITEM_WEIGHT_LIMIT)
     end
-    lib.gui.run_refresh(player, "solver_bar")
+
+    solver.update(player)
+    lib.gui.run_refresh(player, "production")
 end
 
 ---@param player LuaPlayer
