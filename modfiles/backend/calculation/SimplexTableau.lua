@@ -483,6 +483,7 @@ function SimplexTableau:solve(floor_id, basis_cache)
         end
     end
 
+    structures.map.reduce_items(result.products, result.ingredients, true)
     return result
 end
 

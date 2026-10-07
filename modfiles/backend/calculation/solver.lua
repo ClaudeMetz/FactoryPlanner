@@ -354,6 +354,7 @@ end
 ---@field line_ids ObjectID[]
 ---@field gaussian_free_items FPItemPrototype[]
 ---@field simplex_basis SimplexBasisCache?
+---@field simplex_item_weights SolverMap
 
 ---@alias FloorDataMap table<ObjectID, FloorData>
 ---@alias LineDataMap table<ObjectID, LineData>
@@ -374,11 +375,17 @@ local function generate_floor_data(player, factory, floor, machine_requirements)
         products = floor.level == 1 and factory_products(factory) or {},
         line_ids = {},
         gaussian_free_items = free_items,
-        simplex_basis = floor.simplex_basis_cache
+        simplex_basis = floor.simplex_basis_cache,
+        simplex_item_weights = {},
     }  ---@type FloorData
 
     local floor_data_map = {}  ---@type FloorDataMap
     local line_data_map = {}  ---@type LineDataMap
+
+    for _, item_weight in ipairs(floor.simplex_item_weights) do
+        ---@cast item_weight.proto FPItemPrototype
+        floor_data.simplex_item_weights[structures.pack_item(item_weight.proto)] = item_weight.weight
+    end
 
     for line in floor:iterator() do
         if line.class == "Floor" then  ---@cast line Floor
