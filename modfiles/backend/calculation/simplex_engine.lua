@@ -21,19 +21,8 @@ local objective_vector = {
     machine_limit = 0,
     fluid_modifier = 0.01,
     energy_modifier = 1e-9,
+    weight_modifier = 0.01,
 }
-
-
----@param key SolverItemKey
----@return number
-local function item_cost(key)
-    local item = structures.unpack_item(key)
-    if item.type == "fluid" then return objective_vector.fluid_modifier end
-    if item.type == "entity" and lib.is_special_power_item(item.name) then
-        return objective_vector.energy_modifier
-    end
-    return 1
-end
 
 ---@param factory_data FactoryData
 ---@param floor_id ObjectID
@@ -44,6 +33,22 @@ function simplex_engine.solve_floor(factory_data, floor_id)
     local ingredients = {}  ---@type SolverSet
     local cycled_intermediates = {}  ---@type SolverSet
     local floor_data = factory_data.floor_data_map[floor_id]
+
+    ---@param key SolverItemKey
+    ---@return number
+    local function item_cost(key)
+        local item = structures.unpack_item(key)
+        local cost = 1.0 * objective_vector.weight_modifier ^ (floor_data.simplex_item_weights[key] or 0)
+
+        if item.type == "fluid" then
+            cost = cost * objective_vector.fluid_modifier
+        end
+        if item.type == "entity" and lib.is_special_power_item(item.name) then
+            cost = cost * objective_vector.energy_modifier
+        end
+
+        return cost
+    end
 
     -- Consider only lines on this floor
     for _, line_object_id in ipairs(floor_data.line_ids) do
