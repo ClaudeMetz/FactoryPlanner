@@ -134,6 +134,11 @@ run_configuration() {
 }
 EOF
 
+  # Expansion suites may supply their own pinned mod set.
+  if [ -f "$suite_dir/mod-list.json" ]; then
+    cp "$suite_dir/mod-list.json" "$mods/mod-list.json"
+  fi
+
   local exit_code=0
   "$RUN" --mod-directory "$mods" --benchmark "$SAVE" --benchmark-ticks 1 > "$logfile" 2>&1 || exit_code=$?
 
