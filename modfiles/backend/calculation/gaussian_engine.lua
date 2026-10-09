@@ -218,8 +218,14 @@ local function get_matrix(factory_data, floor_id, rows, columns, machine_limits)
             local item_key = structures.pack_item(product)
             local row_num = rows.map[pack_item_key(item_key)]  -- will be nil for unproduced outputs
             if row_num ~= nil then
-                local amount = product.amount
-                matrix[row_num]--[[@cast -nil]][#columns.values+1] = amount
+                matrix[row_num]--[[@cast -nil]][#columns.values+1] = product.amount
+            end
+        end
+        for _, ingredient in ipairs(factory_data.ingredients) do
+            local item_key = structures.pack_item(ingredient)
+            local row_num = rows.map[pack_item_key(item_key)]  -- will be nil for unused ingredients
+            if row_num ~= nil then
+                matrix[row_num]--[[@cast -nil]][#columns.values+1] = -ingredient.amount
             end
         end
     end
