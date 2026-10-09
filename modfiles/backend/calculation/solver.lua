@@ -14,22 +14,25 @@ solver = {
 
 -- ** LOCAL UTIL **
 ---@param factory Factory
----@return SolverItem[]
-local function factory_products(factory)
+---@return SolverItem[] products
+---@return SolverItem[] ingredients
+local function get_factory_items(factory)
     local products = {}  ---@type SolverItem[]
-    for product in factory:iterator() do
-        ---@cast product.proto.type -nil
-        local amount = product:get_defined_amount()
+    local ingredients = {}  ---@type SolverItem[]
+    for factory_item in factory:iterator() do
+        ---@cast factory_item.proto.type -nil
+        local amount = factory_item:get_defined_amount()
         if amount ~= nil then  -- skip machine-defined products
             local item = {
-                name = product.proto.name,
-                type = product.proto.type,
+                name = factory_item.proto.name,
+                type = factory_item.proto.type,
                 amount = amount
             }  ---@type SolverItem
+            --TODO (therenas/vladp): handle getting factory ingredients from the backend
             table.insert(products, item)
         end
     end
-    return products
+    return products, {}
 end
 
 ---@param recipe Recipe
@@ -350,7 +353,6 @@ end
 ---@field id ObjectID
 ---@field level integer
 ---@field solver_choice SolverName
----@field products SolverItem[]
 ---@field line_ids ObjectID[]
 ---@field gaussian_free_items FPItemPrototype[]
 ---@field simplex_basis SimplexBasisCache?
@@ -371,7 +373,6 @@ local function generate_floor_data(player, factory, floor, machine_requirements)
         id = floor.id,
         level = floor.level,
         solver_choice = floor.solver,
-        products = floor.level == 1 and factory_products(factory) or {},
         line_ids = {},
         gaussian_free_items = free_items,
         simplex_basis = floor.simplex_basis_cache
@@ -406,6 +407,8 @@ end
 ---@class FactoryData
 ---@field player_index uint32
 ---@field factory_id ObjectID
+---@field products SolverItem[]
+---@field ingredients SolverItem[]
 ---@field floor_data_map FloorDataMap
 ---@field line_data_map LineDataMap
 
@@ -418,13 +421,16 @@ local function generate_factory_data(player, factory)
     local floor_data_map, line_data_map =
         generate_floor_data(player, factory, factory.top_floor, machine_requirements)
 
+    local products, ingredients = get_factory_items(factory)
+
     local factory_data = {
         player_index = player.index,
         factory_id = factory.id,
-        top_floor_id = factory.top_floor.id,
+        products = products,
+        ingredients = ingredients,
         floor_data_map = floor_data_map,
         line_data_map = line_data_map,
-    }
+    }  ---@type FactoryData
 
     return factory_data
 end

@@ -147,7 +147,7 @@ function sequential_engine.solve_floor(factory_data, floor_id)
 
     -- Add products to the floor ingredients to simulate demand from outside the factory
     if floor_data.level == 1 then
-        for _, product in pairs(floor_data.products) do
+        for _, product in pairs(factory_data.products) do
             structures.map.add(aggregate.ingredients, product)
         end
     end
@@ -164,7 +164,7 @@ function sequential_engine.solve_floor(factory_data, floor_id)
 
     -- Remove simulated product demand
     if floor_data.level == 1 then
-        for _, product in pairs(floor_data.products) do
+        for _, product in pairs(factory_data.products) do
             local ingredient_amount = aggregate.ingredients[structures.pack_item(product)] or 0  ---@type number
             if ingredient_amount < product.amount then
                 local produced_amount = product.amount - ingredient_amount

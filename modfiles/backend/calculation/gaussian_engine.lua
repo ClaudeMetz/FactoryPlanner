@@ -70,9 +70,11 @@ end
 local function get_metadata(factory_data, floor_id, free_items)
     local desired_outputs = {}
     local floor_data = factory_data.floor_data_map[floor_id]
-    for _, product in pairs(floor_data.products) do
-        local item_key = structures.pack_item(product)
-        desired_outputs[item_key] = true
+    if floor_data.level == 1 then
+        for _, product in pairs(factory_data.products) do
+            local item_key = structures.pack_item(product)
+            desired_outputs[item_key] = true
+        end
     end
 
     local line_inputs = {}
@@ -212,8 +214,8 @@ local function get_matrix(factory_data, floor_id, rows, columns, machine_limits)
     -- final column for desired output. Don't have to explicitly set constrained vars to zero
     -- since matrix is initialized with zeros.
     local floor_data = factory_data.floor_data_map[floor_id]
-    for _, product in ipairs(floor_data.products) do
-        if floor_data.level == 1 then
+    if floor_data.level == 1 then
+        for _, product in ipairs(factory_data.products) do
             local item_key = structures.pack_item(product)
             local row_num = rows.map[pack_item_key(item_key)]  -- will be nil for unproduced outputs
             if row_num ~= nil then
