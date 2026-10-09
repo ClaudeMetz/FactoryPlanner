@@ -145,10 +145,13 @@ function sequential_engine.solve_floor(factory_data, floor_id)
     local floor_data = factory_data.floor_data_map[floor_id]
     local line_results = {}  ---@type LineResultMap
 
-    -- Add products to the floor ingredients to simulate demand from outside the factory
+    -- Add factory products/ingredients to the floor to simulate demand/supply from outside the factory
     if floor_data.level == 1 then
-        for _, product in pairs(floor_data.products) do
+        for _, product in pairs(factory_data.products) do
             structures.map.add(aggregate.ingredients, product)
+        end
+        for _, ingredient in pairs(factory_data.ingredients) do
+            structures.map.add(aggregate.products, ingredient)
         end
     end
 
@@ -162,19 +165,18 @@ function sequential_engine.solve_floor(factory_data, floor_id)
         end
     end
 
-    -- Remove simulated product demand
+    -- Remove simulated demand/supply
     if floor_data.level == 1 then
-        for _, product in pairs(floor_data.products) do
-            local ingredient_amount = aggregate.ingredients[structures.pack_item(product)] or 0  ---@type number
-            if ingredient_amount < product.amount then
-                local produced_amount = product.amount - ingredient_amount
-                structures.map.subtract(aggregate.ingredients, product, ingredient_amount)
-                structures.map.add(aggregate.products, product, produced_amount)
-            else
-                structures.map.subtract(aggregate.ingredients, product)
-            end
+        for _, product in pairs(factory_data.products) do
+            structures.map.subtract(aggregate.ingredients, product)
+        end
+        for _, ingredient in pairs(factory_data.ingredients) do
+            structures.map.subtract(aggregate.products, ingredient)
         end
     end
+
+    -- Re-balance products and ingredients after tampering with simulated quantities
+    structures.map.reduce_items(aggregate.products, aggregate.ingredients, true)
 
     return {
         status = "solved",

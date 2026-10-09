@@ -107,7 +107,7 @@ function simplex_engine.solve_floor(factory_data, floor_id)
 
     if floor_data.level == 1 then
         -- Add additional variable and constraint to target products, so we get a bounded solution
-        for _, item in pairs(floor_data.products) do  ---@cast item SolverItem
+        for _, item in pairs(factory_data.products) do  ---@cast item SolverItem
             local item_key = structures.pack_item(item)
             if products[item_key] then
                 local objective = item_cost(item_key) * objective_vector.target_product
@@ -117,8 +117,7 @@ function simplex_engine.solve_floor(factory_data, floor_id)
         end
 
         -- Add additional variable and constraint for limited ingredients
-        -- TODO: implement limited ingredients
-        for _, item in pairs({}) do  ---@cast item SolverItem
+        for _, item in pairs(factory_data.ingredients) do  ---@cast item SolverItem
             local item_key = structures.pack_item(item)
             if ingredients[item_key] then
                 local objective = item_cost(item_key) * objective_vector.limited_ingredient
