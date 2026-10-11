@@ -289,7 +289,12 @@ local function build_factory_list(player)
     frame_vertical.style.height = (row_count * MAGIC_NUMBERS.list_element_height) +
         MAGIC_NUMBERS.subheader_height
 
-    local subheader = frame_vertical.add{type="frame", direction="horizontal", style="subheader_frame"}
+    local toolbar = frame_vertical.add{type="frame", direction="vertical", style="subheader_frame"}
+    toolbar.style.maximal_height = MAGIC_NUMBERS.subheader_height + MAGIC_NUMBERS.list_element_height
+    local toolbar_flow = toolbar.add{type="flow", direction="vertical", style="packed_vertical_flow"}
+    local subheader = toolbar_flow.add{type="flow", direction="horizontal"}
+    subheader.style.vertical_align = "center"
+    subheader.style.horizontally_stretchable = true
 
     local button_toggle_archive = subheader.add{type="sprite-button", tags={mod="fp", on_gui_click="toggle_archive"},
         sprite="fp_archive", mouse_button_filter={"left"}}
@@ -335,22 +340,24 @@ local function build_factory_list(player)
     main_elements.factory_list["search_button"] = button_search
 
 
-    local flow_search = frame_vertical.add{type="flow", direction="horizontal", visible=false}
+    local flow_search = toolbar_flow.add{type="flow", direction="horizontal", visible=false}
     flow_search.style.height = MAGIC_NUMBERS.list_element_height
-    flow_search.style.padding = {0, 12}
     flow_search.style.vertical_align = "center"
+    flow_search.style.horizontally_stretchable = true
     main_elements.factory_list["search_flow"] = flow_search
 
-    flow_search.add{type="label", caption={"fp.search"}}
-    flow_search.add{type="empty-widget", style="fflib_horizontal_pusher"}
+    local label_search = flow_search.add{type="label", caption={"fp.search"}}
+    label_search.style.padding = {0, 4}
     local textfield_search = flow_search.add{type="textfield", style="search_popup_textfield",
         tags={mod="fp", on_gui_text_changed="factory_searchfield"}}
-    textfield_search.style.size = {220, 24}
+    textfield_search.style.size = {0, 24}
+    textfield_search.style.horizontally_stretchable = true
     main_elements.factory_list["search_textfield"] = textfield_search
 
 
     -- This is not really a list-box, but it imitates one and allows additional features
     local listbox_factories = frame_vertical.add{type="scroll-pane", style="list_box_under_subheader_scroll_pane"}
+    listbox_factories.style.top_margin = -4  -- overlap the toolbar's bottom border with the list's inset edge
     listbox_factories.style.vertically_stretchable = true
     listbox_factories.style.horizontally_stretchable = true
     listbox_factories.horizontal_scroll_policy = "never"
