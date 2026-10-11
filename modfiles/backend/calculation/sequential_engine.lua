@@ -90,6 +90,14 @@ local function solve_line(line_data, aggregate, is_relevant_line)
         end
     end
 
+    -- Exit early
+    if machine_amount == 0 then
+        return {
+            id = line_data.id,
+            machine_amount = machine_amount
+        }  ---@type LineResult
+    end
+
     -- Determine products/byproducts
     for _, product in ipairs(products) do
         -- Satisfy ingredient demand
@@ -122,7 +130,7 @@ local function solve_line(line_data, aggregate, is_relevant_line)
     return {
         id = line_data.id,
         machine_amount = machine_amount
-    }
+    }  ---@type LineResult
 end
 
 
