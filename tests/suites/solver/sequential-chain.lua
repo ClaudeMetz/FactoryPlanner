@@ -24,7 +24,7 @@ local function build_factory(classes, player, recipe_names)
     district:insert(factory)
 
     for _, recipe_name in ipairs(recipe_names) do
-        local line = classes.Line.init(prototyper.util.find("recipes", recipe_name), "produce")
+        local line = classes.Line.init(prototyper.util.find("recipes", recipe_name))
         factory.top_floor:insert(line)
         line.machine = classes.Machine.init(line,
             prototyper.util.find("machines", "test-solver-machine", "test-solver"))
@@ -151,13 +151,13 @@ return {
 
         -- Request a coproduct so a consuming gear line can use the 10 plates/s surplus
         local coproduct_line = context.classes.Line.init(
-            prototyper.util.find("recipes", "test-solver-plate-with-slag"), "produce")
+            prototyper.util.find("recipes", "test-solver-plate-with-slag"))
         top:replace(plate_line, coproduct_line)
         coproduct_line:change_machine_to_proto(player,
             prototyper.util.find("machines", "test-solver-machine", "test-solver"))
         add_product(context.classes, factory, "test-solver-slag", 20)
         local consumer = context.classes.Line.init(
-            prototyper.util.find("recipes", "test-solver-gear"), "consume")
+            prototyper.util.find("recipes", "test-solver-gear"))
         top:insert(consumer)
         consumer:change_machine_to_proto(player,
             prototyper.util.find("machines", "test-solver-machine", "test-solver"))
@@ -168,6 +168,45 @@ return {
             "top floor: requested products include the 5 extra gears/s in their total output")
         c.check(item_amount(top.byproducts, "test-solver-plate") == nil,
             "top floor: consuming line must leave no surplus plates")
+
+        -- Surplus-driven recipes can define subfloors, including nested ones
+        local player_table = lib.globals.player_table(player)
+        player_table.realm:insert(factory.parent)
+        lib.context.set(player, factory)
+        main_dialog.rebuild(player, false)
+        local function find_recipe_button(parent)
+            for _, child in pairs(parent.children) do
+                if child.tags.on_gui_click == "act_on_line_recipe" and child.tags.line_id == consumer.id then
+                    return child
+                end
+                local found = find_recipe_button(child)
+                if found then return found end
+            end
+        end
+        local ui = lib.globals.ui_state(player)
+        local button = find_recipe_button(ui.main_elements.main_frame)
+        c.check(button and button.style.name == "fflib_slot_button_default",
+            "surplus-driven recipes must use the ordinary recipe button")
+        ui.last_action = nil
+        script.get_event_handler(defines.events.on_gui_click){
+            name=defines.events.on_gui_click, tick=game.tick, player_index=player.index,
+            element=button, button=defines.mouse_button_type.left, control=false, alt=false, shift=false
+        }
+        local consumer_floor = consumer.parent
+        c.check(consumer_floor ~= top and consumer_floor.first == consumer,
+            "clicking a surplus-driven recipe must create its subfloor")
+        c.check(helpers.approx(consumer.machine.amount, 5) and helpers.approx(product.amount, 10),
+            "consumer subfloor: expected parent surplus to pace 5 gear machines")
+        consumer.recipe.priority_item = prototyper.util.find("items", "test-solver-plate", "item")
+        local outer_floor = context.classes.Floor.init(2, top.solver)
+        top:replace(coproduct_line, outer_floor)
+        top:remove(consumer_floor)
+        outer_floor:insert(coproduct_line)
+        outer_floor:insert(consumer_floor)
+        consumer_floor.level = 3
+        solver.update(player, factory)
+        c.check(helpers.approx(consumer.machine.amount, 10) and helpers.approx(product.amount, 15),
+            "nested consumer subfloor: ingredient priority must consume all 20 locally produced plates/s")
 
         -- A machine definition drives production even without an output amount target
         factory = build_factory(context.classes, player, {"test-solver-gear", "test-solver-plate"})
@@ -214,7 +253,7 @@ return {
 
         -- A consuming line also obeys its fixed count, even if it must import ingredients
         top:move(plate_line, gear_line, "previous")
-        gear_line.recipe.production_type = "consume"
+        gear_line.recipe.priority_item = prototyper.util.find("items", "test-solver-plate", "item")
         product.definition = {type="machines", machine_count=3.5}
         plates.definition.machine_count = 2
         solver.update(player, factory)
@@ -262,6 +301,7 @@ return {
         top:remove(internal)
         subfloor:insert(plate_line)
         subfloor:insert(internal)
+        internal.recipe.priority_item = prototyper.util.find("items", "test-solver-gear", "item")
         solver.update(player, factory)
         c.check(helpers.approx(plate_line.machine.amount, 8) and helpers.approx(product.amount, 5)
             and helpers.approx(plates.amount, 6), "mixed subfloor: expected 5 gears/s and 6 net plates/s")
@@ -271,7 +311,7 @@ return {
 
         -- Subfloors solve independently: the consumer uses all locally available plates,
         -- including those needed by the parent, which imports its 10 plates/s separately.
-        internal.recipe.production_type = "consume"
+        internal.recipe.priority_item = nil
         solver.update(player, factory)
         c.check(helpers.approx(internal.machine.amount, 8) and plates.amount == 0
             and helpers.approx(product.amount, 13),

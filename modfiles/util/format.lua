@@ -31,7 +31,7 @@ local units = {
 
 -- Returns string representing the given power
 ---@param value number
----@param unit string
+---@param unit "W" | "E/m"
 ---@param precision integer
 ---@return LocalisedString formatted_number
 ---@return number display_value

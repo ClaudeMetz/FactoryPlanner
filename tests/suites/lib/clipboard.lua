@@ -19,7 +19,7 @@ local function fixture(context)
 end
 
 local function add_line(classes, player, floor, recipe_name)
-    local line = classes.Line.init(prototyper.util.find("recipes", recipe_name or "iron-gear-wheel"), "produce")
+    local line = classes.Line.init(prototyper.util.find("recipes", recipe_name or "iron-gear-wheel"))
     floor:insert(line)
     line:change_machine_to_proto(player, helpers.find_machine("assembling-machine-2"))
     return line
@@ -141,7 +141,7 @@ return {
         local coal = classes.FactoryItem.init(prototyper.util.find("items", "coal", "item"))
         factory:insert(coal)
         lib.clipboard.copy(player, coal)
-        local smelting = classes.Line.init(prototyper.util.find("recipes", "iron-plate"), "produce")
+        local smelting = classes.Line.init(prototyper.util.find("recipes", "iron-plate"))
         factory.top_floor:insert(smelting)
         smelting:change_machine_to_proto(player, helpers.find_machine("stone-furnace"))
         assert(lib.clipboard.paste(player, smelting.machine.fuel))
@@ -152,7 +152,7 @@ return {
         assert(steam.proto.temperature == 165)
         factory:insert(steam)
         lib.clipboard.copy(player, steam)
-        local liquefaction = classes.Line.init(prototyper.util.find("recipes", "coal-liquefaction"), "produce")
+        local liquefaction = classes.Line.init(prototyper.util.find("recipes", "coal-liquefaction"))
         factory.top_floor:insert(liquefaction)
         liquefaction:change_machine_to_proto(player, helpers.find_machine("oil-refinery"))
         local target = SimpleItem.init(liquefaction, prototyper.util.find("items", "steam", "fluid"))
@@ -164,16 +164,19 @@ return {
 
     paste_onto_recipe = {check=function(context)
         local classes, player, factory = fixture(context)
-        local source = add_line(classes, player, factory.top_floor)
-        source.comment = "Pasted gear recipe"
+        local source = add_line(classes, player, factory.top_floor, "copper-cable")
+        source.comment = "Pasted unrelated recipe"
         local target = add_line(classes, player, factory.top_floor, "transport-belt")
         solver.update(player, factory)
         click(player, "act_on_line_recipe", {line_id=source.id}, nil, "copy")
         click(player, "act_on_line_recipe", {line_id=target.id}, nil, "paste")
         local floor = target.parent
         assert(floor.class == "Floor" and floor.parent == factory.top_floor and floor.first == target)
-        assert(floor:count() == 2 and floor.first.next.comment == "Pasted gear recipe")
+        assert(floor:count() == 2 and floor.first.next.comment == "Pasted unrelated recipe")
         assert(source.parent == factory.top_floor, "Paste must not move the copied source")
+        lib.clipboard.dummy_paste(player, classes.Line.init(), floor)
+        assert(floor:count() == 3 and floor:find_last().recipe.proto.name == "copper-cable",
+            "dummy paste must accept unrelated recipes inside a subfloor")
     end},
 
     paste_failures = {check=function(context)

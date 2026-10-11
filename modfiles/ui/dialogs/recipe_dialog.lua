@@ -1,5 +1,7 @@
 local Line = require("backend.data.Line")
 
+---@alias RecipeProductionType "produce" | "consume"
+
 ---@class RecipeDialogModalData: ModalData
 ---@field recipe_id ObjectID?
 ---@field fuel_id ObjectID?
@@ -161,7 +163,7 @@ end
 ---@return boolean success
 local function attempt_adding_line(player, recipe_id, modal_data)
     local recipe_proto = prototyper.util.find("recipes", recipe_id, nil)  ---@as FPRecipePrototype
-    local line = Line.init(recipe_proto, modal_data.production_type)
+    local line = Line.init(recipe_proto)
 
     -- If finding a machine fails, this line is invalid
     if line:change_machine_to_default(player) == false then

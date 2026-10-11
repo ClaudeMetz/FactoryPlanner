@@ -131,8 +131,6 @@ function builders.recipe(line_object, parent_flow, metadata, indent)
         color, note = "blue", {"fp.recipe_subfloor_attached"}
     elseif first_subfloor_line then
         note = {"fp.floor_recipe"}
-    elseif relevant_line.recipe.production_type == "consume" then
-        color, note = "yellow", {"fp.recipe_consumes_byproduct"}
     end
 
     local status = line_object:get_status()
@@ -155,7 +153,6 @@ function builders.recipe(line_object, parent_flow, metadata, indent)
         defining_recipe = first_subfloor_line,
         archived = metadata.archive_open,
         subfloor = (line_object.class == "Floor"),
-        consuming = (relevant_line.recipe.production_type == "consume"),
         factoriopedia = (lib.get_factoriopedia_proto(recipe_proto) ~= nil)
     }
     ---@class ActOnLineObjectRecipe
@@ -347,7 +344,6 @@ local function item_action_tags(line, proto, category, index, metadata, catalyst
             entity = (proto.type == "entity"),
             fluid = (proto.type == "fluid"),
             subfloor = (line.class == "Floor"),
-            consuming = (line.class == "Line" and line--[[@as Line]].recipe.production_type == "consume"),
             catalyst = catalyst,
             archived = metadata.archive_open,
             sequential = (get_priority_solver(line) == "sequential"),
@@ -464,6 +460,12 @@ function builders.byproducts(line, parent_flow, metadata)
         local proto = byproduct.proto
 
         local relevant_flow = nil
+        local style = "fflib_slot_button_red"
+        local priority_line = ""  ---@type LocalisedString
+        if line.class ~= "Floor" and get_priority_solver(line) == "sequential"
+                and line--[[@as Line]].recipe.priority_item == proto then
+            style, priority_line = "fflib_slot_button_pink", {"fp.item_prioritized"}
+        end
         local amount, number_tooltip, secondary_amount
 
         if proto.type == "entity" and proto.special then
@@ -481,11 +483,11 @@ function builders.byproducts(line, parent_flow, metadata)
         end
 
         local number_line = (number_tooltip) and {"", "\n", number_tooltip} or ""
-        local tooltip = {"", {"fp.tt_title", proto.localised_name}, number_line}
+        local tooltip = {"", {"fp.tt_title", proto.localised_name}, priority_line, number_line}
 
         local tags = item_action_tags(line, proto, "byproduct", index, metadata)
         local button = relevant_flow.add{type="sprite-button", tags=tags, sprite=proto.sprite,
-            number=amount, secondary_number=secondary_amount, style="fflib_slot_button_red",
+            number=amount, secondary_number=secondary_amount, style=style,
             mouse_button_filter={"left-and-right"}, raise_hover_events=true}
         metadata.tooltips[button.index] = tooltip
 
