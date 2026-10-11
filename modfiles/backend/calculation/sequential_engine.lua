@@ -96,31 +96,29 @@ local function solve_line(line_data, aggregate, is_relevant_line)
 
     -- Determine products/byproducts
     for _, product in ipairs(products) do
-        local amount = product.amount * machine_amount
-        local demand = aggregate.ingredients[structures.pack_item(product)] or 0
+        -- Satisfy ingredient demand
+        structures.map.subtract(aggregate.ingredients, product, product.amount * machine_amount, true)
 
-        if amount > demand then
-            local overflow_amount = amount - demand
-            structures.map.add(aggregate.products, product, overflow_amount)
-            aggregate.known_byproducts[structures.pack_item(product)] = true
-            amount = demand  -- desired amount
+        local item_key = structures.pack_item(product)
+        local remainder = aggregate.ingredients[item_key] or 0
+        if remainder < 0 then -- Excess becomes byproduct supply
+            structures.map.add(aggregate.products, product, -remainder)
+            aggregate.ingredients[item_key] = nil
+            aggregate.known_byproducts[item_key] = true
         end
-
-        structures.map.subtract(aggregate.ingredients, product, amount)
     end
 
     -- Determine ingredients
     for _, ingredient in pairs(ingredients) do
-        local amount = ingredient.amount * machine_amount
-        local surplus = aggregate.products[structures.pack_item(ingredient)] or 0
+        -- Consume byproduct supply
+        structures.map.subtract(aggregate.products, ingredient, ingredient.amount * machine_amount, true)
 
-        if amount > surplus then
-            local requested_amount = amount - surplus
-            structures.map.add(aggregate.ingredients, ingredient, requested_amount)
-            amount = surplus
+        local item_key = structures.pack_item(ingredient)
+        local remainder = aggregate.products[item_key] or 0
+        if remainder < 0 then -- Excess becomes ingredient demand
+            structures.map.add(aggregate.ingredients, ingredient, -remainder)
+            aggregate.products[item_key] = nil
         end
-
-        structures.map.subtract(aggregate.products, ingredient, amount)
     end
 
     -- Add the integer machine count to the aggregate so it can be displayed on the origin_line
