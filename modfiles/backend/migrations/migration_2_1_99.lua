@@ -7,7 +7,6 @@ local migration = {}
 function migration.player_table(player_table)
     local function migrate_floor(floor)
         for i, item_proto in ipairs(floor.gaussian_free_items) do
-            if item_proto.class == "SimpleItem" then goto continue end
             --- Avoid constructor to mitigate breaking dependencies
             local simple_item = {
                 class = "SimpleItem",
@@ -16,7 +15,6 @@ function migration.player_table(player_table)
             }
             setmetatable(simple_item, SimpleItem)
             floor.gaussian_free_items[i] = simple_item
-            ::continue::
         end
 
         for line_object in floor:iterator() do
@@ -34,14 +32,12 @@ end
 function migration.packed_factory(packed_factory)
     local function migrate_floor(floor)
         for i, packed_item_proto in ipairs(floor.gaussian_free_items or {}) do
-            if packed_item_proto.class == "SimpleItem" then goto continue end
             local packed_simple_item = {
                 class = "SimpleItem",
                 proto = packed_item_proto,
                 amount = 0
             }
             floor.gaussian_free_items[i] = packed_simple_item
-            ::continue::
         end
 
         for _, line_object in ipairs(floor.lines) do
