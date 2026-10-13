@@ -7,8 +7,6 @@ local ModuleSet = require("backend.data.ModuleSet")
 ---@field parent Line
 ---@field proto FPMachinePrototype | FPPackedPrototype
 ---@field quality_proto FPQualityPrototype | FPPackedPrototype
----@field limit number?
----@field force_limit boolean
 ---@field fuel Fuel?
 ---@field module_set ModuleSet
 ---@field amount number
@@ -32,8 +30,6 @@ local function init(parent, proto)
     local object = Object.init({
         proto = this_proto,
         quality_proto = defaults.get_fallback("qualities").proto,
-        limit = nil,
-        force_limit = true,  -- ignored if limit is not set
         fuel = nil,  -- needs to be set by calling Machine.normalize_fuel afterwards
         module_set = nil, -- set below
 
@@ -69,8 +65,10 @@ function Machine:normalize_fuel(player)
     -- no need to continue if this machine doesn't have a burner
 
     local burner = self.proto.burner  ---@as MachineBurner
-    -- Check if fuel has a valid category for this machine, replace otherwise
-    if self.fuel and not burner.categories[self.fuel.proto.category] then self.fuel = nil end
+    -- Look up the fuel in this machine's category combination to check compatibility
+    local compatible_proto = self.fuel
+        and prototyper.util.find("fuels", self.fuel.proto.name, burner.combined_category)  ---@as FPFuelPrototype?
+    if not compatible_proto then self.fuel = nil end
 
     if self.fuel == nil then  -- add a fuel for this machine if it doesn't have one here
         local default_fuel = defaults.get(player, "fuels", burner.combined_category)
@@ -80,8 +78,7 @@ function Machine:normalize_fuel(player)
         self.fuel.quality_proto = default_fuel.quality
     else  -- make sure the fuel is of the right combined category
         if burner.combined_category ~= self.fuel.proto.combined_category then
-            local proto = prototyper.util.find("fuels", self.fuel.proto.name, burner.combined_category)  ---@as FPFuelPrototype
-            self.fuel:set_proto(proto, player)
+            self.fuel:set_proto(compatible_proto--[[@cast -nil]], player)
         else
             -- The category can stay the same while the machine's fluid box allows other temperatures
             self.fuel:rebuild_temperature_data()
@@ -306,9 +303,6 @@ function Machine:reset(player)
     self.fuel = nil
     self:normalize_fuel(player)
 
-    self.limit = nil
-    self.force_limit = true
-
     self.module_set:clear()
     local machine_default = defaults.get(player, "machines", self.proto.combined_category)
     if machine_default.modules then self.module_set:ingest_default(machine_default.modules) end
@@ -324,15 +318,12 @@ function Machine:paste(object, player)
         local corresponding_proto = prototyper.util.find("machines", object.proto.name, self.proto.combined_category)  ---@as FPMachinePrototype?
 
         if corresponding_proto == nil or not self.parent:is_machine_compatible(corresponding_proto)
-                or not lib.is_machine_available(player.force--[[@as LuaForce]], corresponding_proto) then
+                or not lib.availability.is_machine_available(player.force--[[@as LuaForce]], corresponding_proto) then
             return false, "incompatible"
         end
 
         self.parent:change_machine_to_proto(player, corresponding_proto)
         self.quality_proto = object.quality_proto
-
-        self.limit = object.limit
-        self.force_limit = object.force_limit
 
         if object.fuel then
             self.fuel = object.fuel
@@ -358,8 +349,6 @@ end
 ---@field class "Machine"
 ---@field proto FPPackedPrototype
 ---@field quality_proto FPPackedPrototype
----@field limit number?
----@field force_limit boolean
 ---@field fuel PackedFuel?
 ---@field module_set PackedModuleSet
 
@@ -370,8 +359,6 @@ function Machine:pack(full)
         class = self.class,
         proto = prototyper.util.simplify_prototype(self.proto, "combined_category"),
         quality_proto = prototyper.util.simplify_prototype(self.quality_proto, nil),
-        limit = self.limit,
-        force_limit = self.force_limit,
         fuel = self.fuel and self.fuel:pack(full),
         module_set = self.module_set:pack(full),
 
@@ -387,8 +374,6 @@ local function unpack(packed_self, parent)
     local unpacked_self = init(parent, packed_self.proto)
     unpacked_self.quality_proto = packed_self.quality_proto
 
-    unpacked_self.limit = packed_self.limit
-    unpacked_self.force_limit = packed_self.force_limit
     unpacked_self.fuel = packed_self.fuel and Fuel.unpack(packed_self.fuel, unpacked_self)
     unpacked_self.module_set = ModuleSet.unpack(packed_self.module_set, unpacked_self)
 

@@ -1,15 +1,22 @@
 ---@diagnostic disable
 
--- Tests for lib utilities: formatters and clipboard operations.
+-- Tests for lib utilities: expressions, formatters and clipboard operations.
 
-local formatters = require("cases.lib-formatters")
-local clipboard = require("cases.lib-clipboard")
+local formatters = require("suite.formatters")
+local clipboard = require("suite.clipboard")
+local factory_items = require("suite.factory-items")
 
-return {
+return {{
+    name = "normal",
     cases = {
+        testLibExpressions = require("suite.expressions"),
+        testFactoryItemDefinitions = factory_items.definitions,
+        testFactoryItemPicker = factory_items.picker,
         testLibFormatNumber = formatters.number,
         testLibFormatSIValue = formatters.SI_value,
+        testLibFormatSpecialAmount = formatters.special_amount,
         testLibFormatButtonNumber = formatters.button_number,
+        testLibFormatMachineAmount = formatters.machine_amount,
         testLibClipboardCopySnapshots = clipboard.copy_snapshots,
         testLibClipboardCopyProduct = clipboard.copy_product,
         testLibClipboardProductItemCompatibility = clipboard.product_item_compatibility,
@@ -22,4 +29,4 @@ return {
         testLibClipboardCutProduct = clipboard.cut_product,
         testLibClipboardCutRestrictions = clipboard.cut_restrictions
     }
-}
+}}

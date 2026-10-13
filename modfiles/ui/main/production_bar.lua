@@ -11,7 +11,7 @@ local function refresh_production(player, _, _)
     else
         local factory = lib.context.get(player, "Factory")  ---@as Factory?
         if factory and factory.valid then
-            factory.simplex_basis = nil
+            factory:clear_solver_cache()
             solver.update(player, factory)
             lib.gui.run_refresh(player, "production")
         end
@@ -30,15 +30,14 @@ local function refresh_production_bar(player)
     local districts_view = ui_state.districts_view
     production_bar_elements.factory_flow.visible = (not districts_view)
     production_bar_elements.district_flow.visible = districts_view
+    local invalid_factory_selected = factory and not factory.valid or false
 
     if not districts_view then
-        local invalid_factory_selected = (factory and not factory.valid) or false
         production_bar_elements.validity_label.visible = invalid_factory_selected
     end
 
-    local factory_valid = factory ~= nil and factory.valid
-    production_bar_elements.timescale_switch.visible = factory_valid
-    ui_state.main_elements.views_flow.visible = factory_valid
+    production_bar_elements.timescale_switch.visible = not invalid_factory_selected
+    ui_state.main_elements.views_flow.visible = not invalid_factory_selected
 end
 
 

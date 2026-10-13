@@ -23,7 +23,7 @@ local function export_preferences(player_index)
     local player_table = lib.globals.player_table(player)
     if not player_table then return nil end
 
-    return lib.unpack_export_string(lib.preferences.export(player))
+    return lib.porter.unpack_export_string(lib.preferences.export(player))
 end
 
 ---@param player_index PlayerIndex
@@ -36,7 +36,7 @@ local function import_preferences(player_index, export_table)
     local player_table = lib.globals.player_table(player)
     if not player_table then return nil end
 
-    local export_string = lib.pack_export_string(export_table)
+    local export_string = lib.porter.pack_export_string(export_table)
     local error = lib.preferences.import(player, export_string)
     if error then
         return error

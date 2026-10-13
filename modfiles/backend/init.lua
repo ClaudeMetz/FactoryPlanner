@@ -13,7 +13,6 @@ local dev_export_string = "eNrtWUtv2zAM/i8+R0WdrTvk2MNOGzBsuw2BIct0KlQPV5KzBln++
 ---@field main_dialog_dimensions DisplayResolution?
 ---@field last_action LastAction?
 ---@field views_data ItemViewsData?
----@field messages PlayerMessage[]
 ---@field main_elements table
 ---@field compact_elements table
 ---@field calculator_elements table<string, LuaGuiElement>
@@ -23,7 +22,6 @@ local dev_export_string = "eNrtWUtv2zAM/i8+R0WdrTvk2MNOGzBsuw2BIct0KlQPV5KzBln++
 ---@field modal_dialog_type ModalDialogType?
 ---@field modal_data ModalData?
 ---@field context_menu LuaGuiElement?
----@field active_selector string?
 ---@field compact_view boolean
 ---@field districts_view boolean
 
@@ -38,7 +36,6 @@ local function reset_ui_state(player_table)
         main_dialog_dimensions = nil,
         last_action = nil,
         views_data = nil,
-        messages = {},
         main_elements = {},
         compact_elements = {},
         calculator_elements = {},
@@ -49,7 +46,6 @@ local function reset_ui_state(player_table)
         modal_dialog_type = nil,
         modal_data = nil,
         context_menu = nil,
-        active_selector = nil,
 
         compact_view = false,
         districts_view = false
@@ -212,7 +208,7 @@ local function handle_configuration_change()
         for district in storage.players[index].realm:iterator() do
             district.needs_refresh = true
             for factory in district:iterator() do
-                factory.simplex_basis = nil
+                factory:clear_solver_cache()
                 solver.update(player, factory)
             end
         end

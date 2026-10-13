@@ -132,10 +132,10 @@ end
 ---@field player_index PlayerIndex
 ---@field trigger RefreshGUITrigger
 
----@alias RefreshGUITrigger "all" | "factory" | "production" | "title_bar" | "district_info" | "factory_list" | "districts_box" | "production_bar" | "item_boxes" | "production_box" | "production_table" | "compact_factory" | "paste_button"
+---@alias RefreshGUITrigger "all" | "factory" | "production" | "title_bar" | "district_info" | "factory_list" | "districts_box" | "production_bar" | "item_boxes" | "production_box" | "production_table" | "solver_bar" | "compact_factory" | "paste_button"
 
---- "factory" includes districts_box, production_bar, item_boxes, production_box, production_table
---- "production" includes item_boxes, production_box, production_table
+--- "factory" includes districts_box, production_bar, item_boxes, production_box, production_table, solver_bar
+--- "production" includes item_boxes, production_box, production_table, solver_bar
 ---@param player LuaPlayer
 ---@param trigger RefreshGUITrigger
 function _gui.run_refresh(player, trigger)
@@ -225,9 +225,10 @@ function _gui.parse_expression_field(textfield, positive)
     pcall(function() expression = helpers.evaluate_expression(textfield.text, expression_variables) end)
     ---@cast expression double?
 
-    if expression == nil then return nil
-    elseif positive and expression <= 0 then return nil
-    else return expression end
+    -- Avoid NaN, infinity, and negative values if requested
+    if expression == nil or expression ~= expression or math.abs(expression) == math.huge
+            or (positive and expression <= 0) then return nil end
+    return expression
 end
 
 ---@param textfield LuaGuiElement

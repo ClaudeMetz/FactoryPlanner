@@ -235,7 +235,7 @@ function _util.get_base_module_limit(proto)
     elseif proto.type == "beacon" then
         return limit - normal_quality.beacon_module_slots_bonus
     else  -- crafting machines
-        return limit - proto.module_slots_quality_bonus.normal
+        return limit - proto.module_slots_quality_bonus--[[@cast -nil]].normal
     end
 end
 
@@ -432,7 +432,7 @@ function _util.get_boiler_conversions(proto)
 
         if separate_pipe then
             output_proto = (output ~= nil and output.filter) or fluid_proto
-            goal_temperature = proto.target_temperature--[[@as double]]
+            goal_temperature = math.min(proto.target_temperature--[[@as double]], output_proto.max_temperature)
         else
             goal_temperature = math.min(fluid_proto.max_temperature, input.maximum_temperature or math.huge)
         end
@@ -510,22 +510,22 @@ function _util.recipe_tooltip(recipe)
 
     if recipe.energy ~= nil then
         local energy_line = {"fp.recipe_crafting_time", recipe.energy}
-        current_table, next_index = lib.build_localised_string(energy_line, current_table, next_index)
+        current_table, next_index = lib.format.build_localised_string(energy_line, current_table, next_index)
     end
 
     local item_protos = storage.prototypes.items
     for _, item_type in ipairs{"ingredients", "products"} do
         local locale_key = (item_type == "ingredients") and "fp.pu_ingredient" or "fp.pu_product"
         local header_line = {"fp.recipe_header", {locale_key, 2}}
-        current_table, next_index = lib.build_localised_string(header_line, current_table, next_index)
+        current_table, next_index = lib.format.build_localised_string(header_line, current_table, next_index)
         if not next(recipe[item_type]) then
-            current_table, next_index = lib.build_localised_string({"fp.recipe_none"}, current_table, next_index)
+            current_table, next_index = lib.format.build_localised_string({"fp.recipe_none"}, current_table, next_index)
         else
             local items = recipe[item_type]
             for _, item in ipairs(items) do
                 local proto = item_protos[item.type].members[item.name]
                 local item_line = {"fp.recipe_item", proto.sprite, item.amount, proto.localised_name}
-                current_table, next_index = lib.build_localised_string(item_line, current_table, next_index)
+                current_table, next_index = lib.format.build_localised_string(item_line, current_table, next_index)
             end
         end
     end

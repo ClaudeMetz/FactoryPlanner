@@ -411,7 +411,7 @@ return {
         local force = game.players[1].force
         local previous_bonus = force.laboratory_productivity_bonus
         force.laboratory_productivity_bonus = 0.125
-        c.check(lib.get_recipe_productivity(force, "custom-research") == 1250,
+        c.check(lib.effects.get_recipe_productivity(force, "custom-research") == 1250,
             "expected the 12.5% lab bonus at effect precision")
         force.laboratory_productivity_bonus = previous_bonus
 

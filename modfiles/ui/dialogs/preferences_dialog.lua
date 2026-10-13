@@ -1,14 +1,16 @@
 -- ** LOCAL UTIL **
 ---@param content_frame LuaGuiElement
 ---@param box_type string
+---@param show_tooltip boolean?
 ---@return LuaGuiElement
-local function add_preference_box(content_frame, box_type)
+local function add_preference_box(content_frame, box_type, show_tooltip)
     local bordered_frame = content_frame.add{type="frame", direction="vertical", style="fp_frame_bordered_stretch"}
     local title_flow = bordered_frame.add{type="flow", direction="horizontal", name="title_flow"}
     title_flow.style.vertical_align = "center"
 
-    local caption = {"fp.info_label", {"fp.preference_".. box_type .. "_title"}}
-    local tooltip = {"fp.preference_".. box_type .. "_title_tt"}
+    local caption = {"fp.preference_" .. box_type .. "_title"}  ---@type LocalisedString
+    if show_tooltip then caption = {"fp.info_label", caption} end
+    local tooltip = show_tooltip and {"fp.preference_" .. box_type .. "_title_tt"} or nil
     title_flow.add{type="label", caption=caption, tooltip=tooltip, style="caption_label"}
 
     return bordered_frame
@@ -30,7 +32,7 @@ local function refresh_defaults_table(player, modal_elements, data_type, categor
 
     for prototype_id, prototype in ipairs(prototypes) do
         local selected = (default.proto.id == prototype_id)
-        local style = (selected) and "fflib_slot_button_green_small" or "fflib_slot_button_default_small"
+        local style = (selected) and "fflib_slot_button_green" or "fflib_slot_button_default"
         local elem_type = (default.quality) and prototype.elem_type .. "-with-quality" or prototype.elem_type
         local quality = (default.quality) and default.quality.name or nil
         local tooltip = {type=elem_type, name=prototype.name, quality=quality}
@@ -80,8 +82,9 @@ local function refresh_views_table(player)
         ---@field name string
         local tags = {mod="fp", on_gui_checked_state_changed="toggle_preference_view", name=view_preference.name}
         local enabled = (active_view_count < 4 or view_preference.enabled) and
-            (active_view_count > 1 or not view_preference.enabled)
-        views_table.add{type="checkbox", tags=tags, state=view_preference.enabled, enabled=enabled}
+            (active_view_count > 1 or not view_preference.enabled) and not item_view_data.unavailable
+        views_table.add{type="checkbox", tags=tags, state=view_preference.enabled, enabled=enabled,
+            tooltip=item_view_data.unavailable and item_view_data.tooltip or nil}
 
         local flow_name = views_table.add{type="flow", direction="horizontal"}
         flow_name.add{type="label", caption=item_view_data.caption, tooltip=item_view_data.tooltip}
@@ -94,7 +97,7 @@ local function refresh_views_table(player)
     end
 end
 
----@alias CheckboxPreferenceDataType "general" | "production"
+---@alias CheckboxPreferenceDataType "general" | "solver" | "production"
 
 ---@param preferences PreferencesTable
 ---@param content_frame LuaGuiElement
@@ -121,55 +124,64 @@ local function add_checkboxes_box(preferences, content_frame, data_type, prefere
     return preference_box
 end
 
----@param preferences PreferencesTable
 ---@param parent_flow LuaGuiElement
-local function add_dropdowns(preferences, parent_flow)
-    ---@param name string
-    ---@param items LocalisedString[]
-    ---@param selected_index integer
-    local function add_dropdown(name, items, selected_index)
-        local flow = parent_flow.add{type="flow", direction="horizontal"}
-        flow.style.top_margin = 4
+---@param name string
+---@param items LocalisedString[]
+---@param selected_index integer
+local function add_dropdown(parent_flow, name, items, selected_index)
+    local flow = parent_flow.add{type="flow", direction="horizontal"}
+    flow.style.top_margin = 4
 
-        flow.add{type="label", caption={"fp.info_label", {"fp.preference_dropdown_" .. name}},
-            tooltip={"fp.preference_dropdown_" .. name .. "_tt"}}
-        flow.add{type="empty-widget", style="fflib_horizontal_pusher"}
+    flow.add{type="label", caption={"fp.info_label", {"fp.preference_dropdown_" .. name}},
+        tooltip={"fp.preference_dropdown_" .. name .. "_tt"}}
+    flow.add{type="empty-widget", style="fflib_horizontal_pusher"}
 
-        ---@class ChoosePreferenceTags
-        ---@field name string
-        local tags = {mod="fp", on_gui_selection_state_changed="choose_preference", name=name}
-        flow.add{type="drop-down", tags=tags, items=items, selected_index=selected_index,
-            style="fp_drop-down_slim"}
-    end
+    ---@class ChoosePreferenceTags
+    ---@field name string
+    local tags = {mod="fp", on_gui_selection_state_changed="choose_preference", name=name}
+    flow.add{type="drop-down", tags=tags, items=items, selected_index=selected_index,
+        style="fp_drop-down_slim"}
+end
+
+---@param preferences PreferencesTable
+---@param content_frame LuaGuiElement
+local function add_solver_box(preferences, content_frame)
+    local preference_names = {"per_floor_solver", "ingredient_satisfaction", "calculate_emissions"}
+    local solver_box = add_checkboxes_box(preferences, content_frame, "solver", preference_names)
 
     local solver_items, solver_index = {}, nil  ---@type LocalisedString[], integer?
     for index, name in pairs(solver.choices) do
         solver_items[index] = {"fp.solver_" .. name}
         if name == preferences.default_solver then solver_index = index end
     end
-    add_dropdown("default_solver", solver_items, solver_index--[[@cast -nil]])
-    parent_flow.add{type="line", direction="horizontal"}.style.margin = {4, 0, 2, 0}
+    add_dropdown(solver_box, "default_solver", solver_items, solver_index--[[@cast -nil]])
+end
+
+---@param preferences PreferencesTable
+---@param content_frame LuaGuiElement
+local function add_dimensions_box(preferences, content_frame)
+    local dimensions_box = add_preference_box(content_frame, "dimensions")
 
     local width_items, width_index = {}, nil  ---@type LocalisedString[], integer?
     for index, value in pairs(lib.preferences.products_per_row_options) do
         width_items[index] = {"", value .. " ", {"fp.pl_product", 2}}
         if value == preferences.products_per_row then width_index = index end
     end
-    add_dropdown("products_per_row", width_items, width_index--[[@cast -nil]])
+    add_dropdown(dimensions_box, "products_per_row", width_items, width_index--[[@cast -nil]])
 
     local height_items, height_index = {}, nil  ---@type LocalisedString[], integer?
     for index, value in pairs(lib.preferences.factory_list_rows_options) do
         height_items[index] = {"", value .. " ", {"fp.pl_factory", 2}}
         if value == preferences.factory_list_rows then height_index = index end
     end
-    add_dropdown("factory_list_rows", height_items, height_index--[[@cast -nil]])
+    add_dropdown(dimensions_box, "factory_list_rows", height_items, height_index--[[@cast -nil]])
 
     local compact_items, compact_index = {}, nil  ---@type LocalisedString[], integer?
     for index, value in pairs(lib.preferences.compact_width_percentages) do
         compact_items[index] = {"", value .. " %"}
         if value == preferences.compact_width_percentage then compact_index = index end
     end
-    add_dropdown("compact_width_percentage", compact_items, compact_index--[[@cast -nil]])
+    add_dropdown(dimensions_box, "compact_width_percentage", compact_items, compact_index--[[@cast -nil]])
 end
 
 
@@ -177,7 +189,7 @@ end
 ---@param content_frame LuaGuiElement
 ---@param modal_elements table
 local function add_views_box(player, content_frame, modal_elements)
-    local preference_box = add_preference_box(content_frame, "views")
+    local preference_box = add_preference_box(content_frame, "views", true)
 
     local label = preference_box.add{type="label", caption={"fp.preference_pick_views"}}
     label.style.bottom_margin = 4
@@ -196,16 +208,16 @@ local function add_belts_proto_box(player, content_frame)
     local preferences = lib.globals.preferences(player)
 
     local modal_elements = lib.globals.modal_elements(player)
-    local preference_box = add_preference_box(content_frame, "default_belts")
+    local preference_box = add_preference_box(content_frame, "default_belts", true)
 
-    local frame = preference_box.add{type="frame", direction="horizontal", style="fp_frame_light_slots_small"}
-    modal_elements["belts"] = frame.add{type="table", column_count=8, style="fp_table_slots_small"}
+    local frame = preference_box.add{type="frame", direction="horizontal", style="fp_frame_light_slots"}
+    modal_elements["belts"] = frame.add{type="table", column_count=6, style="filter_slot_table"}
     refresh_defaults_table(player, modal_elements, "belts", nil)
 
     local line = preference_box.add{type="line", direction="horizontal"}
     line.style.margin = {4, 0}
     local flow_additional = preference_box.add{type="flow", direction="horizontal"}
-    flow_additional.style.margin = {0, 20}
+    flow_additional.style.margin = {0, 8}
     flow_additional.style.vertical_align = "center"
 
     local switch_state = (preferences.belts_or_lanes == "belts") and "left" or "right"
@@ -229,23 +241,33 @@ end
 ---@param player LuaPlayer
 ---@param content_frame LuaGuiElement
 ---@param data_type ProtoPreferenceDataType
----@param category_id integer?
+---@param category_id string?
 ---@param filter_type "pump" | "rocket-silo" | "cargo-wagon" | "fluid-wagon"
 local function add_default_proto_box(player, content_frame, data_type, category_id, filter_type)
+    local default = defaults.get_optional(player, data_type, category_id)
+    local type_name = (category_id or data_type:sub(1, -2)):gsub("-", "_")
+
     local flow = content_frame.add{type="flow", direction="horizontal"}
     flow.style.vertical_align = "center"
-    flow.add{type="label", caption={"fp.pu_" .. data_type:sub(1, -2), 1}}
-    flow.add{type="empty-widget", style="fflib_horizontal_pusher"}
+    flow.style.horizontal_spacing = 8
 
     ---@class SelectPreferenceBoxDefaultTags
     ---@field data_type ProtoPreferenceDataType
-    ---@field category_id integer?
+    ---@field category_id string?
     local tags = {mod="fp", on_gui_elem_changed="select_preference_box_default", data_type=data_type,
         category_id=category_id}
-    local filter = {{filter="type", type=filter_type}, {filter="hidden", invert=true, mode="and"}}
+    local filter = (data_type == "silos") and lib.gui.compile_elem_filter("silos")
+        or {{filter="type", type=filter_type}, {filter="hidden", invert=true, mode="and"}}
     local button_module = flow.add{type="choose-elem-button", tags=tags--[[@as Tags]], elem_type="entity-with-quality",
-        elem_filters=filter, style="fp_sprite-button_inset", mouse_button_filter={"left"}}
-    button_module.elem_value = defaults.get_as_elem_value(player, data_type, category_id)
+        elem_filters=filter, style="fp_sprite-button_inset", mouse_button_filter={"left"}, enabled=(default ~= nil)}
+
+    if default then
+        button_module.elem_value = defaults.get_as_elem_value(player, data_type, category_id)
+    else
+        button_module.tooltip = {"fp.preference_no_default_prototype", {"fp.pl_" .. type_name, 2}}
+    end
+    flow.add{type="label", caption={"fp.pu_" .. type_name, 1}, enabled=(default ~= nil),
+        tooltip=button_module.tooltip}
 end
 
 ---@param modal_elements table
@@ -292,20 +314,20 @@ local function handle_checkbox_preference_change(player, tags, event)
     local preference_name = tags.name
     lib.globals.preferences(player)[preference_name] = event.element.state
 
-    if tags.data_type == "production" or preference_name == "show_floor_items" then
-        lib.gui.run_refresh(player, "production")
+    if preference_name == "show_gui_button" then
+        lib.preferences.refresh_after_change(player, "mod_gui")
 
-    elseif preference_name == "ingredient_satisfaction" then
-        lib.preferences.refresh_after_change(player, "solver_config")
-
-    elseif preference_name == "calculate_emissions" then
-        lib.preferences.refresh_after_change(player, "solver_config")
-
-    elseif preference_name == "attach_factory_products" or preference_name == "skip_factory_naming" then
+    elseif preference_name == "skip_factory_naming" or preference_name == "attach_factory_products" then
         lib.gui.run_refresh(player, "factory_list")
 
-    elseif preference_name == "show_gui_button" then
-        lib.preferences.refresh_after_change(player, "mod_gui")
+    elseif preference_name == "per_floor_solver" then
+        lib.gui.run_refresh(player, "production_box")
+
+    elseif preference_name == "ingredient_satisfaction" or preference_name == "calculate_emissions" then
+        lib.preferences.refresh_after_change(player, "solver_config")
+
+    elseif tags.data_type == "production" then
+        lib.gui.run_refresh(player, "production")
     end
 end
 
@@ -336,13 +358,9 @@ end
 ---@param tags TogglePreferencesViewTags
 local function handle_view_toggle(player, tags, _)
     local view_preferences = lib.globals.preferences(player).item_views
-    for index, view_preference in ipairs(view_preferences.views) do
+    for _, view_preference in ipairs(view_preferences.views) do
         if view_preference.name == tags.name then
             view_preference.enabled = not view_preference.enabled
-            -- Select a valid view if the current one is disabled
-            if not view_preference.enabled and view_preferences.selected_index == index then
-                item_views.cycle_views(player, "standard")
-            end
             break
         end
     end
@@ -358,16 +376,6 @@ local function handle_view_move(player, tags, _)
     local view_preference = table.remove(view_preferences.views, tags.index)
     local new_index = (tags.direction == "up") and (tags.index-1) or (tags.index+1)
     table.insert(view_preferences.views, new_index, view_preference)
-
-    -- Make sure the selected view stays selected
-    local selected = view_preferences.selected_index
-    if tags.index == selected then
-        view_preferences.selected_index = new_index
-    elseif tags.index < selected and new_index >= selected then
-        view_preferences.selected_index = selected - 1
-    elseif tags.index > selected and new_index <= selected then
-        view_preferences.selected_index = selected + 1
-    end
 
     lib.preferences.refresh_after_change(player, "edit_views")
     refresh_views_table(player)
@@ -442,34 +450,29 @@ local function open_preferences_dialog(player, modal_data)
     local left_content_frame = modal_elements.content_frame
 
     local general_preference_names = {"show_gui_button", "skip_factory_naming", "attach_factory_products",
-        "show_floor_items", "ingredient_satisfaction", "calculate_emissions",
         "ignore_barreling_recipes", "ignore_recycling_recipes"}
-    local general_box = add_checkboxes_box(preferences, left_content_frame, "general", general_preference_names)
+    add_checkboxes_box(preferences, left_content_frame, "general", general_preference_names)
 
-    add_dropdowns(preferences, general_box)
+    add_solver_box(preferences, left_content_frame)
+    add_dimensions_box(preferences, left_content_frame)
 
-    local production_preference_names = {"done_column", "percentage_column", "line_comment_column"}
+    local production_preference_names = {"done_column", "line_comment_column"}
     add_checkboxes_box(preferences, left_content_frame, "production", production_preference_names)
-
-    left_content_frame.add{type="empty-widget", style="fflib_vertical_pusher"}
-    local support_frame = left_content_frame.add{type="frame", direction="vertical", style="fp_frame_bordered_stretch"}
-    support_frame.style.top_padding = 8
-    support_frame.add{type="label", caption={"fp.preferences_support"}}
 
     -- Right side
     local right_content_frame = modal_elements.secondary_frame
     add_views_box(player, right_content_frame, modal_elements)
     add_belts_proto_box(player, right_content_frame)
 
-    local preference_box = add_preference_box(right_content_frame, "box_defaults")
-    local default_boxes_table = preference_box.add{type="table", column_count=2}
-    default_boxes_table.style.horizontal_spacing = 60
+    local preference_box = add_preference_box(right_content_frame, "box_defaults", true)
+    local default_boxes_table = preference_box.add{type="table", column_count=3}
     default_boxes_table.style.vertical_spacing = 8
-    default_boxes_table.style.right_margin = 50
     add_default_proto_box(player, default_boxes_table, "pumps", nil, "pump")
+    default_boxes_table.add{type="empty-widget", style="fflib_horizontal_pusher"}
+    add_default_proto_box(player, default_boxes_table, "wagons", "cargo-wagon", "cargo-wagon")
     add_default_proto_box(player, default_boxes_table, "silos", nil, "rocket-silo")
-    add_default_proto_box(player, default_boxes_table, "wagons", 1, "cargo-wagon")
-    add_default_proto_box(player, default_boxes_table, "wagons", 2, "fluid-wagon")
+    default_boxes_table.add{type="empty-widget", style="fflib_horizontal_pusher"}
+    add_default_proto_box(player, default_boxes_table, "wagons", "fluid-wagon", "fluid-wagon")
 
     local pusher = right_content_frame.add{type="empty-widget", style="fflib_vertical_pusher"}
     pusher.style.top_margin = -4  -- counteract vertical spacing

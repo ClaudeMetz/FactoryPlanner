@@ -1,5 +1,7 @@
 local Line = require("backend.data.Line")
 
+---@alias RecipeProductionType "produce" | "consume"
+
 ---@class RecipeDialogModalData: ModalData
 ---@field recipe_id ObjectID?
 ---@field fuel_id ObjectID?
@@ -84,6 +86,7 @@ local function match_recipes(player, modal_data, proto)
     local relevant_recipes = {}
     local user_disabled_recipe = false
     local counts = {disabled = 0, hidden = 0, disabled_hidden = 0}
+    local unlock_cache = {}  ---@type PrototypeUnlockCache
 
     local map = RECIPE_MAPS[modal_data.production_type][proto.category_id][proto.id]
 
@@ -99,12 +102,13 @@ local function match_recipes(player, modal_data, proto)
             end
 
             if recipe.custom then
-                -- These are always enabled and non-hidden, so no need to tally them
-                table.insert(relevant_recipes, {proto=recipe, enabled=true})
+                local recipe_enabled = lib.availability.is_recipe_unlocked(force, recipe, unlock_cache)
+                table.insert(relevant_recipes, {proto=recipe, enabled=recipe_enabled})
+                if not recipe_enabled then counts.disabled = counts.disabled + 1 end
 
             elseif force_recipe ~= nil then  -- only add recipes that exist on the current force
-                local recipe_enabled, recipe_hidden = force_recipe.enabled, recipe.hidden
-                local recipe_should_show, overwrite = lib.is_recipe_available(force, recipe)
+                local recipe_enabled, recipe_hidden = lib.availability.is_recipe_unlocked(force, recipe), recipe.hidden
+                local recipe_should_show, overwrite = lib.availability.is_recipe_available(force, recipe)
 
                 if overwrite == nil then  -- user preferences don't apply to overwritten recipes
                     local user_disabled = (preferences.ignore_barreling_recipes and recipe.barreling)
@@ -155,23 +159,24 @@ local function match_recipes(player, modal_data, proto)
     end
 end
 
--- Tries to add the given recipe to the current floor, then exiting the modal dialog
+-- Tries to add the given recipe to the current floor
 ---@param player LuaPlayer
 ---@param recipe_id integer
 ---@param modal_data RecipeDialogModalData
+---@return boolean success
 local function attempt_adding_line(player, recipe_id, modal_data)
     local recipe_proto = modal_data.recipe_proto
             or prototyper.util.find("recipes", recipe_id, nil)  ---@as FPRecipePrototype?
 
     -- Confirmed without selection
-    if not recipe_proto then return end
+    if not recipe_proto then return false end
 
-    local line = Line.init(recipe_proto, modal_data.production_type)
-    local recipe_name = recipe_proto.localised_name
+    local line = Line.init(recipe_proto)
 
     -- If finding a machine fails, this line is invalid
     if line:change_machine_to_default(player) == false then
-        lib.messages.raise(player, "error", {"fp.error_no_compatible_machine", recipe_name}, 1)
+        lib.cursor.create_flying_text(player, {"fp.error_no_compatible_machine", recipe_proto.localised_name})
+        return false
     else
         local floor = lib.context.get(player, "Floor")  ---@as Floor
         local relative_object = OBJECT_INDEX[modal_data.add_after_line_id--[[@cast -nil]]]  ---@as LineObject?
@@ -212,20 +217,9 @@ local function attempt_adding_line(player, recipe_id, modal_data)
 
         line.recipe.quality_proto = modal_data.quality_proto
 
-        if not line:is_temperature_fully_configured() then
-            lib.messages.raise(player, "warning", {"fp.warning_temperature_not_configured", recipe_name}, 1)
-        end
-
-        if not (recipe_proto.custom or player.force--[[@as LuaForce]].recipes[recipe_proto.name].enabled) then
-            lib.messages.raise(player, "warning", {"fp.warning_recipe_disabled", recipe_name}, 1)
-        end
-
-        if not line:get_surface_compatibility().overall then
-            lib.messages.raise(player, "warning", {"fp.warning_surface_not_compatible", recipe_name}, 1)
-        end
-
         solver.update(player)
         lib.gui.run_refresh(player, "production")
+        return true
     end
 end
 
@@ -243,15 +237,12 @@ local function handle_recipe_click(player, tags, event)
         local modal_elements = modal_data.modal_elements
         modal_data.recipe_proto = recipe_proto
 
-        -- If there is no modal submit button, picking a recipe also submits it
-        if not modal_elements.dialog_submit_button then
-            lib.gui.close_dialog(player, "submit")
-            return
-        end
-
-        -- Double-click event
-        if event.tick - (modal_data.select_tick or 0) < MAGIC_NUMBERS.double_click_delay then
-            lib.gui.close_dialog(player, "submit")
+        -- If there is no modal submit button, picking a recipe also submits it; same for double-clicks
+        local double_click = (event.tick - (modal_data.select_tick or 0) < MAGIC_NUMBERS.double_click_delay)
+        if not modal_elements.dialog_submit_button or double_click then
+            if attempt_adding_line(player, tags.recipe_proto_id, modal_data) then
+                lib.gui.close_dialog(player, "cancel")
+            end
             return
         end
         modal_data.select_tick = event.tick
@@ -347,7 +338,7 @@ local function create_recipe_group_box(modal_data, relevant_group)
         local recipe_name = recipe_proto.name
 
         local style = "fflib_slot_button_green"
-        if not recipe.enabled then style = "fflib_slot_button_yellow"
+        if not recipe.enabled then style = "fflib_slot_button_red"
         elseif recipe_proto.hidden then style = "fflib_slot_button_default" end
 
         ---@class PickRecipeTags
@@ -514,7 +505,7 @@ local function recipe_early_abort_check(player, modal_data)
     local relevant_recipes, error, filters = match_recipes(player, modal_data, proto)
 
     if error ~= nil then
-        lib.messages.raise(player, "error", error, 1)
+        lib.cursor.create_flying_text(player, error)
         return true  -- signal that the dialog does not need to actually be opened
 
     else  ---@cast relevant_recipes -nil

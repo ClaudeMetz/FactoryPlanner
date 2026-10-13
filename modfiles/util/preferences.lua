@@ -19,6 +19,7 @@ end
 ---@field pause_on_interface boolean
 ---@field utility_scopes { components: "Factory" | "Floor" }
 ---@field recipe_filters { disabled: boolean, hidden: boolean }
+---@field show_unresearched_items boolean
 ---@field compact_ingredients boolean
 ---@field fold_out_subfloors boolean
 ---@field products_per_row integer
@@ -27,14 +28,13 @@ end
 ---@field show_gui_button boolean
 ---@field attach_factory_products boolean
 ---@field skip_factory_naming boolean
----@field show_floor_items boolean
 ---@field ingredient_satisfaction boolean
 ---@field calculate_emissions boolean
 ---@field ignore_barreling_recipes boolean
 ---@field ignore_recycling_recipes boolean
 ---@field default_solver SolverName
+---@field per_floor_solver boolean
 ---@field done_column boolean
----@field percentage_column boolean
 ---@field line_comment_column boolean
 ---@field item_views ItemViewPreferences
 ---@field belts_or_lanes BeltsOrLanes
@@ -72,6 +72,7 @@ function _preferences.reload(player_table)
     reload("pause_on_interface", false)
     reload("utility_scopes", {components = "Factory"})
     reload("recipe_filters", {disabled = false, hidden = false})
+    reload("show_unresearched_items", true)
     reload("compact_ingredients", false)
     reload("fold_out_subfloors", false)
 
@@ -83,15 +84,14 @@ function _preferences.reload(player_table)
     reload("show_gui_button", true)
     reload("skip_factory_naming", true)
     reload("attach_factory_products", false)
-    reload("show_floor_items", true)
     reload("ingredient_satisfaction", false)
     reload("calculate_emissions", false)
     reload("ignore_barreling_recipes", false)
     reload("ignore_recycling_recipes", false)
     reload("default_solver", "sequential")
+    reload("per_floor_solver", false)
 
-    reload("done_column", true)
-    reload("percentage_column", false)
+    reload("done_column", false)
     reload("line_comment_column", false)
 
     reload("item_views", item_views.default_preferences())
@@ -111,7 +111,7 @@ end
 
 -- Version, incremented each time the format of exported preferences changes in any way
 -- The mod prevents importing non-matching preferences versions to avoid needing migrations
-_preferences.current_version = 3
+_preferences.current_version = 5
 
 ---@class PreferencesExportTable
 ---@field version integer
@@ -125,14 +125,13 @@ _preferences.current_version = 3
 ---@field show_gui_button boolean
 ---@field attach_factory_products boolean
 ---@field skip_factory_naming boolean
----@field show_floor_items boolean
 ---@field ingredient_satisfaction boolean
 ---@field calculate_emissions boolean
 ---@field ignore_barreling_recipes boolean
 ---@field ignore_recycling_recipes boolean
 ---@field default_solver SolverName
+---@field per_floor_solver boolean
 ---@field done_column boolean
----@field percentage_column boolean
 ---@field line_comment_column boolean
 ---@field belts_or_lanes BeltsOrLanes
 ---@field belt_stack integer
@@ -155,20 +154,19 @@ function _preferences.export(player)
         show_gui_button = prefs.show_gui_button,
         attach_factory_products = prefs.attach_factory_products,
         skip_factory_naming = prefs.skip_factory_naming,
-        show_floor_items = prefs.show_floor_items,
         ingredient_satisfaction = prefs.ingredient_satisfaction,
         calculate_emissions = prefs.calculate_emissions,
         ignore_barreling_recipes = prefs.ignore_barreling_recipes,
         ignore_recycling_recipes = prefs.ignore_recycling_recipes,
         default_solver = prefs.default_solver,
+        per_floor_solver = prefs.per_floor_solver,
         done_column = prefs.done_column,
-        percentage_column = prefs.percentage_column,
         line_comment_column = prefs.line_comment_column,
         belts_or_lanes = prefs.belts_or_lanes,
         belt_stack = prefs.belt_stack
     }
 
-    return lib.pack_export_string(export_table)
+    return lib.porter.pack_export_string(export_table)
 end
 
 ---@param value any
@@ -196,7 +194,7 @@ function _preferences.import(player, export_string)
     local export_table = nil
 
     if not pcall(function()
-        export_table = lib.unpack_export_string(export_string)
+        export_table = lib.porter.unpack_export_string(export_string)
         assert(type(export_table) == "table")
     end) then return "decoding_failure" end
     ---@cast export_table PreferencesExportTable
@@ -216,13 +214,12 @@ function _preferences.import(player, export_string)
         assert(type(et.attach_factory_products) == "boolean")
         assert(type(et.skip_factory_naming) == "boolean")
         assert(verify_option(et.default_solver, solver.choices))
-        assert(type(et.show_floor_items) == "boolean")
+        assert(type(et.per_floor_solver) == "boolean")
         assert(type(et.ingredient_satisfaction) == "boolean")
         assert(type(et.calculate_emissions) == "boolean")
         assert(type(et.ignore_barreling_recipes) == "boolean")
         assert(type(et.ignore_recycling_recipes) == "boolean")
         assert(type(et.done_column) == "boolean")
-        assert(type(et.percentage_column) == "boolean")
         assert(type(et.line_comment_column) == "boolean")
         assert(verify_option(et.belts_or_lanes, {"belts", "lanes"}))
         assert(verify_range(et.belt_stack, _preferences.belt_stack_options))

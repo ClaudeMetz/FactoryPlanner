@@ -4,6 +4,10 @@ local Machine = require("backend.data.Machine")
 local Beacon = require("backend.data.Beacon")
 local SimpleItem = require("backend.data.SimpleItem")
 
+---@class SurfaceCompatibility
+---@field recipe boolean
+---@field machine boolean
+
 ---@class Line: Object, ObjectMethods
 ---@field class "Line"
 ---@field parent Floor
@@ -12,7 +16,6 @@ local SimpleItem = require("backend.data.SimpleItem")
 ---@field recipe Recipe
 ---@field done boolean
 ---@field active boolean
----@field percentage number
 ---@field machine Machine
 ---@field beacon Beacon?
 ---@field comment string
@@ -23,19 +26,19 @@ local SimpleItem = require("backend.data.SimpleItem")
 ---@field byproducts SimpleItem[]
 ---@field ingredients SimpleItem[]
 ---@field production_ratio number
+---@field machine_requirement MachineRequirement?
+---@field is_linearly_dependent boolean?
 local Line = Object.methods()
 Line.__index = Line
 script.register_metatable("Line", Line)
 
 ---@param recipe_proto FPRecipePrototype?
----@param production_type RecipeProductionType?
 ---@return Line
-local function init(recipe_proto, production_type)
+local function init(recipe_proto)
     local object = Object.init({
         recipe = nil,  -- initialized below
         done = false,
         active = true,
-        percentage = 100,
         machine = nil,
         beacon = nil,
         comment = "",
@@ -51,7 +54,7 @@ local function init(recipe_proto, production_type)
     }, "Line", Line)  ---@as Line
 
     if recipe_proto then
-        object.recipe = Recipe.init(object, recipe_proto, production_type)
+        object.recipe = Recipe.init(object, recipe_proto)
     end
 
     return object
@@ -70,15 +73,7 @@ end
 ---@param machine_proto FPMachinePrototype
 ---@return boolean applicable
 function Line:is_machine_compatible(machine_proto)
-    ---@cast self.recipe.proto FPRecipePrototype
-    local type_counts = self.recipe.proto.type_counts
-
-    local valid_ingredient_count = (machine_proto.ingredient_limit >= type_counts.ingredients.items)
-    local valid_product_count = (machine_proto.product_limit >= type_counts.products.items)
-    local valid_input_channels = (machine_proto.fluid_channels.input >= type_counts.ingredients.fluids)
-    local valid_output_channels = (machine_proto.fluid_channels.output >= type_counts.products.fluids)
-
-    return (valid_ingredient_count and valid_product_count and valid_input_channels and valid_output_channels)
+    return lib.availability.is_recipe_machine_compatible(self.recipe.proto--[[@as FPRecipePrototype]], machine_proto)
 end
 
 -- Sets this line's machine to be the given prototype
@@ -118,7 +113,7 @@ function Line:change_machine_by_action(player, action, current_proto)
         current_machine_proto = prototyper.util.find("machines", new_machine_id, category_id) ---@as FPMachinePrototype
 
         if self:is_machine_compatible(current_machine_proto)
-                and lib.is_machine_available(force, current_machine_proto) then
+                and lib.availability.is_machine_available(force, current_machine_proto) then
             self:change_machine_to_proto(player, current_machine_proto)
             return true
         end
@@ -151,7 +146,7 @@ function Line:change_machine_to_default(player)
     local success = false
     -- If the default is applicable, just set it straight away
     if self:is_machine_compatible(default_proto)
-            and lib.is_machine_available(player.force--[[@as LuaForce]], default_proto) then
+            and lib.availability.is_machine_available(player.force--[[@as LuaForce]], default_proto) then
         self:change_machine_to_proto(player, default_proto)
         success = true
     -- Otherwise, go up, then down the category to find an alternative
@@ -253,7 +248,7 @@ function Line:compile_machine_filter(force)
     local machine_category = prototyper.util.find("machines", nil, self.machine.proto.combined_category)  ---@as NamedCategory<FPMachinePrototype>
 
     for _, machine_proto in pairs(machine_category.members) do
-        if self:is_machine_compatible(machine_proto) and lib.is_machine_available(force, machine_proto) then
+        if self:is_machine_compatible(machine_proto) and lib.availability.is_machine_available(force, machine_proto) then
             table.insert(compatible_machines, machine_proto.name)
         end
     end
@@ -309,20 +304,19 @@ function Line:get_surface_compatibility()
             recipe = false
         end ]]
 
-        self.surface_compatibility = {recipe=recipe, machine=machine, overall=(recipe and machine)}
+        self.surface_compatibility = {recipe=recipe, machine=machine}
     end
     return self.surface_compatibility
 end
 
 
----@alias LineBlocker "disabled" | "unavailable_recipe" | "zero_percentage" | "incompatible_recipe" | "incompatible_machine" | "unconfigured_temperature"
+---@alias LineBlocker "disabled" | "unavailable_recipe" | "incompatible_recipe" | "incompatible_machine" | "unconfigured_temperature"
 
 --- Returns why this line can't take part in the calculation, or nil if it can
 ---@return LineBlocker?
 function Line:get_blocker()
     if not self.active then return "disabled" end
     if not self.recipe.available then return "unavailable_recipe" end
-    if self.percentage == 0 then return "zero_percentage" end
 
     local compatibility = self:get_surface_compatibility()
     if not compatibility.recipe then return "incompatible_recipe" end
@@ -333,17 +327,18 @@ function Line:get_blocker()
     return nil
 end
 
----@alias LineStatus LineBlocker | "no_byproducts" | "no_demand"
+---@alias LineStatus LineBlocker | "linearly_dependent" | "no_demand"
 
 --- Returns why this line doesn't produce anything, or nil if it does
 ---@return LineStatus?
 function Line:get_status()
     local blocker = self:get_blocker()
     if blocker ~= nil then return blocker end
+    if self.is_linearly_dependent then return "linearly_dependent" end
     if self.production_ratio > 0 then return nil end
 
     -- The line is configured fine, so the calculation just had nothing for it to do
-    return (self.recipe.production_type == "consume") and "no_byproducts" or "no_demand"
+    return "no_demand"
 end
 
 
@@ -352,10 +347,6 @@ end
 ---@return string? error
 function Line:paste(object)
     if object.class == "Line" or object.class == "Floor" then
-        if not self.parent:check_product_compatibility(object--[[@as LineObject]]) then
-            return false, "recipe_irrelevant"  -- found no use for the recipe's products
-        end
-
         self.parent:replace(self, object--[[@as LineObject]])
         return true, nil
     else
@@ -369,7 +360,6 @@ end
 ---@field recipe PackedRecipe
 ---@field done boolean
 ---@field active boolean
----@field percentage number
 ---@field machine PackedMachine
 ---@field beacon PackedBeacon?
 ---@field comment string
@@ -382,7 +372,6 @@ function Line:pack(full)
         recipe = self.recipe:pack(full),
         done = self.done,
         active = self.active,
-        percentage = self.percentage,
         machine = self.machine:pack(full),
         beacon = self.beacon and self.beacon:pack(full),
         comment = self.comment,
@@ -400,7 +389,6 @@ local function unpack(packed_self)
     unpacked_self.recipe = Recipe.unpack(packed_self.recipe, unpacked_self)  ---@as Recipe
     unpacked_self.done = packed_self.done
     unpacked_self.active = packed_self.active
-    unpacked_self.percentage = packed_self.percentage
     unpacked_self.machine = Machine.unpack(packed_self.machine, unpacked_self)  ---@as Machine
     unpacked_self.beacon = packed_self.beacon and Beacon.unpack(packed_self.beacon, unpacked_self)  ---@as Beacon
     unpacked_self.comment = packed_self.comment

@@ -1,7 +1,6 @@
 local Floor = require("backend.data.Floor")
 local Line = require("backend.data.Line")
-local matrix_engine = require("backend.calculation.matrix_engine")
-local TLProduct = require("backend.data.TLProduct")
+local FactoryItem = require("backend.data.FactoryItem")
 
 -- ** LOCAL UTIL **
 ---@param player LuaPlayer
@@ -13,124 +12,6 @@ local function refresh_paste_button(player)
     local line_copied = lib.clipboard.check_classes(player, {Floor=true, Line=true})
     main_elements.production_box.paste_button.visible = (factory ~= nil and line_copied) or false
 end
-
----@param player LuaPlayer
-local function refresh_solver_frame(player)
-    local factory = lib.context.get(player, "Factory")  ---@as Factory
-    local main_elements = lib.globals.main_elements(player)
-    local solver_flow = main_elements.solver_flow  ---@as LuaGuiElement
-    solver_flow.clear()
-
-    local factory_data = solver.generate_factory_data(player, factory)
-    local matrix_metadata = matrix_engine.get_matrix_solver_metadata(factory_data)
-    if matrix_metadata.num_rows == 0 then return end  -- skip if there are no active lines
-    local linear_dependence_data = matrix_engine.get_linear_dependence_data(factory_data, matrix_metadata)
-    local free_items = matrix_engine.get_simple_items(matrix_metadata.free_items)
-    local num_needed_free_items = matrix_metadata.num_rows - matrix_metadata.num_cols + #free_items
-
-    ---@param flow LuaGuiElement
-    ---@param status "unrestricted" | "constrained"
-    ---@param color "default" | "green"
-    ---@param items SimpleItem[]
-    local function build_unrestricted_item_button_flow(flow, status, color, items)
-        for _, item in pairs(items) do
-            local quality = item.quality_proto and item.quality_proto.name
-
-            ---@class SwitchMatrixItemTags : Tags
-            ---@field status "unrestricted" | "constrained"
-            ---@field type string
-            ---@field name string
-            ---@field quality string?
-            local tags = {
-                mod="fp",
-                on_gui_click="switch_matrix_item",
-                status=status,
-                type=item.proto.type,
-                name=item.proto.name,
-                quality=quality,
-            }  ---@type SwitchMatrixItemTags
-
-            flow.add{
-                type="sprite-button",
-                sprite=item.proto.sprite,
-                quality = quality,
-                tooltip={"fp.turn_" .. status, item.proto.localised_name},
-                tags=tags,
-                style="fflib_slot_button_" .. color .. "_small",
-                mouse_button_filter={"left"}
-            }
-        end
-    end
-
-    ---@param item_count integer
-    local function fix_bottom_padding_for_buttons(item_count)
-        -- This is some total bullshit because extra_bottom_padding_when_activated doesn't work
-        local total_width = 180 + (4 * 12) + (item_count * 40)
-        local main_dialog_dimensions = lib.globals.ui_state(player).main_dialog_dimensions
-        local box_width = main_dialog_dimensions--[[@cast -nil]].width - MAGIC_NUMBERS.list_width
-        solver_flow.style.bottom_padding = (total_width > box_width) and 16 or 4
-    end
-
-    if next(linear_dependence_data.linearly_dependent_free_items) then
-        main_elements.solver_frame.visible = true
-
-        local num_needed_restricted_items = #linear_dependence_data.linearly_dependent_free_items
-        local num_items_to_remove = num_needed_restricted_items - num_needed_free_items
-
-        local caption = {"fp.error_message", {"fp.info_label", {"fp.remove_unrestricted_items"}}}
-        local tooltip = {"fp.remove_unrestricted_items_tt", num_items_to_remove,
-                {"fp.pl_item", num_items_to_remove}}
-        solver_flow.add{type="label", caption=caption, tooltip=tooltip, style="bold_label"}
-
-        local flow_unrestricted = solver_flow.add{type="flow", direction="horizontal"}
-        build_unrestricted_item_button_flow(flow_unrestricted, "unrestricted", "default", linear_dependence_data.linearly_dependent_free_items)
-
-        fix_bottom_padding_for_buttons(#free_items)
-
-    elseif next(linear_dependence_data.linearly_dependent_recipes) then
-        main_elements.solver_frame.visible = true
-
-        local caption = {"fp.error_message", {"fp.info_label", {"fp.linearly_dependent_recipes"}}}
-        solver_flow.add{type="label", caption=caption, tooltip={"fp.linearly_dependent_recipes_tt"}, style="bold_label"}
-        local flow_recipes = solver_flow.add{type="flow", direction="horizontal"}
-
-        for _, recipe_proto in pairs(linear_dependence_data.linearly_dependent_recipes) do
-            local sprite = flow_recipes.add{type="sprite", sprite=recipe_proto.sprite,
-                tooltip=recipe_proto.localised_name, resize_to_sprite=true}
-            sprite.style.size = 36
-            sprite.style.stretch_image_to_widget_size = true
-        end
-
-    elseif num_needed_free_items ~= 0 then
-        main_elements.solver_frame.visible = true
-
-        local needs_choice = (#linear_dependence_data.allowed_free_items > 0)
-        local item_count = 0
-
-        if needs_choice then
-            local caption = {"fp.error_message", {"fp.info_label", {"fp.choose_unrestricted_items"}}}
-            local tooltip = {"fp.choose_unrestricted_items_tt", num_needed_free_items,
-                {"fp.pl_item", num_needed_free_items}}
-            solver_flow.add{type="label", caption=caption, tooltip=tooltip, style="bold_label"}
-        else
-            solver_flow.add{type="label", caption={"fp.info_label", {"fp.unrestricted_items_balanced"}},
-                tooltip={"fp.unrestricted_items_balanced_tt"}, style="bold_label"}
-        end
-
-        local flow_unrestricted = solver_flow.add{type="flow", direction="horizontal"}
-        build_unrestricted_item_button_flow(flow_unrestricted, "unrestricted", "green", free_items)
-        item_count = item_count + #matrix_metadata.free_items
-
-        if needs_choice then
-            local flow_constrained = solver_flow.add{type="flow", direction="horizontal"}
-            build_unrestricted_item_button_flow(flow_constrained, "constrained", "default", linear_dependence_data.allowed_free_items)
-            item_count = item_count + #linear_dependence_data.allowed_free_items
-        end
-
-        fix_bottom_padding_for_buttons(item_count)
-    end
-end
-
 
 ---@param player LuaPlayer
 ---@param destination "up" | "top"
@@ -150,12 +31,13 @@ end
 ---@param player LuaPlayer
 local function handle_convert_subfloor(player)
     local floor = lib.context.get(player, "Floor")  ---@as Floor
-    local first_product = floor.products[1]  ---@as SimpleItem always one at least
+    local products = #floor.products > 0 and floor.products or floor.first--[[@cast -nil]].products
+    local first_product = products[1]  ---@as SimpleItem always one at least
     local factory = factory_list.add_factory(player, nil, first_product.proto)
 
-    for _, floor_product in pairs(floor.products) do
-        local product = TLProduct.init(floor_product.proto)
-        product.required_amount = floor_product.amount
+    for _, floor_product in pairs(products) do  ---@cast floor_product SimpleItem
+        local product = FactoryItem.init(floor_product.proto)
+        product.definition = {type="amount", amount=floor_product.amount}
         factory:insert(product)
     end
 
@@ -174,14 +56,15 @@ end
 
 ---@param player LuaPlayer
 ---@param tags ChangeSolverTags
-local function handle_solver_change(player, tags, _)
+---@param event EventData.on_gui_click
+local function handle_solver_change(player, tags, event)
     local factory = lib.context.get(player, "Factory")  ---@as Factory
-    if factory.solver == tags.solver then return end
+    local floor = lib.context.get(player, "Floor")  ---@as Floor
 
-    factory.solver = tags.solver
-    factory.matrix_free_items = {}  -- reset could be avoided
-    factory.linearly_dependant = false
-    factory.simplex_basis = nil
+    local recursive = event.shift or not lib.globals.preferences(player).per_floor_solver
+    local target_floor = recursive and factory.top_floor or floor
+    if not target_floor:set_solver(tags.solver, recursive) then return end
+    factory:clear_solver_cache()
 
     main_dialog.toggle_districts_view(player, true)
     solver.update(player)
@@ -204,29 +87,6 @@ local function paste_line(player, _, _)
     local dummy_line = Line.init()
     lib.clipboard.dummy_paste(player, dummy_line, floor)
 end
-
----@param player LuaPlayer
----@param tags SwitchMatrixItemTags
-local function switch_matrix_item(player, tags, _)
-    local factory = lib.context.get(player, "Factory")  ---@as Factory
-    local button_item = { type = tags.type, name = tags.name, quality = tags.quality, amount = 0 }  ---@type SolverItem
-    local button_item_key = solver.util.pack_item(button_item)
-    if tags.status == "unrestricted" then
-        for index, item in pairs(factory.matrix_free_items) do
-            if button_item_key == solver.util.pack_item(item) then
-                table.remove(factory.matrix_free_items, index)
-                break
-            end
-        end
-    else -- "constrained"
-        local item = matrix_engine.get_simple_items({[button_item_key] = true})[1]
-        table.insert(factory.matrix_free_items, item)
-    end
-
-    solver.update(player)
-    lib.gui.run_refresh(player, "production")
-end
-
 
 ---@param player LuaPlayer
 local function refresh_production_box(player)
@@ -263,8 +123,14 @@ local function refresh_production_box(player)
 
     production_box_elements.solver_flow.visible = factory_valid
     if factory_valid then  ---@cast factory -nil
+        production_box_elements.solver_label.tooltip = {"fp.solver_choice_tt",
+            {preferences.per_floor_solver and "fp.pl_floor" or "fp.pl_factory", 1}}
         for _, button in pairs(production_box_elements.solver_table.children) do
-            button.toggled = (button.tags--[[@as ChangeSolverTags]].solver == factory.solver)
+            local solver_name = button.tags--[[@as ChangeSolverTags]].solver
+            local tooltip = {"fp.solver_" .. solver_name .. "_tt"}
+            button.tooltip = preferences.per_floor_solver
+                and {"", tooltip, {"fp.solver_apply_factory"}} or tooltip
+            button.toggled = (solver_name == floor.solver)
             button.enabled = (not factory.archived)
         end
     end
@@ -294,11 +160,6 @@ local function refresh_production_box(player)
     end
 
     refresh_paste_button(player)
-
-    ui_state.main_elements.solver_frame.visible = false
-    if any_lines_present and factory--[[@cast -nil]].solver == "gaussian" then
-        refresh_solver_frame(player)
-    end
 end
 
 ---@class ChangeFloorTags
@@ -356,15 +217,22 @@ local function build_production_box(player)
     button_convert_subfloor.style.top_margin = 2
     main_elements.production_box["convert_subfloor_button"] = button_convert_subfloor
 
+    local button_paste = flow_production.add{type="sprite-button", sprite="utility/import_slot",
+        tooltip={"fp.paste_line_tt"}, tags={mod="fp", on_gui_click="paste_line"},
+        style="fp_sprite-button_rounded_icon", mouse_button_filter={"left"}}
+    button_paste.style.top_margin = 2
+    main_elements.production_box["paste_button"] = button_paste
+
     flow_production.add{type="empty-widget", style="fflib_horizontal_pusher"}
 
     local flow_solver = flow_production.add{type="flow", direction="horizontal"}
     flow_solver.style.horizontal_spacing = 12
-    flow_solver.style.margin = {2, 8, 0, 0}
+    flow_solver.style.top_margin = 2
     flow_solver.style.vertical_align = "center"
     main_elements.production_box["solver_flow"] = flow_solver
-    flow_solver.add{type="label", caption={"fp.info_label", {"fp.solver_choice"}}, style="bold_label",
-        tooltip={"fp.solver_choice_tt"}}
+    local label_solver = flow_solver.add{type="label", caption={"fp.info_label", {"fp.solver_choice"}},
+        style="bold_label"}
+    main_elements.production_box["solver_label"] = label_solver
 
     local table_solvers = flow_solver.add{type="table", column_count=#solver.choices}
     table_solvers.style.horizontal_spacing = 0
@@ -375,15 +243,15 @@ local function build_production_box(player)
         ---@field solver SolverName
         local tags = {mod="fp", on_gui_click="change_solver", solver=name}
         table_solvers.add{type="button", tags=tags, caption={"fp.solver_" .. name},
-            tooltip={"fp.solver_" .. name .. "_tt"}, style="fp_button_push", mouse_button_filter={"left"}}
+            style="fp_button_push", mouse_button_filter={"left"}}
     end
 
 
     -- Main scrollpane
     local scroll_pane_production = frame_vertical.add{type="scroll-pane", style="fflib_naked_scroll_pane_no_padding"}
-    scroll_pane_production.style.extra_right_padding_when_activated = 0
     scroll_pane_production.style.bottom_padding = 12
     scroll_pane_production.style.extra_bottom_padding_when_activated = -12
+    scroll_pane_production.style.extra_right_padding_when_activated = -12
     main_elements.production_box["production_scroll_pane"] = scroll_pane_production
 
     -- Instruction label
@@ -412,40 +280,8 @@ local function build_production_box(player)
     button_repair.style.height = 22
     button_repair.style.padding = {0, 4}
 
-    -- Paste button
-    local button_paste = frame_vertical.add{type="button", caption={"fp.paste_line"}, tooltip={"fp.paste_line_tt"},
-        style="rounded_button", tags={mod="fp", on_gui_click="paste_line"}, mouse_button_filter={"left"}}
-    button_paste.style.margin = 12
-    button_paste.style.minimal_width = 0
-    main_elements.production_box["paste_button"] = button_paste
-
     frame_vertical.add{type="empty-widget", style="fflib_vertical_pusher"}
     frame_vertical.add{type="empty-widget", style="fflib_horizontal_pusher"}
-
-    -- Bottom UI for messages & solver
-    local scroll_pane_messages = frame_vertical.add{type="scroll-pane", vertical_scroll_policy="never",
-        visible=false, style="fflib_naked_scroll_pane_no_padding"}
-    main_elements["messages_frame"] = scroll_pane_messages
-
-    local line_messages = scroll_pane_messages.add{type="line", direction="horizontal"}
-    line_messages.style.margin = -1  -- hack around some scrollpane styling issues
-
-    local flow_messages = scroll_pane_messages.add{type="flow", direction="vertical"}
-    flow_messages.style.padding = {0, 12, 6, 12}
-    main_elements["messages_flow"] = flow_messages
-
-    local scroll_pane_solver = frame_vertical.add{type="scroll-pane", vertical_scroll_policy="never",
-        visible=false, style="fflib_naked_scroll_pane_no_padding"}
-    main_elements["solver_frame"] = scroll_pane_solver
-
-    local line_solver = scroll_pane_solver.add{type="line", direction="horizontal"}
-    line_solver.style.margin = -1  -- hack around some scrollpane styling issues
-
-    local flow_solver_options = scroll_pane_solver.add{type="flow", direction="horizontal"}
-    flow_solver_options.style.padding = {0, 12, 4, 12}
-    flow_solver_options.style.vertical_align = "center"
-    flow_solver_options.style.horizontal_spacing = 12
-    main_elements["solver_flow"] = flow_solver_options
 
     refresh_production_box(player)
 end
@@ -485,10 +321,6 @@ listeners.gui = {
         {
             name = "paste_line",
             handler = paste_line
-        },
-        {
-            name = "switch_matrix_item",
-            handler = switch_matrix_item
         },
         {
             name = "change_solver",

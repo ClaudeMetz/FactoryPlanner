@@ -12,14 +12,14 @@ local function fixture(context)
     local factory = classes.Factory.init("clipboard-test", "sequential")
     district:insert(factory)
     lib.context.set(player, factory)
-    local product = classes.TLProduct.init(prototyper.util.find("items", "iron-gear-wheel", "item"))
-    product.required_amount = 12
+    local product = classes.FactoryItem.init(prototyper.util.find("items", "iron-gear-wheel", "item"))
+    product.definition.amount = 12
     factory:insert(product)
     return classes, player, factory, product
 end
 
 local function add_line(classes, player, floor, recipe_name)
-    local line = classes.Line.init(prototyper.util.find("recipes", recipe_name or "iron-gear-wheel"), "produce")
+    local line = classes.Line.init(prototyper.util.find("recipes", recipe_name or "iron-gear-wheel"))
     floor:insert(line)
     line:change_machine_to_proto(player, helpers.find_machine("assembling-machine-2"))
     return line
@@ -61,12 +61,11 @@ return {
     copy_snapshots = {check=function(context)
         for _, subfloor in ipairs{false, true} do
             local classes, player, factory = fixture(context)
-            local source = subfloor and classes.Floor.init(2) or nil
+            local source = subfloor and classes.Floor.init(2, factory.top_floor.solver) or nil
             if source then factory.top_floor:insert(source) end
             local line = add_line(classes, player, source or factory.top_floor)
             source = source or line
             line.comment = "Copied configuration"
-            line.percentage = 75
             local beacon = add_beacon(classes, line)
             solver.update(player, factory)
             click(player, "act_on_line_recipe", {line_id=source.id}, nil, "copy")
@@ -82,7 +81,7 @@ return {
                 local pasted = factory.top_floor:find_last()
                 local pasted_line = subfloor and pasted.first or pasted
                 assert(pasted ~= source and pasted_line ~= line)
-                assert(pasted_line.comment == "Copied configuration" and pasted_line.percentage == 75)
+                assert(pasted_line.comment == "Copied configuration")
                 assert(pasted_line.beacon.amount == 3 and pasted_line.beacon.module_set.first.amount == 2,
                     "Paste must restore the snapshot, independent of source and earlier pastes")
                 pasted_line.comment = "Changed after paste"
@@ -96,11 +95,11 @@ return {
     copy_product = {check=function(context)
         for _, belts in ipairs{false, true} do
             local classes, player, factory, product = fixture(context)
-            product.required_amount = belts and 1.5 or 17
+            product.definition = {type="amount", amount=17}
             if belts then
-                product.defined_by = "belts"
-                product.belt_proto = prototyper.util.find("belts", "fast-transport-belt")
-                product.belt_stack = 2
+                product.definition = {type="belts", belt_count=1.5}
+                product.definition.belt_proto = prototyper.util.find("belts", "fast-transport-belt")
+                product.definition.belt_stack = 2
             end
             -- No production: the configured requirement must survive even when output is zero.
             solver.update(player, factory)
@@ -108,11 +107,8 @@ return {
             click(player, "act_on_item_box", {item_id=product.id, item_category="product"},
                 {top_level=true, product=true}, "copy")
             local clip = lib.globals.player_table(player).clipboard
-            assert(clip.class == "TLProduct" and product.parent == factory)
-            product.defined_by = "amount"
-            product.required_amount = 99
-            product.belt_proto = nil
-            product.belt_stack = nil
+            assert(clip.class == "FactoryItem" and product.parent == factory)
+            product.definition = {type="amount", amount=99}
 
             local _, _, destination, target = fixture(context)
             for i = 1, 2 do
@@ -120,15 +116,15 @@ return {
                     {top_level=true, product=true}, "paste")
                 local pasted = destination.first
                 assert(pasted ~= target and pasted ~= product and destination:count() == 1)
-                assert(pasted.defined_by == (belts and "belts" or "amount"))
-                assert(pasted.required_amount == (belts and 1.5 or 17))
+                assert(pasted.definition.type == (belts and "belts" or "amount"))
+                assert(pasted.definition[belts and "belt_count" or "amount"] == (belts and 1.5 or 17))
                 if belts then
-                    assert(pasted.belt_proto.name == "fast-transport-belt" and pasted.belt_stack == 2)
+                    assert(pasted.definition.belt_proto.name == "fast-transport-belt" and pasted.definition.belt_stack == 2)
                 else
-                    assert(pasted.belt_proto == nil and pasted.belt_stack == nil)
+                    assert(pasted.definition.belt_proto == nil and pasted.definition.belt_stack == nil)
                 end
-                pasted.required_amount = 42
-                pasted.belt_stack = belts and 1 or nil
+                pasted.definition[belts and "belt_count" or "amount"] = 42
+                pasted.definition.belt_stack = belts and 1 or nil
                 target = pasted
             end
             assert(lib.globals.player_table(player).clipboard == clip)
@@ -137,26 +133,26 @@ return {
 
     product_item_compatibility = {check=function(context)
         local classes, player, factory, product = fixture(context)
-        lib.clipboard.copy(player, SimpleItem.init(nil, product.proto, 23))
+        lib.clipboard.copy(player, SimpleItem.init(nil, product.proto, nil, 23))
         assert(lib.clipboard.paste(player, product))
-        assert(factory.first.defined_by == "amount" and factory.first.required_amount == 23,
+        assert(factory.first.definition.type == "amount" and factory.first.definition.amount == 23,
             "ordinary items must still paste as rate-defined products")
 
-        local coal = classes.TLProduct.init(prototyper.util.find("items", "coal", "item"))
+        local coal = classes.FactoryItem.init(prototyper.util.find("items", "coal", "item"))
         factory:insert(coal)
         lib.clipboard.copy(player, coal)
-        local smelting = classes.Line.init(prototyper.util.find("recipes", "iron-plate"), "produce")
+        local smelting = classes.Line.init(prototyper.util.find("recipes", "iron-plate"))
         factory.top_floor:insert(smelting)
         smelting:change_machine_to_proto(player, helpers.find_machine("stone-furnace"))
         assert(lib.clipboard.paste(player, smelting.machine.fuel))
         assert(smelting.machine.fuel.proto.name == "coal", "products must still paste as fuels")
 
-        local steam = classes.TLProduct.init(prototyper.util.find("items",
+        local steam = classes.FactoryItem.init(prototyper.util.find("items",
             lib.temperature.name_with("steam", 165), "fluid"))
         assert(steam.proto.temperature == 165)
         factory:insert(steam)
         lib.clipboard.copy(player, steam)
-        local liquefaction = classes.Line.init(prototyper.util.find("recipes", "coal-liquefaction"), "produce")
+        local liquefaction = classes.Line.init(prototyper.util.find("recipes", "coal-liquefaction"))
         factory.top_floor:insert(liquefaction)
         liquefaction:change_machine_to_proto(player, helpers.find_machine("oil-refinery"))
         local target = SimpleItem.init(liquefaction, prototyper.util.find("items", "steam", "fluid"))
@@ -168,16 +164,19 @@ return {
 
     paste_onto_recipe = {check=function(context)
         local classes, player, factory = fixture(context)
-        local source = add_line(classes, player, factory.top_floor)
-        source.comment = "Pasted gear recipe"
+        local source = add_line(classes, player, factory.top_floor, "copper-cable")
+        source.comment = "Pasted unrelated recipe"
         local target = add_line(classes, player, factory.top_floor, "transport-belt")
         solver.update(player, factory)
         click(player, "act_on_line_recipe", {line_id=source.id}, nil, "copy")
         click(player, "act_on_line_recipe", {line_id=target.id}, nil, "paste")
         local floor = target.parent
         assert(floor.class == "Floor" and floor.parent == factory.top_floor and floor.first == target)
-        assert(floor:count() == 2 and floor.first.next.comment == "Pasted gear recipe")
+        assert(floor:count() == 2 and floor.first.next.comment == "Pasted unrelated recipe")
         assert(source.parent == factory.top_floor, "Paste must not move the copied source")
+        lib.clipboard.dummy_paste(player, classes.Line.init(), floor)
+        assert(floor:count() == 3 and floor:find_last().recipe.proto.name == "copper-cable",
+            "dummy paste must accept unrelated recipes inside a subfloor")
     end},
 
     paste_failures = {check=function(context)
@@ -191,35 +190,34 @@ return {
         click(player, "act_on_line_recipe", {line_id=line.id}, nil, "copy")
         local clip = player_table.clipboard
         assert(not lib.clipboard.paste(player, product), "a recipe cannot be pasted onto a product")
-        assert(factory.first == product and product.required_amount == 12 and player_table.clipboard == clip)
-        lib.clipboard.dummy_paste(player, classes.TLProduct.init(), factory)
+        assert(factory.first == product and product.definition.amount == 12 and player_table.clipboard == clip)
+        lib.clipboard.dummy_paste(player, classes.FactoryItem.init(), factory)
         assert(factory:count() == 1 and factory.first == product, "failed dummy paste must remove its placeholder")
         assert(player_table.clipboard == clip)
     end},
 
     cut_line_collapses_subfloor = {check=function(context)
         local classes, player, factory = fixture(context)
-        local floor = classes.Floor.init(2)
+        local floor = classes.Floor.init(2, factory.top_floor.solver)
         factory.top_floor:insert(floor)
         local defining = add_line(classes, player, floor)
         local source = add_line(classes, player, floor)
         source.comment = "Keep this line"
-        source.percentage = 75
         solver.update(player, factory)
         click(player, "act_on_line_recipe", {line_id=source.id})
         assert(source.parent == nil and factory.top_floor.first == defining,
             "cut must remove the line and collapse its old subfloor")
         assert(lib.clipboard.paste(player, factory.top_floor))
         local pasted = factory.top_floor:find_last()
-        assert(pasted ~= source and pasted.comment == "Keep this line" and pasted.percentage == 75)
+        assert(pasted ~= source and pasted.comment == "Keep this line")
     end},
 
     cut_subfloor = {check=function(context)
         local classes, player, factory = fixture(context)
-        local floor = classes.Floor.init(2)
+        local floor = classes.Floor.init(2, factory.top_floor.solver)
         factory.top_floor:insert(floor)
         add_line(classes, player, floor)
-        local nested = classes.Floor.init(3)
+        local nested = classes.Floor.init(3, floor.solver)
         floor:insert(nested)
         add_line(classes, player, nested).comment = "Nested configuration"
         solver.update(player, factory)
@@ -264,15 +262,15 @@ return {
     cut_product = {check=function(context)
         for _, belts in ipairs{false, true} do
             local classes, player, factory, product = fixture(context)
-            product.required_amount = belts and 1.5 or 17
+            product.definition = {type="amount", amount=17}
             if belts then
-                product.defined_by = "belts"
-                product.belt_proto = prototyper.util.find("belts", "transport-belt")
-                product.belt_stack = 2
+                product.definition = {type="belts", belt_count=1.5}
+                product.definition.belt_proto = prototyper.util.find("belts", "transport-belt")
+                product.definition.belt_stack = 2
                 add_line(classes, player, factory.top_floor)
             end
             solver.update(player, factory)
-            local expected_amount = product.required_amount
+            local expected_amount = product.definition[belts and "belt_count" or "amount"]
             click(player, "act_on_item_box", {item_id=product.id, item_category="product"},
                 {top_level=true, product=true}, "copy")
             local copied = lib.globals.player_table(player).clipboard
@@ -280,21 +278,21 @@ return {
                 {top_level=true, product=true})
             assert(factory:count() == 0 and product.parent == nil)
             local clip = lib.globals.player_table(player).clipboard
-            assert(clip.class == "TLProduct" and clip.class == copied.class)
+            assert(clip.class == "FactoryItem" and clip.class == copied.class)
             assert(clip.packed_object.proto.name == copied.packed_object.proto.name
                 and clip.packed_object.proto.type == copied.packed_object.proto.type
-                and clip.packed_object.required_amount == copied.packed_object.required_amount
-                and clip.packed_object.defined_by == copied.packed_object.defined_by
-                and clip.packed_object.belt_stack == copied.packed_object.belt_stack,
+                and clip.packed_object.definition[belts and "belt_count" or "amount"] == copied.packed_object.definition[belts and "belt_count" or "amount"]
+                and clip.packed_object.definition.type == copied.packed_object.definition.type
+                and clip.packed_object.definition.belt_stack == copied.packed_object.definition.belt_stack,
                 "Cut must store the same product configuration as Copy")
-            lib.clipboard.dummy_paste(player, classes.TLProduct.init(), factory)
+            lib.clipboard.dummy_paste(player, classes.FactoryItem.init(), factory)
             local pasted = factory.first
-            assert(pasted and pasted ~= product and pasted.required_amount == expected_amount)
-            assert(pasted.defined_by == (belts and "belts" or "amount"))
+            assert(pasted and pasted ~= product and pasted.definition[belts and "belt_count" or "amount"] == expected_amount)
+            assert(pasted.definition.type == (belts and "belts" or "amount"))
             if belts then
-                assert(pasted.belt_proto.name == "transport-belt" and pasted.belt_stack == 2)
+                assert(pasted.definition.belt_proto.name == "transport-belt" and pasted.definition.belt_stack == 2)
             end
-            lib.clipboard.dummy_paste(player, classes.TLProduct.init(), factory)
+            lib.clipboard.dummy_paste(player, classes.FactoryItem.init(), factory)
             assert(factory:count() == 1, "repeated paste must not create a duplicate product")
             assert(lib.globals.player_table(player).clipboard == clip, "failed paste must retain clipboard")
 

@@ -245,20 +245,8 @@ listeners.gui = {
 }  ---@as GUIListenerDefinition
 
 listeners.player = {
-    -- Makes sure that another GUI can open properly while a modal dialog is open.
-    -- The FP interface can have at most 3 layers of GUI: main interface, modal dialog, selection mode.
-    -- We need to make sure opening the technology screen (for example) from any of those layers behaves properly.
-    -- We need to consider that if the technology screen is opened (which is the reason we get this event),
-    -- the game automtically closes the currently open GUI before calling this one. This means the top layer
-    -- that's open at that stage is closed already when we get here. So we're at most at the modal dialog
-    -- layer at this point and need to close the things below, if there are any.
+    -- The game closes the modal before opening another GUI, so close the main dialog too
     on_gui_opened = function(player, _)
-        local ui_state = lib.globals.ui_state(player)
-
-        -- With that in mind, if there's a modal dialog open, we were in selection mode, and need to close the dialog
-        if ui_state.modal_dialog_type ~= nil then lib.gui.close_dialog(player, "cancel", true) end
-
-        -- Then, at this point we're at most at the stage where the main dialog is open, so close it
         if main_dialog.is_in_focus(player) then main_dialog.toggle(player, true) end
     end,
 

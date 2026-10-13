@@ -2,19 +2,22 @@
 
 lib = require("__factoryplanner__.util.lib")
 
--- run.sh bakes the active world file into this mod copy as world.lua, and the
--- case filter as filter.lua; an empty filter matches every case
-local world = require("world")
-local filter = require("filter")
+local configuration = require("configuration")
+
+-- The first run tells the launcher which configurations to run next, without a discovery launch
+for _, entry in ipairs(configuration.configurations) do log("FPTEST_CONFIGURATION " .. entry.name) end
+log("FPTEST_SELECTED " .. configuration.name)
 
 -- Runs data stage setup code for each test case that has any; only failures
 -- are worth reporting here, success just means the checks get to run
 local lines = {}
-for name, case in pairs(world.cases) do
-    if case.setup and name:find(filter) then
-        local ok, error = pcall(case.setup)
+for _, name in ipairs(configuration.names) do
+    local case = configuration.cases[name]
+    if case.setup then
+        local ok, error = xpcall(case.setup, debug.traceback)
         if not ok then
-            table.insert(lines, "  ✗ setup " .. name .. ": " .. error)
+            table.insert(lines, "  ✗ setup " .. name .. configuration.suffix .. ": "
+                .. tostring(error):gsub("\n", "\n    "))
         end
     end
 end
@@ -22,5 +25,5 @@ end
 if #lines > 0 then
     -- run.sh lifts everything between these markers out of the game log for display
     log("FPTEST_REPORT\n" .. table.concat(lines, "\n") .. "\nFPTEST_REPORT_END")
-    log("setup_failed")
+    error("FPTEST_SETUP_FAILED")
 end

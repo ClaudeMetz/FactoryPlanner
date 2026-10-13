@@ -10,16 +10,16 @@ jobs:
       - name: Run save-create
         run: bash tests/run.sh save-create
 
-  world:
+  suite:
     runs-on: self-hosted
     if: github.event_name == 'push'
       || github.event.pull_request.head.repo.full_name != github.repository
     strategy:
       fail-fast: false
       matrix:
-        # Every file in tests/worlds needs an entry here
-        world: [lib, generator, solver]
+        # Configurations are discovered within each suite
+        suite: [lib, generator, solver, views]
     steps:
       - uses: actions/checkout@v5
-      - name: Run ${{ matrix.world }}
-        run: bash tests/run.sh world ${{ matrix.world }}
+      - name: Run ${{ matrix.suite }}
+        run: bash tests/run.sh suite ${{ matrix.suite }}

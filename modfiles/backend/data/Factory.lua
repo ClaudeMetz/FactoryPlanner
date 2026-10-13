@@ -1,7 +1,6 @@
 local Object = require("backend.data.Object")
 local Floor = require("backend.data.Floor")
-local TLProduct = require("backend.data.TLProduct")
-local SimpleItem = require("backend.data.SimpleItem")
+local FactoryItem = require("backend.data.FactoryItem")
 
 ---@class Factory: Object, ObjectMethods
 ---@field class "Factory"
@@ -10,15 +9,11 @@ local SimpleItem = require("backend.data.SimpleItem")
 ---@field previous Factory?
 ---@field archived boolean
 ---@field name string
----@field solver SolverName
----@field matrix_free_items SimpleItem[]
----@field simplex_basis table<ConstraintKey, VariableKey>?
 ---@field blueprints_inventory LuaInventory
 ---@field notes string
 ---@field productivity_boni table<string, IntegerEffectValue>
----@field first TLProduct?
+---@field first FactoryItem?
 ---@field top_floor Floor
----@field linearly_dependant boolean?
 ---@field tick_of_deletion uint?
 ---@field tick_of_solver_update uint?
 ---@field last_valid_modset ModToVersion?
@@ -36,16 +31,12 @@ local function init(name, solver_name)
         --shared = false,
 
         name = name,
-        solver = solver_name,
-        matrix_free_items = {},
-        simplex_basis = nil,
         blueprints_inventory = game.create_inventory(MAGIC_NUMBERS.blueprint_limit),
         notes = "",
         productivity_boni = {},
         first = nil,
-        top_floor = Floor.init(1),
+        top_floor = Floor.init(1, solver_name),
 
-        linearly_dependant = false,
         tick_of_deletion = nil,
         tick_of_solver_update = nil,
         last_valid_modset = nil
@@ -62,29 +53,29 @@ function Factory:index()
 end
 
 
----@param product TLProduct
----@param relative_object TLProduct?
+---@param product FactoryItem
+---@param relative_object FactoryItem?
 ---@param direction NeighbourDirection?
 function Factory:insert(product, relative_object, direction)
     product.parent = self
     self:_insert(product, relative_object, direction)
 end
 
----@param product TLProduct
+---@param product FactoryItem
 function Factory:remove(product)
     product.parent = nil
     self:_remove(product)
 end
 
----@param product TLProduct
----@param new_product TLProduct
+---@param product FactoryItem
+---@param new_product FactoryItem
 function Factory:replace(product, new_product)
     product.parent = nil
     new_product.parent = self
     self:_replace(product, new_product)
 end
 
----@param product TLProduct
+---@param product FactoryItem
 ---@param direction NeighbourDirection
 ---@param spots integer?
 function Factory:shift(product, direction, spots)
@@ -93,37 +84,37 @@ end
 
 
 ---@param filter ObjectFilter
----@param pivot TLProduct?
+---@param pivot FactoryItem?
 ---@param direction NeighbourDirection?
----@return TLProduct? product
+---@return FactoryItem? product
 function Factory:find(filter, pivot, direction)
-    return self:_find(filter, pivot, direction)  ---@as TLProduct?
+    return self:_find(filter, pivot, direction)  ---@as FactoryItem?
 end
 
----@return TLProduct?
+---@return FactoryItem?
 function Factory:find_last()
-    return self:_find_last()  ---@as TLProduct?
+    return self:_find_last()  ---@as FactoryItem?
 end
 
 
 ---@param filter ObjectFilter?
----@param pivot TLProduct?
+---@param pivot FactoryItem?
 ---@param direction NeighbourDirection?
----@return fun(): TLProduct?
+---@return fun(): FactoryItem?
 function Factory:iterator(filter, pivot, direction)
     return self:_iterator(filter, pivot, direction)
 end
 
 ---@param filter ObjectFilter?
----@param pivot TLProduct?
+---@param pivot FactoryItem?
 ---@param direction NeighbourDirection?
----@return TLProduct[]
+---@return FactoryItem[]
 function Factory:as_list(filter, pivot, direction)
     return self:_as_list(filter, pivot, direction)
 end
 
 ---@param filter ObjectFilter?
----@param pivot TLProduct?
+---@param pivot FactoryItem?
 ---@param direction NeighbourDirection?
 ---@return number count
 function Factory:count(filter, pivot, direction)
@@ -174,7 +165,7 @@ end
 function Factory:get_productivity_bonus(force, recipe_name)
     local custom_bonus = self.productivity_boni[recipe_name]
     if custom_bonus then return custom_bonus
-    else return lib.get_recipe_productivity(force, recipe_name) end
+    else return lib.effects.get_recipe_productivity(force, recipe_name) end
 end
 
 
@@ -213,16 +204,18 @@ function Factory:refresh_lines(player, starting_tick)
     return starting_tick + MAGIC_NUMBERS.factory_solver_update_delay
 end
 
+function Factory:clear_solver_cache()
+    self.top_floor:clear_solver_cache()
+end
+
 
 ---@class PackedFactory: PackedObject
 ---@field class "Factory"
 ---@field name string
----@field solver SolverName
----@field matrix_free_items PackedSimpleItem[]
 ---@field blueprint_strings table<integer, string> sparse
 ---@field notes string
 ---@field productivity_boni table<string, IntegerEffectValue>
----@field products PackedProduct[]
+---@field products PackedFactoryItem[]
 ---@field top_floor PackedFloor
 
 ---@param full boolean
@@ -239,8 +232,6 @@ function Factory:pack(full)
     return {
         class = self.class,
         name = self.name,
-        solver = self.solver,
-        matrix_free_items = self.matrix_free_items and SimpleItem.pack_items(self.matrix_free_items),
         blueprint_strings = blueprint_strings,
         notes = self.notes,
         productivity_boni = self.productivity_boni,
@@ -252,11 +243,7 @@ end
 ---@param packed_self PackedFactory
 ---@return Factory factory
 local function unpack(packed_self)
-    local unpacked_self = init(packed_self.name, packed_self.solver)
-
-    -- Matrix free items will be automatically unpacked by the validation process
-    ---@diagnostic disable-next-line: assign-type-mismatch
-    unpacked_self.matrix_free_items = packed_self.matrix_free_items
+    local unpacked_self = init(packed_self.name, packed_self.top_floor.solver)
 
     unpacked_self.blueprints_inventory = game.create_inventory(MAGIC_NUMBERS.blueprint_limit)
     for index, blueprint in pairs(packed_self.blueprint_strings) do
@@ -266,7 +253,7 @@ local function unpack(packed_self)
     unpacked_self.notes = packed_self.notes
     unpacked_self.productivity_boni = packed_self.productivity_boni
 
-    unpacked_self.first = Object.unpack(packed_self.products, TLProduct.unpack, unpacked_self)  ---@as TLProduct
+    unpacked_self.first = Object.unpack(packed_self.products, FactoryItem.unpack, unpacked_self)  ---@as FactoryItem
 
     unpacked_self.top_floor = Floor.unpack(packed_self.top_floor)
     unpacked_self.top_floor.parent = unpacked_self
@@ -291,10 +278,6 @@ function Factory:validate(player)
 
     self.valid = self:_validate(player) and self.valid
     self.valid = self.top_floor:validate(player) and self.valid
-
-    self.matrix_free_items = SimpleItem.unpack_items(
-        self.matrix_free_items  ---@as PackedSimpleItem[]
-    )
 
     -- Remove any invalid boni, no need to mark the factory as invalid
     for recipe_name, _ in pairs(self.productivity_boni) do
