@@ -503,8 +503,8 @@ function _cursor.pipette_item(player, item)
         or (item_proto.type == "fluid") and prototypes.fluid[name] or nil
     if not prototype then return end
 
-    local quality_name = (item.quality_proto) and item.quality_proto.name or "normal"
-    player.pipette(prototype, quality_name, true)
+    local quality = (item.quality_proto) and item.quality_proto.name or "normal"
+    player.pipette(prototype, quality, true)
 end
 
 ---@param player LuaPlayer

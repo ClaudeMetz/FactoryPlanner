@@ -398,15 +398,16 @@ local function add_item_flow(line, relevant_line, item_category, button_color, m
 
     if item_category == "ingredients" and line.machine.fuel then
         local fuel = line.machine.fuel
+        local fuel_proto = fuel.proto  ---@as FPFuelPrototype
         local amount, number_tooltip, secondary_amount = item_views.process_item(metadata.player,
-            fuel.proto--[[@as FPFuelPrototype]], fuel.amount, line.machine.amount)
+            fuel_proto, fuel.amount, line.machine.amount)
         if amount == -1 then goto skip_fuel end  -- an amount of -1 means it was below the margin of error
 
         local style = "fflib_slot_button_cyan"
         local name_line = {"fp.tt_title_with_note", fuel.proto.localised_name, {"fp.pu_fuel", 1}}
         local temperature_line = ""  ---@type LocalisedString
 
-        if fuel.proto.type == "fluid" then
+        if fuel_proto.type == "fluid" then
             local temperature_data = fuel.temperature_data   -- exists for any fluid fuel
             table.insert(name_line, temperature_data.annotation)
 
@@ -431,13 +432,18 @@ local function add_item_flow(line, relevant_line, item_category, button_color, m
         local tags = {mod="fp", on_gui_click="act_on_compact_item", fuel_id=fuel.id, on_gui_hover="hover_compact_item",
             on_gui_leave="leave_compact_item", context="compact_dialog", flags=flags}
 
-        local button = item_table.add{type="sprite-button", tags=tags, sprite=fuel.proto.sprite, quality=quality,
+        local button = item_table.add{type="sprite-button", tags=tags, sprite=fuel_proto.sprite, quality=quality,
             style=style, number=amount, secondary_number=secondary_amount, mouse_button_filter={"left-and-right"},
             raise_hover_events=true, index=first_special_index}
         metadata.tooltips[button.index] = tooltip
 
-        local key = solver.util.pack_item({type=fuel.proto.type, name=fuel:get_name_with_temperature(),
-            quality=quality, amount=0}--[[@as SolverItem]])
+        local item_with_temp = {
+            type = fuel_proto.type,
+            name = fuel:get_name_with_temperature(),
+            quality = quality,
+            amount = 0
+        }  ---@as SolverItem
+        local key = solver.util.pack_item(item_with_temp)
         item_buttons[key] = item_buttons[key] or {}
         table.insert(item_buttons[key], {button=button, proper_style=style})
 
@@ -811,9 +817,13 @@ local function handle_hover_change(player, tags, event)
         key = solver.util.pack_item(floor.ingredients[tags.item_index]--[[@cast -nil]])
     elseif tags.fuel_id then  ---@cast tags ActOnCompactFuelTags
         local fuel = OBJECT_INDEX[tags.fuel_id]  ---@type Fuel
-        local quality = fuel.quality_proto and fuel.quality_proto.name
-        key = solver.util.pack_item({type=fuel.proto.type, name=fuel:get_name_with_temperature(),
-            quality=quality, amount=0}--[[@as SolverItem]])
+        local item = {
+            type = fuel.proto--[[@as FPFuelPrototype]].type,
+            name = fuel:get_name_with_temperature(),
+            quality = fuel.quality_proto and fuel.quality_proto.name,
+            amount = 0
+        }  ---@as SolverItem
+        key = solver.util.pack_item(item)
     else  ---@cast tags ActOnCompactItemTags
         local line = OBJECT_INDEX[tags.line_id]  ---@type Line
         local item_list = (tags.flags.catalyst) and line.recipe.catalysts or line
