@@ -8,17 +8,6 @@ local _util = {
 _util.pack_item = structures.pack_item
 _util.unpack_item = structures.unpack_item
 
-
----Performs `a - b` while correcting floating point errors
----@param a number
----@param b number
----@return number
-function _util.safe_sub(a, b)
-    local c = a - b
-    if c < MAGIC_NUMBERS.margin_of_error and c > -MAGIC_NUMBERS.margin_of_error then return 0 end
-    return c
-end
-
 --- Calculates the product amount after applying productivity bonuses
 ---@param item FormattedProduct
 ---@param total_effects IntegerModuleEffects
