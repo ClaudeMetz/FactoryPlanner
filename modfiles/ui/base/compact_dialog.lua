@@ -1,3 +1,5 @@
+local SimpleItem = require("backend.data.SimpleItem")
+
 -- ** UTIL **
 ---@param player LuaPlayer
 ---@return integer width
@@ -691,13 +693,13 @@ local function handle_ingredient_click(player, tags, action)
     local item = floor.ingredients[tags.item_index]  ---@as SimpleItem
 
     if action == "pipette" then
-        lib.cursor.pipette_item(player, item.proto)
+        lib.cursor.pipette_item(player, item)
 
     elseif action == "filter_entity" then
         lib.cursor.filter_entity(player, item.proto)
 
     elseif action == "put_into_combinator" then
-        lib.cursor.put_into_combinator(player, item.proto, item.amount)
+        lib.cursor.put_into_combinator(player, item)
 
     elseif action == "factoriopedia" then
         player.open_factoriopedia_gui(lib.get_factoriopedia_proto(item.proto))
@@ -783,14 +785,16 @@ local function handle_item_click(player, tags, action)
         ---@cast item.proto FPItemPrototype
     end
 
+    local simple_item = SimpleItem.init(nil, item.proto--[[@as FPItemPrototype]], item.quality_proto--[[@as FPQualityPrototype?]], amount)
+
     if action == "pipette" then
-        lib.cursor.pipette_item(player, item.proto)
+        lib.cursor.pipette_item(player, simple_item)
 
     elseif action == "filter_entity" then
         lib.cursor.filter_entity(player, item.proto)
 
     elseif action == "put_into_combinator" then
-        lib.cursor.put_into_combinator(player, item.proto, amount)
+        lib.cursor.put_into_combinator(player, simple_item)
 
     elseif action == "factoriopedia" then
         player.open_factoriopedia_gui(lib.get_factoriopedia_proto(item.proto))

@@ -224,6 +224,9 @@ local function handle_item_button_click(player, tags, action)
         item = floor[tags.item_category .. "s"][tags.item_index]  ---@as FactoryItem
     end
 
+    local amount = (item.class == "FactoryItem") and item:get_defined_amount() or item.amount
+    local simple_item = SimpleItem.init(nil, item.proto--[[@as FPItemPrototype]], item.quality_proto--[[@as FPQualityPrototype?]], amount)
+
     if action == "add_recipe" then
         local production_type = (tags.item_category == "byproduct") and "consume" or "produce"
         lib.gui.open_dialog(player, {dialog="recipe", modal_data={production_type=production_type,
@@ -258,11 +261,10 @@ local function handle_item_button_click(player, tags, action)
         lib.gui.run_refresh(player, "all")  -- make sure product icons are updated
 
     elseif action == "pipette" then
-        lib.cursor.pipette_item(player, item.proto--[[@as FPItemPrototype]])
+        lib.cursor.pipette_item(player, simple_item)
 
     elseif action == "put_into_combinator" then
-        local amount = (item.class == "FactoryItem") and item:get_defined_amount() or item.amount
-        lib.cursor.put_into_combinator(player, item.proto--[[@as FPItemPrototype]], amount)
+        lib.cursor.put_into_combinator(player, simple_item)
 
     elseif action == "factoriopedia" then
         local proto = item.proto  ---@as FPItemPrototype

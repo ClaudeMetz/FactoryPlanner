@@ -272,10 +272,12 @@ local function handle_item_click(player, tags, action)
         lib.clipboard.paste(player, item)
 
     elseif action == "pipette" then
-        lib.cursor.pipette_item(player, item.proto)
+        lib.cursor.pipette_item(player, item)
 
     elseif action == "put_into_combinator" then
-        lib.cursor.put_into_combinator(player, item.proto, amount)
+        local item_clone = lib.flib.shallow_copy(item)
+        item_clone.amount = amount
+        lib.cursor.put_into_combinator(player, item_clone)
 
     elseif action == "factoriopedia" then
         player.open_factoriopedia_gui(lib.get_factoriopedia_proto(item.proto))
@@ -288,6 +290,7 @@ end
 local function handle_fuel_click(player, tags, action)
     local fuel = OBJECT_INDEX[tags.fuel_id]  ---@as Fuel
     local line = fuel.parent.parent
+    local item = SimpleItem.init(nil, fuel.proto--[[@as FPItemPrototype]], fuel.quality_proto--[[@as FPQualityPrototype?]], fuel.amount)
 
     if action == "add_recipe_to_end" or action == "add_recipe_below" then
         local add_after_line_id = (action == "add_recipe_below") and line.id or nil
@@ -316,10 +319,10 @@ local function handle_fuel_click(player, tags, action)
         lib.clipboard.paste(player, fuel)
 
     elseif action == "pipette" then
-        lib.cursor.pipette_item(player, fuel.proto--[[@as FPFuelPrototype]])
+        lib.cursor.pipette_item(player, item)
 
     elseif action == "put_into_combinator" then
-        lib.cursor.put_into_combinator(player, fuel.proto--[[@as FPFuelPrototype]], fuel.amount)
+        lib.cursor.put_into_combinator(player, item)
 
     elseif action == "factoriopedia" then
         player.open_factoriopedia_gui(lib.get_factoriopedia_proto(fuel.proto))
