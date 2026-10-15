@@ -80,7 +80,7 @@ function Machine:normalize_fuel(player)
         if burner.combined_category ~= self.fuel.proto.combined_category then
             self.fuel:set_proto(compatible_proto--[[@cast -nil]], player)
         else
-            -- The category can stay the same while the machine's fluid box allows other temperatures
+            -- The category can stay the same while the machine's input limits allow other temperatures
             self.fuel:rebuild_temperature_data()
             if self.fuel.temperature == nil then self.fuel:apply_temperature_default(player) end
         end

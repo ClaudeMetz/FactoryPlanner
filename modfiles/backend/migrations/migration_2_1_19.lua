@@ -4,6 +4,8 @@ local migration = {}
 
 function migration.player_table(player_table)
     local function migrate_floor(floor)
+        floor.simplex_item_weights = floor.simplex_item_weights or {}
+
         for line in floor:iterator() do
             if line.class == "Floor" then
                 migrate_floor(line)
@@ -22,6 +24,8 @@ end
 
 function migration.packed_factory(packed_factory)
     local function migrate_floor(floor)
+        floor.simplex_item_weights = floor.simplex_item_weights or {}
+
         for _, line in pairs(floor.lines) do
             if line.class == "Floor" then
                 migrate_floor(line)

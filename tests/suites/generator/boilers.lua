@@ -11,7 +11,7 @@
 -- The two modes differ only in where the outgoing temperature comes from. "output-to-separate-pipe"
 -- caps target_temperature at the output fluid's maximum, and is the only mode that reads the
 -- output fluidbox at all. "heat-fluid-inside" has no target and tops the fluid out at its own maximum instead,
--- lowered by the input fluidbox's maximum_temperature where that is set.
+-- lowered by the boiler's maximum_input_temperature where that is set.
 --
 -- Machine speed is the boiler's energy consumption in watts. The energy a recipe needs is worked
 -- out per unit as (goal - input temperature) * heat_capacity, so it depends on the temperature
@@ -239,13 +239,14 @@ return {
                 output_fluid_box = output_box()
             }),
 
-            -- Same, but its fluidbox refuses anything above 300°, which is what the fluid now tops
+            -- Same, but it stops heating above 300°, which is what the fluid now tops
             -- out at. That makes this the identical conversion to test-boiler-same-fluid above, and
             -- the two share a recipe despite being in different modes
             test_boiler("test-boiler-inside-capped", {
                 mode = "heat-fluid-inside",
                 target_temperature = REMOVE,
-                fluid_box = input_box{filter = "test-boil-wide", maximum_temperature = 300},
+                fluid_box = input_box{filter = "test-boil-wide"},
+                maximum_input_temperature = 300,
                 output_fluid_box = output_box()
             }),
 

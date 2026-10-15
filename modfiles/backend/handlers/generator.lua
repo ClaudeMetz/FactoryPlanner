@@ -1097,8 +1097,8 @@ function generator.machines.generate(context)
                 fluid_filter = (generator_fluid_box.filter) and generator_fluid_box.filter.name or nil,
                 -- Deliberately not proto.maximum_temperature: a generator clamps the energy it
                 -- extracts rather than refusing hotter fluid, which is what wasted_share models
-                minimum_temperature = generator_fluid_box.minimum_temperature,
-                maximum_temperature = generator_fluid_box.maximum_temperature
+                minimum_temperature = proto.minimum_input_temperature,
+                maximum_temperature = proto.maximum_input_temperature
             }
 
         elseif burner_prototype then
@@ -1128,8 +1128,8 @@ function generator.machines.generate(context)
                 -- burns_fluid == true uses the fluid's fuel_value, otherwise its heat above the default temperature
                 burns_fluid = fluid_burner_prototype.burns_fluid,
                 fluid_filter = (fluid_box.filter) and fluid_box.filter.name or nil,
-                minimum_temperature = fluid_box.minimum_temperature,
-                maximum_temperature = fluid_box.maximum_temperature
+                minimum_temperature = fluid_burner_prototype.minimum_input_temperature,
+                maximum_temperature = fluid_burner_prototype.maximum_input_temperature
             }
 
         elseif proto.electric_energy_source_prototype then
