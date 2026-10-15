@@ -33,8 +33,8 @@ local function get_migration_map()
         for _, fluid in pairs((input.filter) and {input.filter} or prototypes.fluid) do
             local output_fluid = (output ~= nil and output.filter) or fluid
             local new_name = table.concat({"impostor-boil", fluid.name,
-                math.max(input.minimum_temperature or -math.huge, fluid.default_temperature),
-                math.min(input.maximum_temperature or math.huge, fluid.max_temperature, target),
+                math.max(proto.minimum_input_temperature or -math.huge, fluid.default_temperature),
+                math.min(proto.maximum_input_temperature or math.huge, fluid.max_temperature, target),
                 output_fluid.name, target}, "-")
 
             migration_map["impostor-" .. category .. "-fluid-" .. fluid.name] = new_name

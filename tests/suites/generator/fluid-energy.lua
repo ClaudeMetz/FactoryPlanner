@@ -9,7 +9,7 @@
 --   burns_fluid=false  filtered box, capped scale  -> category "fluid-heat-filter-test-heat-fluid"
 --   burns_fluid=false  unfiltered box              -> category "fluid-heat", all heatable fluids
 --   burns_fluid=false  usage derived by the game from the source's maximum_temperature
---   fluid box temperature bounds, with and without a filter (they bind either way)
+--   input temperature bounds, with and without a filter (they bind either way)
 --   two machines sharing a category with different bounds
 --   solid burner in the same crafting category (regression, must be untouched)
 --   heatable fluid never produced hot / hidden fluid (both must not become heat fuels)
@@ -173,21 +173,24 @@ return {
                 fluid_box = input_box{filter = "test-heat-fluid"}
             }),
 
-            -- Same category as test-machine-heat-capped, but the box only accepts 300°-500°,
+            -- Same category as test-machine-heat-capped, but the source only accepts 300°-500°,
             -- so of the produced variants only 400° remains selectable here
             test_machine("test-machine-heat-bounded", {
                 type = "fluid",
                 burns_fluid = false,
                 scale_fluid_usage = true,
-                fluid_box = input_box{filter = "test-heat-fluid", minimum_temperature = 300, maximum_temperature = 500}
+                fluid_box = input_box{filter = "test-heat-fluid"},
+                minimum_input_temperature = 300,
+                maximum_input_temperature = 500
             }),
 
-            -- Box bounds without a filter still bind, despite what the prototype docs say
+            -- Input bounds also apply without a fluid filter
             test_machine("test-machine-heat-bounded-open", {
                 type = "fluid",
                 burns_fluid = false,
                 scale_fluid_usage = true,
-                fluid_box = input_box{minimum_temperature = 300}
+                fluid_box = input_box(),
+                minimum_input_temperature = 300
             }),
 
             -- Solid burner in the same crafting category, which must be entirely unaffected

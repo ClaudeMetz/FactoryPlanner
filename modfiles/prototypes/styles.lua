@@ -214,6 +214,17 @@ styles["fp_button_green"] = {
     left_click_sound = "__core__/sound/gui-green-confirm.ogg"
 }
 
+styles["fp_sprite-button_item_weight"] = {
+    type = "button_style",
+    parent = "fflib_slot_button_default",
+    font = "count-font",
+    horizontal_align = "right",
+    vertical_align = "bottom",
+    default_font_color = {1, 1, 1},
+    hovered_font_color = {1, 1, 1},
+    clicked_font_color = {1, 1, 1}
+}
+
 -- Generate grayscale versions of flib's slot buttons
 for _, color in pairs{"default", "grey", "red", "orange", "yellow", "green", "cyan", "blue", "purple", "pink"} do
     styles["fflib_slot_button_" .. color .. "_grayscale"] = {

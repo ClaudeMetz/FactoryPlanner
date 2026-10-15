@@ -21,19 +21,9 @@ local objective_vector = {
     machine_limit = 0,
     fluid_modifier = 0.01,
     energy_modifier = 1e-9,
+    resource_modifier = 0,
+    weight_modifier = 0.01,
 }
-
-
----@param key SolverItemKey
----@return number
-local function item_cost(key)
-    local item = structures.unpack_item(key)
-    if item.type == "fluid" then return objective_vector.fluid_modifier end
-    if item.type == "entity" and lib.is_special_power_item(item.name) then
-        return objective_vector.energy_modifier
-    end
-    return 1
-end
 
 ---@param factory_data FactoryData
 ---@param floor_id ObjectID
@@ -44,6 +34,27 @@ function simplex_engine.solve_floor(factory_data, floor_id)
     local ingredients = {}  ---@type SolverSet
     local cycled_intermediates = {}  ---@type SolverSet
     local floor_data = factory_data.floor_data_map[floor_id]
+
+    ---@param key SolverItemKey
+    ---@param direction FlowDirection
+    ---@return number
+    local function item_cost(key, direction)
+        local item = structures.unpack_item(key)
+        local cost = 1.0 * objective_vector.weight_modifier ^ (floor_data.simplex_item_weights[key] or 0)
+
+        if item.type == "fluid" then
+            cost = cost * objective_vector.fluid_modifier
+        end
+        if item.type == "entity" then
+            if lib.is_special_power_item(item.name) then
+                cost = cost * objective_vector.energy_modifier
+            elseif direction == "in" then  -- assume ingredient entity is a resource
+                cost = cost * objective_vector.resource_modifier
+            end
+        end
+
+        return cost
+    end
 
     -- Consider only lines on this floor
     for _, line_object_id in ipairs(floor_data.line_ids) do
@@ -80,27 +91,27 @@ function simplex_engine.solve_floor(factory_data, floor_id)
     -- Add slack variables for products
     for item_key, _ in pairs(products) do
         if not intermediates[item_key] then
-            local objective = item_cost(item_key) * objective_vector.product
+            local objective = item_cost(item_key, "out") * objective_vector.product
             tableau:add_item_variable(item_key, "export", objective)
         end
     end
 
     -- Add exporty slack variables for intermediates
     for item_key, _ in pairs(intermediates) do
-        local objective = item_cost(item_key) * objective_vector.intermediate_out
+        local objective = item_cost(item_key, "out") * objective_vector.intermediate_out
         tableau:add_item_variable(item_key, "export", objective)
     end
 
     -- Add import slack variables for cycled intermediates
     for item_key, _ in pairs(cycled_intermediates) do
-        local objective = item_cost(item_key) * objective_vector.intermediate_in
+        local objective = item_cost(item_key, "in") * objective_vector.intermediate_in
         tableau:add_item_variable(item_key, "import", objective)
     end
 
     -- Add slack variables for ingredients
     for item_key, _ in pairs(ingredients) do
         if not intermediates[item_key] then
-            local objective = item_cost(item_key) * objective_vector.ingredient
+            local objective = item_cost(item_key, "in") * objective_vector.ingredient
             tableau:add_item_variable(item_key, "import", objective)
         end
     end
@@ -110,7 +121,7 @@ function simplex_engine.solve_floor(factory_data, floor_id)
         for _, item in pairs(floor_data.products) do  ---@cast item SolverItem
             local item_key = structures.pack_item(item)
             if products[item_key] then
-                local objective = item_cost(item_key) * objective_vector.target_product
+                local objective = item_cost(item_key, "out") * objective_vector.target_product
                 tableau:add_item_variable(item_key, "output", objective)
                 tableau:add_item_constraint(item_key, "output", "<=", item.amount, objective)
             end
@@ -121,7 +132,7 @@ function simplex_engine.solve_floor(factory_data, floor_id)
         for _, item in pairs({}) do  ---@cast item SolverItem
             local item_key = structures.pack_item(item)
             if ingredients[item_key] then
-                local objective = item_cost(item_key) * objective_vector.limited_ingredient
+                local objective = item_cost(item_key, "in") * objective_vector.limited_ingredient
                 tableau:add_item_variable(item_key, "input", objective)
                 tableau:add_item_constraint(item_key, "input", "<=", item.amount, objective)
             end
