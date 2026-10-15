@@ -41,7 +41,7 @@ end
 
 ---@class HandleItemBoxClickTags
 ---@field item_category ItemCategory
----@field item_id ObjectID
+---@field item_id ObjectID?
 ---@field item_index integer?
 ---@field context "item_boxes"
 ---@field flags GUIActionFlags
@@ -111,12 +111,13 @@ local function refresh_item_box(player, factory, item_category, tooltips)
                 table.insert(tooltip, {"", "\n", {"fp.item_defined_by_machines",
                     lib.format.number(count, 4), {"fp.pl_machine", count}}})
             end
+            local quality = product.quality_proto and product.quality_proto.name or nil
 
             ---@type HandleItemBoxClickTags
             local tags = {mod="fp", on_gui_click="act_on_item_box", item_category=item_category, item_id=product.id,
                 on_gui_hover="set_tooltip", context="item_boxes", flags=flags}
             local button = table_items.add{type="sprite-button", tags=tags--[[@as Tags]], number=amount,
-                secondary_number=secondary_amount, style=style, sprite=product.proto.sprite,
+                secondary_number=secondary_amount, style=style, sprite=product.proto.sprite, quality=quality,
                 mouse_button_filter={"left-and-right"}, raise_hover_events=true}
             tooltips.item_boxes[button.index] = tooltip
             table_item_count = table_item_count + 1
@@ -160,12 +161,13 @@ local function refresh_item_box(player, factory, item_category, tooltips)
 
             local style = (item_category == "byproduct") and "fflib_slot_button_red" or "fflib_slot_button_default"
             local tooltip = {"", {"fp.tt_title", item.proto.localised_name}, "\n", number_tooltip}
+            local quality = item.quality_proto and item.quality_proto.name
 
             ---@type HandleItemBoxClickTags
             local tags = {mod="fp", on_gui_click="act_on_item_box", item_category=item_category, item_id=item.id,
                 item_index=index, on_gui_hover="set_tooltip", context="item_boxes", flags=flags}
             local button = table_items.add{type="sprite-button", tags=tags--[[@as Tags]], number=amount,
-                secondary_number=secondary_amount, style=style, sprite=item.proto.sprite,
+                secondary_number=secondary_amount, style=style, sprite=item.proto.sprite, quality=quality,
                 mouse_button_filter={"left-and-right"}, raise_hover_events=true}
             tooltips.item_boxes[button.index] = tooltip
             table_item_count = table_item_count + 1
@@ -224,10 +226,13 @@ local function handle_item_button_click(player, tags, action)
         item = floor[tags.item_category .. "s"][tags.item_index]  ---@as FactoryItem
     end
 
+    local amount = (item.class == "FactoryItem") and item:get_defined_amount() or item.amount
+    local simple_item = SimpleItem.init(nil, item.proto--[[@as FPItemPrototype]], item.quality_proto--[[@as FPQualityPrototype?]], amount)
+
     if action == "add_recipe" then
         local production_type = (tags.item_category == "byproduct") and "consume" or "produce"
         lib.gui.open_dialog(player, {dialog="recipe", modal_data={production_type=production_type,
-            category_id=item.proto.category_id, product_id=item.proto.id}})
+            category_id=item.proto.category_id, product_id=item.proto.id, quality_proto = item.quality_proto}})
 
     elseif action == "adjust_weight" then
         solver_bar.add_item_weight(player, item.proto--[[@as FPItemPrototype]])
@@ -245,7 +250,7 @@ local function handle_item_button_click(player, tags, action)
 
     elseif action == "copy" then
         local copyable_item = (item.class == "FactoryItem") and item
-            or SimpleItem.init(nil, item.proto--[[@as FPItemPrototype]], item.amount)
+            or SimpleItem.init(nil, item.proto--[[@as FPItemPrototype]], item.quality_proto--[[@as FPQualityPrototype?]], item.amount)
         lib.clipboard.copy(player, copyable_item)
 
     elseif action == "paste" then
@@ -261,11 +266,10 @@ local function handle_item_button_click(player, tags, action)
         lib.gui.run_refresh(player, "all")  -- make sure product icons are updated
 
     elseif action == "pipette" then
-        lib.cursor.pipette_item(player, item.proto--[[@as FPItemPrototype]])
+        lib.cursor.pipette_item(player, simple_item)
 
     elseif action == "put_into_combinator" then
-        local amount = (item.class == "FactoryItem") and item:get_defined_amount() or item.amount
-        lib.cursor.put_into_combinator(player, item.proto--[[@as FPItemPrototype]], amount)
+        lib.cursor.put_into_combinator(player, simple_item)
 
     elseif action == "factoriopedia" then
         local proto = item.proto  ---@as FPItemPrototype

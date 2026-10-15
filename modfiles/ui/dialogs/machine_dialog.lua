@@ -67,11 +67,17 @@ end
 local function set_defaults(player, tags, _)
     local modal_data = lib.globals.modal_data(player)  ---@as MachineDialogModalData
     local machine = modal_data.object
+    local fuel = machine.fuel
 
     local machine_data = {
         prototype = machine.proto.name,
         quality = machine.quality_proto.name,
         modules = machine.module_set:compile_default()
+    }
+
+    local fuel_data = fuel and {
+        prototype = fuel.proto.name,
+        quality = fuel.quality_proto and fuel.quality_proto.name
     }
 
     if tags.action == "machine_all" then
@@ -80,10 +86,10 @@ local function set_defaults(player, tags, _)
         defaults.set(player, "machines", machine_data, machine.proto.combined_category)
 
     elseif tags.action == "fuel_all" then
-        defaults.set_all(player, "fuels", {prototype=machine.fuel--[[@cast -nil]].proto.name})
+        defaults.set_all(player, "fuels", fuel_data--[[@cast -nil]])
     elseif tags.action == "fuel" then
         local category = machine.proto.burner--[[@cast -nil]].combined_category
-        defaults.set(player, "fuels", {prototype=machine.fuel--[[@cast -nil]].proto.name}, category)
+        defaults.set(player, "fuels", fuel_data--[[@cast -nil]], category)
     end
 
     refresh_defaults_buttons(player)
@@ -103,9 +109,18 @@ local function refresh_fuel_frame(player)
     if not burns_fuel then return end  ---@cast machine.fuel -nil
 
     local elem_type = machine.fuel.proto.elem_type
+    local elem_value = machine.fuel.proto.name  ---@type string | PrototypeWithQuality
+
+    if QUALITY_ENABLED and elem_type == "item" then
+        elem_type = "item-with-quality"
+        elem_value = {
+            name = machine.fuel.proto.name,
+            quality = machine.fuel.quality_proto and machine.fuel.quality_proto.name
+        }
+    end
 
     local button_fuel = modal_elements.fuel_button_flow.add{type="choose-elem-button", elem_type=elem_type,
-        [elem_type]=machine.fuel.proto.name, elem_filters=machine:compile_fuel_filter(),
+        [elem_type]=elem_value, elem_filters=machine:compile_fuel_filter(),
         tags={mod="fp", on_gui_elem_changed="choose_fuel"}, style="fp_sprite-button_inset"}
     button_fuel.style.size = 40
 end
@@ -212,7 +227,7 @@ end
 local function handle_fuel_choice(player, _, event)
     local modal_data = lib.globals.modal_data(player)  ---@as MachineDialogModalData
     local machine = modal_data.object  ---@cast machine.fuel -nil
-    local elem_value = event.element.elem_value  ---@as string
+    local elem_value = event.element.elem_value
 
     if not elem_value then
         event.element.elem_value = machine.fuel.proto.name  -- reset the fuel so it can't be nil
@@ -220,9 +235,19 @@ local function handle_fuel_choice(player, _, event)
         return  -- nothing changed
     end
 
+    local proto_name, quality  ---@type string, string?
+    if event.element.elem_type == "item-with-quality" then  ---@cast elem_value PrototypeWithQuality
+        proto_name = elem_value.name
+        quality = elem_value.quality
+    else ---@cast elem_value string
+        proto_name = elem_value
+    end
+
     local combined_category = machine.proto.burner--[[@cast -nil]].combined_category
-    local proto = prototyper.util.find("fuels", elem_value, combined_category)  ---@as FPFuelPrototype
-    machine.fuel:set_proto(proto, player)
+    local fuel_proto = prototyper.util.find("fuels", proto_name, combined_category)  ---@as FPFuelPrototype
+    local quality_proto = prototyper.util.find("qualities", quality, nil)  ---@as FPQualityPrototype?
+    machine.fuel:set_proto(fuel_proto, player)
+    machine.fuel.quality_proto = quality_proto
 
     refresh_defaults_buttons(player)
 end

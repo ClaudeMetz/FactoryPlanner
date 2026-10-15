@@ -89,7 +89,8 @@ function _cursor.set_entity(player, line, object)
             position = {0, 0},
             quality = object.quality_proto.name,
             items = items_list,
-            recipe = (object.class == "Machine") and line.recipe.proto.name or nil
+            recipe = (object.class == "Machine") and line.recipe.proto.name or nil,
+            recipe_quality = object.class == "Machine" and line.recipe.quality_proto and line.recipe.quality_proto.name or nil,
         }
         set_cursor_blueprint(player, {blueprint_entity})
     end
@@ -131,12 +132,14 @@ end
 
 ---@param player LuaPlayer
 ---@param blueprint_entity BlueprintEntity?
----@param item_proto FPItemPrototype | FPFuelPrototype
----@param amount number
-local function add_to_item_combinator(player, blueprint_entity, item_proto, amount)
+---@param item SimpleItem
+local function add_to_item_combinator(player, blueprint_entity, item)
     local timescale = lib.globals.preferences(player).timescale
     local item_signals, filter_matched = {}, false
+    local item_proto = item.proto  ---@as FPItemPrototype | FPFuelPrototype
     local item_name = item_proto.base_name or item_proto.name
+    local quality = (item.quality_proto) and item.quality_proto.name or "normal"
+    local amount = item.amount
 
     do
         if not blueprint_entity then goto skip_cursor end
@@ -152,7 +155,9 @@ local function add_to_item_combinator(player, blueprint_entity, item_proto, amou
         if section--[[@cast -nil]].group then goto skip_cursor end
 
         for _, filter in pairs(section--[[@cast -nil]].filters or {}) do
-            if item_proto.type == (filter.type or "item") and item_name == filter.name then
+            ---@cast filter BlueprintLogisticFilter
+            if item_proto.type == (filter.type or "item") and item_name == filter.name
+                    and quality == (filter.quality or "normal") then
                 filter.count = filter.count + (amount * timescale)  ---@as int32
                 filter_matched = true
             end
@@ -166,7 +171,7 @@ local function add_to_item_combinator(player, blueprint_entity, item_proto, amou
         table.insert(item_signals, {
             type = item_proto.type,
             name = item_name,
-            quality = "normal",
+            quality = quality,
             comparator = "=",
             count = math.ceil(amount * timescale - MAGIC_NUMBERS.margin_of_error)
         })
@@ -490,24 +495,25 @@ function _cursor.filter_entity(player, item_proto)
 end
 
 ---@param player LuaPlayer
----@param item_proto FPItemPrototype | FPFuelPrototype
-function _cursor.pipette_item(player, item_proto)
+---@param item SimpleItem
+function _cursor.pipette_item(player, item)
+    local item_proto = item.proto  ---@as FPItemPrototype | FPFuelPrototype
     local name = item_proto.base_name or item_proto.name
     local prototype = (item_proto.type == "item") and prototypes.item[name]
         or (item_proto.type == "fluid") and prototypes.fluid[name] or nil
     if not prototype then return end
 
-    player.pipette(prototype, "normal", true)
+    local quality = (item.quality_proto) and item.quality_proto.name or "normal"
+    player.pipette(prototype, quality, true)
 end
 
 ---@param player LuaPlayer
----@param item_proto FPItemPrototype | FPFuelPrototype
----@param amount number
-function _cursor.put_into_combinator(player, item_proto, amount)
+---@param item SimpleItem
+function _cursor.put_into_combinator(player, item)
     local cursor_entity = parse_cursor_entity(player)
 
     local blueprint_entity = (cursor_entity.type == "blueprint") and cursor_entity.entity or nil
-    add_to_item_combinator(player, blueprint_entity--[[@as BlueprintEntity?]], item_proto, amount)
+    add_to_item_combinator(player, blueprint_entity--[[@as BlueprintEntity?]], item)
 end
 
 return _cursor

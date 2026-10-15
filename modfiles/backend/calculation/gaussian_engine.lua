@@ -25,6 +25,7 @@ Currently the algorithm assumes any item which is part of at least one input and
 If a recipe has loops, typically the user needs to make voids or free variables.
 --]]
 
+local SimpleItem = require("backend.data.SimpleItem")
 local structures = require("backend.calculation.structures")
 
 local gaussian_engine = {}
@@ -43,15 +44,16 @@ local function pack_line_key(line_id)
 end
 
 ---@param item_set SolverSet
----@return FPItemPrototype[]
-local function get_item_protos(item_set)
-    local item_protos = {}  ---@type FPItemPrototype[]
+---@return SimpleItem[]
+function gaussian_engine.get_simple_items(item_set)
+    local items = {}  ---@type SimpleItem[]
     for item_key, _ in pairs(item_set) do
         local item = structures.unpack_item(item_key)
         local item_proto = prototyper.util.find("items", item.name, item.type)  ---@as FPItemPrototype
-        table.insert(item_protos, item_proto)
+        local quality_proto = item.quality and prototyper.util.find("qualities", item.quality)  ---@as FPQualityPrototype?
+        table.insert(items, SimpleItem.init(nil, item_proto, quality_proto))
     end
-    return item_protos
+    return items
 end
 
 
@@ -453,8 +455,8 @@ end
 
 ---@class LinearDependanceData
 ---@field linearly_dependent_lines table<ObjectID, true>
----@field linearly_dependent_free_items FPItemPrototype[]
----@field allowed_free_items FPItemPrototype[]
+---@field linearly_dependent_free_items SimpleItem[]
+---@field allowed_free_items SimpleItem[]
 ---@field num_needed_free_items integer
 ---@field matrix_balanced boolean
 
@@ -508,8 +510,8 @@ local function get_linear_dependence_data(factory_data, metadata, floor_id)
 
     return {
         linearly_dependent_lines = linearly_dependent_lines,
-        linearly_dependent_free_items = get_item_protos(linearly_dependent_free_items),
-        allowed_free_items = get_item_protos(allowed_free_items),
+        linearly_dependent_free_items = gaussian_engine.get_simple_items(linearly_dependent_free_items),
+        allowed_free_items = gaussian_engine.get_simple_items(allowed_free_items),
         num_needed_free_items = math.max(num_rows - num_cols, 0) + num_chosen_free_items,
         matrix_balanced = num_rows == num_cols and not next(linearly_dependent_lines) and #linearly_dependent_free_items == 0
     }  ---@type LinearDependanceData
@@ -583,7 +585,7 @@ function gaussian_engine.solve_floor(factory_data, floor_id)
 
     -- In the case of linearly dependent free items, we remove it automatically if there's only one option.
     -- Otherwise we present the user with a choice to remove problematic free items in the production box.
-    local num_ld_free_items, last_ld_free_item = 0, nil  ---@type integer, FPItemPrototype?
+    local num_ld_free_items, last_ld_free_item = 0, nil  ---@type integer, SimpleItem?
     for _, ld_free_item in pairs(linear_dependence_data.linearly_dependent_free_items) do
         num_ld_free_items = num_ld_free_items + 1
         last_ld_free_item = ld_free_item
@@ -610,7 +612,7 @@ function gaussian_engine.solve_floor(factory_data, floor_id)
     end
 
     result.linear_dependence_data = linear_dependence_data
-    result.gaussian_free_items = get_item_protos(metadata.free_items)
+    result.gaussian_free_items = gaussian_engine.get_simple_items(metadata.free_items)
 
     return result
 end

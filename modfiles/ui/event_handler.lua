@@ -3,7 +3,7 @@
 local event_listener_names = {
     "backend.init", "backend.calculation.solver",
     "ui.base.main_dialog", "ui.base.compact_dialog", "ui.base.modal_dialog", "ui.base.calculator_dialog",
-    "ui.components.module_configurator", "ui.components.item_views",
+    "ui.components.module_configurator", "ui.components.item_views", "ui.components.quality_selector",
     "ui.dialogs.beacon_dialog", "ui.dialogs.machine_dialog", "ui.dialogs.picker_dialog",
     "ui.dialogs.porter_dialog", "ui.dialogs.preferences_dialog", "ui.dialogs.recipe_dialog",
     "ui.dialogs.factory_dialog", "ui.dialogs.utility_dialog", "ui.dialogs.item_dialog",

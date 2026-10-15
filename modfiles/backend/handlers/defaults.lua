@@ -107,9 +107,10 @@ end
 ---@return boolean equals
 function defaults.equals_default(player, data_type, object, category)
     local default = defaults.get(player, data_type, category)
+    local default_quality = default.quality or defaults.get_fallback("qualities").proto  ---@as FPQualityPrototype
     local same_proto = (default.proto.name == object.proto.name)
     local same_quality, same_modules = true, true
-    if object.quality_proto then same_quality = (default.quality--[[@cast -nil]].id == object.quality_proto.id) end
+    if object.quality_proto then same_quality = (default_quality.id == object.quality_proto.id) end
     if object.module_set then same_modules = object.module_set:equals_default(default.modules--[[@cast -nil]]) end
     return same_proto and same_quality and same_modules
 end
@@ -142,9 +143,14 @@ function defaults.get_fallback(data_type)
 
     local fallback = nil
     if prototyper.data_types[data_type] == false then
-        ---@cast prototypes IndexedPrototypes<FPPrototype>
-        fallback = (#prototypes == 0) and {} or
-            {proto=prototypes[1], quality=default_quality, modules=nil, beacon_amount=nil}
+        if data_type == "qualities" then
+            -- Normal quality will always exist, but it's not guaranteed it has the lowest index
+            fallback = { proto = PROTOTYPE_MAPS.qualities["normal"] }
+        else
+            ---@cast prototypes IndexedPrototypes<FPPrototype>
+            fallback = (#prototypes == 0) and {} or
+                {proto=prototypes[1], quality=default_quality, modules=nil, beacon_amount=nil}
+        end
     else
         ---@cast prototypes IndexedPrototypesWithCategory<FPPrototypeWithCategory>
         fallback = {}

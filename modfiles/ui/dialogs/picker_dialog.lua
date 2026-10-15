@@ -12,6 +12,7 @@ local FactoryItem = require("backend.data.FactoryItem")
 ---@field amount_defined_by ItemDefinitionType
 ---@field item_proto FPItemPrototype?
 ---@field belt_proto FPBeltPrototype?
+---@field quality_proto FPQualityPrototype?
 ---@field belt_stack integer
 ---@field selected_group_id integer?
 
@@ -103,9 +104,17 @@ local function add_item_picker(parent_flow, player)
     local frame_filters = parent_flow.add{type="frame", style="filter_frame"}
     modal_elements["filter_frame"] = frame_filters
 
+    if QUALITY_ENABLED then
+        local subfooter = parent_flow.add{type = "frame", style = "subfooter_frame"}
+        subfooter.style.horizontally_stretchable = true
+
+        quality_selector.add_flow(subfooter, modal_data)
+    end
+
     local group_id_cache, group_flow_cache, subgroup_table_cache = {}, {}, {}
     modal_elements.groups = {}
 
+    -- TODO: allow the same product with different qualities
     local existing_products = {}
     if not modal_data.create_factory then  -- check if this is for a new factory or not
         local factory = lib.context.get(player, "Factory")  ---@as Factory
@@ -488,6 +497,7 @@ local function handle_item_pick(player, tags, _)
     refresh_definition_controls(modal_data)
 
     set_appropriate_focus(modal_data)
+    quality_selector.refresh_element(modal_data)
     update_dialog_submit_button(modal_data.modal_elements)
 end
 
@@ -595,6 +605,7 @@ local function close_picker_dialog(player, action)
             local item_proto = modal_data.item_proto
             local top_level_item = FactoryItem.init(item_proto)
             top_level_item.definition = definition
+            top_level_item.quality_proto = modal_data.quality_proto
 
             if modal_data.create_factory then  -- if this flag is set, create a factory to put the item into
                 factory = factory_list.add_factory(player, nil, item_proto)

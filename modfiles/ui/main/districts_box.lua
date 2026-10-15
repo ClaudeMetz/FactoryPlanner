@@ -38,6 +38,7 @@ end
 ---@param action string
 local function handle_item_button_click(player, tags, action)
     local item = OBJECT_INDEX[tags.item_id]  ---@as DistrictItem
+    local simple_item = SimpleItem.init(nil, item.proto, item.quality_proto, item.abs_diff)
 
     if action == "create_factory" then  -- only on net ingredients
         local factory = factory_list.add_factory(player, nil, item.proto)
@@ -50,14 +51,14 @@ local function handle_item_button_click(player, tags, action)
         lib.gui.run_refresh(player, "all")
 
     elseif action == "copy" then  -- copy as SimpleItems makes most sense
-        local copyable_item = SimpleItem.init(nil, item.proto, item.abs_diff)
+        local copyable_item = SimpleItem.init(nil, item.proto, item.quality_proto, item.abs_diff)
         lib.clipboard.copy(player, copyable_item)
 
     elseif action == "pipette" then
-        lib.cursor.pipette_item(player, item.proto)
+        lib.cursor.pipette_item(player, simple_item)
 
     elseif action == "put_into_combinator" then
-        lib.cursor.put_into_combinator(player, item.proto, item.abs_diff)
+        lib.cursor.put_into_combinator(player, simple_item)
 
     elseif action == "factoriopedia" then
         player.open_factoriopedia_gui(lib.get_factoriopedia_proto(item.proto))
@@ -140,9 +141,10 @@ local function build_items_flow(player, parent, district)
         local diff_line = {"fp.item_amount_" .. item.overall, amount_tooltip}
         local total_line = {"fp.item_amount_total", total_tooltip}
         local tooltip = {"", title_line, diff_line, total_line}
+        local quality = item.quality_proto and item.quality_proto.name
 
         local button = relevant_table.add{type="sprite-button", number=diff_number, secondary_number=secondary_number,
-            style=style, sprite=item.proto.sprite, tags=tags, raise_hover_events=true,
+            style=style, sprite=item.proto.sprite, quality=quality, tags=tags, raise_hover_events=true,
             mouse_button_filter={"left-and-right"}}
         tooltips.districts_box[button.index] = tooltip
     end

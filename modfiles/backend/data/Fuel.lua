@@ -4,6 +4,7 @@ local Object = require("backend.data.Object")
 ---@field class "Fuel"
 ---@field parent Machine
 ---@field proto FPFuelPrototype | FPPackedPrototype
+---@field quality_proto (FPQualityPrototype | FPPackedPrototype)?
 ---@field temperature float?
 ---@field temperature_data TemperatureData
 ---@field amount number
@@ -166,6 +167,7 @@ end
 ---@class PackedFuel: PackedObject
 ---@field class "Fuel"
 ---@field proto FPPackedPrototype
+---@field quality_proto FPPackedPrototype?
 ---@field temperature float?
 ---@field amount float?
 
@@ -175,6 +177,7 @@ function Fuel:pack(full)
     return {
         class = self.class,
         proto = prototyper.util.simplify_prototype(self.proto, "combined_category"),
+        quality_proto = self.quality_proto and prototyper.util.simplify_prototype(self.quality_proto),
         temperature = self.temperature,
 
         amount = (full) and self.amount or nil
@@ -188,6 +191,7 @@ local function unpack(packed_self, parent)
     -- Prototypes are unpacked at validate
     local unpacked_self = init(parent, packed_self.proto)
 
+    unpacked_self.quality_proto = packed_self.quality_proto  -- will be migrated through validation
     unpacked_self.temperature = packed_self.temperature  -- will be migrated through validation
     unpacked_self.amount = packed_self.amount or 0  -- only used for paste
 
@@ -200,6 +204,9 @@ end
 function Fuel:validate(player)
     self.proto = prototyper.util.validate_prototype_object(self.proto, "combined_category")
     self.valid = (not self.proto.simplified)
+
+    self.quality_proto = self.quality_proto and prototyper.util.validate_prototype_object(self.quality_proto)
+    self.quality_proto = (self.quality_proto and not self.quality_proto.simplified) and self.quality_proto or nil
 
     if self.valid then  ---@cast self.proto FPFuelPrototype
         local burner = self.parent.proto.burner

@@ -245,14 +245,14 @@ local function handle_item_click(player, tags, action)
         local proto, recipe_id = item.proto, nil
         if production_type == "produce" and proto.type == "fluid" and line.class == "Line" then
             local item_name = line.recipe:get_name_with_temperature(item.proto)
-            proto = prototyper.util.find("items", item_name, "fluid")
+            proto = prototyper.util.find("items", item_name, "fluid")  ---@as FPItemPrototype
             -- If a no-temperature fluid is passed, it'll show all compatible temperatures/recipes
             recipe_id = line.recipe.id
         end
 
         lib.gui.open_dialog(player, {dialog="recipe", modal_data={recipe_id=recipe_id,
             add_after_line_id=add_after_line_id, production_type=production_type,
-            category_id=proto.category_id, product_id=proto.id}})
+            category_id=proto.category_id, product_id=proto.id, quality_proto = item.quality_proto}})
 
     elseif action == "adjust_weight" then
         local proto = item.proto
@@ -270,20 +270,22 @@ local function handle_item_click(player, tags, action)
         local proto = item.proto
         if item.proto.type == "fluid" and line.class == "Line" then
             local item_name = line--[[@as Line]].recipe:get_name_with_temperature(item.proto)
-            proto = prototyper.util.find("items", item_name, "fluid")
+            proto = prototyper.util.find("items", item_name, "fluid")  ---@as FPItemPrototype
         end
 
-        local copyable_item = SimpleItem.init(nil, proto, amount)
+        local copyable_item = SimpleItem.init(nil, proto, item.quality_proto, amount)
         lib.clipboard.copy(player, copyable_item)
 
     elseif action == "paste" then
         lib.clipboard.paste(player, item)
 
     elseif action == "pipette" then
-        lib.cursor.pipette_item(player, item.proto)
+        lib.cursor.pipette_item(player, item)
 
     elseif action == "put_into_combinator" then
-        lib.cursor.put_into_combinator(player, item.proto, amount)
+        local item_clone = lib.flib.shallow_copy(item)
+        item_clone.amount = amount
+        lib.cursor.put_into_combinator(player, item_clone)
 
     elseif action == "factoriopedia" then
         player.open_factoriopedia_gui(lib.get_factoriopedia_proto(item.proto))
@@ -296,6 +298,7 @@ end
 local function handle_fuel_click(player, tags, action)
     local fuel = OBJECT_INDEX[tags.fuel_id]  ---@as Fuel
     local line = fuel.parent.parent
+    local item = SimpleItem.init(nil, fuel.proto--[[@as FPItemPrototype]], fuel.quality_proto--[[@as FPQualityPrototype?]], fuel.amount)
 
     if action == "add_recipe_to_end" or action == "add_recipe_below" then
         local add_after_line_id = (action == "add_recipe_below") and line.id or nil
@@ -308,7 +311,7 @@ local function handle_fuel_click(player, tags, action)
 
         lib.gui.open_dialog(player, {dialog="recipe", modal_data={fuel_id=fuel.id,
             add_after_line_id=add_after_line_id, production_type="produce",
-            category_id=proto.category_id, product_id=proto.id}})
+            category_id=proto.category_id, product_id=proto.id, quality_proto = fuel.quality_proto}})
 
     elseif action == "adjust_weight" then
         local proto = prototyper.util.find("items", fuel:get_name_with_temperature(), fuel.proto.type)
@@ -328,10 +331,10 @@ local function handle_fuel_click(player, tags, action)
         lib.clipboard.paste(player, fuel)
 
     elseif action == "pipette" then
-        lib.cursor.pipette_item(player, fuel.proto--[[@as FPFuelPrototype]])
+        lib.cursor.pipette_item(player, item)
 
     elseif action == "put_into_combinator" then
-        lib.cursor.put_into_combinator(player, fuel.proto--[[@as FPFuelPrototype]], fuel.amount)
+        lib.cursor.put_into_combinator(player, item)
 
     elseif action == "factoriopedia" then
         player.open_factoriopedia_gui(lib.get_factoriopedia_proto(fuel.proto))

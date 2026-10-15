@@ -34,7 +34,8 @@ MAGIC_NUMBERS = {
     blueprint_limit = 8,  -- Maximum number of blueprints allowed per factory
     module_dialog_element_width = 460,  -- Width of machine and beacon dialog elements
     titlebar_label_width = 130,  -- Width of the 'Factory Planner' titlebar label
-    context_menu_width = 310  -- total width of the context menu
+    context_menu_width = 310,  -- total width of the context menu
+    double_click_delay = 20,  -- The threshold (in ticks) under which an on click event is considered a double-click
 }
 
 -- Handlers saved in a central location for access via name

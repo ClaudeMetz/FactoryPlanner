@@ -153,6 +153,7 @@ function builders.recipe(line_object, parent_flow, metadata, indent)
     local effects_section = (line_object.class == "Line") and format_effects_tooltip(relevant_line.effects_tooltip) or ""
     local tooltip = {"", first_line, status_line, effects_section}
     local style = "fflib_slot_button_" .. color
+    local quality = relevant_line.recipe.quality_proto and relevant_line.recipe.quality_proto.name
 
     local flags = {
         defining_recipe = first_subfloor_line,
@@ -167,7 +168,7 @@ function builders.recipe(line_object, parent_flow, metadata, indent)
     local tags = {mod="fp", on_gui_click="act_on_line_recipe", line_id=line_object.id, on_gui_hover="set_tooltip",
         context="production_table", flags=flags}
     local button = parent_flow.add{type="sprite-button", tags = tags, sprite=recipe_proto.sprite, style=style,
-        mouse_button_filter={"left-and-right"}, raise_hover_events=true}
+        quality = quality, mouse_button_filter={"left-and-right"}, raise_hover_events=true}
     metadata.tooltips[button.index] = tooltip
 end
 
@@ -373,7 +374,7 @@ local function add_catalysts(line, parent_flow, category, metadata)
 
     local item_category = string.sub(category, 1, -2)  ---@as ItemCategory
 
-    for index, item in pairs(line.recipe.catalysts[category]) do
+    for index, item in pairs(line.recipe.catalysts[category]) do  ---@cast item SimpleItem
         local proto = item.proto
 
         local amount, number_tooltip, secondary_amount = item_views.process_item(metadata.player, proto,
@@ -394,8 +395,9 @@ local function add_catalysts(line, parent_flow, category, metadata)
         local number_line = (number_tooltip) and {"", "\n", number_tooltip} or ""
         local tooltip = {"", name_line, temperature_line, number_line}
         local tags = item_action_tags(line, proto, item_category, index, metadata, true)
+        local quality = item.quality_proto and item.quality_proto.name
 
-        local button = parent_flow.add{type="sprite-button", sprite=proto.sprite, tags=tags,
+        local button = parent_flow.add{type="sprite-button", sprite=proto.sprite, quality=quality, tags=tags,
             number=amount, secondary_number=secondary_amount, style="fflib_slot_button_blue",
             mouse_button_filter={"left-and-right"}, raise_hover_events=true}
         metadata.tooltips[button.index] = tooltip
@@ -441,8 +443,9 @@ function builders.products(line, parent_flow, metadata)
         local name_line = {"fp.tt_title", proto.localised_name}
         local number_line = (number_tooltip) and {"", "\n", number_tooltip} or ""
         local tooltip = {"", name_line, priority_line, number_line}
+        local quality = product.quality_proto and product.quality_proto.name
 
-        local button = relevant_flow.add{type="sprite-button", sprite=proto.sprite, style=style,
+        local button = relevant_flow.add{type="sprite-button", sprite=proto.sprite, quality=quality, style=style,
             tags=tags, number=amount, secondary_number=secondary_amount,
             mouse_button_filter={"left-and-right"}, raise_hover_events=true}
         metadata.tooltips[button.index] = tooltip
@@ -491,9 +494,10 @@ function builders.byproducts(line, parent_flow, metadata)
 
         local number_line = (number_tooltip) and {"", "\n", number_tooltip} or ""
         local tooltip = {"", {"fp.tt_title", proto.localised_name}, priority_line, number_line}
+        local quality = byproduct.quality_proto and byproduct.quality_proto.name
 
         local tags = item_action_tags(line, proto, "byproduct", index, metadata)
-        local button = relevant_flow.add{type="sprite-button", tags=tags, sprite=proto.sprite,
+        local button = relevant_flow.add{type="sprite-button", tags=tags, sprite=proto.sprite, quality=quality,
             number=amount, secondary_number=secondary_amount, style=style,
             mouse_button_filter={"left-and-right"}, raise_hover_events=true}
         metadata.tooltips[button.index] = tooltip
@@ -548,6 +552,7 @@ local function add_fuel(line, parent_flow, metadata)
 
     local number_line = (number_tooltip) and {"", "\n", number_tooltip} or ""
     local tooltip = {"", name_line, temperature_line, performance_line, number_line, satisfaction_line}
+    local quality = fuel.quality_proto and fuel.quality_proto.name
 
     local item_proto = prototyper.util.find("items", fuel:get_name_with_temperature(), fuel.proto.type)  ---@as FPItemPrototype
     local flags = {
@@ -566,8 +571,8 @@ local function add_fuel(line, parent_flow, metadata)
     local tags = {mod="fp", on_gui_click="act_on_line_fuel", fuel_id=fuel.id, on_gui_hover="set_tooltip",
         context="production_table", flags=flags}
     -- Insert this before special ingredients, ie. index 1
-    local button = parent_flow.add{type="sprite-button", tags=tags, sprite=fuel.proto.sprite, style=style,
-        number=amount, secondary_number=secondary_amount, mouse_button_filter={"left-and-right"},
+    local button = parent_flow.add{type="sprite-button", tags=tags, sprite=fuel.proto.sprite, quality=quality,
+        style=style, number=amount, secondary_number=secondary_amount, mouse_button_filter={"left-and-right"},
         raise_hover_events=true, index=1}
     metadata.tooltips[button.index] = tooltip
 end
@@ -657,8 +662,9 @@ function builders.ingredients(line, parent_flow, metadata)
         local number_line = (number_tooltip) and {"", "\n", number_tooltip} or ""
         local tooltip = {"", name_line, temperature_line, priority_line, number_line, satisfaction_line}
         local tags = item_action_tags(line, proto, "ingredient", index, metadata)
+        local quality = ingredient.quality_proto and ingredient.quality_proto.name
 
-        local button = items_flow.add{type="sprite-button", sprite=proto.sprite, style=style,
+        local button = items_flow.add{type="sprite-button", sprite=proto.sprite, quality=quality, style=style,
             tags=tags, number=amount, secondary_number=secondary_amount,
             mouse_button_filter={"left-and-right"}, raise_hover_events=true}
         metadata.tooltips[button.index] = tooltip

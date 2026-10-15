@@ -317,6 +317,7 @@ function loader.run()
     LAUNCHER_DATA = generate_launcher_data()
 
     MULTIPLE_PLANETS = #storage.prototypes.locations > 1
+    QUALITY_ENABLED = #storage.prototypes.qualities > 1
 end
 
 return loader

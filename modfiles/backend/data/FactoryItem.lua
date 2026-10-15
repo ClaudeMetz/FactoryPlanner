@@ -22,6 +22,7 @@ local Object = require("backend.data.Object")
 ---@field class "FactoryItem"
 ---@field parent Factory
 ---@field proto FPItemPrototype | FPPackedPrototype
+---@field quality_proto (FPQualityPrototype | FPPackedPrototype)?
 ---@field definition ItemDefinition
 ---@field amount number
 local FactoryItem = Object.methods()
@@ -131,6 +132,7 @@ end
 ---@class PackedFactoryItem: PackedObject
 ---@field class "FactoryItem"
 ---@field proto FPPackedPrototype
+---@field quality_proto FPPackedPrototype?
 ---@field definition ItemDefinition
 
 ---@param full boolean
@@ -144,6 +146,7 @@ function FactoryItem:pack(full)
     return {
         class = self.class,
         proto = prototyper.util.simplify_prototype(self.proto, "type"),
+        quality_proto = (self.quality_proto) and prototyper.util.simplify_prototype(self.quality_proto) or nil,
         definition = definition,
 
         amount = (full) and self.amount or nil
@@ -155,6 +158,7 @@ end
 local function unpack(packed_self)
     -- Prototypes are unpacked at validate
     local unpacked_self = init(packed_self.proto)
+    unpacked_self.quality_proto = packed_self.quality_proto
 
     unpacked_self.definition = lib.flib.deep_copy(packed_self.definition)
 
@@ -167,6 +171,9 @@ end
 function FactoryItem:validate(player)
     self.proto = prototyper.util.validate_prototype_object(self.proto, "type")  ---@as FPItemPrototype | FPPackedPrototype
     self.valid = (not self.proto.simplified)
+
+    self.quality_proto = self.quality_proto and prototyper.util.validate_prototype_object(self.quality_proto)
+    self.quality_proto = (self.quality_proto and not self.quality_proto.simplified) and self.quality_proto or nil
 
     local definition = self.definition
     if definition.type == "belts" then

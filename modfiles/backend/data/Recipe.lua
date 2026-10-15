@@ -7,6 +7,7 @@ local SimpleItem = require("backend.data.SimpleItem")
 ---@field class "Recipe"
 ---@field parent Line
 ---@field proto FPRecipePrototype | FPPackedPrototype
+---@field quality_proto (FPQualityPrototype | FPPackedPrototype)?
 ---@field available boolean
 ---@field priority_item (FPItemPrototype | FPPackedPrototype)?
 ---@field temperatures table<string, float>
@@ -128,6 +129,7 @@ end
 --- to be done dynamically based on user-picked fluid ingredient temperatures.
 function Recipe:build_items()
     ---@cast self.proto FPRecipePrototype
+    ---@cast self.quality_proto FPQualityPrototype?
     local products = self.proto.products
 
     ---@type table<ItemType, table<ItemName, number>>
@@ -151,8 +153,9 @@ function Recipe:build_items()
 
         elseif ingredient.amount > peer_product.amount then
             -- The product cancels out entirely, leaving the ingredient with the difference
-            local proto = prototyper.util.find("items", peer_product.name, peer_product.type)
-            local item = SimpleItem.init(self.parent, proto--[[@as FPItemPrototype]], peer_product.amount)
+            local proto = prototyper.util.find("items", peer_product.name, peer_product.type)  ---@as FPItemPrototype
+            local quality_proto = solver.util.determine_item_quality(self.quality_proto, peer_product)
+            local item = SimpleItem.init(self.parent, proto, quality_proto, peer_product.amount)
             table.insert(self.catalysts.products, item)
 
             local remainder = lib.flib.shallow_copy(ingredient)
@@ -163,8 +166,9 @@ function Recipe:build_items()
 
         else
             -- The ingredient cancels out entirely, leaving the product with the difference, if any
-            local proto = prototyper.util.find("items", ingredient.name, ingredient.type)
-            local item = SimpleItem.init(self.parent, proto--[[@as FPItemPrototype]], ingredient.amount)
+            local proto = prototyper.util.find("items", ingredient.name, ingredient.type)  ---@as FPItemPrototype
+            local quality_proto = solver.util.determine_item_quality(self.quality_proto, peer_product)
+            local item = SimpleItem.init(self.parent, proto, quality_proto, ingredient.amount)
             table.insert(self.catalysts.ingredients, item)
 
             local difference = peer_product.amount - ingredient.amount
@@ -326,6 +330,7 @@ end
 ---@class PackedRecipe: PackedObject
 ---@field class "Recipe"
 ---@field proto FPPackedPrototype
+---@field quality_proto FPPackedPrototype?
 ---@field priority_item FPPackedPrototype?
 ---@field temperatures table<string, float>
 
@@ -335,6 +340,7 @@ function Recipe:pack(full)
     return {
         class = self.class,
         proto = prototyper.util.simplify_prototype(self.proto, nil),
+        quality_proto = self.quality_proto and prototyper.util.simplify_prototype(self.quality_proto),
         priority_item = (self.priority_item) and
             prototyper.util.simplify_prototype(self.priority_item, "type") or nil,
         temperatures = self.temperatures
@@ -347,6 +353,7 @@ end
 local function unpack(packed_self, parent)
     -- Prototypes are unpacked at validate
     local unpacked_self = init(parent, packed_self.proto)
+    unpacked_self.quality_proto = packed_self.quality_proto
     unpacked_self.priority_item = packed_self.priority_item
 
     -- Will be automatically unpacked by the validation process
@@ -361,6 +368,9 @@ end
 function Recipe:validate(player)
     self.proto = prototyper.util.validate_prototype_object(self.proto, nil)  ---@as FPRecipePrototype | FPPackedPrototype
     self.valid = (not self.proto.simplified)
+
+    self.quality_proto = self.quality_proto and prototyper.util.validate_prototype_object(self.quality_proto)
+    self.quality_proto = (self.quality_proto and not self.quality_proto.simplified) and self.quality_proto or nil
 
     if self.valid then self:refresh_availability(player.force--[[@as LuaForce]]) end
 

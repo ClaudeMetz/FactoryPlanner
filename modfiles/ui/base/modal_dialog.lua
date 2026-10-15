@@ -102,6 +102,7 @@ local function create_base_dialog(player, dialog_settings, modal_data)
     -- Content frame
     local content_frame = flow_content.add{type="frame", direction="vertical", style="inside_shallow_frame"}
     content_frame.style.vertically_stretchable = true
+    modal_elements.main_frame = content_frame
 
     if dialog_settings.subheader_text then
         local subheader = content_frame.add{type="frame", direction="horizontal", style="subheader_frame"}

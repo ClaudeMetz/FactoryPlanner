@@ -1,3 +1,4 @@
+local SimpleItem = require("backend.data.SimpleItem")
 solver_bar = {}
 
 local ITEM_WEIGHT_LIMIT = 5
@@ -42,17 +43,20 @@ end
 ---@param tags SwitchMatrixItemTags
 local function switch_matrix_item(player, tags, _)
     local floor = lib.context.get(player, "Floor")  ---@as Floor
+    local button_item = { type = tags.type, name = tags.name, quality = tags.quality, amount = 0 }  ---@type SolverItem
+    local button_item_key = solver.util.pack_item(button_item)
 
     if tags.status == "unrestricted" then
         for index, item in pairs(floor.gaussian_free_items) do
-            if item.type == tags.type and item.name == tags.name then
+            if button_item_key == solver.util.pack_item(item) then
                 table.remove(floor.gaussian_free_items, index)
                 break
             end
         end
     else -- "constrained"
-        local item_proto = prototyper.util.find("items", tags.name, tags.type)
-        table.insert(floor.gaussian_free_items, item_proto)
+        local item_proto = prototyper.util.find("items", tags.name, tags.type)  ---@as FPItemPrototype
+        local quality_proto = tags.quality and prototyper.util.find("qualities", tags.quality)  ---@as FPQualityPrototype?
+        table.insert(floor.gaussian_free_items, SimpleItem.init(nil, item_proto, quality_proto))
     end
 
     solver.update(player)
@@ -112,21 +116,27 @@ local function refresh_solver_bar(player)
     if floor.solver ~= "gaussian" or floor:count() == 0 then return end
     label_error.visible = true
 
-    local free_items = floor.gaussian_free_items  ---@as FPItemPrototype[]
+    local free_items = floor.gaussian_free_items
     local num_needed_free_items = floor.linear_dependence_data and floor.linear_dependence_data.num_needed_free_items or 0
 
     ---@param flow LuaGuiElement
     ---@param status "unrestricted" | "constrained"
     ---@param color "default" | "green"
-    ---@param items FPItemPrototype[]
+    ---@param items SimpleItem[]
     local function build_unrestricted_item_buttons(flow, status, color, items)
-        for _, proto in pairs(items) do
-            ---@class SwitchMatrixItemTags
+        for _, item in pairs(items) do
+            local proto = item.proto
+            local quality = item.quality_proto and item.quality_proto.name
+
+            ---@class SwitchMatrixItemTags : Tags
             ---@field status "unrestricted" | "constrained"
             ---@field type string
             ---@field name string
-            flow.add{type="sprite-button", sprite=proto.sprite, tooltip={"fp.turn_" .. status, proto.localised_name},
-                tags={mod="fp", on_gui_click="switch_matrix_item", status=status, type=proto.type, name=proto.name},
+            ---@field quality string?
+            local tags = {mod="fp", on_gui_click="switch_matrix_item", status=status, type=proto.type,
+                name=proto.name, quality=quality}  ---@type SwitchMatrixItemTags
+            flow.add{type="sprite-button", sprite=proto.sprite, quality=quality,
+                tooltip={"fp.turn_" .. status, proto.localised_name}, tags=tags,
                 style="fflib_slot_button_" .. color, mouse_button_filter={"left"}}
         end
     end
