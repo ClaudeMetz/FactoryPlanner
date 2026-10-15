@@ -56,23 +56,26 @@ end
 
 
 ---@class GaussianMetadata
----@field byproducts SolverSet
----@field unproduced_outputs SolverSet
+---@field free_variables SolverSet
 ---@field all_items SolverSet
 ---@field eliminated_items SolverSet
 ---@field free_items SolverSet
----@field raw_inputs SolverSet
 
 ---@param factory_data FactoryData
 ---@param floor_id ObjectID
 ---@param free_items SolverSet?
 ---@return GaussianMetadata
 local function get_metadata(factory_data, floor_id, free_items)
-    local desired_outputs = {}
+    local desired_products = {}  ---@type SolverSet
+    local supplied_ingredients = {}  ---@type SolverSet
     local floor_data = factory_data.floor_data_map[floor_id]
-    for _, product in pairs(floor_data.products) do
-        local item_key = structures.pack_item(product)
-        desired_outputs[item_key] = true
+    if floor_data.level == 1 then
+        for _, product in pairs(factory_data.products) do
+            desired_products[structures.pack_item(product)] = true
+        end
+        for _, ingredient in pairs(factory_data.ingredients) do
+            supplied_ingredients[structures.pack_item(ingredient)] = true
+        end
     end
 
     local line_inputs = {}
@@ -88,9 +91,9 @@ local function get_metadata(factory_data, floor_id, free_items)
     local all_items = solver.util.set.union(line_inputs, line_outputs)
     local raw_inputs = solver.util.set.difference(line_inputs, line_outputs)
     local raw_outputs = solver.util.set.difference(line_outputs, line_inputs)
-    local products = solver.util.set.difference(raw_outputs, desired_outputs)
-    local unproduced_outputs = solver.util.set.difference(desired_outputs, line_outputs)
-    local free_variables = solver.util.set.union(raw_inputs, products, unproduced_outputs)
+    local byproducts = solver.util.set.difference(raw_outputs, desired_products)
+    local demanded_ingredients = solver.util.set.difference(raw_inputs, supplied_ingredients)
+    local free_variables = solver.util.set.union(byproducts, demanded_ingredients)
     local intermediate_items = solver.util.set.difference(all_items, free_variables)
 
     -- When a factory is updated, add any new variables to eliminated and let the user select free.
@@ -105,12 +108,10 @@ local function get_metadata(factory_data, floor_id, free_items)
 
     local eliminated_items = solver.util.set.difference(intermediate_items, free_items)
     local result = {
-        byproducts = products,
-        unproduced_outputs = unproduced_outputs,
         all_items = all_items,
         eliminated_items = eliminated_items,
         free_items = free_items,
-        raw_inputs = raw_inputs,
+        free_variables = free_variables,
     }  ---@type GaussianMetadata
     return result
 end
@@ -212,13 +213,19 @@ local function get_matrix(factory_data, floor_id, rows, columns, machine_limits)
     -- final column for desired output. Don't have to explicitly set constrained vars to zero
     -- since matrix is initialized with zeros.
     local floor_data = factory_data.floor_data_map[floor_id]
-    for _, product in ipairs(floor_data.products) do
-        if floor_data.level == 1 then
+    if floor_data.level == 1 then
+        for _, product in ipairs(factory_data.products) do
             local item_key = structures.pack_item(product)
             local row_num = rows.map[pack_item_key(item_key)]  -- will be nil for unproduced outputs
             if row_num ~= nil then
-                local amount = product.amount
-                matrix[row_num]--[[@cast -nil]][#columns.values+1] = amount
+                matrix[row_num]--[[@cast -nil]][#columns.values+1] = product.amount
+            end
+        end
+        for _, ingredient in ipairs(factory_data.ingredients) do
+            local item_key = structures.pack_item(ingredient)
+            local row_num = rows.map[pack_item_key(item_key)]  -- will be nil for unused ingredients
+            if row_num ~= nil then
+                matrix[row_num]--[[@cast -nil]][#columns.values+1] = -ingredient.amount
             end
         end
     end
@@ -316,7 +323,7 @@ local function get_matrix_data(factory_data, metadata, floor_id)
 
     -- Generate column (variable) data
     local variables = {}  ---@type table<string, true>
-    local item_variable_set = solver.util.set.union(metadata.free_items, metadata.raw_inputs, metadata.byproducts)
+    local item_variable_set = solver.util.set.union(metadata.free_items, metadata.free_variables)
     for item_key, _ in pairs(item_variable_set) do variables[pack_item_key(item_key)] = true end
     for line_id, _ in pairs(relevant_lines) do variables[pack_line_key(line_id)] = true end
     local columns = get_mapping_struct(variables)

@@ -47,7 +47,6 @@ end
 ---@field products SolverMap
 ---@field byproducts SolverMap
 ---@field ingredients SolverMap
----@field known_byproducts SolverSet
 
 ---@param floor_id ObjectID
 ---@return SolverAggregate
@@ -59,7 +58,6 @@ function _structures.aggregate.init(floor_id)
         products = {},
         byproducts = {},
         ingredients = {},
-        known_byproducts = {}
     }  ---@type SolverAggregate
 end
 
