@@ -1,6 +1,8 @@
 -- ** LOCAL UTIL **
 ---@class ProductionTableMetadata
 ---@field archive_open boolean
+---@field simplex boolean
+---@field floor Floor
 ---@field ingredient_satisfaction boolean
 ---@field fold_out_subfloors boolean
 ---@field player LuaPlayer
@@ -19,9 +21,12 @@ local function generate_metadata(player, factory)
     tooltips.production_table = {}
 
     local held_line = lib.gui.held_object(player, "production_table")  ---@as LineObject?
+    local floor = lib.context.get(player, "Floor")  ---@as Floor
 
     local metadata = {
         archive_open = factory.archived,
+        simplex = (floor.solver == "simplex"),
+        floor = floor,
         ingredient_satisfaction = preferences.ingredient_satisfaction,
         fold_out_subfloors = preferences.fold_out_subfloors,
         player = player,
@@ -347,6 +352,8 @@ local function item_action_tags(line, proto, category, index, metadata, catalyst
             catalyst = catalyst,
             archived = metadata.archive_open,
             sequential = (get_priority_solver(line) == "sequential"),
+            simplex = metadata.simplex,
+            folded_out_subfloor = (line.parent ~= metadata.floor),
             ingredient_only = (recipe_item_proto.ingredient_only
                 and not (recipe_item_proto.type == "fluid" and recipe_item_proto.temperature == nil)),
             byproduct = (category == "byproduct"),
@@ -546,6 +553,8 @@ local function add_fuel(line, parent_flow, metadata)
     local flags = {
         cursor = true,
         fluid = (fuel.proto.type == "fluid"),
+        simplex = metadata.simplex,
+        folded_out_subfloor = (line.parent ~= metadata.floor),
         archived = metadata.archive_open,
         ingredient_only = (item_proto.ingredient_only and not (item_proto.type == "fluid" and item_proto.temperature == nil)),
         multiple_temperatures = (fuel.proto.type == "fluid" and #fuel.temperature_data.applicable_values > 1)
