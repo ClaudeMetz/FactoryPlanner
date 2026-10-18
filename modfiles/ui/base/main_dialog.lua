@@ -194,7 +194,7 @@ function main_dialog.toggle_districts_view(player, force_false)
     local ui_state = lib.globals.ui_state(player)
     ui_state.districts_view = not ui_state.districts_view and not force_false
 
-    lib.gui.run_refresh(player, "district_info")
+    lib.gui.run_refresh(player, "district_list")
 end
 
 

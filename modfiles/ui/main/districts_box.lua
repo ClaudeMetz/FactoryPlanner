@@ -15,7 +15,7 @@ local function save_district_name(player, tags, _)
     district_elements.edit_flow.visible = false
     district_elements.name_flow.visible = true
 
-    lib.gui.run_refresh(player, "district_info")
+    lib.gui.run_refresh(player, "district_list")
 end
 
 ---@param player LuaPlayer
@@ -343,7 +343,7 @@ listeners.gui = {
                 ui_state.held_object_id = nil  -- consume the held object
 
                 lib.gui.run_refresh(player, "districts_box")
-                lib.gui.run_refresh(player, "district_info")
+                lib.gui.run_refresh(player, "district_list")
             end
         },
         {
