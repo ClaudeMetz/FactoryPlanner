@@ -69,11 +69,14 @@ end
 ---@param parent LuaGuiElement
 ---@param district District
 local function build_items_flow(player, parent, district)
+    local padding, spacing = 12, 4
     local items_flow = parent.add{type="flow", direction="horizontal"}
-    items_flow.style.padding = {6, 12, 12, 12}
+    items_flow.style.padding = {6, padding, 12, padding}
+    items_flow.style.horizontal_spacing = spacing
 
-    local preferences = lib.globals.preferences(player)
-    local column_count = (preferences.products_per_row * 4) / 2
+    -- Fit two grids alongside the four pushers, accounting for padding and all five gaps
+    local available_width = main_dialog.get_content_width(player) - (2 * padding) - (5 * spacing)
+    local column_count = math.max(1, math.floor(available_width / (2 * MAGIC_NUMBERS.item_button_size)))
 
     ---@param category "product" | "ingredient
     ---@return LuaGuiElement

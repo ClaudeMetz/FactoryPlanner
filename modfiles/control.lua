@@ -16,15 +16,11 @@ MAGIC_NUMBERS = {
     simplex_update_threshold = 1e5,  -- The infinite norm threshold under which a Forrest-Tomlin update is considered stable
     simplex_max_factorization_interval = 50,  -- The upper bound for the amount of iterations between refactorizations
 
-    -- Some magic numbers to determine and calculate the dimensions of the main dialog
+    -- Shared main interface layout dimensions
     frame_spacing = 12,  -- Spacing between the base frames in the main dialog
-    title_bar_height = 28,  -- Height of the main dialog title bar
-    district_info_height = 36,
-    subheader_height = 36,  -- Height of the factory list subheader
+    subheader_height = 36,  -- Height of the factory list and production subheaders
     list_width = 300,  -- Width of the factory list
-    list_element_height = 28,  -- Height of an individual factory list element
     item_button_size = 40,  -- Size of item box buttons
-    item_box_max_rows = 4,  -- Maximum number of rows in an item box
 
     -- Various other UI-related magic numbers
     recipes_per_row = 6,  -- Number of recipes per row in the recipe picker

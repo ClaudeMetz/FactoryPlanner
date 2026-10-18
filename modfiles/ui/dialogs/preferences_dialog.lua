@@ -162,26 +162,16 @@ end
 local function add_dimensions_box(preferences, content_frame)
     local dimensions_box = add_preference_box(content_frame, "dimensions")
 
-    local width_items, width_index = {}, nil  ---@type LocalisedString[], integer?
-    for index, value in pairs(lib.preferences.products_per_row_options) do
-        width_items[index] = {"", value .. " ", {"fp.pl_product", 2}}
-        if value == preferences.products_per_row then width_index = index end
+    for _, name in ipairs{"main_width_percentage", "main_height_percentage", "compact_width_percentage"} do
+        local options = (name == "compact_width_percentage") and lib.preferences.compact_width_percentages
+            or lib.preferences.main_dimension_percentages  ---@as integer[]
+        local items, selected_index = {}, nil  ---@type LocalisedString[], integer?
+        for index, value in ipairs(options) do
+            items[index] = {"", value .. " %"}
+            if value == preferences[name] then selected_index = index end
+        end
+        add_dropdown(dimensions_box, name, items, selected_index--[[@cast -nil]])
     end
-    add_dropdown(dimensions_box, "products_per_row", width_items, width_index--[[@cast -nil]])
-
-    local height_items, height_index = {}, nil  ---@type LocalisedString[], integer?
-    for index, value in pairs(lib.preferences.factory_list_rows_options) do
-        height_items[index] = {"", value .. " ", {"fp.pl_factory", 2}}
-        if value == preferences.factory_list_rows then height_index = index end
-    end
-    add_dropdown(dimensions_box, "factory_list_rows", height_items, height_index--[[@cast -nil]])
-
-    local compact_items, compact_index = {}, nil  ---@type LocalisedString[], integer?
-    for index, value in pairs(lib.preferences.compact_width_percentages) do
-        compact_items[index] = {"", value .. " %"}
-        if value == preferences.compact_width_percentage then compact_index = index end
-    end
-    add_dropdown(dimensions_box, "compact_width_percentage", compact_items, compact_index--[[@cast -nil]])
 end
 
 
@@ -340,12 +330,8 @@ local function handle_dropdown_preference_change(player, tags, event)
 
     if tags.name == "default_solver" then
         preferences.default_solver = solver.choices[selected_index]
-    elseif tags.name == "products_per_row" then
-        preferences.products_per_row = lib.preferences.products_per_row_options[selected_index]
-        lib.preferences.refresh_after_change(player, "main_dimensions")
-        lib.gui.open_dialog(player, {dialog="preferences"})
-    elseif tags.name == "factory_list_rows" then
-        preferences.factory_list_rows = lib.preferences.factory_list_rows_options[selected_index]
+    elseif tags.name == "main_width_percentage" or tags.name == "main_height_percentage" then
+        preferences[tags.name] = lib.preferences.main_dimension_percentages[selected_index]
         lib.preferences.refresh_after_change(player, "main_dimensions")
         lib.gui.open_dialog(player, {dialog="preferences"})
     elseif tags.name == "compact_width_percentage" then
@@ -580,7 +566,7 @@ listeners.global = {
         player_table.preferences = nil
         lib.preferences.reload(player_table)
 
-        lib.preferences.refresh_after_change(player, "all", true)
+        lib.preferences.refresh_after_change(player, "all")
         lib.gui.open_dialog(player, {dialog="preferences"})
     end
 }

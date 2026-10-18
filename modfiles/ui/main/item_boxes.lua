@@ -1,6 +1,9 @@
 local FactoryItem = require("backend.data.FactoryItem")
 local SimpleItem = require("backend.data.SimpleItem")
 
+local MAX_ROWS = 4
+local HORIZONTAL_PADDING = 8
+
 -- ** LOCAL UTIL **
 ---@param player LuaPlayer
 ---@param category ItemCategory
@@ -10,10 +13,19 @@ local function build_item_box(player, category, column_count)
 
     local window_frame = item_boxes_elements.horizontal_flow.add{type="frame", direction="vertical",
         style="inside_shallow_frame"}
+    window_frame.style.horizontally_stretchable = true
     window_frame.style.top_padding = 6
-    window_frame.style.padding = {4, 12, 12, 12}
+    window_frame.style.padding = {4, HORIZONTAL_PADDING, 12, HORIZONTAL_PADDING}
 
-    local title_flow = window_frame.add{type="flow", direction="horizontal"}
+    local centering_flow = window_frame.add{type="flow", direction="horizontal"}
+    centering_flow.style.horizontally_stretchable = true
+    centering_flow.style.horizontal_spacing = 0
+
+    centering_flow.add{type="empty-widget", style="fflib_horizontal_pusher"}
+    local content_flow = centering_flow.add{type="flow", direction="vertical"}
+    centering_flow.add{type="empty-widget", style="fflib_horizontal_pusher"}
+
+    local title_flow = content_flow.add{type="flow", direction="horizontal"}
     title_flow.style.vertical_align = "center"
 
     local label = title_flow.add{type="label", caption={"fp.pu_" .. category, 2}, style="caption_label"}
@@ -29,8 +41,8 @@ local function build_item_box(player, category, column_count)
         item_boxes_elements["ingredient_combinator_button"] = button_combinator
     end
 
-    local scroll_pane = window_frame.add{type="scroll-pane", style="shallow_scroll_pane"}
-    scroll_pane.style.maximal_height = MAGIC_NUMBERS.item_box_max_rows * MAGIC_NUMBERS.item_button_size
+    local scroll_pane = content_flow.add{type="scroll-pane", style="shallow_scroll_pane"}
+    scroll_pane.style.maximal_height = MAX_ROWS * MAGIC_NUMBERS.item_button_size
 
     local item_frame = scroll_pane.add{type="frame", style="slot_button_deep_frame"}
     item_frame.style.width = column_count * MAGIC_NUMBERS.item_button_size
@@ -319,7 +331,7 @@ local function refresh_item_boxes(player)
     local irow_count = refresh_item_box(player, factory, "ingredient", tooltips)
 
     local maxrow_count = math.max(prow_count, math.max(brow_count, irow_count))
-    local actual_row_count = math.min(math.max(maxrow_count, 1), MAGIC_NUMBERS.item_box_max_rows)
+    local actual_row_count = math.min(math.max(maxrow_count, 1), MAX_ROWS)
     local item_table_height = actual_row_count * MAGIC_NUMBERS.item_button_size
 
     -- Set the heights for both the visible frame and the scroll pane containing it
@@ -342,7 +354,10 @@ local function build_item_boxes(player)
     flow_horizontal.style.horizontal_spacing = MAGIC_NUMBERS.frame_spacing
     main_elements.item_boxes["horizontal_flow"] = flow_horizontal
 
-    local products_per_row = lib.globals.preferences(player).products_per_row
+    -- Allow for three item-box frames and the gaps between them
+    local available_width = main_dialog.get_content_width(player)
+        - (6 * HORIZONTAL_PADDING) - (2 * MAGIC_NUMBERS.frame_spacing)
+    local products_per_row = math.max(1, math.floor(available_width / (4 * MAGIC_NUMBERS.item_button_size)))
     build_item_box(player, "product", products_per_row)
     build_item_box(player, "byproduct", products_per_row)
     build_item_box(player, "ingredient", products_per_row * 2)

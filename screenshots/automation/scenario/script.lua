@@ -52,8 +52,8 @@ local function setup_player()
     -- Preferences
     player_table.preferences.show_gui_button = false
     lib.gui.toggle_mod_gui(player)
-    player_table.preferences.products_per_row = 5
-    player_table.preferences.factory_list_rows = 20
+    player_table.preferences.main_width_percentage = 50
+    player_table.preferences.main_height_percentage = 65
     player_table.preferences.compact_width_percentage = 22
     player_table.preferences.recipe_filters = {disabled = true, hidden = false}
     player_table.preferences.ignore_barreling_recipes = true
@@ -85,9 +85,6 @@ local scenes = {
             local main_frame = lib.globals.main_elements(player).main_frame
             local dimensions = {actual_size=main_frame.actual_size, location=main_frame.location}
             storage.dimensions["01_main_interface"] = dimensions
-
-            lib.globals.preferences(player).factory_list_rows = 30
-            main_dialog.rebuild(player, true)  -- avoid modal dialogs being squished
         end,
         name = "01_main_interface"
     },

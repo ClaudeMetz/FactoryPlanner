@@ -10,7 +10,6 @@ require("backend.handlers.interface")
 local dev_export_string = "eNrtWUtv2zAM/i8+R0WdrTvk2MNOGzBsuw2BIct0KlQPV5KzBln++0jLbu08ihVt1yb1LSYpkh/5mabjdQK3lXUh07bwEJLZOsm5h2SWTM/Ss3SaTBJQsOQBCua4VL6vKbkI1q0qxY0B12lS1DgQK6HuZWR9U3Mlw6ov8hUXwPiiF2/TuZWAsX6tE6G4p6ifYzA8ZbimA5fcS0FOrFo2kTzc1GCC5Aqlmgcnb7PSAWQygEYXa/SdqxoqJ03IPOrNohUbGyhcggcrZ4taBLnEXLPcGhktWvEwp59fvkVxPBcs1a9Nr/NjDfNCgkGgiPYaLQVWc0FQZgllhpKCB56FVQWtyBMsqSslSwlFMguuBsyhgFIaKLKcjnJtaxOaWt/U0qG4lczSzXySBFtlpbLWUUp3NWwEkwQ7CgoN8Rc6HGL6gpLYQUn53Cu+R8ljkPZxRYcHkN276MyjhMJhPSpwPNQOmm5RISzmOCu58jBJODULoiv0BE4gCRpOpefnRARxRZB6SL62ol0oqAedY1EWrD3HPgw7JhwvA+q30LXWB+C11M+2wxnrdMPWvqtoLA/5Ki0CzJTUMnSY8d6tFWTt/XuHspH+AOJItBg2Ouof6CfdASye3K5C32S7Em2oFy9ER/ePmzlxIgcurOkX4DJKdgHmnaIfLQr/Y97TZ2+crwDH9P6ONbrXbtU0tkpYrYGuExz3T5k8+GgSOMYFK2tneDMtxpHz1kYOlu85e75nOp122/9EllvNFwaCFP4UebC1mUyfZzOhjXWcCac/E6Sj3RPvjVNZOtOx24e77QOAYvjWGY5y8vuAnnsbS39J06DeWp/LmgZyb1LT9R5UVsmClVHZp+4VaCl28iDDvTlsXn2OjMQaibWHWPOnUYsXS24Evp4J6UQtw7izvsMnV1sVg2+sIw3eLw2ErbADTPD8ZN5d05EAj9kzdGXxae1Y9wfW7t+oR7JxANcMzCKqewQ4DOwodg7CNQRUqhrXkCvggZVSBbx9O6N/2j4GfcFSf7rYvAkC5lYq9psTnvSCIQMiLIYJvhAhkyYaluDiRalJwMANexhl7E51bLQUlh/121VHusi3II/z6WfL0l9ZB6yqdTVsx7bqNB519M3moe/wipvrV/gOT1eP+8pN0Oabv0gxb7I="
 
 ---@class UIStateTable
----@field main_dialog_dimensions DisplayResolution?
 ---@field last_action LastAction?
 ---@field views_data ItemViewsData?
 ---@field main_elements table
@@ -33,7 +32,6 @@ local dev_export_string = "eNrtWUtv2zAM/i8+R0WdrTvk2MNOGzBsuw2BIct0KlQPV5KzBln++
 local function reset_ui_state(player_table)
     -- The UI table gets replaced because the whole interface is reset
     player_table.ui_state = {
-        main_dialog_dimensions = nil,
         last_action = nil,
         views_data = nil,
         main_elements = {},
@@ -79,7 +77,6 @@ local function player_init(player)
     defaults.set_all(player, "fuels", {prototype="coal"})
 
     lib.gui.toggle_mod_gui(player)
-    lib.nth_tick.register((game.tick + 1), "shrinkwrap_interface", {player_index=player.index})
 
     if DEVELOPER_MODE then
         lib.porter.add_factories(player, dev_export_string)
@@ -232,11 +229,6 @@ script.on_configuration_changed(handle_configuration_change)
 commands.add_command("fp-restart-translation", {"command-help.fp_restart_translation"}, function()
     lib.translator.on_init()
     prototyper.util.build_translation_dictionaries()
-end)
-commands.add_command("fp-shrinkwrap-interface", {"command-help.fp_shrinkwrap_interface"}, function(command)
-    if command.player_index then
-        lib.nth_tick.register((game.tick + 1), "shrinkwrap_interface", {player_index=command.player_index})
-    end
 end)
 
 

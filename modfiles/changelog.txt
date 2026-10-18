@@ -3,6 +3,7 @@ Version: 0.00.00
 Date: 00. 00. 0000
   Features:
   Changes:
+    - Changed main interface width and height preferences to be percentage-based
   Bugfixes:
 
 ---------------------------------------------------------------------------------------------------

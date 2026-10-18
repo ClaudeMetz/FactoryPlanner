@@ -285,12 +285,10 @@ local function build_factory_list(player)
 
     local parent_flow = main_elements.flows.left_vertical
     local frame_vertical = parent_flow.add{type="frame", direction="vertical", style="inside_deep_frame"}
-    local row_count = lib.globals.preferences(player).factory_list_rows
-    frame_vertical.style.height = (row_count * MAGIC_NUMBERS.list_element_height) +
-        MAGIC_NUMBERS.subheader_height
+    frame_vertical.style.vertically_stretchable = true
 
     local toolbar = frame_vertical.add{type="frame", direction="vertical", style="subheader_frame"}
-    toolbar.style.maximal_height = MAGIC_NUMBERS.subheader_height + MAGIC_NUMBERS.list_element_height
+    toolbar.style.maximal_height = MAGIC_NUMBERS.subheader_height + 28
     local toolbar_flow = toolbar.add{type="flow", direction="vertical", style="packed_vertical_flow"}
     local subheader = toolbar_flow.add{type="flow", direction="horizontal"}
     subheader.style.vertical_align = "center"
@@ -341,7 +339,7 @@ local function build_factory_list(player)
 
 
     local flow_search = toolbar_flow.add{type="flow", direction="horizontal", visible=false}
-    flow_search.style.height = MAGIC_NUMBERS.list_element_height
+    flow_search.style.padding = 2
     flow_search.style.vertical_align = "center"
     flow_search.style.horizontally_stretchable = true
     main_elements.factory_list["search_flow"] = flow_search

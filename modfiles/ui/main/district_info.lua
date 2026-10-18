@@ -24,7 +24,7 @@ local function build_district_info(player)
 
     local parent_flow = main_elements.flows.left_vertical
     local frame = parent_flow.add{type="frame", style="inside_shallow_frame"}
-    frame.style.size = {MAGIC_NUMBERS.list_width, MAGIC_NUMBERS.district_info_height}
+    frame.style.size = {MAGIC_NUMBERS.list_width, 36}
     local flow_horizontal = frame.add{type="flow", direction="horizontal"}
     flow_horizontal.style.padding = {4, 4}
     flow_horizontal.style.vertical_align = "center"
