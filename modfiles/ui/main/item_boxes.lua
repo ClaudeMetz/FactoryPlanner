@@ -14,8 +14,7 @@ local function build_item_box(player, category, column_count)
     local window_frame = item_boxes_elements.horizontal_flow.add{type="frame", direction="vertical",
         style="inside_shallow_frame"}
     window_frame.style.horizontally_stretchable = true
-    window_frame.style.top_padding = 6
-    window_frame.style.padding = {4, HORIZONTAL_PADDING, 12, HORIZONTAL_PADDING}
+    window_frame.style.padding = {2, HORIZONTAL_PADDING, 8, HORIZONTAL_PADDING}
 
     local centering_flow = window_frame.add{type="flow", direction="horizontal"}
     centering_flow.style.horizontally_stretchable = true
