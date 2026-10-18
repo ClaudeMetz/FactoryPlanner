@@ -217,9 +217,12 @@ end
 
 ---@param player LuaPlayer
 ---@param tags PickRecipeTags
----@param event EventData.on_gui_click
-local function handle_recipe_click(player, tags, event)
-    if event.shift then
+---@param action string
+local function handle_recipe_click(player, tags, action)
+    if action == "factoriopedia" then
+        local recipe_proto = prototyper.util.find("recipes", tags.recipe_proto_id, nil)  ---@as FPRecipePrototype
+        player.open_factoriopedia_gui(lib.get_factoriopedia_proto(recipe_proto))
+    elseif action == "technology" then
         local recipe_proto = prototyper.util.find("recipes", tags.recipe_proto_id, nil)  ---@as FPRecipePrototype
         if not recipe_proto.enabling_technologies then return end
         player.open_technology_gui(recipe_proto.enabling_technologies[1])
@@ -314,7 +317,8 @@ local function create_recipe_group_box(modal_data, relevant_group)
 
         ---@class PickRecipeTags
         ---@field recipe_proto_id integer
-        local button_tags = {mod="fp", on_gui_click="pick_recipe", recipe_proto_id=recipe_proto.id}
+        local button_tags = {mod="fp", on_gui_click="pick_recipe", recipe_proto_id=recipe_proto.id,
+            flags={factoriopedia=(lib.get_factoriopedia_proto(recipe_proto) ~= nil)}}
         local button_recipe = nil
 
         local tooltip = {""}
@@ -513,6 +517,11 @@ listeners.gui = {
         {
             name = "pick_recipe",
             timeout = 20,
+            actions_table = {
+                select = {shortcut="left"},
+                technology = {shortcut="shift-left"},
+                factoriopedia = {shortcut="alt-left", enable=lib.actions.can_open_factoriopedia}
+            },
             handler = handle_recipe_click
         },
         {
