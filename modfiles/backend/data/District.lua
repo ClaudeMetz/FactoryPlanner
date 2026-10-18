@@ -44,6 +44,7 @@ end
 ---@param direction NeighbourDirection?
 function District:insert(factory, relative_object, direction)
     factory.parent = self
+    factory.top_floor:reset_location()
     self:_insert(factory, relative_object, direction)
     self.needs_refresh = true
 end
