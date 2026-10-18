@@ -1,5 +1,7 @@
 local _context = {}
 
+local HISTORY_LIMIT = 25
+
 ---@class ContextTable
 ---@field object_id ObjectID?
 ---@field cache ContextCache
@@ -212,7 +214,7 @@ function _context.record(player)
     end
 
     table.insert(history.stack, entry)
-    if #history.stack > MAGIC_NUMBERS.history_limit then table.remove(history.stack, 1) end
+    if #history.stack > HISTORY_LIMIT then table.remove(history.stack, 1) end
     history.position = #history.stack
 
     return true

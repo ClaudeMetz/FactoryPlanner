@@ -2,6 +2,21 @@
 
 local styles = data.raw["gui-style"].default
 
+data:extend{{
+    type = "font",
+    name = "fp_district_heading",
+    from = "default-semibold",
+    size = 16
+}}
+
+styles["fp_label_district_count"] = {
+    type = "label_style",
+    parent = "label",
+    font = "default-listbox",
+    font_color = {0.65, 0.65, 0.65},
+    parent_hovered_font_color = {0.35, 0.35, 0.35}
+}
+
 styles["fp_naked_frame"] = {
     type = "frame_style",
     parent = "frame",

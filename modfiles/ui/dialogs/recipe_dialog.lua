@@ -1,5 +1,7 @@
 local Line = require("backend.data.Line")
 
+local RECIPES_PER_ROW = 6
+
 ---@alias RecipeProductionType "produce" | "consume"
 
 ---@class RecipeDialogModalData: ModalData
@@ -215,9 +217,12 @@ end
 
 ---@param player LuaPlayer
 ---@param tags PickRecipeTags
----@param event EventData.on_gui_click
-local function handle_recipe_click(player, tags, event)
-    if event.shift then
+---@param action string
+local function handle_recipe_click(player, tags, action)
+    if action == "factoriopedia" then
+        local recipe_proto = prototyper.util.find("recipes", tags.recipe_proto_id, nil)  ---@as FPRecipePrototype
+        player.open_factoriopedia_gui(lib.get_factoriopedia_proto(recipe_proto))
+    elseif action == "technology" then
         local recipe_proto = prototyper.util.find("recipes", tags.recipe_proto_id, nil)  ---@as FPRecipePrototype
         if not recipe_proto.enabling_technologies then return end
         player.open_technology_gui(recipe_proto.enabling_technologies[1])
@@ -236,7 +241,7 @@ local function create_filter_box(modal_data)
     local bordered_frame = content_frame.add{type="frame", direction="vertical", style="fp_frame_bordered_stretch"}
     bordered_frame.style.left_padding = 12
     -- Keep the recipe group width when all groups are hidden or no recipes match the temperature
-    bordered_frame.style.minimal_width = MAGIC_NUMBERS.recipes_per_row * 40 + 64 + 16 + 8 + 16 + 8
+    bordered_frame.style.minimal_width = RECIPES_PER_ROW * 40 + 64 + 16 + 8 + 16 + 8
 
     local table_filters = bordered_frame.add{type="table", column_count=2}
     table_filters.style.horizontal_spacing = 16
@@ -298,8 +303,8 @@ local function create_recipe_group_box(modal_data, relevant_group)
 
     flow_group.add{type="empty-widget", style="fflib_horizontal_pusher"}
     local frame_recipes = flow_group.add{type="frame", direction="horizontal", style="fp_frame_light_slots"}
-    frame_recipes.style.width = MAGIC_NUMBERS.recipes_per_row * 40
-    local table_recipes = frame_recipes.add{type="table", column_count=MAGIC_NUMBERS.recipes_per_row,
+    frame_recipes.style.width = RECIPES_PER_ROW * 40
+    local table_recipes = frame_recipes.add{type="table", column_count=RECIPES_PER_ROW,
         style="slot_table"}
 
     for _, recipe in pairs(relevant_group.recipes) do
@@ -312,7 +317,8 @@ local function create_recipe_group_box(modal_data, relevant_group)
 
         ---@class PickRecipeTags
         ---@field recipe_proto_id integer
-        local button_tags = {mod="fp", on_gui_click="pick_recipe", recipe_proto_id=recipe_proto.id}
+        local button_tags = {mod="fp", on_gui_click="pick_recipe", recipe_proto_id=recipe_proto.id,
+            flags={factoriopedia=(lib.get_factoriopedia_proto(recipe_proto) ~= nil)}}
         local button_recipe = nil
 
         local tooltip = {""}
@@ -337,6 +343,22 @@ end
 
 ---@alias RecipeDialogGroups table<string, RecipeDialogGroup>
 ---@alias RecipeDialogGroup {proto: ItemGroup, recipes: table<string, RelevantRecipe>}
+
+---@param modal_data RecipeDialogModalData
+local function resize_recipe_dialog(modal_data)
+    local added_scroll_pane_height = 0
+    for _, group in ipairs(modal_data.modal_elements.groups) do
+        local button_table_height = math.ceil(table_size(group.recipe_buttons) / RECIPES_PER_ROW) * 40
+        local additional_height = math.max(88, button_table_height + 24) + 4
+        added_scroll_pane_height = added_scroll_pane_height + additional_height
+    end
+
+    added_scroll_pane_height = math.max(added_scroll_pane_height, 42)  -- set minimum when no recipe matches
+    local base_scroll_pane_height = (modal_data.temperature) and (64+24)+70 or 64+24
+    local desired_scroll_pane_height = base_scroll_pane_height + added_scroll_pane_height
+    local bounded_scroll_pane_height = math.min(desired_scroll_pane_height, modal_data.dialog_maximal_height - 80)
+    modal_data.modal_elements.content_frame.style.height = bounded_scroll_pane_height
+end
 
 ---@param modal_data RecipeDialogModalData
 local function build_dialog_structure(modal_data)
@@ -366,6 +388,8 @@ local function build_dialog_structure(modal_data)
         -- Only actually create this group if it contains any relevant recipes
         if relevant_group ~= nil then create_recipe_group_box(modal_data, relevant_group) end
     end
+
+    resize_recipe_dialog(modal_data)
 end
 
 ---@param player LuaPlayer
@@ -374,7 +398,7 @@ local function apply_recipe_filter(player, search_term)
     local modal_data = lib.globals.modal_data(player)  ---@as RecipeDialogModalData
     local disabled, hidden = modal_data.filters.disabled, modal_data.filters.hidden
 
-    local any_recipe_visible, added_scroll_pane_height = false, 0
+    local any_recipe_visible = false
     for _, group in ipairs(modal_data.modal_elements.groups) do
         local group_data = modal_data.recipe_groups[group.name]
         local any_group_recipe_visible = false
@@ -393,19 +417,9 @@ local function apply_recipe_filter(player, search_term)
 
         group.frame.visible = any_group_recipe_visible
         any_recipe_visible = any_recipe_visible or any_group_recipe_visible
-
-        local button_table_height = math.ceil(table_size(group.recipe_buttons) / MAGIC_NUMBERS.recipes_per_row) * 40
-        local additional_height = math.max(88, button_table_height + 24) + 4
-        added_scroll_pane_height = added_scroll_pane_height + additional_height
     end
 
     modal_data.modal_elements.warning_label.visible = not any_recipe_visible
-
-    added_scroll_pane_height = math.max(added_scroll_pane_height, 42)  -- set minimum when no recipe matches
-    local base_scroll_pane_height = (modal_data.temperature) and (64+24)+70 or 64+24
-    local desired_scroll_pane_height = base_scroll_pane_height + added_scroll_pane_height
-    local bounded_scroll_pane_height = math.min(desired_scroll_pane_height, modal_data.dialog_maximal_height - 80)
-    modal_data.modal_elements.content_frame.style.height = bounded_scroll_pane_height
 end
 
 
@@ -503,6 +517,11 @@ listeners.gui = {
         {
             name = "pick_recipe",
             timeout = 20,
+            actions_table = {
+                select = {shortcut="left"},
+                technology = {shortcut="shift-left"},
+                factoriopedia = {shortcut="alt-left", enable=lib.actions.can_open_factoriopedia}
+            },
             handler = handle_recipe_click
         },
         {
@@ -534,7 +553,8 @@ listeners.dialog = {
             caption = {"", {"fp.add"}, " ", {"fp.pl_recipe", 1}},
             subheader_text = {"fp.recipe_instruction", {"fp." .. modal_data.production_type},
                 product_proto--[[@as FPItemPrototype]].localised_name},
-            search_handler_name = "apply_recipe_filter"
+            search_handler_name = "apply_recipe_filter",
+            resize_handler_name = "resize_recipe_dialog"
         }  ---@as ModalDialogSettings
     end,
     early_abort_check = recipe_early_abort_check,
@@ -542,7 +562,8 @@ listeners.dialog = {
 }
 
 listeners.global = {
-    apply_recipe_filter = apply_recipe_filter
+    apply_recipe_filter = apply_recipe_filter,
+    resize_recipe_dialog = resize_recipe_dialog
 }
 
 return { listeners }

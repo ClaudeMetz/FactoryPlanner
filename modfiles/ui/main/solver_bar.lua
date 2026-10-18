@@ -178,8 +178,7 @@ local function build_solver_bar(player)
     local scroll_pane = frame.add{type="scroll-pane", style="naked_scroll_pane",
         horizontal_scroll_policy="auto", vertical_scroll_policy="never"}
     scroll_pane.style.padding = {2, 12}
-    -- Establish the width before layout so a temporary overflow doesn't leave scrollbar height behind
-    scroll_pane.style.width = main_elements.flows.right_vertical.style.minimal_width
+    scroll_pane.style.width = main_dialog.get_content_width(player)
 
     local flow = scroll_pane.add{type="flow", direction="horizontal"}
     flow.style.vertical_align = "center"

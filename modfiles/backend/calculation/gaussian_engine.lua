@@ -341,7 +341,7 @@ local function to_reduced_row_echelon_form(m)
     if num_rows == 0 then return end
     local num_cols = #m[1]
 
-    local tolerance = MAGIC_NUMBERS.matrix_tolerance
+    local tolerance = 1e-12
     local pivot_row = 1
 
     for curr_col = 1, num_cols do

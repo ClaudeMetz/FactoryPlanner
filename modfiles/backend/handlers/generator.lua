@@ -1909,11 +1909,12 @@ function generator.locations.generate(context)
         if not helpers.is_valid_sprite_path(sprite) then return nil end
 
         local surface_properties = {}
-        local tooltip = {"", {"fp.tt_title", proto.localised_name}, "\n"}  ---@type LocalisedString
-        local current_table, next_index = tooltip, 4
+        local tooltip = {""}  ---@type LocalisedString
+        local current_table, next_index = tooltip, 2
         local resource_recipes = {}  ---@type table<string, true>
+        local property_separator = ""
 
-        for _, property_proto in pairs(property_prototypes) do
+        for _, property_proto in ipairs(property_prototypes) do
             local value = proto.surface_properties[property_proto.name] or property_proto.default_value
             surface_properties[property_proto.name] = value
 
@@ -1921,8 +1922,10 @@ function generator.locations.generate(context)
                 local value_and_unit = {property_proto.localised_unit_key, value}  ---@type LocalisedString
                 if property_proto.is_time then value_and_unit = lib.format.time(value) end
 
-                current_table, next_index = lib.format.build_localised_string(
-                    {"fp.surface_property", property_proto.localised_name, value_and_unit}, current_table, next_index)
+                local property_tooltip = {"", property_separator,
+                    {"fp.surface_property", property_proto.localised_name, value_and_unit}}
+                current_table, next_index = lib.format.build_localised_string(property_tooltip, current_table, next_index)
+                property_separator = "\n"
             end
         end
 

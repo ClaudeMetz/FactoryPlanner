@@ -2,6 +2,9 @@ local LUDecomposition = require("backend.calculation.LUDecomposition")
 local structures = require("backend.calculation.structures")
 local util = require("__core__.lualib.util")
 
+local TOLERANCE = 1e-10  -- Tolerance for entering/exiting variable comparisons
+local MAX_FACTORIZATION_INTERVAL = 50  -- Maximum iterations between refactorizations
+
 
 ---@alias InequalityType "==" | "<=" | ">="
 ---@alias ItemFlow "import" | "export" | "input" | "output"
@@ -366,7 +369,7 @@ function SimplexTableau:solve(floor_id, basis_cache)
         -- Add a minimum margin for extra safety
         -- If there is so little score left to maximize, then the solution is pretty close to optimal anyway
         local entering_index = 0
-        local min = -MAGIC_NUMBERS.simplex_tolerance
+        local min = -TOLERANCE
         for j = 1, #non_basic do
             if c_non_basic[j] < min then
                 entering_index = j
@@ -385,7 +388,7 @@ function SimplexTableau:solve(floor_id, basis_cache)
         local leaving_index = 0
         min = math.huge
         for i = 1, #d_vector do
-            if d_vector[i] > MAGIC_NUMBERS.simplex_tolerance then
+            if d_vector[i] > TOLERANCE then
                 local ratio = x_vector[i]--[[@cast -nil]] / d_vector[i]
                 if ratio < min then
                     leaving_index = i
@@ -428,7 +431,7 @@ function SimplexTableau:solve(floor_id, basis_cache)
         -- Find a solution
         local done = false
         local max_iterations = 4 * #basic
-        local factorization_interval = math.min(#basic, MAGIC_NUMBERS.simplex_max_factorization_interval)
+        local factorization_interval = math.min(#basic, MAX_FACTORIZATION_INTERVAL)
         repeat
             -- If the factorization is too old, we need to recreate it
             if iterations - last_factorization >= factorization_interval then

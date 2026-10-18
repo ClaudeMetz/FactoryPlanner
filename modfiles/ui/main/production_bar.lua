@@ -132,7 +132,12 @@ listeners.gui = {
             name = "add_district",
             handler = function(player, _, _)
                 local realm = lib.globals.player_table(player).realm
-                local new_district = District.init()
+                local names = {}
+                for district in realm:iterator() do names[district.name] = true end
+                local number = realm:count() + 1
+                while names["District " .. number] do number = number + 1 end
+
+                local new_district = District.init("District " .. number)
                 realm:insert(new_district)
                 lib.context.set(player, new_district)
                 lib.gui.run_refresh(player, "all")

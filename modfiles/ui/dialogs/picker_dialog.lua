@@ -1,5 +1,7 @@
 local FactoryItem = require("backend.data.FactoryItem")
 
+local GROUP_MAX_ROWS = 3
+
 ---@alias ItemCategory "product" | "byproduct" | "ingredient"
 
 ---@class PickerDialogModalData: ModalData
@@ -86,14 +88,14 @@ local function add_item_picker(parent_flow, player)
     modal_elements["warning_label"] = label_warning
 
     -- Item picker (optimized for performance, so not everything is done in the obvious way)
-    local groups_per_row, items_per_row = MAGIC_NUMBERS.groups_per_row, MAGIC_NUMBERS.items_per_row
+    local groups_per_row, items_per_row = 6, 10
     local tabs_width = 71 * groups_per_row
 
     -- Adjusted when this is actually supposed to scroll
     local scroll_pane_groups = parent_flow.add{type="scroll-pane", style="fp_scroll-pane_group_tabs",
         horizontal_scroll_policy="never"}
     scroll_pane_groups.style.width = tabs_width
-    scroll_pane_groups.style.maximal_height = MAGIC_NUMBERS.group_max_rows * 76
+    scroll_pane_groups.style.maximal_height = GROUP_MAX_ROWS * 76
 
     local table_item_groups = scroll_pane_groups.add{type="table", column_count=groups_per_row}
     table_item_groups.style.width = tabs_width
@@ -213,7 +215,9 @@ local function add_item_picker(parent_flow, player)
             ---@field category_id integer
             ---@field enabled boolean
             local tags = {mod="fp", on_gui_click="select_picker_item", item_id=item_proto.id,
-                category_id=item_proto.category_id, enabled=(existing_product == nil)}
+                category_id=item_proto.category_id, enabled=(existing_product == nil),
+                flags={cursor=(item_proto.type ~= "entity"),
+                    factoriopedia=(lib.get_factoriopedia_proto(item_proto) ~= nil)}}
             local button_item = table_subgroup.add{type="sprite-button", tags=tags, sprite=item_proto.sprite,
                 style=button_style, elem_tooltip=elem_tooltip, mouse_button_filter={"left"}}
             button_item.tooltip = tooltip
@@ -238,12 +242,12 @@ local function add_item_picker(parent_flow, player)
 
     -- Narrow the tabs down when they scroll, so the scrollbar lines up
     local group_rows = math.ceil(#modal_elements.groups / groups_per_row)
-    if group_rows > MAGIC_NUMBERS.group_max_rows then
+    if group_rows > GROUP_MAX_ROWS then
         local scrolling_width = items_per_row * 40 + 12
         scroll_pane_groups.style = "fp_scroll-pane_group_tabs_scrolling"
         local scroll_pane_style = scroll_pane_groups.style  ---@as LuaStyle
         scroll_pane_style.width = scrolling_width
-        scroll_pane_style.maximal_height = MAGIC_NUMBERS.group_max_rows * 76
+        scroll_pane_style.maximal_height = GROUP_MAX_ROWS * 76
         table_item_groups.style.width = scrolling_width
     end
 
@@ -333,6 +337,9 @@ local function set_item_proto(modal_data, item_proto)
 
     local item_choice_button = modal_elements.item_choice_button
     item_choice_button.sprite = (item_proto) and item_proto.sprite or nil
+    item_choice_button.tags = {mod="fp", on_gui_click="picker_item_choice",
+        flags={cursor=(item_proto ~= nil and item_proto.type ~= "entity"),
+            factoriopedia=(item_proto ~= nil and lib.get_factoriopedia_proto(item_proto) ~= nil)}}
     if item_proto then
         local name = (item_proto.temperature) and item_proto.base_name or item_proto.name
         item_choice_button.elem_tooltip = (item_proto.type ~= "entity") and {type=item_proto.type, name=name} or nil
@@ -382,7 +389,7 @@ local function add_item_pane(parent_flow, modal_data, item)
 
     local flow_amount = create_flow()
     local item_choice_button = flow_amount.add{type="sprite-button", style="fp_sprite-button_inset",
-        tags={mod="fp", on_gui_click="picker_item_choice"}}
+        tags={mod="fp", on_gui_click="picker_item_choice"}, mouse_button_filter={"left"}}
     item_choice_button.style.size = 40
     item_choice_button.style.right_margin = 12
     modal_elements["item_choice_button"] = item_choice_button
@@ -660,7 +667,24 @@ listeners.gui = {
         },
         {
             name = "picker_item_choice",
-            handler = function(player, _, _)
+            actions_table = {
+                select = {shortcut="left"},
+                pipette = {input="pipette", enable=lib.actions.can_pipette},
+                factoriopedia = {shortcut="alt-left", enable=lib.actions.can_open_factoriopedia}
+            },
+            handler = function(player, _, action)
+                if action ~= "select" then
+                    local modal_data = lib.globals.modal_data(player)  ---@as PickerDialogModalData
+                    local item_proto = modal_data.item_proto
+                    if not item_proto then return end
+                    if action == "pipette" then
+                        lib.cursor.pipette_item(player, item_proto)
+                    elseif action == "factoriopedia" then
+                        player.open_factoriopedia_gui(lib.get_factoriopedia_proto(item_proto))
+                    end
+                    return
+                end
+
                 local cursor_item = lib.cursor.parse_cursor_item(player)
                 if cursor_item == nil then return end
 
@@ -688,7 +712,24 @@ listeners.gui = {
         },
         {
             name = "select_picker_item",
-            handler = handle_item_pick
+            actions_table = {
+                select = {shortcut="left"},
+                pipette = {input="pipette", enable=lib.actions.can_pipette},
+                factoriopedia = {shortcut="alt-left", enable=lib.actions.can_open_factoriopedia}
+            },
+            handler = function(player, tags, action)
+                ---@cast tags SelectPickerItemTags
+                if action == "select" then
+                    handle_item_pick(player, tags)
+                else
+                    local item_proto = prototyper.util.find("items", tags.item_id, tags.category_id)  ---@as FPItemPrototype
+                    if action == "pipette" then
+                        lib.cursor.pipette_item(player, item_proto)
+                    elseif action == "factoriopedia" then
+                        player.open_factoriopedia_gui(lib.get_factoriopedia_proto(item_proto))
+                    end
+                end
+            end
         }
     },
     on_gui_elem_changed = {

@@ -442,10 +442,20 @@ local function refresh_compact_header(player, factory)
     local tooltips = player_table.ui_state.tooltips.compact_dialog
 
     local attach_factory_products = player_table.preferences.attach_factory_products
-    compact_elements.name_label.caption = factory:tostring(attach_factory_products, true)
+    local factory_names, factory_ids, selected_index = {}, {}, 0
+    for candidate in factory.parent:iterator({archived=factory.archived, valid=true}) do
+        table.insert(factory_names, (candidate:tostring(attach_factory_products, true)))
+        table.insert(factory_ids, candidate.id)
+        if candidate == factory then selected_index = #factory_ids end
+    end
+
+    local dropdown = compact_elements.factory_dropdown
+    dropdown.items = factory_names
+    dropdown.selected_index = selected_index
+    dropdown.tags = {mod="fp", on_gui_selection_state_changed="select_compact_factory", factory_ids=factory_ids}
 
     local current_floor = lib.context.get(player, "Floor")  ---@as Floor
-    compact_elements.level_label.caption = {"fp.bold_label", {"", "-   ", {"fp.level"}, " ", current_floor.level}}
+    compact_elements.level_label.caption = {"fp.bold_label", {"", {"fp.level"}, " ", current_floor.level}}
     compact_elements.floor_up_button.enabled = (current_floor.level > 1)
     compact_elements.floor_top_button.enabled = (current_floor.level > 1)
 
@@ -610,10 +620,9 @@ local function build_compact_factory(player)
     local width, _ = get_compact_frame_dimensions(player)
     flow_navigation.style.width = width - 40
 
-    local label_name = flow_navigation.add{type="label"}
-    label_name.style.font = "heading-2"
-    label_name.style.horizontally_squashable = true
-    compact_elements["name_label"] = label_name
+    local dropdown_factory = flow_navigation.add{type="drop-down", style="fp_drop-down_slim"}
+    dropdown_factory.style.horizontally_squashable = true
+    compact_elements["factory_dropdown"] = dropdown_factory
 
     local label_level = flow_navigation.add{type="label"}
     label_level.style.margin = {0, 6}
@@ -829,6 +838,20 @@ local function has_subfloor(flags)
 end
 
 factory_listeners.gui = {
+    on_gui_selection_state_changed = {
+        {
+            name = "select_compact_factory",
+            handler = function(player, tags, event)
+                ---@cast event EventData.on_gui_selection_state_changed
+                local factory = OBJECT_INDEX[tags.factory_ids[event.element.selected_index]]  ---@as Factory?
+                if not factory or not factory.valid then return end
+
+                lib.context.set(player, factory)
+                lib.gui.run_refresh(player, "all")
+                refresh_compact_factory(player)
+            end
+        }
+    },
     on_gui_click = {
         {
             name = "change_compact_floor",

@@ -1,51 +1,23 @@
 main_dialog = {}
 
--- Accepts custom width and height parameters so dimensions can be tried out without changing actual preferences
 ---@param player LuaPlayer
 ---@return DisplayResolution
-local function determine_main_dimensions(player)
+function main_dialog.get_dimensions(player)
     local preferences = lib.globals.preferences(player)
-    local frame_spacing = MAGIC_NUMBERS.frame_spacing
-
-    -- Width of the larger ingredients-box, which has twice the buttons per row
-    local boxes_width_1 = (preferences.products_per_row * 2 * MAGIC_NUMBERS.item_button_size) + (2 * frame_spacing)
-    -- Width of the two smaller product+byproduct-boxes
-    local boxes_width_2 = 2 * ((preferences.products_per_row * MAGIC_NUMBERS.item_button_size) + (2 * frame_spacing))
-    local width = MAGIC_NUMBERS.list_width + boxes_width_1 + boxes_width_2 + ((2+3) * frame_spacing)
-
-    local factory_list_height = (preferences.factory_list_rows * MAGIC_NUMBERS.list_element_height)
-        + MAGIC_NUMBERS.subheader_height
-    local height = MAGIC_NUMBERS.title_bar_height + MAGIC_NUMBERS.district_info_height +
-        factory_list_height + (3 * frame_spacing)
+    local scaled_resolution = lib.gui.calculate_scaled_resolution(player)
+    local width = math.floor(scaled_resolution.width * preferences.main_width_percentage / 100)
+    local height = math.floor(scaled_resolution.height * preferences.main_height_percentage / 100)
 
     return {width = width, height = height}  ---@as DisplayResolution
 end
 
 
----@class ShrinkwrapInterfaceMetadata
----@field player_index PlayerIndex
-
--- Downscale width and height preferences until the main interface fits onto the player's screen
----@param metadata ShrinkwrapInterfaceMetadata
-local function shrinkwrap_interface(metadata)
-    local player = game.get_player(metadata.player_index)  ---@as LuaPlayer
-    local scaled_resolution = lib.gui.calculate_scaled_resolution(player)
-    local preferences = lib.globals.preferences(player)
-
-    local width_minimum = lib.preferences.products_per_row_options[1]
-    while (scaled_resolution.width * 0.95) < determine_main_dimensions(player).width
-            and preferences.products_per_row > width_minimum do
-        preferences.products_per_row = preferences.products_per_row - 1
-    end
-
-    local height_minimum = lib.preferences.factory_list_rows_options[1]
-    while (scaled_resolution.height * 0.95) < determine_main_dimensions(player).height
-            and preferences.factory_list_rows > height_minimum do
-        preferences.factory_list_rows = preferences.factory_list_rows - 2
-    end
-
-    main_dialog.rebuild(player, false)
+---@param player LuaPlayer
+---@return integer
+function main_dialog.get_content_width(player)
+    return main_dialog.get_dimensions(player).width - MAGIC_NUMBERS.list_width - (3 * MAGIC_NUMBERS.frame_spacing)
 end
+
 
 ---@param metadata InterfaceToggleMetadata
 local function interface_toggle(metadata)
@@ -81,8 +53,7 @@ function main_dialog.rebuild(player, default_visibility)
         name="fp_frame_main_dialog"}
     main_elements["main_frame"] = frame_main_dialog
 
-    local dimensions = determine_main_dimensions(player)
-    ui_state.main_dialog_dimensions = dimensions
+    local dimensions = main_dialog.get_dimensions(player)
     frame_main_dialog.style.size = {dimensions.width, dimensions.height}
     main_dialog.center(player)
 
@@ -95,23 +66,28 @@ function main_dialog.rebuild(player, default_visibility)
 
     local main_horizontal = frame_main_dialog.add{type="flow", direction="horizontal"}
     main_horizontal.style.horizontal_spacing = frame_spacing
+    main_horizontal.style.vertically_stretchable = true
     main_elements.flows["main_horizontal"] = main_horizontal
 
     local left_vertical = main_horizontal.add{type="flow", direction="vertical"}
     left_vertical.style.vertical_spacing = frame_spacing
     left_vertical.style.width = MAGIC_NUMBERS.list_width
+    left_vertical.style.vertically_stretchable = true
     main_elements.flows["left_vertical"] = left_vertical
 
     local right_vertical = main_horizontal.add{type="flow", direction="vertical"}
     right_vertical.style.vertical_spacing = frame_spacing
-    right_vertical.style.width = dimensions.width - MAGIC_NUMBERS.list_width - (3 * MAGIC_NUMBERS.frame_spacing)
+    right_vertical.style.width = main_dialog.get_content_width(player)
     main_elements.flows["right_vertical"] = right_vertical
 
     item_views.rebuild_data(player)
     lib.gui.run_build(player, "main_dialog", nil)  -- tells all elements to build themselves
     item_views.rebuild_interface(player)
 
-    if interface_visible then player.opened = frame_main_dialog end
+    modal_dialog.refresh_layering(player)
+    if interface_visible and not ui_state.modal_data and not ui_state.context_menu then
+        player.opened = frame_main_dialog
+    end
     main_dialog.set_pause_state(player, frame_main_dialog)
 end
 
@@ -143,14 +119,23 @@ end
 ---@param player LuaPlayer
 function main_dialog.center(player)
     local ui_state = lib.globals.ui_state(player)
-    local dimensions = ui_state.main_dialog_dimensions
     local main_frame = ui_state.main_elements.main_frame
-    if not dimensions or not main_frame or not main_frame.valid then return end
+    if not main_frame or not main_frame.valid then return end
+    local dimensions = main_dialog.get_dimensions(player)
 
     local resolution, scale = player.display_resolution, player.display_scale
     local x_offset = ((resolution.width - (dimensions.width * scale)) / 2)
     local y_offset = ((resolution.height - (dimensions.height * scale)) / 2)
     main_frame.location = {x_offset, y_offset}
+end
+
+---@param player LuaPlayer
+local function resize_main_dialog(player)
+    local main_elements = lib.globals.main_elements(player)
+    local main_frame = main_elements.main_frame
+    if not main_frame or not main_frame.valid then return end
+
+    main_dialog.rebuild(player, false)
 end
 
 
@@ -209,7 +194,7 @@ function main_dialog.toggle_districts_view(player, force_false)
     local ui_state = lib.globals.ui_state(player)
     ui_state.districts_view = not ui_state.districts_view and not force_false
 
-    lib.gui.run_refresh(player, "district_info")
+    lib.gui.run_refresh(player, "district_list")
 end
 
 
@@ -257,8 +242,8 @@ listeners.player = {
         end
     end,
 
-    on_player_display_resolution_changed = main_dialog.center,
-    on_player_display_scale_changed = main_dialog.center,
+    on_player_display_resolution_changed = resize_main_dialog,
+    on_player_display_scale_changed = resize_main_dialog,
 
     fp_toggle_interface = function(player, _)
         if not lib.globals.ui_state(player).compact_view then main_dialog.toggle(player) end
@@ -307,7 +292,6 @@ listeners.game = {
 }
 
 listeners.global = {
-    shrinkwrap_interface = shrinkwrap_interface,
     interface_toggle = interface_toggle
 }
 
