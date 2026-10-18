@@ -3,6 +3,7 @@ Version: 0.00.00
 Date: 00. 00. 0000
   Features:
   Changes:
+    - Districts are now shown as a list above factories for quick switching between them (#498)
     - Changed main interface width and height preferences to be percentage-based
   Bugfixes:
 

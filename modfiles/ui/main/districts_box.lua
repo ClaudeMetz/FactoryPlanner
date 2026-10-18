@@ -201,19 +201,6 @@ local function build_district_frame(player, district, location_items, held_distr
     move_button.style.size = {20, 28}
     move_button.style.left_margin = 2
 
-    local selected = lib.context.get(player, "District")--[[@as District]].id == district.id
-    local selection_caption = (selected) and {"fp.u_selected"} or {"fp.u_select"}
-
-    ---@class SelectDistrictTags
-    ---@field district_id ObjectID
-    local select_tags = {mod="fp", on_gui_click="select_district", district_id=district.id}
-    local select_button = subheader.add{type="button", tags=select_tags, caption=selection_caption,
-        style="list_box_item", enabled=(not selected), mouse_button_filter={"left"}}
-    select_button.style.font = "default-bold"
-    select_button.style.width = 72
-    select_button.style.padding = {0, 4}
-    select_button.style.horizontal_align = "center"
-
     -- Name
     subheader.add{type="label", caption={"", {"fp.name"}, ": "}, style="subheader_caption_label"}
 
@@ -356,6 +343,7 @@ listeners.gui = {
                 ui_state.held_object_id = nil  -- consume the held object
 
                 lib.gui.run_refresh(player, "districts_box")
+                lib.gui.run_refresh(player, "district_info")
             end
         },
         {
@@ -366,16 +354,6 @@ listeners.gui = {
                 ui_state.held_object_id = (tags.district_id ~= ui_state.held_object_id)
                     and tags.district_id or nil
                 lib.gui.run_refresh(player, "districts_box")
-            end
-        },
-        {
-            name = "select_district",
-            handler = function(player, tags, _)
-                ---@cast tags SelectDistrictTags
-                local selected_district = OBJECT_INDEX[tags.district_id]  ---@as District
-                lib.context.set(player, selected_district)
-                main_dialog.toggle_districts_view(player, false)
-                lib.gui.run_refresh(player, "all")
             end
         },
         {

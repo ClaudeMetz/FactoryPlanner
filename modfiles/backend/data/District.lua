@@ -103,6 +103,7 @@ end
 
 ---@return LocalisedString caption
 function District:tostring()
+    if not MULTIPLE_PLANETS then return self.name end
     return "[img=" .. self.location_proto.sprite .. "] " .. self.name
 end
 
