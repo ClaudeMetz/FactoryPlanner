@@ -1,5 +1,7 @@
 local Factory = require("backend.data.Factory")
 
+local DELETION_DELAY = 15 * 60 * 60  -- Ticks to deletion after factory trashing
+
 -- Delete factory for good and refresh interface if necessary
 ---@param metadata DeleteFactoryForGoodMetadata
 local function delete_factory_for_good(metadata)
@@ -245,7 +247,7 @@ local function refresh_factory_list(player)
     factory_list_elements.edit_button.enabled = (factory_exists)
 
     factory_list_elements.delete_button.enabled = (factory_exists)
-    local delay_in_minutes = math.floor(MAGIC_NUMBERS.factory_deletion_delay / 3600)
+    local delay_in_minutes = math.floor(DELETION_DELAY / 3600)
     factory_list_elements.delete_button.tooltip = (archived)
         and {"fp.action_delete_factory"} or {"fp.action_trash_factory", delay_in_minutes}
 
@@ -409,7 +411,7 @@ function factory_list.delete_factory(player)
         lib.context.set(player, adjacent_factory or district)
         lib.gui.run_refresh(player, "all")
     else
-        local desired_tick_of_deletion = game.tick + MAGIC_NUMBERS.factory_deletion_delay
+        local desired_tick_of_deletion = game.tick + DELETION_DELAY
 
         ---@class DeleteFactoryForGoodMetadata
         ---@field player_index PlayerIndex

@@ -1,5 +1,8 @@
 modal_dialog = {}
 
+local SEARCH_RATE_LIMIT = 10  -- Ticks between modal search runs
+local CONTEXT_MENU_WIDTH = 310
+
 ---@alias ModalDialogType string
 
 ---@class ModalData
@@ -304,10 +307,10 @@ function modal_dialog.open_context_menu(player, menu_tags, handler, actions, loc
         local button = button_flow.add{type="button", tags=tags, style="list_box_item",
             mouse_button_filter={"left"}, enabled=enabled,
             tooltip=warning and {"fp.warning_with_icon", warning} or nil}
-        button.style.width = MAGIC_NUMBERS.context_menu_width
+        button.style.width = CONTEXT_MENU_WIDTH
 
         local flow = button.add{type="flow", direction="horizontal"}
-        flow.style.width = MAGIC_NUMBERS.context_menu_width
+        flow.style.width = CONTEXT_MENU_WIDTH
         flow.style.right_padding = 20
         flow.add{type="label", caption={"fp.tt_title", {"fp.action_" .. action.name}}, style="bold_label"}
         flow.add{type="empty-widget", style="fflib_horizontal_pusher"}
@@ -332,7 +335,7 @@ function modal_dialog.open_context_menu(player, menu_tags, handler, actions, loc
     local distance_to_bottom = player.display_resolution.height - location.y
     if distance_to_bottom < scaled_dialog_height then location.y = location.y - scaled_dialog_height end
 
-    local scaled_dialog_width = MAGIC_NUMBERS.context_menu_width * player.display_scale
+    local scaled_dialog_width = CONTEXT_MENU_WIDTH * player.display_scale
     local distance_to_right = player.display_resolution.width - location.x
     if distance_to_right < scaled_dialog_width then location.x = location.x - scaled_dialog_width end
 
@@ -471,7 +474,7 @@ listeners.gui = {
     on_gui_text_changed = {
         {
             name = "modal_searchfield",
-            timeout = MAGIC_NUMBERS.modal_search_rate_limit,
+            timeout = SEARCH_RATE_LIMIT,
             handler = function(player, _, _)
                 local modal_data = lib.globals.modal_data(player)  ---@as ModalData
                 local search_tick = modal_data.next_search_tick
@@ -480,7 +483,7 @@ listeners.gui = {
                 modal_dialog.run_search(player)
 
                 -- Set up delayed search update to circumvent issues caused by rate limiting
-                local desired_tick = game.tick + MAGIC_NUMBERS.modal_search_rate_limit
+                local desired_tick = game.tick + SEARCH_RATE_LIMIT
 
                 ---@class RunDelayedModalSearchMetadata
                 ---@field player_index PlayerIndex

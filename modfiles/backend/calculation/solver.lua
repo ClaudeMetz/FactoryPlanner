@@ -4,6 +4,8 @@ local simplex_engine = require("backend.calculation.simplex_engine")
 local structures = require("backend.calculation.structures")
 local SimpleItem = require("backend.data.SimpleItem")
 
+local MINIMUM_ENERGY = 0.001  -- Lower bound for recipe energy
+
 ---@alias SolverName "sequential" | "simplex" | "gaussian"
 
 solver = {
@@ -60,7 +62,7 @@ local function resolve_machine_requirements(factory)
         local line = (line_object.class == "Floor") and line_object.first or line_object  ---@cast line Line
         -- Skip over lines that are blocked or don't calculate machine counts at all
         local blocker = line:get_blocker()
-        if line.recipe.proto.energy > MAGIC_NUMBERS.minimum_energy and (not blocker or blocker == "disabled") then
+        if line.recipe.proto.energy > MINIMUM_ENERGY and (not blocker or blocker == "disabled") then
             for _, product in pairs(line.recipe.products) do
                 local key = structures.pack_item(product)
                 first_lines[key] = first_lines[key] or line.id
@@ -131,7 +133,7 @@ local function generate_line_data(player, factory, line, requirement)
     -- Get amount of crafts in 1 second
     local fuel_performance, wasted_share = line.machine:get_fuel_performance()
     local speed_multiplier = machine_speed * fuel_performance * (1 + (line.total_effects.speed / MAGIC_NUMBERS.effect_precision))
-    local energy = math.max(recipe_energy, MAGIC_NUMBERS.minimum_energy)
+    local energy = math.max(recipe_energy, MINIMUM_ENERGY)
     local crafts_per_second = machine_amount * speed_multiplier / energy
 
     -- Get simple products
@@ -167,7 +169,7 @@ local function generate_line_data(player, factory, line, requirement)
     local heat_amount = 0.0
     local heating_amount = 0.0
 
-    if energy > MAGIC_NUMBERS.minimum_energy then
+    if energy > MINIMUM_ENERGY then
         -- Get power
         local consumption_multiplier = 1 + (line.total_effects.consumption / MAGIC_NUMBERS.effect_precision)
         -- A fuel-starved machine only draws what it can get, and pollutes proportionally less
@@ -610,7 +612,7 @@ local function update_line(line_id, line_data, result, scale_factor, floor_bypro
 
     line.machine.amount = machine_amount
     -- Workaround for recipes with 0 energy
-    if line.recipe.proto.energy <= MAGIC_NUMBERS.minimum_energy then line.machine.amount = 0 end
+    if line.recipe.proto.energy <= MINIMUM_ENERGY then line.machine.amount = 0 end
 
     line.production_ratio = crafts_per_second
     if line.machine.fuel ~= nil then line.machine.fuel.amount = fuel_amount end

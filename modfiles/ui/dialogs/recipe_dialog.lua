@@ -1,5 +1,7 @@
 local Line = require("backend.data.Line")
 
+local RECIPES_PER_ROW = 6
+
 ---@alias RecipeProductionType "produce" | "consume"
 
 ---@class RecipeDialogModalData: ModalData
@@ -236,7 +238,7 @@ local function create_filter_box(modal_data)
     local bordered_frame = content_frame.add{type="frame", direction="vertical", style="fp_frame_bordered_stretch"}
     bordered_frame.style.left_padding = 12
     -- Keep the recipe group width when all groups are hidden or no recipes match the temperature
-    bordered_frame.style.minimal_width = MAGIC_NUMBERS.recipes_per_row * 40 + 64 + 16 + 8 + 16 + 8
+    bordered_frame.style.minimal_width = RECIPES_PER_ROW * 40 + 64 + 16 + 8 + 16 + 8
 
     local table_filters = bordered_frame.add{type="table", column_count=2}
     table_filters.style.horizontal_spacing = 16
@@ -298,8 +300,8 @@ local function create_recipe_group_box(modal_data, relevant_group)
 
     flow_group.add{type="empty-widget", style="fflib_horizontal_pusher"}
     local frame_recipes = flow_group.add{type="frame", direction="horizontal", style="fp_frame_light_slots"}
-    frame_recipes.style.width = MAGIC_NUMBERS.recipes_per_row * 40
-    local table_recipes = frame_recipes.add{type="table", column_count=MAGIC_NUMBERS.recipes_per_row,
+    frame_recipes.style.width = RECIPES_PER_ROW * 40
+    local table_recipes = frame_recipes.add{type="table", column_count=RECIPES_PER_ROW,
         style="slot_table"}
 
     for _, recipe in pairs(relevant_group.recipes) do
@@ -342,7 +344,7 @@ end
 local function resize_recipe_dialog(modal_data)
     local added_scroll_pane_height = 0
     for _, group in ipairs(modal_data.modal_elements.groups) do
-        local button_table_height = math.ceil(table_size(group.recipe_buttons) / MAGIC_NUMBERS.recipes_per_row) * 40
+        local button_table_height = math.ceil(table_size(group.recipe_buttons) / RECIPES_PER_ROW) * 40
         local additional_height = math.max(88, button_table_height + 24) + 4
         added_scroll_pane_height = added_scroll_pane_height + additional_height
     end

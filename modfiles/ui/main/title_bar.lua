@@ -39,7 +39,7 @@ end
 local function determine_left_handle_width(player)
     local half_total_width = main_dialog.get_dimensions(player).width / 2
 
-    local half_label_width = MAGIC_NUMBERS.titlebar_label_width / 2
+    local half_label_width = 130 / 2
     local left_margins = 3 * 8 + 2 * 4  -- horizontal spacing + drag handle margin
     local left_buttons_width = 3 * 24 + 2 * 8  -- button width + spacing
 
