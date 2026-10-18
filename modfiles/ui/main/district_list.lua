@@ -12,15 +12,28 @@ end
 ---@param listbox LuaGuiElement
 ---@param district District
 ---@param selected boolean
-local function build_district_row(listbox, district, selected)
+---@param held_factory Factory?
+local function build_district_row(listbox, district, selected, held_factory)
     local active_count = district:count({archived=false})
     local button_width = MAGIC_NUMBERS.list_width - 24
     local left_padding, right_padding = 4, 12
+    local row = listbox.add{type="flow", direction="horizontal"}
+    row.style.horizontal_spacing = 0
+
+    if held_factory and not held_factory.archived then
+        local move_button = row.add{type="sprite-button", style="fp_sprite-button_move",
+            sprite="fp_arrow_right", mouse_button_filter={"left"}, enabled=held_factory.parent ~= district,
+            tooltip={"fp.move_factory_to_district", held_factory.name, district.name},
+            tags={mod="fp", on_gui_click="place_factory_in_district", district_id=district.id}}
+        move_button.style.size = {20, DISTRICT_ROW_HEIGHT}
+        move_button.style.padding = 2
+        button_width = button_width - 20
+    end
 
     ---@class SelectDistrictTags
     ---@field district_id ObjectID
     local tags = {mod="fp", on_gui_click="select_district", district_id=district.id}
-    local button = listbox.add{type="button", style="list_box_item",
+    local button = row.add{type="button", style="list_box_item",
         toggled=selected, mouse_button_filter={"left"},
         tooltip=district_tooltip(district), tags=tags}
     button.style.width = button_width
@@ -61,12 +74,15 @@ local function refresh_district_list(player)
         and {"fp.pu_district", 2} or {"fp.district_overview"}
     district_list_elements.districts_button.toggled = ui_state.districts_view
     local listbox = district_list_elements.district_listbox
+    listbox.parent.style.extra_right_margin_when_activated = (realm:count() > MAX_DISTRICT_ROWS)
+        and -district_list_elements.frame.style.right_padding or 0
     listbox.parent.visible = not single_district
     listbox.clear()
     if single_district then return end
 
+    local held_factory = lib.gui.held_object(player, "factory_list")  ---@as Factory?
     for district in realm:iterator() do
-        build_district_row(listbox, district, district == selected_district)
+        build_district_row(listbox, district, district == selected_district, held_factory)
     end
 end
 
@@ -106,7 +122,6 @@ local function build_district_list(player)
     local scroll_pane = frame.add{type="scroll-pane", style="list_box_in_shallow_frame_under_subheader_scroll_pane"}
     scroll_pane.style.maximal_height = MAX_DISTRICT_ROWS * DISTRICT_ROW_HEIGHT
     scroll_pane.style.horizontally_stretchable = true
-    scroll_pane.style.extra_right_margin_when_activated = -frame.style.right_padding
     scroll_pane.horizontal_scroll_policy = "never"
     local listbox = scroll_pane.add{type="flow", direction="vertical"}
     listbox.style.vertical_spacing = 0
@@ -131,6 +146,27 @@ listeners.gui = {
             end
         },
         {
+            name = "place_factory_in_district",
+            handler = function(player, tags, _)
+                ---@cast tags SelectDistrictTags
+                local factory = lib.gui.held_object(player, "factory_list")  ---@as Factory?
+                local district = OBJECT_INDEX[tags.district_id]  ---@as District
+                if not factory or factory.archived or factory.parent == district then return end
+
+                lib.context.remove(player, factory)
+                factory.parent:remove(factory)
+                district:insert(factory)
+                factory.top_floor:reset_surface_compatibility()
+                factory:clear_solver_cache()
+                lib.globals.ui_state(player).held_object_id = nil
+
+                main_dialog.toggle_districts_view(player, true)
+                lib.context.set(player, factory)
+                solver.update(player, factory)
+                lib.gui.run_refresh(player, "all")
+            end
+        },
+        {
             name = "toggle_districts_view",
             handler = function(player, _, _)
                 main_dialog.toggle_districts_view(player, false)
@@ -149,7 +185,7 @@ listeners.player = {
     end,
     refresh_gui_element = function(player, event)
         ---@cast event RefreshGUIElementEventData
-        local triggers = {district_list=true, all=true}
+        local triggers = {district_list=true, factory_list=true, all=true}
         if triggers[event.trigger] then refresh_district_list(player) end
     end
 }
