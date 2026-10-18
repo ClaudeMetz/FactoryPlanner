@@ -321,15 +321,40 @@ function generator.recipes.generate(context)
             recipe.order = proto.order
             recipe.categories = {["agricultural-tower"] = true}
             recipe.energy = proto.growth_ticks--[[@cast -nil]] / 60
-            recipe.location_restricted = true
+            recipe.location_restricted = proto.autoplace_specification ~= nil or false
 
-            -- Add the plant prototype name to the list of tiles it can be planted on
             if proto.autoplace_specification then
+                local plantable_tiles = {}  ---@type table<string, true>
+
                 for _, tile_restriction in pairs(proto.autoplace_specification.tile_restriction or {}) do
                     if tile_restriction.first then
-                        context.tile_can_have_plant[tile_restriction.first] =
-                            context.tile_can_have_plant[tile_restriction.first] or {}
-                        table.insert(context.tile_can_have_plant[tile_restriction.first], proto.name)
+                        plantable_tiles[tile_restriction.first] = true
+                    end
+                end
+
+                -- Also consider the tiles on which the plantable tile can be placed on
+                for tile, _ in pairs(plantable_tiles) do
+                    local tile_proto = prototypes.tile[tile]
+                    for _, item in pairs(tile_proto.items_to_place_this or {}) do
+                        local item_proto = prototypes.item[item.name]
+                        local tile_condition = item_proto.place_as_tile_result and
+                            item_proto.place_as_tile_result.tile_condition or {}
+                        for _, tile_cond in pairs(tile_condition) do
+                            plantable_tiles[tile_cond.name] = true
+                        end
+
+                        -- Plant can be planted on an universal tile. Restrictions should not apply
+                        if #tile_condition == 0 then
+                            recipe.location_restricted = false
+                        end
+                    end
+                end
+
+                -- Add the plant prototype name to the list of tiles it can be planted on
+                if recipe.location_restricted then
+                    for tile, _ in pairs(plantable_tiles) do
+                        context.tile_can_have_plant[tile] = context.tile_can_have_plant[tile] or {}
+                        table.insert(context.tile_can_have_plant[tile], proto.name)
                     end
                 end
             end
