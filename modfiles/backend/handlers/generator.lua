@@ -1378,9 +1378,10 @@ function generator.machines.second_pass(machine_categories, context)
     -- Build location compatibility data
     for _, category in pairs(machine_categories) do
         for _, machine in pairs(category.members) do
-            for _, location in pairs(storage.prototypes.locations) do
-                local compatible_locations = machine.compatible_locations
-                if #compatible_locations == 0 then
+            local compatible_locations = machine.compatible_locations
+            -- Avoid useless calculations when a machine is in multiple categories
+            if not next(compatible_locations) then
+                for _, location in pairs(storage.prototypes.locations) do
                     local properties = location.surface_properties
                     local conditions = context.machine_surface_conditions[machine.name]
                     compatible_locations[location.name] = generator.util.are_surface_conditions_met(properties, conditions)

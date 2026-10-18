@@ -70,4 +70,14 @@ function _lib.is_special_power_item(name)
     return (name == "custom-electric-power" or name == "custom-heat-power" or name == "custom-heating-power")
 end
 
+
+---@param object Object
+---@param ancestor_class "Factory" | "District"
+---@return (Factory | District)?
+function _lib.get_ancestor(object, ancestor_class)
+    local obj = object  ---@type Object?
+    while obj and obj.class ~= ancestor_class do obj = obj.parent end
+    return obj
+end
+
 return _lib

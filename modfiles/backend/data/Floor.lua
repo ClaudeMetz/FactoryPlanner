@@ -230,10 +230,8 @@ end
 ---@return FPLocationPrototype
 function Floor:get_current_location()
     if not self.current_location then
-        local object = self.parent  ---@as Object  -- find the District this is in
-        while object.class ~= "District" do object = object.parent--[[@as District]] end
-        ---@cast object District
-        self.current_location = object.location_proto  ---@as FPLocationPrototype
+        local district = lib.get_ancestor(self, "District")  ---@as District
+        self.current_location = district.location_proto  ---@as FPLocationPrototype
     end
     ---@cast self.current_location -nil
     return self.current_location
