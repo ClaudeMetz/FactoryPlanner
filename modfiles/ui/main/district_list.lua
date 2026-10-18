@@ -61,24 +61,46 @@ local function refresh_district_list(player)
     if ui_state.main_elements.main_frame == nil then return end
 
     local selected_district = lib.context.get(player, "District")  ---@as District
-    local district_list_elements = ui_state.main_elements.district_list
+    local frame = ui_state.main_elements.district_list.frame
     local realm = lib.globals.player_table(player).realm
-    local single_district = (realm:count() == 1)
-    district_list_elements.frame.style.bottom_padding = (single_district) and 8 or 12
-    district_list_elements.header.style.bottom_margin = (single_district) and 0 or 8
-    district_list_elements.heading.caption = (single_district)
-        and selected_district:tostring() or {"fp.pu_district", 2}
-    district_list_elements.heading.tooltip = (single_district)
-        and district_tooltip(selected_district) or nil
-    district_list_elements.districts_button.caption = (single_district)
-        and {"fp.pu_district", 2} or {"fp.district_overview"}
-    district_list_elements.districts_button.toggled = ui_state.districts_view
-    local listbox = district_list_elements.district_listbox
-    listbox.parent.style.extra_right_margin_when_activated = (realm:count() > MAX_DISTRICT_ROWS)
-        and -district_list_elements.frame.style.right_padding or 0
-    listbox.parent.visible = not single_district
-    listbox.clear()
+    local district_count = realm:count()
+    local single_district = (district_count == 1)
+    frame.clear()
+    frame.style.bottom_padding = (single_district) and 8 or 12
+
+    local flow_horizontal = frame.add{type="flow", direction="horizontal"}
+    flow_horizontal.style.height = 24
+    flow_horizontal.style.bottom_margin = (single_district) and 0 or 8
+    flow_horizontal.style.horizontally_stretchable = true
+    flow_horizontal.style.vertical_align = "center"
+
+    local label_districts = flow_horizontal.add{type="label",
+        caption=(single_district) and selected_district:tostring() or {"fp.pu_district", 2},
+        tooltip=(single_district) and district_tooltip(selected_district) or nil}
+    label_districts.style.font = "fp_district_heading"
+    label_districts.style.left_padding = 2
+    label_districts.style.maximal_width = 180
+
+    flow_horizontal.add{type="empty-widget", style="fflib_horizontal_pusher"}
+    local button_districts = flow_horizontal.add{type="button",
+        caption=(single_district) and {"fp.pu_district", 2} or {"fp.district_overview"},
+        tooltip={"fp.view_districts"}, tags={mod="fp", on_gui_click="toggle_districts_view"},
+        style="tool_button", auto_toggle=true, toggled=ui_state.districts_view, mouse_button_filter={"left"}}
+    button_districts.style.font = "default-semibold"
+    button_districts.style.padding = {0, 6}
+    button_districts.style.minimal_width = 0
+    button_districts.style.height = 24
+
     if single_district then return end
+
+    local scroll_pane = frame.add{type="scroll-pane", style="list_box_in_shallow_frame_under_subheader_scroll_pane"}
+    scroll_pane.style.maximal_height = MAX_DISTRICT_ROWS * DISTRICT_ROW_HEIGHT
+    scroll_pane.style.horizontally_stretchable = true
+    scroll_pane.style.extra_right_margin_when_activated = (district_count > MAX_DISTRICT_ROWS)
+        and -frame.style.right_padding or 0
+    scroll_pane.horizontal_scroll_policy = "never"
+    local listbox = scroll_pane.add{type="flow", direction="vertical"}
+    listbox.style.vertical_spacing = 0
 
     local held_factory = lib.gui.held_object(player, "factory_list")  ---@as Factory?
     for district in realm:iterator() do
@@ -89,43 +111,11 @@ end
 ---@param player LuaPlayer
 local function build_district_list(player)
     local main_elements = lib.globals.main_elements(player)
-    main_elements.district_list = {}
-
     local parent_flow = main_elements.flows.left_vertical
     local frame = parent_flow.add{type="frame", direction="vertical", style="inside_shallow_frame"}
     frame.style.width = MAGIC_NUMBERS.list_width
     frame.style.padding = {8, 12, 12, 12}
-    main_elements.district_list["frame"] = frame
-    local flow_horizontal = frame.add{type="flow", direction="horizontal"}
-    flow_horizontal.style.height = 24
-    flow_horizontal.style.bottom_margin = 8
-    flow_horizontal.style.horizontally_stretchable = true
-    flow_horizontal.style.vertical_align = "center"
-    main_elements.district_list["header"] = flow_horizontal
-
-    local label_districts = flow_horizontal.add{type="label", caption={"fp.pu_district", 2}}
-    label_districts.style.font = "fp_district_heading"
-    label_districts.style.left_padding = 2
-    label_districts.style.maximal_width = 180
-    main_elements.district_list["heading"] = label_districts
-
-    flow_horizontal.add{type="empty-widget", style="fflib_horizontal_pusher"}
-    local button_districts = flow_horizontal.add{type="button", caption={"fp.district_overview"},
-        tooltip={"fp.view_districts"}, tags={mod="fp", on_gui_click="toggle_districts_view"},
-        style="tool_button", auto_toggle=true, mouse_button_filter={"left"}}
-    button_districts.style.font = "default-semibold"
-    button_districts.style.padding = {0, 6}
-    button_districts.style.minimal_width = 0
-    button_districts.style.height = 24
-    main_elements.district_list["districts_button"] = button_districts
-
-    local scroll_pane = frame.add{type="scroll-pane", style="list_box_in_shallow_frame_under_subheader_scroll_pane"}
-    scroll_pane.style.maximal_height = MAX_DISTRICT_ROWS * DISTRICT_ROW_HEIGHT
-    scroll_pane.style.horizontally_stretchable = true
-    scroll_pane.horizontal_scroll_policy = "never"
-    local listbox = scroll_pane.add{type="flow", direction="vertical"}
-    listbox.style.vertical_spacing = 0
-    main_elements.district_list["district_listbox"] = listbox
+    main_elements.district_list = {frame=frame}
 
     refresh_district_list(player)
 end
