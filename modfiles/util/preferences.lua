@@ -27,7 +27,6 @@ end
 ---@field show_gui_button boolean
 ---@field attach_factory_products boolean
 ---@field skip_factory_naming boolean
----@field ingredient_satisfaction boolean
 ---@field calculate_emissions boolean
 ---@field ignore_barreling_recipes boolean
 ---@field ignore_recycling_recipes boolean
@@ -82,7 +81,6 @@ function _preferences.reload(player_table)
     reload("show_gui_button", true)
     reload("skip_factory_naming", true)
     reload("attach_factory_products", false)
-    reload("ingredient_satisfaction", false)
     reload("calculate_emissions", false)
     reload("ignore_barreling_recipes", false)
     reload("ignore_recycling_recipes", false)
@@ -123,7 +121,6 @@ _preferences.current_version = 6
 ---@field show_gui_button boolean
 ---@field attach_factory_products boolean
 ---@field skip_factory_naming boolean
----@field ingredient_satisfaction boolean
 ---@field calculate_emissions boolean
 ---@field ignore_barreling_recipes boolean
 ---@field ignore_recycling_recipes boolean
@@ -152,7 +149,6 @@ function _preferences.export(player)
         show_gui_button = prefs.show_gui_button,
         attach_factory_products = prefs.attach_factory_products,
         skip_factory_naming = prefs.skip_factory_naming,
-        ingredient_satisfaction = prefs.ingredient_satisfaction,
         calculate_emissions = prefs.calculate_emissions,
         ignore_barreling_recipes = prefs.ignore_barreling_recipes,
         ignore_recycling_recipes = prefs.ignore_recycling_recipes,
@@ -213,7 +209,6 @@ function _preferences.import(player, export_string)
         assert(type(et.skip_factory_naming) == "boolean")
         assert(verify_option(et.default_solver, solver.choices))
         assert(type(et.per_floor_solver) == "boolean")
-        assert(type(et.ingredient_satisfaction) == "boolean")
         assert(type(et.calculate_emissions) == "boolean")
         assert(type(et.ignore_barreling_recipes) == "boolean")
         assert(type(et.ignore_recycling_recipes) == "boolean")

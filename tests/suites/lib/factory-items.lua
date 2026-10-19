@@ -159,6 +159,6 @@ return {
         solver.update(player, factory)
         assert(helpers.approx(iron_line.machine.amount, 5))
         assert(helpers.approx(item.amount, 5 / 3.2) and helpers.approx(output.amount, 10))
-        assert(#factory.top_floor.byproducts == 0, "Machine-defined output must not also appear as a byproduct")
+        assert(#factory.top_floor.products == 2, "Calculated outputs must include both factory products once")
     end}
 }

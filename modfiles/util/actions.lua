@@ -95,7 +95,7 @@ end
 ---@return LocalisedString? warning
 function _actions.can_add_recipe(flags)
     if flags.archived then return false, {"fp.factory_archived_edit"} end
-    if flags.ingredient_only and not flags.byproduct then return false, {"fp.item_has_no_recipes"} end
+    if flags.ingredient_only and not flags.consume then return false, {"fp.item_has_no_recipes"} end
     return true
 end
 

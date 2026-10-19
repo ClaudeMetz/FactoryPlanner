@@ -147,7 +147,7 @@ return {
             "top floor: expected 20 ore/s")
         c.check(helpers.approx(item_amount(top.ingredients, "custom-electric-power") or 0, 1e6),
             "top floor: expected 1MW total power draw")
-        c.check(#top.byproducts == 0, "top floor: expected no byproducts")
+        c.check(#top.products == 1, "top floor: expected only the requested gear output")
 
         -- Request a coproduct so a consuming gear line can use the 10 plates/s surplus
         local coproduct_line = context.classes.Line.init(
@@ -164,9 +164,9 @@ return {
         solver.update(player, factory)
         c.check(helpers.approx(consumer.production_ratio, 5),
             "consuming line: expected all 10 surplus plates/s to make 5 gears/s")
-        c.check(helpers.approx(product.amount, 10) and item_amount(top.byproducts, "test-solver-gear") == nil,
+        c.check(helpers.approx(product.amount, 10) and helpers.approx(item_amount(top.products, "test-solver-gear") or 0, 10),
             "top floor: requested products include the 5 extra gears/s in their total output")
-        c.check(item_amount(top.byproducts, "test-solver-plate") == nil,
+        c.check(item_amount(top.products, "test-solver-plate") == nil,
             "top floor: consuming line must leave no surplus plates")
 
         -- Surplus-driven recipes can define subfloors, including nested ones
@@ -217,16 +217,15 @@ return {
         solver.update(player, factory)
         c.check(helpers.approx(gear_line.machine.amount, 3.5), "machine product: expected exactly 3.5 gear machines")
         c.check(helpers.approx(product.amount, 3.5), "machine product: expected 3.5 gears/s")
-        c.check(helpers.approx(item_amount(gear_line.products, "test-solver-gear") or 0, 3.5)
-            and item_amount(gear_line.byproducts, "test-solver-gear") == nil,
+        c.check(helpers.approx(item_amount(gear_line.products, "test-solver-gear") or 0, 3.5),
             "machine product: the controlling line must show gears as a product")
         c.check(helpers.approx(plate_line.machine.amount, 3.5), "machine product: expected 3.5 upstream plate machines")
         c.check(helpers.approx(item_amount(top.ingredients, "test-solver-ore") or 0, 14),
             "machine product: expected 14 ore/s")
         c.check(helpers.approx(item_amount(top.ingredients, "custom-electric-power") or 0, 700000),
             "machine product: expected 700kW total power draw")
-        c.check(item_amount(top.byproducts, "test-solver-gear") == nil,
-            "machine product: output must not also appear as a byproduct")
+        c.check(helpers.approx(item_amount(top.products, "test-solver-gear") or 0, 3.5),
+            "machine product: top floor must include its calculated output")
 
         -- The fixed plate count overrides internal demand; only the surplus is factory output
         product.definition = {type="amount", amount=5}
@@ -237,11 +236,10 @@ return {
             "mixed definitions: expected the amount target to remain 5 gears/s")
         c.check(helpers.approx(plate_line.machine.amount, 8), "mixed definitions: expected exactly 8 plate machines")
         c.check(helpers.approx(plates.amount, 6), "mixed definitions: expected 16 minus 10 = 6 plates/s net output")
-        c.check(helpers.approx(item_amount(plate_line.products, "test-solver-plate") or 0, 16)
-            and item_amount(plate_line.byproducts, "test-solver-plate") == nil,
+        c.check(helpers.approx(item_amount(plate_line.products, "test-solver-plate") or 0, 16),
             "mixed definitions: the controlling line must show all 16 plates/s as a product")
-        c.check(item_amount(top.byproducts, "test-solver-plate") == nil,
-            "mixed definitions: net plate output must not also appear as a byproduct")
+        c.check(helpers.approx(item_amount(top.products, "test-solver-plate") or 0, 6),
+            "mixed definitions: top floor must include the net plate output")
 
         plates.definition.machine_count = 3
         solver.update(player, factory)
@@ -283,8 +281,7 @@ return {
         c.check(helpers.approx(item_amount(top.ingredients, "test-solver-ore") or 0, 14)
             and helpers.approx(item_amount(top.ingredients, "custom-electric-power") or 0, 700000),
             "subfloor: expected 14 ore/s and 700kW at the factory level")
-        c.check(helpers.approx(item_amount(subfloor.products, "test-solver-gear") or 0, 3.5)
-            and item_amount(subfloor.byproducts, "test-solver-gear") == nil,
+        c.check(helpers.approx(item_amount(subfloor.products, "test-solver-gear") or 0, 3.5),
             "subfloor: its summary must show the machine-defined output as a product")
 
         -- A fixed subfloor can supply a parent recipe and export the remaining production
@@ -305,8 +302,7 @@ return {
         solver.update(player, factory)
         c.check(helpers.approx(plate_line.machine.amount, 8) and helpers.approx(product.amount, 5)
             and helpers.approx(plates.amount, 6), "mixed subfloor: expected 5 gears/s and 6 net plates/s")
-        c.check(helpers.approx(item_amount(subfloor.products, "test-solver-plate") or 0, 16)
-            and item_amount(subfloor.byproducts, "test-solver-plate") == nil,
+        c.check(helpers.approx(item_amount(subfloor.products, "test-solver-plate") or 0, 16),
             "mixed subfloor: all 16 plates/s must appear as a product in its summary")
 
         -- Subfloors solve independently: the consumer uses all locally available plates,
