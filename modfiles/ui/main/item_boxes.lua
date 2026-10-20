@@ -398,13 +398,9 @@ local function refresh_item_boxes(player)
     local total_columns = math.max(2, math.floor(available_width / MAGIC_NUMBERS.item_button_size))
     local minimum_columns = math.min(3, math.floor(total_columns / 2))
 
-    local rows = 0  -- find the fewest rows that fit both groups
-    local required_product_columns, required_ingredient_columns
-    repeat
-        rows = rows + 1
-        required_product_columns = math.max(minimum_columns, math.ceil(#products / rows))
-        required_ingredient_columns = math.max(minimum_columns, math.ceil(#ingredients / rows))
-    until required_product_columns + required_ingredient_columns <= total_columns
+    local rows = math.ceil((#products + #ingredients) / total_columns)
+    local required_product_columns = math.max(minimum_columns, math.ceil(#products / rows))
+    local required_ingredient_columns = math.max(minimum_columns, math.ceil(#ingredients / rows))
 
     -- Divide spare columns equally between both groups
     local spare_columns = total_columns - required_product_columns - required_ingredient_columns
