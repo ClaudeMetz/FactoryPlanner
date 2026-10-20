@@ -107,7 +107,9 @@ function prototyper.build()
         pumped_tiles = {},
         tile_can_have_plant = {},
         research_sets = {},
-        research_groups = nil
+        research_groups = nil,
+        recipe_surface_conditions = {},
+        machine_surface_conditions = {},
     }  ---@type GeneratorContext
 
     integrator.collect("recycling_recipes")
@@ -119,8 +121,8 @@ function prototyper.build()
 
     -- Second pass to do some things that can't be done in the first pass due to the strict sequencing
     for data_type, _ in pairs(prototyper.data_types) do
-        local second_pass = generator[data_type].second_pass  ---@as fun(prototypes: NamedPrototypes<FPPrototype>)?
-        if second_pass ~= nil then second_pass(storage.prototypes[data_type]--[[@as NamedPrototypes<FPPrototype>]]) end
+        local second_pass = generator[data_type].second_pass  ---@as fun(prototypes: NamedPrototypes<FPPrototype>, context: GeneratorContext)?
+        if second_pass ~= nil then second_pass(storage.prototypes[data_type]--[[@as NamedPrototypes<FPPrototype>]], context) end
     end
 
     -- Finish up generation by converting lists to use ids as keys, and sort if desired

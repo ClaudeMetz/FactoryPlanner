@@ -150,7 +150,6 @@ listeners.gui = {
                 end
                 factory.parent:remove(factory)
                 district:insert(factory)
-                factory.top_floor:reset_surface_compatibility()
                 factory:clear_solver_cache()
                 lib.globals.ui_state(player).held_object_id = nil
 
