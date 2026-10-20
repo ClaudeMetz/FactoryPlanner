@@ -104,7 +104,9 @@ local function prepare_item_buttons(player, factory, item_category)
             if amount == -1 then return end  -- an amount of -1 means it was below the margin of error
         end
 
-        local name_line = {"fp.tt_title", item.proto.localised_name}
+        local name_line = (target and item_category == "product")
+            and {"fp.tt_title_with_note", item.proto.localised_name, {"fp.target"}}
+            or {"fp.tt_title", item.proto.localised_name}
         local tooltip = {"", name_line, "\n", number_tooltip}
 
         ---@type HandleItemBoxClickTags
@@ -156,7 +158,8 @@ local function prepare_item_buttons(player, factory, item_category)
                 style = shortfall and "fflib_slot_button_yellow" or "fflib_slot_button_green"
             end
 
-            local tooltip = {"", {"fp.tt_title", product.proto.localised_name}, "\n", number_tooltip or ""}
+            local tooltip = {"", {"fp.tt_title_with_note", product.proto.localised_name, {"fp.target"}},
+                "\n", number_tooltip or ""}
             if product.definition.type == "machines" then
                 local count = product.definition.machine_count
                 table.insert(tooltip, {"", "\n", {"fp.item_defined_by_machines",

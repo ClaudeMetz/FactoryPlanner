@@ -296,7 +296,10 @@ local function add_item_flow(line, relevant_line, item_category, metadata, item_
                 part_color = "blue"
             end
             if relevant_line.done then part_color = part_color .. "_grayscale" end
-            local name_line = {"", {"fp.tt_title", proto.localised_name}}
+            local title = (target and item_category == "products")
+                and {"fp.tt_title_with_note", proto.localised_name, {"fp.target"}}
+                or {"fp.tt_title", proto.localised_name}
+            local name_line = {"", title}
             local temperature_line = ""  ---@type LocalisedString
 
             ---@class ActOnCompactItemTags
