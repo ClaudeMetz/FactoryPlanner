@@ -686,11 +686,7 @@ function generator.recipes.second_pass(recipes, context)
 
     -- Build location compatibility data
     for _, recipe in pairs(recipes) do
-        for _, location in pairs(storage.prototypes.locations) do
-            local properties = location.surface_properties
-            local conditions = context.recipe_surface_conditions[recipe.name]
-            recipe.compatible_locations[location.name] = generator.util.are_surface_conditions_met(properties, conditions)
-        end
+        generator.util.compile_surface_conditions(context, recipe)
 
         if recipe.location_restricted then
             local locations_with_resource = {}  ---@type table<string, true>
@@ -1403,15 +1399,7 @@ function generator.machines.second_pass(machine_categories, context)
     -- Build location compatibility data
     for _, category in pairs(machine_categories) do
         for _, machine in pairs(category.members) do
-            local compatible_locations = machine.compatible_locations
-            -- Avoid useless calculations when a machine is in multiple categories
-            if not next(compatible_locations) then
-                for _, location in pairs(storage.prototypes.locations) do
-                    local properties = location.surface_properties
-                    local conditions = context.machine_surface_conditions[machine.name]
-                    compatible_locations[location.name] = generator.util.are_surface_conditions_met(properties, conditions)
-                end
-            end
+            generator.util.compile_surface_conditions(context, machine)
         end
     end
 end

@@ -558,19 +558,33 @@ function _util.add_entity_groups(proto, entity_name)
     end
 end
 
----@param properties SurfaceProperties?
----@param conditions SurfaceCondition[]?
----@return boolean
-function _util.are_surface_conditions_met(properties, conditions)
-    -- No surface properties or conditions means that the location/recipe/machine prototype is universal
-    if not properties or not conditions then return true end
-    for _, condition in pairs(conditions) do
-        local property = properties[condition.property]
-        if property and (property < condition.min or property > condition.max) then
-            return false
+---@param context GeneratorContext
+---@param proto FPRecipePrototype | FPMachinePrototype
+function _util.compile_surface_conditions(context, proto)
+    if not next(proto.compatible_locations) then
+        for _, location in pairs(storage.prototypes.locations) do
+            local properties = location.surface_properties
+            local conditions = proto.data_type == "recipes" and context.recipe_surface_conditions[proto.name]
+                or context.machine_surface_conditions[proto.name]
+
+            -- No surface properties or conditions means that the location/recipe/machine prototype is universal
+            if not properties or not conditions then
+                proto.compatible_locations[location.name] = true
+                goto continue
+            end
+
+            for _, condition in pairs(conditions) do
+                local property = properties[condition.property]
+                if property and (property < condition.min or property > condition.max) then
+                    proto.compatible_locations[location.name] = false
+                    goto continue
+                end
+            end
+
+            proto.compatible_locations[location.name] = true
+            ::continue::
         end
     end
-    return true
 end
 
 ---@param text LocalisedString
