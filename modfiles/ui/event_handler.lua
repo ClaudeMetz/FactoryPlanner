@@ -7,7 +7,7 @@ local event_listener_names = {
     "ui.dialogs.beacon_dialog", "ui.dialogs.machine_dialog", "ui.dialogs.picker_dialog",
     "ui.dialogs.porter_dialog", "ui.dialogs.preferences_dialog", "ui.dialogs.recipe_dialog",
     "ui.dialogs.factory_dialog", "ui.dialogs.utility_dialog", "ui.dialogs.item_dialog",
-    "ui.main.title_bar", "ui.main.district_info", "ui.main.factory_list", "ui.main.production_bar",
+    "ui.main.title_bar", "ui.main.district_list", "ui.main.factory_list", "ui.main.production_bar",
     "ui.main.districts_box", "ui.main.item_boxes", "ui.main.production_box", "ui.main.production_table",
     "ui.main.production_handler", "ui.main.solver_bar"
 }
@@ -87,7 +87,7 @@ local action_inputs = {}  ---@type table<string, boolean>
 
 ---@param definitions table<string, GUIActionDefinition>
 ---@return GUIAction[] actions
----@return table<string, GUIAction> shortcuts
+---@return table<string, GUIAction[]> shortcuts
 ---@return table<string, GUIAction> inputs
 local function compile_actions(definitions)
     local actions, shortcuts, inputs = {}, {}, {}
@@ -106,7 +106,11 @@ local function compile_actions(definitions)
         }  ---@type GUIAction
         table.insert(actions, action)
 
-        if definition.shortcut then shortcuts[definition.shortcut] = action end
+        if definition.shortcut then
+            local shortcut = definition.shortcut
+            shortcuts[shortcut] = shortcuts[shortcut] or {}
+            table.insert(shortcuts[shortcut], action)
+        end
         if input then inputs[input] = action; action_inputs[input] = true end
     end
     return actions, shortcuts, inputs
@@ -167,7 +171,7 @@ end
 ---@class RegisteredGUIHandler
 ---@field handler GUIEventHandler | GUIActionEventHandler
 ---@field actions GUIAction[]?
----@field shortcuts table<string, GUIAction>?
+---@field shortcuts table<string, GUIAction[]>?
 ---@field inputs table<string, GUIAction>?
 ---@field timeout MapTick?
 
@@ -239,9 +243,18 @@ local function handle_gui_event(event)
             modal_dialog.open_context_menu(player, tags, action_name,
                 registered_handler.actions, click_event.cursor_display_location)
         else
-            local action = input_action or registered_handler.shortcuts--[[@cast -nil]][click]
-            if not action then return end  -- no action associated with this binding
-            if not lib.actions.is_visible(action, tags.flags--[[@as GUIActionFlags?]]) then return end
+            local candidates = input_action and {input_action}
+                or registered_handler.shortcuts--[[@cast -nil]][click] or {}
+            local action  ---@type GUIAction?
+            -- Actions sharing a shortcut must have mutually exclusive visibility conditions
+            for _, candidate in ipairs(candidates) do
+                if lib.actions.is_visible(candidate, tags.flags--[[@as GUIActionFlags?]]) then
+                    action = candidate
+                    break
+                end
+            end
+
+            if not action then return end
             local enabled, warning = lib.actions.is_enabled(action, tags.flags--[[@as GUIActionFlags?]])
             if not enabled then if warning then lib.cursor.create_flying_text(player, warning) end return end
 

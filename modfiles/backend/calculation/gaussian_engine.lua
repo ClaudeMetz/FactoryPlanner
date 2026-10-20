@@ -17,7 +17,7 @@ If there are more items than recipes, the problem is over-constrained (this is m
     Items with pseudo-recipes will be "free" variables that will have some constrained non-zero input or
     output after solving.
     The solved "number of buildings" will be equal to the extra input or output needed for that item.
-    Typically these pseudo-recipes will be for external inputs or non-fully-recycled byproducts.
+    Typically these pseudo-recipes will be for external inputs or unused outputs.
 Currently the algorithm assumes any item which is part of at least one input and one output in any recipe
     is not a free variable, though the user can click on constrained items in the matrix dialog to make
     them free variables.
@@ -91,9 +91,9 @@ local function get_metadata(factory_data, floor_id, free_items)
     local all_items = solver.util.set.union(line_inputs, line_outputs)
     local raw_inputs = solver.util.set.difference(line_inputs, line_outputs)
     local raw_outputs = solver.util.set.difference(line_outputs, line_inputs)
-    local byproducts = solver.util.set.difference(raw_outputs, desired_products)
+    local untargeted_outputs = solver.util.set.difference(raw_outputs, desired_products)
     local demanded_ingredients = solver.util.set.difference(raw_inputs, supplied_ingredients)
-    local free_variables = solver.util.set.union(byproducts, demanded_ingredients)
+    local free_variables = solver.util.set.union(untargeted_outputs, demanded_ingredients)
     local intermediate_items = solver.util.set.difference(all_items, free_variables)
 
     -- When a factory is updated, add any new variables to eliminated and let the user select free.
@@ -348,7 +348,7 @@ local function to_reduced_row_echelon_form(m)
     if num_rows == 0 then return end
     local num_cols = #m[1]
 
-    local tolerance = MAGIC_NUMBERS.matrix_tolerance
+    local tolerance = 1e-12
     local pivot_row = 1
 
     for curr_col = 1, num_cols do

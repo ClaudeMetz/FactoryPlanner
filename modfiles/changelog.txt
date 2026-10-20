@@ -2,10 +2,26 @@
 Version: 0.00.00
 Date: 00. 00. 0000
   Features:
+    - Districts are now shown as a list above factories for quick switching between them (#498)
+    - Added Q to pipette to the item picker, and Alt-Click to open in Factoriopedia to the item and recipe pickers (#906)
+    - Added a dropdown to the compact dialog for easy factory switching
+  Changes:
+    - Changed main interface width and height preferences to be percentage-based
+    - Dropped the explicit byproduct categorization, as it won't make sense in the context of input-based solving (#843)
+    - Removed the ingredient satisfaction preference
+  Bugfixes:
+
+---------------------------------------------------------------------------------------------------
+Version: 2.1.19
+Date: 15. 10. 2026
+  Features:
+    - Item weights can now be configured manually when using the Simplex solver, providing control what the factory optimizes for (#866) (Thanks vapopescu!)
   Changes:
     - Recipes are no longer categorized as producing or consuming, as the sequential solver now determines their role dynamically (#911) (Thanks vapopescu!)
     - Pasting no longer guards against irrelevant recipes
+    - Bumped the required Factorio version to 2.1.22
   Bugfixes:
+    - Fixed crashes when loading a save caused by to breaking API changes in 2.1.22 (#923)
     - Fixed a crash with a factory's first row being an unsolved subfloor (#913)
 
 ---------------------------------------------------------------------------------------------------

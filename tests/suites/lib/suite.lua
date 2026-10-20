@@ -12,6 +12,7 @@ return {{
         testLibExpressions = require("suite.expressions"),
         testFactoryItemDefinitions = factory_items.definitions,
         testFactoryItemPicker = factory_items.picker,
+        testDistrictFactoryMove = require("suite.district-list"),
         testLibFormatNumber = formatters.number,
         testLibFormatSIValue = formatters.SI_value,
         testLibFormatSpecialAmount = formatters.special_amount,

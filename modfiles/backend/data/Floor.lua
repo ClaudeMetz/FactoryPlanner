@@ -5,6 +5,10 @@ local SimpleItem = require("backend.data.SimpleItem")
 ---@alias LineObject Line | Floor
 ---@alias LineParent Factory | Floor
 
+---@class ItemWeight
+---@field proto FPItemPrototype | FPPackedPrototype
+---@field weight integer
+
 ---@class Floor: Object, ObjectMethods
 ---@field class "Floor"
 ---@field parent LineParent
@@ -13,7 +17,6 @@ local SimpleItem = require("backend.data.SimpleItem")
 ---@field level integer
 ---@field first LineObject?
 ---@field products SimpleItem[]
----@field byproducts SimpleItem[]
 ---@field ingredients SimpleItem[]
 ---@field machine_amount integer
 ---@field solver SolverName
@@ -21,6 +24,7 @@ local SimpleItem = require("backend.data.SimpleItem")
 ---@field is_linearly_dependent boolean?
 ---@field gaussian_free_items (FPItemPrototype | FPPackedPrototype)[]
 ---@field linear_dependence_data LinearDependanceData?
+---@field simplex_item_weights ItemWeight[]
 ---@field simplex_basis_cache SimplexBasisCache?
 local Floor = Object.methods()
 Floor.__index = Floor
@@ -36,12 +40,12 @@ local function init(level, solver_name)
         first = nil,
 
         products = {},
-        byproducts = {},
         ingredients = {},
         machine_amount = 0,
 
         linear_dependence_data = nil,
         gaussian_free_items = {},
+        simplex_item_weights = {},
         simplex_basis_cache = nil,
     }, "Floor", Floor)  ---@as Floor
     return object
@@ -281,19 +285,32 @@ end
 
 ---@alias PackedLineObject PackedLine | PackedFloor
 
+---@class PackedItemWeight
+---@field proto FPPackedPrototype
+---@field weight integer
+
 ---@class PackedFloor: PackedObject
 ---@field class "Floor"
 ---@field level integer
 ---@field lines PackedLineObject[]
 ---@field solver SolverName
 ---@field products PackedSimpleItem[]?
----@field byproducts PackedSimpleItem[]?
 ---@field ingredients PackedSimpleItem[]?
 ---@field gaussian_free_items FPPackedPrototype[]
+---@field simplex_item_weights PackedItemWeight[]
 
 ---@param full boolean
 ---@return PackedFloor packed_self
 function Floor:pack(full)
+    local weights = {}  ---@type PackedItemWeight[]
+    for _, entry in ipairs(self.simplex_item_weights) do
+        table.insert(weights, {
+            proto = entry.proto.simplified and entry.proto--[[@as FPPackedPrototype]]
+                or prototyper.util.simplify_prototype(entry.proto, "type"),
+            weight = entry.weight
+        })
+    end
+
     return {
         class = self.class,
         level = self.level,
@@ -301,10 +318,10 @@ function Floor:pack(full)
         lines = self:_pack(full),
 
         products = (full) and SimpleItem.pack_items(self.products) or nil,
-        byproducts = (full) and SimpleItem.pack_items(self.byproducts) or nil,
         ingredients = (full) and SimpleItem.pack_items(self.ingredients) or nil,
 
         gaussian_free_items = prototyper.util.simplify_prototypes(self.gaussian_free_items, "type") or nil,
+        simplex_item_weights = weights,
     }
 end
 
@@ -322,6 +339,9 @@ local function unpack(packed_self)
 
     -- Matrix free items will be automatically unpacked by the validation process
     unpacked_self.gaussian_free_items = packed_self.gaussian_free_items
+    for _, entry in ipairs(packed_self.simplex_item_weights) do
+        table.insert(unpacked_self.simplex_item_weights, {proto=entry.proto, weight=entry.weight})
+    end
 
     return unpacked_self
 end
@@ -335,6 +355,11 @@ function Floor:validate(player)
     local free_items, valid = prototyper.util.validate_prototype_objects(self.gaussian_free_items, "type")
     self.gaussian_free_items = free_items
     self.valid = valid and self.valid
+
+    for _, entry in ipairs(self.simplex_item_weights) do
+        entry.proto = prototyper.util.validate_prototype_object(entry.proto, "type")  ---@as FPItemPrototype | FPPackedPrototype
+        self.valid = (not entry.proto.simplified) and self.valid
+    end
 
     return self.valid
 end
@@ -356,6 +381,11 @@ function Floor:repair(player)
         if free_items[index].simplified then
             table.remove(free_items, index)
         end
+    end
+
+    local weights = self.simplex_item_weights
+    for index = #weights, 1, -1 do
+        if weights[index].proto.simplified then table.remove(weights, index) end
     end
 
     if pivot then self:_repair(player, pivot) end

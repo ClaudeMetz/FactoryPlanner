@@ -20,7 +20,7 @@ script.register_metatable("District", District)
 ---@return District
 local function init(name)
     local object = Object.init({
-        name = name or "Nauvis",
+        name = name or "Home Base",
         location_proto = defaults.get_fallback("locations").proto,
         item_set = DistrictItemSet.init(),
         first = nil,
@@ -103,6 +103,7 @@ end
 
 ---@return LocalisedString caption
 function District:tostring()
+    if not MULTIPLE_PLANETS then return self.name end
     return "[img=" .. self.location_proto.sprite .. "] " .. self.name
 end
 
@@ -114,8 +115,7 @@ function District:refresh()
     self.item_set:clear()
 
     for factory in self:iterator({archived=false, valid=true}) do
-        self.item_set:add_items(factory:as_list(), "production")
-        self.item_set:add_items(factory.top_floor.byproducts, "production")
+        self.item_set:add_items(factory.top_floor.products, "production")
         self.item_set:add_items(factory.top_floor.ingredients, "consumption")
     end
 

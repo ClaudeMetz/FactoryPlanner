@@ -15,7 +15,7 @@
 --   heat, flat usage        1.155MW  fluid-heat-filter-test-gen-heat  (wastes 20.6% on 500°)
 --   heat, capped output     500kW    fluid-heat-filter-test-gen-heat  (wastes 56.7% on 400°)
 --   heat, scaling usage     1.155MW  fluid-heat-filter-test-gen-heat  (never wastes any)
---   heat, bounded box       1.155MW  fluid-heat-filter-test-gen-heat  (400° and 500° only)
+--   heat, bounded input       1.155MW  fluid-heat-filter-test-gen-heat  (400° and 500° only)
 --   heat, spent fluid       855kW    fluid-heat-filter-test-gen-spent (+ 6/s coolant)
 --   heat, spent fallback    855kW    fluid-heat-filter-test-gen-spent (+ 12/s coolant)
 --   burn, filtered          1.2MW    fluid-fuel-filter-test-gen-fuel
@@ -162,12 +162,14 @@ return {
                 scale_fluid_usage = true
             }),
 
-            -- The box only accepts 300°-500°, so of the three produced variants only 400° and 500°
+            -- The generator only accepts 300°-500°, so of the three produced variants only 400° and 500°
             -- are offered. Shares its fuel category with the machines above, since bounds live on
             -- the machine rather than in the category name
             test_generator("test-generator-heat-bounded", {
                 fluid_usage_per_tick = 0.1,
-                fluid_box = input_box{filter = "test-gen-heat", minimum_temperature = 300, maximum_temperature = 500}
+                fluid_box = input_box{filter = "test-gen-heat"},
+                minimum_input_temperature = 300,
+                maximum_input_temperature = 500
             }),
 
             -- Puts out spent fluid alongside its power, which is new to generators in 2.1. Capped at

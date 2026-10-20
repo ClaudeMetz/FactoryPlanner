@@ -7,7 +7,6 @@ local Object = require("backend.data.Object")
 ---@field temperature float?
 ---@field temperature_data TemperatureData
 ---@field amount number
----@field satisfied_amount number
 local Fuel = Object.methods()
 Fuel.__index = Fuel
 script.register_metatable("Fuel", Fuel)
@@ -29,7 +28,6 @@ local function init(parent, proto)
         temperature_data = nil,
 
         amount = 0,
-        satisfied_amount = 0,
 
         parent = parent  -- could be nil
     }, "Fuel", Fuel)  ---@as Fuel
@@ -71,7 +69,7 @@ function Fuel:build_temperature_data()
     if self.proto.type ~= "fluid" then return end
     ---@cast self.proto FPFluidFuelPrototype
 
-    -- The machine's fluid box can narrow the temperatures further than the fuel itself allows
+    -- The machine's input limits can narrow the temperatures further than the fuel itself allows
     local burner = (self.parent) and self.parent.proto.burner or nil
     local min_temp, exclusive_minimum = self.proto.minimum_temperature, self.proto.exclusive_minimum
     local max_temp = (burner) and burner.maximum_temperature or nil

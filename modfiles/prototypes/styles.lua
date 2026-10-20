@@ -2,6 +2,21 @@
 
 local styles = data.raw["gui-style"].default
 
+data:extend{{
+    type = "font",
+    name = "fp_district_heading",
+    from = "default-semibold",
+    size = 16
+}}
+
+styles["fp_label_district_count"] = {
+    type = "label_style",
+    parent = "label",
+    font = "default-listbox",
+    font_color = {0.65, 0.65, 0.65},
+    parent_hovered_font_color = {0.35, 0.35, 0.35}
+}
+
 styles["fp_naked_frame"] = {
     type = "frame_style",
     parent = "frame",
@@ -212,6 +227,17 @@ styles["fp_button_green"] = {
         shadow = default_dirt
     },
     left_click_sound = "__core__/sound/gui-green-confirm.ogg"
+}
+
+styles["fp_sprite-button_item_weight"] = {
+    type = "button_style",
+    parent = "fflib_slot_button_default",
+    font = "count-font",
+    horizontal_align = "right",
+    vertical_align = "bottom",
+    default_font_color = {1, 1, 1},
+    hovered_font_color = {1, 1, 1},
+    clicked_font_color = {1, 1, 1}
 }
 
 -- Generate grayscale versions of flib's slot buttons

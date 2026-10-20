@@ -42,7 +42,7 @@ local function determine_available_columns(floor, frame_width)
     local used_width = 0
     used_width = used_width + (frame_border_size * 2)  -- border on both sides
     used_width = used_width + (table_padding * 2)  -- padding on both sides
-    used_width = used_width + (table_spacing * 4)  -- 5 columns -> 4 spaces
+    used_width = used_width + (table_spacing * 3)  -- 4 columns -> 3 spaces
     used_width = used_width + recipe_and_check_width  -- constant
     -- Add up machines button, module buttons, and spacing for them
     used_width = used_width + button_width + (max_module_count * button_width) + (max_module_count * button_spacing)
@@ -52,39 +52,46 @@ local function determine_available_columns(floor, frame_width)
     return math.floor(available_columns)  -- amount is floored as to not cause a horizontal scrollbar
 end
 
----@param floor Floor
+---@alias CompactRowCounts {ingredients: integer, products: integer, machines: integer}
+
+---@param row_counts CompactRowCounts[]
 ---@param column_counts CompactColumnCounts
 ---@return number
-local function determine_table_height(floor, column_counts)
+local function determine_table_height(row_counts, column_counts)
     local total_height = 0
-    for line in floor:iterator() do
-        local items_height = 0
-        for column, count in pairs(column_counts) do
-            local item_count = #line[column]
-
-            if line.class == "Line" then
-                if column == "ingredients" and line.machine.fuel then item_count = item_count + 1 end
-                local catalysts = line.recipe.catalysts[column--[[@as "ingredients" | "products"]]]
-                if catalysts then item_count = item_count + table_size(catalysts) end
-            end
-
-            local column_height = math.ceil(item_count / count)
-            items_height = math.max(items_height, column_height)
-        end
-
-        local machines_height = (line.beacon ~= nil) and 2 or 1
-        total_height = total_height + math.max(machines_height, items_height)
+    for _, counts in ipairs(row_counts) do
+        total_height = total_height + math.max(counts.machines,
+            math.ceil(counts.products / column_counts.products),
+            math.ceil(counts.ingredients / column_counts.ingredients))
     end
     return total_height
 end
 
----@alias CompactColumnCounts {ingredients: integer, products: integer, byproducts: integer}
+---@alias CompactColumnCounts {ingredients: integer, products: integer}
 
 ---@param floor Floor
 ---@param available_columns integer
 ---@return CompactColumnCounts
 local function determine_column_counts(floor, available_columns)
-    local column_counts = {ingredients = 1, products = 1, byproducts = 0}  -- ordered by priority
+    local row_counts = {}  ---@type CompactRowCounts[]
+    for line in floor:iterator() do
+        local counts = {products = #line.products, ingredients = #line.ingredients,
+            machines = (line.beacon ~= nil) and 2 or 1}
+        for _, product in pairs(line.products) do
+            if (product.target_amount or 0) > 0 and product:get_remaining_amount() > 0 then
+                counts.products = counts.products + 1
+            end
+        end
+        if line.class == "Line" then
+            if line.machine.fuel then counts.ingredients = counts.ingredients + 1 end
+            for category, catalysts in pairs(line.recipe.catalysts) do
+                counts[category] = counts[category] + table_size(catalysts)
+            end
+        end
+        table.insert(row_counts, counts)
+    end
+
+    local column_counts = {ingredients = 1, products = 1}  -- ordered by priority
     local remaining_columns = available_columns - 2  -- two buttons are already assigned
 
     local previous_height, increment = 2^53, 1
@@ -94,7 +101,7 @@ local function determine_column_counts(floor, available_columns)
         for column, count in pairs(column_counts) do
             local potential_column_counts = lib.flib.shallow_copy(column_counts)
             potential_column_counts[column] = count + increment
-            local new_height = determine_table_height(floor, potential_column_counts)
+            local new_height = determine_table_height(row_counts, potential_column_counts)
             table_heights[column] = new_height
             minimal_height = math.min(minimal_height, new_height)  ---@as integer
         end
@@ -259,155 +266,165 @@ end
 
 ---@param line LineObject
 ---@param relevant_line Line
----@param item_category "products" | "byproducts" | "ingredients"
----@param button_color string
+---@param item_category "products" | "ingredients"
 ---@param metadata CompactMetadata
 ---@param item_buttons table
-local function add_item_flow(line, relevant_line, item_category, button_color, metadata, item_buttons)
+local function add_item_flow(line, relevant_line, item_category, metadata, item_buttons)
     local column_count = metadata.column_counts[item_category]
-    if column_count == 0 then metadata.parent.add{type="empty-widget"}; return end
     local item_table = metadata.parent.add{type="table", column_count=column_count}
 
-    local first_special_index = nil  -- place for fuel to slot in
-    for index, item in pairs(line[item_category]) do
-        local proto, type = item.proto, item.proto.type
-        local flags = {
-            entity = (type == "entity"),
-            special = (type == "entity" and proto.special),
-            cursor = (type ~= "entity"),
-            factoriopedia = (lib.get_factoriopedia_proto(proto) ~= nil)
-        }
+    local first_special_index = nil  -- keep catalysts and fuel before power
+    for _, target in ipairs{true, false} do
+        for index, item in pairs(line[item_category]) do
+            local part_amount = target and (item.target_amount or 0) or item:get_remaining_amount()
+            if part_amount <= 0 and (target or item.amount ~= 0) then goto skip_item end
 
-        local amount, number_tooltip, secondary_amount
-        button_color = (relevant_line.done) and "default_grayscale" or button_color
-        local name_line = {"", {"fp.tt_title", {"", proto.localised_name}}}
-        local temperature_line = ""  ---@type LocalisedString
+            local proto, type = item.proto, item.proto.type
+            local flags = {
+                target = target,
+                entity = (type == "entity"),
+                special = (type == "entity" and proto.special),
+                cursor = (type ~= "entity"),
+                factoriopedia = (lib.get_factoriopedia_proto(proto) ~= nil)
+            }
 
-        ---@class ActOnCompactItemTags
-        ---@field line_id ObjectID
-        ---@field item_category "products" | "byproducts" | "ingredients"
-        ---@field item_index integer
-        ---@field context "compact_dialog"
-        ---@field flags GUIActionFlags
-        local tags = {mod="fp", on_gui_click="act_on_compact_item", line_id=line.id, item_category=item_category, item_index=index,
-            on_gui_hover="hover_compact_item", on_gui_leave="leave_compact_item", context="compact_dialog", flags=flags}
+            local amount, number_tooltip, secondary_amount
+            local part_color = "default"
+            if target then
+                part_color = "green"
+            elseif flags.special and item_category == "ingredients" then
+                part_color = "blue"
+            end
+            if relevant_line.done then part_color = part_color .. "_grayscale" end
+            local name_line = {"", {"fp.tt_title", proto.localised_name}}
+            local temperature_line = ""  ---@type LocalisedString
 
-        if flags.special then
-            amount, number_tooltip = lib.format.special_amount(proto.name, item.amount)
-            if not relevant_line.done and item_category == "ingredients" then button_color = "cyan" end
-            first_special_index = first_special_index or index
-        else
-            -- items/s/machine does not make sense for lines with subfloors, show items/s instead
-            local machine_amount = (line.class == "Line") and line--[[@as Line]].machine.amount or nil
-            amount, number_tooltip, secondary_amount = item_views.process_item(metadata.player, proto,
-                item.amount, machine_amount)
-            if amount == -1 then goto skip_item end  -- an amount of -1 means it was below the margin of error
+            ---@class ActOnCompactItemTags
+            ---@field line_id ObjectID
+            ---@field item_category "products" | "ingredients"
+            ---@field item_index integer
+            ---@field context "compact_dialog"
+            ---@field flags GUIActionFlags
+            local tags = {mod="fp", on_gui_click="act_on_compact_item", line_id=line.id,
+                item_category=item_category, item_index=index,
+                on_gui_hover="hover_compact_item", on_gui_leave="leave_compact_item", context="compact_dialog", flags=flags}
 
-            if flags.entity then
-                button_color = (relevant_line.done) and "default_grayscale" or "default"
+            if flags.special then
+                amount, number_tooltip = lib.format.special_amount(proto.name, part_amount)
             else
+                -- items/s/machine does not make sense for lines with subfloors, show items/s instead
+                local machine_amount = (line.class == "Line") and line--[[@as Line]].machine.amount or nil
+                amount, number_tooltip, secondary_amount = item_views.process_item(metadata.player, proto,
+                    part_amount, machine_amount)
+                if amount == -1 then goto skip_item end  -- an amount of -1 means it was below the margin of error
+
                 if type == "fluid" and item_category == "ingredients" and line.class ~= "Floor" then  ---@cast line Line
                     local temperature_data = line.recipe.temperature_data[proto.name]
                     table.insert(name_line, temperature_data.annotation)
 
                     local temperature = line.recipe:get_temperature(proto)
                     if temperature == nil then
-                        button_color = "purple"
+                        part_color = "orange"
                         temperature_line = {"fp.no_temperature_configured"}
                     else
                         temperature_line = {"fp.configured_temperature", temperature}
                     end
                 end
             end
+
+            local number_line = (number_tooltip) and {"", "\n", number_tooltip} or ""  ---@type LocalisedString
+            local tooltip = {"", name_line, temperature_line, number_line}
+            local style = "fflib_slot_button_" .. part_color
+
+            local insertion_index = not flags.special and first_special_index or nil
+            local position = insertion_index or (#item_table.children + 1)
+            local button = item_table.add{type="sprite-button", tags=tags, sprite=proto.sprite, number=amount,
+                secondary_number=secondary_amount, style=style, mouse_button_filter={"left-and-right"},
+                raise_hover_events=true, index=insertion_index}
+            metadata.tooltips[button.index] = tooltip
+
+            if insertion_index then
+                first_special_index = insertion_index + 1
+            end
+            if flags.special then first_special_index = first_special_index or position end
+
+            local name = (line.class == "Line") and line.recipe:get_name_with_temperature(proto) or proto.name
+            item_buttons[type] = item_buttons[type] or {}
+            item_buttons[type][name] = item_buttons[type][name] or {}
+            table.insert(item_buttons[type][name], {button=button, proper_style=style})
+
+            ::skip_item::
         end
-
-        local number_line = (number_tooltip) and {"", "\n", number_tooltip} or ""
-        local tooltip = {"", name_line, temperature_line, number_line}
-        local style = "fflib_slot_button_" .. button_color
-
-        local button = item_table.add{type="sprite-button", tags=tags, sprite=proto.sprite, number=amount,
-            secondary_number=secondary_amount, style=style, mouse_button_filter={"left-and-right"},
-            raise_hover_events=true}
-        metadata.tooltips[button.index] = tooltip
-
-        local name = (line.class == "Line") and line.recipe:get_name_with_temperature(proto) or proto.name
-        item_buttons[type] = item_buttons[type] or {}
-        item_buttons[type][name] = item_buttons[type][name] or {}
-        table.insert(item_buttons[type][name], {button=button, proper_style=style})
-
-        ::skip_item::
     end
 
     if line.class == "Floor" then return end
     ---@cast line Line
 
-    if item_category == "products" or item_category == "ingredients" then
-        for index, item in pairs(line.recipe.catalysts[item_category]) do
-            local proto = item.proto
-            local flags = {
-                catalyst=true,
-                cursor=true,
-                factoriopedia=(lib.get_factoriopedia_proto(proto) ~= nil)
-            }
-            ---@type ActOnCompactItemTags
-            local tags = {mod="fp", on_gui_click="act_on_compact_item", line_id=line.id,
-                item_category=item_category, item_index=index, on_gui_hover="hover_compact_item",
-                on_gui_leave="leave_compact_item", context="compact_dialog", flags=flags}
+    for index, item in pairs(line.recipe.catalysts[item_category]) do
+        local proto = item.proto
+        local flags = {
+            catalyst=true,
+            cursor=true,
+            factoriopedia=(lib.get_factoriopedia_proto(proto) ~= nil)
+        }
+        ---@type ActOnCompactItemTags
+        local tags = {mod="fp", on_gui_click="act_on_compact_item", line_id=line.id,
+            item_category=item_category, item_index=index,
+            on_gui_hover="hover_compact_item", on_gui_leave="leave_compact_item", context="compact_dialog", flags=flags}
 
-            local amount, number_tooltip, secondary_amount = item_views.process_item(metadata.player, proto,
-                (item.amount * line.production_ratio), line.machine.amount)
+        local amount, number_tooltip, secondary_amount = item_views.process_item(metadata.player, proto,
+            (item.amount * line.production_ratio), line.machine.amount)
 
-            ---@type LocalisedString, LocalisedString
-            local name_line, temperature_line = {"", {"fp.tt_title_with_note",
-                proto.localised_name, {"fp.catalyst"}}}, ""
+        ---@type LocalisedString, LocalisedString
+        local name_line, temperature_line = {"", {"fp.tt_title_with_note",
+            proto.localised_name, {"fp.catalyst"}}}, ""
 
-            -- Ingredient catalysts carry the base fluid proto, so their temperature needs spelling out
-            if item_category == "ingredients" and proto.type == "fluid" then
-                local temperature_data = line.recipe.temperature_data[proto.name]
-                table.insert(name_line--[[@as table]], temperature_data.annotation)
-                temperature_line = {"fp.configured_temperature", line.recipe:get_temperature(proto)}  ---@as LocalisedString
-            end
-
-            local number_line = (number_tooltip) and {"", "\n", number_tooltip} or ""
-            local style = "fflib_slot_button_blue"
-
-            -- Slots in ahead of the special items, which stay at the end alongside the fuel
-            local button = item_table.add{type="sprite-button", sprite=proto.sprite, number=amount,
-                secondary_number=secondary_amount, tags=tags, style=style, index=first_special_index,
-                mouse_button_filter={"left-and-right"}, raise_hover_events=true}
-            metadata.tooltips[button.index] = {"", name_line, temperature_line, number_line}
-            if first_special_index then first_special_index = first_special_index + 1 end
-
-            local type, name = proto.type, line.recipe:get_name_with_temperature(proto)
-            item_buttons[type] = item_buttons[type] or {}
-            item_buttons[type][name] = item_buttons[type][name] or {}
-            table.insert(item_buttons[type][name], {button=button, proper_style=style})
+        -- Ingredient catalysts carry the base fluid proto, so their temperature needs spelling out
+        if item_category == "ingredients" and proto.type == "fluid" then
+            local temperature_data = line.recipe.temperature_data[proto.name]
+            table.insert(name_line--[[@as table]], temperature_data.annotation)
+            temperature_line = {"fp.configured_temperature", line.recipe:get_temperature(proto)}  ---@as LocalisedString
         end
+
+        local number_line = (number_tooltip) and {"", "\n", number_tooltip} or ""
+        local style = relevant_line.done and "fflib_slot_button_purple_grayscale" or "fflib_slot_button_purple"
+
+        -- Keep catalysts before additional ingredients
+        local button = item_table.add{type="sprite-button", sprite=proto.sprite, number=amount,
+            secondary_number=secondary_amount, tags=tags, style=style, index=first_special_index,
+            mouse_button_filter={"left-and-right"}, raise_hover_events=true}
+        metadata.tooltips[button.index] = {"", name_line, temperature_line, number_line}
+        if first_special_index then first_special_index = first_special_index + 1 end
+
+        local type, name = proto.type, line.recipe:get_name_with_temperature(proto)
+        item_buttons[type] = item_buttons[type] or {}
+        item_buttons[type][name] = item_buttons[type][name] or {}
+        table.insert(item_buttons[type][name], {button=button, proper_style=style})
     end
 
     if item_category == "ingredients" and line.machine.fuel then
         local fuel = line.machine.fuel
         local amount, number_tooltip, secondary_amount = item_views.process_item(metadata.player,
             fuel.proto--[[@as FPFuelPrototype]], fuel.amount, line.machine.amount)
-        if amount == -1 then goto skip_fuel end  -- an amount of -1 means it was below the margin of error
+        if amount == -1 then return end  -- an amount of -1 means it was below the margin of error
 
-        local style = "fflib_slot_button_cyan"
-        local name_line = {"fp.tt_title_with_note", fuel.proto.localised_name, {"fp.pu_fuel", 1}}
+        local style = "fflib_slot_button_blue"
+        local name_line = {"fp.tt_title_with_note", fuel.proto.localised_name, {"fp.pu_fuel", 1}}  ---@as LocalisedString
         local temperature_line = ""  ---@type LocalisedString
 
         if fuel.proto.type == "fluid" then
             local temperature_data = fuel.temperature_data   -- exists for any fluid fuel
-            table.insert(name_line, temperature_data.annotation)
+            table.insert(name_line--[[@as table]], temperature_data.annotation)
 
             if fuel.temperature == nil then
-                style = "fflib_slot_button_purple"
+                style = "fflib_slot_button_orange"
                 temperature_line = {"fp.no_temperature_configured"}
             else
                 temperature_line = {"fp.configured_temperature", fuel.temperature}
             end
         end
 
-        style = (relevant_line.done) and "fflib_slot_button_default_grayscale" or style
+        if relevant_line.done then style = style .. "_grayscale" end
         local number_line = (number_tooltip) and {"", "\n", number_tooltip} or ""
         local tooltip = {"", name_line, temperature_line, number_line}
 
@@ -428,8 +445,6 @@ local function add_item_flow(line, relevant_line, item_category, button_color, m
         item_buttons[type] = item_buttons[type] or {}
         item_buttons[type][name] = item_buttons[type][name] or {}
         table.insert(item_buttons[type][name], {button=button, proper_style=style})
-
-        ::skip_fuel::
     end
 end
 
@@ -442,10 +457,20 @@ local function refresh_compact_header(player, factory)
     local tooltips = player_table.ui_state.tooltips.compact_dialog
 
     local attach_factory_products = player_table.preferences.attach_factory_products
-    compact_elements.name_label.caption = factory:tostring(attach_factory_products, true)
+    local factory_names, factory_ids, selected_index = {}, {}, 0
+    for candidate in factory.parent:iterator({archived=factory.archived, valid=true}) do
+        table.insert(factory_names, (candidate:tostring(attach_factory_products, true)))
+        table.insert(factory_ids, candidate.id)
+        if candidate == factory then selected_index = #factory_ids end
+    end
+
+    local dropdown = compact_elements.factory_dropdown
+    dropdown.items = factory_names
+    dropdown.selected_index = selected_index
+    dropdown.tags = {mod="fp", on_gui_selection_state_changed="select_compact_factory", factory_ids=factory_ids}
 
     local current_floor = lib.context.get(player, "Floor")  ---@as Floor
-    compact_elements.level_label.caption = {"fp.bold_label", {"", "-   ", {"fp.level"}, " ", current_floor.level}}
+    compact_elements.level_label.caption = {"fp.bold_label", {"", {"fp.level"}, " ", current_floor.level}}
     compact_elements.floor_up_button.enabled = (current_floor.level > 1)
     compact_elements.floor_top_button.enabled = (current_floor.level > 1)
 
@@ -556,10 +581,9 @@ local function refresh_compact_production(player)
         add_machine_flow(machines_flow, line, metadata)
         add_beacon_flow(machines_flow, line, metadata)
 
-        -- Products, Byproducts and Ingredients
-        add_item_flow(line, relevant_line, "products", "default", metadata, compact_elements.item_buttons)
-        add_item_flow(line, relevant_line, "byproducts", "red", metadata, compact_elements.item_buttons)
-        add_item_flow(line, relevant_line, "ingredients", "green", metadata, compact_elements.item_buttons)
+        -- Products and Ingredients
+        add_item_flow(line, relevant_line, "products", metadata, compact_elements.item_buttons)
+        add_item_flow(line, relevant_line, "ingredients", metadata, compact_elements.item_buttons)
 
         production_table.add{type="empty-widget", style="fflib_horizontal_pusher"}
 
@@ -610,10 +634,9 @@ local function build_compact_factory(player)
     local width, _ = get_compact_frame_dimensions(player)
     flow_navigation.style.width = width - 40
 
-    local label_name = flow_navigation.add{type="label"}
-    label_name.style.font = "heading-2"
-    label_name.style.horizontally_squashable = true
-    compact_elements["name_label"] = label_name
+    local dropdown_factory = flow_navigation.add{type="drop-down", style="fp_drop-down_slim"}
+    dropdown_factory.style.horizontally_squashable = true
+    compact_elements["factory_dropdown"] = dropdown_factory
 
     local label_level = flow_navigation.add{type="label"}
     label_level.style.margin = {0, 6}
@@ -655,7 +678,7 @@ local function build_compact_factory(player)
     scroll_pane_production.style.horizontally_stretchable = true
     scroll_pane_production.style.extra_right_padding_when_activated = -8
 
-    local table_production = scroll_pane_production.add{type="table", column_count=6, style="fp_table_production"}
+    local table_production = scroll_pane_production.add{type="table", column_count=5, style="fp_table_production"}
     table_production.vertical_centering = false
     table_production.style.horizontal_spacing = 12
     table_production.style.vertical_spacing = 8
@@ -769,7 +792,13 @@ local function handle_item_click(player, tags, action)
         local line = OBJECT_INDEX[tags.line_id]  ---@as LineObject
         local item_list = (tags.flags.catalyst) and line--[[@as Line]].recipe.catalysts or line
         item = item_list[tags.item_category]--[[@cast -nil]][tags.item_index]  ---@as SimpleItem
-        amount = item.amount * ((tags.flags.catalyst) and line--[[@as Line]].production_ratio or 1)
+        if tags.flags.catalyst then
+            amount = item.amount * line--[[@as Line]].production_ratio
+        elseif tags.flags.target then
+            amount = item.target_amount or 0
+        else
+            amount = item:get_remaining_amount()
+        end
         ---@cast item.proto FPItemPrototype
     end
 
@@ -829,6 +858,20 @@ local function has_subfloor(flags)
 end
 
 factory_listeners.gui = {
+    on_gui_selection_state_changed = {
+        {
+            name = "select_compact_factory",
+            handler = function(player, tags, event)
+                ---@cast event EventData.on_gui_selection_state_changed
+                local factory = OBJECT_INDEX[tags.factory_ids[event.element.selected_index]]  ---@as Factory?
+                if not factory or not factory.valid then return end
+
+                lib.context.set(player, factory)
+                lib.gui.run_refresh(player, "all")
+                refresh_compact_factory(player)
+            end
+        }
+    },
     on_gui_click = {
         {
             name = "change_compact_floor",

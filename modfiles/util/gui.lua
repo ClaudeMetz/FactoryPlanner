@@ -132,7 +132,7 @@ end
 ---@field player_index PlayerIndex
 ---@field trigger RefreshGUITrigger
 
----@alias RefreshGUITrigger "all" | "factory" | "production" | "title_bar" | "district_info" | "factory_list" | "districts_box" | "production_bar" | "item_boxes" | "production_box" | "production_table" | "solver_bar" | "compact_factory" | "paste_button"
+---@alias RefreshGUITrigger "all" | "factory" | "production" | "title_bar" | "district_list" | "factory_list" | "districts_box" | "production_bar" | "item_boxes" | "production_box" | "production_table" | "solver_bar" | "compact_factory" | "paste_button"
 
 --- "factory" includes districts_box, production_bar, item_boxes, production_box, production_table, solver_bar
 --- "production" includes item_boxes, production_box, production_table, solver_bar
@@ -200,18 +200,6 @@ function _gui.reset_player(player)
             gui_element.destroy()
         end
     end
-end
-
-
----@param satisfied_amount number
----@param actual_amount number
----@return LocalisedString satisfaction_line
----@return string percentage_string
-function _gui.calculate_satisfaction(satisfied_amount, actual_amount)
-    local satisfied_percentage = (satisfied_amount / actual_amount) * 100
-    local percentage_string = lib.format.number(satisfied_percentage, 3)
-    local satisfaction_line = {"", "\n", {"fp.bold_label", (percentage_string .. "%")}, " ", {"fp.satisfied"}}
-    return satisfaction_line, percentage_string
 end
 
 

@@ -31,6 +31,7 @@ end
 ---@param player LuaPlayer
 local function handle_convert_subfloor(player)
     local floor = lib.context.get(player, "Floor")  ---@as Floor
+    -- Preserve full net outputs, independently of their use in the parent floor
     local products = #floor.products > 0 and floor.products or floor.first--[[@cast -nil]].products
     local first_product = products[1]  ---@as SimpleItem always one at least
     local factory = factory_list.add_factory(player, nil, first_product.proto)

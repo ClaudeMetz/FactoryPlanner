@@ -66,7 +66,6 @@ return {
         instant.recipe.proto.energy = 0
         top:move(instant, first, "previous")
         solver.update(player, factory)
-        assert(instant.recipe.proto.energy <= MAGIC_NUMBERS.minimum_energy)
         assert(instant.machine_requirement == nil and first.machine_requirement.count == 3.5)
         first.active, second.active = false, false
         solver.update(player, factory)

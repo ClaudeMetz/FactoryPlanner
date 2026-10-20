@@ -1,3 +1,5 @@
+local UPDATE_THRESHOLD = 1e5  -- Infinite norm threshold for a stable Forrest-Tomlin update
+
 ---@class LUDecomposition
 ---@field u_matrix number[][] `U*` permuted upper triangular matrix where `U = P U*`
 ---@field l_matrix number[][] `L` lower unit triangular matrix
@@ -152,8 +154,8 @@ function LUDecomposition:update(vector, column)
 
     -- Check for stablility
     for i = index + 1, #self.u_matrix do
-        if t_vector[i] > MAGIC_NUMBERS.simplex_update_threshold or
-                t_vector[i] < -MAGIC_NUMBERS.simplex_update_threshold then
+        if t_vector[i] > UPDATE_THRESHOLD or
+                t_vector[i] < -UPDATE_THRESHOLD then
             return false
         end
     end

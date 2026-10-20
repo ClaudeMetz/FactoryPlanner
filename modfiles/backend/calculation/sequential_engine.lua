@@ -28,7 +28,7 @@ local function determine_producing_ratio(line_data, aggregate, products)
     return producing_ratio
 end
 
---- A consuming line is paced by the byproducts available to its ingredients
+--- A consuming line is paced by the surplus available to its ingredients
 ---@param line_data LineData
 ---@param aggregate SolverAggregate
 ---@param ingredients SolverItem[]
@@ -98,14 +98,14 @@ local function solve_line(line_data, aggregate, is_relevant_line)
         }  ---@type LineResult
     end
 
-    -- Determine products/byproducts
+    -- Determine remaining product supply
     for _, product in ipairs(products) do
         -- Satisfy ingredient demand
         structures.map.subtract(aggregate.ingredients, product, product.amount * machine_amount, true)
 
         local item_key = structures.pack_item(product)
         local remainder = aggregate.ingredients[item_key] or 0
-        if remainder < 0 then -- Excess becomes byproduct supply
+        if remainder < 0 then -- Excess becomes surplus supply
             structures.map.add(aggregate.products, product, -remainder)
             aggregate.ingredients[item_key] = nil
         end
@@ -113,7 +113,7 @@ local function solve_line(line_data, aggregate, is_relevant_line)
 
     -- Determine ingredients
     for _, ingredient in pairs(ingredients) do
-        -- Consume byproduct supply
+        -- Consume surplus supply
         structures.map.subtract(aggregate.products, ingredient, ingredient.amount * machine_amount, true)
 
         local item_key = structures.pack_item(ingredient)

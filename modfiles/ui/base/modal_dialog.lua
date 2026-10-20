@@ -1,5 +1,8 @@
 modal_dialog = {}
 
+local SEARCH_RATE_LIMIT = 10  -- Ticks between modal search runs
+local CONTEXT_MENU_WIDTH = 310
+
 ---@alias ModalDialogType string
 
 ---@class ModalData
@@ -7,6 +10,7 @@ modal_dialog = {}
 ---@field search_handler_name string?
 ---@field next_search_tick MapTick?
 ---@field reset_handler_name string?
+---@field resize_handler_name string?
 ---@field dialog_maximal_height number
 ---@field confirmed_dialog boolean
 
@@ -14,6 +18,7 @@ modal_dialog = {}
 ---@field caption LocalisedString?
 ---@field search_handler_name string?
 ---@field reset_handler_name string?
+---@field resize_handler_name string?
 ---@field subheader_text LocalisedString?
 ---@field subheader_tooltip LocalisedString?
 ---@field disable_scroll_pane boolean?
@@ -27,6 +32,12 @@ modal_dialog = {}
 ---@alias GUICloseAction "submit" | "cancel" | "delete"
 
 -- ** LOCAL UTIL **
+---@param player LuaPlayer
+---@return integer
+local function get_dialog_maximal_height(player)
+    return math.floor(lib.gui.calculate_scaled_resolution(player).height * 0.90)
+end
+
 ---@param player LuaPlayer
 ---@param dialog_settings ModalDialogSettings
 ---@param modal_data ModalData
@@ -128,8 +139,7 @@ local function create_base_dialog(player, dialog_settings, modal_data)
     -- Auxiliary flow
     modal_elements.auxiliary_flow = frame_modal_dialog.add{type="flow", direction="vertical"}
 
-    local ui_state = lib.globals.ui_state(player)
-    local dialog_max_height = ui_state.main_dialog_dimensions--[[@cast -nil]].height * 0.96
+    local dialog_max_height = get_dialog_maximal_height(player)
     modal_data.dialog_maximal_height = dialog_max_height
     frame_modal_dialog.style.maximal_height = dialog_max_height  ---@as integer
 
@@ -174,6 +184,10 @@ local function create_base_dialog(player, dialog_settings, modal_data)
         modal_elements.dialog_submit_button = button_submit
     end
 
+    if dialog_settings.resize_handler_name then
+        modal_data.resize_handler_name = dialog_settings.resize_handler_name
+    end
+
     return frame_modal_dialog
 end
 
@@ -195,7 +209,8 @@ function modal_dialog.enter(player, metadata, dialog_open, early_abort)
     if main_dialog.is_in_focus(player) then
         local interface_dimmer = player.gui.screen.add{type="frame", style="fp_frame_semitransparent",
             tags={mod="fp", on_gui_click="re-layer_interface_dimmer"}, visible=(not metadata.skip_dimmer)}
-        interface_dimmer.style.size = ui_state.main_dialog_dimensions
+        local dimensions = main_dialog.get_dimensions(player)
+        interface_dimmer.style.size = {dimensions.width, dimensions.height}
         interface_dimmer.location = ui_state.main_elements.main_frame.location
         ui_state.modal_data.modal_elements.interface_dimmer = interface_dimmer
     end
@@ -241,6 +256,26 @@ function modal_dialog.exit(player, action, skip_opened, dialog_close)
 end
 
 
+-- Updates overlays after the main interface is rebuilt
+---@param player LuaPlayer
+function modal_dialog.refresh_layering(player)
+    local ui_state = lib.globals.ui_state(player)
+    local modal_data = ui_state.modal_data
+    if modal_data then
+        local modal_elements = modal_data.modal_elements
+        local dimmer = modal_elements.interface_dimmer
+        if dimmer then
+            local dimensions = main_dialog.get_dimensions(player)
+            dimmer.style.size = {dimensions.width, dimensions.height}
+            dimmer.location = ui_state.main_elements.main_frame.location
+            dimmer.bring_to_front()
+        end
+        modal_elements.modal_frame.bring_to_front()
+    end
+    if ui_state.context_menu then ui_state.context_menu.bring_to_front() end
+end
+
+
 ---@param player LuaPlayer
 ---@param menu_tags Tags
 ---@param handler string
@@ -272,10 +307,10 @@ function modal_dialog.open_context_menu(player, menu_tags, handler, actions, loc
         local button = button_flow.add{type="button", tags=tags, style="list_box_item",
             mouse_button_filter={"left"}, enabled=enabled,
             tooltip=warning and {"fp.warning_with_icon", warning} or nil}
-        button.style.width = MAGIC_NUMBERS.context_menu_width
+        button.style.width = CONTEXT_MENU_WIDTH
 
         local flow = button.add{type="flow", direction="horizontal"}
-        flow.style.width = MAGIC_NUMBERS.context_menu_width
+        flow.style.width = CONTEXT_MENU_WIDTH
         flow.style.right_padding = 20
         flow.add{type="label", caption={"fp.tt_title", {"fp.action_" .. action.name}}, style="bold_label"}
         flow.add{type="empty-widget", style="fflib_horizontal_pusher"}
@@ -300,7 +335,7 @@ function modal_dialog.open_context_menu(player, menu_tags, handler, actions, loc
     local distance_to_bottom = player.display_resolution.height - location.y
     if distance_to_bottom < scaled_dialog_height then location.y = location.y - scaled_dialog_height end
 
-    local scaled_dialog_width = MAGIC_NUMBERS.context_menu_width * player.display_scale
+    local scaled_dialog_width = CONTEXT_MENU_WIDTH * player.display_scale
     local distance_to_right = player.display_resolution.width - location.x
     if distance_to_right < scaled_dialog_width then location.x = location.x - scaled_dialog_width end
 
@@ -366,6 +401,18 @@ end
 -- ** EVENTS **
 local listeners = {}  ---@type ListenerDefinitions
 
+---@param player LuaPlayer
+local function resize_modal_dialog(player)
+    local modal_data = lib.globals.modal_data(player)
+    if not modal_data then return end
+
+    modal_data.dialog_maximal_height = get_dialog_maximal_height(player)
+    local frame = modal_data.modal_elements.modal_frame
+    frame.style.maximal_height = modal_data.dialog_maximal_height  ---@as integer
+    if modal_data.resize_handler_name then GLOBAL_HANDLERS[modal_data.resize_handler_name](modal_data) end
+    frame.force_auto_center()
+end
+
 listeners.gui = {
     on_gui_click = {
         {
@@ -427,7 +474,7 @@ listeners.gui = {
     on_gui_text_changed = {
         {
             name = "modal_searchfield",
-            timeout = MAGIC_NUMBERS.modal_search_rate_limit,
+            timeout = SEARCH_RATE_LIMIT,
             handler = function(player, _, _)
                 local modal_data = lib.globals.modal_data(player)  ---@as ModalData
                 local search_tick = modal_data.next_search_tick
@@ -436,7 +483,7 @@ listeners.gui = {
                 modal_dialog.run_search(player)
 
                 -- Set up delayed search update to circumvent issues caused by rate limiting
-                local desired_tick = game.tick + MAGIC_NUMBERS.modal_search_rate_limit
+                local desired_tick = game.tick + SEARCH_RATE_LIMIT
 
                 ---@class RunDelayedModalSearchMetadata
                 ---@field player_index PlayerIndex
@@ -476,6 +523,9 @@ listeners.gui = {
 }  ---@as GUIListenerDefinition
 
 listeners.player = {
+    on_player_display_resolution_changed = resize_modal_dialog,
+    on_player_display_scale_changed = resize_modal_dialog,
+
     fp_confirm_dialog = function(player, _)
         lib.gui.close_dialog(player, "submit")
     end,

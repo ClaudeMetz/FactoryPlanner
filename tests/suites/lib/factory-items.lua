@@ -136,9 +136,8 @@ return {
             lib.gui.run_refresh(player, "item_boxes")
             local button = lib.globals.main_elements(player).item_boxes.product_item_table.children[1]
             local expected = item_views.process_item(player, item.proto, amount, nil)
-            assert(button.number == expected and button.style.name == "fflib_slot_button_blue")
+            assert(button.number == expected and button.style.name == "fflib_slot_button_green")
             local tooltip = lib.globals.ui_state(player).tooltips.item_boxes[button.index]
-            assert(tooltip[5] == "", "Calculated output must not show target satisfaction")
             local machine_definition = tooltip[#tooltip][3]
             assert(machine_definition[1] == "fp.item_defined_by_machines" and machine_definition[2] == "5")
             assert(machine_definition[3][1] == "fp.pl_machine" and machine_definition[3][2] == 5)
@@ -159,6 +158,6 @@ return {
         solver.update(player, factory)
         assert(helpers.approx(iron_line.machine.amount, 5))
         assert(helpers.approx(item.amount, 5 / 3.2) and helpers.approx(output.amount, 10))
-        assert(#factory.top_floor.byproducts == 0, "Machine-defined output must not also appear as a byproduct")
+        assert(#factory.top_floor.products == 2, "Calculated outputs must include both factory products once")
     end}
 }

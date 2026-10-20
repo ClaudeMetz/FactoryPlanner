@@ -2,9 +2,8 @@ if helpers.stage ~= "runtime" then return {} end
 
 local _preferences = {}
 
-_preferences.products_per_row_options = {5, 6, 7, 8, 9, 10}
-_preferences.factory_list_rows_options = {20, 22, 24, 26, 28, 30, 32}
-_preferences.compact_width_percentages = {8, 10, 12, 14, 16, 18, 20, 22, 24, 26, 28, 30, 32, 34, 36}
+_preferences.main_dimension_percentages = {50, 55, 60, 65, 70, 75, 80, 85, 90, 95, 100}
+_preferences.compact_width_percentages = {10, 12, 14, 16, 18, 20, 22, 24, 26, 28, 30, 32, 34, 36, 38, 40}
 
 _preferences.belt_stack_options = {}
 for i = 1, prototypes.utility_constants.max_belt_stack_size do
@@ -22,13 +21,12 @@ end
 ---@field show_unresearched_items boolean
 ---@field compact_ingredients boolean
 ---@field fold_out_subfloors boolean
----@field products_per_row integer
----@field factory_list_rows integer
+---@field main_width_percentage integer
+---@field main_height_percentage integer
 ---@field compact_width_percentage integer
 ---@field show_gui_button boolean
 ---@field attach_factory_products boolean
 ---@field skip_factory_naming boolean
----@field ingredient_satisfaction boolean
 ---@field calculate_emissions boolean
 ---@field ignore_barreling_recipes boolean
 ---@field ignore_recycling_recipes boolean
@@ -76,15 +74,13 @@ function _preferences.reload(player_table)
     reload("compact_ingredients", false)
     reload("fold_out_subfloors", false)
 
-    -- Main dimensions are maxed, to be shrinkwrapped down
-    reload("products_per_row", 10)
-    reload("factory_list_rows", 32)
-    reload("compact_width_percentage", 26)
+    reload("main_width_percentage", 80)
+    reload("main_height_percentage", 80)
+    reload("compact_width_percentage", 30)
 
     reload("show_gui_button", true)
     reload("skip_factory_naming", true)
     reload("attach_factory_products", false)
-    reload("ingredient_satisfaction", false)
     reload("calculate_emissions", false)
     reload("ignore_barreling_recipes", false)
     reload("ignore_recycling_recipes", false)
@@ -111,7 +107,7 @@ end
 
 -- Version, incremented each time the format of exported preferences changes in any way
 -- The mod prevents importing non-matching preferences versions to avoid needing migrations
-_preferences.current_version = 5
+_preferences.current_version = 6
 
 ---@class PreferencesExportTable
 ---@field version integer
@@ -119,13 +115,12 @@ _preferences.current_version = 5
 ---@field pause_on_interface boolean
 ---@field compact_ingredients boolean
 ---@field fold_out_subfloors boolean
----@field products_per_row integer
----@field factory_list_rows integer
+---@field main_width_percentage integer
+---@field main_height_percentage integer
 ---@field compact_width_percentage integer
 ---@field show_gui_button boolean
 ---@field attach_factory_products boolean
 ---@field skip_factory_naming boolean
----@field ingredient_satisfaction boolean
 ---@field calculate_emissions boolean
 ---@field ignore_barreling_recipes boolean
 ---@field ignore_recycling_recipes boolean
@@ -148,13 +143,12 @@ function _preferences.export(player)
         pause_on_interface = prefs.pause_on_interface,
         compact_ingredients = prefs.compact_ingredients,
         fold_out_subfloors = prefs.fold_out_subfloors,
-        products_per_row = prefs.products_per_row,
-        factory_list_rows = prefs.factory_list_rows,
+        main_width_percentage = prefs.main_width_percentage,
+        main_height_percentage = prefs.main_height_percentage,
         compact_width_percentage = prefs.compact_width_percentage,
         show_gui_button = prefs.show_gui_button,
         attach_factory_products = prefs.attach_factory_products,
         skip_factory_naming = prefs.skip_factory_naming,
-        ingredient_satisfaction = prefs.ingredient_satisfaction,
         calculate_emissions = prefs.calculate_emissions,
         ignore_barreling_recipes = prefs.ignore_barreling_recipes,
         ignore_recycling_recipes = prefs.ignore_recycling_recipes,
@@ -207,15 +201,14 @@ function _preferences.import(player, export_string)
         assert(type(et.pause_on_interface) == "boolean")
         assert(type(et.compact_ingredients) == "boolean")
         assert(type(et.fold_out_subfloors) == "boolean")
-        assert(verify_range(et.products_per_row, _preferences.products_per_row_options))
-        assert(verify_range(et.factory_list_rows, _preferences.factory_list_rows_options))
+        assert(verify_range(et.main_width_percentage, _preferences.main_dimension_percentages))
+        assert(verify_range(et.main_height_percentage, _preferences.main_dimension_percentages))
         assert(verify_range(et.compact_width_percentage, _preferences.compact_width_percentages))
         assert(type(et.show_gui_button) == "boolean")
         assert(type(et.attach_factory_products) == "boolean")
         assert(type(et.skip_factory_naming) == "boolean")
         assert(verify_option(et.default_solver, solver.choices))
         assert(type(et.per_floor_solver) == "boolean")
-        assert(type(et.ingredient_satisfaction) == "boolean")
         assert(type(et.calculate_emissions) == "boolean")
         assert(type(et.ignore_barreling_recipes) == "boolean")
         assert(type(et.ignore_recycling_recipes) == "boolean")
@@ -240,8 +233,7 @@ end
 
 ---@param player LuaPlayer
 ---@param change_type PreferencesChangeType
----@param shrinkwrap boolean?
-function _preferences.refresh_after_change(player, change_type, shrinkwrap)
+function _preferences.refresh_after_change(player, change_type)
     local rebuild_views_data, rebuild_views_interface = false, false
     local run_solver, run_solver_all = false, false
     local toggle_mod_gui = false
@@ -287,9 +279,7 @@ function _preferences.refresh_after_change(player, change_type, shrinkwrap)
     if run_solver then solver.update(player) end
     if toggle_mod_gui then lib.gui.toggle_mod_gui(player) end
     if refresh_scope then lib.gui.run_refresh(player, refresh_scope) end
-    if shrinkwrap then  -- this rebuilds the main interface implicitly
-        GLOBAL_HANDLERS["shrinkwrap_interface"]{player_index=player.index}
-    elseif rebuild_main then main_dialog.rebuild(player, true) end
+    if rebuild_main then main_dialog.rebuild(player, true) end
     if rebuild_compact then compact_dialog.rebuild(player, false) end
 end
 
