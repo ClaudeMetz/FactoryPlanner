@@ -58,16 +58,25 @@ return {check=function(context)
     click("pick_up_factory", "factory_id", moving.id)
     click("place_factory_in_district", "district_id", destination.id)
     assert(moving.parent == destination and source:count() == 1 and destination:count() == 1)
-    assert(lib.context.get(player, "Factory") == moving)
+    assert(lib.context.get(player, "District") == source)
+    assert(lib.context.get(player, "Factory") == selected)
     assert(ui_state.held_object_id == nil and not ui_state.districts_view)
     assert(button("select_district", "district_id", source.id))
-    click("select_district", "district_id", source.id)
-    assert(lib.context.get(player, "Factory") == selected)
 
-    -- Moving the selected factory out leaves an empty source navigable
+    -- Moving the selected factory keeps a neighboring factory selected in the source
+    local neighbor = context.classes.Factory.init("Neighbor", "sequential")
+    source:insert(neighbor)
+    lib.gui.run_refresh(player, "all")
     click("pick_up_factory", "factory_id", selected.id)
     click("place_factory_in_district", "district_id", destination.id)
-    click("select_district", "district_id", source.id)
+    assert(selected.parent == destination)
+    assert(lib.context.get(player, "District") == source)
+    assert(lib.context.get(player, "Factory") == neighbor)
+
+    -- Moving the selected factory out leaves an empty source navigable
+    click("pick_up_factory", "factory_id", neighbor.id)
+    click("place_factory_in_district", "district_id", destination.id)
+    assert(neighbor.parent == destination and source:count() == 0)
     assert(lib.context.get(player, "District") == source)
     assert(lib.context.get(player, "Factory") == nil)
 
