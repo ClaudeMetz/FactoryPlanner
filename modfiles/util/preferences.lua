@@ -21,6 +21,7 @@ end
 ---@field show_unresearched_items boolean
 ---@field compact_ingredients boolean
 ---@field fold_out_subfloors boolean
+---@field highlight_items boolean
 ---@field main_width_percentage integer
 ---@field main_height_percentage integer
 ---@field compact_width_percentage integer
@@ -73,6 +74,7 @@ function _preferences.reload(player_table)
     reload("show_unresearched_items", true)
     reload("compact_ingredients", false)
     reload("fold_out_subfloors", false)
+    reload("highlight_items", false)
 
     reload("main_width_percentage", 80)
     reload("main_height_percentage", 80)
@@ -115,6 +117,7 @@ _preferences.current_version = 6
 ---@field pause_on_interface boolean
 ---@field compact_ingredients boolean
 ---@field fold_out_subfloors boolean
+---@field highlight_items boolean
 ---@field main_width_percentage integer
 ---@field main_height_percentage integer
 ---@field compact_width_percentage integer
@@ -143,6 +146,7 @@ function _preferences.export(player)
         pause_on_interface = prefs.pause_on_interface,
         compact_ingredients = prefs.compact_ingredients,
         fold_out_subfloors = prefs.fold_out_subfloors,
+        highlight_items = prefs.highlight_items,
         main_width_percentage = prefs.main_width_percentage,
         main_height_percentage = prefs.main_height_percentage,
         compact_width_percentage = prefs.compact_width_percentage,
@@ -201,6 +205,7 @@ function _preferences.import(player, export_string)
         assert(type(et.pause_on_interface) == "boolean")
         assert(type(et.compact_ingredients) == "boolean")
         assert(type(et.fold_out_subfloors) == "boolean")
+        assert(type(et.highlight_items) == "boolean")
         assert(verify_range(et.main_width_percentage, _preferences.main_dimension_percentages))
         assert(verify_range(et.main_height_percentage, _preferences.main_dimension_percentages))
         assert(verify_range(et.compact_width_percentage, _preferences.compact_width_percentages))

@@ -58,6 +58,7 @@ end
 ---@field definition table
 ---@field tooltip LocalisedString?
 ---@field is_add_button boolean?
+---@field proto FPItemPrototype?
 
 ---@param player LuaPlayer
 ---@param factory Factory?
@@ -116,7 +117,7 @@ local function prepare_item_buttons(player, factory, item_category)
             secondary_number=secondary_amount, sprite=item.proto.sprite,
             style=target and "fflib_slot_button_green" or "fflib_slot_button_default",
             mouse_button_filter={"left-and-right"}, raise_hover_events=true}
-        table.insert(buttons, {definition=definition, tooltip=tooltip})
+        table.insert(buttons, {definition=definition, tooltip=tooltip, proto=item.proto})
     end
 
     if item_category == "product" and floor.level == 1 then
@@ -176,7 +177,7 @@ local function prepare_item_buttons(player, factory, item_category)
             local definition = {type="sprite-button", tags=tags--[[@as Tags]], number=amount,
                 secondary_number=secondary_amount, style=style, sprite=product.proto.sprite,
                 mouse_button_filter={"left-and-right"}, raise_hover_events=true}
-            table.insert(buttons, {definition=definition, tooltip=tooltip})
+            table.insert(buttons, {definition=definition, tooltip=tooltip, proto=product.proto})
 
             ::skip_product::
         end
@@ -365,6 +366,7 @@ local function render_item_box(player, category, buttons, columns, height)
     for _, data in ipairs(buttons) do
         local button = table_items.add(data.definition)
         tooltips[button.index] = data.tooltip
+        if data.proto then item_highlights.register(player, button, data.proto) end
         if data.is_add_button then
             button.style.padding = 4
             button.style.margin = 4
@@ -378,6 +380,7 @@ local function refresh_item_boxes(player)
 
     local main_elements = player_table.ui_state.main_elements
     if main_elements.main_frame == nil then return end
+    item_highlights.reset(player, "item_boxes")
 
     local visible = not player_table.ui_state.districts_view
     main_elements.item_boxes.horizontal_flow.visible = visible
