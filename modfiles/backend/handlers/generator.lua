@@ -1090,8 +1090,8 @@ function generator.machines.generate(context)
                 fluid_filter = (generator_fluid_box.filter) and generator_fluid_box.filter.name or nil,
                 -- Deliberately not proto.maximum_temperature: a generator clamps the energy it
                 -- extracts rather than refusing hotter fluid, which is what wasted_share models
-                minimum_temperature = generator_fluid_box.minimum_temperature,
-                maximum_temperature = generator_fluid_box.maximum_temperature
+                minimum_temperature = proto.minimum_input_temperature,
+                maximum_temperature = proto.maximum_input_temperature
             }
 
         elseif burner_prototype then
@@ -1121,8 +1121,8 @@ function generator.machines.generate(context)
                 -- burns_fluid == true uses the fluid's fuel_value, otherwise its heat above the default temperature
                 burns_fluid = fluid_burner_prototype.burns_fluid,
                 fluid_filter = (fluid_box.filter) and fluid_box.filter.name or nil,
-                minimum_temperature = fluid_box.minimum_temperature,
-                maximum_temperature = fluid_box.maximum_temperature
+                minimum_temperature = fluid_burner_prototype.minimum_input_temperature,
+                maximum_temperature = fluid_burner_prototype.maximum_input_temperature
             }
 
         elseif proto.electric_energy_source_prototype then
@@ -1360,7 +1360,6 @@ end
 ---@class FPFuelPrototype: FPPrototypeWithCategory
 ---@field data_type "fuels"
 ---@field type "item" | "fluid"
----@field category string
 ---@field combined_category string
 ---@field elem_type ElemType
 ---@field fuel_value float
@@ -1402,7 +1401,6 @@ function generator.fuels.generate()
                 sprite = "item/" .. proto.name,
                 type = "item",
                 elem_type = "item",
-                category = proto.fuel_category,
                 combined_category = nil,  -- set below
                 fuel_value = proto.fuel_value,
                 emissions_multiplier = proto.fuel_emissions_multiplier,
@@ -1411,8 +1409,10 @@ function generator.fuels.generate()
                 burnt_result = (proto.burnt_result) and proto.burnt_result.name or nil
                 -- burnt_result item not explicitly added as FPItemPrototype, relies on mod to use it elsewhere
             }
-            fuel_categories[fuel.category] = fuel_categories[fuel.category] or {}
-            table.insert(fuel_categories[fuel.category], fuel)
+            for _, category in pairs(proto.fuel_categories--[[@cast -nil]]) do
+                fuel_categories[category] = fuel_categories[category] or {}
+                table.insert(fuel_categories[category], fuel)
+            end
         end
     end
 
@@ -1464,7 +1464,6 @@ function generator.fuels.generate()
                     sprite = "fluid/" .. proto.name,
                     type = "fluid",
                     elem_type = "fluid",
-                    category = category,
                     combined_category = nil,  -- set below
                     fuel_value = (burns_fluid) and proto.fuel_value or 0,
                     emissions_multiplier = proto.emissions_multiplier,
@@ -1578,7 +1577,8 @@ function generator.pumps.generate()
         {filter="hidden", invert=true, mode="and"}}
     for _, proto in pairs(prototypes.get_entity_filtered(pump_filter)) do
         local sprite = generator.util.determine_entity_sprite(proto)
-        if sprite ~= nil then
+        local pumping_speed = generator.util.get_base_value(proto.get_pumping_speed())--[[@cast -nil]] * 60
+        if sprite ~= nil and pumping_speed > 0 then
             ---@diagnostic disable-next-line: missing-fields
             local pump = {
                 name = proto.name,
@@ -1586,7 +1586,7 @@ function generator.pumps.generate()
                 sprite = sprite,
                 elem_type = "entity",
                 rich_text = "[entity=" .. proto.name .. "]",
-                pumping_speed = generator.util.get_base_value(proto.get_pumping_speed())--[[@cast -nil]] * 60
+                pumping_speed = pumping_speed
                 -- pumping_speed is unused as the mod uses get_pumping_speed(quality)
             }  ---@type FPPumpPrototype
             insert_prototype(pumps, pump, nil)
@@ -1867,19 +1867,20 @@ function generator.locations.generate(context)
         if not helpers.is_valid_sprite_path(sprite) then return nil end
 
         local surface_properties = {}
-        local tooltip = {"", {"fp.tt_title", proto.localised_name}, "\n"}  ---@type LocalisedString
-        local current_table, next_index = tooltip, 4
+        local tooltip = {""}  ---@type LocalisedString
+        local current_table, next_index = tooltip, 2
         local resource_recipes = {}  ---@type table<string, true>
 
-        for _, property_proto in pairs(property_prototypes) do
+        for index, property_proto in ipairs(property_prototypes) do
             local value = proto.surface_properties[property_proto.name] or property_proto.default_value
             surface_properties[property_proto.name] = value
 
             local value_and_unit = {property_proto.localised_unit_key, value}  ---@type LocalisedString
             if property_proto.is_time then value_and_unit = lib.format.time(value) end
 
-            current_table, next_index = lib.format.build_localised_string(
-                {"fp.surface_property", property_proto.localised_name, value_and_unit}, current_table, next_index)
+            local property_tooltip = {"", (index > 1) and "\n" or "",
+                {"fp.surface_property", property_proto.localised_name, value_and_unit}}
+            current_table, next_index = lib.format.build_localised_string(property_tooltip, current_table, next_index)
         end
 
         if category == "space-location" and proto.map_gen_settings and proto.map_gen_settings.autoplace_settings then

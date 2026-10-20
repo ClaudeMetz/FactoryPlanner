@@ -1,5 +1,8 @@
-local TLProduct = require("backend.data.TLProduct")
+local FactoryItem = require("backend.data.FactoryItem")
 local SimpleItem = require("backend.data.SimpleItem")
+
+local MAX_ROWS = 4
+local HORIZONTAL_PADDING = 8
 
 -- ** LOCAL UTIL **
 ---@param player LuaPlayer
@@ -10,10 +13,18 @@ local function build_item_box(player, category, column_count)
 
     local window_frame = item_boxes_elements.horizontal_flow.add{type="frame", direction="vertical",
         style="inside_shallow_frame"}
-    window_frame.style.top_padding = 6
-    window_frame.style.padding = {4, 12, 12, 12}
+    window_frame.style.horizontally_stretchable = true
+    window_frame.style.padding = {2, HORIZONTAL_PADDING, 8, HORIZONTAL_PADDING}
 
-    local title_flow = window_frame.add{type="flow", direction="horizontal"}
+    local centering_flow = window_frame.add{type="flow", direction="horizontal"}
+    centering_flow.style.horizontally_stretchable = true
+    centering_flow.style.horizontal_spacing = 0
+
+    centering_flow.add{type="empty-widget", style="fflib_horizontal_pusher"}
+    local content_flow = centering_flow.add{type="flow", direction="vertical"}
+    centering_flow.add{type="empty-widget", style="fflib_horizontal_pusher"}
+
+    local title_flow = content_flow.add{type="flow", direction="horizontal"}
     title_flow.style.vertical_align = "center"
 
     local label = title_flow.add{type="label", caption={"fp.pu_" .. category, 2}, style="caption_label"}
@@ -29,8 +40,8 @@ local function build_item_box(player, category, column_count)
         item_boxes_elements["ingredient_combinator_button"] = button_combinator
     end
 
-    local scroll_pane = window_frame.add{type="scroll-pane", style="shallow_scroll_pane"}
-    scroll_pane.style.maximal_height = MAGIC_NUMBERS.item_box_max_rows * MAGIC_NUMBERS.item_button_size
+    local scroll_pane = content_flow.add{type="scroll-pane", style="shallow_scroll_pane"}
+    scroll_pane.style.maximal_height = MAX_ROWS * MAGIC_NUMBERS.item_button_size
 
     local item_frame = scroll_pane.add{type="frame", style="slot_button_deep_frame"}
     item_frame.style.width = column_count * MAGIC_NUMBERS.item_button_size
@@ -66,10 +77,11 @@ local function refresh_item_box(player, factory, item_category, tooltips)
 
     if item_category == "product" and floor.level == 1 then
         for product in factory:iterator() do  ---@cast product.proto FPItemPrototype
-            local style = "fflib_slot_button_default"
+            local style = "fflib_slot_button_blue"
 
             local amount, number_tooltip, secondary_amount
-            local required_amount = product:get_required_amount()
+            local required_amount = product:get_defined_amount()
+            local display_amount = required_amount or product.amount
 
             local special = (product.proto.type == "entity" and product.proto.special)
             local flags = {
@@ -78,6 +90,7 @@ local function refresh_item_box(player, factory, item_category, tooltips)
                 special = special,
                 cursor = (product.proto.type ~= "entity"),
                 archived = factory.archived,
+                simplex = (floor.solver == "simplex"),
                 ingredient_only = product.proto.ingredient_only,
                 move_left = (product.previous ~= nil),
                 move_right = (product.next ~= nil),
@@ -85,23 +98,30 @@ local function refresh_item_box(player, factory, item_category, tooltips)
             }
 
             if flags.special then
-                amount = lib.format.button_number(required_amount)
-                number_tooltip = lib.format.special_tooltip(product.proto.name, required_amount)
+                amount, number_tooltip = lib.format.special_amount(product.proto.name, display_amount)
             else
                 amount, number_tooltip, secondary_amount = item_views.process_item(player, product.proto,
-                    required_amount, nil)
+                    display_amount, nil)
                 if amount == -1 then goto skip_product end  -- an amount of -1 means it was below the margin of error
             end
 
-            local satisfaction_line, percentage_string = lib.gui.calculate_satisfaction(
-                product.amount, required_amount)
+            local satisfaction_line = ""  ---@type LocalisedString
+            if required_amount ~= nil then
+                local percentage_string
+                satisfaction_line, percentage_string = lib.gui.calculate_satisfaction(product.amount, required_amount)
 
-            if percentage_string == "0" then style = "fflib_slot_button_red"
-            elseif percentage_string == "100" then style = "fflib_slot_button_green"
-            else style = "fflib_slot_button_yellow" end
+                if percentage_string == "0" then style = "fflib_slot_button_red"
+                elseif percentage_string == "100" then style = "fflib_slot_button_green"
+                else style = "fflib_slot_button_yellow" end
+            end
 
             local tooltip = {"", {"fp.tt_title", product.proto.localised_name}, "\n", number_tooltip,
                 satisfaction_line}
+            if product.definition.type == "machines" then
+                local count = product.definition.machine_count
+                table.insert(tooltip, {"", "\n", {"fp.item_defined_by_machines",
+                    lib.format.number(count, 4), {"fp.pl_machine", count}}})
+            end
 
             ---@type HandleItemBoxClickTags
             local tags = {mod="fp", on_gui_click="act_on_item_box", item_category=item_category, item_id=product.id,
@@ -136,14 +156,14 @@ local function refresh_item_box(player, factory, item_category, tooltips)
                 special = special,
                 cursor = (item.proto.type ~= "entity"),
                 archived = factory.archived,
+                simplex = (floor.solver == "simplex"),
                 ingredient_only = item.proto.ingredient_only,
                 byproduct = (item_category == "byproduct"),
                 factoriopedia = (lib.get_factoriopedia_proto(item.proto) ~= nil)
             }
 
             if flags.special then
-                amount = lib.format.button_number(item.amount)
-                number_tooltip = lib.format.special_tooltip(item.proto.name, item.amount)
+                amount, number_tooltip = lib.format.special_amount(item.proto.name, item.amount)
             else
                 amount, number_tooltip, secondary_amount = item_views.process_item(player, item.proto, item.amount, nil)
                 if amount == -1 then goto skip_item end  -- an amount of -1 means it was below the margin of error
@@ -176,7 +196,7 @@ local function handle_item_add(player, tags, event)
     local factory = lib.context.get(player, "Factory")  ---@as Factory
 
     if event.shift then  -- paste
-        local dummy_product = TLProduct.init()
+        local dummy_product = FactoryItem.init()
         lib.clipboard.dummy_paste(player, dummy_product, factory)
     elseif player.is_cursor_blueprint() then  -- import blueprint entities
         local blueprint = player.cursor_record or player.cursor_stack
@@ -188,10 +208,10 @@ local function handle_item_add(player, tags, event)
 
             local amount = entity.count / timescale
             if existing_item then
-                existing_item:add_required_amount(amount)
+                existing_item:add_defined_amount(amount)
             else
-                local product = TLProduct.init(proto)  -- defined_by = "amount"
-                product.required_amount = amount
+                local product = FactoryItem.init(proto)  -- definition.type = "amount"
+                product.definition = {type="amount", amount=amount}
                 factory:insert(product)
             end
         end
@@ -209,16 +229,19 @@ end
 local function handle_item_button_click(player, tags, action)
     local item
     if tags.item_id then
-        item = OBJECT_INDEX[tags.item_id]  ---@as TLProduct
+        item = OBJECT_INDEX[tags.item_id]  ---@as FactoryItem
     else
         local floor = lib.context.get(player, "Floor")  ---@as Floor
-        item = floor[tags.item_category .. "s"][tags.item_index]  ---@as TLProduct
+        item = floor[tags.item_category .. "s"][tags.item_index]  ---@as FactoryItem
     end
 
     if action == "add_recipe" then
         local production_type = (tags.item_category == "byproduct") and "consume" or "produce"
         lib.gui.open_dialog(player, {dialog="recipe", modal_data={production_type=production_type,
             category_id=item.proto.category_id, product_id=item.proto.id}})
+
+    elseif action == "adjust_weight" then
+        solver_bar.add_item_weight(player, item.proto--[[@as FPItemPrototype]])
 
     elseif action == "edit" then
         lib.gui.open_dialog(player, {dialog="picker",
@@ -227,10 +250,12 @@ local function handle_item_button_click(player, tags, action)
     elseif action == "move_left" or action == "move_right" then
         local direction = (action == "move_left") and "previous" or "next"
         item.parent:shift(item, direction, 1)
-        lib.gui.run_refresh(player, "item_boxes")
+
+        solver.update(player)
+        lib.gui.run_refresh(player, "production")
 
     elseif action == "copy" then
-        local copyable_item = (item.class == "TLProduct") and item
+        local copyable_item = (item.class == "FactoryItem") and item
             or SimpleItem.init(nil, item.proto--[[@as FPItemPrototype]], item.amount)
         lib.clipboard.copy(player, copyable_item)
 
@@ -250,7 +275,7 @@ local function handle_item_button_click(player, tags, action)
         lib.cursor.pipette_item(player, item.proto--[[@as FPItemPrototype]])
 
     elseif action == "put_into_combinator" then
-        local amount = (item.class == "TLProduct") and item:get_required_amount() or item.amount
+        local amount = (item.class == "FactoryItem") and item:get_defined_amount() or item.amount
         lib.cursor.put_into_combinator(player, item.proto--[[@as FPItemPrototype]], amount)
 
     elseif action == "factoriopedia" then
@@ -305,7 +330,7 @@ local function refresh_item_boxes(player)
     local irow_count = refresh_item_box(player, factory, "ingredient", tooltips)
 
     local maxrow_count = math.max(prow_count, math.max(brow_count, irow_count))
-    local actual_row_count = math.min(math.max(maxrow_count, 1), MAGIC_NUMBERS.item_box_max_rows)
+    local actual_row_count = math.min(math.max(maxrow_count, 1), MAX_ROWS)
     local item_table_height = actual_row_count * MAGIC_NUMBERS.item_button_size
 
     -- Set the heights for both the visible frame and the scroll pane containing it
@@ -328,7 +353,10 @@ local function build_item_boxes(player)
     flow_horizontal.style.horizontal_spacing = MAGIC_NUMBERS.frame_spacing
     main_elements.item_boxes["horizontal_flow"] = flow_horizontal
 
-    local products_per_row = lib.globals.preferences(player).products_per_row
+    -- Allow for three item-box frames and the gaps between them
+    local available_width = main_dialog.get_content_width(player)
+        - (6 * HORIZONTAL_PADDING) - (2 * MAGIC_NUMBERS.frame_spacing)
+    local products_per_row = math.max(1, math.floor(available_width / (4 * MAGIC_NUMBERS.item_button_size)))
     build_item_box(player, "product", products_per_row)
     build_item_box(player, "byproduct", products_per_row)
     build_item_box(player, "ingredient", products_per_row * 2)
@@ -382,6 +410,7 @@ listeners.gui = {
                 add_recipe = {shortcut="left", core=true, show=show_add_recipe, enable=lib.actions.can_add_recipe},
                 edit = {shortcut="control-left", core=true, show=is_top_level_product, enable=lib.actions.can_edit_factory},
                 delete = {input="delete", show=is_top_level_product, enable=lib.actions.can_edit_factory},
+                adjust_weight = {show=lib.actions.show_adjust_weight, enable=lib.actions.can_adjust_weight},
                 move_left = {show=is_top_level_product, enable=can_move_left},
                 move_right = {show=is_top_level_product, enable=can_move_right},
                 copy = {shortcut="shift-right"},

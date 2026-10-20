@@ -9,9 +9,9 @@
 -- to each other. Each boiler is its own machine category, which is what those recipes list.
 --
 -- The two modes differ only in where the outgoing temperature comes from. "output-to-separate-pipe"
--- uses the target_temperature verbatim, and is the only mode that reads the output fluidbox at
--- all. "heat-fluid-inside" has no target and tops the fluid out at its own maximum instead,
--- lowered by the input fluidbox's maximum_temperature where that is set.
+-- caps target_temperature at the output fluid's maximum, and is the only mode that reads the
+-- output fluidbox at all. "heat-fluid-inside" has no target and tops the fluid out at its own maximum instead,
+-- lowered by the boiler's maximum_input_temperature where that is set.
 --
 -- Machine speed is the boiler's energy consumption in watts. The energy a recipe needs is worked
 -- out per unit as (goal - input temperature) * heat_capacity, so it depends on the temperature
@@ -24,6 +24,7 @@
 --   separate pipe, fluid energy source      shares it too, once its fuel box is ignored
 --   separate pipe, no output filter         wide 0-300 -> wide 300, capped at the target
 --   separate pipe, unfiltered input         one recipe per fluid, skipping ones already hotter
+--   separate pipe, both boxes unfiltered    caps each fluid at its maximum, skipping unheatable ones
 --   heat in place, filtered                 wide 0-500 -> wide 500, the fluid's own maximum
 --   heat in place, box caps the maximum     wide 0-300 -> wide 300, shares the separate pipe one
 --   heat in place, unfiltered input         one recipe per fluid that can be heated at all
@@ -223,6 +224,12 @@ return {
                 fluid_box = input_box()
             }),
 
+            -- Without either filter, the target can exceed an individual fluid's maximum
+            test_boiler("test-boiler-unfiltered", {
+                fluid_box = input_box(),
+                output_fluid_box = output_box()
+            }),
+
             -- Heats its fluid where it sits, with no target temperature of its own, so the fluid
             -- goes all the way to the 500° maximum it declares. The output box is never looked at
             test_boiler("test-boiler-inside", {
@@ -232,13 +239,14 @@ return {
                 output_fluid_box = output_box()
             }),
 
-            -- Same, but its fluidbox refuses anything above 300°, which is what the fluid now tops
+            -- Same, but it stops heating above 300°, which is what the fluid now tops
             -- out at. That makes this the identical conversion to test-boiler-same-fluid above, and
             -- the two share a recipe despite being in different modes
             test_boiler("test-boiler-inside-capped", {
                 mode = "heat-fluid-inside",
                 target_temperature = REMOVE,
-                fluid_box = input_box{filter = "test-boil-wide", maximum_temperature = 300},
+                fluid_box = input_box{filter = "test-boil-wide"},
+                maximum_input_temperature = 300,
                 output_fluid_box = output_box()
             }),
 
@@ -287,7 +295,7 @@ return {
         local find = prototyper.util.find
 
         -- Every boiler in its own category, at its energy consumption as speed
-        local boilers = {"separate", "twin", "fluid-burner", "same-fluid", "open",
+        local boilers = {"separate", "twin", "fluid-burner", "same-fluid", "open", "unfiltered",
             "inside", "inside-capped", "inside-open", "no-mode", "special-output"}
         for _, suffix in ipairs(boilers) do
             local name = "test-boiler-" .. suffix
@@ -332,7 +340,24 @@ return {
             {"boiler-test-boiler-inside", "boiler-test-boiler-inside-open"})
         -- No mode set defaults to heating in place rather than being skipped
         check_recipe("impostor-boil-test-boil-cold-15-100-test-boil-cold-100",
-            {"boiler-test-boiler-no-mode"})
+            {"boiler-test-boiler-no-mode", "boiler-test-boiler-unfiltered"})
+
+        -- A fully unfiltered boiler clamps cold fluid to 100, but can still heat wide fluid to 165
+        local unfiltered = check_recipe("impostor-boil-test-boil-wide-0-165-test-boil-wide-165",
+            {"boiler-test-boiler-unfiltered"})
+        if unfiltered then
+            c.check(unfiltered.products[1].temperature == 165,
+                "unfiltered: target below the fluid maximum must remain unchanged")
+        end
+        for _, recipe_proto in pairs(storage.prototypes.recipes) do
+            if recipe_proto.categories["boiler-test-boiler-unfiltered"] then
+                c.check(recipe_proto.products[1].temperature <=
+                    prototypes.fluid[recipe_proto.products[1].base_name].max_temperature,
+                    "unfiltered: output exceeds fluid maximum: " .. recipe_proto.name)
+                c.check(recipe_proto.products[1].base_name ~= "test-boil-flat",
+                    "unfiltered: flat fluid must not be heatable")
+            end
+        end
 
         -- A boiler no pipe can feed is a part of a bigger entity, and offers nothing on its own,
         -- which takes its machine with it. Its unfiltered input would otherwise boil every fluid

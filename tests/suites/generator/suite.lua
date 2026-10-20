@@ -13,6 +13,7 @@ return {{
         testGeneratorPrototypes = require("suite.generators"),
         testBoilerPrototypes = require("suite.boilers"),
         testFluidEnergyPrototypes = require("suite.fluid-energy"),
+        testFuelCategories = require("suite.fuel-categories"),
         testResearchPrototypes = require("suite.research"),
         testQualityBaselines = require("suite.quality")
     }

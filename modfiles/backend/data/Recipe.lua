@@ -1,14 +1,12 @@
 local Object = require("backend.data.Object")
 local SimpleItem = require("backend.data.SimpleItem")
 
----@alias RecipeProductionType "produce" | "consume"
 ---@alias RecipeCatalysts { products: SimpleItem[], ingredients: SimpleItem[] }
 
 ---@class Recipe: Object, ObjectMethods
 ---@field class "Recipe"
 ---@field parent Line
 ---@field proto FPRecipePrototype | FPPackedPrototype
----@field production_type RecipeProductionType
 ---@field available boolean
 ---@field priority_item (FPItemPrototype | FPPackedPrototype)?
 ---@field temperatures table<string, float>
@@ -23,9 +21,8 @@ script.register_metatable("Recipe", Recipe)
 
 ---@param parent Line
 ---@param proto (FPRecipePrototype | FPPackedPrototype)?
----@param production_type RecipeProductionType?
 ---@return Recipe
-local function init(parent, proto, production_type)
+local function init(parent, proto)
     local this_proto = proto or {
         name = "",
         data_type = "recipes",
@@ -33,7 +30,6 @@ local function init(parent, proto, production_type)
     }
     local object = Object.init({
         proto = this_proto,
-        production_type = production_type or "produce",
         available = true,
         priority_item = nil,
         temperatures = {},
@@ -221,13 +217,20 @@ function Recipe:migrate_temperatures()
     -- A priority item the recipe doesn't have anymore would pace the line by an item it never sees
     local priority_item = self.priority_item
     if priority_item and not priority_item.simplified then
-        local consuming = (self.production_type == "consume")
         self.priority_item = nil
 
+        for _, item in pairs(self.products) do
+            if item.type == priority_item.type and item.name == priority_item.name then
+                self.priority_item = priority_item
+                break
+            end
+        end
         -- Ingredients are kept under their base name, so the temperature needs adding back on
-        for _, item in pairs((consuming) and self.ingredients or self.products) do
-            local name = (consuming) and self:get_name_with_temperature(item) or item.name
-            if name == priority_item.name then self.priority_item = priority_item; break end
+        for _, item in pairs(self.ingredients) do
+            if item.type == priority_item.type and self:get_name_with_temperature(item) == priority_item.name then
+                self.priority_item = priority_item
+                break
+            end
         end
     end
 end
@@ -323,7 +326,6 @@ end
 ---@class PackedRecipe: PackedObject
 ---@field class "Recipe"
 ---@field proto FPPackedPrototype
----@field production_type RecipeProductionType
 ---@field priority_item FPPackedPrototype?
 ---@field temperatures table<string, float>
 
@@ -333,7 +335,6 @@ function Recipe:pack(full)
     return {
         class = self.class,
         proto = prototyper.util.simplify_prototype(self.proto, nil),
-        production_type = self.production_type,
         priority_item = (self.priority_item) and
             prototyper.util.simplify_prototype(self.priority_item, "type") or nil,
         temperatures = self.temperatures
@@ -345,7 +346,7 @@ end
 ---@return Recipe Recipe
 local function unpack(packed_self, parent)
     -- Prototypes are unpacked at validate
-    local unpacked_self = init(parent, packed_self.proto, packed_self.production_type)
+    local unpacked_self = init(parent, packed_self.proto)
     unpacked_self.priority_item = packed_self.priority_item
 
     -- Will be automatically unpacked by the validation process

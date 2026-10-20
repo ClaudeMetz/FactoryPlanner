@@ -59,8 +59,8 @@ return {
     SI_value = {
         check = function()
             local c = helpers.collector()
-            local function run(value, unit, precision, expected_num, expected_prefix, label)
-                local result = lib.format.SI_value(value, unit, precision)
+            local function run(value, unit, precision, expected_num, expected_prefix, label, expected_amount)
+                local result, display_amount = lib.format.SI_value(value, unit, precision)
                 local num_str, prefix = result[2], result[3]
                 local prefix_key = (type(prefix) == "table") and prefix[1] or prefix
 
@@ -68,6 +68,9 @@ return {
                     string.format("[%s] number: expected %q, got %q", label, expected_num, num_str))
                 c.check(prefix_key == expected_prefix,
                     string.format("[%s] prefix: expected %q, got %q", label, expected_prefix, prefix_key))
+                if expected_amount then
+                    c.check(display_amount == expected_amount, label .. ": rounded base-unit amount")
+                end
             end
 
             -- Base scale (no prefix)
@@ -103,6 +106,69 @@ return {
 
             -- Emissions unit
             run(1500, "E/m", 3, "1.5 ", "fp.prefix_kilo", "1.5k E/m")
+
+            -- Reuse the displayed precision in buttons, including after SI scaling
+            run(32.00001, "W", 4, "32 ", "", "near integer", 32)
+            run(32.00001e3, "W", 4, "32 ", "fp.prefix_kilo", "near integer kW", 32e3)
+            run(32.00001e6, "W", 4, "32 ", "fp.prefix_mega", "near integer MW", 32e6)
+            run(32.04e6, "W", 4, "32.04 ", "fp.prefix_mega", "fractional MW", 32.04e6)
+            run(999.999e3, "W", 4, "1 ", "fp.prefix_mega", "prefix crossing", 1e6)
+            run(1.23456e27, "W", 4, "1.235e+27 ", "", "scientific rounding", 1.235e27)
+            run(-32.00001e3, "W", 4, "-32 ", "fp.prefix_kilo", "negative rounding", -32e3)
+            run(0.00001, "W", 4, "≤0.0001 ", "", "tiny amount", 0.00001)
+            run(0, "W", 4, "0 ", "", "zero amount", 0)
+            run(32.00001e3, "E/m", 4, "32 ", "fp.prefix_kilo", "near integer emissions", 32e3)
+
+            c.done()
+        end
+    },
+
+    special_amount = {
+        check = function()
+            local c = helpers.collector()
+            for _, name in ipairs{
+                "custom-electric-power", "custom-heat-power", "custom-heating-power", "custom-pollution"
+            } do
+                for _, case in ipairs{
+                    {32.00001, 32, "32 ", ""},
+                    {32.00001e6, 32e6, "32 ", "fp.prefix_mega"},
+                    {32.04e6, 33e6, "32.04 ", "fp.prefix_mega"},
+                    {0.00001, 0.1, "≤0.0001 ", ""}
+                } do
+                    local button, tooltip = lib.format.special_amount(name, case[1])
+                    local prefix = type(tooltip[3]) == "table" and tooltip[3][1] or tooltip[3]
+                    c.check(button == case[2] and tooltip[2] == case[3] and prefix == case[4],
+                        name .. ": button and tooltip for " .. case[1])
+                end
+            end
+
+            c.done()
+        end
+    },
+
+    machine_amount = {
+        check = function()
+            local c = helpers.collector()
+            local function run(amount, ceil_number, expected_button, expected_tooltip, expected_plural, label)
+                local button, tooltip = lib.format.machine_amount(amount, ceil_number)
+                c.check(button == expected_button, label .. ": button count")
+                c.check(tooltip[3] == expected_tooltip, label .. ": tooltip count")
+                if expected_plural then
+                    c.check(tooltip[5][2] == expected_plural, label .. ": plural count")
+                end
+            end
+
+            run(0, false, nil, nil, nil, "zero")
+            run(32, false, 32, "32", 2, "integer")
+            run(32.00001, false, 32, "32", 2, "issue 908")
+            run(32.004, false, 32, "32", 2, "fraction below tooltip precision")
+            run(32.006, false, 32.1, "32.01", 2, "fraction above tooltip precision")
+            run(32.04, false, 32.1, "32.04", 2, "meaningful fraction")
+            run(1.00001, false, 1, "1", 1, "rounded singular")
+            run(0.00001, false, 0.1, "≤0.0001", 2, "tiny amount")
+            run(32.00001, true, 32, "32", 2, "compact near integer")
+            run(32.04, true, 33, "32.04", 2, "compact fraction")
+            run(0.00001, true, 1, "≤0.0001", 2, "compact tiny amount")
 
             c.done()
         end

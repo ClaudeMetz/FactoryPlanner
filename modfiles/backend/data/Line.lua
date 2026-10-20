@@ -26,14 +26,15 @@ local SimpleItem = require("backend.data.SimpleItem")
 ---@field byproducts SimpleItem[]
 ---@field ingredients SimpleItem[]
 ---@field production_ratio number
+---@field machine_requirement MachineRequirement?
+---@field is_linearly_dependent boolean?
 local Line = Object.methods()
 Line.__index = Line
 script.register_metatable("Line", Line)
 
 ---@param recipe_proto FPRecipePrototype?
----@param production_type RecipeProductionType?
 ---@return Line
-local function init(recipe_proto, production_type)
+local function init(recipe_proto)
     local object = Object.init({
         recipe = nil,  -- initialized below
         done = false,
@@ -53,7 +54,7 @@ local function init(recipe_proto, production_type)
     }, "Line", Line)  ---@as Line
 
     if recipe_proto then
-        object.recipe = Recipe.init(object, recipe_proto, production_type)
+        object.recipe = Recipe.init(object, recipe_proto)
     end
 
     return object
@@ -326,17 +327,18 @@ function Line:get_blocker()
     return nil
 end
 
----@alias LineStatus LineBlocker | "no_byproducts" | "no_demand"
+---@alias LineStatus LineBlocker | "linearly_dependent" | "no_demand"
 
 --- Returns why this line doesn't produce anything, or nil if it does
 ---@return LineStatus?
 function Line:get_status()
     local blocker = self:get_blocker()
     if blocker ~= nil then return blocker end
+    if self.is_linearly_dependent then return "linearly_dependent" end
     if self.production_ratio > 0 then return nil end
 
     -- The line is configured fine, so the calculation just had nothing for it to do
-    return (self.recipe.production_type == "consume") and "no_byproducts" or "no_demand"
+    return "no_demand"
 end
 
 
@@ -345,10 +347,6 @@ end
 ---@return string? error
 function Line:paste(object)
     if object.class == "Line" or object.class == "Floor" then
-        if not self.parent:check_product_compatibility(object--[[@as LineObject]]) then
-            return false, "recipe_irrelevant"  -- found no use for the recipe's products
-        end
-
         self.parent:replace(self, object--[[@as LineObject]])
         return true, nil
     else

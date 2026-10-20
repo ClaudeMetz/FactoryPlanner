@@ -1,6 +1,19 @@
 ---@diagnostic disable
 
-local TLProduct = require("backend.data.TLProduct")
+-- Retain the legacy metatable until 2.1.16 replaces these objects with FactoryItem
+local Object = require("backend.data.Object")
+local TLProduct = Object.methods()
+TLProduct.__index = TLProduct
+script.register_metatable("TLProduct", TLProduct)
+
+function TLProduct:index()
+    OBJECT_INDEX[self.id] = self
+end
+
+function TLProduct.init(proto)
+    return Object.init({proto=proto, defined_by="amount", required_amount=0, amount=0}, "TLProduct", TLProduct)
+end
+
 
 local migration = {}
 

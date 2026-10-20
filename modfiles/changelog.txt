@@ -2,9 +2,55 @@
 Version: 0.00.00
 Date: 00. 00. 0000
   Features:
-    - Implemented support for selecting two item rate views at once (#807)
+    - Districts are now shown as a list above factories for quick switching between them (#498)
+    - Added Q to pipette to the item picker, and Alt-Click to open in Factoriopedia to the item and recipe pickers (#906)
+    - Added a dropdown to the compact dialog for easy factory switching
   Changes:
-    - Bumped the required Factorio version to 2.1.18
+    - Changed main interface width and height preferences to be percentage-based
+  Bugfixes:
+
+---------------------------------------------------------------------------------------------------
+Version: 2.1.19
+Date: 15. 10. 2026
+  Features:
+    - Item weights can now be configured manually when using the Simplex solver, providing control what the factory optimizes for (#866) (Thanks vapopescu!)
+  Changes:
+    - Recipes are no longer categorized as producing or consuming, as the sequential solver now determines their role dynamically (#911) (Thanks vapopescu!)
+    - Pasting no longer guards against irrelevant recipes
+    - Bumped the required Factorio version to 2.1.22
+  Bugfixes:
+    - Fixed crashes when loading a save caused by to breaking API changes in 2.1.22 (#923)
+    - Fixed a crash with a factory's first row being an unsolved subfloor (#913)
+
+---------------------------------------------------------------------------------------------------
+Version: 2.1.18
+Date: 02. 10. 2026
+  Bugfixes:
+    - Fixed that amounts on buttons and their tooltips sometimes didn't agree (#908)
+    - Fixed a crash when the Simplex solver runs in certain situations (#909)
+
+---------------------------------------------------------------------------------------------------
+Version: 2.1.17
+Date: 01. 10. 2026
+  Features:
+    - Added a setting to allow you to use distinct solvers for different floors when desired. As a consequence, solver configuration is now always done per floor, not globally per factory (#768) (Thanks vapopescu!)
+    - Added support for defining products by machine count to Simplex and Gaussian solvers (Thanks vapopescu!)
+  Changes:
+    - Rewrote the Gaussian solver to bring it in line with the other solvers. It now treats subfloors in isolation instead of internally combining everything onto a single one. This will break some setups and/or require reconfiguration. (#842) (Thanks vapopescu!)
+    - Added warnings to the Simplex solver, and improved warning presentation for the Gaussian solver (Thanks vapopescu!)
+  Bugfixes:
+    - Fixed an issue with the Simplex solver when a product has no producing line (#898) (Thanks vapopescu!)
+    - Fixed an issue with the Simplex solver scaling recipes wrong in certain situations (#901) (Thanks vapopescu!)
+
+---------------------------------------------------------------------------------------------------
+Version: 2.1.16
+Date: 22. 09. 2026
+  Features:
+    - Implemented support for selecting two item rate views at once (#807)
+    - Implemented defining desired products by machine amount instead of item rate, replacing limits defined on machines themselves (#93)
+  Changes:
+    - Added support for fuels being able to have multiple categories
+    - Bumped the required Factorio version to 2.1.20
   Bugfixes:
     - Fixed crash when exporting disabled subfloor (#894) (Thanks vapopescu!)
     - Fixed research planning ignoring science ingredient durability

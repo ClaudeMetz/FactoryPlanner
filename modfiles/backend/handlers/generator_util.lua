@@ -223,7 +223,7 @@ function _util.get_base_module_limit(proto)
     elseif proto.type == "beacon" then
         return limit - normal_quality.beacon_module_slots_bonus
     else  -- crafting machines
-        return limit - proto.module_slots_quality_bonus.normal
+        return limit - proto.module_slots_quality_bonus--[[@cast -nil]].normal
     end
 end
 
@@ -420,9 +420,9 @@ function _util.get_boiler_conversions(proto)
 
         if separate_pipe then
             output_proto = (output ~= nil and output.filter) or fluid_proto
-            goal_temperature = proto.target_temperature--[[@as double]]
+            goal_temperature = math.min(proto.target_temperature--[[@as double]], output_proto.max_temperature)
         else
-            goal_temperature = math.min(fluid_proto.max_temperature, input.maximum_temperature or math.huge)
+            goal_temperature = math.min(fluid_proto.max_temperature, proto.maximum_input_temperature or math.huge)
         end
 
         -- A goal not above the default temperature can't be achieved
@@ -431,9 +431,9 @@ function _util.get_boiler_conversions(proto)
         table.insert(conversions, {
             input = fluid_proto,
             output = output_proto,
-            minimum_temperature = math.max(input.minimum_temperature or -math.huge,
+            minimum_temperature = math.max(proto.minimum_input_temperature or -math.huge,
                 fluid_proto.default_temperature),
-            maximum_temperature = math.min(input.maximum_temperature or math.huge,
+            maximum_temperature = math.min(proto.maximum_input_temperature or math.huge,
                 fluid_proto.max_temperature, goal_temperature),
             goal_temperature = goal_temperature
         })

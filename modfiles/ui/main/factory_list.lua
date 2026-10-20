@@ -1,5 +1,7 @@
 local Factory = require("backend.data.Factory")
 
+local DELETION_DELAY = 15 * 60 * 60  -- Ticks to deletion after factory trashing
+
 -- Delete factory for good and refresh interface if necessary
 ---@param metadata DeleteFactoryForGoodMetadata
 local function delete_factory_for_good(metadata)
@@ -245,7 +247,7 @@ local function refresh_factory_list(player)
     factory_list_elements.edit_button.enabled = (factory_exists)
 
     factory_list_elements.delete_button.enabled = (factory_exists)
-    local delay_in_minutes = math.floor(MAGIC_NUMBERS.factory_deletion_delay / 3600)
+    local delay_in_minutes = math.floor(DELETION_DELAY / 3600)
     factory_list_elements.delete_button.tooltip = (archived)
         and {"fp.action_delete_factory"} or {"fp.action_trash_factory", delay_in_minutes}
 
@@ -285,11 +287,15 @@ local function build_factory_list(player)
 
     local parent_flow = main_elements.flows.left_vertical
     local frame_vertical = parent_flow.add{type="frame", direction="vertical", style="inside_deep_frame"}
-    local row_count = lib.globals.preferences(player).factory_list_rows
-    frame_vertical.style.height = (row_count * MAGIC_NUMBERS.list_element_height) +
-        MAGIC_NUMBERS.subheader_height
+    frame_vertical.style.vertically_stretchable = true
 
-    local subheader = frame_vertical.add{type="frame", direction="horizontal", style="subheader_frame"}
+    local toolbar = frame_vertical.add{type="frame", direction="vertical", style="subheader_frame"}
+    toolbar.style.bottom_padding = 3
+    toolbar.style.maximal_height = MAGIC_NUMBERS.subheader_height + 28 + 4
+    local toolbar_flow = toolbar.add{type="flow", direction="vertical", style="packed_vertical_flow"}
+    local subheader = toolbar_flow.add{type="flow", direction="horizontal"}
+    subheader.style.vertical_align = "center"
+    subheader.style.horizontally_stretchable = true
 
     local button_toggle_archive = subheader.add{type="sprite-button", tags={mod="fp", on_gui_click="toggle_archive"},
         sprite="fp_archive", mouse_button_filter={"left"}}
@@ -335,22 +341,25 @@ local function build_factory_list(player)
     main_elements.factory_list["search_button"] = button_search
 
 
-    local flow_search = frame_vertical.add{type="flow", direction="horizontal", visible=false}
-    flow_search.style.height = MAGIC_NUMBERS.list_element_height
-    flow_search.style.padding = {0, 12}
+    local flow_search = toolbar_flow.add{type="flow", direction="horizontal", visible=false}
+    flow_search.style.top_margin = 2
+    flow_search.style.height = 28
     flow_search.style.vertical_align = "center"
+    flow_search.style.horizontally_stretchable = true
     main_elements.factory_list["search_flow"] = flow_search
 
-    flow_search.add{type="label", caption={"fp.search"}}
-    flow_search.add{type="empty-widget", style="fflib_horizontal_pusher"}
+    local label_search = flow_search.add{type="label", caption={"fp.search"}}
+    label_search.style.padding = {0, 4}
     local textfield_search = flow_search.add{type="textfield", style="search_popup_textfield",
         tags={mod="fp", on_gui_text_changed="factory_searchfield"}}
-    textfield_search.style.size = {220, 24}
+    textfield_search.style.size = {0, 24}
+    textfield_search.style.horizontally_stretchable = true
     main_elements.factory_list["search_textfield"] = textfield_search
 
 
     -- This is not really a list-box, but it imitates one and allows additional features
     local listbox_factories = frame_vertical.add{type="scroll-pane", style="list_box_under_subheader_scroll_pane"}
+    listbox_factories.style.top_margin = -4  -- overlap the toolbar's bottom border with the list's inset edge
     listbox_factories.style.vertically_stretchable = true
     listbox_factories.style.horizontally_stretchable = true
     listbox_factories.horizontal_scroll_policy = "never"
@@ -404,7 +413,7 @@ function factory_list.delete_factory(player)
         lib.context.set(player, adjacent_factory or district)
         lib.gui.run_refresh(player, "all")
     else
-        local desired_tick_of_deletion = game.tick + MAGIC_NUMBERS.factory_deletion_delay
+        local desired_tick_of_deletion = game.tick + DELETION_DELAY
 
         ---@class DeleteFactoryForGoodMetadata
         ---@field player_index PlayerIndex

@@ -202,8 +202,14 @@ local function add_machine_flow(parent_flow, line, metadata)
         local title_line = (not quality_proto.always_show) and {"fp.tt_title", machine_proto.localised_name}
             or {"fp.tt_title_with_note", machine_proto.localised_name, quality_proto.rich_text}
         local amount, tooltip_line = lib.format.machine_amount(machine.amount, true)
+        local color = "default"
+        if line.machine_requirement then
+            color = "blue"
+            local count = line.machine_requirement.count
+            tooltip_line = {"", "\n", {"fp.machine_requirement", lib.format.number(count, 4), {"fp.pl_machine", count}}}
+        end
         local tooltip = {"", title_line, tooltip_line}
-        local style = (line.done) and "fflib_slot_button_default_grayscale" or "fflib_slot_button_default"
+        local style = "fflib_slot_button_" .. color .. ((line.done) and "_grayscale" or "")
 
         local flags = {cursor=lib.cursor.can_set_entity(machine_proto--[[@as FPMachinePrototype]])}
         ---@class ActOnCompactMachineTags
@@ -287,8 +293,7 @@ local function add_item_flow(line, relevant_line, item_category, button_color, m
             on_gui_hover="hover_compact_item", on_gui_leave="leave_compact_item", context="compact_dialog", flags=flags}
 
         if flags.special then
-            amount = lib.format.button_number(item.amount)
-            number_tooltip = lib.format.special_tooltip(proto.name, item.amount)
+            amount, number_tooltip = lib.format.special_amount(proto.name, item.amount)
             if not relevant_line.done and item_category == "ingredients" then button_color = "cyan" end
             first_special_index = first_special_index or index
         else
@@ -437,10 +442,20 @@ local function refresh_compact_header(player, factory)
     local tooltips = player_table.ui_state.tooltips.compact_dialog
 
     local attach_factory_products = player_table.preferences.attach_factory_products
-    compact_elements.name_label.caption = factory:tostring(attach_factory_products, true)
+    local factory_names, factory_ids, selected_index = {}, {}, 0
+    for candidate in factory.parent:iterator({archived=factory.archived, valid=true}) do
+        table.insert(factory_names, (candidate:tostring(attach_factory_products, true)))
+        table.insert(factory_ids, candidate.id)
+        if candidate == factory then selected_index = #factory_ids end
+    end
+
+    local dropdown = compact_elements.factory_dropdown
+    dropdown.items = factory_names
+    dropdown.selected_index = selected_index
+    dropdown.tags = {mod="fp", on_gui_selection_state_changed="select_compact_factory", factory_ids=factory_ids}
 
     local current_floor = lib.context.get(player, "Floor")  ---@as Floor
-    compact_elements.level_label.caption = {"fp.bold_label", {"", "-   ", {"fp.level"}, " ", current_floor.level}}
+    compact_elements.level_label.caption = {"fp.bold_label", {"", {"fp.level"}, " ", current_floor.level}}
     compact_elements.floor_up_button.enabled = (current_floor.level > 1)
     compact_elements.floor_top_button.enabled = (current_floor.level > 1)
 
@@ -483,8 +498,7 @@ local function refresh_compact_header(player, factory)
             on_gui_hover="hover_compact_item", on_gui_leave="leave_compact_item", context="compact_dialog", flags=flags}
 
         if flags.special then
-            amount = lib.format.button_number(ingredient.amount)
-            number_tooltip = lib.format.special_tooltip(proto.name, ingredient.amount)
+            amount, number_tooltip = lib.format.special_amount(proto.name, ingredient.amount)
         else
             amount, number_tooltip, secondary_amount = item_views.process_item(player, proto, ingredient.amount, nil)
             if amount == -1 then goto skip_ingredient end  -- an amount of -1 means it was below the margin of error
@@ -606,10 +620,9 @@ local function build_compact_factory(player)
     local width, _ = get_compact_frame_dimensions(player)
     flow_navigation.style.width = width - 40
 
-    local label_name = flow_navigation.add{type="label"}
-    label_name.style.font = "heading-2"
-    label_name.style.horizontally_squashable = true
-    compact_elements["name_label"] = label_name
+    local dropdown_factory = flow_navigation.add{type="drop-down", style="fp_drop-down_slim"}
+    dropdown_factory.style.horizontally_squashable = true
+    compact_elements["factory_dropdown"] = dropdown_factory
 
     local label_level = flow_navigation.add{type="label"}
     label_level.style.margin = {0, 6}
@@ -825,6 +838,20 @@ local function has_subfloor(flags)
 end
 
 factory_listeners.gui = {
+    on_gui_selection_state_changed = {
+        {
+            name = "select_compact_factory",
+            handler = function(player, tags, event)
+                ---@cast event EventData.on_gui_selection_state_changed
+                local factory = OBJECT_INDEX[tags.factory_ids[event.element.selected_index]]  ---@as Factory?
+                if not factory or not factory.valid then return end
+
+                lib.context.set(player, factory)
+                lib.gui.run_refresh(player, "all")
+                refresh_compact_factory(player)
+            end
+        }
+    },
     on_gui_click = {
         {
             name = "change_compact_floor",

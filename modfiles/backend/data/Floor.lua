@@ -5,6 +5,10 @@ local SimpleItem = require("backend.data.SimpleItem")
 ---@alias LineObject Line | Floor
 ---@alias LineParent Factory | Floor
 
+---@class ItemWeight
+---@field proto FPItemPrototype | FPPackedPrototype
+---@field weight integer
+
 ---@class Floor: Object, ObjectMethods
 ---@field class "Floor"
 ---@field parent LineParent
@@ -16,21 +20,35 @@ local SimpleItem = require("backend.data.SimpleItem")
 ---@field byproducts SimpleItem[]
 ---@field ingredients SimpleItem[]
 ---@field machine_amount integer
+---@field solver SolverName
+---@field solver_error SolverStatus?
+---@field is_linearly_dependent boolean?
+---@field gaussian_free_items (FPItemPrototype | FPPackedPrototype)[]
+---@field linear_dependence_data LinearDependanceData?
+---@field simplex_item_weights ItemWeight[]
+---@field simplex_basis_cache SimplexBasisCache?
 local Floor = Object.methods()
 Floor.__index = Floor
 script.register_metatable("Floor", Floor)
 
 ---@param level integer
+---@param solver_name SolverName
 ---@return Floor
-local function init(level)
+local function init(level, solver_name)
     local object = Object.init({
         level = level,
+        solver = solver_name,
         first = nil,
 
         products = {},
         byproducts = {},
         ingredients = {},
-        machine_amount = 0
+        machine_amount = 0,
+
+        linear_dependence_data = nil,
+        gaussian_free_items = {},
+        simplex_item_weights = {},
+        simplex_basis_cache = nil,
     }, "Floor", Floor)  ---@as Floor
     return object
 end
@@ -199,70 +217,6 @@ function Floor:refresh_lines(player)
 end
 
 
----@param object LineObject
----@return boolean compatible
-function Floor:check_product_compatibility(object)
-    if self.level == 1 then return true end
-
-    local relevant_line = (object.class == "Floor") and object.first or object
-    local recipe = relevant_line.recipe  ---@cast recipe -nil
-    local producing = (recipe.production_type == "produce")
-
-    -- Use the recipe's net items, as the picker only offers recipes that actually net the
-    -- item in question, which the raw prototype items don't take into account
-    local relevant_items = producing and recipe.products or recipe.ingredients
-
-    ---@param type string
-    ---@param name string
-    ---@param base_name string?
-    ---@param temperature float?
-    ---@return boolean
-    local function relevant(type, name, base_name, temperature)
-        for _, item in pairs(relevant_items) do
-            local item_temperature = producing and item.temperature or recipe:get_temperature(item)
-            if item.type == type and (item.name == name or item.name == base_name or item.base_name == name)
-                    and item_temperature == temperature then
-                return true
-            end
-        end
-        return false
-    end
-
-    ---@param items SimpleItem[]
-    ---@return boolean
-    local function any_relevant(items)
-        for _, item in pairs(items) do
-            local proto = item.proto
-            if relevant(proto.type, proto.name, proto.base_name, proto.temperature) then
-                return true
-            end
-        end
-        return false
-    end
-
-    for line in self:iterator() do
-        if producing then
-            -- Check whether any line on this floor consumes something the pasted line produces
-            for _, ingredient in pairs(line.ingredients) do
-                local proto = ingredient.proto
-                -- Subfloors have no recipe to resolve a temperature with, so use the proto's directly
-                local temperature = proto.temperature
-                if line.recipe then temperature = line.recipe:get_temperature(proto) end
-                if relevant(proto.type, proto.name, nil, temperature) then return true end
-            end
-            local fuel = line.machine and line.machine.fuel
-            if fuel and relevant(fuel.proto.elem_type--[[@as string]], fuel.proto.name, nil, fuel.temperature) then
-                return true
-            end
-        else
-            -- Check whether any line on this floor produces something the pasted line consumes
-            if any_relevant(line.products) or any_relevant(line.byproducts) then return true end
-        end
-    end
-
-    return false
-end
-
 function Floor:reset_surface_compatibility()
     for line in self:iterator() do
         if line.class == "Floor" then  ---@cast line Floor
@@ -273,15 +227,56 @@ function Floor:reset_surface_compatibility()
     end
 end
 
+---@alias FloorStatus "disabled" | "linearly_dependent" | "solver_error"
+
+--- Returns why this floor doesn't produce anything, or nil if it does
+---@return FloorStatus?
+function Floor:get_status()
+    if self.first--[[@cast -nil]]:get_status() == "disabled" then return "disabled" end
+
+    for line_object in self:iterator() do
+        if line_object.class == "Floor" and line_object:get_status() == "solver_error" then return "solver_error" end
+    end
+
+    if self.solver_error then return "solver_error" end
+    if self.is_linearly_dependent then return "linearly_dependent" end
+
+    return nil
+end
+
+---@param solver_name SolverName
+---@param recursive boolean?
+---@return boolean changed
+function Floor:set_solver(solver_name, recursive)
+    local changed = self.solver ~= solver_name
+    self.solver = solver_name
+    if not recursive then return changed end
+
+    for line in self:iterator() do
+        if line.class == "Floor" and line:set_solver(solver_name, true) then
+            changed = true
+        end
+    end
+
+    return changed
+end
+
+---@param self_only boolean?
+function Floor:clear_solver_cache(self_only)
+    self.linear_dependence_data = nil
+    self.simplex_basis_cache = nil
+
+    if self_only then return end
+    for line_object in self:iterator() do
+        if line_object.class == "Floor" then line_object:clear_solver_cache() end
+    end
+end
+
 ---@param object CopyableObject
 ---@return boolean success
 ---@return string? error
 function Floor:paste(object)
     if object.class == "Line" or object.class == "Floor" then
-        if not self:check_product_compatibility(object--[[@as LineObject]]) then
-            return false, "recipe_irrelevant"  -- found no use for the recipe's products
-        end
-
         self:insert(object--[[@as LineObject]])
         return true, nil
     else
@@ -292,29 +287,52 @@ end
 
 ---@alias PackedLineObject PackedLine | PackedFloor
 
+---@class PackedItemWeight
+---@field proto FPPackedPrototype
+---@field weight integer
+
 ---@class PackedFloor: PackedObject
 ---@field class "Floor"
 ---@field level integer
 ---@field lines PackedLineObject[]
+---@field solver SolverName
+---@field products PackedSimpleItem[]?
+---@field byproducts PackedSimpleItem[]?
+---@field ingredients PackedSimpleItem[]?
+---@field gaussian_free_items FPPackedPrototype[]
+---@field simplex_item_weights PackedItemWeight[]
 
 ---@param full boolean
 ---@return PackedFloor packed_self
 function Floor:pack(full)
+    local weights = {}  ---@type PackedItemWeight[]
+    for _, entry in ipairs(self.simplex_item_weights) do
+        table.insert(weights, {
+            proto = entry.proto.simplified and entry.proto--[[@as FPPackedPrototype]]
+                or prototyper.util.simplify_prototype(entry.proto, "type"),
+            weight = entry.weight
+        })
+    end
+
     return {
         class = self.class,
         level = self.level,
+        solver = self.solver,
         lines = self:_pack(full),
 
         products = (full) and SimpleItem.pack_items(self.products) or nil,
         byproducts = (full) and SimpleItem.pack_items(self.byproducts) or nil,
         ingredients = (full) and SimpleItem.pack_items(self.ingredients) or nil,
+
+        gaussian_free_items = prototyper.util.simplify_prototypes(self.gaussian_free_items, "type") or nil,
+        simplex_item_weights = weights,
     }
 end
 
 ---@param packed_self PackedFloor
 ---@return Floor floor
 local function unpack(packed_self)
-    local unpacked_self = init(packed_self.level)
+    local unpacked_self = init(packed_self.level, packed_self.solver)
 
     ---@param line PackedLineObject
     ---@return LineObject line
@@ -322,6 +340,12 @@ local function unpack(packed_self)
         return (line.class == "Floor") and unpack(line--[[@as PackedFloor]]) or Line.unpack(line--[[@as PackedLine]])
     end
     unpacked_self.first = Object.unpack(packed_self.lines, unpacker, unpacked_self)  ---@as LineObject
+
+    -- Matrix free items will be automatically unpacked by the validation process
+    unpacked_self.gaussian_free_items = packed_self.gaussian_free_items
+    for _, entry in ipairs(packed_self.simplex_item_weights) do
+        table.insert(unpacked_self.simplex_item_weights, {proto=entry.proto, weight=entry.weight})
+    end
 
     return unpacked_self
 end
@@ -331,6 +355,16 @@ end
 ---@return boolean valid
 function Floor:validate(player)
     self.valid = self:_validate(player)
+
+    local free_items, valid = prototyper.util.validate_prototype_objects(self.gaussian_free_items, "type")
+    self.gaussian_free_items = free_items
+    self.valid = valid and self.valid
+
+    for _, entry in ipairs(self.simplex_item_weights) do
+        entry.proto = prototyper.util.validate_prototype_object(entry.proto, "type")  ---@as FPItemPrototype | FPPackedPrototype
+        self.valid = (not entry.proto.simplified) and self.valid
+    end
+
     return self.valid
 end
 
@@ -343,6 +377,19 @@ function Floor:repair(player)
         -- If the defining line can't be repaired, the floor is dead
         if not line_valid then return false end
         pivot = self.first.next
+    end
+
+    -- Remove any unrepairable free items so the factory remains valid
+    local free_items = self.gaussian_free_items
+    for index = #free_items, 1, -1 do
+        if free_items[index].simplified then
+            table.remove(free_items, index)
+        end
+    end
+
+    local weights = self.simplex_item_weights
+    for index = #weights, 1, -1 do
+        if weights[index].proto.simplified then table.remove(weights, index) end
     end
 
     if pivot then self:_repair(player, pivot) end
