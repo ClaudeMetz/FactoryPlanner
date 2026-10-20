@@ -207,12 +207,31 @@ function generator.recipes.generate(context)
         end
     end
 
+    -- Each tower has its own category, shared by all seeds it accepts.
+    local agricultural_categories = {}
+    for _, seed_name in pairs(plant_seed_map) do agricultural_categories[seed_name] = {} end
+    local tower_filter = {{filter="type", type="agricultural-tower"},
+        {filter="hidden", invert=true, mode="and"}}
+    for _, tower in pairs(prototypes.get_entity_filtered(tower_filter)) do
+        local category = "agricultural-tower-" .. tower.name
+        if tower.accepted_seeds then
+            for _, seed_name in pairs(tower.accepted_seeds) do
+                if agricultural_categories[seed_name] then
+                    agricultural_categories[seed_name][category] = true
+                end
+            end
+        else
+            for _, categories in pairs(agricultural_categories) do categories[category] = true end
+        end
+    end
+
     local pumped_fixed_fluids = {}  ---@type table<string, boolean>
     local boiler_recipes = {}  ---@type table<string, FPRecipePrototype>
     local silo_recipes = {}  ---@type table<string, FPRecipePrototype>
     local lab_sets = {}  ---@type {inputs: table<string, boolean>, name: string, order: string}[]
 
-    local entity_filter = {{filter="hidden", invert=true}}
+    -- Hidden plants can still be cultivated through a seed (for example fishing towers).
+    local entity_filter = {{filter="hidden", invert=true}, {filter="type", type="plant"}}
     for _, proto in pairs(prototypes.get_entity_filtered(entity_filter)) do
         -- Note the alphabetically first power generating machine for the electricity recipe below
         if proto.type == "generator" or proto.type == "burner-generator" then
@@ -311,9 +330,10 @@ function generator.recipes.generate(context)
             recipe.additional_unlock_requirements = {{type="item", name=seed_name}}
             recipe.sprite = main_product.type .. "/" .. main_product.name
             recipe.order = proto.order
-            recipe.categories = {["agricultural-tower"] = true}
+            recipe.categories = agricultural_categories[seed_name]
             recipe.energy = proto.growth_ticks--[[@cast -nil]] / 60
-            recipe.location_restricted = true
+            -- Cultivated-only plants need not have any natural spawning rules.
+            recipe.location_restricted = proto.autoplace_specification ~= nil
 
             -- Add the plant prototype name to the list of tiles it can be planted on
             if proto.autoplace_specification then
@@ -1279,15 +1299,14 @@ function generator.machines.generate(context)
             end
 
         elseif proto.type == "agricultural-tower" then
-            local machine = generate_category_entry(proto.type, proto, nil)
+            local machine = generate_category_entry("agricultural-tower-" .. proto.name, proto, nil)
             if machine then
                 local radius = proto.agricultural_tower_radius  ---@cast radius -nil
                 local crane_energy_usage = proto.crane_energy_usage  ---@cast crane_energy_usage -nil
                 -- One plant per grid square, with the tower occupying the center square
                 machine.speed = ((2 * radius + 1) ^ 2) - 1
-                -- The crane of a fully utilized tower is moving near-constantly, so include its usage
+                -- Include the crane usage of a fully utilized tower
                 machine.energy_usage = machine.energy_usage + crane_energy_usage
-                -- Agri tower silently drops any fluid ingredients/products, so just allow them
                 machine.fluid_channels = {input = 255, output = 255}
                 insert_machine(machine)
             end

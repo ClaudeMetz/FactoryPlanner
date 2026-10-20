@@ -16,7 +16,9 @@ bash tests/run.sh suite lib normal Clipboard    # Filter case names with a Lua p
 ```
 
 Each directory in `tests/suites/` contains a `suite.lua` manifest and its test
-modules. The manifest returns an ordered array of named configurations:
+modules. An optional `mod-list.json` overrides the default test mod set; the
+`agriculture` suite uses this to enable Space Age, which must be installed.
+The manifest returns an ordered array of named configurations:
 
 ```lua
 local wagons = require("suite.wagons")
