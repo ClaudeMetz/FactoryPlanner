@@ -3,7 +3,8 @@
 ---@field class "SimpleItem"
 ---@field proto FPItemPrototype
 ---@field amount number
----@field target_amount number?
+---@field target_amount number? Contribution to the containing floor's target
+---@field required_amount number? Floor product supply required by its parent
 ---@field parent LineObject?
 local SimpleItem = {}
 SimpleItem.__index = SimpleItem
@@ -20,6 +21,7 @@ local function init(parent, proto, amount)
         class = "SimpleItem",
         amount = amount or 0,
         target_amount = nil,
+        required_amount = nil,
         parent = parent  -- can be nil
     }  ---@type SimpleItem
     setmetatable(item, SimpleItem)
@@ -77,6 +79,7 @@ end
 ---@field proto FPPackedPrototype
 ---@field amount number
 ---@field target_amount number?
+---@field required_amount number?
 
 ---@return PackedSimpleItem
 function SimpleItem:pack()
@@ -84,7 +87,8 @@ function SimpleItem:pack()
         class = self.class,
         proto = prototyper.util.simplify_prototype(self.proto, "type"),
         amount = self.amount,
-        target_amount = self.target_amount
+        target_amount = self.target_amount,
+        required_amount = self.required_amount
     }
 end
 

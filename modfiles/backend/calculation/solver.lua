@@ -496,7 +496,7 @@ end
 local function update_product_allocations(floor)
     local export_demand = {}  ---@type SolverMap
     for _, product in pairs(floor.products) do
-        structures.map.add(export_demand, product, product.target_amount or 0)
+        structures.map.add(export_demand, product, product.required_amount or 0)
     end
 
     local total_demand = lib.flib.shallow_copy(export_demand)
@@ -521,7 +521,8 @@ local function update_product_allocations(floor)
             local key = structures.pack_item(product)
             local supplied = math.min(total_demand[key] or 0, product.amount)
             local desired = math.min(export_demand[key] or 0, supplied)
-            product.target_amount = (line_object.class == "Floor") and supplied or desired
+            product.target_amount = desired
+            if line_object.class == "Floor" then product.required_amount = supplied end
             structures.map.subtract(total_demand, product, supplied)
             structures.map.subtract(export_demand, product, desired)
         end
@@ -685,6 +686,7 @@ local function update_factory(factory_data, result_map)
     end
     for _, product in pairs(factory.top_floor.products) do
         product.target_amount = math.min(product.amount, requested_products[structures.pack_item(product)] or 0)
+        product.required_amount = product.target_amount
     end
 
     update_product_allocations(factory.top_floor)

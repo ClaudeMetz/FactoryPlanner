@@ -74,7 +74,8 @@ local function prepare_item_buttons(player, factory, item_category)
     ---@param index integer
     ---@param target boolean
     local function add_calculated_item(item, index, target)
-        local part_amount = target and (item.target_amount or 0) or item:get_remaining_amount()
+        local required_amount = item.required_amount or 0
+        local part_amount = target and required_amount or (item.amount - required_amount)
         if part_amount <= 0 and (target or item.amount ~= 0) then return end
         if not target and defined_items[item.proto] and part_amount == 0 then return end
 
@@ -244,9 +245,9 @@ local function handle_item_button_click(player, tags, action)
     if item.class == "FactoryItem" then
         amount = item:get_defined_amount() or item.amount
     elseif tags.flags.target then
-        amount = item.target_amount or 0
+        amount = item.required_amount or 0
     else
-        amount = item:get_remaining_amount()
+        amount = item.amount - (item.required_amount or 0)
     end
 
     if action == "add_recipe" then
