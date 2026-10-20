@@ -440,7 +440,8 @@ function builders.products(line, parent_flow, metadata)
                 if amount == -1 then goto skip_product end  -- an amount of -1 means it was below the margin of error
             end
 
-            local name_line = {"fp.tt_title", proto.localised_name}
+            local name_line = target and {"fp.tt_title_with_note", proto.localised_name, {"fp.target"}}
+                or {"fp.tt_title", proto.localised_name}
             local number_line = (number_tooltip) and {"", "\n", number_tooltip} or ""  ---@type LocalisedString
             local tooltip = {"", name_line, priority_line, number_line}
 

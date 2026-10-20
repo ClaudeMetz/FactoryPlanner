@@ -542,10 +542,17 @@ local function open_picker_dialog(player, modal_data)
     content_frame.style.bottom_padding = 6
     add_item_pane(content_frame, modal_data, modal_data.item)
 
+    local titlebar_flow = modal_data.modal_elements.titlebar_flow
+    titlebar_flow.visible = true
+
     -- The item picker only needs to show when adding a new item
-    if modal_data.item_id == nil then
-        local titlebar_flow = modal_data.modal_elements.titlebar_flow
-        titlebar_flow.visible = true
+    if modal_data.item then
+        modal_data.modal_elements.active_button = titlebar_flow.add{type="sprite-button",
+            sprite="utility/check_mark_white", style="fp_button_frame",
+            tooltip={"fp.toggle_target", {"fp.pl_" .. modal_data.item_category, 1}},
+            auto_toggle=true, toggled=modal_data.item.active, mouse_button_filter={"left"}}
+        modal_data.modal_elements.active_button.style.padding = -3
+    else
         titlebar_flow.add{type="sprite-button", sprite="utility/tip_icon", style="fp_button_frame",
             tooltip={"factoriopedia.show-unresearched"}, auto_toggle=true, toggled=preferences.show_unresearched_items,
             tags={mod="fp", on_gui_click="toggle_picker_unresearched"}, mouse_button_filter={"left"}}
@@ -598,6 +605,7 @@ local function close_picker_dialog(player, action)
 
         if modal_data.item ~= nil then  -- ie. this is an edit
             modal_data.item.definition = definition
+            modal_data.item.active = modal_data.modal_elements.active_button.toggled
         else
             local item_proto = modal_data.item_proto
             local top_level_item = FactoryItem.init(item_proto)

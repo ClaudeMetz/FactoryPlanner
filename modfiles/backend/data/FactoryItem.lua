@@ -23,6 +23,7 @@ local Object = require("backend.data.Object")
 ---@field parent Factory
 ---@field proto FPItemPrototype | FPPackedPrototype
 ---@field definition ItemDefinition
+---@field active boolean
 ---@field amount number
 local FactoryItem = Object.methods()
 FactoryItem.__index = FactoryItem
@@ -40,6 +41,7 @@ local function init(proto)
     local object = Object.init({
         proto = this_proto,
         definition = {type="amount", amount=0},
+        active = true,
 
         amount = 0  -- the amount satisfied by the solver
     }, "FactoryItem", FactoryItem)  ---@as FactoryItem
@@ -132,6 +134,7 @@ end
 ---@field class "FactoryItem"
 ---@field proto FPPackedPrototype
 ---@field definition ItemDefinition
+---@field active boolean
 
 ---@param full boolean
 ---@return PackedFactoryItem packed_self
@@ -145,6 +148,7 @@ function FactoryItem:pack(full)
         class = self.class,
         proto = prototyper.util.simplify_prototype(self.proto, "type"),
         definition = definition,
+        active = self.active,
 
         amount = (full) and self.amount or nil
     }
@@ -157,6 +161,7 @@ local function unpack(packed_self)
     local unpacked_self = init(packed_self.proto)
 
     unpacked_self.definition = lib.flib.deep_copy(packed_self.definition)
+    unpacked_self.active = packed_self.active
 
     return unpacked_self
 end

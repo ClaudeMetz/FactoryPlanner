@@ -558,6 +558,31 @@ function _util.add_entity_groups(proto, entity_name)
     end
 end
 
+---@param proto FPRecipePrototype | FPMachinePrototype
+---@param conditions SurfaceCondition[]?
+function _util.compile_surface_conditions(proto, conditions)
+    if not next(proto.compatible_locations) then
+        for _, location in pairs(storage.prototypes.locations) do
+            local properties = location.surface_properties
+            -- No surface properties or conditions means that the location/recipe/machine prototype is universal
+            if not properties or not conditions then
+                proto.compatible_locations[location.name] = true
+                goto continue
+            end
+
+            for _, condition in pairs(conditions) do
+                local property = properties[condition.property]
+                if property and (property < condition.min or property > condition.max) then
+                    proto.compatible_locations[location.name] = false
+                    goto continue
+                end
+            end
+
+            proto.compatible_locations[location.name] = true
+            ::continue::
+        end
+    end
+end
 
 ---@param text LocalisedString
 ---@param color Color

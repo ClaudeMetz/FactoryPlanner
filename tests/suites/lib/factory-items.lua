@@ -66,6 +66,87 @@ return {
         assert(item:validate(player) and item:get_defined_amount() == expected)
         assert(item.definition.belt_stack == max_stack and item.definition.belt_count == 4)
     end},
+    toggle = {check=function(context)
+        local player, factory, item = fixture(context)
+        local line = context.classes.Line.init(prototyper.util.find("recipes", "iron-plate"))
+        factory.top_floor:insert(line)
+        line:change_machine_to_proto(player, helpers.find_machine("stone-furnace"))
+        main_dialog.rebuild(player, false)
+        compact_dialog.rebuild(player, false)
+
+        local function product_button()
+            return lib.globals.main_elements(player).item_boxes.product_item_table.children[1]
+        end
+        local function menu_toggle()
+            local button = product_button()
+            lib.globals.ui_state(player).last_action = nil
+            script.get_event_handler(defines.events.on_gui_click){
+                name=defines.events.on_gui_click, tick=game.tick, player_index=player.index,
+                element=button, button=defines.mouse_button_type.right, control=false, alt=false, shift=false,
+                cursor_display_location={x=0, y=0}}
+            local menu = lib.globals.ui_state(player).context_menu
+            assert(menu, "Right-click must open the product context menu")
+            for _, action in pairs(menu.children[1].children) do
+                if action.tags.action == "toggle" then return action end
+            end
+            error("Product context menu must offer Toggle")
+        end
+        local belt = prototyper.util.find("belts", "transport-belt")
+        for _, solver_name in ipairs{"sequential", "simplex", "gaussian"} do
+            factory.top_floor.solver = solver_name
+            for _, definition in ipairs{
+                {type="amount", amount=10},
+                {type="belts", belt_count=1, belt_proto=belt, belt_stack=1},
+                {type="machines", machine_count=5}
+            } do
+                item.definition, item.active = definition, true
+                solver.update(player, factory)
+                local expected = line.machine.amount
+                assert(expected > 0, "Active products must drive production")
+                lib.gui.run_refresh(player, "production")
+                dispatch(player, menu_toggle(), defines.events.on_gui_click)
+                assert(item.active == false and item.definition == definition)
+                assert(line.machine.amount == 0 and line.machine_requirement == nil)
+                assert(product_button().style.name == "fflib_slot_button_red")
+                local packed = factory:pack(false)
+                local restored = context.classes.Factory.unpack(packed)
+                assert(restored:validate(player) and restored.first.active == false)
+                lib.clipboard.copy(player, item)
+                assert(lib.clipboard.paste(player, item))
+                item = factory.first
+                assert(item.active == false and item.definition.type == definition.type)
+                dispatch(player, menu_toggle(), defines.events.on_gui_click)
+                assert(item.active == true and helpers.approx(line.machine.amount, expected))
+                assert(product_button().style.name == "fflib_slot_button_green")
+            end
+        end
+        for _, close_action in ipairs{"cancel", "submit", "submit"} do
+            local active = item.active
+            lib.gui.open_dialog(player, {dialog="picker", modal_data={item_id=item.id, item_category="product"}})
+            local button = lib.globals.modal_elements(player).active_button
+            assert(button and button.toggled == active)
+            button.toggled = not active
+            assert(item.active == active, "Editing the toggle must wait for submission")
+            lib.gui.close_dialog(player, close_action)
+            local expected = active
+            if close_action == "submit" then expected = not active end
+            assert(item.active == expected)
+            assert((line.machine.amount > 0) == expected)
+        end
+        for _, create_factory in ipairs{false, true} do
+            lib.gui.open_dialog(player, {dialog="picker",
+                modal_data={item_category="product", create_factory=create_factory}})
+            assert(lib.globals.modal_elements(player).active_button == nil,
+                "The active toggle must only be offered when editing")
+            lib.gui.close_dialog(player, "cancel")
+        end
+
+        factory.archived = true
+        lib.gui.run_refresh(player, "production")
+        assert(not menu_toggle().enabled, "Archived targets must not be toggleable")
+        modal_dialog.close_context_menu(player)
+        factory.archived = false
+    end},
     picker = {check=function(context)
         local player, factory, item = fixture(context)
         local preferences = lib.globals.preferences(player)
