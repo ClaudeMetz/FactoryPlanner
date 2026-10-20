@@ -151,15 +151,19 @@ local function prepare_item_buttons(player, factory, item_category)
                 if amount == -1 then goto skip_product end  -- an amount of -1 means it was below the margin of error
             end
 
-            if required_amount ~= nil then
+            if not product.active then
+                style = "fflib_slot_button_red"
+            elseif required_amount ~= nil then
                 local difference = product.amount - required_amount
                 local tolerance = math.max(product.amount, required_amount) * MAGIC_NUMBERS.margin_of_error
                 local shortfall = difference < -tolerance
                 style = shortfall and "fflib_slot_button_yellow" or "fflib_slot_button_green"
             end
 
+            local status_line = (not product.active)
+                and {"fp.line_status", {"fp.target_disabled", {"fp.pu_" .. item_category, 1}}} or ""
             local tooltip = {"", {"fp.tt_title_with_note", product.proto.localised_name, {"fp.target"}},
-                "\n", number_tooltip or ""}
+                status_line, "\n", number_tooltip or ""}
             if product.definition.type == "machines" then
                 local count = product.definition.machine_count
                 table.insert(tooltip, {"", "\n", {"fp.item_defined_by_machines",
@@ -275,6 +279,11 @@ local function handle_item_button_click(player, tags, action)
     elseif action == "edit" then
         lib.gui.open_dialog(player, {dialog="picker",
             modal_data={item_id=item.id, item_category=tags.item_category}})
+
+    elseif action == "toggle" then  ---@cast item FactoryItem
+        item.active = not item.active
+        solver.update(player)
+        lib.gui.run_refresh(player, "production")
 
     elseif action == "move_left" or action == "move_right" then  ---@cast item FactoryItem
         local direction = (action == "move_left") and "previous" or "next"
@@ -476,6 +485,7 @@ listeners.gui = {
                 add_recipe = {shortcut="left", core=true, show=show_add_recipe, enable=lib.actions.can_add_recipe},
                 edit = {shortcut="control-left", core=true, show=is_top_level_product,
                     enable=lib.actions.can_edit_factory},
+                toggle = {show=is_top_level_product, enable=lib.actions.can_edit_factory},
                 convert_to_target = {shortcut="control-left", show=show_convert_to_target,
                     enable=lib.actions.can_edit_factory},
                 delete = {input="delete", show=is_top_level_product, enable=lib.actions.can_edit_factory},

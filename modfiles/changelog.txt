@@ -4,6 +4,7 @@ Date: 00. 00. 0000
   Features:
     - Districts are now shown as a list above factories for quick switching between them (#498)
     - Added Q to pipette to the item picker, and Alt-Click to open in Factoriopedia to the item and recipe pickers (#906)
+    - Top level products can now be toggled on or off (#907)
     - Added a dropdown to the compact dialog for easy factory switching
   Changes:
     - Changed main interface width and height preferences to be percentage-based

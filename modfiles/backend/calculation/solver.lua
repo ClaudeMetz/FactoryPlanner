@@ -22,7 +22,8 @@ local function factory_products(factory)
     for product in factory:iterator() do
         ---@cast product.proto.type -nil
         local amount = product:get_defined_amount()
-        if amount ~= nil then  -- skip machine-defined products
+        -- Skip disabled and machine-defined products
+        if product.active and amount ~= nil then
             local item = {
                 name = product.proto.name,
                 type = product.proto.type,
@@ -73,7 +74,7 @@ local function resolve_machine_requirements(factory)
     local requirements = {}  ---@type table<ObjectID, MachineRequirement>
     for product in factory:iterator() do
         local definition = product.definition
-        if definition.type == "machines" then
+        if product.active and definition.type == "machines" then
             ---@cast definition MachineItemDefinition
             local line_id = first_lines[structures.pack_item(product)]
             if line_id and not requirements[line_id] then
@@ -681,8 +682,10 @@ local function update_factory(factory_data, result_map)
 
     local requested_products = {}  ---@type SolverMap
     for product in factory:iterator() do
-        -- A machine target intentionally exports its calculated net output
-        structures.map.add(requested_products, product, product:get_defined_amount() or product.amount)
+        if product.active then
+            -- A machine target intentionally exports its calculated net output
+            structures.map.add(requested_products, product, product:get_defined_amount() or product.amount)
+        end
     end
     for _, product in pairs(factory.top_floor.products) do
         product.target_amount = math.min(product.amount, requested_products[structures.pack_item(product)] or 0)
