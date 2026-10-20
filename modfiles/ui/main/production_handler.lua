@@ -222,7 +222,14 @@ local function handle_item_click(player, tags, action)
     local line = OBJECT_INDEX[tags.line_id]  ---@as LineObject
     local item_list = (tags.flags.catalyst) and line--[[@as Line]].recipe.catalysts or line
     local item = item_list[tags.item_category .. "s"][tags.item_index]
-    local amount = item.amount * ((tags.flags.catalyst) and line--[[@as Line]].production_ratio or 1)
+    local amount
+    if tags.flags.catalyst then
+        amount = item.amount * line--[[@as Line]].production_ratio
+    elseif tags.flags.target then
+        amount = item.target_amount or 0
+    else
+        amount = item:get_remaining_amount()
+    end
 
     if action == "prioritize" then  ---@cast line Line
         local proto = item.proto
@@ -239,7 +246,7 @@ local function handle_item_click(player, tags, action)
         lib.gui.run_refresh(player, "production")
 
     elseif action == "add_recipe_to_end" or action == "add_recipe_below" then
-        local production_type = (tags.item_category == "byproduct") and "consume" or "produce"
+        local production_type = tags.flags.consume and "consume" or "produce"
         local add_after_line_id = (action == "add_recipe_below") and line.id or nil
 
         local proto, recipe_id = item.proto, nil
@@ -351,7 +358,7 @@ end
 ---@param flags GUIActionFlags
 ---@return boolean?
 local function show_add_item_recipe(flags)
-    return not flags.product and not flags.catalyst
+    return not flags.catalyst
         and (not flags.entity or flags.special)
 end
 
@@ -426,11 +433,11 @@ listeners.gui = {
             name = "act_on_line_recipe",
             actions_table = {
                 open_subfloor = {shortcut="left", core=true, show=is_regular_recipe, enable=can_open_subfloor},
+                toggle = {shortcut="control-left", enable=lib.actions.can_edit_factory},
+                delete = {input="delete", enable=can_delete_recipe},
                 copy = {shortcut="shift-right"},
                 paste = {shortcut="shift-left", enable=can_paste_recipe},
                 cut = {shortcut="control-right", enable=can_cut_recipe},
-                toggle = {shortcut="control-left", enable=lib.actions.can_edit_factory},
-                delete = {input="delete", enable=can_delete_recipe},
                 factoriopedia = {shortcut="alt-left", enable=lib.actions.can_open_factoriopedia}
             },
             handler = handle_line_recipe_click
@@ -454,10 +461,10 @@ listeners.gui = {
             name = "act_on_line_beacon",
             actions_table = {
                 edit = {shortcut="left", core=true, enable=lib.actions.can_edit_factory},
+                delete = {input="delete", enable=lib.actions.can_edit_factory},
                 copy = {shortcut="shift-right"},
                 paste = {shortcut="shift-left", enable=lib.actions.can_edit_factory},
                 cut = {shortcut="control-right", enable=lib.actions.can_edit_factory},
-                delete = {input="delete", enable=lib.actions.can_edit_factory},
                 pipette = {input="pipette", enable=lib.actions.can_pipette},
                 factoriopedia = {shortcut="alt-left"}
             },
@@ -471,10 +478,10 @@ listeners.gui = {
             name = "act_on_line_module",
             actions_table = {
                 edit = {shortcut="left", core=true, enable=lib.actions.can_edit_factory},
+                delete = {input="delete", enable=lib.actions.can_edit_factory},
                 copy = {shortcut="shift-right"},
                 paste = {shortcut="shift-left", enable=lib.actions.can_edit_factory},
                 cut = {shortcut="control-right", enable=lib.actions.can_edit_factory},
-                delete = {input="delete", enable=lib.actions.can_edit_factory},
                 pipette = {input="pipette"},
                 factoriopedia = {shortcut="alt-left"}
             },
@@ -485,8 +492,8 @@ listeners.gui = {
             actions_table = {
                 add_recipe_to_end = {shortcut="left", core=true, show=show_add_item_recipe, enable=lib.actions.can_add_recipe},
                 add_recipe_below = {show=show_add_item_recipe, enable=lib.actions.can_add_recipe},
-                adjust_weight = {show=lib.actions.show_adjust_weight, enable=lib.actions.can_adjust_weight},
                 edit_temperature = {shortcut="control-left", core=true, show=show_item_temperature, enable=lib.actions.can_edit_temperature},
+                adjust_weight = {show=lib.actions.show_adjust_weight, enable=lib.actions.can_adjust_weight},
                 prioritize = {show=show_prioritize_item, enable=lib.actions.can_edit_factory},
                 copy = {shortcut="shift-right"},
                 paste = {shortcut="shift-left", show=show_item_temperature, enable=lib.actions.can_edit_temperature},

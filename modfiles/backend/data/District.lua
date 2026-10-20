@@ -116,8 +116,7 @@ function District:refresh()
     self.item_set:clear()
 
     for factory in self:iterator({archived=false, valid=true}) do
-        self.item_set:add_items(factory:as_list(), "production")
-        self.item_set:add_items(factory.top_floor.byproducts, "production")
+        self.item_set:add_items(factory.top_floor.products, "production")
         self.item_set:add_items(factory.top_floor.ingredients, "consumption")
     end
 

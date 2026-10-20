@@ -17,7 +17,6 @@ local SimpleItem = require("backend.data.SimpleItem")
 ---@field level integer
 ---@field first LineObject?
 ---@field products SimpleItem[]
----@field byproducts SimpleItem[]
 ---@field ingredients SimpleItem[]
 ---@field machine_amount integer
 ---@field solver SolverName
@@ -42,7 +41,6 @@ local function init(level, solver_name)
         first = nil,
 
         products = {},
-        byproducts = {},
         ingredients = {},
         machine_amount = 0,
 
@@ -307,7 +305,6 @@ end
 ---@field lines PackedLineObject[]
 ---@field solver SolverName
 ---@field products PackedSimpleItem[]?
----@field byproducts PackedSimpleItem[]?
 ---@field ingredients PackedSimpleItem[]?
 ---@field gaussian_free_items FPPackedPrototype[]
 ---@field simplex_item_weights PackedItemWeight[]
@@ -331,7 +328,6 @@ function Floor:pack(full)
         lines = self:_pack(full),
 
         products = (full) and SimpleItem.pack_items(self.products) or nil,
-        byproducts = (full) and SimpleItem.pack_items(self.byproducts) or nil,
         ingredients = (full) and SimpleItem.pack_items(self.ingredients) or nil,
 
         gaussian_free_items = prototyper.util.simplify_prototypes(self.gaussian_free_items, "type") or nil,

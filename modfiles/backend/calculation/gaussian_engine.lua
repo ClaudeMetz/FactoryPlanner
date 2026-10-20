@@ -17,7 +17,7 @@ If there are more items than recipes, the problem is over-constrained (this is m
     Items with pseudo-recipes will be "free" variables that will have some constrained non-zero input or
     output after solving.
     The solved "number of buildings" will be equal to the extra input or output needed for that item.
-    Typically these pseudo-recipes will be for external inputs or non-fully-recycled byproducts.
+    Typically these pseudo-recipes will be for external inputs or unused outputs.
 Currently the algorithm assumes any item which is part of at least one input and one output in any recipe
     is not a free variable, though the user can click on constrained items in the matrix dialog to make
     them free variables.
@@ -56,7 +56,7 @@ end
 
 
 ---@class GaussianMetadata
----@field byproducts SolverSet
+---@field untargeted_outputs SolverSet
 ---@field unproduced_outputs SolverSet
 ---@field all_items SolverSet
 ---@field eliminated_items SolverSet
@@ -88,9 +88,9 @@ local function get_metadata(factory_data, floor_id, free_items)
     local all_items = solver.util.set.union(line_inputs, line_outputs)
     local raw_inputs = solver.util.set.difference(line_inputs, line_outputs)
     local raw_outputs = solver.util.set.difference(line_outputs, line_inputs)
-    local products = solver.util.set.difference(raw_outputs, desired_outputs)
+    local untargeted_outputs = solver.util.set.difference(raw_outputs, desired_outputs)
     local unproduced_outputs = solver.util.set.difference(desired_outputs, line_outputs)
-    local free_variables = solver.util.set.union(raw_inputs, products, unproduced_outputs)
+    local free_variables = solver.util.set.union(raw_inputs, untargeted_outputs, unproduced_outputs)
     local intermediate_items = solver.util.set.difference(all_items, free_variables)
 
     -- When a factory is updated, add any new variables to eliminated and let the user select free.
@@ -105,7 +105,7 @@ local function get_metadata(factory_data, floor_id, free_items)
 
     local eliminated_items = solver.util.set.difference(intermediate_items, free_items)
     local result = {
-        byproducts = products,
+        untargeted_outputs = untargeted_outputs,
         unproduced_outputs = unproduced_outputs,
         all_items = all_items,
         eliminated_items = eliminated_items,
@@ -316,7 +316,7 @@ local function get_matrix_data(factory_data, metadata, floor_id)
 
     -- Generate column (variable) data
     local variables = {}  ---@type table<string, true>
-    local item_variable_set = solver.util.set.union(metadata.free_items, metadata.raw_inputs, metadata.byproducts)
+    local item_variable_set = solver.util.set.union(metadata.free_items, metadata.raw_inputs, metadata.untargeted_outputs)
     for item_key, _ in pairs(item_variable_set) do variables[pack_item_key(item_key)] = true end
     for line_id, _ in pairs(relevant_lines) do variables[pack_line_key(line_id)] = true end
     local columns = get_mapping_struct(variables)

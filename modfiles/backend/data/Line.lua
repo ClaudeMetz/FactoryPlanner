@@ -18,7 +18,6 @@ local SimpleItem = require("backend.data.SimpleItem")
 ---@field total_effects IntegerModuleEffects
 ---@field effects_tooltip LocalisedString
 ---@field products SimpleItem[]
----@field byproducts SimpleItem[]
 ---@field ingredients SimpleItem[]
 ---@field production_ratio number
 ---@field machine_requirement MachineRequirement?
@@ -42,7 +41,6 @@ local function init(recipe_proto)
         effects_tooltip = "",
 
         products = {},
-        byproducts = {},
         ingredients = {},
         production_ratio = 0
     }, "Line", Line)  ---@as Line
@@ -333,7 +331,6 @@ function Line:pack(full)
         comment = self.comment,
 
         products = (full) and SimpleItem.pack_items(self.products) or nil,
-        byproducts = (full) and SimpleItem.pack_items(self.byproducts) or nil,
         ingredients = (full) and SimpleItem.pack_items(self.ingredients) or nil,
     }
 end

@@ -66,7 +66,8 @@ local function refresh_district_list(player)
     local district_count = realm:count()
     local single_district = (district_count == 1)
     frame.clear()
-    frame.style.bottom_padding = (single_district) and 8 or 12
+    frame.style.top_padding = (single_district) and 6 or 8
+    frame.style.bottom_padding = (single_district) and 6 or 12
 
     local flow_horizontal = frame.add{type="flow", direction="horizontal"}
     flow_horizontal.style.height = 24
@@ -143,14 +144,15 @@ listeners.gui = {
                 local district = OBJECT_INDEX[tags.district_id]  ---@as District
                 if not factory or factory.archived or factory.parent == district then return end
 
-                lib.context.remove(player, factory)
+                local adjacent_factory = lib.context.remove(player, factory)
+                if lib.context.get(player, "Factory") == factory then
+                    lib.context.set(player, adjacent_factory or factory.parent, true)
+                end
                 factory.parent:remove(factory)
                 district:insert(factory)
                 factory:clear_solver_cache()
                 lib.globals.ui_state(player).held_object_id = nil
 
-                main_dialog.toggle_districts_view(player, true)
-                lib.context.set(player, factory)
                 solver.update(player, factory)
                 lib.gui.run_refresh(player, "all")
             end

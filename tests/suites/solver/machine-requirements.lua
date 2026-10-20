@@ -55,6 +55,20 @@ return {
         assert(first.machine_requirement.count == 3.5 and second.machine_requirement == nil)
         assert(first.machine.amount == 3.5 and second.machine.amount == 0, "First factory product must win")
         assert(first:pack(false).machine_requirement == nil and first:pack(true).machine_requirement == nil)
+        iron.active = false
+        solver.update(player, factory)
+        assert(first.machine_requirement.count == 8 and first.machine.amount == 8,
+            "Disabled products must not take precedence over active machine targets")
+        for _, product in ipairs(top.products) do
+            if product.proto == iron.proto then
+                assert(product.amount > 0 and product.required_amount == 0,
+                    "Output of a disabled target must remain incidental output")
+            end
+        end
+        copper.active = false
+        solver.update(player, factory)
+        assert(first.machine.amount == 0 and first.machine_requirement == nil)
+        iron.active, copper.active = true, true
         factory:shift(copper, "previous", 1)
         solver.update(player, factory)
         assert(first.machine_requirement.count == 8 and first.machine.amount == 8)
