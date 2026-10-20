@@ -104,7 +104,6 @@ end
 ---@field custom boolean
 ---@field additional_unlock_requirements UnlockableID[]?
 ---@field unlock_without_machine boolean?
----@field agricultural_seed string?
 ---@field location_restricted boolean?
 ---@field enabled_from_the_start boolean
 ---@field hidden boolean
@@ -205,6 +204,24 @@ function generator.recipes.generate(context)
 
             generator.util.format_recipe(recipe, proto.products, proto.main_product, proto.ingredients)
             insert_prototype(recipes, recipe, nil)
+        end
+    end
+
+    -- Each tower has its own category, shared by all seeds it accepts.
+    local agricultural_categories = {}
+    for _, seed_name in pairs(plant_seed_map) do agricultural_categories[seed_name] = {} end
+    local tower_filter = {{filter="type", type="agricultural-tower"},
+        {filter="hidden", invert=true, mode="and"}}
+    for _, tower in pairs(prototypes.get_entity_filtered(tower_filter)) do
+        local category = "agricultural-tower-" .. tower.name
+        if tower.accepted_seeds then
+            for _, seed_name in pairs(tower.accepted_seeds) do
+                if agricultural_categories[seed_name] then
+                    agricultural_categories[seed_name][category] = true
+                end
+            end
+        else
+            for _, categories in pairs(agricultural_categories) do categories[category] = true end
         end
     end
 
@@ -313,8 +330,7 @@ function generator.recipes.generate(context)
             recipe.additional_unlock_requirements = {{type="item", name=seed_name}}
             recipe.sprite = main_product.type .. "/" .. main_product.name
             recipe.order = proto.order
-            recipe.agricultural_seed = seed_name
-            recipe.categories = {["agricultural-tower-" .. seed_name] = true}
+            recipe.categories = agricultural_categories[seed_name]
             recipe.energy = proto.growth_ticks--[[@cast -nil]] / 60
             -- Cultivated-only plants need not have any natural spawning rules.
             recipe.location_restricted = proto.autoplace_specification ~= nil
@@ -1283,26 +1299,16 @@ function generator.machines.generate(context)
             end
 
         elseif proto.type == "agricultural-tower" then
-            local accepted_seeds = nil
-            if proto.accepted_seeds then
-                accepted_seeds = {}
-                for _, seed_name in pairs(proto.accepted_seeds) do accepted_seeds[seed_name] = true end
-            end
-            for _, recipe in pairs(recipe_prototypes) do
-                local seed_name = recipe.agricultural_seed
-                if seed_name and (accepted_seeds == nil or accepted_seeds[seed_name]) then
-                    local machine = generate_category_entry("agricultural-tower-" .. seed_name, proto, nil)
-                    if machine then
-                        local radius = proto.agricultural_tower_radius  ---@cast radius -nil
-                        local crane_energy_usage = proto.crane_energy_usage  ---@cast crane_energy_usage -nil
-                        -- One plant per grid square, with the tower occupying the center square
-                        machine.speed = ((2 * radius + 1) ^ 2) - 1
-                        -- Include the crane usage of a fully utilized tower
-                        machine.energy_usage = machine.energy_usage + crane_energy_usage
-                        machine.fluid_channels = {input = 255, output = 255}
-                        insert_machine(machine)
-                    end
-                end
+            local machine = generate_category_entry("agricultural-tower-" .. proto.name, proto, nil)
+            if machine then
+                local radius = proto.agricultural_tower_radius  ---@cast radius -nil
+                local crane_energy_usage = proto.crane_energy_usage  ---@cast crane_energy_usage -nil
+                -- One plant per grid square, with the tower occupying the center square
+                machine.speed = ((2 * radius + 1) ^ 2) - 1
+                -- Include the crane usage of a fully utilized tower
+                machine.energy_usage = machine.energy_usage + crane_energy_usage
+                machine.fluid_channels = {input = 255, output = 255}
+                insert_machine(machine)
             end
 
         elseif proto.type == "container" then

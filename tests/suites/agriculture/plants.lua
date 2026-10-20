@@ -23,7 +23,8 @@ return {
         end
         for _, variant in ipairs{
             {name="all"}, {name="fish", seeds={"test-seed-fish"}},
-            {name="crop", seeds={"test-seed-crop"}}, {name="none", seeds={}}
+            {name="crop", seeds={"test-seed-crop"}},
+            {name="both", seeds={"test-seed-fish", "test-seed-crop"}}, {name="none", seeds={}}
         } do
             local name = "test-tower-" .. variant.name
             data:extend{{
@@ -57,12 +58,21 @@ return {
                 c.check(recipe.ingredients[1].name == "test-seed-" .. name
                     and recipe.ingredients[1].amount == 1, name .. ": incorrect seed input")
                 c.check(not recipe.location_restricted, name .. ": cultivated-only plant restricted")
+                c.check(recipe.categories["agricultural-tower-test-tower-" .. name],
+                    name .. ": matching tower category missing")
+                c.check(recipe.categories["agricultural-tower-test-tower-both"],
+                    name .. ": shared tower category missing")
+                c.check(recipe.categories["agricultural-tower-test-tower-all"],
+                    name .. ": unrestricted tower category missing")
+                c.check(not recipe.categories["agricultural-tower-test-seed-" .. name],
+                    name .. ": category should belong to a tower, not a seed")
                 local machines = {}
                 for _, category in pairs(storage.prototypes.machines) do
                     if category.name == recipe.combined_category then machines = category.members end
                 end
                 local found = {}
                 for _, machine in pairs(machines) do
+                    c.check(not found[machine.name], name .. ": duplicate tower " .. machine.name)
                     found[machine.name] = true
                     if machine.name == "test-tower-" .. name then
                         c.check(machine.speed == 48, name .. ": tower capacity changed")
@@ -70,6 +80,7 @@ return {
                             name .. ": tower surface restriction lost")
                     end
                 end
+                c.check(found["test-tower-both"], name .. ": overlapping restricted tower missing")
                 c.check(found["test-tower-all"], name .. ": unrestricted tower missing")
                 c.check(found["test-tower-" .. name], name .. ": matching tower missing")
                 local other = name == "fish" and "crop" or "fish"
@@ -89,6 +100,7 @@ return {
                 end
             end
             c.check(found["agricultural-tower"], "vanilla tower missing for yumako")
+            c.check(not found["test-tower-both"], "restricted tower allowed for yumako")
             c.check(not found["test-tower-fish"], "fish-only tower allowed for yumako")
         end
         c.done()
