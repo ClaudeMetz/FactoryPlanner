@@ -387,7 +387,6 @@ function Machine:clone(player)
     clone.amount = self.amount
     if self.fuel then  ---@cast clone.fuel -nil
         clone.fuel.amount = self.fuel.amount
-        clone.fuel.satisfied_amount = self.fuel.satisfied_amount
     end
 
     clone:validate(player)

@@ -158,7 +158,7 @@ local function match_recipes(player, modal_data, proto)
     end
 end
 
--- Tries to add the given recipe to the current floor
+-- Adds below the selected row in its own floor, or appends to the current floor
 ---@param player LuaPlayer
 ---@param recipe_id integer
 ---@param modal_data RecipeDialogModalData
@@ -172,8 +172,8 @@ local function attempt_adding_line(player, recipe_id, modal_data)
         lib.cursor.create_flying_text(player, {"fp.error_no_compatible_machine", recipe_proto.localised_name})
         return false
     else
-        local floor = lib.context.get(player, "Floor")  ---@as Floor
         local relative_object = OBJECT_INDEX[modal_data.add_after_line_id--[[@cast -nil]]]  ---@as LineObject?
+        local floor = (relative_object and relative_object.parent or lib.context.get(player, "Floor"))  ---@as Floor
         floor:insert(line, relative_object, "next")  -- if not relative, insert uses last line
 
         local requested_proto = nil
@@ -204,9 +204,16 @@ local function attempt_adding_line(player, recipe_id, modal_data)
             end
         end
 
-        -- Set ingredient temperature to match byproduct recipe
+        -- Set the consuming recipe's ingredient temperature to match the selected output
         if modal_data.production_type == "consume" and requested_proto.temperature then
             line.recipe:set_temperature(requested_proto.base_name--[[@as string]], requested_proto.temperature)
+        end
+
+        -- Expanded rows can change a floor below the current view
+        local changed_floor = floor  ---@type Floor | Factory
+        while changed_floor.class == "Floor" do
+            changed_floor:clear_solver_cache(true)
+            changed_floor = changed_floor.parent  ---@as Floor | Factory
         end
 
         solver.update(player)

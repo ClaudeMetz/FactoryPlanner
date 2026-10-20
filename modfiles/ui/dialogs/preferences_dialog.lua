@@ -146,7 +146,7 @@ end
 ---@param preferences PreferencesTable
 ---@param content_frame LuaGuiElement
 local function add_solver_box(preferences, content_frame)
-    local preference_names = {"per_floor_solver", "ingredient_satisfaction", "calculate_emissions"}
+    local preference_names = {"per_floor_solver", "calculate_emissions"}
     local solver_box = add_checkboxes_box(preferences, content_frame, "solver", preference_names)
 
     local solver_items, solver_index = {}, nil  ---@type LocalisedString[], integer?
@@ -313,7 +313,7 @@ local function handle_checkbox_preference_change(player, tags, event)
     elseif preference_name == "per_floor_solver" then
         lib.gui.run_refresh(player, "production_box")
 
-    elseif preference_name == "ingredient_satisfaction" or preference_name == "calculate_emissions" then
+    elseif preference_name == "calculate_emissions" then
         lib.preferences.refresh_after_change(player, "solver_config")
 
     elseif tags.data_type == "production" then

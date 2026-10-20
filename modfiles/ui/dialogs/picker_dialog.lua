@@ -2,7 +2,7 @@ local FactoryItem = require("backend.data.FactoryItem")
 
 local GROUP_MAX_ROWS = 3
 
----@alias ItemCategory "product" | "byproduct" | "ingredient"
+---@alias ItemCategory "product" | "ingredient"
 
 ---@class PickerDialogModalData: ModalData
 ---@field item_id ObjectID?

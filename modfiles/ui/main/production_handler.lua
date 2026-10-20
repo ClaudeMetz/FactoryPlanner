@@ -222,7 +222,14 @@ local function handle_item_click(player, tags, action)
     local line = OBJECT_INDEX[tags.line_id]  ---@as LineObject
     local item_list = (tags.flags.catalyst) and line--[[@as Line]].recipe.catalysts or line
     local item = item_list[tags.item_category .. "s"][tags.item_index]
-    local amount = item.amount * ((tags.flags.catalyst) and line--[[@as Line]].production_ratio or 1)
+    local amount
+    if tags.flags.catalyst then
+        amount = item.amount * line--[[@as Line]].production_ratio
+    elseif tags.flags.target then
+        amount = item.target_amount or 0
+    else
+        amount = item:get_remaining_amount()
+    end
 
     if action == "prioritize" then  ---@cast line Line
         local proto = item.proto
@@ -239,7 +246,7 @@ local function handle_item_click(player, tags, action)
         lib.gui.run_refresh(player, "production")
 
     elseif action == "add_recipe_to_end" or action == "add_recipe_below" then
-        local production_type = (tags.item_category == "byproduct") and "consume" or "produce"
+        local production_type = tags.flags.consume and "consume" or "produce"
         local add_after_line_id = (action == "add_recipe_below") and line.id or nil
 
         local proto, recipe_id = item.proto, nil
@@ -351,7 +358,7 @@ end
 ---@param flags GUIActionFlags
 ---@return boolean?
 local function show_add_item_recipe(flags)
-    return not flags.product and not flags.catalyst
+    return not flags.catalyst
         and (not flags.entity or flags.special)
 end
 
