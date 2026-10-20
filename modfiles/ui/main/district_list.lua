@@ -66,7 +66,8 @@ local function refresh_district_list(player)
     local district_count = realm:count()
     local single_district = (district_count == 1)
     frame.clear()
-    frame.style.bottom_padding = (single_district) and 8 or 12
+    frame.style.top_padding = (single_district) and 6 or 8
+    frame.style.bottom_padding = (single_district) and 6 or 12
 
     local flow_horizontal = frame.add{type="flow", direction="horizontal"}
     flow_horizontal.style.height = 24
