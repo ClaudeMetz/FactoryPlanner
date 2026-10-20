@@ -70,11 +70,11 @@ function _structures.map.add(map, item, amount, round_errors)
     local amount_to_add = amount or item.amount or 0
 
     map[key] = (map[key] or 0) + amount_to_add
-    if round_errors then
+    if map[key] == 0 then
+        map[key] = nil
+    elseif round_errors then
         local threshold = math.abs(amount_to_add * MAGIC_NUMBERS.margin_of_error)
         if map[key] < threshold and map[key] > -threshold then map[key] = nil end
-    else
-        if map[key] == 0 then map[key] = nil end
     end
 end
 
