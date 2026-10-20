@@ -368,19 +368,26 @@ local function refresh_item_boxes(player)
     local products = prepare_item_buttons(player, factory, "product")
     local ingredients = prepare_item_buttons(player, factory, "ingredient")
 
-    -- Divide the available slots according to the displayed content, keeping room for both headings
+    -- Keep room for both headings
     local available_width = main_dialog.get_content_width(player)
         - (4 * HORIZONTAL_PADDING) - MAGIC_NUMBERS.frame_spacing
     local total_columns = math.max(2, math.floor(available_width / MAGIC_NUMBERS.item_button_size))
     local minimum_columns = math.min(3, math.floor(total_columns / 2))
-    local product_weight = math.max(#products, minimum_columns)
-    local ingredient_weight = math.max(#ingredients, minimum_columns)
-    local product_columns = math.floor(total_columns * product_weight / (product_weight + ingredient_weight) + 0.5)
-    product_columns = math.max(minimum_columns, math.min(product_columns, total_columns - minimum_columns))
+
+    local rows = 0  -- find the fewest rows that fit both groups
+    local required_product_columns, required_ingredient_columns
+    repeat
+        rows = rows + 1
+        required_product_columns = math.max(minimum_columns, math.ceil(#products / rows))
+        required_ingredient_columns = math.max(minimum_columns, math.ceil(#ingredients / rows))
+    until required_product_columns + required_ingredient_columns <= total_columns
+
+    -- Divide spare columns equally between both groups
+    local spare_columns = total_columns - required_product_columns - required_ingredient_columns
+    local product_columns = required_product_columns + math.floor(spare_columns / 2)
     local ingredient_columns = total_columns - product_columns
 
-    local rows = math.max(math.ceil(#products / product_columns), math.ceil(#ingredients / ingredient_columns))
-    local height = math.min(math.max(rows, 1), MAX_ROWS) * MAGIC_NUMBERS.item_button_size
+    local height = math.min(rows, MAX_ROWS) * MAGIC_NUMBERS.item_button_size
     render_item_box(player, "product", products, product_columns, height)
     render_item_box(player, "ingredient", ingredients, ingredient_columns, height)
 end
