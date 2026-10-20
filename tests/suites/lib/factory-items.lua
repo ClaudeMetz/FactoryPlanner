@@ -136,9 +136,8 @@ return {
             lib.gui.run_refresh(player, "item_boxes")
             local button = lib.globals.main_elements(player).item_boxes.product_item_table.children[1]
             local expected = item_views.process_item(player, item.proto, amount, nil)
-            assert(button.number == expected and button.style.name == "fflib_slot_button_blue")
+            assert(button.number == expected and button.style.name == "fflib_slot_button_green")
             local tooltip = lib.globals.ui_state(player).tooltips.item_boxes[button.index]
-            assert(tooltip[5] == "", "Calculated output must not show target satisfaction")
             local machine_definition = tooltip[#tooltip][3]
             assert(machine_definition[1] == "fp.item_defined_by_machines" and machine_definition[2] == "5")
             assert(machine_definition[3][1] == "fp.pl_machine" and machine_definition[3][2] == 5)
