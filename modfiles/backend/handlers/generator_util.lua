@@ -558,15 +558,12 @@ function _util.add_entity_groups(proto, entity_name)
     end
 end
 
----@param context GeneratorContext
 ---@param proto FPRecipePrototype | FPMachinePrototype
-function _util.compile_surface_conditions(context, proto)
+---@param conditions SurfaceCondition[]?
+function _util.compile_surface_conditions(proto, conditions)
     if not next(proto.compatible_locations) then
         for _, location in pairs(storage.prototypes.locations) do
             local properties = location.surface_properties
-            local conditions = proto.data_type == "recipes" and context.recipe_surface_conditions[proto.name]
-                or context.machine_surface_conditions[proto.name]
-
             -- No surface properties or conditions means that the location/recipe/machine prototype is universal
             if not properties or not conditions then
                 proto.compatible_locations[location.name] = true
