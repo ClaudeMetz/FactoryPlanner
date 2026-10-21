@@ -82,7 +82,8 @@ local function prepare_item_buttons(player, factory, item_category)
     local function add_calculated_item(item, index, target)
         local required_amount = item.required_amount or 0
         local part_amount = target and required_amount or (item.amount - required_amount)
-        if part_amount <= 0 and (target or item.amount ~= 0) then return end
+        local tolerance = math.max(item.amount, required_amount) * MAGIC_NUMBERS.margin_of_error
+        if part_amount <= tolerance and (target or item.amount ~= 0) then return end
         if not target and defined_items[item.proto] == item_category and part_amount == 0 then return end
 
         local amount, number_tooltip, secondary_amount
