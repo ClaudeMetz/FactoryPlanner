@@ -30,8 +30,11 @@ local function get_factory_items(factory)
                 type = factory_item.proto.type,
                 amount = amount
             }  ---@type SolverItem
-            --TODO (therenas/vladp): handle getting factory ingredients from the backend
-            table.insert(products, item)
+            if factory_item.category == "product" then
+                table.insert(products, item)
+            else
+                table.insert(ingredients, item)
+            end
         end
     end
     return products, ingredients
