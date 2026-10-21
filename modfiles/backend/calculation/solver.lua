@@ -709,7 +709,7 @@ function solver.update(player, factory)
             factory.tick_of_solver_update = nil
         end
 
-        -- Clear solve caches on updated floors
+        -- Clear solver caches on updated floors
         local floor = lib.context.get(player, "Floor")
         while floor and floor.class == "Floor" do
             floor:clear_solver_cache(true)

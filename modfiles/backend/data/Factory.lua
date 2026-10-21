@@ -204,10 +204,6 @@ function Factory:refresh_lines(player, starting_tick)
     return starting_tick + MAGIC_NUMBERS.factory_solver_update_delay
 end
 
-function Factory:clear_solver_cache()
-    self.top_floor:clear_solver_cache()
-end
-
 
 ---@class PackedFactory: PackedObject
 ---@field class "Factory"

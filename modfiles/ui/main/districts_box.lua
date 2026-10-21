@@ -28,6 +28,7 @@ local function change_district_location(player, tags, event)
 
     for factory in district:iterator() do
         factory.top_floor:reset_location()
+        factory.top_floor:clear_solver_cache()
         solver.update(player, factory)
     end
     lib.gui.run_refresh(player, "all")
