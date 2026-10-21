@@ -91,11 +91,16 @@ function simplex_engine.solve_floor(factory_data, floor_id)
         end
     end
 
-    -- Add slack variables for intermediates
+    -- Add export slack variables for intermediates
     for item_key, _ in pairs(intermediates) do
-        local cost = item_cost(item_key, "out")
-        tableau:add_item_variable(item_key, "export", cost * objective_vector.intermediate_out)
-        tableau:add_item_variable(item_key, "import", cost * objective_vector.intermediate_in)
+        local objective = item_cost(item_key, "out") * objective_vector.intermediate_out
+        tableau:add_item_variable(item_key, "export", objective)
+    end
+
+    -- Add import slack variables for intermediates
+    for item_key, _ in pairs(intermediates) do
+        local objective = item_cost(item_key, "in") * objective_vector.intermediate_in
+        tableau:add_item_variable(item_key, "import", objective)
     end
 
     -- Add slack variables for ingredients
