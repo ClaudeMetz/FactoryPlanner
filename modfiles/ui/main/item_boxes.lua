@@ -186,7 +186,7 @@ local function prepare_item_buttons(player, factory, item_category)
             local definition = {type="sprite-button", tags=tags--[[@as Tags]], number=amount,
                 secondary_number=secondary_amount, style=style, sprite=item.proto.sprite,
                 mouse_button_filter={"left-and-right"}, raise_hover_events=true}
-            table.insert(buttons, {definition=definition, tooltip=tooltip, proto=product.proto})
+            table.insert(buttons, {definition=definition, tooltip=tooltip, proto=item.proto})
 
             ::skip_item::
         end
