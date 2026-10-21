@@ -9,7 +9,7 @@ local function fixture(context)
     local factory = context.classes.Factory.init("factory-item-test", "sequential")
     district:insert(factory)
     lib.context.set(player, factory)
-    local item = context.classes.FactoryItem.init(prototyper.util.find("items", "iron-plate", "item"))
+    local item = context.classes.FactoryItem.init(prototyper.util.find("items", "iron-plate", "item"), "product")
     factory:insert(item)
     return player, factory, item
 end
@@ -22,6 +22,75 @@ end
 
 
 return {
+    categories = {check=function(context)
+        local player, factory, product = fixture(context)
+        local FactoryItem = context.classes.FactoryItem
+        local function add(name, category)
+            local item = FactoryItem.init(prototyper.util.find("items", name, "item"), category)
+            factory:insert(item)
+            return item
+        end
+        local ingredient = add("iron-ore", "ingredient")
+        local second_product = add("copper-plate", "product")
+        local second_ingredient = add("copper-ore", "ingredient")
+        assert(product.category == "product")
+        ingredient.definition = {type="machines", machine_count=2.5}
+        second_ingredient.definition = {type="belts", belt_count=2, belt_stack=1,
+            belt_proto=prototyper.util.find("belts", "transport-belt")}
+        second_product.active = false
+
+        assert(factory:count() == 4 and factory:count({category="ingredient"}) == 2)
+        assert(factory:find({proto=ingredient.proto}) == ingredient)
+        assert(factory:find({proto=ingredient.proto, category="product"}) == nil)
+        factory:shift(second_product, "previous", 1)
+        factory:shift(ingredient, "next", 1)
+        local products = factory:as_list({category="product"})
+        local ingredients = factory:as_list({category="ingredient"})
+        assert(products[1] == second_product and products[2] == product)
+        assert(ingredients[1] == second_ingredient and ingredients[2] == ingredient)
+        assert(factory:find({category="ingredient"}, product.next, "next") == second_ingredient)
+        assert(factory:find({category="product"}, ingredient.previous, "previous") == product)
+
+        local packed = factory:pack(false)
+        assert(packed.products == nil and #packed.items == 4)
+        local restored = context.classes.Factory.unpack(packed)
+        assert(restored:validate(player))
+        assert(restored:count({category="product"}) == 2 and restored:count({category="ingredient"}) == 2)
+        local restored_products = restored:as_list({category="product"})
+        local restored_ingredients = restored:as_list({category="ingredient"})
+        assert(restored_products[1].proto == second_product.proto and not restored_products[1].active)
+        assert(restored_ingredients[1].proto == second_ingredient.proto)
+        assert(restored_ingredients[1]:get_defined_amount() == second_ingredient:get_defined_amount())
+        assert(restored_ingredients[2].definition.machine_count == 2.5)
+        local clone = factory:clone(player)
+        assert(clone:find({proto=ingredient.proto}).category == "ingredient")
+        local imported, import_error = lib.porter.process_export_string(player,
+            lib.porter.generate_export_string({factory}))
+        assert(imported, import_error)
+        local imported_factory = imported.factories[1]
+        assert(imported_factory:find({proto=ingredient.proto}).category == "ingredient")
+        assert(not imported_factory:find({proto=second_product.proto}).active)
+
+        local function copy(item)
+            local result = FactoryItem.unpack(item:pack(true))
+            assert(result:validate(player))
+            return result
+        end
+        local success, reason = ingredient:paste(copy(second_product))
+        assert(not success and reason == "already_exists",
+            "Disabled targets on the other side must still prevent duplicates")
+        local source = FactoryItem.init(prototyper.util.find("items", "coal", "item"), "product")
+        source.definition = {type="machines", machine_count=3}
+        source.active = false
+        assert(ingredient:paste(copy(source)))
+        local pasted = factory:find({proto=source.proto})
+        assert(pasted.category == "ingredient" and not pasted.active)
+        assert(pasted.definition.machine_count == 3 and source.category == "product")
+        factory:remove(pasted)
+        assert(product:paste(copy(pasted)))
+        assert(factory:find({proto=source.proto}).category == "product",
+            "Pasting must preserve the destination category in both directions")
+    end},
     definitions = {check=function(context)
         local player, factory, item = fixture(context)
         local belt = prototyper.util.find("belts", "transport-belt")
@@ -223,7 +292,7 @@ return {
             assert(machine_definition[1] == "fp.item_defined_by_machines" and machine_definition[2] == "5")
             assert(machine_definition[3][1] == "fp.pl_machine" and machine_definition[3][2] == 5)
         end
-        local output = context.classes.FactoryItem.init(prototyper.util.find("items", "copper-plate", "item"))
+        local output = context.classes.FactoryItem.init(prototyper.util.find("items", "copper-plate", "item"), "product")
         output.definition = {type="amount", amount=10}
         factory:insert(output)
         -- Exercise result calculation through the public solver entry point.

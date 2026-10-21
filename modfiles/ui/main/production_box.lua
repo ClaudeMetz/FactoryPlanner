@@ -37,7 +37,7 @@ local function handle_convert_subfloor(player)
     local factory = factory_list.add_factory(player, nil, first_product.proto)
 
     for _, floor_product in pairs(products) do  ---@cast floor_product SimpleItem
-        local product = FactoryItem.init(floor_product.proto)
+        local product = FactoryItem.init(floor_product.proto, "product")
         product.definition = {type="amount", amount=floor_product.amount}
         factory:insert(product)
     end

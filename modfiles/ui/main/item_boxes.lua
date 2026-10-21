@@ -210,7 +210,7 @@ local function handle_item_add(player, tags, event)
     local factory = lib.context.get(player, "Factory")  ---@as Factory
 
     if event.shift then  -- paste
-        local dummy_product = FactoryItem.init()
+        local dummy_product = FactoryItem.init(nil, tags.item_category)
         lib.clipboard.dummy_paste(player, dummy_product, factory)
     elseif player.is_cursor_blueprint() then  -- import blueprint entities
         local blueprint = player.cursor_record or player.cursor_stack
@@ -224,7 +224,7 @@ local function handle_item_add(player, tags, event)
             if existing_item then
                 existing_item:add_defined_amount(amount)
             else
-                local product = FactoryItem.init(proto)  -- definition.type = "amount"
+                local product = FactoryItem.init(proto, tags.item_category)  -- definition.type = "amount"
                 product.definition = {type="amount", amount=amount}
                 factory:insert(product)
             end
@@ -265,7 +265,7 @@ local function handle_item_button_click(player, tags, action)
 
     elseif action == "convert_to_target" then
         local factory = lib.context.get(player, "Factory")  ---@as Factory
-        local target = FactoryItem.init(item.proto)
+        local target = FactoryItem.init(item.proto, tags.item_category)
         target.definition = {type="amount", amount=amount}
         factory:insert(target)
 

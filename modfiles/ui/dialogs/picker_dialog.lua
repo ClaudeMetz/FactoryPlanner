@@ -2,8 +2,6 @@ local FactoryItem = require("backend.data.FactoryItem")
 
 local GROUP_MAX_ROWS = 3
 
----@alias ItemCategory "product" | "ingredient"
-
 ---@class PickerDialogModalData: ModalData
 ---@field item_id ObjectID?
 ---@field item_category ItemCategory
@@ -608,7 +606,7 @@ local function close_picker_dialog(player, action)
             modal_data.item.active = modal_data.modal_elements.active_button.toggled
         else
             local item_proto = modal_data.item_proto
-            local top_level_item = FactoryItem.init(item_proto)
+            local top_level_item = FactoryItem.init(item_proto, modal_data.item_category)
             top_level_item.definition = definition
 
             if modal_data.create_factory then  -- if this flag is set, create a factory to put the item into

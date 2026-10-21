@@ -10,6 +10,7 @@ return {{
     name = "normal",
     cases = {
         testLibExpressions = require("suite.expressions"),
+        testFactoryItemCategories = factory_items.categories,
         testFactoryItemDefinitions = factory_items.definitions,
         testFactoryItemPicker = factory_items.picker,
         testFactoryItemToggle = factory_items.toggle,
