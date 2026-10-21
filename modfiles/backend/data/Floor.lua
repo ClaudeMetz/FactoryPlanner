@@ -26,6 +26,7 @@ local SimpleItem = require("backend.data.SimpleItem")
 ---@field linear_dependence_data LinearDependanceData?
 ---@field simplex_item_weights ItemWeight[]
 ---@field simplex_basis_cache SimplexBasisCache?
+---@field solver_result_cache FloorResult?
 ---@field current_location FPLocationPrototype?
 local Floor = Object.methods()
 Floor.__index = Floor
@@ -48,6 +49,7 @@ local function init(level, solver_name)
         gaussian_free_items = {},
         simplex_item_weights = {},
         simplex_basis_cache = nil,
+        solver_result_cache = nil,
         current_location = nil,  -- determined on demand
     }, "Floor", Floor)  ---@as Floor
     return object
@@ -273,6 +275,7 @@ end
 function Floor:clear_solver_cache(self_only)
     self.linear_dependence_data = nil
     self.simplex_basis_cache = nil
+    self.solver_result_cache = nil
 
     if self_only then return end
     for line_object in self:iterator() do

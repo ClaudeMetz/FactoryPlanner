@@ -357,6 +357,7 @@ end
 ---@field line_ids ObjectID[]
 ---@field gaussian_free_items FPItemPrototype[]
 ---@field simplex_basis SimplexBasisCache?
+---@field result_cache FloorResult?
 ---@field simplex_item_weights SolverMap
 
 ---@alias FloorDataMap table<ObjectID, FloorData>
@@ -379,6 +380,7 @@ local function generate_floor_data(player, factory, floor, machine_requirements)
         line_ids = {},
         gaussian_free_items = free_items,
         simplex_basis = floor.simplex_basis_cache,
+        result_cache = floor.solver_result_cache,
         simplex_item_weights = {},
     }  ---@type FloorData
 
@@ -390,21 +392,21 @@ local function generate_floor_data(player, factory, floor, machine_requirements)
         floor_data.simplex_item_weights[structures.pack_item(item_weight.proto)] = item_weight.weight
     end
 
-    for line in floor:iterator() do
-        if line.class == "Floor" then  ---@cast line Floor
+    for line_object in floor:iterator() do
+        if line_object.class == "Floor" then
             local subfloor_floor_map, subfloor_line_map
-            subfloor_floor_map, subfloor_line_map = generate_floor_data(player, factory, line, machine_requirements)
-            if subfloor_floor_map[line.id] then table.insert(floor_data.line_ids, line.id) end
+            subfloor_floor_map, subfloor_line_map = generate_floor_data(player, factory, line_object, machine_requirements)
+            if subfloor_floor_map[line_object.id] then table.insert(floor_data.line_ids, line_object.id) end
             for k, v in pairs (subfloor_floor_map) do floor_data_map[k] = v end
             for k, v in pairs (subfloor_line_map) do line_data_map[k] = v end
-        else  ---@cast line Line
-            local requirement = machine_requirements[line.id]
-            if line:get_blocker() then
+        else  -- Line
+            local requirement = machine_requirements[line_object.id]
+            if line_object:get_blocker() then
                 -- A blocked defining recipe disables the entire subtree
-                if line == floor.first and floor.level > 1 then break end
+                if line_object == floor.first and floor.level > 1 then break end
             else
-                table.insert(floor_data.line_ids, line.id)
-                line_data_map[line.id] = generate_line_data(player, factory, line, requirement)
+                table.insert(floor_data.line_ids, line_object.id)
+                line_data_map[line_object.id] = generate_line_data(player, factory, line_object, requirement)
             end
         end
     end
@@ -641,6 +643,7 @@ local function update_floor(factory_data, result_map, floor_id, scale_factor)
         floor.gaussian_free_items = result.gaussian_free_items or floor.gaussian_free_items
         floor.linear_dependence_data = result.linear_dependence_data
         floor.simplex_basis_cache = result.simplex_basis_cache
+        floor.solver_result_cache = result
 
         if result.linear_dependence_data then
             for line_object in floor:iterator() do
@@ -654,6 +657,7 @@ local function update_floor(factory_data, result_map, floor_id, scale_factor)
     else
         floor.linear_dependence_data = nil
         floor.simplex_basis_cache = nil
+        floor.solver_result_cache = nil
         floor.solver_error = nil
     end
 
@@ -735,7 +739,9 @@ function solver.update(player, factory)
             end
 
             local result = nil
-            if floor_data.solver_choice == "sequential" then
+            if floor_data.result_cache then
+                result = floor_data.result_cache
+            elseif floor_data.solver_choice == "sequential" then
                 result = sequential_engine.solve_floor(factory_data, floor_id)
             elseif floor_data.solver_choice == "simplex" then
                 result = simplex_engine.solve_floor(factory_data, floor_id)
