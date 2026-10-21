@@ -152,7 +152,7 @@ function simplex_engine.solve_floor(factory_data, floor_id)
     end
 
     -- Solve the tableau
-    return tableau:solve(floor_id, floor_data.simplex_basis)
+    return tableau:solve(floor_id)
 end
 
 return simplex_engine

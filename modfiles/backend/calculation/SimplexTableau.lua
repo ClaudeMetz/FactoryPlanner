@@ -209,9 +209,8 @@ end
 ---@alias SimplexBasisCache table<ConstraintKey, VariableKey>
 
 ---@param floor_id ObjectID
----@param basis_cache SimplexBasisCache?
 ---@return FloorResult result
-function SimplexTableau:solve(floor_id, basis_cache)
+function SimplexTableau:solve(floor_id)
     local result = {
         status = "in_progress",
         id = floor_id,
@@ -228,20 +227,6 @@ function SimplexTableau:solve(floor_id, basis_cache)
     -- Populate the column index to variable key map
     for key, column in pairs(self.cols) do
         variable_map[column] = {key = key, type = "unassigned"}
-    end
-
-    -- Populate the basis vector based on the previous result
-    if basis_cache then
-        for row_key, col_key in pairs(basis_cache) do
-            local row_index = self.rows[row_key]
-            local col_index = self.cols[col_key]
-
-            if row_index and col_index then
-                variable_map[col_index]--[[@cast -nil]].type = "basic"
-                basic[row_index] = col_key
-                basis_scalars[row_index] = 1
-            end
-        end
     end
 
     -- Check if the cache covered all the bases
@@ -454,12 +439,6 @@ function SimplexTableau:solve(floor_id, basis_cache)
         -- Re-use the cached solution
         refactorize()
         result.status = "solved"
-    end
-
-    -- Cache the solution basis for later
-    result.simplex_basis_cache = {}
-    for key, i in pairs(self.rows) do
-        result.simplex_basis_cache[key] = basic[i]
     end
 
     -- Interpret the result
