@@ -105,11 +105,11 @@ local function add_item_picker(parent_flow, player)
     local group_id_cache, group_flow_cache, subgroup_table_cache = {}, {}, {}
     modal_elements.groups = {}
 
-    local existing_products = {}
+    local existing_items = {}  ---@type table<FPItemPrototype, ItemCategory>
     if not modal_data.create_factory then  -- check if this is for a new factory or not
         local factory = lib.context.get(player, "Factory")  ---@as Factory
-        for product in factory:iterator() do
-            existing_products[product.proto.name] = true
+        for item in factory:iterator() do
+            existing_items[item.proto] = item.category
         end
     end
 
@@ -187,15 +187,15 @@ local function add_item_picker(parent_flow, player)
         current_items_in_table_count = current_items_in_table_count + 1
 
         local item_name = item_proto.name
-        local existing_product = existing_products[item_name]
+        local existing_category = existing_items[item_proto]
         local name = (item_proto.temperature) and item_proto.base_name or item_name
         local elem_tooltip = (item_proto.type ~= "entity") and {type=item_proto.type, name=name} or nil
         local unlocked = lib.availability.is_item_unlocked(force, item_proto, modal_data.item_category, unlock_cache)
         local button_style = "fflib_slot_button_default"
         local status_tooltip = nil  ---@type LocalisedString?
-        if existing_product then
+        if existing_category then
             button_style = "fflib_slot_button_blue"
-            status_tooltip = {"fp.picker_already_selected_tt", {"fp.pu_" .. modal_data.item_category, 1}}
+            status_tooltip = {"fp.picker_already_selected_" .. existing_category}
         elseif not unlocked then
             button_style = "fflib_slot_button_red"
             status_tooltip = {"fp.picker_unresearched_tt"}
@@ -206,12 +206,13 @@ local function add_item_picker(parent_flow, player)
             tooltip = {"", item_proto.tooltip or "", (item_proto.tooltip) and "\n\n" or "", status_tooltip}
         end
 
-        ---@class SelectPickerItemTags
+        ---@class SelectPickerItemTags: Tags
         ---@field item_id integer
         ---@field category_id integer
         ---@field enabled boolean
+        ---@field existing_category ItemCategory?
         local tags = {mod="fp", on_gui_click="select_picker_item", item_id=item_proto.id,
-            category_id=item_proto.category_id, enabled=(existing_product == nil),
+            category_id=item_proto.category_id, enabled=(existing_category == nil), existing_category=existing_category,
             flags={cursor=(item_proto.type ~= "entity"),
                 factoriopedia=(lib.get_factoriopedia_proto(item_proto) ~= nil)}}
         local button_item = table_subgroup.add{type="sprite-button", tags=tags, sprite=item_proto.sprite,
@@ -482,7 +483,7 @@ local function handle_item_pick(player, tags, _)
     local item_proto = prototyper.util.find("items", tags.item_id, tags.category_id)  ---@as FPItemPrototype
 
     if not tags.enabled then
-        lib.cursor.create_flying_text(player, {"fp.picker_already_selected", item_proto.localised_name})
+        lib.cursor.create_flying_text(player, {"fp.item_already_defined_" .. tags.existing_category})
         return
    end
 
@@ -699,8 +700,10 @@ listeners.gui = {
                         {"fp.pl_" .. modal_data.item_category, 1}})
                 else
                     local factory = lib.context.get(player, "Factory")  ---@as Factory
-                    local enabled = (factory:find({proto = item_proto}) == nil)
-                    local tags = {item_id=item_proto.id, category_id=item_proto.category_id, enabled=enabled}
+                    local existing_item = not modal_data.create_factory and factory:find({proto=item_proto}) or nil
+                    local existing_category = (existing_item) and existing_item.category or nil
+                    local tags = {item_id=item_proto.id, category_id=item_proto.category_id,
+                        enabled=(existing_item == nil), existing_category=existing_category}
                     handle_item_pick(player, tags--[[@as SelectPickerItemTags]])
                 end
             end
