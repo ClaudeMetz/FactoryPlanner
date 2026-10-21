@@ -48,7 +48,7 @@ local function determine_consuming_ratio(line_data, aggregate, ingredients)
             return ratio
 
         elseif available and ingredient_key ~= fuel_key then
-            -- stay within every byproduct's availability, so take the lowest ratio
+            -- stay within every surplus item's availability, so take the lowest ratio
             consuming_ratio = (consuming_ratio == 0) and ratio or math.min(consuming_ratio, ratio)
         end
     end
