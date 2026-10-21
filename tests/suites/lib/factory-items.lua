@@ -23,7 +23,16 @@ end
 
 
 return {
-    ingredient_boxes = {check=function(context)
+    ingredient_boxes = {setup=function()
+        local item = require("util").table.deepcopy(data.raw.item["iron-plate"])
+        item.name = "test-spawnable-input"
+        item.flags = {"spawnable"}
+        data:extend{item, {
+            type="recipe", name="test-spawnable-input", enabled=true, energy_required=1,
+            ingredients={{type="item", name=item.name, amount=1}},
+            results={{type="item", name="iron-plate", amount=1}}
+        }}
+    end, check=function(context)
         local player, factory, product = fixture(context)
         local function add(name, category)
             local item = context.classes.FactoryItem.init(prototyper.util.find("items", name, "item"), category)
@@ -113,7 +122,12 @@ return {
             for _, subgroup in pairs(group.subgroup_tables) do
                 for _, candidate in pairs(subgroup) do
                     local proto = prototyper.util.find("items", candidate.tags.item_id, candidate.tags.category_id)
-                    if proto == product.proto then assert(not candidate.tags.enabled) end
+                    if proto == product.proto then
+                        assert(not candidate.tags.enabled)
+                        local tooltip = candidate.tooltip
+                        assert(tooltip[#tooltip][1] == "fp.picker_already_selected_product",
+                            "Duplicate tooltips must identify the existing side")
+                    end
                     if proto.name == "stone" then stone_button = candidate end
                 end
             end
@@ -142,15 +156,39 @@ return {
 
         local coal = prototyper.util.find("items", "coal", "item")
         product.active = false
-        factory.top_floor.ingredients = {SimpleItem.init(nil, product.proto, 3), SimpleItem.init(nil, coal, 7)}
+        local spawnable = prototyper.util.find("items", "test-spawnable-input", "item")
+        assert(spawnable and lib.availability.has_productive_recipe(spawnable, "consume"))
+        factory.top_floor.ingredients = {SimpleItem.init(nil, product.proto, 3), SimpleItem.init(nil, coal, 7),
+            SimpleItem.init(nil, spawnable, 1)}
         lib.gui.run_refresh(player, "item_boxes")
         local calculated
         for _, candidate in pairs(buttons("ingredient")) do
             if candidate.tags.item_index == 1 then
-                assert(not candidate.tags.flags.can_define_target, "Disabled targets on either side prevent duplicates")
+                click(candidate, {button=defines.mouse_button_type.right})
+                local conversion
+                for _, action in pairs(lib.globals.ui_state(player).context_menu.children[1].children) do
+                    if action.tags.action == "convert_to_target" then conversion = action end
+                end
+                assert(conversion and not conversion.enabled, "Duplicate conversion must remain visible but disabled")
+                assert(conversion.tooltip[2][1] == "fp.item_already_defined_product")
+                modal_dialog.close_context_menu(player)
+                local count = factory:count()
+                click(candidate, {control=true})
+                assert(factory:count() == count, "The conversion shortcut must also reject duplicates")
             elseif candidate.tags.item_index == 2 then
                 calculated = candidate
-                assert(candidate.tags.flags.can_define_target and not candidate.tags.flags.consume)
+                assert(candidate.tags.flags.top_floor and not candidate.tags.flags.consume)
+            elseif candidate.tags.item_index == 3 then
+                click(candidate, {button=defines.mouse_button_type.right})
+                local conversion
+                for _, action in pairs(lib.globals.ui_state(player).context_menu.children[1].children) do
+                    if action.tags.action == "convert_to_target" then conversion = action end
+                end
+                assert(conversion and not conversion.enabled, "Ineligible conversion must remain visible but disabled")
+                assert(conversion.tooltip[2][1] == "fp.item_cannot_be_defined")
+                modal_dialog.close_context_menu(player)
+                click(candidate, {control=true})
+                assert(not factory:find({proto=spawnable}), "Conversion must not bypass picker eligibility")
             end
         end
         assert(calculated)
@@ -170,8 +208,14 @@ return {
         lib.gui.run_refresh(player, "item_boxes")
         list = buttons("ingredient")
         click(list[#list])
-        assert(furnace:get_defined_amount() == 10, "Blueprint imports must not modify opposite-side targets")
-        assert(assembler:get_defined_amount() == 10 + 1 / lib.globals.preferences(player).timescale)
+        assert(lib.globals.modal_data(player).item_category == "ingredient",
+            "Holding a blueprint must still open the ingredient picker")
+        assert(furnace:get_defined_amount() == 10 and assembler:get_defined_amount() == 10)
+        lib.gui.close_dialog(player, "cancel")
+        list = buttons("product")
+        click(list[#list])
+        assert(furnace:get_defined_amount() == 10 + 1 / lib.globals.preferences(player).timescale)
+        assert(assembler:get_defined_amount() == 10, "Blueprint imports must not modify ingredient targets")
         player.clear_cursor()
 
         factory.archived = true
@@ -271,7 +315,7 @@ return {
             return result
         end
         local success, reason = ingredient:paste(copy(second_product))
-        assert(not success and reason == "already_exists",
+        assert(not success and reason == "already_exists_as_product",
             "Disabled targets on the other side must still prevent duplicates")
         local source = FactoryItem.init(prototyper.util.find("items", "coal", "item"), "product")
         source.definition = {type="machines", machine_count=3}
@@ -416,6 +460,22 @@ return {
         local previous_unit = preferences.belts_or_lanes
         main_dialog.rebuild(player, false)
         compact_dialog.rebuild(player, false)
+        for _, category in ipairs{"product", "ingredient"} do
+            for _, create_factory in ipairs{false, true} do
+                lib.gui.open_dialog(player, {dialog="picker",
+                    modal_data={item_category=category, create_factory=create_factory}})
+                local modal_data = lib.globals.modal_data(player)
+                player.cursor_stack.set_stack{name=item.proto.name, count=1}
+                dispatch(player, modal_data.modal_elements.item_choice_button, defines.events.on_gui_click)
+                if create_factory then
+                    assert(modal_data.item_proto == item.proto, "A new factory must ignore the old factory's targets")
+                else
+                    assert(modal_data.item_proto == nil, "Cursor selection must reject duplicates on either side")
+                end
+                player.clear_cursor()
+                lib.gui.close_dialog(player, "cancel")
+            end
+        end
         for _, unit in ipairs{"belts", "lanes"} do
             preferences.belts_or_lanes = unit
             for _, mode in ipairs{"amount", "belts"} do

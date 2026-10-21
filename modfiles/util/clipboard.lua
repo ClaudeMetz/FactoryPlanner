@@ -75,8 +75,9 @@ function _clipboard.paste(player, target)
                 lib.cursor.create_flying_text(player, {"fp.clipboard_incompatible_class", object_lower, target_lower})
             elseif error == "incompatible" then
                 lib.cursor.create_flying_text(player, {"fp.clipboard_incompatible", object_lower})
-            elseif error == "already_exists" then
-                lib.cursor.create_flying_text(player, {"fp.clipboard_already_exists", target_lower})
+            elseif error == "already_exists_as_product" or error == "already_exists_as_ingredient" then
+                local category = (error == "already_exists_as_product") and "product" or "ingredient"
+                lib.cursor.create_flying_text(player, {"fp.item_already_defined_" .. category})
             elseif error == "no_empty_slots" then
                 lib.cursor.create_flying_text(player, {"fp.clipboard_no_empty_slots"})
             elseif error == "temperature_not_set" then

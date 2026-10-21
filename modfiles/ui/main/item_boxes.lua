@@ -92,7 +92,10 @@ local function prepare_item_buttons(player, factory, item_category)
         local special = (item.proto.type == "entity" and item.proto.special)
         local flags = {
             top_level = false,
-            can_define_target = (floor.level == 1 and not defined_items[item.proto]),
+            top_floor = (floor.level == 1),
+            can_define_target = lib.availability.can_define_factory_item(item.proto, item_category),
+            defined_product = (defined_items[item.proto] == "product"),
+            defined_ingredient = (defined_items[item.proto] == "ingredient"),
             product = (item_category == "product"),
             special = special,
             entity = (item.proto.type == "entity"),
@@ -199,7 +202,10 @@ local function prepare_item_buttons(player, factory, item_category)
     end
 
     if floor.level == 1 then
-        local tooltip = {"fp.add_top_level_product", {"fp.pl_" .. item_category, 1}}
+        local tooltip = {"fp.add_top_level_product", {"fp.pl_" .. item_category, 1}}  ---@type LocalisedString
+        if item_category == "product" then
+            tooltip = {"", tooltip, "\n", {"fp.add_blueprint_entities_tt"}}
+        end
         ---@class AddTopLevelItemTags
         ---@field item_category ItemCategory
         local tags = {mod="fp", on_gui_click="add_top_level_item", item_category=item_category}
@@ -222,7 +228,7 @@ local function handle_item_add(player, tags, event)
     if event.shift then  -- paste
         local dummy_product = FactoryItem.init(nil, tags.item_category)
         lib.clipboard.dummy_paste(player, dummy_product, factory)
-    elseif player.is_cursor_blueprint() then  -- import blueprint entities
+    elseif tags.item_category == "product" and player.is_cursor_blueprint() then  -- import blueprint entities
         local blueprint = player.cursor_record or player.cursor_stack
         local timescale = lib.globals.preferences(player).timescale
 
@@ -466,7 +472,20 @@ end
 ---@param flags GUIActionFlags
 ---@return boolean?
 local function show_convert_to_target(flags)
-    return flags.can_define_target
+    return flags.top_floor
+end
+
+---@param flags GUIActionFlags
+---@return boolean
+---@return LocalisedString? warning
+local function can_convert_to_target(flags)
+    if flags.archived then return false, {"fp.factory_archived_edit"} end
+    if flags.defined_product or flags.defined_ingredient then
+        local category = flags.defined_product and "product" or "ingredient"
+        return false, {"fp.item_already_defined_" .. category}
+    end
+    if not flags.can_define_target then return false, {"fp.item_cannot_be_defined"} end
+    return true
 end
 
 ---@param flags GUIActionFlags
@@ -501,7 +520,7 @@ listeners.gui = {
                     enable=lib.actions.can_edit_factory},
                 toggle = {show=is_top_level_item, enable=lib.actions.can_edit_factory},
                 convert_to_target = {shortcut="control-left", show=show_convert_to_target,
-                    enable=lib.actions.can_edit_factory},
+                    enable=can_convert_to_target},
                 delete = {input="delete", show=is_top_level_item, enable=lib.actions.can_edit_factory},
                 adjust_weight = {show=lib.actions.show_adjust_weight, enable=lib.actions.can_adjust_weight},
                 move_left = {show=is_top_level_item, enable=can_move_left},

@@ -194,6 +194,20 @@ return {
         lib.clipboard.dummy_paste(player, classes.FactoryItem.init(nil, "product"), factory)
         assert(factory:count() == 1 and factory.first == product, "failed dummy paste must remove its placeholder")
         assert(player_table.clipboard == clip)
+
+        for _, category in ipairs{"product", "ingredient"} do
+            local existing = classes.FactoryItem.init(prototyper.util.find("items", "iron-plate", "item"), category)
+            existing.active = false
+            factory:insert(existing)
+            local source = SimpleItem.init(nil, existing.proto, 5)
+            local success, reason = product:paste(source)
+            assert(not success and reason == "already_exists_as_" .. category,
+                "Duplicate paste errors must identify the existing side, including disabled targets")
+            lib.clipboard.copy(player, source)
+            assert(not lib.clipboard.paste(player, product))
+            assert(factory:count() == 2 and factory.first == product)
+            factory:remove(existing)
+        end
     end},
 
     cut_line_collapses_subfloor = {check=function(context)
