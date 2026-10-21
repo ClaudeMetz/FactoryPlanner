@@ -352,8 +352,8 @@ local function item_action_tags(line, proto, category, index, metadata, catalyst
             sequential = (get_priority_solver(line) == "sequential"),
             simplex = metadata.simplex,
             folded_out_subfloor = (line.parent ~= metadata.floor),
-            ingredient_only = (recipe_item_proto.ingredient_only
-                and not (recipe_item_proto.type == "fluid" and recipe_item_proto.temperature == nil)),
+            can_produce = lib.availability.has_productive_recipe(recipe_item_proto, "produce"),
+            can_consume = lib.availability.has_productive_recipe(recipe_item_proto, "consume"),
             consume = (category == "product"),
             multiple_temperatures = (temperature_data ~= nil and #temperature_data.applicable_values > 1),
             cursor = (proto.type ~= "entity"),
@@ -506,7 +506,7 @@ local function add_fuel(line, parent_flow, metadata)
         simplex = metadata.simplex,
         folded_out_subfloor = (line.parent ~= metadata.floor),
         archived = metadata.archive_open,
-        ingredient_only = (item_proto.ingredient_only and not (item_proto.type == "fluid" and item_proto.temperature == nil)),
+        can_produce = lib.availability.has_productive_recipe(item_proto, "produce"),
         multiple_temperatures = (fuel.proto.type == "fluid" and #fuel.temperature_data.applicable_values > 1)
     }
     ---@class ActOnLineFuelTags

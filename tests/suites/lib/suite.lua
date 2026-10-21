@@ -13,6 +13,7 @@ return {{
         testFactoryItemCategories = factory_items.categories,
         testFactoryItemDefinitions = factory_items.definitions,
         testFactoryItemPicker = factory_items.picker,
+        testFactoryItemResearchRecipe = factory_items.research_recipe,
         testFactoryItemToggle = factory_items.toggle,
         testDistrictFactoryMove = require("suite.district-list"),
         testLibFormatNumber = formatters.number,

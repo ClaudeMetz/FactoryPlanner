@@ -1,5 +1,27 @@
 local _availability = {}
 
+---@param item FPItemPrototype
+---@param direction RecipeProductionType
+---@return boolean
+function _availability.has_productive_recipe(item, direction)
+    local recipes = RECIPE_MAPS[direction][item.category_id]
+    if item.type == "fluid" and not item.temperature then
+        for _, variant in pairs(TEMPERATURE_MAP[item.name]) do
+            if recipes[variant.id] then return true end
+        end
+        return false
+    end
+    return recipes[item.id] ~= nil
+end
+
+---@param item FPItemPrototype
+---@param category ItemCategory
+---@return boolean
+function _availability.can_define_factory_item(item, category)
+    if item.hidden or (item.type == "fluid" and not item.temperature) then return false end
+    return _availability.has_productive_recipe(item, (category == "product") and "produce" or "consume")
+end
+
 
 ---@param force LuaForce
 ---@param recipe FPRecipePrototype
@@ -118,16 +140,18 @@ end
 
 ---@param force LuaForce
 ---@param item FPItemPrototype
+---@param category ItemCategory
 ---@param cache PrototypeUnlockCache?
 ---@return boolean
-function _availability.is_item_unlocked(force, item, cache)
+function _availability.is_item_unlocked(force, item, category, cache)
     cache = cache or {}
     if item.type ~= "entity" then
         return is_prototype_unlocked(force, {type=item.type, name=item.base_name or item.name}, cache)
     end
 
-    local producers = RECIPE_MAPS.produce[item.category_id][item.id]
-    for recipe_id, _ in pairs(producers or {}) do
+    local direction = (category == "product") and "produce" or "consume"
+    local recipes = RECIPE_MAPS[direction][item.category_id][item.id]
+    for recipe_id, _ in pairs(recipes or {}) do
         local recipe = prototyper.util.find("recipes", recipe_id, nil)  ---@as FPRecipePrototype
         if _availability.is_recipe_unlocked(force, recipe, cache) then return true end
     end

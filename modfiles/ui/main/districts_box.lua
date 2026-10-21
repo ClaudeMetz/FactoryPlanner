@@ -114,7 +114,8 @@ local function build_items_flow(player, parent, district)
             ingredient = (item.overall == "consumption"),
             special = special,
             cursor = (item.proto.type ~= "entity"),
-            ingredient_only = item.proto.ingredient_only,
+            can_produce = lib.availability.has_productive_recipe(item.proto, "produce"),
+            can_consume = lib.availability.has_productive_recipe(item.proto, "consume"),
             factoriopedia = (lib.get_factoriopedia_proto(item.proto) ~= nil)
         }
         ---@class HandleItemButtonClickTags

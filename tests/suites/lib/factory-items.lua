@@ -22,6 +22,41 @@ end
 
 
 return {
+    research_recipe = {check=function(context)
+        local player, factory, item = fixture(context)
+        for _, proto in ipairs(SORTED_ITEMS.product) do
+            if proto.name:find("^custom%-research%-") then
+                item.proto = proto
+                break
+            end
+        end
+        assert(item.proto.type == "entity" and not item.proto.special, "Expected a research target")
+        item.definition.amount = 1
+        main_dialog.rebuild(player, false)
+        compact_dialog.rebuild(player, false)
+        local button = lib.globals.main_elements(player).item_boxes.product_item_table.children[1]
+        assert(button.tags.flags.can_produce, "Research must have producing recipes")
+        dispatch(player, button, defines.events.on_gui_click)
+
+        if factory.top_floor:count() == 0 then
+            local modal_data = lib.globals.modal_data(player)
+            assert(modal_data and lib.globals.ui_state(player).modal_dialog_type == "recipe",
+                "Clicking a research target must add its recipe or open the recipe picker")
+            local choice
+            for _, group in pairs(modal_data.modal_elements.groups) do
+                for _, candidate in pairs(group.recipe_buttons) do
+                    if candidate.visible then choice = candidate; break end
+                end
+                if choice then break end
+            end
+            assert(choice, "The research picker must offer a recipe")
+            dispatch(player, choice, defines.events.on_gui_click)
+        end
+        assert(factory.top_floor:count() == 1, "Selecting a research recipe must add one line")
+        local line = factory.top_floor.first
+        assert(line.recipe.proto.products[1].name == item.proto.name)
+        assert(line.machine.proto.prototype_category == "lab", "Research recipes must use a lab")
+    end},
     categories = {check=function(context)
         local player, factory, product = fixture(context)
         local FactoryItem = context.classes.FactoryItem

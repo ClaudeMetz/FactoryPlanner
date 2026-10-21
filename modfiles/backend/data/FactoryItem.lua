@@ -101,17 +101,11 @@ function FactoryItem:paste(object)
         end
         ---@cast proto FPItemPrototype
 
-        -- Product targets require a producible item
-        if proto.hidden or (self.category == "product" and proto.ingredient_only) then
-            return false, "incompatible"
-        end
+        if not lib.availability.can_define_factory_item(proto, self.category) then return false, "incompatible" end
 
         -- Only allow pasting fluids with set temperatures
-        local temperature = (object.class == "Fuel") and object.temperature
-            or proto.temperature
-        if object.proto.type == "fluid" and not temperature then
-            return false, "temperature_not_set"
-        end
+        local temperature = (object.class == "Fuel") and object.temperature or proto.temperature
+        if object.proto.type == "fluid" and not temperature then return false, "temperature_not_set" end
 
         -- Avoid duplicate items, but allow pasting over the same item proto
         local existing_item = self.parent:find({proto=proto})

@@ -91,7 +91,8 @@ local function prepare_item_buttons(player, factory, item_category)
             cursor = (item.proto.type ~= "entity"),
             archived = factory.archived,
             simplex = (floor.solver == "simplex"),
-            ingredient_only = item.proto.ingredient_only,
+            can_produce = lib.availability.has_productive_recipe(item.proto, "produce"),
+            can_consume = lib.availability.has_productive_recipe(item.proto, "consume"),
             consume = (item_category == "product"),
             target = target,
             factoriopedia = (lib.get_factoriopedia_proto(item.proto) ~= nil)
@@ -137,7 +138,8 @@ local function prepare_item_buttons(player, factory, item_category)
                 cursor = (product.proto.type ~= "entity"),
                 archived = factory.archived,
                 simplex = (floor.solver == "simplex"),
-                ingredient_only = product.proto.ingredient_only,
+                can_produce = lib.availability.has_productive_recipe(product.proto, "produce"),
+                can_consume = lib.availability.has_productive_recipe(product.proto, "consume"),
                 move_left = (product.previous ~= nil),
                 move_right = (product.next ~= nil),
                 factoriopedia = (lib.get_factoriopedia_proto(product.proto) ~= nil)
@@ -440,7 +442,7 @@ local listeners = {}  ---@type ListenerDefinitions
 ---@param flags GUIActionFlags
 ---@return boolean?
 local function show_add_recipe(flags)
-    return not flags.entity or flags.special
+    return flags.top_level or not flags.entity or flags.special
 end
 
 ---@param flags GUIActionFlags
