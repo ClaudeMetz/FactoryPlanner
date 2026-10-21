@@ -119,8 +119,10 @@ local function refresh_production_box(player)
     production_box_elements.fold_out_subfloors_button.visible = factory_valid
     production_box_elements.fold_out_subfloors_button.toggled = preferences.fold_out_subfloors
 
-    production_box_elements.convert_subfloor_button.visible = factory_valid
-    production_box_elements.convert_subfloor_button.enabled = (current_level > 1)
+    production_box_elements.highlight_items_button.visible = factory_valid
+    production_box_elements.highlight_items_button.toggled = preferences.highlight_items
+
+    production_box_elements.convert_subfloor_button.visible = (current_level > 1)
 
     production_box_elements.solver_flow.visible = factory_valid
     if factory_valid then  ---@cast factory -nil
@@ -211,6 +213,12 @@ local function build_production_box(player)
         style="fp_sprite-button_rounded_icon", mouse_button_filter={"left"}, auto_toggle=true}
     button_fold_out_subfloors.style.margin = {2, 0, 0, 16}
     main_elements.production_box["fold_out_subfloors_button"] = button_fold_out_subfloors
+
+    local button_highlight_items = flow_production.add{type="sprite-button", sprite="utility/cursor_icon",
+        tooltip={"fp.highlight_items_tt"}, tags={mod="fp", on_gui_click="toggle_highlight_items"},
+        style="fp_sprite-button_rounded_icon", mouse_button_filter={"left"}, auto_toggle=true}
+    button_highlight_items.style.top_margin = 2
+    main_elements.production_box["highlight_items_button"] = button_highlight_items
 
     local button_convert_subfloor = flow_production.add{type="sprite-button", sprite="utility/export_slot",
         tooltip={"fp.convert_subfloor_tt"}, tags={mod="fp", on_gui_click="convert_subfloor"},
@@ -303,6 +311,14 @@ listeners.gui = {
         {
             name = "toggle_fold_out_subfloors",
             handler = toggle_fold_out_subfloors
+        },
+        {
+            name = "toggle_highlight_items",
+            handler = function(player, _, _)
+                local preferences = lib.globals.preferences(player)
+                preferences.highlight_items = not preferences.highlight_items
+                lib.gui.run_refresh(player, "production")
+            end
         },
         {
             name = "convert_subfloor",

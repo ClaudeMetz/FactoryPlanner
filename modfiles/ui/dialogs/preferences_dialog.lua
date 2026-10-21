@@ -448,7 +448,9 @@ local function open_preferences_dialog(player, modal_data)
     -- Right side
     local right_content_frame = modal_elements.secondary_frame
     add_views_box(player, right_content_frame, modal_elements)
+    right_content_frame.add{type="empty-widget", style="fflib_vertical_pusher"}
     add_belts_proto_box(player, right_content_frame)
+    right_content_frame.add{type="empty-widget", style="fflib_vertical_pusher"}
 
     local preference_box = add_preference_box(right_content_frame, "box_defaults", true)
     local default_boxes_table = preference_box.add{type="table", column_count=3}
@@ -459,9 +461,6 @@ local function open_preferences_dialog(player, modal_data)
     add_default_proto_box(player, default_boxes_table, "silos", nil, "rocket-silo")
     default_boxes_table.add{type="empty-widget", style="fflib_horizontal_pusher"}
     add_default_proto_box(player, default_boxes_table, "wagons", "fluid-wagon", "fluid-wagon")
-
-    local pusher = right_content_frame.add{type="empty-widget", style="fflib_vertical_pusher"}
-    pusher.style.top_margin = -4  -- counteract vertical spacing
 
     add_export_box(modal_elements)  -- export UI
 end

@@ -268,8 +268,7 @@ end
 ---@param relevant_line Line
 ---@param item_category "products" | "ingredients"
 ---@param metadata CompactMetadata
----@param item_buttons table
-local function add_item_flow(line, relevant_line, item_category, metadata, item_buttons)
+local function add_item_flow(line, relevant_line, item_category, metadata)
     local column_count = metadata.column_counts[item_category]
     local item_table = metadata.parent.add{type="table", column_count=column_count}
 
@@ -309,8 +308,7 @@ local function add_item_flow(line, relevant_line, item_category, metadata, item_
             ---@field context "compact_dialog"
             ---@field flags GUIActionFlags
             local tags = {mod="fp", on_gui_click="act_on_compact_item", line_id=line.id,
-                item_category=item_category, item_index=index,
-                on_gui_hover="hover_compact_item", on_gui_leave="leave_compact_item", context="compact_dialog", flags=flags}
+                item_category=item_category, item_index=index, context="compact_dialog", flags=flags}
 
             if flags.special then
                 amount, number_tooltip = lib.format.special_amount(proto.name, part_amount)
@@ -351,10 +349,7 @@ local function add_item_flow(line, relevant_line, item_category, metadata, item_
             end
             if flags.special then first_special_index = first_special_index or position end
 
-            local name = (line.class == "Line") and line.recipe:get_name_with_temperature(proto) or proto.name
-            item_buttons[type] = item_buttons[type] or {}
-            item_buttons[type][name] = item_buttons[type][name] or {}
-            table.insert(item_buttons[type][name], {button=button, proper_style=style})
+            item_highlights.register_line_item(metadata.player, button, line, proto, item_category)
 
             ::skip_item::
         end
@@ -372,8 +367,7 @@ local function add_item_flow(line, relevant_line, item_category, metadata, item_
         }
         ---@type ActOnCompactItemTags
         local tags = {mod="fp", on_gui_click="act_on_compact_item", line_id=line.id,
-            item_category=item_category, item_index=index,
-            on_gui_hover="hover_compact_item", on_gui_leave="leave_compact_item", context="compact_dialog", flags=flags}
+            item_category=item_category, item_index=index, context="compact_dialog", flags=flags}
 
         local amount, number_tooltip, secondary_amount = item_views.process_item(metadata.player, proto,
             (item.amount * line.production_ratio), line.machine.amount)
@@ -399,10 +393,7 @@ local function add_item_flow(line, relevant_line, item_category, metadata, item_
         metadata.tooltips[button.index] = {"", name_line, temperature_line, number_line}
         if first_special_index then first_special_index = first_special_index + 1 end
 
-        local type, name = proto.type, line.recipe:get_name_with_temperature(proto)
-        item_buttons[type] = item_buttons[type] or {}
-        item_buttons[type][name] = item_buttons[type][name] or {}
-        table.insert(item_buttons[type][name], {button=button, proper_style=style})
+        item_highlights.register_line_item(metadata.player, button, line, proto, item_category)
     end
 
     if item_category == "ingredients" and line.machine.fuel then
@@ -436,18 +427,14 @@ local function add_item_flow(line, relevant_line, item_category, metadata, item_
         ---@field fuel_id ObjectID
         ---@field context "compact_dialog"
         ---@field flags GUIActionFlags
-        local tags = {mod="fp", on_gui_click="act_on_compact_item", fuel_id=fuel.id, on_gui_hover="hover_compact_item",
-            on_gui_leave="leave_compact_item", context="compact_dialog", flags=flags}
+        local tags = {mod="fp", on_gui_click="act_on_compact_item", fuel_id=fuel.id, context="compact_dialog", flags=flags}
 
         local button = item_table.add{type="sprite-button", tags=tags, sprite=fuel.proto.sprite, style=style,
             number=amount, secondary_number=secondary_amount, mouse_button_filter={"left-and-right"},
             raise_hover_events=true, index=first_special_index}
         metadata.tooltips[button.index] = tooltip
 
-        local type, name = fuel.proto.type, fuel:get_name_with_temperature()
-        item_buttons[type] = item_buttons[type] or {}
-        item_buttons[type][name] = item_buttons[type][name] or {}
-        table.insert(item_buttons[type][name], {button=button, proper_style=style})
+        item_highlights.register(metadata.player, button, fuel.proto--[[@as FPFuelPrototype]], fuel:get_name_with_temperature())
     end
 end
 
@@ -495,8 +482,6 @@ local function refresh_compact_header(player, factory)
     local item_frame = ingredients_frame.add{type="frame", style="slot_button_deep_frame"}
     local table_items = item_frame.add{type="table", column_count=column_count, style="filter_slot_table"}
 
-    local item_buttons = compact_elements.item_buttons
-
     for index, ingredient in pairs(current_floor.ingredients) do
         local amount, number_tooltip, secondary_amount
         local proto = ingredient.proto
@@ -513,7 +498,7 @@ local function refresh_compact_header(player, factory)
         ---@field context "compact_dialog"
         ---@field flags GUIActionFlags
         local tags = {mod="fp", on_gui_click="act_on_compact_ingredient", floor_id=current_floor.id, item_index=index,
-            on_gui_hover="hover_compact_item", on_gui_leave="leave_compact_item", context="compact_dialog", flags=flags}
+            context="compact_dialog", flags=flags}
 
         if flags.special then
             amount, number_tooltip = lib.format.special_amount(proto.name, ingredient.amount)
@@ -531,10 +516,7 @@ local function refresh_compact_header(player, factory)
             raise_hover_events=true}
         tooltips[button.index] = tooltip
 
-        local type, name = proto.type, proto.name
-        item_buttons[type] = item_buttons[type] or {}
-        item_buttons[type][name] = item_buttons[type][name] or {}
-        table.insert(item_buttons[type][name], {button=button, proper_style=style})
+        item_highlights.register(player, button, proto)
 
         ::skip_ingredient::
     end
@@ -585,8 +567,8 @@ local function refresh_compact_production(player)
         add_beacon_flow(machines_flow, line, metadata)
 
         -- Products and Ingredients
-        add_item_flow(line, relevant_line, "products", metadata, compact_elements.item_buttons)
-        add_item_flow(line, relevant_line, "ingredients", metadata, compact_elements.item_buttons)
+        add_item_flow(line, relevant_line, "products", metadata)
+        add_item_flow(line, relevant_line, "ingredients", metadata)
 
         production_table.add{type="empty-widget", style="fflib_horizontal_pusher"}
 
@@ -601,7 +583,7 @@ local function refresh_compact_factory(player)
 
     local ui_state = lib.globals.ui_state(player)
     ui_state.tooltips.compact_dialog = {}
-    ui_state.compact_elements.item_buttons = {}
+    item_highlights.reset(player, "compact_dialog")
 
     refresh_compact_header(player, factory)
     refresh_compact_production(player)
@@ -819,38 +801,6 @@ local function handle_item_click(player, tags, action)
     end
 end
 
----@param player LuaPlayer
----@param tags ActOnCompactIngredientTags | ActOnCompactItemTags | ActOnCompactFuelTags
----@param event EventData.on_gui_hover | EventData.on_gui_leave
-local function handle_hover_change(player, tags, event)
-    local type, name = nil, nil
-    if tags.floor_id then  ---@cast tags ActOnCompactIngredientTags
-        local floor = OBJECT_INDEX[tags.floor_id]  ---@as Floor
-        local proto = floor.ingredients[tags.item_index]--[[@cast -nil]].proto
-        type, name = proto.type, proto.name
-    elseif tags.fuel_id then  ---@cast tags ActOnCompactFuelTags
-        local fuel = OBJECT_INDEX[tags.fuel_id]  ---@type Fuel
-        type, name = fuel.proto.type, fuel:get_name_with_temperature()
-    else  ---@cast tags ActOnCompactItemTags
-        local line = OBJECT_INDEX[tags.line_id]  ---@type Line
-        local item_list = (tags.flags.catalyst) and line.recipe.catalysts or line
-        local proto = item_list[tags.item_category]--[[@cast -nil]][tags.item_index]--[[@cast -nil]].proto
-        if line.class == "Line" and tags.item_category == "ingredients" then
-            type, name = proto.type, line.recipe:get_name_with_temperature(proto)
-        else
-            type, name = proto.type, proto.name
-        end
-    end
-
-    local compact_elements = lib.globals.ui_state(player).compact_elements
-    local relevant_buttons = compact_elements.item_buttons[type][name]
-    for _, button_data in pairs(relevant_buttons) do
-        button_data.button.style = (event.name == defines.events.on_gui_hover)
-            and "fflib_slot_button_pink" or button_data.proper_style
-    end
-end
-
-
 -- ** EVENTS **
 local factory_listeners = {}  ---@type ListenerDefinitions
 
@@ -958,23 +908,6 @@ factory_listeners.gui = {
                 relevant_line.done = not relevant_line.done
                 refresh_compact_factory(player)
             end
-        }
-    },
-    on_gui_hover = {
-        {
-            name = "hover_compact_item",
-            handler = function(player, tags, event)
-                ---@cast tags ActOnCompactIngredientTags | ActOnCompactItemTags | ActOnCompactFuelTags
-                ---@cast event EventData.on_gui_hover
-                handle_hover_change(player, tags, event)
-                main_dialog.set_tooltip(player, event.element)
-            end
-        }
-    },
-    on_gui_leave = {
-        {
-            name = "leave_compact_item",
-            handler = handle_hover_change
         }
     }
 }  ---@as GUIListenerDefinition

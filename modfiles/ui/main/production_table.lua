@@ -397,6 +397,7 @@ local function add_catalysts(line, parent_flow, category, metadata)
             number=amount, secondary_number=secondary_amount, style="fflib_slot_button_purple",
             mouse_button_filter={"left-and-right"}, raise_hover_events=true}
         metadata.tooltips[button.index] = tooltip
+        item_highlights.register_line_item(metadata.player, button, line, proto, category)
     end
 end
 
@@ -449,6 +450,7 @@ function builders.products(line, parent_flow, metadata)
                 tags=tags, number=amount, secondary_number=secondary_amount,
                 mouse_button_filter={"left-and-right"}, raise_hover_events=true}
             metadata.tooltips[button.index] = tooltip
+            item_highlights.register_line_item(metadata.player, button, line, proto, "products")
 
             ::skip_product::
         end
@@ -519,6 +521,7 @@ local function add_fuel(line, parent_flow, metadata)
         number=amount, secondary_number=secondary_amount, mouse_button_filter={"left-and-right"},
         raise_hover_events=true}
     metadata.tooltips[button.index] = tooltip
+    item_highlights.register(metadata.player, button, fuel.proto--[[@as FPFuelPrototype]], fuel:get_name_with_temperature())
 end
 
 ---@param line LineObject
@@ -537,6 +540,7 @@ local function add_special_ingredient(line, parent_flow, metadata, item, index)
     local button = parent_flow.add{type="sprite-button", tags=tags, sprite=item.proto.sprite, number=button_number,
         style=style, mouse_button_filter={"left-and-right"}, raise_hover_events=true}
     metadata.tooltips[button.index] = tooltip
+    item_highlights.register_line_item(metadata.player, button, line, item.proto, "ingredients")
 end
 
 ---@param line LineObject
@@ -593,6 +597,7 @@ function builders.ingredients(line, parent_flow, metadata)
             tags=tags, number=amount, secondary_number=secondary_amount,
             mouse_button_filter={"left-and-right"}, raise_hover_events=true}
         metadata.tooltips[button.index] = tooltip
+        item_highlights.register_line_item(metadata.player, button, line, proto, "ingredients")
 
         ::skip_ingredient::
     end
@@ -640,6 +645,7 @@ local all_production_columns = {
 local function refresh_production_table(player)
     local main_elements = lib.globals.main_elements(player)
     if main_elements.main_frame == nil then return end
+    item_highlights.reset(player, "production_table")
 
     -- Determine the column_count first, because not all columns are nessecarily shown
     local preferences = lib.globals.preferences(player)
