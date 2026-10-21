@@ -4,7 +4,7 @@
 ---@field proto FPItemPrototype
 ---@field amount number
 ---@field target_amount number? Contribution to the containing floor's target
----@field required_amount number? Floor product supply required by its parent
+---@field required_amount number? Floor production or consumption required by its parent
 ---@field parent LineObject?
 local SimpleItem = {}
 SimpleItem.__index = SimpleItem
