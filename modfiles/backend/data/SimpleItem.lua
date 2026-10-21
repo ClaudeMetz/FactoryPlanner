@@ -31,7 +31,10 @@ end
 
 ---@return number
 function SimpleItem:get_remaining_amount()
-    return self.amount - (self.target_amount or 0)
+    local target_amount = self.target_amount or 0
+    local tolerance = math.max(self.amount, target_amount) * MAGIC_NUMBERS.margin_of_error
+    local difference = self.amount - target_amount
+    return difference > tolerance and difference or 0
 end
 
 
