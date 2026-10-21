@@ -32,7 +32,6 @@ function simplex_engine.solve_floor(factory_data, floor_id)
     local relevant_line_data = {}  ---@type LineData[]
     local products = {}  ---@type SolverSet
     local ingredients = {}  ---@type SolverSet
-    local cycled_intermediates = {}  ---@type SolverSet
     local floor_data = factory_data.floor_data_map[floor_id]
 
     ---@param key SolverItemKey
@@ -61,7 +60,7 @@ function simplex_engine.solve_floor(factory_data, floor_id)
         table.insert(relevant_line_data, factory_data.line_data_map[line_object_id])
     end
 
-    -- Do not continue if the floor is empty (sanity check)
+    -- Do not continue if the floor is empty
     if not next(relevant_line_data) then return end
 
     -- Populate the item sets based on the line data
@@ -71,14 +70,10 @@ function simplex_engine.solve_floor(factory_data, floor_id)
         end
         for item_key, _ in pairs(line_data.ingredients) do
             ingredients[item_key] = true
-            if products[item_key] then cycled_intermediates[item_key] = true end
         end
     end
 
     local intermediates = solver.util.set.intersection(products, ingredients)  ---@type SolverSet
-
-    -- Do not continue if the floor can't produce anything (sanity check)
-    if not next(products) then return end
 
     -- Create the simplex tableau
     local tableau = SimplexTableau:init()
@@ -96,16 +91,11 @@ function simplex_engine.solve_floor(factory_data, floor_id)
         end
     end
 
-    -- Add exporty slack variables for intermediates
+    -- Add slack variables for intermediates
     for item_key, _ in pairs(intermediates) do
-        local objective = item_cost(item_key, "out") * objective_vector.intermediate_out
-        tableau:add_item_variable(item_key, "export", objective)
-    end
-
-    -- Add import slack variables for cycled intermediates
-    for item_key, _ in pairs(cycled_intermediates) do
-        local objective = item_cost(item_key, "in") * objective_vector.intermediate_in
-        tableau:add_item_variable(item_key, "import", objective)
+        local cost = item_cost(item_key, "out")
+        tableau:add_item_variable(item_key, "export", cost * objective_vector.intermediate_out)
+        tableau:add_item_variable(item_key, "import", cost * objective_vector.intermediate_in)
     end
 
     -- Add slack variables for ingredients
