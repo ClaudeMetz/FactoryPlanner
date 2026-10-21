@@ -1,6 +1,7 @@
 ---@diagnostic disable
 
 local helpers = require("helpers")
+local SimpleItem = script and require("__factoryplanner__.backend.data.SimpleItem")
 
 local function fixture(context)
     local player = game.players[1]
@@ -22,6 +23,164 @@ end
 
 
 return {
+    ingredient_boxes = {check=function(context)
+        local player, factory, product = fixture(context)
+        local function add(name, category)
+            local item = context.classes.FactoryItem.init(prototyper.util.find("items", name, "item"), category)
+            item.definition = {type="amount", amount=10}
+            factory:insert(item)
+            return item
+        end
+        product.definition = {type="amount", amount=10}
+        local ingredient = add("iron-ore", "ingredient")
+        local second_product = add("copper-plate", "product")
+        local second_ingredient = add("copper-ore", "ingredient")
+        main_dialog.rebuild(player, false)
+        compact_dialog.rebuild(player, false)
+
+        local function buttons(category)
+            return lib.globals.main_elements(player).item_boxes[category .. "_item_table"].children
+        end
+        local function button(item)
+            for _, candidate in pairs(buttons(item.category)) do
+                if candidate.tags.item_id == item.id then return candidate end
+            end
+            error("Missing target button for " .. item.proto.name)
+        end
+        local function click(element, overrides)
+            local event = {name=defines.events.on_gui_click, tick=game.tick, player_index=player.index,
+                element=element, button=defines.mouse_button_type.left, control=false, alt=false, shift=false,
+                cursor_display_location={x=0, y=0}}
+            for key, value in pairs(overrides or {}) do event[key] = value end
+            lib.globals.ui_state(player).last_action = nil
+            script.get_event_handler(event.name)(event)
+        end
+        local function menu(item)
+            click(button(item), {button=defines.mouse_button_type.right})
+            local actions = {}
+            for _, action in pairs(lib.globals.ui_state(player).context_menu.children[1].children) do
+                actions[action.tags.action] = action
+            end
+            return actions
+        end
+
+        for _, category in ipairs{"product", "ingredient"} do
+            local list = buttons(category)
+            assert(#list == 3 and list[3].tags.on_gui_click == "add_top_level_item")
+            assert(list[3].tags.item_category == category)
+            assert(not list[1].tags.flags.move_left and list[1].tags.flags.move_right)
+            assert(list[2].tags.flags.move_left and not list[2].tags.flags.move_right)
+            for i = 1, 2 do
+                assert(OBJECT_INDEX[list[i].tags.item_id].category == category)
+                assert(list[i].tags.flags.consume == (category == "ingredient"))
+            end
+        end
+        local actions = menu(ingredient)
+        for _, name in ipairs{"edit", "toggle", "delete", "copy", "paste", "cut", "move_left", "move_right"} do
+            assert(actions[name], "Ingredient targets must offer " .. name)
+        end
+        assert(not actions.move_left.enabled and actions.move_right.enabled)
+        click(actions.move_right)
+        local ingredients = factory:as_list({category="ingredient"})
+        local products = factory:as_list({category="product"})
+        assert(ingredients[1] == second_ingredient and ingredients[2] == ingredient)
+        assert(products[1] == product and products[2] == second_product)
+        assert(not button(ingredient).tags.flags.move_right)
+
+        click(menu(ingredient).toggle)
+        assert(not ingredient.active and button(ingredient).style.name == "fflib_slot_button_red")
+        click(menu(ingredient).edit)
+        assert(lib.globals.modal_data(player).item_category == "ingredient")
+        local elements = lib.globals.modal_elements(player)
+        elements.item_amount_textfield.text = "60"
+        dispatch(player, elements.item_amount_textfield, defines.events.on_gui_text_changed)
+        lib.gui.close_dialog(player, "submit")
+        assert(ingredient:get_defined_amount() == 60 / lib.globals.preferences(player).timescale)
+        assert(ingredient.category == "ingredient")
+
+        click(menu(ingredient).cut)
+        assert(not factory:find({proto=ingredient.proto}))
+        local list = buttons("ingredient")
+        click(list[#list], {shift=true})
+        ingredient = factory:find({proto=ingredient.proto})
+        assert(ingredient and ingredient.category == "ingredient" and not ingredient.active)
+
+        list = buttons("ingredient")
+        click(list[#list])
+        assert(lib.globals.modal_data(player).item_category == "ingredient")
+        local stone_button
+        for _, group in pairs(lib.globals.modal_elements(player).groups) do
+            for _, subgroup in pairs(group.subgroup_tables) do
+                for _, candidate in pairs(subgroup) do
+                    local proto = prototyper.util.find("items", candidate.tags.item_id, candidate.tags.category_id)
+                    if proto == product.proto then assert(not candidate.tags.enabled) end
+                    if proto.name == "stone" then stone_button = candidate end
+                end
+            end
+        end
+        assert(stone_button and stone_button.tags.enabled)
+        click(stone_button)
+        elements = lib.globals.modal_elements(player)
+        elements.item_amount_textfield.text = "120"
+        dispatch(player, elements.item_amount_textfield, defines.events.on_gui_text_changed)
+        lib.gui.close_dialog(player, "submit")
+        local stone = factory:find({proto=prototyper.util.find("items", "stone", "item")})
+        assert(stone and stone.category == "ingredient")
+
+        click(button(ingredient))
+        if factory.top_floor:count() == 0 then
+            local modal_data = lib.globals.modal_data(player)
+            assert(modal_data.production_type == "consume")
+            lib.gui.close_dialog(player, "cancel")
+        else
+            local consumes_ore = false
+            for _, input in pairs(factory.top_floor.first.recipe.proto.ingredients) do
+                if input.name == "iron-ore" then consumes_ore = true end
+            end
+            assert(consumes_ore, "Ingredient targets must add consuming recipes")
+        end
+
+        local coal = prototyper.util.find("items", "coal", "item")
+        product.active = false
+        factory.top_floor.ingredients = {SimpleItem.init(nil, product.proto, 3), SimpleItem.init(nil, coal, 7)}
+        lib.gui.run_refresh(player, "item_boxes")
+        local calculated
+        for _, candidate in pairs(buttons("ingredient")) do
+            if candidate.tags.item_index == 1 then
+                assert(not candidate.tags.flags.can_define_target, "Disabled targets on either side prevent duplicates")
+            elseif candidate.tags.item_index == 2 then
+                calculated = candidate
+                assert(candidate.tags.flags.can_define_target and not candidate.tags.flags.consume)
+            end
+        end
+        assert(calculated)
+        click(calculated, {control=true})
+        local converted = factory:find({proto=coal})
+        assert(converted and converted.category == "ingredient" and converted:get_defined_amount() == 7)
+        click(menu(converted).delete)
+        assert(not factory:find({proto=coal}))
+
+        local furnace = add("stone-furnace", "product")
+        local assembler = add("assembling-machine-1", "ingredient")
+        player.cursor_stack.set_stack{name="blueprint", count=1}
+        player.cursor_stack.set_blueprint_entities{
+            {entity_number=1, name="stone-furnace", position={0, 0}},
+            {entity_number=2, name="assembling-machine-1", position={4, 0}}
+        }
+        lib.gui.run_refresh(player, "item_boxes")
+        list = buttons("ingredient")
+        click(list[#list])
+        assert(furnace:get_defined_amount() == 10, "Blueprint imports must not modify opposite-side targets")
+        assert(assembler:get_defined_amount() == 10 + 1 / lib.globals.preferences(player).timescale)
+        player.clear_cursor()
+
+        factory.archived = true
+        lib.gui.run_refresh(player, "item_boxes")
+        for _, category in ipairs{"product", "ingredient"} do
+            list = buttons(category)
+            assert(not list[#list].enabled, "Archived factories must disable both add buttons")
+        end
+    end},
     research_recipe = {check=function(context)
         local player, factory, item = fixture(context)
         for _, proto in ipairs(SORTED_ITEMS.product) do

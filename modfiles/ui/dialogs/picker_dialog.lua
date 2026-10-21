@@ -15,7 +15,6 @@ local GROUP_MAX_ROWS = 3
 ---@field belt_stack integer
 ---@field selected_group_id integer?
 
--- This dialog works as the product picker currently, but could also work as an ingredient picker down the line
 -- ** ITEM PICKER **
 ---@param modal_data PickerDialogModalData
 ---@param new_group_id integer

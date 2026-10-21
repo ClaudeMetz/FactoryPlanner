@@ -140,6 +140,10 @@ return {
                     or (category == "ingredient" and suffix == "input")
                 c.check((offered[find(suffix)] == true) == expected, suffix .. ": " .. category .. " picker")
             end
+            for _, name in ipairs{"blueprint", "blueprint-book", "deconstruction-planner", "upgrade-planner"} do
+                local proto = prototyper.util.find("items", name, "item")
+                c.check(proto ~= nil and not offered[proto], name .. ": spawnable tools stay out of the picker")
+            end
             c.check(not offered[find("fluid", "fluid")], "The picker must not offer temperatureless fluids")
             lib.gui.close_dialog(player, "cancel")
         end

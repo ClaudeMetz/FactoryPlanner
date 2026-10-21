@@ -19,6 +19,7 @@ end
 ---@return boolean
 function _availability.can_define_factory_item(item, category)
     if item.hidden or (item.type == "fluid" and not item.temperature) then return false end
+    if item.type == "item" and prototypes.item[item.name].has_flag("spawnable") then return false end
     return _availability.has_productive_recipe(item, (category == "product") and "produce" or "consume")
 end
 

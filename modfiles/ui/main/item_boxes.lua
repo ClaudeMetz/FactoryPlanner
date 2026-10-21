@@ -67,8 +67,14 @@ local function prepare_item_buttons(player, factory, item_category)
     if not factory or not factory.valid then return {} end
 
     local buttons = {}  ---@type ItemBoxButton[]
-    local defined_items = {}  ---@type table<FPItemPrototype, true>
+    local defined_items = {}  ---@type table<FPItemPrototype, ItemCategory>
     local floor = lib.context.get(player, "Floor")  ---@as Floor
+
+    if floor.level == 1 then
+        for item in factory:iterator() do
+            defined_items[item.proto] = item.category
+        end
+    end
 
     ---@param item SimpleItem
     ---@param index integer
@@ -77,14 +83,14 @@ local function prepare_item_buttons(player, factory, item_category)
         local required_amount = item.required_amount or 0
         local part_amount = target and required_amount or (item.amount - required_amount)
         if part_amount <= 0 and (target or item.amount ~= 0) then return end
-        if not target and defined_items[item.proto] and part_amount == 0 then return end
+        if not target and defined_items[item.proto] == item_category and part_amount == 0 then return end
 
         local amount, number_tooltip, secondary_amount
 
         local special = (item.proto.type == "entity" and item.proto.special)
         local flags = {
             top_level = false,
-            can_define_target = (floor.level == 1 and item_category == "product" and not defined_items[item.proto]),
+            can_define_target = (floor.level == 1 and not defined_items[item.proto]),
             product = (item_category == "product"),
             special = special,
             entity = (item.proto.type == "entity"),
@@ -105,7 +111,7 @@ local function prepare_item_buttons(player, factory, item_category)
             if amount == -1 then return end  -- an amount of -1 means it was below the margin of error
         end
 
-        local name_line = (target and item_category == "product")
+        local name_line = target
             and {"fp.tt_title_with_note", item.proto.localised_name, {"fp.target"}}
             or {"fp.tt_title", item.proto.localised_name}
         local tooltip = {"", name_line, "\n", number_tooltip}
@@ -120,77 +126,77 @@ local function prepare_item_buttons(player, factory, item_category)
         table.insert(buttons, {definition=definition, tooltip=tooltip})
     end
 
-    if item_category == "product" and floor.level == 1 then
-        for product in factory:iterator() do  ---@cast product.proto FPItemPrototype
-            defined_items[product.proto] = true
+    if floor.level == 1 then
+        for item in factory:iterator({category=item_category}) do  ---@cast item.proto FPItemPrototype
             local style = "fflib_slot_button_green"
 
             local amount, number_tooltip, secondary_amount
-            local required_amount = product:get_defined_amount()
-            local display_amount = required_amount or product.amount
+            local required_amount = item:get_defined_amount()
+            local display_amount = required_amount or item.amount
 
-            local special = (product.proto.type == "entity" and product.proto.special)
+            local special = (item.proto.type == "entity" and item.proto.special)
             local flags = {
                 top_level = true,
-                product = true,
+                product = (item_category == "product"),
+                consume = (item_category == "ingredient"),
                 special = special,
-                entity = (product.proto.type == "entity"),
-                cursor = (product.proto.type ~= "entity"),
+                entity = (item.proto.type == "entity"),
+                cursor = (item.proto.type ~= "entity"),
                 archived = factory.archived,
                 simplex = (floor.solver == "simplex"),
-                can_produce = lib.availability.has_productive_recipe(product.proto, "produce"),
-                can_consume = lib.availability.has_productive_recipe(product.proto, "consume"),
-                move_left = (product.previous ~= nil),
-                move_right = (product.next ~= nil),
-                factoriopedia = (lib.get_factoriopedia_proto(product.proto) ~= nil)
+                can_produce = lib.availability.has_productive_recipe(item.proto, "produce"),
+                can_consume = lib.availability.has_productive_recipe(item.proto, "consume"),
+                move_left = (factory:find({category=item_category}, item.previous, "previous") ~= nil),
+                move_right = (factory:find({category=item_category}, item.next, "next") ~= nil),
+                factoriopedia = (lib.get_factoriopedia_proto(item.proto) ~= nil)
             }
 
             if flags.special then
-                amount, number_tooltip = lib.format.special_amount(product.proto.name, display_amount)
+                amount, number_tooltip = lib.format.special_amount(item.proto.name, display_amount)
             else
-                amount, number_tooltip, secondary_amount = item_views.process_item(player, product.proto,
+                amount, number_tooltip, secondary_amount = item_views.process_item(player, item.proto,
                     display_amount, nil)
-                if amount == -1 then goto skip_product end  -- an amount of -1 means it was below the margin of error
+                if amount == -1 then goto skip_item end  -- an amount of -1 means it was below the margin of error
             end
 
-            if not product.active then
+            if not item.active then
                 style = "fflib_slot_button_red"
             elseif required_amount ~= nil then
-                local difference = product.amount - required_amount
-                local tolerance = math.max(product.amount, required_amount) * MAGIC_NUMBERS.margin_of_error
+                local difference = item.amount - required_amount
+                local tolerance = math.max(item.amount, required_amount) * MAGIC_NUMBERS.margin_of_error
                 local shortfall = difference < -tolerance
                 style = shortfall and "fflib_slot_button_yellow" or "fflib_slot_button_green"
             end
 
-            local status_line = (not product.active)
+            local status_line = (not item.active)
                 and {"fp.line_status", {"fp.target_disabled", {"fp.pu_" .. item_category, 1}}} or ""
-            local tooltip = {"", {"fp.tt_title_with_note", product.proto.localised_name, {"fp.target"}},
+            local tooltip = {"", {"fp.tt_title_with_note", item.proto.localised_name, {"fp.target"}},
                 status_line, "\n", number_tooltip or ""}
-            if product.definition.type == "machines" then
-                local count = product.definition.machine_count
+            if item.definition.type == "machines" then
+                local count = item.definition.machine_count
                 table.insert(tooltip, {"", "\n", {"fp.item_defined_by_machines",
                     lib.format.number(count, 4), {"fp.pl_machine", count}}})
             end
 
             ---@type HandleItemBoxClickTags
-            local tags = {mod="fp", on_gui_click="act_on_item_box", item_category=item_category, item_id=product.id,
+            local tags = {mod="fp", on_gui_click="act_on_item_box", item_category=item_category, item_id=item.id,
                 on_gui_hover="set_tooltip", context="item_boxes", flags=flags}
             local definition = {type="sprite-button", tags=tags--[[@as Tags]], number=amount,
-                secondary_number=secondary_amount, style=style, sprite=product.proto.sprite,
+                secondary_number=secondary_amount, style=style, sprite=item.proto.sprite,
                 mouse_button_filter={"left-and-right"}, raise_hover_events=true}
             table.insert(buttons, {definition=definition, tooltip=tooltip})
 
-            ::skip_product::
+            ::skip_item::
         end
     end
 
     for _, target in ipairs{true, false} do
         for index, item in pairs(floor[item_category .. "s"]) do
-            if not target or not defined_items[item.proto] then add_calculated_item(item, index, target) end
+            if not target or defined_items[item.proto] ~= item_category then add_calculated_item(item, index, target) end
         end
     end
 
-    if item_category == "product" and floor.level == 1 then
+    if floor.level == 1 then
         local tooltip = {"fp.add_top_level_product", {"fp.pl_" .. item_category, 1}}
         ---@class AddTopLevelItemTags
         ---@field item_category ItemCategory
@@ -224,7 +230,9 @@ local function handle_item_add(player, tags, event)
 
             local amount = entity.count / timescale
             if existing_item then
-                existing_item:add_defined_amount(amount)
+                if existing_item.category == tags.item_category then
+                    existing_item:add_defined_amount(amount)
+                end
             else
                 local product = FactoryItem.init(proto, tags.item_category)  -- definition.type = "amount"
                 product.definition = {type="amount", amount=amount}
@@ -447,7 +455,7 @@ end
 
 ---@param flags GUIActionFlags
 ---@return boolean?
-local function is_top_level_product(flags)
+local function is_top_level_item(flags)
     return flags.top_level
 end
 
@@ -485,18 +493,18 @@ listeners.gui = {
             name = "act_on_item_box",
             actions_table = {
                 add_recipe = {shortcut="left", core=true, show=show_add_recipe, enable=lib.actions.can_add_recipe},
-                edit = {shortcut="control-left", core=true, show=is_top_level_product,
+                edit = {shortcut="control-left", core=true, show=is_top_level_item,
                     enable=lib.actions.can_edit_factory},
-                toggle = {show=is_top_level_product, enable=lib.actions.can_edit_factory},
+                toggle = {show=is_top_level_item, enable=lib.actions.can_edit_factory},
                 convert_to_target = {shortcut="control-left", show=show_convert_to_target,
                     enable=lib.actions.can_edit_factory},
-                delete = {input="delete", show=is_top_level_product, enable=lib.actions.can_edit_factory},
+                delete = {input="delete", show=is_top_level_item, enable=lib.actions.can_edit_factory},
                 adjust_weight = {show=lib.actions.show_adjust_weight, enable=lib.actions.can_adjust_weight},
-                move_left = {show=is_top_level_product, enable=can_move_left},
-                move_right = {show=is_top_level_product, enable=can_move_right},
+                move_left = {show=is_top_level_item, enable=can_move_left},
+                move_right = {show=is_top_level_item, enable=can_move_right},
                 copy = {shortcut="shift-right"},
-                paste = {shortcut="shift-left", show=is_top_level_product, enable=lib.actions.can_edit_factory},
-                cut = {shortcut="control-right", show=is_top_level_product, enable=lib.actions.can_edit_factory},
+                paste = {shortcut="shift-left", show=is_top_level_item, enable=lib.actions.can_edit_factory},
+                cut = {shortcut="control-right", show=is_top_level_item, enable=lib.actions.can_edit_factory},
                 pipette = {input="pipette", enable=lib.actions.can_pipette},
                 put_into_combinator = {input="put_into_combinator", enable=lib.actions.can_put_into_combinator},
                 factoriopedia = {shortcut="alt-left", enable=lib.actions.can_open_factoriopedia}
