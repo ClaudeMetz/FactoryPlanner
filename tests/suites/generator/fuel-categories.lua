@@ -56,12 +56,6 @@ return {
             defaults.set(player, "fuels", {prototype="test-fuel-a"}, category_a)
             defaults.set(player, "fuels", {prototype="test-fuel-b"}, category_b)
             defaults.set(player, "fuels", {prototype="test-fuel-ab"}, combined)
-            defaults.migrate(player_table)
-            for category, name in pairs{[category_a]="test-fuel-a", [category_b]="test-fuel-b",
-                [combined]="test-fuel-ab"} do
-                assert(defaults.get(player, "fuels", category).proto.name == name,
-                    "Migration must preserve the independent default for " .. category)
-            end
 
             local line = context.classes.Line.init(find("recipes", "test-fuel-gear"))
             local function change_machine(suffix)

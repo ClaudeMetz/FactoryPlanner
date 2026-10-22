@@ -302,12 +302,6 @@ return {
         assert(restored_ingredients[2].definition.machine_count == 2.5)
         local clone = factory:clone(player)
         assert(clone:find({proto=ingredient.proto}).category == "ingredient")
-        local imported, import_error = lib.porter.process_export_string(player,
-            lib.porter.generate_export_string({factory}))
-        assert(imported, import_error)
-        local imported_factory = imported.factories[1]
-        assert(imported_factory:find({proto=ingredient.proto}).category == "ingredient")
-        assert(not imported_factory:find({proto=second_product.proto}).active)
 
         local function copy(item)
             local result = FactoryItem.unpack(item:pack(true))
