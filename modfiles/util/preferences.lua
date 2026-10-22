@@ -76,9 +76,9 @@ function _preferences.reload(player_table)
     reload("fold_out_subfloors", false)
     reload("highlight_items", false)
 
-    reload("main_width_percentage", 80)
-    reload("main_height_percentage", 80)
-    reload("compact_width_percentage", 30)
+    reload("main_width_percentage", 70)
+    reload("main_height_percentage", 90)
+    reload("compact_width_percentage", 24)
 
     reload("show_gui_button", true)
     reload("skip_factory_naming", true)

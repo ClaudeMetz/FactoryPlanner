@@ -717,7 +717,6 @@ end
 ---@field weight double?
 ---@field temperature float?
 ---@field base_name string?
----@field ingredient_only boolean
 ---@field order string
 ---@field group ItemGroup
 ---@field subgroup ItemGroup
@@ -728,8 +727,8 @@ end
 ---@alias RelevantItems table<ItemType, table<ItemName, ItemDetails>>
 
 ---@class ItemDetails
----@field ingredient_only boolean
 ---@field temperature float?
+---@field base_name string?
 
 ---@class CustomItemDetails
 ---@field name string
@@ -872,33 +871,17 @@ function generator.items.generate(context)
 
     local relevant_items = {item={}, fluid={}, entity={}}
     local fluid_has_temperature = {}
-    -- Extract items from recipes and note whether they are ever used as a product
+    -- Extract all items used by recipes
     for _, recipe_proto in pairs(recipe_prototypes) do
-        local ingredient_amounts = {}  ---@type table<string, number>
-        for _, ingredient in pairs(recipe_proto.ingredients) do
-            -- Recipe picker needs to deal with fluids, as their temperature needs configuration
-            if ingredient.type == "item" then
-                local amount = ingredient_amounts[ingredient.name] or 0
-                ingredient_amounts[ingredient.name] = amount + ingredient.amount
-            end
-        end
-
         for _, item_category in pairs({"products", "ingredients"}) do
             for _, item_data in pairs(recipe_proto[item_category]) do
                 local type_data = relevant_items[item_data.type]
 
                 if type_data[item_data.name] == nil then
                     type_data[item_data.name] = {
-                        ingredient_only = true,
                         temperature = item_data.temperature,
                         base_name = item_data.base_name
                     }
-                end
-
-                -- Make sure the recipe actually net-produces the item
-                local ingredient_amount = ingredient_amounts[item_data.name] or 0
-                if item_category == "products" and item_data.amount > ingredient_amount then
-                    type_data[item_data.name].ingredient_only = false
                 end
 
                 if item_data.type == "fluid" then
@@ -917,7 +900,6 @@ function generator.items.generate(context)
         if not exists then
             local temperature = prototypes.fluid[name].default_temperature
             relevant_items["fluid"][lib.temperature.name_with(name, temperature)] = {
-                ingredient_only = true,
                 temperature = temperature,
                 base_name = name
             }
@@ -936,16 +918,16 @@ function generator.items.generate(context)
             special = true
         }
         generator.util.add_default_groups(custom_items[item_name])
-        relevant_items["entity"][item_name] = {ingredient_only=true}
+        relevant_items["entity"][item_name] = {}
     end
 
     -- Electricity is normally produced by generators, add manually otherwise
     relevant_items["entity"]["custom-electric-power"] =
-        relevant_items["entity"]["custom-electric-power"] or {ingredient_only=true}
+        relevant_items["entity"]["custom-electric-power"] or {}
 
     -- No recipes use these (yet) so they need to be added manually
-    relevant_items["entity"]["custom-heat-power"] = {ingredient_only=true}
-    relevant_items["entity"]["custom-heating-power"] = {ingredient_only=true}
+    relevant_items["entity"]["custom-heat-power"] = {}
+    relevant_items["entity"]["custom-heating-power"] = {}
 
     for type, item_table in pairs(relevant_items) do
         for item_name, item_details in pairs(item_table) do
@@ -963,7 +945,6 @@ function generator.items.generate(context)
                 weight = (type == "item") and proto.weight or nil,
                 temperature = item_details.temperature,
                 base_name = item_details.base_name,
-                ingredient_only = item_details.ingredient_only,
                 order = proto.order,
                 group = generator.util.generate_group_table(proto.group--[[@cast -nil]]),
                 subgroup = generator.util.generate_group_table(proto.subgroup--[[@cast -nil]])

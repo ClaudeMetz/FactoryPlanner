@@ -79,7 +79,7 @@ end
 ---@param direction NeighbourDirection
 ---@param spots integer?
 function Factory:shift(product, direction, spots)
-    self:_shift(product, direction, spots)
+    self:_shift(product, direction, spots, {category=product.category})
 end
 
 
@@ -215,7 +215,7 @@ end
 ---@field blueprint_strings table<integer, string> sparse
 ---@field notes string
 ---@field productivity_boni table<string, IntegerEffectValue>
----@field products PackedFactoryItem[]
+---@field items PackedFactoryItem[]
 ---@field top_floor PackedFloor
 
 ---@param full boolean
@@ -235,7 +235,7 @@ function Factory:pack(full)
         blueprint_strings = blueprint_strings,
         notes = self.notes,
         productivity_boni = self.productivity_boni,
-        products = self:_pack(full),
+        items = self:_pack(full),
         top_floor = self.top_floor:pack(full)
     }
 end
@@ -253,7 +253,7 @@ local function unpack(packed_self)
     unpacked_self.notes = packed_self.notes
     unpacked_self.productivity_boni = packed_self.productivity_boni
 
-    unpacked_self.first = Object.unpack(packed_self.products, FactoryItem.unpack, unpacked_self)  ---@as FactoryItem
+    unpacked_self.first = Object.unpack(packed_self.items, FactoryItem.unpack, unpacked_self)  ---@as FactoryItem
 
     unpacked_self.top_floor = Floor.unpack(packed_self.top_floor)
     unpacked_self.top_floor.parent = unpacked_self

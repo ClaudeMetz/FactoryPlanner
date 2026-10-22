@@ -18,6 +18,9 @@ return {{
         testQualityBaselines = require("suite.quality")
     }
 }, {
+    name = "item-recipes",
+    cases = {testItemRecipeEligibility = require("suite.item-recipes")}
+}, {
     name = "research-durability",
     cases = {testResearchDurability = require("suite.research-durability")}
 }}

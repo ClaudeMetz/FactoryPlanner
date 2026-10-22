@@ -10,8 +10,11 @@ return {{
     name = "normal",
     cases = {
         testLibExpressions = require("suite.expressions"),
+        testFactoryItemIngredientBoxes = factory_items.ingredient_boxes,
+        testFactoryItemCategories = factory_items.categories,
         testFactoryItemDefinitions = factory_items.definitions,
         testFactoryItemPicker = factory_items.picker,
+        testFactoryItemResearchRecipe = factory_items.research_recipe,
         testFactoryItemToggle = factory_items.toggle,
         testDistrictFactoryMove = require("suite.district-list"),
         testLibFormatNumber = formatters.number,

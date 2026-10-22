@@ -37,19 +37,68 @@ local function ordered_recipe_groups()
     return groups
 end
 
--- Maps all items to the recipes that produce or consume them ([item_type][item_name] = {[recipe_id] = true}
+---@alias RecipeProductionType "produce" | "consume"
+
+---@param items (Ingredient | FormattedProduct)[]
+---@param type string
+---@param name string
+---@return number? amount
+local function peer_amount(items, type, name)
+    for _, item in pairs(items) do
+        if item.type == type and item.name == name then return item.amount end
+    end
+    return nil
+end
+
+---@param recipe FPRecipePrototype
+---@param proto FPItemPrototype
+---@param production_type RecipeProductionType
+---@return boolean
+local function recipe_nets_item(recipe, proto, production_type)
+    -- Products carry their temperature in their name, ingredients are keyed by the base fluid
+    local ingredient_name = proto.base_name or proto.name
+    local ingredient_amount = peer_amount(recipe.ingredients, proto.type, ingredient_name)
+    local product_amount = peer_amount(recipe.products, proto.type, proto.name)
+
+    if production_type == "consume" then
+        -- Consuming pins the ingredient to the temperature of the item in question, unlike
+        -- producing, so a product at that same temperature is certain to cancel it out
+        if ingredient_amount == nil then return false end
+        return (product_amount == nil) or (ingredient_amount > product_amount)
+
+    else  -- production_type == "produce"
+        if product_amount == nil then return false end
+        if ingredient_amount == nil or product_amount > ingredient_amount then return true end
+
+        -- The ingredient only cancels the product out when set to its temperature, so the recipe is
+        -- still worth offering as long as there is any other temperature to pick instead
+        for _, ingredient in pairs(recipe.ingredients) do
+            if ingredient.type == "fluid" and ingredient.name == ingredient_name then
+                local temperature_data = lib.temperature.generate_data(ingredient--[[@as Ingredient.fluid]])
+                for _, value in pairs(temperature_data.applicable_values) do
+                    if value ~= proto.temperature then return true end
+                end
+            end
+        end
+        return false
+    end
+end
+
+-- Maps items to recipes that net-produce or net-consume them
 ---@param item_type "products" | "ingredients"
 ---@return RecipeMap
 local function recipe_map_from(item_type)
+    local direction = (item_type == "products") and "produce" or "consume"
     -- There is always only 3 categories (item, fluid, entity)
     local map = {[1] = {}, [2] = {}, [3] = {}}  ---@type RecipeMap
 
     ---@param item_proto FPItemPrototype
-    ---@param recipe_id integer
-    local function add(item_proto, recipe_id)
+    ---@param recipe FPRecipePrototype
+    local function add(item_proto, recipe)
+        if not recipe_nets_item(recipe, item_proto, direction) then return end
         local category = map[item_proto.category_id]
         category[item_proto.id] = category[item_proto.id] or {}
-        category[item_proto.id][recipe_id] = true
+        category[item_proto.id][recipe.id] = true
     end
 
     for _, recipe in pairs(storage.prototypes.recipes) do
@@ -60,12 +109,12 @@ local function recipe_map_from(item_type)
                 for _, fluid_proto in pairs(TEMPERATURE_MAP[item.name] or {}) do
                     if (not min_temp or min_temp <= fluid_proto.temperature) and
                             (not max_temp or max_temp >= fluid_proto.temperature) then
-                        add(fluid_proto, recipe.id)
+                        add(fluid_proto, recipe)
                     end
                 end
             else
                 local item_proto = prototyper.util.find("items", item.name, item.type)
-                add(item_proto--[[@as FPItemPrototype]], recipe.id)
+                add(item_proto--[[@as FPItemPrototype]], recipe)
             end
         end
     end
@@ -74,15 +123,19 @@ local function recipe_map_from(item_type)
 end
 
 
--- Generates a list of all items, sorted for display in the picker
----@return FPItemPrototype[]
+-- Generates eligible product and ingredient lists, sorted for display in the picker
+---@return table<ItemCategory, FPItemPrototype[]>
 local function sorted_items()
-    local items = {}
+    local items = {product={}, ingredient={}}  ---@type table<ItemCategory, FPItemPrototype[]>
 
     for _, type in pairs{"item", "fluid", "entity"} do
         local category = prototyper.util.find("items", nil, type)  ---@as NamedCategory<FPItemPrototype>
         for _, item in pairs(category.members--[[@cast -nil]]) do
-            table.insert(items, item)
+            for item_category, list in pairs(items) do
+                if lib.availability.can_define_factory_item(item, item_category) then
+                    table.insert(list, item)
+                end
+            end
         end
     end
 
@@ -102,7 +155,7 @@ local function sorted_items()
         return false
     end
 
-    table.sort(items, sorting_function)
+    for _, list in pairs(items) do table.sort(list, sorting_function) end
     return items
 end
 
@@ -304,7 +357,6 @@ function loader.run()
     PROTOTYPE_MAPS = prototype_maps(prototyper.data_types)
     MODULE_NAME_MAP = module_name_map()
 
-    SORTED_ITEMS = sorted_items()
     TEMPERATURE_MAP = temperature_map()
 
     ORDERED_RECIPE_GROUPS = ordered_recipe_groups()
@@ -312,6 +364,7 @@ function loader.run()
         produce = recipe_map_from("products"),
         consume = recipe_map_from("ingredients")
     }
+    SORTED_ITEMS = sorted_items()
 
     PRODUCTIVITY_RECIPES = generate_productivity_recipes()
     LAUNCHER_DATA = generate_launcher_data()

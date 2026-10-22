@@ -2,8 +2,6 @@ local FactoryItem = require("backend.data.FactoryItem")
 
 local GROUP_MAX_ROWS = 3
 
----@alias ItemCategory "product" | "ingredient"
-
 ---@class PickerDialogModalData: ModalData
 ---@field item_id ObjectID?
 ---@field item_category ItemCategory
@@ -17,7 +15,6 @@ local GROUP_MAX_ROWS = 3
 ---@field belt_stack integer
 ---@field selected_group_id integer?
 
--- This dialog works as the product picker currently, but could also work as an ingredient picker down the line
 -- ** ITEM PICKER **
 ---@param modal_data PickerDialogModalData
 ---@param new_group_id integer
@@ -72,7 +69,8 @@ end
 
 ---@param parent_flow LuaGuiElement
 ---@param player LuaPlayer
-local function add_item_picker(parent_flow, player)
+---@param selected_group_name string?
+local function add_item_picker(parent_flow, player, selected_group_name)
     local player_table = lib.globals.player_table(player)
     local modal_data = player_table.ui_state.modal_data  ---@as PickerDialogModalData
     local modal_elements = modal_data.modal_elements
@@ -108,131 +106,131 @@ local function add_item_picker(parent_flow, player)
     local group_id_cache, group_flow_cache, subgroup_table_cache = {}, {}, {}
     modal_elements.groups = {}
 
-    local existing_products = {}
+    local existing_items = {}  ---@type table<FPItemPrototype, ItemCategory>
     if not modal_data.create_factory then  -- check if this is for a new factory or not
         local factory = lib.context.get(player, "Factory")  ---@as Factory
-        for product in factory:iterator() do
-            existing_products[product.proto.name] = true
+        for item in factory:iterator() do
+            existing_items[item.proto] = item.category
         end
     end
 
     local current_item_rows, max_item_rows = 0, 0
     local current_items_in_table_count = 0
-    for _, item_proto in ipairs(SORTED_ITEMS) do
-        if not item_proto.hidden and not item_proto.ingredient_only then
-            local group_name = item_proto.group.name
-            local group_id = group_id_cache[group_name]
-            local flow_subgroups  ---@type LuaGuiElement
-            local subgroup_tables  ---@type table<string, table<SubgroupKey, LuaGuiElement>>
+    for _, item_proto in ipairs(SORTED_ITEMS[modal_data.item_category]) do
+        local group_name = item_proto.group.name
+        local group_id = group_id_cache[group_name]
+        local flow_subgroups  ---@type LuaGuiElement
+        local subgroup_tables  ---@type table<string, table<SubgroupKey, LuaGuiElement>>
 
-            if group_id == nil then
-                local cache_count = table_size(group_id_cache) + 1
-                group_id_cache[group_name] = cache_count
-                group_id = cache_count
+        if group_id == nil then
+            local cache_count = table_size(group_id_cache) + 1
+            group_id_cache[group_name] = cache_count
+            group_id = cache_count
 
-                ---@class SelectPickerItemGroupTags
-                ---@field group_id integer
-                local tags = {mod="fp", on_gui_click="select_picker_item_group", group_id=group_id}
-                local button_group = table_item_groups.add{type="sprite-button", tags=tags,
-                    sprite=("item-group/" .. group_name), style="fp_sprite-button_group_tab",
-                    tooltip=item_proto.group.localised_name, mouse_button_filter={"left"}}
+            ---@class SelectPickerItemGroupTags
+            ---@field group_id integer
+            local tags = {mod="fp", on_gui_click="select_picker_item_group", group_id=group_id}
+            local button_group = table_item_groups.add{type="sprite-button", tags=tags,
+                sprite=("item-group/" .. group_name), style="fp_sprite-button_group_tab",
+                tooltip=item_proto.group.localised_name, mouse_button_filter={"left"}}
 
-                -- This only exists when button_group also exists
-                local scroll_pane_subgroups = frame_filters.add{type="scroll-pane", style="shallow_scroll_pane"}
-                scroll_pane_subgroups.style.vertically_stretchable = true
+            -- This only exists when button_group also exists
+            local scroll_pane_subgroups = frame_filters.add{type="scroll-pane", style="shallow_scroll_pane"}
+            scroll_pane_subgroups.style.vertically_stretchable = true
 
-                local frame_subgroups = scroll_pane_subgroups.add{type="frame", style="slot_button_deep_frame"}
-                frame_subgroups.style.vertically_stretchable = true
+            local frame_subgroups = scroll_pane_subgroups.add{type="frame", style="slot_button_deep_frame"}
+            frame_subgroups.style.vertically_stretchable = true
 
-                -- This flow is only really needed to set the correct vertical spacing
-                flow_subgroups = frame_subgroups.add{type="flow", name="flow_group", direction="vertical"}
-                flow_subgroups.style.vertical_spacing = 0
-                group_flow_cache[group_id] = flow_subgroups
+            -- This flow is only really needed to set the correct vertical spacing
+            flow_subgroups = frame_subgroups.add{type="flow", name="flow_group", direction="vertical"}
+            flow_subgroups.style.vertical_spacing = 0
+            group_flow_cache[group_id] = flow_subgroups
 
-                modal_elements.groups[group_id] = {
-                    button = button_group,
-                    frame = frame_subgroups,
-                    scroll_pane = scroll_pane_subgroups,
-                    subgroup_tables = {}
-                }
-                subgroup_tables = modal_elements.groups[group_id].subgroup_tables
+            modal_elements.groups[group_id] = {
+                name = group_name,
+                button = button_group,
+                frame = frame_subgroups,
+                scroll_pane = scroll_pane_subgroups,
+                subgroup_tables = {}
+            }
+            subgroup_tables = modal_elements.groups[group_id].subgroup_tables
 
-                -- Catch up on adding the last item flow's row count
-                current_item_rows = current_item_rows + math.ceil(current_items_in_table_count / items_per_row)
-                current_items_in_table_count = 0
+            -- Catch up on adding the last item flow's row count
+            current_item_rows = current_item_rows + math.ceil(current_items_in_table_count / items_per_row)
+            current_items_in_table_count = 0
 
-                max_item_rows = math.max(current_item_rows, max_item_rows)
-                current_item_rows = 0
-            else
-                flow_subgroups = group_flow_cache[group_id]
-                subgroup_tables = modal_elements.groups[group_id].subgroup_tables
-            end
-            ---@cast flow_subgroups -nil
-
-            local subgroup_name = item_proto.subgroup.name
-            local table_subgroup = subgroup_table_cache[subgroup_name]
-            local subgroup_table = nil
-
-            if table_subgroup == nil then
-                table_subgroup = flow_subgroups.add{type="table", column_count=items_per_row,
-                    style="filter_slot_table"}
-                table_subgroup.style.horizontally_stretchable = true
-                subgroup_table_cache[subgroup_name] = table_subgroup
-
-                subgroup_tables[subgroup_name] = {}
-                subgroup_table = subgroup_tables[subgroup_name]
-
-                current_item_rows = current_item_rows + math.ceil(current_items_in_table_count / items_per_row)
-                current_items_in_table_count = 0
-            else
-                subgroup_table = subgroup_tables[subgroup_name]
-            end
-
-            current_items_in_table_count = current_items_in_table_count + 1
-
-            local item_name = item_proto.name
-            local existing_product = existing_products[item_name]
-            local name = (item_proto.temperature) and item_proto.base_name or item_name
-            local elem_tooltip = (item_proto.type ~= "entity") and {type=item_proto.type, name=name} or nil
-            local unlocked = lib.availability.is_item_unlocked(force, item_proto, unlock_cache)
-            local button_style = "fflib_slot_button_default"
-            local status_tooltip = nil  ---@type LocalisedString?
-            if existing_product then
-                button_style = "fflib_slot_button_blue"
-                status_tooltip = {"fp.picker_already_selected_tt", {"fp.pu_" .. modal_data.item_category, 1}}
-            elseif not unlocked then
-                button_style = "fflib_slot_button_red"
-                status_tooltip = {"fp.picker_unresearched_tt"}
-            end
-
-            local tooltip = item_proto.tooltip  ---@type LocalisedString?
-            if status_tooltip then
-                tooltip = {"", item_proto.tooltip or "", (item_proto.tooltip) and "\n\n" or "", status_tooltip}
-            end
-
-            ---@class SelectPickerItemTags
-            ---@field item_id integer
-            ---@field category_id integer
-            ---@field enabled boolean
-            local tags = {mod="fp", on_gui_click="select_picker_item", item_id=item_proto.id,
-                category_id=item_proto.category_id, enabled=(existing_product == nil),
-                flags={cursor=(item_proto.type ~= "entity"),
-                    factoriopedia=(lib.get_factoriopedia_proto(item_proto) ~= nil)}}
-            local button_item = table_subgroup.add{type="sprite-button", tags=tags, sprite=item_proto.sprite,
-                style=button_style, elem_tooltip=elem_tooltip, mouse_button_filter={"left"}}
-            button_item.tooltip = tooltip
-
-            -- Figure out the translated name here so search doesn't have to repeat the work for every character
-            local translated_name = (translations) and translations[item_proto.type][item_name] or nil
-            translated_name = (translated_name) and helpers.multilingual_to_lower(translated_name) or item_name
-
-            ---@class SubgroupKey
-            ---@field name string
-            ---@field translated_name string
-            ---@field unlocked boolean
-            local subgroup_key = {name=item_name, translated_name=translated_name, unlocked=unlocked}
-            subgroup_table[subgroup_key] = button_item
+            max_item_rows = math.max(current_item_rows, max_item_rows)
+            current_item_rows = 0
+        else
+            flow_subgroups = group_flow_cache[group_id]
+            subgroup_tables = modal_elements.groups[group_id].subgroup_tables
         end
+        ---@cast flow_subgroups -nil
+
+        local subgroup_name = item_proto.subgroup.name
+        local table_subgroup = subgroup_table_cache[subgroup_name]
+        local subgroup_table = nil
+
+        if table_subgroup == nil then
+            table_subgroup = flow_subgroups.add{type="table", column_count=items_per_row,
+                style="filter_slot_table"}
+            table_subgroup.style.horizontally_stretchable = true
+            subgroup_table_cache[subgroup_name] = table_subgroup
+
+            subgroup_tables[subgroup_name] = {}
+            subgroup_table = subgroup_tables[subgroup_name]
+
+            current_item_rows = current_item_rows + math.ceil(current_items_in_table_count / items_per_row)
+            current_items_in_table_count = 0
+        else
+            subgroup_table = subgroup_tables[subgroup_name]
+        end
+
+        current_items_in_table_count = current_items_in_table_count + 1
+
+        local item_name = item_proto.name
+        local existing_category = existing_items[item_proto]
+        local name = (item_proto.temperature) and item_proto.base_name or item_name
+        local elem_tooltip = (item_proto.type ~= "entity") and {type=item_proto.type, name=name} or nil
+        local unlocked = lib.availability.is_item_unlocked(force, item_proto, modal_data.item_category, unlock_cache)
+        local button_style = "fflib_slot_button_default"
+        local status_tooltip = nil  ---@type LocalisedString?
+        if existing_category then
+            button_style = "fflib_slot_button_blue"
+            status_tooltip = {"fp.picker_already_selected_" .. existing_category}
+        elseif not unlocked then
+            button_style = "fflib_slot_button_red"
+            status_tooltip = {"fp.picker_unresearched_tt"}
+        end
+
+        local tooltip = item_proto.tooltip  ---@type LocalisedString?
+        if status_tooltip then
+            tooltip = {"", item_proto.tooltip or "", (item_proto.tooltip) and "\n\n" or "", status_tooltip}
+        end
+
+        ---@class SelectPickerItemTags: Tags
+        ---@field item_id integer
+        ---@field category_id integer
+        ---@field enabled boolean
+        ---@field existing_category ItemCategory?
+        local tags = {mod="fp", on_gui_click="select_picker_item", item_id=item_proto.id,
+            category_id=item_proto.category_id, enabled=(existing_category == nil), existing_category=existing_category,
+            flags={cursor=(item_proto.type ~= "entity"),
+                factoriopedia=(lib.get_factoriopedia_proto(item_proto) ~= nil)}}
+        local button_item = table_subgroup.add{type="sprite-button", tags=tags, sprite=item_proto.sprite,
+            style=button_style, elem_tooltip=elem_tooltip, mouse_button_filter={"left"}}
+        button_item.tooltip = tooltip
+
+        -- Figure out the translated name here so search doesn't have to repeat the work for every character
+        local translated_name = (translations) and translations[item_proto.type][item_name] or nil
+        translated_name = (translated_name) and helpers.multilingual_to_lower(translated_name) or item_name
+
+        ---@class SubgroupKey
+        ---@field name string
+        ---@field translated_name string
+        ---@field unlocked boolean
+        local subgroup_key = {name=item_name, translated_name=translated_name, unlocked=unlocked}
+        subgroup_table[subgroup_key] = button_item
     end
 
     -- Catch up on addding the last item flow and groups row counts
@@ -252,10 +250,9 @@ local function add_item_picker(parent_flow, player)
     end
 
     -- Select the previously selected item group if possible
-    local group_to_select, previous_selection = 1, player_table.ui_state.last_selected_picker_group
-    if previous_selection ~= nil and modal_elements.groups[previous_selection] ~= nil then
-        group_to_select = previous_selection
-    end
+    local group_to_select = (selected_group_name and group_id_cache[selected_group_name])
+        or player_table.ui_state.last_selected_picker_group
+    if group_to_select == nil or modal_elements.groups[group_to_select] == nil then group_to_select = 1 end
     select_item_group(modal_data, group_to_select)
 end
 
@@ -339,11 +336,15 @@ local function set_item_proto(modal_data, item_proto)
     item_choice_button.sprite = (item_proto) and item_proto.sprite or nil
     item_choice_button.tags = {mod="fp", on_gui_click="picker_item_choice",
         flags={cursor=(item_proto ~= nil and item_proto.type ~= "entity"),
-            factoriopedia=(item_proto ~= nil and lib.get_factoriopedia_proto(item_proto) ~= nil)}}
+        factoriopedia=(item_proto ~= nil and lib.get_factoriopedia_proto(item_proto) ~= nil)}}
+
     if item_proto then
         local name = (item_proto.temperature) and item_proto.base_name or item_proto.name
         item_choice_button.elem_tooltip = (item_proto.type ~= "entity") and {type=item_proto.type, name=name} or nil
         item_choice_button.tooltip = item_proto.tooltip
+    else
+        item_choice_button.elem_tooltip = nil
+        item_choice_button.tooltip = nil
     end
 
     -- Disable definition by belt for non-items
@@ -456,8 +457,7 @@ local function add_item_pane(parent_flow, modal_data, item)
     modal_elements["machine_count_checkbox"] = flow_machines.add{type="checkbox", state=(defined_by == "machines"),
         tags={mod="fp", on_gui_checked_state_changed="picker_toggle_machines"},
         caption={"fp.info_label", {"fp.picker_machine_count"}},
-        tooltip={"fp.picker_machine_count_tt", {"fp.pl_" .. modal_data.item_category, 1},
-            {"fp.pl_" .. modal_data.item_category, 2}}}
+        tooltip={"fp.picker_machine_count_tt"}}
 
     local machine_width = 50
     local machine_count = (item and item.definition.type == "machines") and tostring(item.definition.machine_count) or ""
@@ -487,7 +487,7 @@ local function handle_item_pick(player, tags, _)
     local item_proto = prototyper.util.find("items", tags.item_id, tags.category_id)  ---@as FPItemPrototype
 
     if not tags.enabled then
-        lib.cursor.create_flying_text(player, {"fp.picker_already_selected", item_proto.localised_name})
+        lib.cursor.create_flying_text(player, {"fp.item_already_defined_" .. tags.existing_category})
         return
    end
 
@@ -526,6 +526,7 @@ end
 ---@param player LuaPlayer
 ---@param modal_data PickerDialogModalData
 local function open_picker_dialog(player, modal_data)
+    local modal_elements = modal_data.modal_elements
     local preferences = lib.globals.preferences(player)
     modal_data.timescale = preferences.timescale
     modal_data.belts_or_lanes = preferences.belts_or_lanes
@@ -537,30 +538,41 @@ local function open_picker_dialog(player, modal_data)
         if definition.type == "belts" then modal_data.belt_stack = definition.belt_stack end
     end
 
-    local content_frame = modal_data.modal_elements.content_frame
+    local content_frame = modal_elements.content_frame
     content_frame.style.minimal_width = 325
     content_frame.style.bottom_padding = 6
-    add_item_pane(content_frame, modal_data, modal_data.item)
+    local item_pane = content_frame.add{type="flow", direction="vertical"}
+    item_pane.style.horizontally_stretchable = false
+    add_item_pane(item_pane, modal_data, modal_data.item)
 
-    local titlebar_flow = modal_data.modal_elements.titlebar_flow
+    local titlebar_flow = modal_elements.titlebar_flow
     titlebar_flow.visible = true
 
     -- The item picker only needs to show when adding a new item
     if modal_data.item then
-        modal_data.modal_elements.active_button = titlebar_flow.add{type="sprite-button",
+        modal_elements.active_button = titlebar_flow.add{type="sprite-button",
             sprite="utility/check_mark_white", style="fp_button_frame",
             tooltip={"fp.toggle_target", {"fp.pl_" .. modal_data.item_category, 1}},
             auto_toggle=true, toggled=modal_data.item.active, mouse_button_filter={"left"}}
-        modal_data.modal_elements.active_button.style.padding = -3
+        modal_elements.active_button.style.padding = -3
     else
         titlebar_flow.add{type="sprite-button", sprite="utility/tip_icon", style="fp_button_frame",
             tooltip={"factoriopedia.show-unresearched"}, auto_toggle=true, toggled=preferences.show_unresearched_items,
             tags={mod="fp", on_gui_click="toggle_picker_unresearched"}, mouse_button_filter={"left"}}
 
-        local auxiliary_flow = modal_data.modal_elements.auxiliary_flow
-        local picker_content_frame = auxiliary_flow.add{type="frame", direction="vertical", style="inside_deep_frame"}
-        picker_content_frame.style.top_margin = 8
-        add_item_picker(picker_content_frame, player)
+        modal_elements.subheader_label.style.right_margin = 8
+        modal_elements.subheader.add{type="switch",
+            switch_state=(modal_data.item_category == "product") and "left" or "right",
+            left_label_caption={"fp.pu_product", 1}, right_label_caption={"fp.pu_ingredient", 1},
+            left_label_tooltip={"fp.picker_product_tt"}, right_label_tooltip={"fp.picker_ingredient_tt"},
+            tags={mod="fp", on_gui_switch_state_changed="picker_change_category"}}
+
+        local auxiliary_flow = modal_elements.auxiliary_flow
+        local picker_frame = auxiliary_flow.add{type="frame", direction="vertical", style="inside_deep_frame"}
+        picker_frame.style.top_margin = 8
+        modal_elements.picker_frame = picker_frame
+
+        add_item_picker(picker_frame, player)
         apply_item_filter(player, "")
     end
 end
@@ -608,7 +620,7 @@ local function close_picker_dialog(player, action)
             modal_data.item.active = modal_data.modal_elements.active_button.toggled
         else
             local item_proto = modal_data.item_proto
-            local top_level_item = FactoryItem.init(item_proto)
+            local top_level_item = FactoryItem.init(item_proto, modal_data.item_category)
             top_level_item.definition = definition
 
             if modal_data.create_factory then  -- if this flag is set, create a factory to put the item into
@@ -639,6 +651,31 @@ end
 local listeners = {}  ---@type ListenerDefinitions
 
 listeners.gui = {
+    on_gui_switch_state_changed = {
+        {
+            name = "picker_change_category",
+            handler = function(player, _, event)
+                ---@cast event EventData.on_gui_switch_state_changed
+                local modal_data = lib.globals.modal_data(player)  ---@as PickerDialogModalData
+                local modal_elements = modal_data.modal_elements
+                local category = (event.element.switch_state == "left") and "product" or "ingredient"
+                modal_data.item_category = category
+
+                local item_proto = modal_data.item_proto
+                if item_proto and not lib.availability.can_define_factory_item(item_proto, category) then
+                    set_item_proto(modal_data, nil)
+                    refresh_definition_controls(modal_data)
+                    update_dialog_submit_button(modal_elements)
+                end
+
+                local selected_group = modal_elements.groups[modal_data.selected_group_id]
+                local selected_group_name = selected_group and selected_group.name
+                modal_elements.picker_frame.clear()
+                add_item_picker(modal_elements.picker_frame, player, selected_group_name)
+                modal_dialog.run_search(player)
+            end
+        }
+    },
     on_gui_checked_state_changed = {
         {
             name = "picker_toggle_machines",
@@ -697,15 +734,17 @@ listeners.gui = {
                 if cursor_item == nil then return end
 
                 local item_proto = prototyper.util.find("items", cursor_item.name, "item")  ---@as FPItemPrototype?
-                if item_proto == nil or item_proto.hidden or item_proto.ingredient_only then
+                local modal_data = lib.globals.modal_data(player)  ---@as PickerDialogModalData
+                if item_proto == nil or not lib.availability.can_define_factory_item(item_proto, modal_data.item_category) then
                     local name = (item_proto) and item_proto.localised_name or {"fp.this"}
-                    local modal_data = lib.globals.modal_data(player)  ---@as PickerDialogModalData
                     lib.cursor.create_flying_text(player, {"fp.picker_invalid_product", name,
                         {"fp.pl_" .. modal_data.item_category, 1}})
                 else
                     local factory = lib.context.get(player, "Factory")  ---@as Factory
-                    local enabled = (factory:find({proto = item_proto}) == nil)
-                    local tags = {item_id=item_proto.id, category_id=item_proto.category_id, enabled=enabled}
+                    local existing_item = not modal_data.create_factory and factory:find({proto=item_proto}) or nil
+                    local existing_category = (existing_item) and existing_item.category or nil
+                    local tags = {item_id=item_proto.id, category_id=item_proto.category_id,
+                        enabled=(existing_item == nil), existing_category=existing_category}
                     handle_item_pick(player, tags--[[@as SelectPickerItemTags]])
                 end
             end
@@ -796,9 +835,12 @@ listeners.dialog = {
     dialog = "picker",
     metadata = function(modal_data)
         ---@cast modal_data PickerDialogModalData
-        local action = (modal_data.item_id) and {"fp.edit"} or {"fp.add"}
+        local caption = modal_data.item_id
+            and {"", {"fp.edit"}, " ", {"fp.pl_" .. modal_data.item_category, 1}}
+            or {"fp.add_target"}
         return {
-            caption = {"", action, " ", {"fp.pl_" .. modal_data.item_category, 1}},
+            caption = caption,
+            subheader_text = (not modal_data.item_id) and {"fp.picker_add_as"} or nil,
             search_handler_name = (not modal_data.item_id) and "apply_item_filter" or nil,
             disable_scroll_pane = true,
             show_submit_button = true,
