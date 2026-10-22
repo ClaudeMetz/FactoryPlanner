@@ -2,6 +2,13 @@
 Version: 0.00.00
 Date: 00. 00. 0000
   Features:
+  Changes:
+  Bugfixes:
+
+---------------------------------------------------------------------------------------------------
+Version: 2.1.20
+Date: 22. 10. 2026
+  Features:
     - Implemented input-based factory solving, allowing you to define ingredients to be consumed, in addition to standard products (#87) (Thanks vapopescu!)
     - Added a toggle to highlight identical items on hover to the main interface (#583)
     - Districts are now shown as a list above factories for quick switching between them (#498)
@@ -13,7 +20,6 @@ Date: 00. 00. 0000
     - Surface restrictions for mining, offshore pumps, and planting are now detected (#897) (Thanks vapopescu!)
     - Changed main interface width and height preferences to be percentage-based
     - Removed the ingredient satisfaction preference
-  Bugfixes:
 
 ---------------------------------------------------------------------------------------------------
 Version: 2.1.19
