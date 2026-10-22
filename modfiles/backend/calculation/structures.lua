@@ -46,7 +46,6 @@ end
 ---@field crafts_per_second number?
 ---@field products SolverMap
 ---@field ingredients SolverMap
----@field known_surplus SolverSet
 
 ---@param floor_id ObjectID
 ---@return SolverAggregate
@@ -57,7 +56,6 @@ function _structures.aggregate.init(floor_id)
         crafts_per_second = nil,
         products = {},
         ingredients = {},
-        known_surplus = {}
     }  ---@type SolverAggregate
 end
 

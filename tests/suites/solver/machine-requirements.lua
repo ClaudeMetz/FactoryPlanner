@@ -42,7 +42,7 @@ return {
             return line
         end
         local function add_product(proto, count)
-            local product = classes.FactoryItem.init(proto)
+            local product = classes.FactoryItem.init(proto, "product")
             product.definition = {type="machines", machine_count=count}
             factory:insert(product)
             return product

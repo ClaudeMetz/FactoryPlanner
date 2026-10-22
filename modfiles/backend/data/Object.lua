@@ -58,8 +58,9 @@ end
 ---@field valid boolean?
 ---@field proto FPPrototype?
 ---@field quality_proto FPQualityPrototype?
+---@field category ItemCategory?
 
-local filter_options = {"id", "archived", "valid", "proto", "quality_proto"}
+local filter_options = {"id", "archived", "valid", "proto", "quality_proto", "category"}
 
 ---@param object Object
 ---@param filter ObjectFilter?

@@ -12,7 +12,7 @@ local function fixture(context)
     local factory = classes.Factory.init("clipboard-test", "sequential")
     district:insert(factory)
     lib.context.set(player, factory)
-    local product = classes.FactoryItem.init(prototyper.util.find("items", "iron-gear-wheel", "item"))
+    local product = classes.FactoryItem.init(prototyper.util.find("items", "iron-gear-wheel", "item"), "product")
     product.definition.amount = 12
     factory:insert(product)
     return classes, player, factory, product
@@ -138,7 +138,7 @@ return {
         assert(factory.first.definition.type == "amount" and factory.first.definition.amount == 23,
             "ordinary items must still paste as rate-defined products")
 
-        local coal = classes.FactoryItem.init(prototyper.util.find("items", "coal", "item"))
+        local coal = classes.FactoryItem.init(prototyper.util.find("items", "coal", "item"), "product")
         factory:insert(coal)
         lib.clipboard.copy(player, coal)
         local smelting = classes.Line.init(prototyper.util.find("recipes", "iron-plate"))
@@ -148,7 +148,7 @@ return {
         assert(smelting.machine.fuel.proto.name == "coal", "products must still paste as fuels")
 
         local steam = classes.FactoryItem.init(prototyper.util.find("items",
-            lib.temperature.name_with("steam", 165), "fluid"))
+            lib.temperature.name_with("steam", 165), "fluid"), "product")
         assert(steam.proto.temperature == 165)
         factory:insert(steam)
         lib.clipboard.copy(player, steam)
@@ -191,9 +191,23 @@ return {
         local clip = player_table.clipboard
         assert(not lib.clipboard.paste(player, product), "a recipe cannot be pasted onto a product")
         assert(factory.first == product and product.definition.amount == 12 and player_table.clipboard == clip)
-        lib.clipboard.dummy_paste(player, classes.FactoryItem.init(), factory)
+        lib.clipboard.dummy_paste(player, classes.FactoryItem.init(nil, "product"), factory)
         assert(factory:count() == 1 and factory.first == product, "failed dummy paste must remove its placeholder")
         assert(player_table.clipboard == clip)
+
+        for _, category in ipairs{"product", "ingredient"} do
+            local existing = classes.FactoryItem.init(prototyper.util.find("items", "iron-plate", "item"), category)
+            existing.active = false
+            factory:insert(existing)
+            local source = SimpleItem.init(nil, existing.proto, 5)
+            local success, reason = product:paste(source)
+            assert(not success and reason == "already_exists_as_" .. category,
+                "Duplicate paste errors must identify the existing side, including disabled targets")
+            lib.clipboard.copy(player, source)
+            assert(not lib.clipboard.paste(player, product))
+            assert(factory:count() == 2 and factory.first == product)
+            factory:remove(existing)
+        end
     end},
 
     cut_line_collapses_subfloor = {check=function(context)
@@ -285,14 +299,14 @@ return {
                 and clip.packed_object.definition.type == copied.packed_object.definition.type
                 and clip.packed_object.definition.belt_stack == copied.packed_object.definition.belt_stack,
                 "Cut must store the same product configuration as Copy")
-            lib.clipboard.dummy_paste(player, classes.FactoryItem.init(), factory)
+            lib.clipboard.dummy_paste(player, classes.FactoryItem.init(nil, "product"), factory)
             local pasted = factory.first
             assert(pasted and pasted ~= product and pasted.definition[belts and "belt_count" or "amount"] == expected_amount)
             assert(pasted.definition.type == (belts and "belts" or "amount"))
             if belts then
                 assert(pasted.definition.belt_proto.name == "transport-belt" and pasted.definition.belt_stack == 2)
             end
-            lib.clipboard.dummy_paste(player, classes.FactoryItem.init(), factory)
+            lib.clipboard.dummy_paste(player, classes.FactoryItem.init(nil, "product"), factory)
             assert(factory:count() == 1, "repeated paste must not create a duplicate product")
             assert(lib.globals.player_table(player).clipboard == clip, "failed paste must retain clipboard")
 

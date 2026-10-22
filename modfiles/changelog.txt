@@ -2,13 +2,14 @@
 Version: 0.00.00
 Date: 00. 00. 0000
   Features:
+    - Implemented input-based factory solving, allowing you to define ingredients to be consumed, in addition to standard products (#87) (Thanks vapopescu!)
     - Added a toggle to highlight identical items on hover to the main interface (#583)
     - Districts are now shown as a list above factories for quick switching between them (#498)
     - Added Q to pipette to the item picker, and Alt-Click to open in Factoriopedia to the item and recipe pickers (#906)
     - Top level products can now be toggled on or off (#907)
     - Added a dropdown to the compact dialog for easy factory switching
   Changes:
-    - Dropped the explicit byproduct categorization, as it won't make sense in the context of input-based solving (#843)
+    - Dropped the explicit byproduct categorization, as it doesn't make sense in the context of input-based solving (#843)
     - Surface restrictions for mining, offshore pumps, and planting are now detected (#897) (Thanks vapopescu!)
     - Changed main interface width and height preferences to be percentage-based
     - Removed the ingredient satisfaction preference

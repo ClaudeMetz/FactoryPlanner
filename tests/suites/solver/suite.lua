@@ -5,6 +5,7 @@
 return {{
     name = "normal",
     cases = {
+        testInputTargets = require("suite.input-targets"),
         testMachineRequirements = require("suite.machine-requirements"),
         testSequentialChain = require("suite.sequential-chain")
     }

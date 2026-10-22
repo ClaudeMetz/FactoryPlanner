@@ -39,7 +39,7 @@ local function determine_consuming_ratio(line_data, aggregate, ingredients)
 
     for _, ingredient in pairs(ingredients) do
         local ingredient_key = structures.pack_item(ingredient)
-        local available = aggregate.known_surplus[ingredient_key] and aggregate.products[ingredient_key]  ---@type number?
+        local available = aggregate.products[ingredient_key]  ---@type number?
         local fuel_key = line_data.fuel_item and structures.pack_item(line_data.fuel_item)
         local ratio = (available or 0) / ingredient.amount
 
@@ -47,11 +47,7 @@ local function determine_consuming_ratio(line_data, aggregate, ingredients)
             -- The priority ingredient paces the line by itself, importing the others as needed
             return ratio
 
-        elseif available == nil then
-            -- Avoid importing additional ingredients if they are an exhausted surplus further up
-            if aggregate.known_surplus[structures.pack_item(ingredient)] then return 0 end
-
-        elseif ingredient_key ~= fuel_key then
+        elseif available and ingredient_key ~= fuel_key then
             -- stay within every surplus item's availability, so take the lowest ratio
             consuming_ratio = (consuming_ratio == 0) and ratio or math.min(consuming_ratio, ratio)
         end
@@ -94,6 +90,14 @@ local function solve_line(line_data, aggregate, is_relevant_line)
         end
     end
 
+    -- Exit early
+    if machine_amount == 0 then
+        return {
+            id = line_data.id,
+            machine_amount = machine_amount
+        }  ---@type LineResult
+    end
+
     -- Determine remaining product supply
     for _, product in ipairs(products) do
         -- Satisfy ingredient demand
@@ -104,7 +108,6 @@ local function solve_line(line_data, aggregate, is_relevant_line)
         if remainder < 0 then -- Excess becomes surplus supply
             structures.map.add(aggregate.products, product, -remainder)
             aggregate.ingredients[item_key] = nil
-            aggregate.known_surplus[item_key] = true
         end
     end
 
@@ -127,7 +130,7 @@ local function solve_line(line_data, aggregate, is_relevant_line)
     return {
         id = line_data.id,
         machine_amount = machine_amount
-    }
+    }  ---@type LineResult
 end
 
 
@@ -143,10 +146,13 @@ function sequential_engine.solve_floor(factory_data, floor_id)
     local floor_data = factory_data.floor_data_map[floor_id]
     local line_results = {}  ---@type LineResultMap
 
-    -- Add products to the floor ingredients to simulate demand from outside the factory
+    -- Add factory products/ingredients to the floor to simulate demand/supply from outside the factory
     if floor_data.level == 1 then
-        for _, product in pairs(floor_data.products) do
+        for _, product in pairs(factory_data.products) do
             structures.map.add(aggregate.ingredients, product)
+        end
+        for _, ingredient in pairs(factory_data.ingredients) do
+            structures.map.add(aggregate.products, ingredient)
         end
     end
 
@@ -160,19 +166,18 @@ function sequential_engine.solve_floor(factory_data, floor_id)
         end
     end
 
-    -- Remove simulated product demand
+    -- Remove simulated demand/supply
     if floor_data.level == 1 then
-        for _, product in pairs(floor_data.products) do
-            local ingredient_amount = aggregate.ingredients[structures.pack_item(product)] or 0  ---@type number
-            if ingredient_amount < product.amount then
-                local produced_amount = product.amount - ingredient_amount
-                structures.map.subtract(aggregate.ingredients, product, ingredient_amount)
-                structures.map.add(aggregate.products, product, produced_amount)
-            else
-                structures.map.subtract(aggregate.ingredients, product)
-            end
+        for _, product in pairs(factory_data.products) do
+            structures.map.subtract(aggregate.ingredients, product)
+        end
+        for _, ingredient in pairs(factory_data.ingredients) do
+            structures.map.subtract(aggregate.products, ingredient)
         end
     end
+
+    -- Re-balance products and ingredients after tampering with simulated quantities
+    structures.map.reduce_items(aggregate.products, aggregate.ingredients, true)
 
     return {
         status = "solved",

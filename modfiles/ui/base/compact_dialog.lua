@@ -77,9 +77,11 @@ local function determine_column_counts(floor, available_columns)
     for line in floor:iterator() do
         local counts = {products = #line.products, ingredients = #line.ingredients,
             machines = (line.beacon ~= nil) and 2 or 1}
-        for _, product in pairs(line.products) do
-            if (product.target_amount or 0) > 0 and product:get_remaining_amount() > 0 then
-                counts.products = counts.products + 1
+        for _, category in ipairs{"products", "ingredients"} do
+            for _, item in pairs(line[category]) do
+                if (item.target_amount or 0) > 0 and item:get_remaining_amount() > 0 then
+                    counts[category] = counts[category] + 1
+                end
             end
         end
         if line.class == "Line" then
@@ -295,7 +297,7 @@ local function add_item_flow(line, relevant_line, item_category, metadata)
                 part_color = "blue"
             end
             if relevant_line.done then part_color = part_color .. "_grayscale" end
-            local title = (target and item_category == "products")
+            local title = target
                 and {"fp.tt_title_with_note", proto.localised_name, {"fp.target"}}
                 or {"fp.tt_title", proto.localised_name}
             local name_line = {"", title}

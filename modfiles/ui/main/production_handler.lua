@@ -245,7 +245,7 @@ local function handle_item_click(player, tags, action)
         solver.update(player)
         lib.gui.run_refresh(player, "production")
 
-    elseif action == "add_recipe_to_end" or action == "add_recipe_below" then
+    elseif action == "add_producing_recipe" or action == "add_consuming_recipe" or action == "add_recipe_below" then
         local production_type = tags.flags.consume and "consume" or "produce"
         local add_after_line_id = (action == "add_recipe_below") and line.id or nil
 
@@ -304,7 +304,7 @@ local function handle_fuel_click(player, tags, action)
     local fuel = OBJECT_INDEX[tags.fuel_id]  ---@as Fuel
     local line = fuel.parent.parent
 
-    if action == "add_recipe_to_end" or action == "add_recipe_below" then
+    if action == "add_producing_recipe" or action == "add_recipe_below" then
         local add_after_line_id = (action == "add_recipe_below") and line.id or nil
 
         local proto = prototyper.util.find("items", fuel.proto.name, fuel.proto.type)
@@ -490,7 +490,10 @@ listeners.gui = {
         {
             name = "act_on_line_item",
             actions_table = {
-                add_recipe_to_end = {shortcut="left", core=true, show=show_add_item_recipe, enable=lib.actions.can_add_recipe},
+                add_producing_recipe = {shortcut="left", core=true, enable=lib.actions.can_add_recipe,
+                    show=function(flags) return not flags.consume and show_add_item_recipe(flags) end},
+                add_consuming_recipe = {shortcut="left", core=true, enable=lib.actions.can_add_recipe,
+                    show=function(flags) return flags.consume and show_add_item_recipe(flags) end},
                 add_recipe_below = {show=show_add_item_recipe, enable=lib.actions.can_add_recipe},
                 edit_temperature = {shortcut="control-left", core=true, show=show_item_temperature, enable=lib.actions.can_edit_temperature},
                 adjust_weight = {show=lib.actions.show_adjust_weight, enable=lib.actions.can_adjust_weight},
@@ -506,7 +509,7 @@ listeners.gui = {
         {
             name = "act_on_line_fuel",
             actions_table = {
-                add_recipe_to_end = {shortcut="left", core=true, enable=lib.actions.can_add_recipe},
+                add_producing_recipe = {shortcut="left", core=true, enable=lib.actions.can_add_recipe},
                 add_recipe_below = {enable=lib.actions.can_add_recipe},
                 edit_temperature = {shortcut="control-left", core=true, show=is_fluid, enable=lib.actions.can_edit_temperature},
                 edit_fuel = {enable=lib.actions.can_edit_factory},

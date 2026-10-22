@@ -290,7 +290,7 @@ return {
             local item = find("items", "custom-research-" .. ticks, "entity")
             if item then
                 c.check(item.type == "entity" and item.hidden == false
-                    and item.fixed_unit == nil and item.ingredient_only == false,
+                    and item.fixed_unit == nil and lib.availability.has_productive_recipe(item, "produce"),
                     "item: expected a visible entity item without a fixed unit")
                 c.check(item.group.name == prototypes.item_subgroup["science-pack"].group.name
                     and item.subgroup.name == "fp_research",

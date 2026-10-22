@@ -352,8 +352,8 @@ local function item_action_tags(line, proto, category, index, metadata, catalyst
             sequential = (get_priority_solver(line) == "sequential"),
             simplex = metadata.simplex,
             folded_out_subfloor = (line.parent ~= metadata.floor),
-            ingredient_only = (recipe_item_proto.ingredient_only
-                and not (recipe_item_proto.type == "fluid" and recipe_item_proto.temperature == nil)),
+            can_produce = lib.availability.has_productive_recipe(recipe_item_proto, "produce"),
+            can_consume = lib.availability.has_productive_recipe(recipe_item_proto, "consume"),
             consume = (category == "product"),
             multiple_temperatures = (temperature_data ~= nil and #temperature_data.applicable_values > 1),
             cursor = (proto.type ~= "entity"),
@@ -508,7 +508,7 @@ local function add_fuel(line, parent_flow, metadata)
         simplex = metadata.simplex,
         folded_out_subfloor = (line.parent ~= metadata.floor),
         archived = metadata.archive_open,
-        ingredient_only = (item_proto.ingredient_only and not (item_proto.type == "fluid" and item_proto.temperature == nil)),
+        can_produce = lib.availability.has_productive_recipe(item_proto, "produce"),
         multiple_temperatures = (fuel.proto.type == "fluid" and #fuel.temperature_data.applicable_values > 1)
     }
     ---@class ActOnLineFuelTags
@@ -527,79 +527,69 @@ end
 ---@param line LineObject
 ---@param parent_flow LuaGuiElement
 ---@param metadata ProductionTableMetadata
----@param item SimpleItem
----@param index integer
-local function add_special_ingredient(line, parent_flow, metadata, item, index)
-    local button_number, number_tooltip = lib.format.special_amount(item.proto.name, item.amount)
-    local number_line = {"", "\n", number_tooltip}
-    local title = {"fp.tt_title", item.proto.localised_name}
-    local tooltip = {"", title, number_line}
-
-    local tags = item_action_tags(line, item.proto, "ingredient", index, metadata)
-    local style = "fflib_slot_button_blue"
-    local button = parent_flow.add{type="sprite-button", tags=tags, sprite=item.proto.sprite, number=button_number,
-        style=style, mouse_button_filter={"left-and-right"}, raise_hover_events=true}
-    metadata.tooltips[button.index] = tooltip
-    item_highlights.register_line_item(metadata.player, button, line, item.proto, "ingredients")
-end
-
----@param line LineObject
----@param parent_flow LuaGuiElement
----@param metadata ProductionTableMetadata
 function builders.ingredients(line, parent_flow, metadata)
     local items_flow = parent_flow.add{type="flow", direction="horizontal"}
     local fuel_flow = parent_flow.add{type="flow", direction="horizontal"}
     local special_flow = parent_flow.add{type="flow", direction="horizontal"}
 
-    for index, ingredient in pairs(line.ingredients) do
-        local proto = ingredient.proto
+    for _, target in ipairs{true, false} do
+        for index, ingredient in pairs(line.ingredients) do
+            local part_amount = target and (ingredient.target_amount or 0) or ingredient:get_remaining_amount()
+            if part_amount <= 0 and (target or ingredient.amount ~= 0) then goto skip_ingredient end
 
-        if proto.type == "entity" and proto.special then
-            add_special_ingredient(line, special_flow, metadata, ingredient, index)
-            goto skip_ingredient
-        end
+            local proto = ingredient.proto
+            local special = (proto.type == "entity" and proto.special)
+            local relevant_flow = special and special_flow or items_flow
+            local style = target and "fflib_slot_button_green"
+                or (special and "fflib_slot_button_blue" or "fflib_slot_button_default")
+            local amount, number_tooltip, secondary_amount
+            local priority_line, temperature_line = "", ""  ---@type LocalisedString, LocalisedString
+            local title = target and {"fp.tt_title_with_note", proto.localised_name, {"fp.target"}}
+                or {"fp.tt_title", proto.localised_name}
+            local name_line = {"", title}
 
-        -- items/s/machine does not make sense for lines with subfloors, show items/s instead
-        local machine_amount = (line.class ~= "Floor") and line.machine.amount or nil
-        local amount, number_tooltip, secondary_amount = item_views.process_item(metadata.player, proto,
-            ingredient.amount, machine_amount)
-        if amount == -1 then goto skip_ingredient end  -- an amount of -1 means it was below the margin of error
-
-        local style = "fflib_slot_button_default"
-
-        -- A prioritized ingredient paces the line by itself
-        local priority_line = ""  ---@type LocalisedString
-        if line.class ~= "Floor" and get_priority_solver(line) == "sequential" and line.recipe.priority_item ~= nil
-                and line.recipe.priority_item.name == line.recipe:get_name_with_temperature(proto) then
-            priority_line = {"fp.item_prioritized"}
-        end
-
-        ---@type LocalisedString, LocalisedString
-        local name_line, temperature_line = {"", {"fp.tt_title", proto.localised_name}}, ""
-        if proto.type == "fluid" and line.class ~= "Floor" then
-            local temperature_data = line.recipe.temperature_data[proto.name]   -- exists for any fluid ingredient
-            table.insert(name_line--[[@as table]], temperature_data.annotation)
-
-            local temperature = line.recipe:get_temperature(proto)
-            if temperature == nil then
-                style = "fflib_slot_button_orange"
-                temperature_line = {"fp.no_temperature_configured"}
+            if special then
+                amount, number_tooltip = lib.format.special_amount(proto.name, part_amount)
             else
-                temperature_line = {"fp.configured_temperature", temperature}
+                -- items/s/machine does not make sense for lines with subfloors, show items/s instead
+                local machine_amount = (line.class ~= "Floor") and line.machine.amount or nil
+                amount, number_tooltip, secondary_amount = item_views.process_item(metadata.player, proto,
+                    part_amount, machine_amount)
+                if amount == -1 then goto skip_ingredient end  -- an amount of -1 means it was below the margin of error
+
+                -- A prioritized ingredient paces the line by itself
+                if line.class ~= "Floor" and get_priority_solver(line) == "sequential" and line.recipe.priority_item ~= nil
+                        and line.recipe.priority_item.name == line.recipe:get_name_with_temperature(proto) then
+                    priority_line = {"fp.item_prioritized"}
+                end
+
+                if proto.type == "fluid" and line.class ~= "Floor" then
+                    local temperature_data = line.recipe.temperature_data[proto.name]   -- exists for any fluid ingredient
+                    table.insert(name_line, temperature_data.annotation)
+
+                    local temperature = line.recipe:get_temperature(proto)
+                    if temperature == nil then
+                        style = "fflib_slot_button_orange"
+                        temperature_line = {"fp.no_temperature_configured"}
+                    else
+                        temperature_line = {"fp.configured_temperature", temperature}
+                    end
+                end
             end
+
+            local number_line = (number_tooltip) and {"", "\n", number_tooltip} or ""  ---@type LocalisedString
+            local tooltip = {"", name_line, temperature_line, priority_line, number_line}
+            local tags = item_action_tags(line, proto, "ingredient", index, metadata)
+            tags.flags.target = target
+
+            local button = relevant_flow.add{type="sprite-button", sprite=proto.sprite, style=style,
+                tags=tags, number=amount, secondary_number=secondary_amount,
+                mouse_button_filter={"left-and-right"}, raise_hover_events=true}
+            metadata.tooltips[button.index] = tooltip
+            item_highlights.register_line_item(metadata.player, button, line, proto, "ingredients")
+
+            ::skip_ingredient::
         end
-
-        local number_line = (number_tooltip) and {"", "\n", number_tooltip} or ""
-        local tooltip = {"", name_line, temperature_line, priority_line, number_line}
-        local tags = item_action_tags(line, proto, "ingredient", index, metadata)
-
-        local button = items_flow.add{type="sprite-button", sprite=proto.sprite, style=style,
-            tags=tags, number=amount, secondary_number=secondary_amount,
-            mouse_button_filter={"left-and-right"}, raise_hover_events=true}
-        metadata.tooltips[button.index] = tooltip
-        item_highlights.register_line_item(metadata.player, button, line, proto, "ingredients")
-
-        ::skip_ingredient::
     end
 
     add_catalysts(line, items_flow, "ingredients", metadata)

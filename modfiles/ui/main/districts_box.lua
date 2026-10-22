@@ -42,7 +42,7 @@ local function handle_item_button_click(player, tags, action)
 
     if action == "create_factory" then  -- only on net ingredients
         local factory = factory_list.add_factory(player, nil, item.proto)
-        local top_level_item = FactoryItem.init(item.proto)
+        local top_level_item = FactoryItem.init(item.proto, "product")
         top_level_item.definition = {type="amount", amount=item.abs_diff}
         factory:insert(top_level_item)
         solver.update(player, factory)
@@ -115,7 +115,8 @@ local function build_items_flow(player, parent, district)
             ingredient = (item.overall == "consumption"),
             special = special,
             cursor = (item.proto.type ~= "entity"),
-            ingredient_only = item.proto.ingredient_only,
+            can_produce = lib.availability.has_productive_recipe(item.proto, "produce"),
+            can_consume = lib.availability.has_productive_recipe(item.proto, "consume"),
             factoriopedia = (lib.get_factoriopedia_proto(item.proto) ~= nil)
         }
         ---@class HandleItemButtonClickTags

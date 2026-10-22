@@ -62,7 +62,7 @@ function migration.player_table(player_table)
             for _, product in pairs(factory:as_list()) do
                 local item = product
                 if product.class == "TLProduct" then
-                    item = FactoryItem.init(product.proto)
+                    item = FactoryItem.init(product.proto, "product")
                     item.defined_by = product.defined_by
                     item.required_amount = product.required_amount
                     item.belt_proto = product.belt_proto

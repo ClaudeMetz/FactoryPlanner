@@ -16,23 +16,28 @@ solver = {
 
 -- ** LOCAL UTIL **
 ---@param factory Factory
----@return SolverItem[]
-local function factory_products(factory)
+---@return SolverItem[] products
+---@return SolverItem[] ingredients
+local function get_factory_items(factory)
     local products = {}  ---@type SolverItem[]
-    for product in factory:iterator() do
-        ---@cast product.proto.type -nil
-        local amount = product:get_defined_amount()
-        -- Skip disabled and machine-defined products
-        if product.active and amount ~= nil then
+    local ingredients = {}  ---@type SolverItem[]
+    for factory_item in factory:iterator() do
+        ---@cast factory_item.proto.type -nil
+        local amount = factory_item:get_defined_amount()
+        if factory_item.active and amount ~= nil then  -- skip machine-defined targets
             local item = {
-                name = product.proto.name,
-                type = product.proto.type,
+                name = factory_item.proto.name,
+                type = factory_item.proto.type,
                 amount = amount
             }  ---@type SolverItem
-            table.insert(products, item)
+            if factory_item.category == "product" then
+                table.insert(products, item)
+            else
+                table.insert(ingredients, item)
+            end
         end
     end
-    return products
+    return products, ingredients
 end
 
 ---@param recipe Recipe
@@ -58,25 +63,31 @@ end
 ---@param factory Factory
 ---@return table<ObjectID, MachineRequirement>
 local function resolve_machine_requirements(factory)
-    local first_lines = {}  ---@type table<SolverItemKey, ObjectID>
+    local first_lines = {product={}, ingredient={}}  ---@type table<ItemCategory, table<SolverItemKey, ObjectID>>
+
     for line_object in factory.top_floor:iterator() do
         local line = (line_object.class == "Floor") and line_object.first or line_object  ---@cast line Line
+
         -- Skip over lines that are blocked or don't calculate machine counts at all
         local blocker = line:get_blocker()
         if line.recipe.proto.energy > MINIMUM_ENERGY and (not blocker or blocker == "disabled") then
-            for _, product in pairs(line.recipe.products) do
-                local key = structures.pack_item(product)
-                first_lines[key] = first_lines[key] or line.id
+            local recipe_items = {product=line.recipe.products, ingredient=line.recipe.ingredients}
+            for category, items in pairs(recipe_items) do
+                for _, item in pairs(items) do
+                    local name = (category == "ingredient") and line.recipe:get_name_with_temperature(item) or item.name
+                    local key = item.type .. "/" .. name
+                    first_lines[category][key] = first_lines[category][key] or line.id
+                end
             end
         end
     end
 
     local requirements = {}  ---@type table<ObjectID, MachineRequirement>
-    for product in factory:iterator() do
-        local definition = product.definition
-        if product.active and definition.type == "machines" then
+    for item in factory:iterator() do
+        local definition = item.definition
+        if item.active and definition.type == "machines" then
             ---@cast definition MachineItemDefinition
-            local line_id = first_lines[structures.pack_item(product)]
+            local line_id = first_lines[item.category][structures.pack_item(item)]
             if line_id and not requirements[line_id] then
                 requirements[line_id] = {count=definition.machine_count}  ---@type MachineRequirement
             end
@@ -352,7 +363,6 @@ end
 ---@field id ObjectID
 ---@field level integer
 ---@field solver_choice SolverName
----@field products SolverItem[]
 ---@field line_ids ObjectID[]
 ---@field gaussian_free_items FPItemPrototype[]
 ---@field result_cache FloorResult?
@@ -374,7 +384,6 @@ local function generate_floor_data(player, factory, floor, machine_requirements)
         id = floor.id,
         level = floor.level,
         solver_choice = floor.solver,
-        products = floor.level == 1 and factory_products(factory) or {},
         line_ids = {},
         gaussian_free_items = free_items,
         result_cache = floor.solver_result_cache,
@@ -415,6 +424,8 @@ end
 ---@class FactoryData
 ---@field player_index uint32
 ---@field factory_id ObjectID
+---@field products SolverItem[]
+---@field ingredients SolverItem[]
 ---@field floor_data_map FloorDataMap
 ---@field line_data_map LineDataMap
 
@@ -427,13 +438,16 @@ local function generate_factory_data(player, factory)
     local floor_data_map, line_data_map =
         generate_floor_data(player, factory, factory.top_floor, machine_requirements)
 
+    local products, ingredients = get_factory_items(factory)
+
     local factory_data = {
         player_index = player.index,
         factory_id = factory.id,
-        top_floor_id = factory.top_floor.id,
+        products = products,
+        ingredients = ingredients,
         floor_data_map = floor_data_map,
         line_data_map = line_data_map,
-    }
+    }  ---@type FactoryData
 
     return factory_data
 end
@@ -491,42 +505,52 @@ local function set_zeroed_items(line, item_category, items)
 end
 
 
--- Allocate each floor's targets locally and pass all parent demand to its subfloors
+-- Allocate each floor's targets locally and pass parent requirements to its subfloors
 ---@param floor Floor
-local function update_product_allocations(floor)
-    local export_demand = {}  ---@type SolverMap
-    for _, product in pairs(floor.products) do
-        structures.map.add(export_demand, product, product.required_amount or 0)
+---@param category SolverItemCategory
+local function update_item_allocations(floor, category)
+    local opposite_category = (category == "products") and "ingredients" or "products"
+    local target_flow = {}  ---@type SolverMap
+    for _, item in pairs(floor[category]) do
+        structures.map.add(target_flow, item, item.required_amount or 0)
     end
 
-    local total_demand = lib.flib.shallow_copy(export_demand)
+    ---@param line_object LineObject
+    ---@param item SimpleItem
+    ---@return SolverItem
+    local function flow_item(line_object, item)
+        local name = (line_object.class == "Floor") and item.proto.name
+            or line_object.recipe--[[@cast -nil]]:get_name_with_temperature(item.proto)
+        return {type=item.proto.type, name=name, amount=item.amount}
+    end
+
+    local total_flow = lib.flib.shallow_copy(target_flow)
     for line_object in floor:iterator() do
-        for _, ingredient in pairs(line_object.ingredients) do
-            local name = (line_object.class == "Floor") and ingredient.proto.name
-                or line_object.recipe--[[@cast -nil]]:get_name_with_temperature(ingredient.proto)
-            structures.map.add(total_demand, {type=ingredient.proto.type, name=name, amount=ingredient.amount})
+        for _, item in pairs(line_object[opposite_category]) do
+            structures.map.add(total_flow, flow_item(line_object, item))
         end
 
-        if line_object.class == "Line" and line_object.machine.fuel then
+        if category == "products" and line_object.class == "Line" and line_object.machine.fuel then
             local fuel = line_object.machine.fuel
             ---@cast fuel.proto FPFuelPrototype
-            structures.map.add(total_demand, {type=fuel.proto.type, name=fuel:get_name_with_temperature(),
+            structures.map.add(total_flow, {type=fuel.proto.type, name=fuel:get_name_with_temperature(),
                 amount=fuel.amount})
         end
     end
 
-    -- Allocate from the bottom up when several lines produce the same item
+    -- Allocate from the bottom up when several lines produce or consume the same item
     for line_object in floor:iterator(nil, floor:find_last(), "previous") do
-        for _, product in pairs(line_object.products) do
-            local key = structures.pack_item(product)
-            local supplied = math.min(total_demand[key] or 0, product.amount)
-            local desired = math.min(export_demand[key] or 0, supplied)
-            product.target_amount = desired
-            if line_object.class == "Floor" then product.required_amount = supplied end
-            structures.map.subtract(total_demand, product, supplied)
-            structures.map.subtract(export_demand, product, desired)
+        for _, item in pairs(line_object[category]) do
+            local flow = flow_item(line_object, item)
+            local key = structures.pack_item(flow)
+            local supplied = math.min(total_flow[key] or 0, item.amount)
+            local desired = math.min(target_flow[key] or 0, supplied)
+            item.target_amount = desired
+            if line_object.class == "Floor" then item.required_amount = supplied end
+            structures.map.subtract(total_flow, flow, supplied)
+            structures.map.subtract(target_flow, flow, desired)
         end
-        if line_object.class == "Floor" then update_product_allocations(line_object) end
+        if line_object.class == "Floor" then update_item_allocations(line_object, category) end
     end
 end
 
@@ -672,26 +696,27 @@ local function update_factory(factory_data, result_map)
 
     if factory.parent then factory.parent.needs_refresh = true end
 
-    for product in factory:iterator() do
-        product.amount = product_result[structures.pack_item(product)] or 0
-    end
-
     update_object_items(factory.top_floor, "products", product_result)
     update_object_items(factory.top_floor, "ingredients", ingredient_result)
 
-    local requested_products = {}  ---@type SolverMap
-    for product in factory:iterator() do
-        if product.active then
-            -- A machine target intentionally exports its calculated net output
-            structures.map.add(requested_products, product, product:get_defined_amount() or product.amount)
+    for category, result in pairs{product=product_result, ingredient=ingredient_result} do
+        local requested_items = {}  ---@type SolverMap
+        for item in factory:iterator({category=category}) do
+            item.amount = result[structures.pack_item(item)] or 0
+            if item.active then
+                -- Machine targets use the calculated net production or consumption
+                structures.map.add(requested_items, item, item:get_defined_amount() or item.amount)
+            end
+        end
+
+        for _, item in pairs(factory.top_floor[category .. "s"]) do
+            item.target_amount = math.min(item.amount, requested_items[structures.pack_item(item)] or 0)
+            item.required_amount = item.target_amount
         end
     end
-    for _, product in pairs(factory.top_floor.products) do
-        product.target_amount = math.min(product.amount, requested_products[structures.pack_item(product)] or 0)
-        product.required_amount = product.target_amount
-    end
 
-    update_product_allocations(factory.top_floor)
+    update_item_allocations(factory.top_floor, "products")
+    update_item_allocations(factory.top_floor, "ingredients")
 end
 
 

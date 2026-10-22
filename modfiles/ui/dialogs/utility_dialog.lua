@@ -381,16 +381,25 @@ local function handle_item_combinator(player, tags, event)
         end
 
         local icons = {}  ---@type BlueprintSignalIcon[]
-        for product in factory:iterator() do
-            local proto = product.proto  ---@as FPItemPrototype
-            describe_item("→", proto, product.amount)
+        local described_ingredients = {}  ---@type table<FPItemPrototype, boolean>
+        for item in factory:iterator() do
+            local proto = item.proto  ---@as FPItemPrototype
+            local ingredient = (item.category == "ingredient")
+            describe_item(ingredient and "←" or "→", proto, item.amount)
+            if ingredient then described_ingredients[proto] = true end
             if #icons < 4 and proto.type ~= "entity" then
                 table.insert(icons, {index=#icons + 1, signal={type=proto.type, name=proto.base_name or proto.name}})
             end
         end
-        if factory.first and next(factory.top_floor.ingredients) then table.insert(description, "") end
+        local separate_ingredients = (#description > 0)
         for _, ingredient in ipairs(factory.top_floor.ingredients) do
-            describe_item("←", ingredient.proto--[[@as FPItemPrototype]], ingredient.amount)
+            if not described_ingredients[ingredient.proto] then
+                if separate_ingredients then
+                    table.insert(description, "")
+                    separate_ingredients = false
+                end
+                describe_item("←", ingredient.proto--[[@as FPItemPrototype]], ingredient.amount)
+            end
         end
         if factory.notes ~= "" then
             if next(description) then table.insert(description, "") end

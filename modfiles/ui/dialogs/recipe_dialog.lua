@@ -2,8 +2,6 @@ local Line = require("backend.data.Line")
 
 local RECIPES_PER_ROW = 6
 
----@alias RecipeProductionType "produce" | "consume"
-
 ---@class RecipeDialogModalData: ModalData
 ---@field recipe_id ObjectID?
 ---@field fuel_id ObjectID?
@@ -24,53 +22,8 @@ local RECIPES_PER_ROW = 6
 ---@alias RecipeDialogFilters {disabled: boolean, hidden: boolean}
 
 -- ** LOCAL UTIL **
----@param items (Ingredient | FormattedProduct)[]
----@param type string
----@param name string
----@return number? amount
-local function peer_amount(items, type, name)
-    for _, item in pairs(items) do
-        if item.type == type and item.name == name then return item.amount end
-    end
-    return nil
-end
-
----@param recipe FPRecipePrototype
----@param proto FPItemPrototype
----@param production_type RecipeProductionType
----@return boolean
-local function recipe_nets_item(recipe, proto, production_type)
-    -- Products carry their temperature in their name, ingredients are keyed by the base fluid
-    local ingredient_name = proto.base_name or proto.name
-    local ingredient_amount = peer_amount(recipe.ingredients, proto.type, ingredient_name)
-    local product_amount = peer_amount(recipe.products, proto.type, proto.name)
-
-    if production_type == "consume" then
-        -- Consuming pins the ingredient to the temperature of the item in question, unlike
-        -- producing, so a product at that same temperature is certain to cancel it out
-        if ingredient_amount == nil then return false end
-        return (product_amount == nil) or (ingredient_amount > product_amount)
-
-    else  -- production_type == "produce"
-        if product_amount == nil then return false end
-        if ingredient_amount == nil or product_amount > ingredient_amount then return true end
-
-        -- The ingredient only cancels the product out when set to its temperature, so the recipe is
-        -- still worth offering as long as there is any other temperature to pick instead
-        for _, ingredient in pairs(recipe.ingredients) do
-            if ingredient.type == "fluid" and ingredient.name == ingredient_name then
-                local temperature_data = lib.temperature.generate_data(ingredient--[[@as Ingredient.fluid]])
-                for _, value in pairs(temperature_data.applicable_values) do
-                    if value ~= proto.temperature then return true end
-                end
-            end
-        end
-        return false
-    end
-end
-
 -- Serves the dual-purpose of determining the appropriate settings for the recipe picker filter
--- and finding any recipes that produce the given prototype
+-- and finding recipes for the requested production or consumption
 ---@param player any
 ---@param modal_data any
 ---@param proto any
@@ -93,12 +46,6 @@ local function match_recipes(player, modal_data, proto)
         for recipe_id, _ in pairs(map) do
             local recipe = prototyper.util.find("recipes", recipe_id, nil)  ---@as FPRecipePrototype
             local force_recipe = force_recipes[recipe.name]
-
-            -- Make sure the recipe actually is a net producer/consumer of the item
-            -- Fluid ingredient temperature configuration influences this
-            if not recipe_nets_item(recipe, proto, modal_data.production_type) then
-                goto skip_recipe
-            end
 
             if recipe.custom then
                 local recipe_enabled = lib.availability.is_recipe_unlocked(force, recipe, unlock_cache)
@@ -127,8 +74,6 @@ local function match_recipes(player, modal_data, proto)
                     elseif recipe_hidden then counts.hidden = counts.hidden + 1 end
                 end
             end
-
-            ::skip_recipe::
         end
     end
 

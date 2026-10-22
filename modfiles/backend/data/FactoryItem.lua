@@ -1,7 +1,8 @@
 local Object = require("backend.data.Object")
 
----@alias ItemDefinitionType "amount" | "belts" | "machines"
+---@alias ItemCategory "product" | "ingredient"
 
+---@alias ItemDefinitionType "amount" | "belts" | "machines"
 ---@alias ItemDefinition AmountItemDefinition | BeltItemDefinition | MachineItemDefinition
 
 ---@class AmountItemDefinition
@@ -22,6 +23,7 @@ local Object = require("backend.data.Object")
 ---@field class "FactoryItem"
 ---@field parent Factory
 ---@field proto FPItemPrototype | FPPackedPrototype
+---@field category ItemCategory
 ---@field definition ItemDefinition
 ---@field active boolean
 ---@field amount number
@@ -30,8 +32,9 @@ FactoryItem.__index = FactoryItem
 script.register_metatable("FactoryItem", FactoryItem)
 
 ---@param proto (FPItemPrototype | FPPackedPrototype)?
+---@param category ItemCategory
 ---@return FactoryItem
-local function init(proto)
+local function init(proto, category)
     local this_proto = proto or {
         name = "",
         category = "",
@@ -40,6 +43,7 @@ local function init(proto)
     }
     local object = Object.init({
         proto = this_proto,
+        category = category,
         definition = {type="amount", amount=0},
         active = true,
 
@@ -54,7 +58,7 @@ function FactoryItem:index()
 end
 
 
--- Machine definitions have no output amount target
+-- Machine definitions have no item amount target
 ---@return number? amount
 function FactoryItem:get_defined_amount()
     local definition = self.definition
@@ -97,31 +101,28 @@ function FactoryItem:paste(object)
         end
         ---@cast proto FPItemPrototype
 
-        -- The item picker doesn't offer these as products, so pasting shouldn't sneak them in
-        if proto.hidden or proto.ingredient_only then return false, "incompatible" end
-
-        -- Only allow pasting fluids with set temperatures
-        local temperature = (object.class == "Fuel") and object.temperature
-            or proto.temperature
-        if object.proto.type == "fluid" and not temperature then
-            return false, "temperature_not_set"
-        end
-
         -- Avoid duplicate items, but allow pasting over the same item proto
         local existing_item = self.parent:find({proto=proto})
-        if existing_item and not (self.proto.name == proto.name) then
-            return false, "already_exists"
+        if existing_item and existing_item ~= self then
+            return false, "already_exists_as_" .. existing_item.category
         end
 
-        local product
+        if not lib.availability.can_define_factory_item(proto, self.category) then return false, "incompatible" end
+
+        -- Only allow pasting fluids with set temperatures
+        local temperature = (object.class == "Fuel") and object.temperature or proto.temperature
+        if object.proto.type == "fluid" and not temperature then return false, "temperature_not_set" end
+
+        local item
         if object.class == "FactoryItem" then
-            product = object
+            item = object
         else
             local source = object  ---@as SimpleItem | Fuel
-            product = init(proto)  -- definition.type = "amount"
-            product.definition = {type="amount", amount=source.amount}
+            item = init(proto, self.category)  -- definition.type = "amount"
+            item.definition = {type="amount", amount=source.amount}
         end
-        self.parent:replace(self, product)
+        item.category = self.category
+        self.parent:replace(self, item)
 
         return true, nil
     else
@@ -133,6 +134,7 @@ end
 ---@class PackedFactoryItem: PackedObject
 ---@field class "FactoryItem"
 ---@field proto FPPackedPrototype
+---@field category ItemCategory
 ---@field definition ItemDefinition
 ---@field active boolean
 
@@ -147,6 +149,7 @@ function FactoryItem:pack(full)
     return {
         class = self.class,
         proto = prototyper.util.simplify_prototype(self.proto, "type"),
+        category = self.category,
         definition = definition,
         active = self.active,
 
@@ -155,10 +158,10 @@ function FactoryItem:pack(full)
 end
 
 ---@param packed_self PackedFactoryItem
----@return FactoryItem product
+---@return FactoryItem item
 local function unpack(packed_self)
     -- Prototypes are unpacked at validate
-    local unpacked_self = init(packed_self.proto)
+    local unpacked_self = init(packed_self.proto, packed_self.category)
 
     unpacked_self.definition = lib.flib.deep_copy(packed_self.definition)
     unpacked_self.active = packed_self.active
