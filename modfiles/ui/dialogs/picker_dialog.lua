@@ -69,7 +69,8 @@ end
 
 ---@param parent_flow LuaGuiElement
 ---@param player LuaPlayer
-local function add_item_picker(parent_flow, player)
+---@param selected_group_name string?
+local function add_item_picker(parent_flow, player, selected_group_name)
     local player_table = lib.globals.player_table(player)
     local modal_data = player_table.ui_state.modal_data  ---@as PickerDialogModalData
     local modal_elements = modal_data.modal_elements
@@ -146,6 +147,7 @@ local function add_item_picker(parent_flow, player)
             group_flow_cache[group_id] = flow_subgroups
 
             modal_elements.groups[group_id] = {
+                name = group_name,
                 button = button_group,
                 frame = frame_subgroups,
                 scroll_pane = scroll_pane_subgroups,
@@ -248,10 +250,9 @@ local function add_item_picker(parent_flow, player)
     end
 
     -- Select the previously selected item group if possible
-    local group_to_select, previous_selection = 1, player_table.ui_state.last_selected_picker_group
-    if previous_selection ~= nil and modal_elements.groups[previous_selection] ~= nil then
-        group_to_select = previous_selection
-    end
+    local group_to_select = (selected_group_name and group_id_cache[selected_group_name])
+        or player_table.ui_state.last_selected_picker_group
+    if group_to_select == nil or modal_elements.groups[group_to_select] == nil then group_to_select = 1 end
     select_item_group(modal_data, group_to_select)
 end
 
@@ -335,11 +336,15 @@ local function set_item_proto(modal_data, item_proto)
     item_choice_button.sprite = (item_proto) and item_proto.sprite or nil
     item_choice_button.tags = {mod="fp", on_gui_click="picker_item_choice",
         flags={cursor=(item_proto ~= nil and item_proto.type ~= "entity"),
-            factoriopedia=(item_proto ~= nil and lib.get_factoriopedia_proto(item_proto) ~= nil)}}
+        factoriopedia=(item_proto ~= nil and lib.get_factoriopedia_proto(item_proto) ~= nil)}}
+
     if item_proto then
         local name = (item_proto.temperature) and item_proto.base_name or item_proto.name
         item_choice_button.elem_tooltip = (item_proto.type ~= "entity") and {type=item_proto.type, name=name} or nil
         item_choice_button.tooltip = item_proto.tooltip
+    else
+        item_choice_button.elem_tooltip = nil
+        item_choice_button.tooltip = nil
     end
 
     -- Disable definition by belt for non-items
@@ -452,8 +457,7 @@ local function add_item_pane(parent_flow, modal_data, item)
     modal_elements["machine_count_checkbox"] = flow_machines.add{type="checkbox", state=(defined_by == "machines"),
         tags={mod="fp", on_gui_checked_state_changed="picker_toggle_machines"},
         caption={"fp.info_label", {"fp.picker_machine_count"}},
-        tooltip={"fp.picker_machine_count_tt", {"fp.pl_" .. modal_data.item_category, 1},
-            {"fp.pl_" .. modal_data.item_category, 2}}}
+        tooltip={"fp.picker_machine_count_tt"}}
 
     local machine_width = 50
     local machine_count = (item and item.definition.type == "machines") and tostring(item.definition.machine_count) or ""
@@ -522,6 +526,7 @@ end
 ---@param player LuaPlayer
 ---@param modal_data PickerDialogModalData
 local function open_picker_dialog(player, modal_data)
+    local modal_elements = modal_data.modal_elements
     local preferences = lib.globals.preferences(player)
     modal_data.timescale = preferences.timescale
     modal_data.belts_or_lanes = preferences.belts_or_lanes
@@ -533,30 +538,41 @@ local function open_picker_dialog(player, modal_data)
         if definition.type == "belts" then modal_data.belt_stack = definition.belt_stack end
     end
 
-    local content_frame = modal_data.modal_elements.content_frame
+    local content_frame = modal_elements.content_frame
     content_frame.style.minimal_width = 325
     content_frame.style.bottom_padding = 6
-    add_item_pane(content_frame, modal_data, modal_data.item)
+    local item_pane = content_frame.add{type="flow", direction="vertical"}
+    item_pane.style.horizontally_stretchable = false
+    add_item_pane(item_pane, modal_data, modal_data.item)
 
-    local titlebar_flow = modal_data.modal_elements.titlebar_flow
+    local titlebar_flow = modal_elements.titlebar_flow
     titlebar_flow.visible = true
 
     -- The item picker only needs to show when adding a new item
     if modal_data.item then
-        modal_data.modal_elements.active_button = titlebar_flow.add{type="sprite-button",
+        modal_elements.active_button = titlebar_flow.add{type="sprite-button",
             sprite="utility/check_mark_white", style="fp_button_frame",
             tooltip={"fp.toggle_target", {"fp.pl_" .. modal_data.item_category, 1}},
             auto_toggle=true, toggled=modal_data.item.active, mouse_button_filter={"left"}}
-        modal_data.modal_elements.active_button.style.padding = -3
+        modal_elements.active_button.style.padding = -3
     else
         titlebar_flow.add{type="sprite-button", sprite="utility/tip_icon", style="fp_button_frame",
             tooltip={"factoriopedia.show-unresearched"}, auto_toggle=true, toggled=preferences.show_unresearched_items,
             tags={mod="fp", on_gui_click="toggle_picker_unresearched"}, mouse_button_filter={"left"}}
 
-        local auxiliary_flow = modal_data.modal_elements.auxiliary_flow
-        local picker_content_frame = auxiliary_flow.add{type="frame", direction="vertical", style="inside_deep_frame"}
-        picker_content_frame.style.top_margin = 8
-        add_item_picker(picker_content_frame, player)
+        modal_elements.subheader_label.style.right_margin = 8
+        modal_elements.subheader.add{type="switch",
+            switch_state=(modal_data.item_category == "product") and "left" or "right",
+            left_label_caption={"fp.pu_product", 1}, right_label_caption={"fp.pu_ingredient", 1},
+            left_label_tooltip={"fp.picker_product_tt"}, right_label_tooltip={"fp.picker_ingredient_tt"},
+            tags={mod="fp", on_gui_switch_state_changed="picker_change_category"}}
+
+        local auxiliary_flow = modal_elements.auxiliary_flow
+        local picker_frame = auxiliary_flow.add{type="frame", direction="vertical", style="inside_deep_frame"}
+        picker_frame.style.top_margin = 8
+        modal_elements.picker_frame = picker_frame
+
+        add_item_picker(picker_frame, player)
         apply_item_filter(player, "")
     end
 end
@@ -635,6 +651,31 @@ end
 local listeners = {}  ---@type ListenerDefinitions
 
 listeners.gui = {
+    on_gui_switch_state_changed = {
+        {
+            name = "picker_change_category",
+            handler = function(player, _, event)
+                ---@cast event EventData.on_gui_switch_state_changed
+                local modal_data = lib.globals.modal_data(player)  ---@as PickerDialogModalData
+                local modal_elements = modal_data.modal_elements
+                local category = (event.element.switch_state == "left") and "product" or "ingredient"
+                modal_data.item_category = category
+
+                local item_proto = modal_data.item_proto
+                if item_proto and not lib.availability.can_define_factory_item(item_proto, category) then
+                    set_item_proto(modal_data, nil)
+                    refresh_definition_controls(modal_data)
+                    update_dialog_submit_button(modal_elements)
+                end
+
+                local selected_group = modal_elements.groups[modal_data.selected_group_id]
+                local selected_group_name = selected_group and selected_group.name
+                modal_elements.picker_frame.clear()
+                add_item_picker(modal_elements.picker_frame, player, selected_group_name)
+                modal_dialog.run_search(player)
+            end
+        }
+    },
     on_gui_checked_state_changed = {
         {
             name = "picker_toggle_machines",
@@ -794,9 +835,12 @@ listeners.dialog = {
     dialog = "picker",
     metadata = function(modal_data)
         ---@cast modal_data PickerDialogModalData
-        local action = (modal_data.item_id) and {"fp.edit"} or {"fp.add"}
+        local caption = modal_data.item_id
+            and {"", {"fp.edit"}, " ", {"fp.pl_" .. modal_data.item_category, 1}}
+            or {"fp.add_target"}
         return {
-            caption = {"", action, " ", {"fp.pl_" .. modal_data.item_category, 1}},
+            caption = caption,
+            subheader_text = (not modal_data.item_id) and {"fp.picker_add_as"} or nil,
             search_handler_name = (not modal_data.item_id) and "apply_item_filter" or nil,
             disable_scroll_pane = true,
             show_submit_button = true,
