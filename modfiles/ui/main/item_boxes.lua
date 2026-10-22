@@ -276,7 +276,7 @@ local function handle_item_button_click(player, tags, action)
         amount = item.amount - (item.required_amount or 0)
     end
 
-    if action == "add_recipe" then
+    if action == "add_producing_recipe" or action == "add_consuming_recipe" then
         local production_type = tags.flags.consume and "consume" or "produce"
         lib.gui.open_dialog(player, {dialog="recipe", modal_data={production_type=production_type,
             category_id=item.proto.category_id, product_id=item.proto.id}})
@@ -515,7 +515,10 @@ listeners.gui = {
         {
             name = "act_on_item_box",
             actions_table = {
-                add_recipe = {shortcut="left", core=true, show=show_add_recipe, enable=lib.actions.can_add_recipe},
+                add_producing_recipe = {shortcut="left", core=true, enable=lib.actions.can_add_recipe,
+                    show=function(flags) return not flags.consume and show_add_recipe(flags) end},
+                add_consuming_recipe = {shortcut="left", core=true, enable=lib.actions.can_add_recipe,
+                    show=function(flags) return flags.consume and show_add_recipe(flags) end},
                 edit = {shortcut="control-left", core=true, show=is_top_level_item,
                     enable=lib.actions.can_edit_factory},
                 toggle = {show=is_top_level_item, enable=lib.actions.can_edit_factory},
