@@ -127,15 +127,12 @@ return {
             close(ore.amount, 0, solver_name .. " cleared target amount")
             close(find(plate.ingredients, "iron-ore").target_amount, 0, solver_name .. " cleared line allocation")
 
-            -- Simplex currently skips floors with no products; its engine is maintained separately
-            if solver_name ~= "simplex" then
-                f = factory(solver_name)
-                local sink = line(f.top_floor, "sink")
-                ore = target(f, "iron-ore", "ingredient", 20)
-                solver.update(player, f)
-                close(ore.amount, 20, solver_name .. " disposal without outputs")
-                close(sink.machine.amount, 10, solver_name .. " disposal machines")
-            end
+            f = factory(solver_name)
+            local sink = line(f.top_floor, "sink")
+            ore = target(f, "iron-ore", "ingredient", 20)
+            solver.update(player, f)
+            close(ore.amount, 20, solver_name .. " disposal without outputs")
+            close(sink.machine.amount, 10, solver_name .. " disposal machines")
 
             f = factory(solver_name)
             local steam = line(f.top_floor, "steam")
