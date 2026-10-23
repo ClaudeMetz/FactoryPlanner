@@ -755,11 +755,13 @@ function generator.items.generate(context)
     -- Deposits and lakes match the entities/tiles that recipe generation created recipes for
     for _, proto in pairs(context.resource_deposits) do
         local item_name = "custom-" .. proto.name
+        local sprite = proto.resource_category == "basic-solid" and
+            ("fp_resource_" .. proto.name) or ("entity/" .. proto.name)
         custom_items[item_name] = {
             name = item_name,
             factoriopedia_id = {type="entity", name=proto.name},
             localised_name = {"", proto.localised_name, " ", {"fp.deposit"}},
-            sprite = "entity/" .. proto.name,
+            sprite = sprite,
             hidden = true,
             order = proto.order
         }
