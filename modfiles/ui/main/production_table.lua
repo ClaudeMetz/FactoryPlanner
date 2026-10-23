@@ -142,7 +142,7 @@ function builders.recipe(line_object, parent_flow, metadata, indent)
         color = "red"
     elseif status == "unavailable_recipe" or status == "incompatible_recipe" or status == "incompatible_machine"
             or status == "unconfigured_temperature" or status == "linearly_dependent" or status == "solver_error" then
-        color = "orange"
+        color = line_object.class == "Floor" and "orange" or "yellow"
     end
 
     local recipe_proto = relevant_line.recipe.proto
