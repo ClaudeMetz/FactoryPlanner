@@ -18,5 +18,5 @@ local function create_sprite(resource)
 end
 
 for _, resource in pairs(data.raw.resource) do
-    if resource.category ~= "basic-fluid" then create_sprite(resource) end
+    if not resource.category or resource.category == "basic-solid" then create_sprite(resource) end
 end
