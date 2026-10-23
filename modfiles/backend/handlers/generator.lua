@@ -723,6 +723,7 @@ end
 ---@field tooltip LocalisedString?
 ---@field fixed_unit LocalisedString?
 ---@field special boolean
+---@field spawnable boolean
 
 ---@alias RelevantItems table<ItemType, table<ItemName, ItemDetails>>
 
@@ -947,7 +948,8 @@ function generator.items.generate(context)
                 base_name = item_details.base_name,
                 order = proto.order,
                 group = generator.util.generate_group_table(proto.group--[[@cast -nil]]),
-                subgroup = generator.util.generate_group_table(proto.subgroup--[[@cast -nil]])
+                subgroup = generator.util.generate_group_table(proto.subgroup--[[@cast -nil]]),
+                spawnable = false
             }
 
             if type == "entity" then
@@ -960,7 +962,8 @@ function generator.items.generate(context)
                 item.special = proto.special or false
             elseif type == "fluid" and item.temperature then
                 item.localised_name = {"fp.fluid_with_temperature", proto.localised_name, item.temperature}
-                item.tooltip = item.localised_name
+            elseif type == "item" then  ---@cast proto LuaItemPrototype
+                item.spawnable = proto.has_flag("spawnable")
             end
 
             insert_prototype(items, item--[[@as FPPrototype]], item.type)
