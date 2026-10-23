@@ -24,6 +24,7 @@ Date: 22. 10. 2026
   Changes:
     - Dropped the explicit byproduct categorization, as it doesn't make sense in the context of input-based solving (#843)
     - Surface restrictions for mining, offshore pumps, and planting are now detected (#897) (Thanks vapopescu!)
+    - Solver results are now cached per subfloor, improving performance when editing parts of a factory (#912) (Thanks vapopescu!)
     - Changed main interface width and height preferences to be percentage-based
     - Removed the ingredient satisfaction preference
 

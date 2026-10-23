@@ -150,7 +150,7 @@ listeners.gui = {
                 end
                 factory.parent:remove(factory)
                 district:insert(factory)
-                factory:clear_solver_cache()
+                factory.top_floor:clear_solver_cache()
                 lib.globals.ui_state(player).held_object_id = nil
 
                 solver.update(player, factory)

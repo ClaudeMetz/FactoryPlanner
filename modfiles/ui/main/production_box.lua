@@ -65,7 +65,7 @@ local function handle_solver_change(player, tags, event)
     local recursive = event.shift or not lib.globals.preferences(player).per_floor_solver
     local target_floor = recursive and factory.top_floor or floor
     if not target_floor:set_solver(tags.solver, recursive) then return end
-    factory:clear_solver_cache()
+    if recursive then factory.top_floor:clear_solver_cache() end
 
     main_dialog.toggle_districts_view(player, true)
     solver.update(player)
