@@ -1,0 +1,32 @@
+{
+    "mods": [
+        {
+            "name": "base",
+            "enabled": true
+        },
+        {
+            "name": "recycler",
+            "enabled": true
+        },
+        {
+            "name": "space-age",
+            "enabled": true
+        },
+        {
+            "name": "quality",
+            "enabled": true
+        },
+        {
+            "name": "elevated-rails",
+            "enabled": true
+        },
+        {
+            "name": "factoryplanner",
+            "enabled": true
+        },
+        {
+            "name": "factoryplanner-test",
+            "enabled": true
+        }
+    ]
+}
