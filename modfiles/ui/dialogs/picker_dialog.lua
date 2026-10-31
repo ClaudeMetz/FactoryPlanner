@@ -776,15 +776,12 @@ listeners.gui = {
                     local existing_item = nil  ---@type FactoryItem?
                     local existing_quality = {}  ---@type table<string, true>
 
-                    local factory_item = not modal_data.create_factory and factory:find({proto=item_proto})
-                    while factory_item do
-                        if factory_item.quality_proto and factory_item.quality_proto.name == quality then
-                            existing_item = factory_item
+                    if not modal_data.create_factory then
+                        for factory_item in factory:iterator({proto=item_proto}) do
+                            local item_quality = factory_item.quality_proto and factory_item.quality_proto.name or "normal"
+                            if item_quality == (quality or "normal") then existing_item = factory_item end
+                            existing_quality[item_quality] = true
                         end
-
-                        local factory_item_quality = factory_item.quality_proto and factory_item.quality_proto.name or "normal"
-                        existing_quality[factory_item_quality] = true
-                        factory_item = factory:find({proto=item_proto}, factory_item)
                     end
 
                     local existing_category = (existing_item) and existing_item.category or nil
