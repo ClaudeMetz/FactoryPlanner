@@ -245,7 +245,11 @@ local function handle_item_add(player, tags, event)
         for _, entity in pairs(blueprint--[[@cast -nil]].cost_to_build) do
             local proto = prototyper.util.find("items", entity.name, "item")  ---@as FPItemPrototype
             local quality_proto = prototyper.util.find("qualities", entity.quality)  ---@as FPQualityPrototype
-            local existing_item = factory:find({proto=proto, quality_proto=quality_proto})
+            local existing_item = nil  ---@type FactoryItem?
+            for item in factory:iterator({proto=proto}) do
+                local quality = item.quality_proto and item.quality_proto.name or "normal"
+                if quality == quality_proto.name then existing_item = item break end
+            end
 
             local amount = entity.count / timescale
             if existing_item then
