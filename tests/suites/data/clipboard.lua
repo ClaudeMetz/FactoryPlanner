@@ -74,7 +74,7 @@ return {
     end},
     product_item_compatibility = {check=function(context)
         local classes, player, factory, product = fixture(context)
-        lib.clipboard.copy(player, SimpleItem.init(nil, product.proto, 23))
+        lib.clipboard.copy(player, SimpleItem.init(nil, product.proto, nil, 23))
         assert(lib.clipboard.paste(player, product))
         assert(factory.first.definition.type == "amount" and factory.first.definition.amount == 23,
             "ordinary items must still paste as rate-defined products")
@@ -122,7 +122,7 @@ return {
             local existing = classes.FactoryItem.init(category, prototyper.util.find("items", "iron-plate", "item"))
             existing.active = false
             factory:insert(existing)
-            local source = SimpleItem.init(nil, existing.proto, 5)
+            local source = SimpleItem.init(nil, existing.proto, nil, 5)
             local success, reason = product:paste(source)
             assert(not success and reason == "already_exists_as_" .. category,
                 "Duplicate paste errors must identify the existing side, including disabled targets")
