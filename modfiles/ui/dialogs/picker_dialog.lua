@@ -215,7 +215,7 @@ local function add_item_picker(parent_flow, player, selected_group_name)
         local unlocked = lib.availability.is_item_unlocked(force, item_proto, modal_data.item_category, unlock_cache)
         local button_style = "fflib_slot_button_default"
         local status_tooltip = nil  ---@type LocalisedString?
-        local enabled = not existing_category or QUALITY_ENABLED
+        local enabled = not existing_category or (QUALITY_ENABLED and item_proto.type == "item")
         if existing_category or next(existing_quality) then
             button_style = "fflib_slot_button_blue"
             status_tooltip = existing_category and {"fp.picker_already_selected_" .. existing_category}
@@ -510,7 +510,7 @@ local function handle_item_pick(player, tags, _)
     local modal_data = lib.globals.modal_data(player)  ---@as PickerDialogModalData
     local item_proto = prototyper.util.find("items", tags.item_id, tags.category_id)  ---@as FPItemPrototype
 
-    if tags.existing_category and not QUALITY_ENABLED then
+    if tags.existing_category and not (QUALITY_ENABLED and item_proto.type == "item") then
         lib.cursor.create_flying_text(player, {"fp.item_already_defined_" .. tags.existing_category})
         return
    end
@@ -785,7 +785,7 @@ listeners.gui = {
                     end
 
                     local existing_category = (existing_item) and existing_item.category or nil
-                    local enabled = not existing_item or QUALITY_ENABLED
+                    local enabled = not existing_item or (QUALITY_ENABLED and item_proto.type == "item")
                     local tags = {item_id=item_proto.id, category_id=item_proto.category_id,
                         enabled=enabled, existing_category=existing_category, existing_quality=existing_quality}
                     handle_item_pick(player, tags--[[@as SelectPickerItemTags]])
