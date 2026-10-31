@@ -119,7 +119,7 @@ do
     cases.testMixedTargetRates = {check=function(context)
         local player, factory, item = fixture(context)
         item.definition = {type="machines", machine_count=5}
-        local output = context.classes.FactoryItem.init(prototyper.util.find("items", "copper-plate", "item"), "product")
+        local output = context.classes.FactoryItem.init("product", prototyper.util.find("items", "copper-plate", "item"))
         output.definition = {type="amount", amount=10}
         factory:insert(output)
         -- Exercise result calculation through the public solver entry point.

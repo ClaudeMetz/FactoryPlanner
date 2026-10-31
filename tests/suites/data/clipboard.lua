@@ -9,7 +9,7 @@ local SimpleItem = script and require("__factoryplanner__.backend.data.SimpleIte
 local function fixture(context)
     local classes, player = context.classes, game.players[1]
     local factory = fixtures.factory(context, "clipboard-test")
-    local product = classes.FactoryItem.init(prototyper.util.find("items", "iron-gear-wheel", "item"), "product")
+    local product = classes.FactoryItem.init("product", prototyper.util.find("items", "iron-gear-wheel", "item"))
     product.definition.amount = 12
     factory:insert(product)
     return classes, player, factory, product
@@ -79,7 +79,7 @@ return {
         assert(factory.first.definition.type == "amount" and factory.first.definition.amount == 23,
             "ordinary items must still paste as rate-defined products")
 
-        local coal = classes.FactoryItem.init(prototyper.util.find("items", "coal", "item"), "product")
+        local coal = classes.FactoryItem.init("product", prototyper.util.find("items", "coal", "item"))
         factory:insert(coal)
         lib.clipboard.copy(player, coal)
         local smelting = classes.Line.init(prototyper.util.find("recipes", "iron-plate"))
@@ -88,8 +88,8 @@ return {
         assert(lib.clipboard.paste(player, smelting.machine.fuel))
         assert(smelting.machine.fuel.proto.name == "coal", "products must still paste as fuels")
 
-        local steam = classes.FactoryItem.init(prototyper.util.find("items",
-            lib.temperature.name_with("steam", 165), "fluid"), "product")
+        local steam = classes.FactoryItem.init("product", prototyper.util.find("items",
+            lib.temperature.name_with("steam", 165), "fluid"))
         assert(steam.proto.temperature == 165)
         factory:insert(steam)
         lib.clipboard.copy(player, steam)
@@ -114,12 +114,12 @@ return {
         local clip = player_table.clipboard
         assert(not lib.clipboard.paste(player, product), "a recipe cannot be pasted onto a product")
         assert(factory.first == product and product.definition.amount == 12 and player_table.clipboard == clip)
-        lib.clipboard.dummy_paste(player, classes.FactoryItem.init(nil, "product"), factory)
+        lib.clipboard.dummy_paste(player, classes.FactoryItem.init("product"), factory)
         assert(factory:count() == 1 and factory.first == product, "failed dummy paste must remove its placeholder")
         assert(player_table.clipboard == clip)
 
         for _, category in ipairs{"product", "ingredient"} do
-            local existing = classes.FactoryItem.init(prototyper.util.find("items", "iron-plate", "item"), category)
+            local existing = classes.FactoryItem.init(category, prototyper.util.find("items", "iron-plate", "item"))
             existing.active = false
             factory:insert(existing)
             local source = SimpleItem.init(nil, existing.proto, 5)

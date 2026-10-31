@@ -9,7 +9,7 @@ local SimpleItem = script and require("__factoryplanner__.backend.data.SimpleIte
 local function arrange(context)
     local player, factory, product = fixture(context)
     local function add(name, category)
-        local item = context.classes.FactoryItem.init(prototyper.util.find("items", name, "item"), category)
+        local item = context.classes.FactoryItem.init(category, prototyper.util.find("items", name, "item"))
         item.definition = {type="amount", amount=10}
         factory:insert(item)
         return item

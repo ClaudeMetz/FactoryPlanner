@@ -105,7 +105,7 @@ function fixtures.line(context, floor, recipe_name, machine)
 end
 
 function fixtures.target(context, factory, name, category, definition, item_type)
-    local target = context.classes.FactoryItem.init(prototyper.util.find("items", name, item_type or "item"), category)
+    local target = context.classes.FactoryItem.init(category, prototyper.util.find("items", name, item_type or "item"))
     target.definition = definition or {type="amount", amount=0}
     factory:insert(target)
     return target
@@ -167,7 +167,7 @@ function fixtures.machine(context)
         return line
     end
     local function add_product(proto, count)
-        local product = classes.FactoryItem.init(proto, "product")
+        local product = classes.FactoryItem.init("product", proto)
         product.definition = {type="machines", machine_count=count}
         factory:insert(product)
         return product
@@ -215,7 +215,7 @@ do
     end
 
     local function add_product(classes, factory, item_name, amount)
-        local product = classes.FactoryItem.init(prototyper.util.find("items", item_name, "item"), "product")
+        local product = classes.FactoryItem.init("product", prototyper.util.find("items", item_name, "item"))
         product.definition.amount = amount  -- per second
         factory:insert(product)
         return product
