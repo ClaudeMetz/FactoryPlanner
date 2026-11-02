@@ -123,6 +123,28 @@ end
 
 
 -- ** EVENTS **
+---@param event EventData.on_research_finished|EventData.on_research_reversed
+local function handle_research_changed(event)
+    if game.tick == 0 then return end  -- no shenanigans during setup
+
+    for _, effect in pairs(event.research.prototype.effects) do
+        if effect.type == "mining-drill-productivity-bonus"
+                or effect.type == "change-recipe-productivity"
+                or effect.type == "laboratory-speed"
+                or effect.type == "laboratory-productivity" then
+            local offset = 1
+            for _, player in pairs(event.research.force.players) do
+                local player_table = storage.players[player.index]
+                if player_table ~= nil then  -- could run in earlier mod's on_player_created
+                    player_table.realm:schedule_solver_updates(game.tick + offset, player)
+                    offset = offset + 2
+                end
+            end
+            break
+        end
+    end
+end
+
 local listeners = {}  ---@type ListenerDefinitions
 
 listeners.gui = {
@@ -181,22 +203,8 @@ listeners.player = {
 }
 
 listeners.game = {
-    on_research_finished = function(event)
-        ---@cast event EventData.on_research_finished
-        if game.tick == 0 then return end  -- no shenanigans during setup
-        for _, effect in pairs(event.research.prototype.effects) do
-            if effect.type == "mining-drill-productivity-bonus"
-                    or effect.type == "change-recipe-productivity" then
-                local offset = 1
-                for _, player in pairs(game.players) do
-                    local realm = lib.globals.player_table(player).realm
-                    realm:schedule_solver_updates(game.tick + offset, player)
-                    offset = offset + 2
-                end
-                break
-            end
-        end
-    end
+    on_research_finished = handle_research_changed,
+    on_research_reversed = handle_research_changed
 }
 
 return { listeners }

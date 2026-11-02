@@ -18,6 +18,7 @@ local context = {
 }
 
 local function run()
+    if game.tick == 0 then return end  -- let event handlers leave their initialization guards
     local player = game.players[1]
     assert(player and storage.players[player.index], "Test player was not initialized")
     local names = configuration.names
