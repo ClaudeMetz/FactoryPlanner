@@ -202,6 +202,16 @@ local function build_district_frame(player, district, location_items, held_distr
     move_button.style.size = {20, 28}
     move_button.style.left_margin = 2
 
+    local selected = lib.context.get(player, "District") == district
+    local selection_caption = (selected) and {"fp.u_selected"} or {"fp.u_select"}
+    local select_tags = {mod="fp", on_gui_click="select_district", district_id=district.id}
+    local select_button = subheader.add{type="button", tags=select_tags, caption=selection_caption,
+        style="list_box_item", enabled=(not selected), mouse_button_filter={"left"}}
+    select_button.style.font = "default-bold"
+    select_button.style.width = 72
+    select_button.style.padding = {0, 4}
+    select_button.style.horizontal_align = "center"
+
     -- Name
     subheader.add{type="label", caption={"", {"fp.name"}, ": "}, style="subheader_caption_label"}
 
