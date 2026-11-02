@@ -49,6 +49,13 @@ function Realm:move(district, relative_object, direction)
     self:_insert(district, relative_object, direction)
 end
 
+---@param district District
+---@param direction NeighbourDirection
+---@param spots integer?
+function Realm:shift(district, direction, spots)
+    self:_shift(district, direction, spots)
+end
+
 
 ---@param filter ObjectFilter
 ---@param pivot District?

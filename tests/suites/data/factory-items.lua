@@ -66,6 +66,18 @@ tests.testFactoryCategoryRoundTrip = {check=function(context)
     assert(clone:find({proto=ingredient.proto}).category == "ingredient", "Cloning must preserve the ingredient category")
 end}
 
+tests.testFactoryItemShiftBoundaries = {check=function(context)
+    local _, factory, product, ingredient, second_product, second_ingredient = arrange(context)
+    factory:shift(second_product, "next", 1)
+    assert(second_product.next == second_ingredient, "Do not cross filtered trailing items")
+    factory:shift(ingredient, "previous", 1)
+    assert(ingredient.previous == product, "Do not cross filtered leading items")
+    factory:shift(product, "next")
+    assert(product.previous == second_product and product.next == second_ingredient)
+    factory:shift(product, "next")
+    assert(product.previous == second_product and product.next == second_ingredient, "Already last means no move")
+end}
+
 tests.testFactoryItemPasteCategories = {check=function(context)
     local player, factory, product, ingredient, second_product, second_ingredient = arrange(context)
     local function copy(item)

@@ -151,17 +151,20 @@ function methods:_shift(object, direction, spots, filter)
     spots = spots or 2^53  -- no spots means shift to end
     local spots_moved = 0
 
-    local next_object = object
+    local next_object, destination = object, object
     while spots_moved < spots and next_object[direction] ~= nil do
         next_object = next_object[direction]
-        local matched = match(next_object--[[@cast -nil]], filter)
-        if matched then spots_moved = spots_moved + 1 end
+        ---@cast next_object -nil
+        local matched = match(next_object, filter)
+        if matched then
+            spots_moved = spots_moved + 1
+            destination = next_object
+        end
     end
 
-    if next_object.id ~= object.id then  -- only move if necessary
-        self:_remove(object)
-        self:_insert(object, next_object, direction)
-    end
+    if destination == object then return end
+    self:_remove(object)
+    self:_insert(object, destination, direction)
 end
 
 

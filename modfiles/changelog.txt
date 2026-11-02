@@ -2,6 +2,7 @@
 Version: 0.00.00
 Date: 00. 00. 0000
   Features:
+    - Implemented moving held district/factory/recipe using the up/down keys
     - Added a 'put into combinator' button to top level products
   Changes:
     - Added a warning when the Gaussian solver returns a negative machine amount, instead of silently accepting it (#935)

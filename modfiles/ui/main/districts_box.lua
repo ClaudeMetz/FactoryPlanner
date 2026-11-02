@@ -330,6 +330,21 @@ local function build_districts_box(player)
     refresh_districts_box(player)
 end
 
+---@param player LuaPlayer
+---@param event PlayerEventData
+local function move_held_district(player, event)
+    if not main_dialog.is_in_focus(player) then return end
+
+    local district = lib.gui.held_object(player, "districts_box")  ---@as District?
+    if not district then return end
+
+    local direction = (event.input_name == "fp_move_up") and "previous" or "next"
+    district.parent:shift(district, direction, 1)
+
+    lib.gui.run_refresh(player, "districts_box")
+    lib.gui.run_refresh(player, "district_list")
+end
+
 -- ** EVENTS **
 local listeners = {}  ---@type ListenerDefinitions
 
@@ -447,6 +462,9 @@ listeners.gui = {
 }  ---@as GUIListenerDefinition
 
 listeners.player = {
+    fp_move_up = move_held_district,
+    fp_move_down = move_held_district,
+
     build_gui_element = function(player, event)
         ---@cast event BuildGUIElementEventData
         if event.trigger == "main_dialog" then

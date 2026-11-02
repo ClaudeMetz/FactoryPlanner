@@ -98,6 +98,24 @@ function Floor:move(line, relative_object, direction)
     self:_insert(line, relative_object, direction)
 end
 
+---@param line LineObject
+---@param direction NeighbourDirection
+---@param spots integer?
+function Floor:shift(line, direction, spots)
+    -- Preserve the recipe defining a subfloor as its first line
+    if self.level > 1 then
+        if line == self.first then return end
+
+        if direction == "previous" then
+            local available = self:count(nil, line.previous, "previous") - 1
+            ---@cast available integer
+            if not spots or spots > available then spots = available end
+        end
+    end
+
+    self:_shift(line, direction, spots)
+end
+
 
 ---@return LineObject?
 function Floor:find_last()

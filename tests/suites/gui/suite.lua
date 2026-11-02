@@ -24,7 +24,7 @@ local configurations = {
     {name="no-orbital-silos", setup={rockets.setup}, cases={testRocketViews=rockets}}
 }
 
-for _, module in ipairs{"item-boxes", "targets"} do
+for _, module in ipairs{"item-boxes", "targets", "movement"} do
     for name, case in pairs(require("suite." .. module)) do
         assert(not configurations[1].cases[name], "Duplicate test: " .. name)
         configurations[1].cases[name] = case

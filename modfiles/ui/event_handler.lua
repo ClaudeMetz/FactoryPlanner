@@ -307,6 +307,8 @@ local player_events = {
     "fp_top_floor",
     "fp_navigate_back",
     "fp_navigate_forward",
+    "fp_move_up",
+    "fp_move_down",
     "fp_toggle_fold_out_subfloors",
     "fp_confirm_dialog",
     "fp_confirm_gui",
@@ -388,7 +390,9 @@ local function handle_player_event(event)
     end
 
     if event.input_name then  -- only for keyboard shortcut events
-        drop_held_object(player, lib.globals.ui_state(player).held_object_id)
+        if event_name ~= "fp_move_up" and event_name ~= "fp_move_down" then
+            drop_held_object(player, lib.globals.ui_state(player).held_object_id)
+        end
         if lib.context.record(player) then lib.gui.run_refresh(player, "title_bar") end
     end
 end

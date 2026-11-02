@@ -110,6 +110,21 @@ local function place_factory(player, tags, _)
 end
 
 ---@param player LuaPlayer
+---@param event PlayerEventData
+local function move_held_factory(player, event)
+    if not main_dialog.is_in_focus(player) then return end
+    if lib.globals.main_elements(player).factory_list.search_textfield.text ~= "" then return end
+
+    local factory = lib.gui.held_object(player, "factory_list")  ---@as Factory?
+    if not factory then return end
+
+    local direction = (event.input_name == "fp_move_up") and "previous" or "next"
+    factory.parent:shift(factory, direction, 1)
+
+    lib.gui.run_refresh(player, "factory_list")
+end
+
+---@param player LuaPlayer
 ---@param tags ActOnFactoryTags
 ---@param action string
 local function handle_factory_click(player, tags, action)
@@ -519,6 +534,9 @@ listeners.gui = {
 }  ---@as GUIListenerDefinition
 
 listeners.player = {
+    fp_move_up = move_held_factory,
+    fp_move_down = move_held_factory,
+
     fp_focus_searchfield = function(player, _)
         if main_dialog.is_in_focus(player) then toggle_factory_search(player) end
     end,
