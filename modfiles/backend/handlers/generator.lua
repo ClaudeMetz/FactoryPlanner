@@ -962,6 +962,7 @@ function generator.items.generate(context)
                 item.special = proto.special or false
             elseif type == "fluid" and item.temperature then
                 item.localised_name = {"fp.fluid_with_temperature", proto.localised_name, item.temperature}
+                item.tooltip = item.localised_name
             elseif type == "item" then  ---@cast proto LuaItemPrototype
                 item.spawnable = proto.has_flag("spawnable")
             end
