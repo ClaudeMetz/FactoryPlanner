@@ -3,6 +3,7 @@ Version: 0.00.00
 Date: 00. 00. 0000
   Features:
   Changes:
+    - Added a warning when the Gaussian solver returns a negative machine amount, instead of silently accepting it (#935)
   Bugfixes:
 
 ---------------------------------------------------------------------------------------------------
