@@ -634,7 +634,7 @@ local function close_picker_dialog(player, action)
 
         solver.update(player, factory)
         main_dialog.toggle_districts_view(player, true)
-        lib.gui.run_refresh(player, "production")
+        lib.gui.run_refresh(player, "factory")
 
     elseif action == "delete" then  ---@cast modal_data.item -nil
         factory:remove(modal_data.item)

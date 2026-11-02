@@ -395,6 +395,7 @@ function factory_list.add_factory(player, name, item_proto)
     local district = lib.context.get(player, "District")  ---@as District
     district:insert(factory)
     lib.context.set(player, factory)
+    main_dialog.toggle_districts_view(player, true)
 
     return factory
 end
