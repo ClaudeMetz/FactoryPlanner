@@ -542,28 +542,35 @@ local function run_solver(factory_data, metadata, floor_id)
     local floor_products = {}  ---@type SolverMap
     local floor_ingredients = {}  ---@type SolverMap
     local line_results = {}  ---@type LineResultMap
+    local floor_error  ---@type boolean?
     for _, line_object_id in ipairs(floor_data.line_ids) do
         local line_key = pack_line_key(line_object_id)
         local line_data = factory_data.line_data_map[line_object_id]
         local col_num = matrix_data.columns.map[line_key]
+        local line_error  ---@type boolean?
 
         if col_num then
             -- want the j-th entry in the last column (output of row-reduction is identity matrix + last column)
             local machine_amount = matrix_data.matrix[col_num]--[[@cast -nil]][#matrix_data.columns.values+1]  ---@as number
-            if machine_amount < 0 then machine_amount = 0 end
-
-            for key, amount in pairs(line_data.products) do
-                local item = structures.unpack_item(key, amount * machine_amount)
-                structures.map.add(floor_products, item)
-            end
-            for key, amount in pairs(line_data.ingredients) do
-                local item = structures.unpack_item(key, amount * machine_amount)
-                structures.map.add(floor_ingredients, item)
+            if machine_amount > 0 then
+                for key, amount in pairs(line_data.products) do
+                    local item = structures.unpack_item(key, amount * machine_amount)
+                    structures.map.add(floor_products, item)
+                end
+                for key, amount in pairs(line_data.ingredients) do
+                    local item = structures.unpack_item(key, amount * machine_amount)
+                    structures.map.add(floor_ingredients, item)
+                end
+            elseif machine_amount < 0 then
+                floor_error = true
+                line_error = true
+                machine_amount = 0
             end
 
             line_results[line_object_id] = {
                 id = line_object_id,
-                machine_amount = machine_amount
+                machine_amount = machine_amount,
+                is_invalid = line_error
             }
         end
     end
@@ -571,7 +578,7 @@ local function run_solver(factory_data, metadata, floor_id)
     structures.map.reduce_items(floor_products, floor_ingredients, true)
 
     return {
-        status = "solved",
+        status = not floor_error and "solved" or "result_invalid",
         id = floor_id,
         products = floor_products,
         ingredients = floor_ingredients,
@@ -579,7 +586,7 @@ local function run_solver(factory_data, metadata, floor_id)
     }
 end
 
----@alias GaussianSolverStatus "solved" | "linearly_dependent" | "free_items_unbalanced"
+---@alias GaussianSolverStatus "solved" | "linearly_dependent" | "free_items_unbalanced" | "result_invalid"
 
 ---@param factory_data FactoryData
 ---@param floor_id ObjectID

@@ -144,10 +144,10 @@ function generator.recipes.generate(context)
     local any_mining_productivity = false
     local any_lab_productivity = false
 
-    local tech_filter = {{filter="hidden", invert=true}, {filter="has-effects", mode="and"}}
+    local tech_filter = {{filter="has-effects"}}
     for _, tech_proto in pairs(prototypes.get_technology_filtered(tech_filter)) do
         for _, effect in pairs(tech_proto.effects) do
-            if effect.type == "unlock-recipe" then
+            if effect.type == "unlock-recipe" and not tech_proto.hidden then
                 local recipe_name = effect.recipe
                 researchable_recipes[recipe_name] = researchable_recipes[recipe_name] or {}
                 table.insert(researchable_recipes[recipe_name], tech_proto.name)
@@ -723,6 +723,7 @@ end
 ---@field tooltip LocalisedString?
 ---@field fixed_unit LocalisedString?
 ---@field special boolean
+---@field spawnable boolean
 
 ---@alias RelevantItems table<ItemType, table<ItemName, ItemDetails>>
 
@@ -947,7 +948,8 @@ function generator.items.generate(context)
                 base_name = item_details.base_name,
                 order = proto.order,
                 group = generator.util.generate_group_table(proto.group--[[@cast -nil]]),
-                subgroup = generator.util.generate_group_table(proto.subgroup--[[@cast -nil]])
+                subgroup = generator.util.generate_group_table(proto.subgroup--[[@cast -nil]]),
+                spawnable = false
             }
 
             if type == "entity" then
@@ -960,7 +962,8 @@ function generator.items.generate(context)
                 item.special = proto.special or false
             elseif type == "fluid" and item.temperature then
                 item.localised_name = {"fp.fluid_with_temperature", proto.localised_name, item.temperature}
-                item.tooltip = item.localised_name
+            elseif type == "item" then  ---@cast proto LuaItemPrototype
+                item.spawnable = proto.has_flag("spawnable")
             end
 
             insert_prototype(items, item--[[@as FPPrototype]], item.type)

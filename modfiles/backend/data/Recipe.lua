@@ -337,7 +337,7 @@ function Recipe:pack(full)
         proto = prototyper.util.simplify_prototype(self.proto, nil),
         priority_item = (self.priority_item) and
             prototyper.util.simplify_prototype(self.priority_item, "type") or nil,
-        temperatures = self.temperatures
+        temperatures = lib.flib.shallow_copy(self.temperatures)
     }
 end
 

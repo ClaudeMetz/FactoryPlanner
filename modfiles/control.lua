@@ -36,12 +36,6 @@ require("ui.event_handler")
 ---@alias ExportString string
 
 
--- Import test code to run within the mod's context
-if script.active_mods["factoryplanner-test"] then
-    ---@diagnostic disable-next-line: unresolved-require
-    test_runner = require("__factoryplanner-test__.runner")
-end
-
 -- Import screenshotter code if its scenario is active
 if remote.interfaces["fp_screenshotter"] then
     DEVELOPER_MODE = false

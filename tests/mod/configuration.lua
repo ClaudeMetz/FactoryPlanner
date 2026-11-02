@@ -1,6 +1,6 @@
 ---@diagnostic disable
 
--- run.sh copies the selected suite into this mod and writes its command-line options
+-- run.py copies the selected suite into this mod and writes its command-line options
 local configurations = require("suite.suite")
 local options = require("options")
 assert(#configurations > 0, "Suite has no configurations")

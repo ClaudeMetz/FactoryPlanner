@@ -340,6 +340,7 @@ end
 ---@class LineResult
 ---@field id ObjectID
 ---@field machine_amount number
+---@field is_invalid boolean?
 
 ---@param factory_data FactoryData
 ---@param floor_id ObjectID
@@ -608,6 +609,7 @@ local function update_line(line_id, line_data, result, scale_factor)
 
     line.machine_requirement = line_data and line_data.machine_requirement
     line.is_linearly_dependent = nil
+    line.is_result_invalid = nil
 
     if line.production_ratio == 0 then
         set_zeroed_items(line, "products", line.recipe.products)
@@ -631,7 +633,7 @@ local function update_floor(factory_data, result_map, floor_id, scale_factor)
     local floor_machines = 0
 
     for line_object in floor:iterator(nil, floor:find_last(), "previous") do
-        local line_result = result and result.line_result_map[line_object.id]
+        local line_result = result and result.status == "solved" and result.line_result_map[line_object.id] or nil
         if line_object.class == "Line" then
             local line_data = factory_data.line_data_map[line_object.id]
             local line_machines = update_line(line_object.id, line_data, line_result, scale_factor)
@@ -673,7 +675,14 @@ local function update_floor(factory_data, result_map, floor_id, scale_factor)
             end
         end
 
-        floor.solver_error = result and result.status ~= "solved" and result.status or nil
+        if result.status == "result_invalid" then
+            for line_object in floor:iterator() do
+                local line_result = result.line_result_map[line_object.id]
+                if line_result and line_result.is_invalid then line_object.is_result_invalid = true end
+            end
+        end
+
+        floor.solver_error = result.status ~= "solved" and result.status or nil
     else
         floor.linear_dependence_data = nil
         floor.solver_result_cache = nil

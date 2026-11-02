@@ -12,6 +12,11 @@ local event_listener_names = {
     "ui.main.production_handler", "ui.main.solver_bar"
 }
 
+-- Tests use the same dispatch as ordinary handlers, in FactoryPlanner's Lua context
+if script.active_mods["factoryplanner-test"] then
+    table.insert(event_listener_names, "__factoryplanner-test__.runner")
+end
+
 ---@class ListenerDefinitions
 ---@field gui GUIListenerDefinition?
 ---@field player table<string, PlayerEventHandler>?

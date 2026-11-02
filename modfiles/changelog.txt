@@ -3,8 +3,11 @@ Version: 0.00.00
 Date: 00. 00. 0000
   Features:
   Changes:
-    - Solver results are now cached per subfloor, improving performance when editing parts of a factory (#912) (Thanks vapopescu!)
+    - Added a warning when the Gaussian solver returns a negative machine amount, instead of silently accepting it (#935)
+    - Solver results are now cached per subfloor, improving performance when editing parts of a factory (#912)
   Bugfixes:
+    - Fixed a crash when opening the item picker dialog (#946)
+    - Fixed that some research productivity boni weren't picked up on
 
 ---------------------------------------------------------------------------------------------------
 Version: 2.1.21

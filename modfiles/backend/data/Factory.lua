@@ -230,7 +230,7 @@ function Factory:pack(full)
         name = self.name,
         blueprint_strings = blueprint_strings,
         notes = self.notes,
-        productivity_boni = self.productivity_boni,
+        productivity_boni = lib.flib.shallow_copy(self.productivity_boni),
         items = self:_pack(full),
         top_floor = self.top_floor:pack(full)
     }

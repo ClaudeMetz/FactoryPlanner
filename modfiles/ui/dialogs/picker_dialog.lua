@@ -168,14 +168,15 @@ local function add_item_picker(parent_flow, player, selected_group_name)
         ---@cast flow_subgroups -nil
 
         local subgroup_name = item_proto.subgroup.name
-        local table_subgroup = subgroup_table_cache[subgroup_name]
+        local subgroup_key = group_name .. "/" .. subgroup_name
+        local table_subgroup = subgroup_table_cache[subgroup_key]
         local subgroup_table = nil
 
         if table_subgroup == nil then
             table_subgroup = flow_subgroups.add{type="table", column_count=items_per_row,
                 style="filter_slot_table"}
             table_subgroup.style.horizontally_stretchable = true
-            subgroup_table_cache[subgroup_name] = table_subgroup
+            subgroup_table_cache[subgroup_key] = table_subgroup
 
             subgroup_tables[subgroup_name] = {}
             subgroup_table = subgroup_tables[subgroup_name]
