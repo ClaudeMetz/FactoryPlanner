@@ -683,16 +683,19 @@ listeners.gui = {
             handler = function(player, _, event)
                 ---@cast event EventData.on_gui_checked_state_changed
                 local modal_data = lib.globals.modal_data(player)  ---@as PickerDialogModalData
+                local modal_elements = modal_data.modal_elements
                 modal_data.amount_defined_by = event.element.state and "machines" or "amount"
 
                 if event.element.state then
-                    local modal_elements = modal_data.modal_elements
                     modal_elements.item_amount_textfield.text = ""
                     set_belt_proto(modal_data, nil)
                     modal_data.belt_stack = lib.globals.preferences(player).belt_stack
                     modal_elements.belt_stack_dropdown.selected_index = modal_data.belt_stack
                     lib.gui.update_expression_field(modal_elements.item_amount_textfield, true)
                     lib.gui.update_expression_field(modal_elements.belt_amount_textfield, true)
+                else
+                    modal_elements.machine_count_textfield.text = ""
+                    lib.gui.update_expression_field(modal_elements.machine_count_textfield, true)
                 end
 
                 refresh_definition_controls(modal_data)
