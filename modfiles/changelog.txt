@@ -8,6 +8,7 @@ Date: 00. 00. 0000
     - Added a warning when the Gaussian solver returns a negative machine amount, instead of silently accepting it (#935)
     - Solver results are now cached per subfloor, improving performance when editing parts of a factory (#912)
     - Re-added the button to select a District to the District list
+    - Removed special 'items' like power and heat from the compact view to save space
   Bugfixes:
     - Fixed a crash when opening the item picker dialog (#946)
     - Fixed that some research productivity boni weren't picked up on
