@@ -196,11 +196,12 @@ do
     -- solver expectations to generator behavior. A change in the checked numbers means
     -- solver behavior changed.
 
-    -- Builds a factory in a fresh district with one line per recipe name, in order
-    local function build_factory(classes, player, recipe_names)
-        local district = classes.District.init()
-        local factory = classes.Factory.init("test-factory", "sequential")
-        district:insert(factory)
+    -- Builds a factory in a fresh district with one line per recipe name, in order.
+    -- The factory is put in context, as solver.update() only clears the cache of the
+    -- floor in context and its parents.
+    local function build_factory(context, recipe_names)
+        local classes, player = context.classes, context.player
+        local factory = fixtures.factory(context, "test-factory", "sequential")
 
         for _, recipe_name in ipairs(recipe_names) do
             local line = classes.Line.init(prototyper.util.find("recipes", recipe_name))

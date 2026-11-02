@@ -582,7 +582,7 @@ end
 local function close_utility_dialog(player, _)
     local modal_data = lib.globals.modal_data(player)  ---@as UtilityDialogModalData
     if modal_data.recalculate then
-        solver.update(player)
+        solver.update(player, nil, true)
         lib.gui.run_refresh(player, "production")
     end
 end

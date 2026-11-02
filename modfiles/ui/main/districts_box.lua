@@ -28,7 +28,7 @@ local function change_district_location(player, tags, event)
 
     for factory in district:iterator() do
         factory.top_floor:reset_location()
-        solver.update(player, factory)
+        solver.update(player, factory, true)
     end
     lib.gui.run_refresh(player, "all")
 end
@@ -44,7 +44,7 @@ local function handle_item_button_click(player, tags, action)
         local top_level_item = FactoryItem.init(item.proto, "product")
         top_level_item.definition = {type="amount", amount=item.abs_diff}
         factory:insert(top_level_item)
-        solver.update(player, factory)
+        solver.update(player, factory, true)
 
         main_dialog.toggle_districts_view(player, true)
         lib.gui.run_refresh(player, "all")

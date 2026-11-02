@@ -11,8 +11,7 @@ local function refresh_production(player, _, _)
     else
         local factory = lib.context.get(player, "Factory")  ---@as Factory?
         if factory and factory.valid then
-            factory:clear_solver_cache()
-            solver.update(player, factory)
+            solver.update(player, factory, true)
             lib.gui.run_refresh(player, "production")
         end
     end

@@ -156,7 +156,7 @@ function _porter.add_factories(player, export_string)
     for _, factory in pairs(import_table.factories) do
         district:insert(factory)
         if not factory.valid then factory:repair(player) end
-        solver.update(player, factory)
+        solver.update(player, factory, true)
         first_factory = first_factory or factory
     end
     ---@cast first_factory Factory

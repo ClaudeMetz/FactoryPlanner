@@ -157,7 +157,6 @@ local function attempt_adding_line(player, recipe_id, modal_data)
         -- Expanded rows can change a floor below the current view
         local changed_floor = floor  ---@type Floor | Factory
         while changed_floor.class == "Floor" do
-            changed_floor:clear_solver_cache(true)
             changed_floor = changed_floor.parent  ---@as Floor | Factory
         end
 

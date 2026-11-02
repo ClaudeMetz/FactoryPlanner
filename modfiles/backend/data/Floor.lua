@@ -25,7 +25,7 @@ local SimpleItem = require("backend.data.SimpleItem")
 ---@field gaussian_free_items (FPItemPrototype | FPPackedPrototype)[]
 ---@field linear_dependence_data LinearDependanceData?
 ---@field simplex_item_weights ItemWeight[]
----@field simplex_basis_cache SimplexBasisCache?
+---@field solver_result_cache FloorResult?
 ---@field current_location FPLocationPrototype?
 local Floor = Object.methods()
 Floor.__index = Floor
@@ -47,7 +47,7 @@ local function init(level, solver_name)
         linear_dependence_data = nil,
         gaussian_free_items = {},
         simplex_item_weights = {},
-        simplex_basis_cache = nil,
+        solver_result_cache = nil,
         current_location = nil,  -- determined on demand
     }, "Floor", Floor)  ---@as Floor
     return object
@@ -269,14 +269,17 @@ function Floor:set_solver(solver_name, recursive)
     return changed
 end
 
----@param self_only boolean?
-function Floor:clear_solver_cache(self_only)
+---@param recurse_direction ("top" | "bottom")?
+function Floor:clear_solver_cache(recurse_direction)
     self.linear_dependence_data = nil
-    self.simplex_basis_cache = nil
+    self.solver_result_cache = nil
 
-    if self_only then return end
-    for line_object in self:iterator() do
-        if line_object.class == "Floor" then line_object:clear_solver_cache() end
+    if recurse_direction == "top" and self.parent.class == "Floor" then
+        self.parent--[[@as Floor]]:clear_solver_cache(recurse_direction)
+    elseif recurse_direction == "bottom" then
+        for floor in self:iterator({class="Floor"}) do
+            floor--[[@as Floor]]:clear_solver_cache(recurse_direction)
+        end
     end
 end
 

@@ -150,10 +150,9 @@ listeners.gui = {
                 end
                 factory.parent:remove(factory)
                 district:insert(factory)
-                factory:clear_solver_cache()
                 lib.globals.ui_state(player).held_object_id = nil
 
-                solver.update(player, factory)
+                solver.update(player, factory, true)
                 lib.gui.run_refresh(player, "all")
             end
         },

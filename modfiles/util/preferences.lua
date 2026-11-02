@@ -281,7 +281,7 @@ function _preferences.refresh_after_change(player, change_type)
         local realm = lib.globals.player_table(player).realm
         realm:schedule_solver_updates(game.tick, player)
     end
-    if run_solver then solver.update(player) end
+    if run_solver then solver.update(player, nil, true) end
     if toggle_mod_gui then lib.gui.toggle_mod_gui(player) end
     if refresh_scope then lib.gui.run_refresh(player, refresh_scope) end
     if rebuild_main then main_dialog.rebuild(player, true) end

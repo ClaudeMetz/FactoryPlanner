@@ -89,7 +89,7 @@ local function duplicate_factory(player, factory)
     local pivot = (not factory.archived) and factory or nil
     factory.parent:insert(clone, pivot, "next")
 
-    solver.update(player, clone)
+    solver.update(player, clone, true)
     main_dialog.toggle_districts_view(player, true)
     lib.context.set(player, clone)
     lib.gui.run_refresh(player, "all")

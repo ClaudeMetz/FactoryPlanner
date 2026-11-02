@@ -65,20 +65,20 @@ local function handle_solver_change(player, tags, event)
     local recursive = event.shift or not lib.globals.preferences(player).per_floor_solver
     local target_floor = recursive and factory.top_floor or floor
     if not target_floor:set_solver(tags.solver, recursive) then return end
-    factory:clear_solver_cache()
 
     main_dialog.toggle_districts_view(player, true)
-    solver.update(player)
+    solver.update(player, factory, recursive)
     lib.gui.run_refresh(player, "production")
 end
 
 ---@param player LuaPlayer
 local function repair_factory(player, _, _)
     -- This function can only run is a factory is selected and invalid
-    lib.context.get(player, "Factory")--[[@as Factory]]:repair(player)
+    local factory = lib.context.get(player, "Factory")  ---@as Factory
+    factory:repair(player)
 
     main_dialog.toggle_districts_view(player, true)
-    solver.update(player)
+    solver.update(player, factory, true)
     lib.gui.run_refresh(player, "all")  -- needs the full refresh to reset factory list buttons
 end
 

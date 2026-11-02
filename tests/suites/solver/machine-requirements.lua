@@ -81,6 +81,7 @@ local cases = {
         f.top:replace(f.second, subfloor)
         subfloor:insert(f.second)
         local internal = f.add_line(subfloor)
+        lib.context.set(f.player, subfloor)
         solver.update(f.player, f.factory)
         assert(f.second.machine_requirement.count == 3.5 and f.first.machine_requirement == nil,
             "A subfloor's defining recipe must retain its requirement")
