@@ -4,6 +4,7 @@ Date: 00. 00. 0000
   Features:
   Changes:
   Bugfixes:
+    - Fixed a crash when opening the item picker dialog (#946)
     - Fixed that some research productivity boni weren't picked up on
 
 ---------------------------------------------------------------------------------------------------
