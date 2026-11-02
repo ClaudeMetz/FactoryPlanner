@@ -39,9 +39,10 @@ end
 local function handle_item_button_click(player, tags, action)
     local item = OBJECT_INDEX[tags.item_id]  ---@as DistrictItem
 
-    if action == "create_factory" then  -- only on net ingredients
+    if action == "create_producing_factory" or action == "create_consuming_factory" then
         local factory = factory_list.add_factory(player, nil, item.proto)
-        local top_level_item = FactoryItem.init(item.proto, "product")
+        local category = (item.overall == "production") and "ingredient" or "product"
+        local top_level_item = FactoryItem.init(item.proto, category)
         top_level_item.definition = {type="amount", amount=item.abs_diff}
         factory:insert(top_level_item)
         solver.update(player, factory, true)
@@ -111,7 +112,7 @@ local function build_items_flow(player, parent, district)
 
         local special = (item.proto.type == "entity" and item.proto.special)
         local flags = {
-            ingredient = (item.overall == "consumption"),
+            consume = (item.overall == "production"),
             special = special,
             cursor = (item.proto.type ~= "entity"),
             can_produce = lib.availability.has_productive_recipe(item.proto, "produce"),
@@ -348,12 +349,6 @@ end
 -- ** EVENTS **
 local listeners = {}  ---@type ListenerDefinitions
 
----@param flags GUIActionFlags
----@return boolean?
-local function is_ingredient(flags)
-    return flags.ingredient
-end
-
 listeners.gui = {
     on_gui_click = {
         {
@@ -438,7 +433,10 @@ listeners.gui = {
         {
             name = "act_on_district_item",
             actions_table = {
-                create_factory = {shortcut="left", core=true, show=is_ingredient, enable=lib.actions.can_add_recipe},
+                create_producing_factory = {shortcut="left", core=true, enable=lib.actions.can_add_recipe,
+                    show=function(flags) return not flags.consume end},
+                create_consuming_factory = {shortcut="left", core=true, enable=lib.actions.can_add_recipe,
+                    show=function(flags) return flags.consume end},
                 copy = {shortcut="shift-right"},
                 pipette = {input="pipette", enable=lib.actions.can_pipette},
                 put_into_combinator = {input="put_into_combinator", enable=lib.actions.can_put_into_combinator},
