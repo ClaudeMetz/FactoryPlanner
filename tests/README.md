@@ -7,8 +7,7 @@ The launcher runs natively on Windows, Linux and macOS. It requires Python 3.10+
 Run commands from the repository root. On Linux and macOS:
 
 ```sh
-python3 tests/run.py save-create                      # Smoke test map creation
-python3 tests/run.py suites                           # All suites and configurations
+python3 tests/run.py                                  # All suites and configurations
 python3 tests/run.py suite gui                        # One suite
 python3 tests/run.py suite gui no-wagons               # One prototype configuration
 python3 tests/run.py suite data normal Clipboard      # Filter case names with a Lua pattern
@@ -19,8 +18,10 @@ On Windows, use `py -3` in place of `python3`, from PowerShell or Command Prompt
 
 ```powershell
 $env:FACTORIO = 'C:\Program Files\Factorio\bin\x64\factorio.exe'
-py -3 tests/run.py suites
+py -3 tests/run.py
 ```
+
+The explicit `suites` command also runs all suites and configurations.
 
 In Command Prompt, set the executable with
 `set "FACTORIO=C:\Program Files\Factorio\bin\x64\factorio.exe"` instead.

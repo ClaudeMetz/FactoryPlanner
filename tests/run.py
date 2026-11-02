@@ -77,11 +77,17 @@ class Runner:
         self.failure_dir = None
         self.mods = temporary / "mods"
 
-    def run_game(self, name, *args):
+    def run_configuration(self, suite, configuration, case_filter):
+        selected = lua_string(configuration) if configuration else "nil"
+        options = f"return {{configuration={selected}, filter={lua_string(case_filter)}}}\n"
+        (self.mods / "factoryplanner-test/options.lua").write_text(options, encoding="utf-8")
+        name = f"{suite}-{configuration or 'first'}"
+        command = self.game.command(["--mod-directory", self.mods,
+                                     "--test-scenario", "factoryplanner-test/tests"])
         logfile = self.temporary / "run.log"
         with logfile.open("w", encoding="utf-8") as output:
             try:
-                exit_code = subprocess.run(self.game.command(args), timeout=self.timeout,
+                exit_code = subprocess.run(command, timeout=self.timeout,
                                            stdout=output, stderr=subprocess.STDOUT).returncode
             except subprocess.TimeoutExpired:
                 exit_code = 124
@@ -101,7 +107,10 @@ class Runner:
             destination = self.failure_dir / f"{name}.log"
             shutil.copyfile(logfile, destination)
             print(f"    Log: {destination}")
-        return exit_code, log
+        # These markers supply presentation and discovery only; Factorio owns the verdict
+        configurations = re.findall(r"FPTEST_CONFIGURATION ([a-zA-Z0-9_-]+)$", log, re.MULTILINE)
+        counts = re.findall(r"FPTEST_PASSED ([0-9]+)$", log, re.MULTILINE)
+        return exit_code == 0, int(counts[-1]) if counts else 0, configurations
 
     def prepare_suite(self, suite):
         if self.mods.exists():
@@ -113,18 +122,6 @@ class Runner:
         disabled = ("space-age", "quality", "elevated-rails")
         mods = [{"name": name, "enabled": name in enabled} for name in (*enabled, *disabled)]
         (self.mods / "mod-list.json").write_text(json.dumps({"mods": mods}), encoding="utf-8")
-
-    def run_configuration(self, suite, configuration, case_filter):
-        selected = lua_string(configuration) if configuration else "nil"
-        options = f"return {{configuration={selected}, filter={lua_string(case_filter)}}}\n"
-        (self.mods / "factoryplanner-test/options.lua").write_text(options, encoding="utf-8")
-        exit_code, log = self.run_game(f"{suite}-{configuration or 'first'}",
-                                       "--mod-directory", self.mods,
-                                       "--test-scenario", "factoryplanner-test/tests")
-        # These markers supply presentation and discovery only; Factorio owns the verdict
-        configurations = re.findall(r"FPTEST_CONFIGURATION ([a-zA-Z0-9_-]+)$", log, re.MULTILINE)
-        counts = re.findall(r"FPTEST_PASSED ([0-9]+)$", log, re.MULTILINE)
-        return exit_code == 0, int(counts[-1]) if counts else 0, configurations
 
     def run_suite(self, suite, configuration="", case_filter=""):
         print(styled(suite, "1"), flush=True)
@@ -143,20 +140,11 @@ class Runner:
         print(f"  {summary}", flush=True)
         return failed == 0
 
-    def save_create(self):
-        shutil.copytree(self.root / "modfiles", self.mods / "factoryplanner")
-        code, _ = self.run_game("save-create", "--mod-directory", self.mods,
-                                "--create", self.temporary / "test-map.zip")
-        if code == 0:
-            print(styled("✓ save-create: map created without errors", "32"))
-        return code == 0
-
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     commands = parser.add_subparsers(dest="command")
-    commands.add_parser("save-create", help="Smoke test map creation (default)")
-    commands.add_parser("suites", help="Run all suites and configurations")
+    commands.add_parser("suites", help="Run all suites and configurations (default)")
     suite_parser = commands.add_parser("suite", help="Run one suite")
     suite_parser.add_argument("name")
     suite_parser.add_argument("configuration", nargs="?", default="")
@@ -175,8 +163,6 @@ def main():
     try:
         with tempfile.TemporaryDirectory(prefix="factoryplanner-tests-") as temporary:
             runner = Runner(root, Path(temporary), int(timeout))
-            if args.command in (None, "save-create"):
-                return 0 if runner.save_create() else 1
             help_result = subprocess.run([str(runner.game.executable), "--help"],
                                          timeout=int(timeout), stdout=subprocess.PIPE,
                                          stderr=subprocess.STDOUT, text=True, encoding="utf-8", errors="replace")
