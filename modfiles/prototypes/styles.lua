@@ -191,6 +191,15 @@ styles["fp_sprite-button_rounded_icon"] = {
     invert_colors_of_picture_when_disabled = true
 }
 
+styles["fp_sprite-button_item_box_action"] = {
+    type = "button_style",
+    parent = "tool_button",
+    size = 20,
+    padding = 2,
+    default_graphical_set = {},
+    disabled_graphical_set = {}
+}
+
 styles["fp_sprite-button_move"] = {
     type = "button_style",
     parent = "list_box_item",

@@ -13,7 +13,7 @@ local function build_item_box(player, category)
     local window_frame = item_boxes_elements.horizontal_flow.add{type="frame", direction="vertical",
         style="inside_shallow_frame"}
     window_frame.style.horizontally_stretchable = true
-    window_frame.style.padding = {2, HORIZONTAL_PADDING, 8, HORIZONTAL_PADDING}
+    window_frame.style.padding = {8, HORIZONTAL_PADDING, 8, HORIZONTAL_PADDING}
 
     local centering_flow = window_frame.add{type="flow", direction="horizontal"}
     centering_flow.style.horizontally_stretchable = true
@@ -25,19 +25,18 @@ local function build_item_box(player, category)
 
     local title_flow = content_flow.add{type="flow", direction="horizontal"}
     title_flow.style.vertical_align = "center"
+    title_flow.style.horizontal_spacing = 0
+    title_flow.style.bottom_margin = 2
 
-    local label = title_flow.add{type="label", caption={"fp.pu_" .. category, 2}, style="caption_label"}
-    label.style.bottom_margin = 8
+    title_flow.add{type="label", caption={"fp.pu_" .. category, 2}, style="caption_label"}
+    title_flow.add{type="empty-widget", style="fflib_horizontal_pusher"}
+    item_boxes_elements[category .. "_title_flow"] = title_flow
 
-    if category == "ingredient" then
-        local button_combinator = title_flow.add{type="sprite-button", sprite="item/constant-combinator",
-            tooltip={"fp.ingredients_to_combinator_tt"}, tags={mod="fp", on_gui_click="ingredients_to_combinator"},
-            visible=false, mouse_button_filter={"left"}}
-        button_combinator.style.size = 24
-        button_combinator.style.padding = -2
-        button_combinator.style.left_margin = 4
-        item_boxes_elements["ingredient_combinator_button"] = button_combinator
-    end
+    local button_combinator = title_flow.add{type="sprite-button", sprite="item/constant-combinator",
+        style="fp_sprite-button_item_box_action", tooltip={"fp.items_to_combinator_tt", {"fp.pl_" .. category, 2}},
+        tags={mod="fp", on_gui_click="items_to_combinator", item_category=category},
+        visible=false, mouse_button_filter={"left"}}
+    item_boxes_elements[category .. "_combinator_button"] = button_combinator
 
     local scroll_pane = content_flow.add{type="scroll-pane", style="shallow_scroll_pane"}
     scroll_pane.style.maximal_height = MAX_ROWS * MAGIC_NUMBERS.item_button_size
@@ -341,24 +340,25 @@ end
 
 
 ---@param player LuaPlayer
-local function put_ingredients_into_cursor(player, _, _)
+---@param tags {item_category: ItemCategory}
+local function put_items_into_cursor(player, tags, _)
     local preferences = lib.globals.preferences(player)
     local relevant_floor = lib.context.get(player, "Floor")  ---@as Floor
 
-    local ingredient_filters = {}
-    for _, ingredient in pairs(relevant_floor.ingredients) do
-        local amount = ingredient.amount * preferences.timescale
-        if amount > MAGIC_NUMBERS.margin_of_error and ingredient.proto.type ~= "entity" then
-            table.insert(ingredient_filters, {
-                type = ingredient.proto.type,
-                name = ingredient.proto.base_name or ingredient.proto.name,
+    local item_filters = {}
+    for _, item in pairs(relevant_floor[tags.item_category .. "s"]) do
+        local amount = item.amount * preferences.timescale
+        if amount > MAGIC_NUMBERS.margin_of_error and item.proto.type ~= "entity" then
+            table.insert(item_filters, {
+                type = item.proto.type,
+                name = item.proto.base_name or item.proto.name,
                 quality = "normal",
                 comparator = "=",
                 count = math.ceil(amount - MAGIC_NUMBERS.margin_of_error)
             })
         end
     end
-    lib.cursor.set_item_combinator(player, ingredient_filters)
+    lib.cursor.set_item_combinator(player, item_filters)
 
     main_dialog.toggle(player)
 end
@@ -377,9 +377,12 @@ local function render_item_box(player, category, buttons, columns, height)
     item_frame.style.minimal_height = height
     item_frame.parent.style.minimal_height = height
 
+    elements[category .. "_title_flow"].style.width = columns * MAGIC_NUMBERS.item_button_size
+
     local table_items = item_frame.add{type="table", column_count=columns, style="filter_slot_table"}
     elements[category .. "_item_table"] = table_items
     local tooltips = lib.globals.ui_state(player).tooltips.item_boxes
+
     for _, data in ipairs(buttons) do
         local button = table_items.add(data.definition)
         tooltips[button.index] = data.tooltip
@@ -404,7 +407,9 @@ local function refresh_item_boxes(player)
     if not visible then return end
 
     local factory = lib.context.get(player, "Factory")  ---@as Factory?
-    main_elements.item_boxes.ingredient_combinator_button.visible = (factory ~= nil and factory.valid)
+    for _, category in ipairs{"product", "ingredient"} do
+        main_elements.item_boxes[category .. "_combinator_button"].visible = (factory ~= nil and factory.valid)
+    end
 
     local tooltips = player_table.ui_state.tooltips
     tooltips.item_boxes = {}
@@ -538,9 +543,9 @@ listeners.gui = {
             handler = handle_item_button_click
         },
         {
-            name = "ingredients_to_combinator",
+            name = "items_to_combinator",
             timeout = 20,
-            handler = put_ingredients_into_cursor
+            handler = put_items_into_cursor
         }
     }
 }  ---@as GUIListenerDefinition
