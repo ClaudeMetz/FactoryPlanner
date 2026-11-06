@@ -141,8 +141,7 @@ do
     tests.surplus = {
         testSurplusRecipeCreatesSubfloor = {check=function(context)
             local c, player = helpers.collector(), context.player
-            local factory = build_factory(context.classes, player,
-                {"test-solver-gear", "test-solver-plate"})
+            local factory = build_factory(context, {"test-solver-gear", "test-solver-plate"})
             local product = add_product(context.classes, factory, "test-solver-gear", 5)
 
             solver.update(player, factory)
@@ -162,9 +161,6 @@ do
                 prototyper.util.find("machines", "test-solver-machine", "test-solver"))
             solver.update(player, factory)
             -- Surplus-driven recipes can define subfloors, including nested ones
-            local player_table = lib.globals.player_table(player)
-            player_table.realm:insert(factory.parent)
-            lib.context.set(player, factory)
             main_dialog.rebuild(player, false)
             local button = gui.require(lib.globals.main_elements(player).main_frame,
                 {on_gui_click="act_on_line_recipe", line_id=consumer.id})

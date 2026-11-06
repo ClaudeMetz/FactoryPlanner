@@ -28,7 +28,7 @@ local function change_district_location(player, tags, event)
 
     for factory in district:iterator() do
         factory.top_floor:reset_location()
-        solver.update(player, factory)
+        solver.update(player, factory, true)
     end
     lib.gui.run_refresh(player, "all")
 end
@@ -40,12 +40,13 @@ local function handle_item_button_click(player, tags, action)
     local item = OBJECT_INDEX[tags.item_id]  ---@as DistrictItem
     local simple_item = SimpleItem.init(nil, item.proto, item.quality_proto, item.abs_diff)
 
-    if action == "create_factory" then  -- only on net ingredients
+    if action == "create_producing_factory" or action == "create_consuming_factory" then
         local factory = factory_list.add_factory(player, nil, item.proto)
-        local top_level_item = FactoryItem.init("product", item.proto, item.quality_proto)
+        local category = (item.overall == "production") and "ingredient" or "product"
+        local top_level_item = FactoryItem.init(category, item.proto, item.quality_proto)
         top_level_item.definition = {type="amount", amount=item.abs_diff}
         factory:insert(top_level_item)
-        solver.update(player, factory)
+        solver.update(player, factory, true)
 
         main_dialog.toggle_districts_view(player, true)
         lib.gui.run_refresh(player, "all")
@@ -112,7 +113,7 @@ local function build_items_flow(player, parent, district)
 
         local special = (item.proto.type == "entity" and item.proto.special)
         local flags = {
-            ingredient = (item.overall == "consumption"),
+            consume = (item.overall == "production"),
             special = special,
             cursor = (item.proto.type ~= "entity"),
             can_produce = lib.availability.has_productive_recipe(item.proto, "produce"),
@@ -203,6 +204,16 @@ local function build_district_frame(player, district, location_items, held_distr
 
     move_button.style.size = {20, 28}
     move_button.style.left_margin = 2
+
+    local selected = lib.context.get(player, "District") == district
+    local selection_caption = (selected) and {"fp.u_selected"} or {"fp.u_select"}
+    local select_tags = {mod="fp", on_gui_click="select_district", district_id=district.id}
+    local select_button = subheader.add{type="button", tags=select_tags, caption=selection_caption,
+        style="list_box_item", enabled=(not selected), mouse_button_filter={"left"}}
+    select_button.style.font = "default-bold"
+    select_button.style.width = 72
+    select_button.style.padding = {0, 4}
+    select_button.style.horizontal_align = "center"
 
     -- Name
     subheader.add{type="label", caption={"", {"fp.name"}, ": "}, style="subheader_caption_label"}
@@ -322,14 +333,23 @@ local function build_districts_box(player)
     refresh_districts_box(player)
 end
 
+---@param player LuaPlayer
+---@param event PlayerEventData
+local function move_held_district(player, event)
+    if not main_dialog.is_in_focus(player) then return end
+
+    local district = lib.gui.held_object(player, "districts_box")  ---@as District?
+    if not district then return end
+
+    local direction = (event.input_name == "fp_move_up") and "previous" or "next"
+    district.parent:shift(district, direction, 1)
+
+    lib.gui.run_refresh(player, "districts_box")
+    lib.gui.run_refresh(player, "district_list")
+end
+
 -- ** EVENTS **
 local listeners = {}  ---@type ListenerDefinitions
-
----@param flags GUIActionFlags
----@return boolean?
-local function is_ingredient(flags)
-    return flags.ingredient
-end
 
 listeners.gui = {
     on_gui_click = {
@@ -415,7 +435,10 @@ listeners.gui = {
         {
             name = "act_on_district_item",
             actions_table = {
-                create_factory = {shortcut="left", core=true, show=is_ingredient, enable=lib.actions.can_add_recipe},
+                create_producing_factory = {shortcut="left", core=true, enable=lib.actions.can_add_recipe,
+                    show=function(flags) return not flags.consume end},
+                create_consuming_factory = {shortcut="left", core=true, enable=lib.actions.can_add_recipe,
+                    show=function(flags) return flags.consume end},
                 copy = {shortcut="shift-right"},
                 pipette = {input="pipette", enable=lib.actions.can_pipette},
                 put_into_combinator = {input="put_into_combinator", enable=lib.actions.can_put_into_combinator},
@@ -439,6 +462,9 @@ listeners.gui = {
 }  ---@as GUIListenerDefinition
 
 listeners.player = {
+    fp_move_up = move_held_district,
+    fp_move_down = move_held_district,
+
     build_gui_element = function(player, event)
         ---@cast event BuildGUIElementEventData
         if event.trigger == "main_dialog" then

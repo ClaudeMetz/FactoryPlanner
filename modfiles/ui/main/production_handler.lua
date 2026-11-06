@@ -18,6 +18,22 @@ local function place_line(player, tags, _)
     lib.gui.run_refresh(player, "production")
 end
 
+---@param player LuaPlayer
+---@param event PlayerEventData
+local function move_held_line(player, event)
+    if not main_dialog.is_in_focus(player) then return end
+
+    local line = lib.gui.held_object(player, "production_table")  ---@as LineObject?
+    if not line then return end
+
+    local direction = (event.input_name == "fp_move_up") and "previous" or "next"
+    local floor = line.parent  ---@as Floor
+    floor:shift(line, direction, 1)
+
+    solver.update(player)
+    lib.gui.run_refresh(player, "production")
+end
+
 ---@param line Line
 ---@return Floor
 local function convert_line_to_subfloor(line)
@@ -550,5 +566,10 @@ listeners.gui = {
         }
     }
 }  ---@as GUIListenerDefinition
+
+listeners.player = {
+    fp_move_up = move_held_line,
+    fp_move_down = move_held_line
+}
 
 return { listeners }

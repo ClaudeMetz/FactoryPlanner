@@ -170,8 +170,6 @@ local function global_init()
     prototyper.util.build_translation_dictionaries()
 
     for _, player in pairs(game.players) do player_init(player) end
-
-    if test_runner then test_runner() end  -- Run if a test mod is active
 end
 
 -- Prompts migrations, a GUI and prototype reload, and a validity check on all factories
@@ -202,11 +200,10 @@ local function handle_configuration_change()
         lib.gui.toggle_mod_gui(player)  -- Recreates the mod-GUI if necessary
 
         -- Update calculations in case prototypes changed in a relevant way
-        for district in storage.players[index].realm:iterator() do
+        for district in storage.players[index--[[@as PlayerIndex]]].realm:iterator() do
             district.needs_refresh = true
             for factory in district:iterator() do
-                factory:clear_solver_cache()
-                solver.update(player, factory)
+                solver.update(player, factory, true)
             end
         end
     end

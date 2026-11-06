@@ -179,14 +179,15 @@ local function add_item_picker(parent_flow, player, selected_group_name)
         ---@cast flow_subgroups -nil
 
         local subgroup_name = item_proto.subgroup.name
-        local table_subgroup = subgroup_table_cache[subgroup_name]
+        local subgroup_key = group_name .. "/" .. subgroup_name
+        local table_subgroup = subgroup_table_cache[subgroup_key]
         local subgroup_table = nil
 
         if table_subgroup == nil then
             table_subgroup = flow_subgroups.add{type="table", column_count=items_per_row,
                 style="filter_slot_table"}
             table_subgroup.style.horizontally_stretchable = true
-            subgroup_table_cache[subgroup_name] = table_subgroup
+            subgroup_table_cache[subgroup_key] = table_subgroup
 
             subgroup_tables[subgroup_name] = {}
             subgroup_table = subgroup_tables[subgroup_name]
@@ -663,7 +664,7 @@ local function close_picker_dialog(player, action)
 
         solver.update(player, factory)
         main_dialog.toggle_districts_view(player, true)
-        lib.gui.run_refresh(player, "production")
+        lib.gui.run_refresh(player, "factory")
 
     elseif action == "delete" then  ---@cast modal_data.item -nil
         factory:remove(modal_data.item)
@@ -712,16 +713,19 @@ listeners.gui = {
             handler = function(player, _, event)
                 ---@cast event EventData.on_gui_checked_state_changed
                 local modal_data = lib.globals.modal_data(player)  ---@as PickerDialogModalData
+                local modal_elements = modal_data.modal_elements
                 modal_data.amount_defined_by = event.element.state and "machines" or "amount"
 
                 if event.element.state then
-                    local modal_elements = modal_data.modal_elements
                     modal_elements.item_amount_textfield.text = ""
                     set_belt_proto(modal_data, nil)
                     modal_data.belt_stack = lib.globals.preferences(player).belt_stack
                     modal_elements.belt_stack_dropdown.selected_index = modal_data.belt_stack
                     lib.gui.update_expression_field(modal_elements.item_amount_textfield, true)
                     lib.gui.update_expression_field(modal_elements.belt_amount_textfield, true)
+                else
+                    modal_elements.machine_count_textfield.text = ""
+                    lib.gui.update_expression_field(modal_elements.machine_count_textfield, true)
                 end
 
                 refresh_definition_controls(modal_data)

@@ -1,0 +1,1 @@
+-- The test mode creates the player; the runner executes inside FactoryPlanner's Lua context

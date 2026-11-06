@@ -198,14 +198,10 @@ function Factory:refresh_lines(player, starting_tick)
     if not starting_tick then return nil end  -- callers that re-solve on their own pass no tick
 
     -- Keep the selected factory's data consistent until its scheduled UI refresh
-    if lib.context.get(player, "Factory") == self then solver.update(player, self) end
+    if lib.context.get(player, "Factory") == self then solver.update(player, self, true) end
 
     self:schedule_solver_update(starting_tick, player)
     return starting_tick + MAGIC_NUMBERS.factory_solver_update_delay
-end
-
-function Factory:clear_solver_cache()
-    self.top_floor:clear_solver_cache()
 end
 
 
@@ -234,7 +230,7 @@ function Factory:pack(full)
         name = self.name,
         blueprint_strings = blueprint_strings,
         notes = self.notes,
-        productivity_boni = self.productivity_boni,
+        productivity_boni = lib.flib.shallow_copy(self.productivity_boni),
         items = self:_pack(full),
         top_floor = self.top_floor:pack(full)
     }

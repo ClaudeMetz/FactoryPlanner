@@ -3,10 +3,6 @@
 local configuration = require("configuration")
 local fixtures = require("fixtures")
 
--- Adding the mod to the clean save would otherwise run configuration changes after on_init
--- These cases exercise current state only, including current-format packing and cloning
-script.on_configuration_changed(nil)
-
 local context = {
     classes = {
         District = require("__factoryplanner__.backend.data.District"),
@@ -21,12 +17,14 @@ local context = {
     }
 }
 
--- Called by backend/init.lua at the end of on_init
-return function()
+local function run()
+    if game.tick == 0 then return end  -- let event handlers leave their initialization guards
+    local player = game.players[1]
+    assert(player and storage.players[player.index], "Test player was not initialized")
     local names = configuration.names
 
     local lines, error_count = {}, 0
-    for _, name in ipairs(names) do
+    for index, name in ipairs(names) do
         local ok, error, clean = fixtures.run(context, configuration.cases[name].check)
         local label = name .. configuration.suffix
         if ok then
@@ -37,7 +35,7 @@ return function()
         end
         if not clean then
             -- Later cases cannot be trusted after incomplete cleanup
-            for remaining = #lines + 1, #names do
+            for remaining = index + 1, #names do
                 error_count = error_count + 1
                 lines[#lines + 1] = "  ✗ " .. names[remaining] .. configuration.suffix .. ": skipped after cleanup failure"
             end
@@ -49,7 +47,11 @@ return function()
         table.insert(lines, "  ✗ no test cases selected" .. configuration.suffix)
     end
 
-    -- run.sh lifts everything between these markers out of the game log for display
+    -- run.py lifts everything between these markers out of the game log for display
     log("FPTEST_REPORT\n" .. table.concat(lines, "\n") .. "\nFPTEST_REPORT_END")
-    log(string.format("FPTEST_RESULT %d %d", #names - error_count, error_count))
+    log(string.format("FPTEST_PASSED %d", #names - error_count))
+    script.finish_test(#names > 0 and error_count == 0)
 end
+
+-- Test mode exits after this tick when run calls script.finish_test
+return {{game = {on_tick = run}}}

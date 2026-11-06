@@ -140,9 +140,8 @@ function builders.recipe(line_object, parent_flow, metadata, indent)
     local status_line = (status ~= nil) and {"fp.line_status", {"fp.line_status_" .. status}} or ""
     if status == "disabled" then
         color = "red"
-    elseif status == "unavailable_recipe" or status == "incompatible_recipe" or status == "incompatible_machine"
-            or status == "unconfigured_temperature" or status == "linearly_dependent" or status == "solver_error" then
-        color = "orange"
+    elseif status and status ~= "no_demand" then
+        color = line_object.class == "Floor" and "orange" or "yellow"
     end
 
     local recipe_proto = relevant_line.recipe.proto

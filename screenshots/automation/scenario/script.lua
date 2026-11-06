@@ -52,7 +52,7 @@ local function setup_player()
     -- Preferences
     player_table.preferences.show_gui_button = false
     lib.gui.toggle_mod_gui(player)
-    player_table.preferences.main_width_percentage = 50
+    player_table.preferences.main_width_percentage = 55
     player_table.preferences.main_height_percentage = 65
     player_table.preferences.compact_width_percentage = 22
     player_table.preferences.recipe_filters = {disabled = true, hidden = false}

@@ -264,7 +264,7 @@ local function close_import_dialog(player, action)
                 if not factory.valid then factory.last_valid_modset = modal_data.export_modset end
                 district:insert(factory)
 
-                solver.update(player, factory)
+                solver.update(player, factory, true)
                 first_factory = first_factory or factory
             end
         end

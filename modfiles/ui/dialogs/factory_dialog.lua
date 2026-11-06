@@ -68,7 +68,7 @@ local function close_factory_dialog(player, action)
                 selected_district:insert(factory)
 
                 lib.context.set(player, adjacent_factory or current_district)
-                solver.update(player, factory)  -- surface conditions change things
+                solver.update(player, factory, true)  -- surface conditions change things
             end
         end
 

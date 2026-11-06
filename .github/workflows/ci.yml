@@ -1,15 +1,6 @@
 name: Mod CI
 on: [push, pull_request]
 jobs:
-  save-create:
-    runs-on: self-hosted
-    if: github.event_name == 'push'
-      || github.event.pull_request.head.repo.full_name != github.repository
-    steps:
-      - uses: actions/checkout@v5
-      - name: Run save-create
-        run: bash tests/run.sh save-create
-
   suite:
     runs-on: self-hosted
     if: github.event_name == 'push'
@@ -21,5 +12,12 @@ jobs:
         suite: [lib, data, generator, solver, gui]
     steps:
       - uses: actions/checkout@v5
+      - uses: actions/setup-python@v7
+        with:
+          # Ubuntu 20.04 has no Python 3.14 builds in setup-python
+          python-version: '3.13'
+          check-latest: true
+      - name: Update Factorio
+        run: bash tests/update-factorio.sh
       - name: Run ${{ matrix.suite }}
-        run: bash tests/run.sh suite ${{ matrix.suite }}
+        run: python tests/run.py suite ${{ matrix.suite }}

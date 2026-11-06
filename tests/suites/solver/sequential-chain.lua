@@ -6,8 +6,7 @@ local build_factory, add_product, item_amount = chain.build, chain.product, chai
 return {
     testSequentialChainRates = {check=function(context)
         local c, player = helpers.collector(), context.player
-        local factory = build_factory(context.classes, player,
-            {"test-solver-gear", "test-solver-plate"})
+        local factory = build_factory(context, {"test-solver-gear", "test-solver-plate"})
         local product = add_product(context.classes, factory, "test-solver-gear", 5)
 
         solver.update(player, factory)
@@ -43,8 +42,7 @@ return {
     end},
     testSequentialSurplusConsumption = {check=function(context)
         local c, player = helpers.collector(), context.player
-        local factory = build_factory(context.classes, player,
-            {"test-solver-gear", "test-solver-plate"})
+        local factory = build_factory(context, {"test-solver-gear", "test-solver-plate"})
         local product = add_product(context.classes, factory, "test-solver-gear", 5)
 
         solver.update(player, factory)
@@ -73,7 +71,7 @@ return {
     end},
     testSequentialFixedMachineOutput = {check=function(context)
         local c, player = helpers.collector(), context.player
-        local factory = build_factory(context.classes, player, {"test-solver-gear", "test-solver-plate"})
+        local factory = build_factory(context, {"test-solver-gear", "test-solver-plate"})
         local product = add_product(context.classes, factory, "test-solver-gear", 0)
         product.definition = {type="machines", machine_count=3.5}
         local top = factory.top_floor
@@ -94,7 +92,7 @@ return {
     end},
     testSequentialMixedTargetsAndShortage = {check=function(context)
         local c, player = helpers.collector(), context.player
-        local factory = build_factory(context.classes, player, {"test-solver-gear", "test-solver-plate"})
+        local factory = build_factory(context, {"test-solver-gear", "test-solver-plate"})
         local product = add_product(context.classes, factory, "test-solver-gear", 0)
         product.definition = {type="machines", machine_count=3.5}
         local top = factory.top_floor
@@ -125,7 +123,7 @@ return {
     end},
     testSequentialFixedConsumerImports = {check=function(context)
         local c, player = helpers.collector(), context.player
-        local factory = build_factory(context.classes, player, {"test-solver-gear", "test-solver-plate"})
+        local factory = build_factory(context, {"test-solver-gear", "test-solver-plate"})
         local product = add_product(context.classes, factory, "test-solver-gear", 0)
         product.definition = {type="machines", machine_count=3.5}
         local top = factory.top_floor
@@ -150,7 +148,7 @@ return {
     end},
     testSequentialFixedSubfloorOutput = {check=function(context)
         local c, player = helpers.collector(), context.player
-        local factory = build_factory(context.classes, player, {"test-solver-gear", "test-solver-plate"})
+        local factory = build_factory(context, {"test-solver-gear", "test-solver-plate"})
         local product = add_product(context.classes, factory, "test-solver-gear", 0)
         product.definition = {type="machines", machine_count=3.5}
         local top = factory.top_floor
@@ -160,6 +158,7 @@ return {
         top:remove(plate_line)
         subfloor:insert(gear_line)
         subfloor:insert(plate_line)
+        lib.context.set(player, subfloor)
         solver.update(player, factory)
         c.check(helpers.approx(gear_line.machine.amount, 3.5) and helpers.approx(product.amount, 3.5),
             "subfloor: expected exactly 3.5 defining machines producing 3.5 gears/s")
@@ -174,8 +173,7 @@ return {
     end},
     testSequentialSubfloorLocalConsumption = {check=function(context)
         local c, player = helpers.collector(), context.player
-        local factory = build_factory(context.classes, player,
-            {"test-solver-gear", "test-solver-plate", "test-solver-gear"})
+        local factory = build_factory(context, {"test-solver-gear", "test-solver-plate", "test-solver-gear"})
         local product = add_product(context.classes, factory, "test-solver-gear", 5)
         local plates = add_product(context.classes, factory, "test-solver-plate", 0)
         plates.definition = {type="machines", machine_count=8}
@@ -188,6 +186,7 @@ return {
         subfloor:insert(plate_line)
         subfloor:insert(internal)
         internal.recipe.priority_item = prototyper.util.find("items", "test-solver-gear", "item")
+        lib.context.set(player, subfloor)
         solver.update(player, factory)
         c.check(helpers.approx(plate_line.machine.amount, 8) and helpers.approx(product.amount, 5)
             and helpers.approx(plates.amount, 6), "mixed subfloor: expected 5 gears/s and 6 net plates/s")
@@ -216,8 +215,7 @@ return {
     end},
     testSequentialNestedSurplusConsumption = {check=function(context)
         local c, player = helpers.collector(), context.player
-        local factory = build_factory(context.classes, player,
-            {"test-solver-gear", "test-solver-plate"})
+        local factory = build_factory(context, {"test-solver-gear", "test-solver-plate"})
         local product = add_product(context.classes, factory, "test-solver-gear", 5)
 
         solver.update(player, factory)
@@ -239,6 +237,7 @@ return {
         local consumer_floor = context.classes.Floor.init(2, top.solver)
         top:replace(consumer, consumer_floor)
         consumer_floor:insert(consumer)
+        lib.context.set(player, consumer_floor)
         solver.update(player, factory)
         c.check(helpers.approx(consumer.machine.amount, 5) and helpers.approx(product.amount, 10),
             "consumer subfloor: expected parent surplus to pace 5 gear machines")

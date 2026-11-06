@@ -11,8 +11,7 @@ local function refresh_production(player, _, _)
     else
         local factory = lib.context.get(player, "Factory")  ---@as Factory?
         if factory and factory.valid then
-            factory:clear_solver_cache()
-            solver.update(player, factory)
+            solver.update(player, factory, true)
             lib.gui.run_refresh(player, "production")
         end
     end
@@ -76,10 +75,11 @@ local function build_production_bar(player)
     local label_districts = flow_districts.add{type="label", caption={"fp.pu_district", 2}, style="frame_title"}
     label_districts.style.padding = {-1, 8}
 
-    local button_add = flow_districts.add{type="button", caption={"fp.add_district"}, style="fp_button_green",
+    local button_add = flow_districts.add{type="sprite-button", sprite="utility/add",
+        tooltip={"fp.add_district"}, style="fflib_tool_button_light_green",
         tags={mod="fp", on_gui_click="add_district"}, mouse_button_filter={"left"}}
-    button_add.style.height = 26
-    button_add.style.left_margin = 12
+    button_add.style.size = {26, 26}
+    button_add.style.padding = 1
 
     -- Shared bar
     subheader.add{type="empty-widget", style="fflib_horizontal_pusher"}

@@ -8,6 +8,7 @@ local configurations = {{name="normal", cases={
 }}}
 
 for name, case in pairs(require("suite.factory-items")) do configurations[1].cases[name] = case end
+for name, case in pairs(require("suite.movement")) do configurations[1].cases[name] = case end
 configurations[#configurations + 1] = {name="machine-requirements", setup={require("prototypes").machine_requirements},
     cases={testMachineRequirementPacking=machines.packing}}
 configurations[#configurations + 1] = {name="research", setup={require("prototypes").research},

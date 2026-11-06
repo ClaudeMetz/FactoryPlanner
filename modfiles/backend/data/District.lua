@@ -72,8 +72,7 @@ end
 ---@param direction NeighbourDirection
 ---@param spots integer?
 function District:shift(factory, direction, spots)
-    local filter = { archived = factory.archived }  ---@type ObjectFilter
-    self:_shift(factory, direction, spots, filter)
+    self:_shift(factory, direction, spots, {archived=factory.archived})
 end
 
 

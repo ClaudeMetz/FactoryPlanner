@@ -19,11 +19,7 @@ end
 ---@return boolean
 function _availability.can_define_factory_item(item, category)
     if item.hidden or (item.type == "fluid" and not item.temperature) then return false end
-    if item.type == "item" then
-        -- This runs on load, when the stored prototypes can still contain items that no longer exist
-        local item_proto = prototypes.item[item.name]
-        if item_proto == nil or item_proto.has_flag("spawnable") then return false end
-    end
+    if item.spawnable then return false end
     return _availability.has_productive_recipe(item, (category == "product") and "produce" or "consume")
 end
 

@@ -13,6 +13,11 @@ local event_listener_names = {
     "ui.main.production_handler", "ui.main.solver_bar"
 }
 
+-- Tests use the same dispatch as ordinary handlers, in FactoryPlanner's Lua context
+if script.active_mods["factoryplanner-test"] then
+    table.insert(event_listener_names, "__factoryplanner-test__.runner")
+end
+
 ---@class ListenerDefinitions
 ---@field gui GUIListenerDefinition?
 ---@field player table<string, PlayerEventHandler>?
@@ -303,6 +308,8 @@ local player_events = {
     "fp_top_floor",
     "fp_navigate_back",
     "fp_navigate_forward",
+    "fp_move_up",
+    "fp_move_down",
     "fp_toggle_fold_out_subfloors",
     "fp_confirm_dialog",
     "fp_confirm_gui",
@@ -384,7 +391,9 @@ local function handle_player_event(event)
     end
 
     if event.input_name then  -- only for keyboard shortcut events
-        drop_held_object(player, lib.globals.ui_state(player).held_object_id)
+        if event_name ~= "fp_move_up" and event_name ~= "fp_move_down" then
+            drop_held_object(player, lib.globals.ui_state(player).held_object_id)
+        end
         if lib.context.record(player) then lib.gui.run_refresh(player, "title_bar") end
     end
 end
@@ -401,6 +410,7 @@ local game_events = {
     defines.events.on_singleplayer_init,
     defines.events.on_multiplayer_init,
     defines.events.on_research_finished,
+    defines.events.on_research_reversed,
     defines.events.on_force_created,
     defines.events.on_forces_merged,
     defines.events.on_player_changed_force

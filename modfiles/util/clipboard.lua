@@ -65,7 +65,7 @@ function _clipboard.paste(player, target)
             local message = {"fp.pasted_from_clipboard", {"fp.pu_" .. clip.class--[[@as string]]:lower(), 1}}
             lib.cursor.create_flying_text(player, message--[[@as LocalisedString]])
 
-            solver.update(player)
+            solver.update(player, nil, true)  -- lines can be pasted in subfloors
             lib.gui.run_refresh(player, "production")
         else
             local object_lower = {"fp.pl_" .. clip.class--[[@as string]]:lower(), 1}

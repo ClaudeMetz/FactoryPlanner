@@ -209,9 +209,8 @@ end
 ---@alias SimplexBasisCache table<ConstraintKey, VariableKey>
 
 ---@param floor_id ObjectID
----@param basis_cache SimplexBasisCache?
 ---@return FloorResult result
-function SimplexTableau:solve(floor_id, basis_cache)
+function SimplexTableau:solve(floor_id)
     local result = {
         status = "in_progress",
         id = floor_id,
@@ -230,71 +229,41 @@ function SimplexTableau:solve(floor_id, basis_cache)
         variable_map[column] = {key = key, type = "unassigned"}
     end
 
-    -- Populate the basis vector based on the previous result
-    if basis_cache then
-        for row_key, col_key in pairs(basis_cache) do
-            local row_index = self.rows[row_key]
-            local col_index = self.cols[col_key]
-
-            if row_index and col_index then
-                variable_map[col_index]--[[@cast -nil]].type = "basic"
-                basic[row_index] = col_key
-                basis_scalars[row_index] = 1
-            end
-        end
-    end
-
-    -- Check if the cache covered all the bases
-    for i = 1, #self.matrix[1] do
-        if not basic[i] then
-            result.cache_invalid = true
-            break
-        end
-    end
-
-    if result.cache_invalid then
-        -- Reset the basis
-        for i, key in pairs(basic) do
-            basic[i] = nil
-            variable_map[self.cols[key]]--[[@cast -nil]].type = "unassigned"
-        end
-
-        -- Find basic variables (positive coefficient in one row, 0 on the rest)
-        for k = 1, #self.matrix[1] do
-            if not basic[k] then
-                for j = 1, #self.matrix do
-                    local map = variable_map[j]  ---@as VariableMap
-                    if map.type == "unassigned" and self.matrix[j][k] > MAGIC_NUMBERS.margin_of_error then
-                        local is_basic = true
-                        for i = 1, #self.matrix[j] do
-                            if i ~= k and self.matrix[j][i] ~= 0 then
-                                is_basic = false
-                                break
-                            end
+    -- Find basic variables (positive coefficient in one row, 0 on the rest)
+    for k = 1, #self.matrix[1] do
+        if not basic[k] then
+            for j = 1, #self.matrix do
+                local map = variable_map[j]  ---@as VariableMap
+                if map.type == "unassigned" and self.matrix[j][k] > MAGIC_NUMBERS.margin_of_error then
+                    local is_basic = true
+                    for i = 1, #self.matrix[j] do
+                        if i ~= k and self.matrix[j][i] ~= 0 then
+                            is_basic = false
+                            break
                         end
+                    end
 
-                        if is_basic then
-                            map.type = "basic"
-                            basic[k] = map.key
-                            basis_scalars[k] = self.matrix[j][k]
-                        else
-                            map.type = "non-basic"
-                            table.insert(non_basic, map.key)
-                        end
+                    if is_basic then
+                        map.type = "basic"
+                        basic[k] = map.key
+                        basis_scalars[k] = self.matrix[j][k]
+                    else
+                        map.type = "non-basic"
+                        table.insert(non_basic, map.key)
                     end
                 end
             end
         end
+    end
 
-        -- Add a virtual variables with huge cost for each non-basic row
-        for i = 1, #self.matrix[1] do
-            if not basic[i] then
-                local virtual_key = pack_slack_variable(#self.matrix + 1, true)
-                local col_index = self:_add_column(virtual_key, -1e100)
-                self.matrix[col_index]--[[@cast -nil]][i] = 1
-                basic[i] = virtual_key
-                basis_scalars[i] = 1
-            end
+    -- Add a virtual variables with huge cost for each non-basic row
+    for i = 1, #self.matrix[1] do
+        if not basic[i] then
+            local virtual_key = pack_slack_variable(#self.matrix + 1, true)
+            local col_index = self:_add_column(virtual_key, -1e100)
+            self.matrix[col_index]--[[@cast -nil]][i] = 1
+            basic[i] = virtual_key
+            basis_scalars[i] = 1
         end
     end
 
@@ -426,41 +395,28 @@ function SimplexTableau:solve(floor_id, basis_cache)
         return false, "in_progress"
     end
 
-    -- If a cached result was found, then we need to calculate the initial
-    if result.cache_invalid then
-        -- Find a solution
-        local done = false
-        local max_iterations = 4 * #basic
-        local factorization_interval = math.min(#basic, MAX_FACTORIZATION_INTERVAL)
-        repeat
-            -- If the factorization is too old, we need to recreate it
-            if iterations - last_factorization >= factorization_interval then
-                needs_factorization = true
-            end
+    -- Find a solution
+    local done = false
+    local max_iterations = 4 * #basic
+    local factorization_interval = math.min(#basic, MAX_FACTORIZATION_INTERVAL)
+    repeat
+        -- If the factorization is too old, we need to recreate it
+        if iterations - last_factorization >= factorization_interval then
+            needs_factorization = true
+        end
 
-            -- Re-factorize if needed
-            if needs_factorization then refactorize() end
-            if not lu then
-                result.status = "no_solution"
-                break
-            end
+        -- Re-factorize if needed
+        if needs_factorization then refactorize() end
+        if not lu then
+            result.status = "no_solution"
+            break
+        end
 
-            -- Iterate through the solution
-            done, result.status = iterate()
-            iterations = iterations + 1
-        until done or iterations == max_iterations
-        if result.status ~= "solved" then return result end
-    else
-        -- Re-use the cached solution
-        refactorize()
-        result.status = "solved"
-    end
-
-    -- Cache the solution basis for later
-    result.simplex_basis_cache = {}
-    for key, i in pairs(self.rows) do
-        result.simplex_basis_cache[key] = basic[i]
-    end
+        -- Iterate through the solution
+        done, result.status = iterate()
+        iterations = iterations + 1
+    until done or iterations == max_iterations
+    if result.status ~= "solved" then return result end
 
     -- Interpret the result
     for row, key in pairs(basic) do
