@@ -11,7 +11,7 @@ local function arrange(context)
     local player, factory, product = fixture(context)
     local FactoryItem = context.classes.FactoryItem
     local function add(name, category)
-        local item = FactoryItem.init(prototyper.util.find("items", name, "item"), category)
+        local item = FactoryItem.init(category, prototyper.util.find("items", name, "item"))
         factory:insert(item)
         return item
     end
@@ -88,7 +88,7 @@ tests.testFactoryItemPasteCategories = {check=function(context)
     local success, reason = ingredient:paste(copy(second_product))
     assert(not success and reason == "already_exists_as_product",
         "Disabled targets on the other side must still prevent duplicates")
-    local source = context.classes.FactoryItem.init(prototyper.util.find("items", "coal", "item"), "product")
+    local source = context.classes.FactoryItem.init("product", prototyper.util.find("items", "coal", "item"))
     source.definition = {type="machines", machine_count=3}
     source.active = false
     assert(ingredient:paste(copy(source)))

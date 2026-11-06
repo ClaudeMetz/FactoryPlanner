@@ -71,8 +71,9 @@ function Machine:normalize_fuel(player)
     if not compatible_proto then self.fuel = nil end
 
     if self.fuel == nil then  -- add a fuel for this machine if it doesn't have one here
-        local default_fuel_proto = defaults.get(player, "fuels", burner.combined_category).proto  ---@as FPFuelPrototype
-        self.fuel = Fuel.init(self, default_fuel_proto)  -- builds temperature_data implicitly
+        local default_fuel = defaults.get(player, "fuels", burner.combined_category)
+        -- builds temperature_data implicitly
+        self.fuel = Fuel.init(self, default_fuel.proto--[[@as FPFuelPrototype]], default_fuel.quality)
         self.fuel:apply_temperature_default(player)
     else  -- make sure the fuel is of the right combined category
         if burner.combined_category ~= self.fuel.proto.combined_category then

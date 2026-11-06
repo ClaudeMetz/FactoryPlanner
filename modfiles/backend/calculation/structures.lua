@@ -6,11 +6,12 @@ local _structures = {
 ---@class SolverItem
 ---@field type string
 ---@field name string
+---@field quality string?
 ---@field amount number
 ---@field temperature float?
 
 ---@alias SolverInputItem SolverItem | FPItemPrototype | SimpleItem | Ingredient | FormattedProduct | FactoryItem | Fuel
----@alias SolverItemKey string `<item.proto.type>/<item.proto.name>`
+---@alias SolverItemKey string `<item.proto.type>/<item.proto.name>/<item.quality_proto.name>`
 ---@alias SolverMap table<SolverItemKey, number>
 ---@alias SolverSet table<SolverItemKey, true>
 
@@ -21,20 +22,23 @@ local SEPARATOR = "/"
 function _structures.pack_item(item)
     local type = item.proto and item.proto.type or item.type
     local name = item.proto and item.proto.name or item.name
-    return type .. SEPARATOR .. name
+    local quality = type == "item" and (item.quality_proto and item.quality_proto.name or item.quality or "normal")
+    return type .. SEPARATOR .. name .. (quality and SEPARATOR .. quality or "")
 end
 
 ---@param item_key SolverItemKey
 ---@param amount number?
 ---@return SolverItem
 function _structures.unpack_item(item_key, amount)
-    local separator_index = string.find(item_key, SEPARATOR, 1, true)  ---@as integer
-    local type = string.sub(item_key, 1, separator_index - 1)
-    local name = string.sub(item_key, separator_index + 1)
+    local unpacked = lib.split_string(item_key, SEPARATOR)
+    local type = unpacked[1]  ---@as string
+    local name = unpacked[2]  ---@as string
+    local quality = unpacked[3]  ---@as string?
     local _, temperature = lib.temperature.name_split(name)
     return {
         type = type,
         name = name,
+        quality = quality,
         temperature = temperature,
         amount = amount or 0
     }  ---@type SolverItem

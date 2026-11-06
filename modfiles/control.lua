@@ -14,7 +14,8 @@ MAGIC_NUMBERS = {
 
     -- Shared dialog settings
     blueprint_limit = 8,  -- Maximum number of blueprints allowed per factory
-    module_dialog_element_width = 460  -- Width of machine and beacon dialog elements
+    module_dialog_element_width = 460,  -- Width of machine and beacon dialog elements
+    double_click_delay = 20,  -- The threshold (in ticks) under which an on click event is considered a double-click
 }
 
 -- Handlers saved in a central location for access via name

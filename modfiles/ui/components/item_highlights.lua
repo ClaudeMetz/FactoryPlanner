@@ -54,13 +54,16 @@ end
 
 ---@param player LuaPlayer
 ---@param button LuaGuiElement
----@param proto FPItemPrototype | FPFuelPrototype
+---@param item SimpleItem | Fuel
 ---@param name string?
-function item_highlights.register(player, button, proto, name)
+function item_highlights.register(player, button, item, name)
     local tags = button.tags  ---@as ItemHighlightTags
     if tags.context ~= "compact_dialog" and not lib.globals.preferences(player).highlight_items then return end
 
-    local key = proto.type .. "/" .. (name or proto.name)
+    local proto = item.proto  ---@as FPItemPrototype | FPFuelPrototype
+    local quality = item.quality_proto and item.quality_proto.name
+    local raw_item = {name=name or proto.name, type=proto.type, quality=quality, amount=0}  ---@type SolverItem
+    local key = solver.util.pack_item(raw_item)
     tags.highlight_key = key
     tags.on_gui_hover = "hover_item"
     tags.on_gui_leave = "leave_item"
@@ -74,14 +77,14 @@ end
 ---@param player LuaPlayer
 ---@param button LuaGuiElement
 ---@param line LineObject
----@param proto FPItemPrototype
+---@param item SimpleItem
 ---@param category "products" | "ingredients"
-function item_highlights.register_line_item(player, button, line, proto, category)
-    local name = proto.name
+function item_highlights.register_line_item(player, button, line, item, category)
+    local name = item.proto.name
     if line.class == "Line" and category == "ingredients" then
-        name = line--[[@as Line]].recipe:get_name_with_temperature(proto)
+        name = line--[[@as Line]].recipe:get_name_with_temperature(item.proto)
     end
-    item_highlights.register(player, button, proto, name)
+    item_highlights.register(player, button, item, name)
 end
 
 ---@param player LuaPlayer

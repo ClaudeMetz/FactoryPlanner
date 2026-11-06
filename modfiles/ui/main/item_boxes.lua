@@ -58,6 +58,7 @@ end
 ---@field tooltip LocalisedString?
 ---@field is_add_button boolean?
 ---@field proto FPItemPrototype?
+---@field quality_proto FPQualityPrototype?
 
 ---@param player LuaPlayer
 ---@param factory Factory?
@@ -67,12 +68,18 @@ local function prepare_item_buttons(player, factory, item_category)
     if not factory or not factory.valid then return {} end
 
     local buttons = {}  ---@type ItemBoxButton[]
-    local defined_items = {}  ---@type table<FPItemPrototype, ItemCategory>
+    local defined_items = {}  ---@type table<SolverItemKey, ItemCategory>
     local floor = lib.context.get(player, "Floor")  ---@as Floor
 
     if floor.level == 1 then
         for item in factory:iterator() do
-            defined_items[item.proto] = item.category
+            local raw_item = {
+                name = item.proto.name,
+                type = item.proto--[[@as FPItemPrototype]].type,
+                quality = item.quality_proto and item.quality_proto.name,
+                amount = 0
+            }  ---@type SolverItem
+            defined_items[solver.util.pack_item(raw_item)] = item.category
         end
     end
 
@@ -83,8 +90,9 @@ local function prepare_item_buttons(player, factory, item_category)
         local required_amount = item.required_amount or 0
         local part_amount = target and required_amount or (item.amount - required_amount)
         local tolerance = math.max(item.amount, required_amount) * MAGIC_NUMBERS.margin_of_error
+        local item_key = solver.util.pack_item(item)
         if part_amount <= tolerance and (target or item.amount ~= 0) then return end
-        if not target and defined_items[item.proto] == item_category and part_amount == 0 then return end
+        if not target and defined_items[item_key] == item_category and part_amount == 0 then return end
 
         local amount, number_tooltip, secondary_amount
 
@@ -93,8 +101,8 @@ local function prepare_item_buttons(player, factory, item_category)
             top_level = false,
             top_floor = (floor.level == 1),
             can_define_target = lib.availability.can_define_factory_item(item.proto, item_category),
-            defined_product = (defined_items[item.proto] == "product"),
-            defined_ingredient = (defined_items[item.proto] == "ingredient"),
+            defined_product = (defined_items[item_key] == "product"),
+            defined_ingredient = (defined_items[item_key] == "ingredient"),
             product = (item_category == "product"),
             special = special,
             entity = (item.proto.type == "entity"),
@@ -123,11 +131,12 @@ local function prepare_item_buttons(player, factory, item_category)
         ---@type HandleItemBoxClickTags
         local tags = {mod="fp", on_gui_click="act_on_item_box", item_category=item_category,
             item_index=index, on_gui_hover="set_tooltip", context="item_boxes", flags=flags}
+        local quality = item.quality_proto and item.quality_proto.name
         local definition = {type="sprite-button", tags=tags--[[@as Tags]], number=amount,
-            secondary_number=secondary_amount, sprite=item.proto.sprite,
+            secondary_number=secondary_amount, sprite=item.proto.sprite, quality=quality,
             style=target and "fflib_slot_button_green" or "fflib_slot_button_default",
             mouse_button_filter={"left-and-right"}, raise_hover_events=true}
-        table.insert(buttons, {definition=definition, tooltip=tooltip, proto=item.proto})
+        table.insert(buttons, {definition=definition, tooltip=tooltip, proto=item.proto, quality_proto=item.quality_proto})
     end
 
     if floor.level == 1 then
@@ -185,10 +194,11 @@ local function prepare_item_buttons(player, factory, item_category)
             ---@type HandleItemBoxClickTags
             local tags = {mod="fp", on_gui_click="act_on_item_box", item_category=item_category, item_id=item.id,
                 on_gui_hover="set_tooltip", context="item_boxes", flags=flags}
+            local quality = item.quality_proto and item.quality_proto.name
             local definition = {type="sprite-button", tags=tags--[[@as Tags]], number=amount,
-                secondary_number=secondary_amount, style=style, sprite=item.proto.sprite,
+                secondary_number=secondary_amount, style=style, sprite=item.proto.sprite, quality=quality,
                 mouse_button_filter={"left-and-right"}, raise_hover_events=true}
-            table.insert(buttons, {definition=definition, tooltip=tooltip, proto=item.proto})
+            table.insert(buttons, {definition=definition, tooltip=tooltip, proto=item.proto, quality_proto=item.quality_proto})
 
             ::skip_item::
         end
@@ -196,7 +206,7 @@ local function prepare_item_buttons(player, factory, item_category)
 
     for _, target in ipairs{true, false} do
         for index, item in pairs(floor[item_category .. "s"]) do
-            if not target or defined_items[item.proto] ~= item_category then add_calculated_item(item, index, target) end
+            if not target or defined_items[solver.util.pack_item(item)] ~= item_category then add_calculated_item(item, index, target) end
         end
     end
 
@@ -225,7 +235,7 @@ local function handle_item_add(player, tags, event)
     local factory = lib.context.get(player, "Factory")  ---@as Factory
 
     if event.shift then  -- paste
-        local dummy_product = FactoryItem.init(nil, tags.item_category)
+        local dummy_product = FactoryItem.init(tags.item_category)
         lib.clipboard.dummy_paste(player, dummy_product, factory)
     elseif tags.item_category == "product" and player.is_cursor_blueprint() then  -- import blueprint entities
         local blueprint = player.cursor_record or player.cursor_stack
@@ -233,7 +243,12 @@ local function handle_item_add(player, tags, event)
 
         for _, entity in pairs(blueprint--[[@cast -nil]].cost_to_build) do
             local proto = prototyper.util.find("items", entity.name, "item")  ---@as FPItemPrototype
-            local existing_item = factory:find({proto=proto})
+            local quality_proto = prototyper.util.find("qualities", entity.quality)  ---@as FPQualityPrototype
+            local existing_item = nil  ---@type FactoryItem?
+            for item in factory:iterator({proto=proto}) do
+                local quality = item.quality_proto and item.quality_proto.name or "normal"
+                if quality == quality_proto.name then existing_item = item break end
+            end
 
             local amount = entity.count / timescale
             if existing_item then
@@ -241,7 +256,7 @@ local function handle_item_add(player, tags, event)
                     existing_item:add_defined_amount(amount)
                 end
             else
-                local product = FactoryItem.init(proto, tags.item_category)  -- definition.type = "amount"
+                local product = FactoryItem.init(tags.item_category, proto, quality_proto)  -- definition.type = "amount"
                 product.definition = {type="amount", amount=amount}
                 factory:insert(product)
             end
@@ -275,14 +290,15 @@ local function handle_item_button_click(player, tags, action)
         amount = item.amount - (item.required_amount or 0)
     end
 
+    local simple_item = SimpleItem.init(nil, item.proto--[[@as FPItemPrototype]], item.quality_proto--[[@as FPQualityPrototype?]], amount)
     if action == "add_producing_recipe" or action == "add_consuming_recipe" then
         local production_type = tags.flags.consume and "consume" or "produce"
         lib.gui.open_dialog(player, {dialog="recipe", modal_data={production_type=production_type,
-            category_id=item.proto.category_id, product_id=item.proto.id}})
+            category_id=item.proto.category_id, product_id=item.proto.id, quality_proto = item.quality_proto}})
 
     elseif action == "convert_to_target" then
         local factory = lib.context.get(player, "Factory")  ---@as Factory
-        local target = FactoryItem.init(item.proto, tags.item_category)
+        local target = FactoryItem.init(tags.item_category, item.proto, item.quality_proto)
         target.definition = {type="amount", amount=amount}
         factory:insert(target)
 
@@ -291,7 +307,8 @@ local function handle_item_button_click(player, tags, action)
         lib.gui.run_refresh(player, "production")
 
     elseif action == "adjust_weight" then
-        solver_bar.add_item_weight(player, item.proto--[[@as FPItemPrototype]])
+        solver_bar.add_item_weight(player, item.proto--[[@as FPItemPrototype]],
+            item.quality_proto--[[@as FPQualityPrototype]])
 
     elseif action == "edit" then
         lib.gui.open_dialog(player, {dialog="picker",
@@ -311,7 +328,7 @@ local function handle_item_button_click(player, tags, action)
 
     elseif action == "copy" then
         local copyable_item = (item.class == "FactoryItem") and item
-            or SimpleItem.init(nil, item.proto--[[@as FPItemPrototype]], amount)
+            or SimpleItem.init(nil, item.proto--[[@as FPItemPrototype]], item.quality_proto--[[@as FPQualityPrototype?]], amount)
         lib.clipboard.copy(player, copyable_item)
 
     elseif action == "paste" then
@@ -327,10 +344,10 @@ local function handle_item_button_click(player, tags, action)
         lib.gui.run_refresh(player, "all")  -- make sure product icons are updated
 
     elseif action == "pipette" then
-        lib.cursor.pipette_item(player, item.proto--[[@as FPItemPrototype]])
+        lib.cursor.pipette_item(player, simple_item)
 
     elseif action == "put_into_combinator" then
-        lib.cursor.put_into_combinator(player, item.proto--[[@as FPItemPrototype]], amount)
+        lib.cursor.put_into_combinator(player, simple_item)
 
     elseif action == "factoriopedia" then
         local proto = item.proto  ---@as FPItemPrototype
@@ -386,7 +403,8 @@ local function render_item_box(player, category, buttons, columns, height)
     for _, data in ipairs(buttons) do
         local button = table_items.add(data.definition)
         tooltips[button.index] = data.tooltip
-        if data.proto then item_highlights.register(player, button, data.proto) end
+        local item = SimpleItem.init(nil, data.proto--[[@as FPItemPrototype]], data.quality_proto)
+        if data.proto then item_highlights.register(player, button, item) end
         if data.is_add_button then
             button.style.padding = 4
             button.style.margin = 4

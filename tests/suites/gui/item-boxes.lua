@@ -9,7 +9,7 @@ local SimpleItem = script and require("__factoryplanner__.backend.data.SimpleIte
 local function arrange(context)
     local player, factory, product = fixture(context)
     local function add(name, category)
-        local item = context.classes.FactoryItem.init(prototyper.util.find("items", name, "item"), category)
+        local item = context.classes.FactoryItem.init(category, prototyper.util.find("items", name, "item"))
         item.definition = {type="amount", amount=10}
         factory:insert(item)
         return item
@@ -180,8 +180,8 @@ return {
         product.active = false
         local spawnable = prototyper.util.find("items", "test-spawnable-input", "item")
         assert(spawnable and lib.availability.has_productive_recipe(spawnable, "consume"))
-        factory.top_floor.ingredients = {SimpleItem.init(nil, product.proto, 3), SimpleItem.init(nil, coal, 7),
-            SimpleItem.init(nil, spawnable, 1)}
+        factory.top_floor.ingredients = {SimpleItem.init(nil, product.proto, nil, 3), SimpleItem.init(nil, coal, nil, 7),
+            SimpleItem.init(nil, spawnable, nil, 1)}
         lib.gui.run_refresh(player, "item_boxes")
         local calculated
         for _, candidate in pairs(buttons("ingredient")) do

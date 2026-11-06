@@ -101,12 +101,12 @@ return {
         for _, category in ipairs{"product", "ingredient"} do
             for _, suffix in ipairs{"input", "output", "both", "catalyst"} do
                 local proto = find(suffix)
-                local target = FactoryItem.init(nil, category)
+                local target = FactoryItem.init(category)
                 factory:insert(target)
                 local expected = (suffix == "both") or (category == "product" and suffix == "output")
                     or (category == "ingredient" and suffix == "input")
                 c.check(lib.availability.can_define_factory_item(proto, category) == expected, suffix .. ": " .. category .. " eligibility")
-                local success = target:paste(FactoryItem.init(proto, category))
+                local success = target:paste(FactoryItem.init(category, proto))
                 c.check(success == expected, suffix .. ": " .. category .. " paste")
                 factory:remove(factory.first)
             end
