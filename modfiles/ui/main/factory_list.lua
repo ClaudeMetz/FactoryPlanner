@@ -15,7 +15,6 @@ local function delete_factory_for_good(metadata)
     end
     factory.parent:remove(factory)
 
-    if not main_dialog.is_in_focus(player) then return end
     -- Refresh all if the archive is currently open
     if selected_factory and selected_factory.archived == true then
         lib.gui.run_refresh(player, "all")
@@ -32,6 +31,7 @@ local function toggle_archive(player, _, _)
     local district = (factory) and factory.parent or lib.context.get(player, "District")
     local filter = {archived=not archive_open}
     local new_factory = district:find(filter)
+    if not archive_open and not new_factory then return end  -- safeguard
 
     main_dialog.toggle_districts_view(player, true)
     lib.context.set(player, new_factory or district, true)
