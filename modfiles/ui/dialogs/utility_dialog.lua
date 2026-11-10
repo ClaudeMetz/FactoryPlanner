@@ -1,9 +1,9 @@
 ---@class UtilityDialogModalData: ModalData
 ---@field recalculate boolean
----@field missing_items MissingItem[]
+---@field required_items ComponentItem[]
 ---@field factory_index ObjectID[]
 
----@alias MissingItem {name: string, quality: string, required_amount: integer, missing_amount: number}
+---@alias ComponentItem {name: string, quality: string, required_amount: integer, missing_amount: number}
 
 -- ** LOCAL UTIL **
 ---@alias UtilityBoxType "components" | "blueprints" | "notes" | "productivity_boni"
@@ -123,6 +123,8 @@ function utility_structures.components(player, modal_data)
     if scope == "Factory" then relevant_object = relevant_object--[[@as Factory]].top_floor end
     local component_data = relevant_object--[[@as Floor]]:get_component_data(skip_done, nil)
 
+    local any_missing_items = false
+
     ---@param type "machine" | "module"
     local function refresh_component_flow(type)
         local component_row = modal_elements["components_" .. type .. "_flow"]
@@ -145,14 +147,13 @@ function utility_structures.components(player, modal_data)
                 local normal_quality = (quality_proto.name == "normal")
                 local amount_queued = (normal_quality) and queued_amounts[proto.name] or 0
 
-                if missing_amount > 0 then
-                    table.insert(modal_data.missing_items, {
-                        name = proto.name,
-                        quality = quality_proto.name,
-                        required_amount = required_amount,
-                        missing_amount = missing_amount
-                    })
-                end
+                table.insert(modal_data.required_items, {
+                    name = proto.name,
+                    quality = quality_proto.name,
+                    required_amount = required_amount,
+                    missing_amount = missing_amount
+                })
+                if missing_amount > 0 then any_missing_items = true end
 
                 -- Queued crafts count towards the demand, since they'll arrive on their own
                 local amount_covered = amount_in_inventory + amount_queued
@@ -188,21 +189,21 @@ function utility_structures.components(player, modal_data)
         end
     end
 
-    modal_data.missing_items = {}  -- a flat structure works because there is no overlap between machines and modules
+    modal_data.required_items = {}  -- a flat structure works because there is no overlap between machines and modules
     refresh_component_flow("machine")
     refresh_component_flow("module")
 
-    local any_missing_items = (next(modal_data.missing_items) ~= nil)
     local no_items_necessary = {"fp.utility_no_items_necessary", {"fp.pl_" .. scope:lower(), 1}}
 
     ---@param name "combinator" | "request"
-    local function configure_button(name)
+    ---@param enabled boolean
+    local function configure_button(name, enabled)
         local button = modal_elements[name .. "_button"]
-        button.enabled = any_missing_items
-        button.tooltip = (any_missing_items) and {"fp.utility_" .. name .. "_tt"} or no_items_necessary
+        button.enabled = enabled
+        button.tooltip = (enabled) and {"fp.utility_" .. name .. "_tt"} or no_items_necessary
     end
-    configure_button("combinator")
-    configure_button("request")
+    configure_button("combinator", next(modal_data.required_items) ~= nil)
+    configure_button("request", any_missing_items)
 end
 
 ---@param player LuaPlayer
@@ -345,7 +346,8 @@ local function handle_item_combinator(player, tags, event)
     local modal_data = lib.globals.modal_data(player)  ---@as UtilityDialogModalData
     local item_filters = {}
 
-    for _, item in pairs(modal_data.missing_items) do
+    for _, item in pairs(modal_data.required_items) do
+        if event.shift and item.missing_amount <= 0 then goto skip_item end
         table.insert(item_filters, {
             type = "item",
             name = item.name,
@@ -353,6 +355,7 @@ local function handle_item_combinator(player, tags, event)
             comparator = "=",
             count = (event.shift) and item.missing_amount or item.required_amount
         })
+        ::skip_item::
     end
 
     local metadata
@@ -426,7 +429,9 @@ local function handle_item_request(player, _, _)
         local new_section = requester_point.add_section()  ---@cast new_section -nil
 
         local modal_data = lib.globals.modal_data(player)  ---@as UtilityDialogModalData
-        for index, item in pairs(modal_data.missing_items) do
+        local index = 1
+        for _, item in pairs(modal_data.required_items) do
+            if item.missing_amount <= 0 then goto skip_item end
             new_section.set_slot(index, {
                 value = {
                     name = item.name,
@@ -435,6 +440,8 @@ local function handle_item_request(player, _, _)
                 },
                 min = item.required_amount
             })
+            index = index + 1
+            ::skip_item::
         end
 
         fly_text(player, {"fp.utility_logistics_request_set"})
