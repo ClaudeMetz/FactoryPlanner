@@ -2,6 +2,13 @@
 Version: 0.00.00
 Date: 00. 00. 0000
   Features:
+  Changes:
+  Bugfixes:
+
+---------------------------------------------------------------------------------------------------
+Version: 2.1.22
+Date: 10. 11. 2026
+  Features:
     - Implemented moving held district/factory/recipe using the up/down keys
     - Added a 'put into combinator' button to top level products
     - Enabled creating a factory by ingredient from District products
