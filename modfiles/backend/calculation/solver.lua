@@ -28,6 +28,7 @@ local function get_factory_items(factory)
             local item = {
                 name = factory_item.proto.name,
                 type = factory_item.proto.type,
+                quality = factory_item.quality_proto and factory_item.quality_proto.name,
                 amount = amount
             }  ---@type SolverItem
             if factory_item.category == "product" then
@@ -45,9 +46,12 @@ end
 local function line_ingredients(recipe)
     local ingredients = {}  ---@type SolverItem[]
     for _, ingredient in pairs(recipe.ingredients) do
+        ---@cast recipe.quality_proto FPQualityPrototype?
+        local quality_proto = solver.util.determine_item_quality(recipe.quality_proto, ingredient)
         local item = {
             name = recipe:get_name_with_temperature(ingredient),
             type = ingredient.type,
+            quality = quality_proto and quality_proto.name,
             amount = ingredient.amount,
             temperature = recipe:get_temperature(ingredient)  -- don't need min/max temperatures here
         }  ---@as SolverItem
@@ -71,11 +75,14 @@ local function resolve_machine_requirements(factory)
         -- Skip over lines that are blocked or don't calculate machine counts at all
         local blocker = line:get_blocker()
         if line.recipe.proto.energy > MINIMUM_ENERGY and (not blocker or blocker == "disabled") then
+            ---@cast line.recipe.quality_proto FPQualityPrototype?
             local recipe_items = {product=line.recipe.products, ingredient=line.recipe.ingredients}
             for category, items in pairs(recipe_items) do
                 for _, item in pairs(items) do
+                    local quality_proto = solver.util.determine_item_quality(line.recipe.quality_proto, item)
+                    local quality = quality_proto and quality_proto.name
                     local name = (category == "ingredient") and line.recipe:get_name_with_temperature(item) or item.name
-                    local key = item.type .. "/" .. name
+                    local key = structures.pack_item{name=name, type=item.type, quality=quality, amount=0}
                     first_lines[category][key] = first_lines[category][key] or line.id
                 end
             end
@@ -149,9 +156,25 @@ local function generate_line_data(player, factory, line, requirement)
     local crafts_per_second = machine_amount * speed_multiplier / energy
 
     -- Get simple products
+    ---@cast line.recipe.quality_proto FPQualityPrototype?
     for _, item in pairs(line.recipe.products) do
         local amount = crafts_per_second * solver.util.determine_prodded_amount(item, line.total_effects)
-        structures.map.add(products, item, amount)
+        local quality_proto = solver.util.determine_item_quality(line.recipe.quality_proto, item)
+
+        if quality_proto then  -- only set for items when quality is enabled
+            local distribution = solver.util.determine_quality_ditribuiton(line.total_effects, quality_proto)
+            for quality_name, probability in pairs(distribution) do
+                local product = {
+                    name = item.name,
+                    type = item.type,
+                    quality = quality_name,
+                    amount = amount * probability
+                }  ---@type SolverItem
+                structures.map.add(products, product)
+            end
+        else
+            structures.map.add(products, item, amount)
+        end
     end
 
     -- Get simple ingredients
@@ -164,11 +187,13 @@ local function generate_line_data(player, factory, line, requirement)
     local fuel_proto = nil
     local fuel_name = nil
     local fuel_value = nil
+    local fuel_quality = nil
     if machine_proto.burner then
         ---@cast line.machine.fuel -nil
         fuel_proto = line.machine.fuel.proto  ---@as AnyFPFuelPrototype
         fuel_name = line.machine.fuel:get_name_with_temperature()
         fuel_value = line.machine.fuel:get_fuel_value()
+        fuel_quality = line.machine.fuel.quality_proto and line.machine.fuel.quality_proto.name
     end
 
     local power = 0.0
@@ -250,6 +275,7 @@ local function generate_line_data(player, factory, line, requirement)
         fuel_item = {
             name = fuel_name,
             type = fuel_proto.type,
+            quality = fuel_quality,
             amount = fuel_amount
         }  ---@type SolverItem
         structures.map.add(ingredients, fuel_item)
@@ -259,6 +285,7 @@ local function generate_line_data(player, factory, line, requirement)
             local burnt_item = {
                 name = fuel_proto.burnt_result,
                 type = "item",
+                quality = fuel_quality,
                 amount = fuel_amount
             }  ---@type SolverItem
             structures.map.add(products, burnt_item)
@@ -301,9 +328,12 @@ local function generate_line_data(player, factory, line, requirement)
     -- Get the priority product
     local priority_item = nil
     if line.recipe.priority_item then
+        ---@cast line.recipe.priority_item FPItemPrototype
+        local quality_proto = solver.util.determine_item_quality(line.recipe.quality_proto, line.recipe.priority_item)
         priority_item = {
             name = line.recipe.priority_item.name,
             type = line.recipe.priority_item.type--[[@cast -nil]],
+            quality = quality_proto and quality_proto.name,
             amount = 0
         }  ---@type SolverItem
     end
@@ -334,7 +364,7 @@ end
 ---@field ingredients SolverMap
 ---@field line_result_map LineResultMap
 ---@field cache_invalid boolean?
----@field gaussian_free_items FPItemPrototype[]?  -- gaussian
+---@field gaussian_free_items SimpleItem[]?  -- gaussian
 ---@field linear_dependence_data LinearDependanceData?  -- gaussian
 
 ---@class LineResult
@@ -365,7 +395,7 @@ end
 ---@field level integer
 ---@field solver_choice SolverName
 ---@field line_ids ObjectID[]
----@field gaussian_free_items FPItemPrototype[]
+---@field gaussian_free_items SimpleItem[]
 ---@field result_cache FloorResult?
 ---@field simplex_item_weights SolverMap
 
@@ -380,7 +410,7 @@ end
 ---@return FloorDataMap
 ---@return LineDataMap
 local function generate_floor_data(player, factory, floor, machine_requirements)
-    local free_items = floor.gaussian_free_items  ---@as FPItemPrototype[]
+    local free_items = floor.gaussian_free_items
     local floor_data = {
         id = floor.id,
         level = floor.level,
@@ -396,7 +426,13 @@ local function generate_floor_data(player, factory, floor, machine_requirements)
 
     for _, item_weight in ipairs(floor.simplex_item_weights) do
         ---@cast item_weight.proto FPItemPrototype
-        floor_data.simplex_item_weights[structures.pack_item(item_weight.proto)] = item_weight.weight
+        local item = {
+            name = item_weight.proto.name,
+            type = item_weight.proto.type,
+            quality = item_weight.quality_proto and item_weight.quality_proto.name,
+            amount = 0
+        }  ---@as SolverItem
+        floor_data.simplex_item_weights[structures.pack_item(item)] = item_weight.weight
     end
 
     for line_object in floor:iterator() do
@@ -476,6 +512,7 @@ local function update_object_items(object, item_category, item_results)
 
     for _, item_result in pairs(structures.map.list(item_results)) do
         local item_proto = prototyper.util.find("items", item_result.name, item_result.type)  ---@as FPItemPrototype
+        local quality_proto = item_result.quality and prototyper.util.find("qualities", item_result.quality)  ---@as FPQualityPrototype?
 
         -- Floor items keep their temperature, since they can't be configured from there
         if object.class ~= "Floor" and item_category == "ingredients" and item_proto.base_name then
@@ -483,7 +520,7 @@ local function update_object_items(object, item_category, item_results)
         end
 
         if object.class ~= "Floor" or item_proto.type ~= "entity" or item_proto.special then
-            table.insert(item_list, SimpleItem.init(object, item_proto, item_result.amount))
+            table.insert(item_list, SimpleItem.init(object, item_proto, quality_proto, item_result.amount))
         end
     end
 
@@ -497,9 +534,11 @@ end
 local function set_zeroed_items(line, item_category, items)
     local item_list = {}
 
+    ---@cast line.recipe.quality_proto FPQualityPrototype?
     for _, item in pairs(items) do
         local item_proto = prototyper.util.find("items", item.name, item.type)  ---@as FPItemPrototype
-        table.insert(item_list, SimpleItem.init(line, item_proto))
+        local quality_proto = solver.util.determine_item_quality(line.recipe.quality_proto, item)
+        table.insert(item_list, SimpleItem.init(line, item_proto, quality_proto))
     end
 
     line[item_category] = item_list
@@ -522,7 +561,8 @@ local function update_item_allocations(floor, category)
     local function flow_item(line_object, item)
         local name = (line_object.class == "Floor") and item.proto.name
             or line_object.recipe--[[@cast -nil]]:get_name_with_temperature(item.proto)
-        return {type=item.proto.type, name=name, amount=item.amount}
+        local quality = item.quality_proto and item.quality_proto.name
+        return {type=item.proto.type, name=name, quality=quality, amount=item.amount}  ---@type SolverItem
     end
 
     local total_flow = lib.flib.shallow_copy(target_flow)

@@ -12,6 +12,10 @@ local _util = {}
 ---@field proddable_amount number
 ---@field temperature float?
 ---@field base_name string?
+---@field quality_min string?
+---@field quality_max string?
+---@field quality_change integer?
+---@field quality string?  -- used by solver
 
 ---@param product Product
 ---@return FormattedProduct
@@ -41,12 +45,17 @@ local function generate_formatted_product(product)
     local shared_probability = product.shared_probability or {min = 0, max = 1}
     local independent_probability = product.independent_probability or 1
     local probability = independent_probability * (shared_probability.max - shared_probability.min)
+    local quality_min = product.quality_min and product.quality_min.name or product.quality_min  ---@as string?
+    local quality_max = product.quality_max and product.quality_max.name or product.quality_max  ---@as string?
 
     local formatted_product = {
         name = product.name,
         type = product.type,
         amount = base_amount * probability,
-        proddable_amount = proddable_amount * probability
+        proddable_amount = proddable_amount * probability,
+        quality_min = quality_min,
+        quality_max = quality_max,
+        quality_change = product.quality_change
     }
 
     if product.type == "fluid" then
@@ -116,6 +125,9 @@ function _util.format_recipe(recipe_proto, products, main_product, ingredients)
 
             base_ingredient.minimum_temperature = min_temp
             base_ingredient.maximum_temperature = max_temp
+        else
+            base_ingredient.quality_min = base_ingredient.quality_min and base_ingredient.quality_min.name or base_ingredient.quality_min  ---@as string?
+            base_ingredient.quality_max = base_ingredient.quality_max and base_ingredient.quality_max.name or base_ingredient.quality_max  ---@as string?
         end
     end
 

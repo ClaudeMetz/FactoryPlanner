@@ -104,6 +104,7 @@ end
 ---@field compatible_locations CompatibleLocationSet
 ---@field recycling boolean
 ---@field barreling boolean
+---@field can_set_quality boolean
 ---@field enabling_technologies string[]?
 ---@field heat_capacity double?
 ---@field custom boolean
@@ -132,7 +133,8 @@ function generator.recipes.generate(context)
             hidden = false,
             maximum_productivity = 2^53,
             emissions_multiplier = 1,
-            compatible_locations = {}
+            compatible_locations = {},
+            can_set_quality = false,
         }  ---@type FPRecipePrototype
         generator.util.add_default_groups(recipe)
         return recipe
@@ -199,6 +201,7 @@ function generator.recipes.generate(context)
                 compatible_locations = {},
                 recycling = recycling_recipes[proto.name],
                 barreling = compacting_recipes[proto.name],
+                can_set_quality = proto.can_set_quality,
                 enabling_technologies = researchable_recipes[recipe_name],  -- can be nil
                 custom = false,
                 enabled_from_the_start = proto.enabled,
@@ -545,8 +548,16 @@ function generator.recipes.generate(context)
             recipe.order = proto.spoil_result.order
             recipe.categories = {["purposeful-spoiling"] = true}
             recipe.energy = proto.get_spoil_ticks() / 60 / proto.stack_size
+            recipe.can_set_quality = true
 
-            local products = {{type="item", name=proto.spoil_result.name, amount=1}--[[@as Product]]}
+            local products = {{
+                type = "item",
+                name = proto.spoil_result.name,
+                amount = 1,
+                quality_min = proto.spoil_quality_min,
+                quality_max = proto.spoil_quality_max,
+                quality_change = proto.spoil_quality_change
+            }--[[@as Product]]}
             local ingredients = {{type="item", name=proto.name, amount=1}--[[@as Ingredient]]}
             generator.util.format_recipe(recipe, products, products[1], ingredients)
 
@@ -2042,6 +2053,12 @@ end
 ---@field mining_drill_module_slots_bonus uint16
 ---@field lab_module_slots_bonus uint16
 ---@field module_multipliers table<ModuleEffectName, float>
+---@field next_quality string?
+---@field next_probability double
+---@field next_chain_probability double
+---@field previous_quality string?
+---@field previous_probability double
+---@field previous_chain_probability double
 
 ---@return NamedPrototypes<FPQualityPrototype>
 function generator.qualities.generate()
@@ -2075,7 +2092,13 @@ function generator.qualities.generate()
                         productivity = proto.module_productivity_multiplier,
                         pollution = proto.module_pollution_multiplier,
                         quality = proto.module_quality_multiplier
-                    }
+                    },
+                    next_quality = proto.next and proto.next.name or nil,
+                    next_probability = proto.next and proto.next_probability or 0,
+                    next_chain_probability = proto.chain_probability or 0,
+                    previous_quality = proto.previous and proto.previous.name or nil,
+                    previous_probability = proto.previous and proto.previous_probability or 0,
+                    previous_chain_probability = proto.previous_chain_probability or 0
                 }  ---@type FPQualityPrototype
                 insert_prototype(qualities, quality, nil)
             end

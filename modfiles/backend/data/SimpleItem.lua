@@ -2,6 +2,7 @@
 ---@class SimpleItem
 ---@field class "SimpleItem"
 ---@field proto FPItemPrototype
+---@field quality_proto FPQualityPrototype?
 ---@field amount number
 ---@field target_amount number? Contribution to the containing floor's target
 ---@field required_amount number? Floor production or consumption required by its parent
@@ -12,12 +13,14 @@ script.register_metatable("SimpleItem", SimpleItem)
 
 ---@param parent LineObject?
 ---@param proto FPItemPrototype
+---@param quality_proto FPQualityPrototype?
 ---@param amount number?
 ---@return SimpleItem
-local function init(parent, proto, amount)
+local function init(parent, proto, quality_proto, amount)
     ---@diagnostic disable-next-line: missing-fields
     local item = {
         proto = proto,
+        quality_proto = quality_proto,  -- can be nil
         class = "SimpleItem",
         amount = amount or 0,
         target_amount = nil,
@@ -80,6 +83,7 @@ end
 ---@class PackedSimpleItem
 ---@field class "SimpleItem"
 ---@field proto FPPackedPrototype
+---@field quality_proto FPPackedPrototype?
 ---@field amount number
 ---@field target_amount number?
 ---@field required_amount number?
@@ -89,13 +93,32 @@ function SimpleItem:pack()
     return {
         class = self.class,
         proto = prototyper.util.simplify_prototype(self.proto, "type"),
+        quality_proto = self.quality_proto and prototyper.util.simplify_prototype(self.quality_proto),
         amount = self.amount,
         target_amount = self.target_amount,
-        required_amount = self.required_amount
+        required_amount = self.required_amount,
     }
 end
 
--- Helper functions to pack up Floor or Line products and ingredients
+---@param packed_self PackedSimpleItem
+---@return SimpleItem?  -- discard if invalid
+local function unpack(packed_self)
+    local item_proto = prototyper.util.validate_prototype_object(packed_self.proto, "type")
+    local valid = not item_proto.simplified
+    ---@cast item_proto FPItemPrototype
+
+    local quality_proto = packed_self.quality_proto and prototyper.util.validate_prototype_object(packed_self.quality_proto)
+    quality_proto = (quality_proto and not quality_proto.simplified) and quality_proto or nil
+    ---@cast quality_proto FPQualityPrototype?
+
+    local unpacked_self = init(nil, item_proto, quality_proto, packed_self.amount)
+    unpacked_self.target_amount = packed_self.target_amount
+    unpacked_self.required_amount = packed_self.required_amount
+
+    return valid and unpacked_self or nil
+end
+
+-- Helper functions to pack up Floor or Line products, byproducts and ingredients
 ---@param items SimpleItem[]
 ---@return PackedSimpleItem[]
 local function pack_items(items)
@@ -104,5 +127,16 @@ local function pack_items(items)
     return packed_items
 end
 
+---@param packed_items PackedSimpleItem[]
+---@return SimpleItem[]
+local function unpack_items(packed_items)
+    local items = {}  ---@type SimpleItem[]
+    for _, packed_item in ipairs(packed_items) do
+        local item = unpack(packed_item)
+        if item then table.insert(items, item) end
+    end
+    return items
+end
 
-return {init = init, pack_items = pack_items}
+
+return {init = init, unpack = unpack, pack_items = pack_items, unpack_items = unpack_items}

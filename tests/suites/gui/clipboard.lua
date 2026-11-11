@@ -10,7 +10,7 @@ local SimpleItem = script and require("__factoryplanner__.backend.data.SimpleIte
 local function fixture(context)
     local classes, player = context.classes, game.players[1]
     local factory = fixtures.factory(context, "clipboard-test")
-    local product = classes.FactoryItem.init(prototyper.util.find("items", "iron-gear-wheel", "item"), "product")
+    local product = classes.FactoryItem.init("product", prototyper.util.find("items", "iron-gear-wheel", "item"))
     product.definition.amount = 12
     factory:insert(product)
     return classes, player, factory, product
@@ -191,14 +191,14 @@ return {
                 and clip.packed_object.definition.type == copied.packed_object.definition.type
                 and clip.packed_object.definition.belt_stack == copied.packed_object.definition.belt_stack,
                 "Cut must store the same product configuration as Copy")
-            lib.clipboard.dummy_paste(player, classes.FactoryItem.init(nil, "product"), factory)
+            lib.clipboard.dummy_paste(player, classes.FactoryItem.init("product"), factory)
             local pasted = factory.first
             assert(pasted and pasted ~= product and pasted.definition[belts and "belt_count" or "amount"] == expected_amount)
             assert(pasted.definition.type == (belts and "belts" or "amount"))
             if belts then
                 assert(pasted.definition.belt_proto.name == "transport-belt" and pasted.definition.belt_stack == 2)
             end
-            lib.clipboard.dummy_paste(player, classes.FactoryItem.init(nil, "product"), factory)
+            lib.clipboard.dummy_paste(player, classes.FactoryItem.init("product"), factory)
             assert(factory:count() == 1, "repeated paste must not create a duplicate product")
             assert(lib.globals.player_table(player).clipboard == clip, "failed paste must retain clipboard")
         end

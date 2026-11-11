@@ -1,3 +1,5 @@
+local SimpleItem = require("backend.data.SimpleItem")
+
 -- ** UTIL **
 ---@param player LuaPlayer
 ---@return integer width
@@ -165,6 +167,7 @@ local function add_recipe_button(parent_flow, line, relevant_line, metadata)
     end
 
     local tooltip = {"", {"fp.tt_title", recipe_proto.localised_name}, note}
+    local quality = relevant_line.recipe.quality_proto and relevant_line.recipe.quality_proto.name
 
     ---@class ActOnCompactRecipeTags
     ---@field line_id ObjectID
@@ -172,8 +175,8 @@ local function add_recipe_button(parent_flow, line, relevant_line, metadata)
     ---@field flags GUIActionFlags
     local tags = {mod="fp", on_gui_click="act_on_compact_recipe", line_id=line.id, on_gui_hover="set_tooltip",
         context="compact_dialog", flags=flags}
-    local button = parent_flow.add{type="sprite-button", tags=tags, sprite=recipe_proto.sprite, style=style,
-        mouse_button_filter={"left-and-right"}, raise_hover_events=true}
+    local button = parent_flow.add{type="sprite-button", tags=tags, sprite=recipe_proto.sprite,
+        quality=quality, style=style, mouse_button_filter={"left-and-right"}, raise_hover_events=true}
     metadata.tooltips[button.index] = tooltip
 end
 
@@ -334,13 +337,14 @@ local function add_item_flow(line, relevant_line, item_category, metadata)
             local number_line = (number_tooltip) and {"", "\n", number_tooltip} or ""  ---@type LocalisedString
             local tooltip = {"", name_line, temperature_line, number_line}
             local style = "fflib_slot_button_" .. part_color
+            local quality = item.quality_proto and item.quality_proto.name
 
-            local button = item_table.add{type="sprite-button", tags=tags, sprite=proto.sprite, number=amount,
-                secondary_number=secondary_amount, style=style, mouse_button_filter={"left-and-right"},
-                raise_hover_events=true}
+            local button = item_table.add{type="sprite-button", tags=tags, sprite=proto.sprite,
+                quality=quality, number=amount, secondary_number=secondary_amount, style=style,
+                mouse_button_filter={"left-and-right"}, raise_hover_events=true}
             metadata.tooltips[button.index] = tooltip
 
-            item_highlights.register_line_item(metadata.player, button, line, proto, item_category)
+            item_highlights.register_line_item(metadata.player, button, line, item, item_category)
 
             ::skip_item::
         end
@@ -383,20 +387,21 @@ local function add_item_flow(line, relevant_line, item_category, metadata)
             mouse_button_filter={"left-and-right"}, raise_hover_events=true}
         metadata.tooltips[button.index] = {"", name_line, temperature_line, number_line}
 
-        item_highlights.register_line_item(metadata.player, button, line, proto, item_category)
+        item_highlights.register_line_item(metadata.player, button, line, item, item_category)
     end
 
     if item_category == "ingredients" and line.machine.fuel then
         local fuel = line.machine.fuel
+        local fuel_proto = fuel.proto  ---@as FPFuelPrototype
         local amount, number_tooltip, secondary_amount = item_views.process_item(metadata.player,
-            fuel.proto--[[@as FPFuelPrototype]], fuel.amount, line.machine.amount)
+            fuel_proto, fuel.amount, line.machine.amount)
         if amount == -1 then return end  -- an amount of -1 means it was below the margin of error
 
         local style = "fflib_slot_button_blue"
         local name_line = {"fp.tt_title_with_note", fuel.proto.localised_name, {"fp.pu_fuel", 1}}  ---@as LocalisedString
         local temperature_line = ""  ---@type LocalisedString
 
-        if fuel.proto.type == "fluid" then
+        if fuel_proto.type == "fluid" then
             local temperature_data = fuel.temperature_data   -- exists for any fluid fuel
             table.insert(name_line--[[@as table]], temperature_data.annotation)
 
@@ -411,6 +416,7 @@ local function add_item_flow(line, relevant_line, item_category, metadata)
         if relevant_line.done then style = style .. "_grayscale" end
         local number_line = (number_tooltip) and {"", "\n", number_tooltip} or ""
         local tooltip = {"", name_line, temperature_line, number_line}
+        local quality = fuel.quality_proto and fuel.quality_proto.name
 
         local flags = {cursor=true, factoriopedia=(lib.get_factoriopedia_proto(fuel.proto) ~= nil)}
         ---@class ActOnCompactFuelTags
@@ -419,12 +425,12 @@ local function add_item_flow(line, relevant_line, item_category, metadata)
         ---@field flags GUIActionFlags
         local tags = {mod="fp", on_gui_click="act_on_compact_item", fuel_id=fuel.id, context="compact_dialog", flags=flags}
 
-        local button = item_table.add{type="sprite-button", tags=tags, sprite=fuel.proto.sprite, style=style,
-            number=amount, secondary_number=secondary_amount, mouse_button_filter={"left-and-right"},
-            raise_hover_events=true}
+        local button = item_table.add{type="sprite-button", tags=tags, sprite=fuel_proto.sprite,
+            quality=quality, style=style, number=amount, secondary_number=secondary_amount,
+            mouse_button_filter={"left-and-right"}, raise_hover_events=true}
         metadata.tooltips[button.index] = tooltip
 
-        item_highlights.register(metadata.player, button, fuel.proto--[[@as FPFuelPrototype]], fuel:get_name_with_temperature())
+        item_highlights.register(metadata.player, button, fuel, fuel:get_name_with_temperature())
     end
 end
 
@@ -495,13 +501,14 @@ local function refresh_compact_header(player, factory)
         local style = "fflib_slot_button_default"
         local number_line = (number_tooltip) and {"", "\n", number_tooltip} or ""  ---@type LocalisedString
         local tooltip = {"", {"fp.tt_title", proto.localised_name}, number_line}
+        local quality = ingredient.quality_proto and ingredient.quality_proto.name
 
-        local button = table_items.add{type="sprite-button", tags=tags, sprite=proto.sprite, number=amount,
-            secondary_number=secondary_amount, style=style, mouse_button_filter={"left-and-right"},
+        local button = table_items.add{type="sprite-button", tags=tags, sprite=proto.sprite, quality=quality,
+            number=amount, secondary_number=secondary_amount, style=style, mouse_button_filter={"left-and-right"},
             raise_hover_events=true}
         tooltips[button.index] = tooltip
 
-        item_highlights.register(player, button, proto)
+        item_highlights.register(player, button, ingredient)
 
         ::skip_ingredient::
     end
@@ -674,13 +681,13 @@ local function handle_ingredient_click(player, tags, action)
     local item = floor.ingredients[tags.item_index]  ---@as SimpleItem
 
     if action == "pipette" then
-        lib.cursor.pipette_item(player, item.proto)
+        lib.cursor.pipette_item(player, item)
 
     elseif action == "filter_entity" then
         lib.cursor.filter_entity(player, item.proto)
 
     elseif action == "put_into_combinator" then
-        lib.cursor.put_into_combinator(player, item.proto, item.amount)
+        lib.cursor.put_into_combinator(player, item)
 
     elseif action == "factoriopedia" then
         player.open_factoriopedia_gui(lib.get_factoriopedia_proto(item.proto))
@@ -772,14 +779,16 @@ local function handle_item_click(player, tags, action)
         ---@cast item.proto FPItemPrototype
     end
 
+    local simple_item = SimpleItem.init(nil, item.proto--[[@as FPItemPrototype]], item.quality_proto--[[@as FPQualityPrototype?]], amount)
+
     if action == "pipette" then
-        lib.cursor.pipette_item(player, item.proto)
+        lib.cursor.pipette_item(player, simple_item)
 
     elseif action == "filter_entity" then
         lib.cursor.filter_entity(player, item.proto)
 
     elseif action == "put_into_combinator" then
-        lib.cursor.put_into_combinator(player, item.proto, amount)
+        lib.cursor.put_into_combinator(player, simple_item)
 
     elseif action == "factoriopedia" then
         player.open_factoriopedia_gui(lib.get_factoriopedia_proto(item.proto))

@@ -17,6 +17,9 @@ local RECIPES_PER_ROW = 6
 ---@field temperature float?
 ---@field translations TranslationTables
 ---@field recipe_groups RecipeDialogGroups
+---@field recipe_proto FPRecipePrototype?
+---@field quality_proto FPQualityPrototype?
+---@field select_tick integer?
 
 ---@alias RelevantRecipe {proto: FPRecipePrototype, enabled: boolean}
 ---@alias RecipeDialogFilters {disabled: boolean, hidden: boolean}
@@ -109,7 +112,12 @@ end
 ---@param modal_data RecipeDialogModalData
 ---@return boolean success
 local function attempt_adding_line(player, recipe_id, modal_data)
-    local recipe_proto = prototyper.util.find("recipes", recipe_id, nil)  ---@as FPRecipePrototype
+    local recipe_proto = modal_data.recipe_proto
+            or prototyper.util.find("recipes", recipe_id, nil)  ---@as FPRecipePrototype?
+
+    -- Confirmed without selection
+    if not recipe_proto then return false end
+
     local line = Line.init(recipe_proto)
 
     -- If finding a machine fails, this line is invalid
@@ -154,6 +162,8 @@ local function attempt_adding_line(player, recipe_id, modal_data)
             line.recipe:set_temperature(requested_proto.base_name--[[@as string]], requested_proto.temperature)
         end
 
+        line.recipe.quality_proto = modal_data.quality_proto
+
         -- Expanded rows can change a floor below the current view
         local changed_floor = floor  ---@type Floor | Factory
         while changed_floor.class == "Floor" do
@@ -170,18 +180,42 @@ end
 ---@param tags PickRecipeTags
 ---@param action string
 local function handle_recipe_click(player, tags, action)
+    local recipe_proto = prototyper.util.find("recipes", tags.recipe_proto_id, nil)  ---@as FPRecipePrototype
+
     if action == "factoriopedia" then
-        local recipe_proto = prototyper.util.find("recipes", tags.recipe_proto_id, nil)  ---@as FPRecipePrototype
         player.open_factoriopedia_gui(lib.get_factoriopedia_proto(recipe_proto))
     elseif action == "technology" then
-        local recipe_proto = prototyper.util.find("recipes", tags.recipe_proto_id, nil)  ---@as FPRecipePrototype
         if not recipe_proto.enabling_technologies then return end
         player.open_technology_gui(recipe_proto.enabling_technologies[1])
     else
         local modal_data = lib.globals.modal_data(player)  ---@as RecipeDialogModalData
-        if attempt_adding_line(player, tags.recipe_proto_id, modal_data) then
-            lib.gui.close_dialog(player, "cancel")
+        local modal_elements = modal_data.modal_elements
+        modal_data.recipe_proto = recipe_proto
+
+        -- If there is no modal submit button, picking a recipe also submits it; same for double-clicks
+        local double_click = (game.tick - (modal_data.select_tick or 0) < MAGIC_NUMBERS.double_click_delay)
+        if not modal_elements.dialog_submit_button or double_click then
+            if attempt_adding_line(player, tags.recipe_proto_id, modal_data) then
+                lib.gui.close_dialog(player, "submit")
+            end
+            return
         end
+        modal_data.select_tick = game.tick
+
+        -- Reset recipe button states
+        for _, recipe_group in pairs(modal_elements.groups) do
+            for _, recipe_button in pairs(recipe_group.recipe_buttons) do
+                if recipe_button.tags.recipe_proto_id == tags.recipe_proto_id then
+                    recipe_button.toggled = true
+                else
+                    recipe_button.toggled = false
+                end
+            end
+        end
+
+        
+        modal_elements.dialog_submit_button.enabled = true
+        quality_selector.refresh_element(modal_data)
     end
 end
 
@@ -314,7 +348,8 @@ end
 ---@param modal_data RecipeDialogModalData
 local function build_dialog_structure(modal_data)
     local modal_elements = modal_data.modal_elements
-    local content_frame = modal_elements.content_frame
+    local main_frame = modal_elements.main_frame  ---@type LuaGuiElement
+    local content_frame = modal_elements.content_frame  ---@type LuaGuiElement
     content_frame.clear()
 
     create_filter_box(modal_data)
@@ -340,6 +375,28 @@ local function build_dialog_structure(modal_data)
         if relevant_group ~= nil then create_recipe_group_box(modal_data, relevant_group) end
     end
 
+    if QUALITY_ENABLED then
+        local subfooter = main_frame.add{type = "frame", style = "subfooter_frame"}
+        local footer_flow = subfooter.add{type = "flow", direction = "horizontal"}
+        local input_flow = footer_flow.add{type = "flow", direction = "horizontal", style = "player_input_horizontal_flow"}
+        input_flow.add{type = "label", caption = {"gui.ingredient-quality"}}
+
+        footer_flow.style.horizontally_stretchable = true
+        input_flow.style.horizontally_stretchable = true
+
+        quality_selector.add_flow(input_flow, modal_data)
+
+        local submit_tags = {mod="fp", on_gui_click="exit_modal_dialog", action="submit"}  ---@type ExitModalDialogTags
+        local submit_button = subfooter.add{
+            type = "sprite-button",
+            style = "item_and_count_select_confirm",
+            sprite = "utility/confirm_slot",
+            enabled = false,
+            tags = submit_tags
+        }
+        modal_elements.dialog_submit_button = submit_button
+    end
+
     resize_recipe_dialog(modal_data)
 end
 
@@ -348,6 +405,7 @@ end
 local function apply_recipe_filter(player, search_term)
     local modal_data = lib.globals.modal_data(player)  ---@as RecipeDialogModalData
     local disabled, hidden = modal_data.filters.disabled, modal_data.filters.hidden
+    -- TODO: consider quality in recipe filter
 
     local any_recipe_visible = false
     for _, group in ipairs(modal_data.modal_elements.groups) do
@@ -419,7 +477,7 @@ local function recipe_early_abort_check(player, modal_data)
         return true  -- signal that the dialog does not need to actually be opened
 
     else  ---@cast relevant_recipes -nil
-        if #relevant_recipes == 1 then  -- if one relevant recipe is found, try it straight away
+        if #relevant_recipes == 1 and not QUALITY_ENABLED then  -- if one relevant recipe is found, try it straight away
             attempt_adding_line(player, relevant_recipes[1]--[[@cast -nil]].proto.id, modal_data)
             return true  -- idem above
 
@@ -460,6 +518,17 @@ local function open_recipe_dialog(player, modal_data)
     modal_data.modal_elements.search_textfield.focus()
 end
 
+---@param player LuaPlayer
+---@param action GUICloseAction
+local function close_recipe_dialog(player, action)
+    local modal_data = lib.globals.modal_data(player)  ---@as RecipeDialogModalData
+
+    if action == "submit" then
+        attempt_adding_line(player, 0, modal_data)
+    end
+end
+
+
 -- ** EVENTS **
 local listeners = {}  ---@type ListenerDefinitions
 
@@ -467,7 +536,6 @@ listeners.gui = {
     on_gui_click = {
         {
             name = "pick_recipe",
-            timeout = 20,
             actions_table = {
                 select = {shortcut="left"},
                 technology = {shortcut="shift-left"},
@@ -509,7 +577,8 @@ listeners.dialog = {
         }  ---@as ModalDialogSettings
     end,
     early_abort_check = recipe_early_abort_check,
-    open = open_recipe_dialog
+    open = open_recipe_dialog,
+    close = close_recipe_dialog
 }
 
 listeners.global = {

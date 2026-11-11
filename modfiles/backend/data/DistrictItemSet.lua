@@ -4,7 +4,7 @@ local DistrictItem = require("backend.data.DistrictItem")
 ---@class DistrictItemSet: Object, ObjectMethods
 ---@field class "DistrictItemSet"
 ---@field first DistrictItem?
----@field map table<FPItemPrototype, DistrictItem>
+---@field map table<SolverItemKey, DistrictItem>
 local DistrictItemSet = Object.methods()
 DistrictItemSet.__index = DistrictItemSet
 script.register_metatable("DistrictItemSet", DistrictItemSet)
@@ -28,14 +28,15 @@ end
 ---@param items SimpleItem[] | FactoryItem[]
 ---@param mode DistrictItemMode
 function DistrictItemSet:add_items(items, mode)
-    for _, item in pairs(items) do
-        local district_item = self.map[item.proto]
+    for _, item in pairs(items) do  ---@cast item SimpleItem
+        local item_key = solver.util.pack_item(item)
+        local district_item = self.map[item_key]
 
         if not district_item then
-            district_item = DistrictItem.init(item.proto)
+            district_item = DistrictItem.init(item.proto,item.quality_proto)
             district_item.parent = self
             self:_insert(district_item)
-            self.map[district_item.proto] = district_item
+            self.map[item_key] = district_item
         end
 
         district_item:add(item.amount, mode)

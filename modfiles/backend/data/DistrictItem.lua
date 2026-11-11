@@ -8,6 +8,7 @@ local Object = require("backend.data.Object")
 ---@class DistrictItem: Object, ObjectMethods
 ---@field class "DistrictItem"
 ---@field proto FPItemPrototype
+---@field quality_proto FPQualityPrototype?
 ---@field production DistrictItemData
 ---@field consumption DistrictItemData
 ---@field overall DistrictItemMode
@@ -17,10 +18,12 @@ DistrictItem.__index = DistrictItem
 script.register_metatable("DistrictItem", DistrictItem)
 
 ---@param proto FPItemPrototype
+---@param quality_proto FPQualityPrototype?
 ---@return DistrictItem
-local function init(proto)
+local function init(proto, quality_proto)
     local object = Object.init({
         proto = proto,
+        quality_proto = quality_proto,
         production = {amount=0},
         consumption = {amount=0},
 

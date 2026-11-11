@@ -23,6 +23,7 @@ local Object = require("backend.data.Object")
 ---@field class "FactoryItem"
 ---@field parent Factory
 ---@field proto FPItemPrototype | FPPackedPrototype
+---@field quality_proto (FPQualityPrototype | FPPackedPrototype)?
 ---@field category ItemCategory
 ---@field definition ItemDefinition
 ---@field active boolean
@@ -31,10 +32,11 @@ local FactoryItem = Object.methods()
 FactoryItem.__index = FactoryItem
 script.register_metatable("FactoryItem", FactoryItem)
 
----@param proto (FPItemPrototype | FPPackedPrototype)?
 ---@param category ItemCategory
+---@param proto (FPItemPrototype | FPPackedPrototype)?
+---@param quality_proto (FPQualityPrototype | FPPackedPrototype)?
 ---@return FactoryItem
-local function init(proto, category)
+local function init(category, proto, quality_proto)
     local this_proto = proto or {
         name = "",
         category = "",
@@ -43,6 +45,7 @@ local function init(proto, category)
     }
     local object = Object.init({
         proto = this_proto,
+        quality_proto = quality_proto,
         category = category,
         definition = {type="amount", amount=0},
         active = true,
@@ -118,7 +121,7 @@ function FactoryItem:paste(object)
             item = object
         else
             local source = object  ---@as SimpleItem | Fuel
-            item = init(proto, self.category)  -- definition.type = "amount"
+            item = init(self.category, proto, source.quality_proto)  -- definition.type = "amount"
             item.definition = {type="amount", amount=source.amount}
         end
         item.category = self.category
@@ -134,6 +137,7 @@ end
 ---@class PackedFactoryItem: PackedObject
 ---@field class "FactoryItem"
 ---@field proto FPPackedPrototype
+---@field quality_proto FPPackedPrototype?
 ---@field category ItemCategory
 ---@field definition ItemDefinition
 ---@field active boolean
@@ -149,6 +153,7 @@ function FactoryItem:pack(full)
     return {
         class = self.class,
         proto = prototyper.util.simplify_prototype(self.proto, "type"),
+        quality_proto = (self.quality_proto) and prototyper.util.simplify_prototype(self.quality_proto) or nil,
         category = self.category,
         definition = definition,
         active = self.active,
@@ -161,7 +166,8 @@ end
 ---@return FactoryItem item
 local function unpack(packed_self)
     -- Prototypes are unpacked at validate
-    local unpacked_self = init(packed_self.proto, packed_self.category)
+    local unpacked_self = init(packed_self.category,
+        packed_self.proto, packed_self.quality_proto)
 
     unpacked_self.definition = lib.flib.deep_copy(packed_self.definition)
     unpacked_self.active = packed_self.active
@@ -175,6 +181,9 @@ end
 function FactoryItem:validate(player)
     self.proto = prototyper.util.validate_prototype_object(self.proto, "type")  ---@as FPItemPrototype | FPPackedPrototype
     self.valid = (not self.proto.simplified)
+
+    self.quality_proto = self.quality_proto and prototyper.util.validate_prototype_object(self.quality_proto)
+    self.quality_proto = (self.quality_proto and not self.quality_proto.simplified) and self.quality_proto or nil
 
     local definition = self.definition
     if definition.type == "belts" then

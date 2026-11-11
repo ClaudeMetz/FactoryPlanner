@@ -7,6 +7,7 @@ local SimpleItem = require("backend.data.SimpleItem")
 
 ---@class ItemWeight
 ---@field proto FPItemPrototype | FPPackedPrototype
+---@field quality_proto (FPQualityPrototype | FPPackedPrototype)?
 ---@field weight integer
 
 ---@class Floor: Object, ObjectMethods
@@ -22,7 +23,7 @@ local SimpleItem = require("backend.data.SimpleItem")
 ---@field solver SolverName
 ---@field solver_error SolverStatus?
 ---@field is_linearly_dependent boolean?
----@field gaussian_free_items (FPItemPrototype | FPPackedPrototype)[]
+---@field gaussian_free_items SimpleItem[]
 ---@field linear_dependence_data LinearDependanceData?
 ---@field simplex_item_weights ItemWeight[]
 ---@field solver_result_cache FloorResult?
@@ -318,6 +319,7 @@ end
 
 ---@class PackedItemWeight
 ---@field proto FPPackedPrototype
+---@field quality_proto FPPackedPrototype?
 ---@field weight integer
 
 ---@class PackedFloor: PackedObject
@@ -327,7 +329,7 @@ end
 ---@field solver SolverName
 ---@field products PackedSimpleItem[]?
 ---@field ingredients PackedSimpleItem[]?
----@field gaussian_free_items FPPackedPrototype[]
+---@field gaussian_free_items PackedSimpleItem[]
 ---@field simplex_item_weights PackedItemWeight[]
 
 ---@param full boolean
@@ -338,6 +340,8 @@ function Floor:pack(full)
         table.insert(weights, {
             proto = entry.proto.simplified and entry.proto--[[@as FPPackedPrototype]]
                 or prototyper.util.simplify_prototype(entry.proto, "type"),
+            quality_proto = entry.quality_proto and (entry.quality_proto.simplified and entry.quality_proto--[[@as FPPackedPrototype]]
+                or prototyper.util.simplify_prototype(entry.quality_proto)) or nil,
             weight = entry.weight
         })
     end
@@ -351,7 +355,7 @@ function Floor:pack(full)
         products = (full) and SimpleItem.pack_items(self.products) or nil,
         ingredients = (full) and SimpleItem.pack_items(self.ingredients) or nil,
 
-        gaussian_free_items = prototyper.util.simplify_prototypes(self.gaussian_free_items, "type") or nil,
+        gaussian_free_items = SimpleItem.pack_items(self.gaussian_free_items),
         simplex_item_weights = weights,
     }
 end
@@ -368,8 +372,9 @@ local function unpack(packed_self)
     end
     unpacked_self.first = Object.unpack(packed_self.lines, unpacker, unpacked_self)  ---@as LineObject
 
-    -- Matrix free items will be automatically unpacked by the validation process
-    unpacked_self.gaussian_free_items = packed_self.gaussian_free_items
+    -- Gaussian free items will be automatically unpacked by the validation process
+    unpacked_self.gaussian_free_items = packed_self.gaussian_free_items  ---@as SimpleItem[]
+
     for _, entry in ipairs(packed_self.simplex_item_weights) do
         table.insert(unpacked_self.simplex_item_weights, {proto=entry.proto, weight=entry.weight})
     end
@@ -383,15 +388,18 @@ end
 function Floor:validate(player)
     self.valid = self:_validate(player)
 
-    local free_items, valid = prototyper.util.validate_prototype_objects(self.gaussian_free_items, "type")
-    self.valid = valid and self.valid
+    -- Invalid free items are dropped, they don't invalidate the floor
+    self.gaussian_free_items = SimpleItem.unpack_items(
+        self.gaussian_free_items  ---@as PackedSimpleItem[]
+    )
 
-    self.gaussian_free_items = free_items
     self.current_location = nil  -- reset cached value
 
     for _, entry in ipairs(self.simplex_item_weights) do
         entry.proto = prototyper.util.validate_prototype_object(entry.proto, "type")  ---@as FPItemPrototype | FPPackedPrototype
         self.valid = (not entry.proto.simplified) and self.valid
+        entry.quality_proto = entry.quality_proto and prototyper.util.validate_prototype_object(entry.quality_proto) or nil  ---@as (FPQualityPrototype | FPPackedPrototype)?
+        self.valid = self.valid and not (entry.quality_proto and entry.quality_proto.simplified)
     end
 
     return self.valid
@@ -408,17 +416,12 @@ function Floor:repair(player)
         pivot = self.first.next
     end
 
-    -- Remove any unrepairable free items so the factory remains valid
-    local free_items = self.gaussian_free_items
-    for index = #free_items, 1, -1 do
-        if free_items[index].simplified then
-            table.remove(free_items, index)
-        end
-    end
-
     local weights = self.simplex_item_weights
     for index = #weights, 1, -1 do
-        if weights[index].proto.simplified then table.remove(weights, index) end
+        if weights[index].proto.simplified or
+                (weights[index].quality_proto and weights[index].quality_proto.simplified) then
+            table.remove(weights, index)
+        end
     end
 
     if pivot then self:_repair(player, pivot) end
