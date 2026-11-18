@@ -176,43 +176,42 @@ function generator.recipes.generate(context)
 
     -- Add all standard recipes
     local recipe_filter = {{filter="energy", comparison=">", value=0},
-        {filter="energy", comparison="<", value=1e+21, mode="and"}}
+        {filter="energy", comparison="<", value=1e+21, mode="and"},
+        {filter="is-parameter", invert=true, mode="and"}}
     for recipe_name, proto in pairs(prototypes.get_recipe_filtered(recipe_filter)) do
-        if not proto.parameter then  -- not an option on the filter
-            local categories = {}
-            for _, category in pairs(proto.categories) do categories[category] = true end
+        local categories = {}
+        for _, category in pairs(proto.categories) do categories[category] = true end
 
-            ---@diagnostic disable-next-line: missing-fields
-            local recipe = {
-                name = proto.name,
-                localised_name = proto.localised_name,
-                sprite = "recipe/" .. proto.name,
-                categories = categories,
-                combined_category = "",  -- filled in by machine generator
-                energy = proto.energy,
-                emissions_multiplier = proto.emissions_multiplier,
-                allowed_effects = proto.allowed_effects,  -- can be nil
-                allowed_module_categories = proto.allowed_module_categories,  -- can be nil
-                maximum_productivity = math.floor(proto.maximum_productivity
-                    * MAGIC_NUMBERS.effect_precision + 1e-4),
-                productivity_recipe = (productivity_recipes[proto.name]) and proto.name or nil,
-                compatible_locations = {},
-                recycling = recycling_recipes[proto.name],
-                barreling = compacting_recipes[proto.name],
-                enabling_technologies = researchable_recipes[recipe_name],  -- can be nil
-                custom = false,
-                enabled_from_the_start = proto.enabled,
-                hidden = proto.hidden,
-                order = proto.order,
-                group = generator.util.generate_group_table(proto.group),
-                subgroup = generator.util.generate_group_table(proto.subgroup)
-            }  ---@type FPRecipePrototype
+        ---@diagnostic disable-next-line: missing-fields
+        local recipe = {
+            name = proto.name,
+            localised_name = proto.localised_name,
+            sprite = "recipe/" .. proto.name,
+            categories = categories,
+            combined_category = "",  -- filled in by machine generator
+            energy = proto.energy,
+            emissions_multiplier = proto.emissions_multiplier,
+            allowed_effects = proto.allowed_effects,  -- can be nil
+            allowed_module_categories = proto.allowed_module_categories,  -- can be nil
+            maximum_productivity = math.floor(proto.maximum_productivity
+                * MAGIC_NUMBERS.effect_precision + 1e-4),
+            productivity_recipe = (productivity_recipes[proto.name]) and proto.name or nil,
+            compatible_locations = {},
+            recycling = recycling_recipes[proto.name],
+            barreling = compacting_recipes[proto.name],
+            enabling_technologies = researchable_recipes[recipe_name],  -- can be nil
+            custom = false,
+            enabled_from_the_start = proto.enabled,
+            hidden = proto.hidden,
+            order = proto.order,
+            group = generator.util.generate_group_table(proto.group),
+            subgroup = generator.util.generate_group_table(proto.subgroup)
+        }  ---@type FPRecipePrototype
 
-            context.recipe_surface_conditions[proto.name] = proto.surface_conditions
+        context.recipe_surface_conditions[proto.name] = proto.surface_conditions
 
-            generator.util.format_recipe(recipe, proto.products, proto.main_product, proto.ingredients)
-            insert_prototype(recipes, recipe, nil)
-        end
+        generator.util.format_recipe(recipe, proto.products, proto.main_product, proto.ingredients)
+        insert_prototype(recipes, recipe, nil)
     end
 
     local pumped_fixed_fluids = {}  ---@type table<string, boolean>
@@ -504,8 +503,8 @@ function generator.recipes.generate(context)
 
     -- Add offshore pump recipes based on fluid tiles
     local pumped_fluids = {}
-    for _, proto in pairs(prototypes.tile) do
-        if proto.fluid and not pumped_fluids[proto.fluid.name] and not proto.hidden then
+    for _, proto in pairs(prototypes.get_tile_filtered{{filter="hidden", invert=true}}) do
+        if proto.fluid and not pumped_fluids[proto.fluid.name] then
             local fluid = proto.fluid  ---@cast fluid -nil
             pumped_fluids[fluid.name] = true
 

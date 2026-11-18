@@ -442,9 +442,11 @@ function _util.get_boiler_conversions(proto)
     if input.filter then
         add_conversion(input.filter)
     else  -- an unfiltered boiler takes in any fluid that can actually be put into it
-        for _, fluid_proto in pairs(prototypes.fluid) do
-            -- Parameters are blueprint placeholders, and hidden fluids aren't offered anywhere
-            if not fluid_proto.parameter and not fluid_proto.hidden then add_conversion(fluid_proto) end
+        -- Parameters are blueprint placeholders, and hidden fluids aren't offered anywhere
+        local fluid_filter = {{filter="hidden", invert=true},
+            {filter="is-parameter", invert=true, mode="and"}}
+        for _, fluid_proto in pairs(prototypes.get_fluid_filtered(fluid_filter)) do
+            add_conversion(fluid_proto)
         end
     end
 
