@@ -980,7 +980,7 @@ end
 ---@field category string
 ---@field combined_category string
 ---@field elem_type ElemType
----@field prototype_category PrototypeCategory?
+---@field prototype_category PrototypeCategory
 ---@field ingredient_limit integer
 ---@field product_limit integer
 ---@field fluid_channels FluidChannels
@@ -1026,7 +1026,7 @@ end
 ---@field maximum_temperature float?
 
 ---@alias EmissionsMap table<string, double>
----@alias PrototypeCategory ("crafter" | "launcher" | "mining_drill" | "boiler" | "offshore_pump" | "generator" | "lab" | "container")
+---@alias PrototypeCategory ("crafter" | "launcher" | "mining_drill" | "boiler" | "offshore_pump" | "generator" | "lab" | "container" | "agricultural_tower")
 
 ---@param context GeneratorContext
 ---@return NamedPrototypesWithCategory<FPMachinePrototype>
@@ -1066,7 +1066,7 @@ function generator.machines.generate(context)
 
     ---@param category string
     ---@param proto LuaEntityPrototype
-    ---@param prototype_category PrototypeCategory?
+    ---@param prototype_category PrototypeCategory
     ---@return FPMachinePrototype?
     local function generate_category_entry(category, proto, prototype_category)
         -- If no recipe uses this machine's category, it is pointless
@@ -1323,7 +1323,7 @@ function generator.machines.generate(context)
             end
 
         elseif proto.type == "agricultural-tower" then
-            local machine = generate_category_entry(proto.type, proto, nil)
+            local machine = generate_category_entry(proto.type, proto, "agricultural_tower")
             if machine then
                 local radius = proto.agricultural_tower_radius  ---@cast radius -nil
                 local crane_energy_usage = proto.crane_energy_usage  ---@cast crane_energy_usage -nil
