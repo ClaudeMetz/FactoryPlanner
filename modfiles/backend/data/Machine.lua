@@ -223,8 +223,6 @@ function Machine:get_module_limit()
     ---@cast self.proto FPMachinePrototype
     ---@cast self.quality_proto FPQualityPrototype
 
-    if self.proto.allowed_module_categories == nil then return 0 end
-
     local limit = self.proto.module_limit
     local category = self.proto.prototype_category
 
